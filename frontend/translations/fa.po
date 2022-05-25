@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-05-04 10:14+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
-"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
-"fa/>\n"
+"Language-Team: Persian "
+"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -32,6 +32,12 @@ msgstr "ایجاد حساب دمو"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
 msgstr "فقط می‌خواهید آن را امتحان کنید؟"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"این یک سرویس آزمایشی است، برای کار واقعی استفاده نکنید، پروژه‌ها به صورت "
+"دوره‌ای پاک می‌شوند."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
@@ -183,6 +189,9 @@ msgstr "لینک با موفقیت کپی شد"
 msgid "common.share-link.link-deleted-success"
 msgstr "لینک با موفقیت حذف شد"
 
+msgid "common.share-link.permissions-can-access"
+msgstr "می‌تواند دسترسی داشته باشد"
+
 msgid "common.share-link.permissions-can-view"
 msgstr "می‌تواند مشاهده کند"
 
@@ -191,6 +200,9 @@ msgstr "هر کسی که لینک داشته باشد دسترسی خواهد د
 
 msgid "common.share-link.remove-link"
 msgstr "حذف لینک"
+
+msgid "common.share-link.title"
+msgstr "اشتراک‌گذاری پروتوتایپ‌ها"
 
 msgid "common.share-link.view-all-pages"
 msgstr "تمام صفحات"
@@ -236,6 +248,17 @@ msgstr "تکثیر"
 msgid "dashboard.empty-files"
 msgstr "شما هنوز هیچ فایلی در اینجا ندارید"
 
+msgid "dashboard.export-frames"
+msgstr "خروجی آرت‌بوردها به پی‌دی‌اف..."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "اکسپورت به پی‌دی‌اف"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "اکسپورت"
+
 msgid "dashboard.options"
 msgstr "گزینه‌ها"
 
@@ -276,6 +299,10 @@ msgid "feedback.title"
 msgstr "ایمیل"
 
 #: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "محو"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
 msgid "handoff.attributes.blur.value"
 msgstr "مقدار"
 
@@ -314,6 +341,10 @@ msgstr "ارتفاع"
 #: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.left"
 msgstr "چپ"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "گردی"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.rotation"
@@ -358,6 +389,12 @@ msgstr "داخل"
 #, permanent
 msgid "handoff.attributes.stroke.alignment.outer"
 msgstr "بیرون"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "خط‌چین"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "‏مخلوط"
 
 msgid "handoff.attributes.stroke.style.none"
 msgstr "هیچ‌یک"
@@ -435,6 +472,9 @@ msgstr "لغو"
 msgid "labels.centered"
 msgstr "مرکز"
 
+msgid "labels.close"
+msgstr "بستن"
+
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.comments"
 msgstr "نظرات"
@@ -476,6 +516,9 @@ msgstr "ویرایشگر"
 msgid "labels.email"
 msgstr "ایمیل"
 
+msgid "labels.export"
+msgstr "اکسپورت"
+
 msgid "labels.font-variants"
 msgstr "استایل‌ها"
 
@@ -507,12 +550,19 @@ msgstr "اعضا"
 msgid "labels.name"
 msgstr "نام"
 
+msgid "labels.next"
+msgstr "بعدی"
+
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
 msgstr "اوپس!"
 
 msgid "labels.or"
 msgstr "یا"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.owner"
+msgstr "مالک"
 
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
@@ -564,6 +614,9 @@ msgstr "درحال ارسال…"
 msgid "labels.settings"
 msgstr "تنظیمات"
 
+msgid "labels.skip"
+msgstr "رد"
+
 msgid "labels.start"
 msgstr "شروع"
 
@@ -584,6 +637,22 @@ msgstr "بیننده"
 msgid "labels.workspace"
 msgstr "فضای‌کاری"
 
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"آیا مطمئن هستید که می‌خواهید این سبک فونت را حذف کنید؟ اگر در یک فایل "
+"استفاده شود، بارگیری نمی‌شود."
+
+msgid "modals.delete-font.message"
+msgstr ""
+"آیا مطمئن هستید که می‌خواهید این فونت را حذف کنید؟ اگر در یک فایل استفاده "
+"شود، بارگیری نمی‌شود."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.message"
+msgstr ""
+"آیا مطمئنید که می‌خواهید این تیم را حذف کنید؟ تمام پروژه‌ها و فایل‌های "
+"مرتبط با تیم به طور دائم حذف خواهند شد."
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
 msgstr "به‌روزرسانی"
@@ -594,6 +663,14 @@ msgstr "لغو"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "settings.multiple"
+msgstr "مخلوط"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.sitemap"
+msgstr "نقشه سایت"
 
 msgid "workspace.assets.box-filter-graphics"
 msgstr "گرافیک"
@@ -645,6 +722,10 @@ msgstr "فونت"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-size"
 msgstr "اندازه"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "حذف گروه"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.edit"
@@ -735,6 +816,18 @@ msgstr "بالا"
 msgid "workspace.options.design"
 msgstr "طرح"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export"
+msgstr "اکسپورت"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "workspace.options.export.suffix"
+msgstr "پسوند"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object"
+msgstr "درحال گرفتن خروجی…"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"
 msgstr "پر"
@@ -786,64 +879,9 @@ msgstr "چپ"
 msgid "workspace.options.grid.params.type.right"
 msgstr "راست"
 
-msgid "common.share-link.title"
-msgstr "اشتراک‌گذاری پروتوتایپ‌ها"
-
-msgid "dashboard.export-frames"
-msgstr "خروجی آرت‌بوردها به پی‌دی‌اف..."
-
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur"
-msgstr "محو"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.owner"
-msgstr "مالک"
-
-msgid "labels.close"
-msgstr "بستن"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-ms"
-msgstr "م‌ث"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-frames.title"
-msgstr "اکسپورت به پی‌دی‌اف"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.delete-team-confirm.message"
-msgstr ""
-"آیا مطمئنید که می‌خواهید این تیم را حذف کنید؟ تمام پروژه‌ها و فایل‌های مرتبط "
-"با تیم به طور دائم حذف خواهند شد."
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "dashboard.export-shapes"
-msgstr "اکسپورت"
-
-msgid "labels.export"
-msgstr "اکسپورت"
-
-msgid "labels.next"
-msgstr "بعدی"
-
-msgid "modals.delete-font-variant.message"
-msgstr ""
-"آیا مطمئن هستید که می‌خواهید این سبک فونت را حذف کنید؟ اگر در یک فایل "
-"استفاده شود، بارگیری نمی‌شود."
-
-msgid "modals.delete-font.message"
-msgstr ""
-"آیا مطمئن هستید که می‌خواهید این فونت را حذف کنید؟ اگر در یک فایل استفاده "
-"شود، بارگیری نمی‌شود."
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
-msgid "settings.multiple"
-msgstr "مخلوط"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.ungroup"
-msgstr "حذف گروه"
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.top"
+msgstr "بالا"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.width"
@@ -856,6 +894,9 @@ msgstr "ردیف‌ها"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.square"
 msgstr "مربع"
+
+msgid "workspace.options.height"
+msgstr "بلندی"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
@@ -894,6 +935,10 @@ msgid "workspace.options.interaction-in"
 msgstr "در"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "م‌ث"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-out"
 msgstr "خارج"
 
@@ -913,6 +958,10 @@ msgstr "موقعیت"
 msgid "workspace.options.interaction-self"
 msgstr "خود"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.color"
 msgstr "رنگ"
@@ -920,6 +969,22 @@ msgstr "رنگ"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.difference"
 msgstr "تفاوت"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.normal"
+msgstr "معمولی"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.saturation"
+msgstr "اشباع"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "صفحه نمایش"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title"
+msgstr "لایه"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
@@ -969,20 +1034,20 @@ msgid "workspace.options.stroke-cap.square"
 msgstr "مربع"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke.dotted"
-msgstr "خط‌چین"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke.inner"
-msgstr "داخل"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.center"
 msgstr "مرکز"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.dashed"
 msgstr "نقطه‌چین"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dotted"
+msgstr "خط‌چین"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.inner"
+msgstr "داخل"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.mixed"
@@ -1003,6 +1068,10 @@ msgstr "RTL"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.google"
 msgstr "گوگل"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-fixed"
+msgstr "درست شد"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.lowercase"
@@ -1040,6 +1109,9 @@ msgstr "برش"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.delete"
 msgstr "حذف"
+
+msgid "workspace.shape.menu.difference"
+msgstr "تفاوت"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.duplicate"
@@ -1098,75 +1170,3 @@ msgstr "صفحات"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.sitemap"
 msgstr "نقشه سایت"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.grow-fixed"
-msgstr "درست شد"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.demo-warning"
-msgstr ""
-"این یک سرویس آزمایشی است، برای کار واقعی استفاده نکنید، پروژه‌ها به صورت "
-"دوره‌ای پاک می‌شوند."
-
-msgid "common.share-link.permissions-can-access"
-msgstr "می‌تواند دسترسی داشته باشد"
-
-msgid "handoff.attributes.stroke.style.mixed"
-msgstr "‏مخلوط"
-
-msgid "handoff.attributes.stroke.style.dotted"
-msgstr "خط‌چین"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.radius"
-msgstr "گردی"
-
-msgid "labels.skip"
-msgstr "رد"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.sitemap"
-msgstr "نقشه سایت"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
-msgid "workspace.options.export"
-msgstr "اکسپورت"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
-msgid "workspace.options.export.suffix"
-msgstr "پسوند"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
-msgid "workspace.options.exporting-object"
-msgstr "درحال گرفتن خروجی…"
-
-msgid "workspace.options.height"
-msgstr "بلندی"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.type.top"
-msgstr "بالا"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-url"
-msgstr "URL"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-msgid "workspace.options.layer-options.blend-mode.normal"
-msgstr "معمولی"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-msgid "workspace.options.layer-options.blend-mode.saturation"
-msgstr "اشباع"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-msgid "workspace.options.layer-options.blend-mode.screen"
-msgstr "صفحه نمایش"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-msgid "workspace.options.layer-options.title"
-msgstr "لایه"
-
-msgid "workspace.shape.menu.difference"
-msgstr "تفاوت"

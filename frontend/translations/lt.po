@@ -2,36 +2,16 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-05-25 09:24+0000\n"
 "Last-Translator: Vincas Dundzys <dundzys.vincas@gmail.com>\n"
-"Language-Team: Lithuanian <https://hosted.weblate.org/projects/penpot/"
-"frontend/lt/>\n"
+"Language-Team: Lithuanian "
+"<https://hosted.weblate.org/projects/penpot/frontend/lt/>\n"
 "Language: lt\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 1 && (n % 100 < 11 || n % 100 > "
-"19)) ? 0 : ((n % 10 >= 2 && n % 10 <= 9 && (n % 100 < 11 || n % 100 > 19)) ? "
-"1 : 2);\n"
+"19)) ? 0 : ((n % 10 >= 2 && n % 10 <= 9 && (n % 100 < 11 || n % 100 > 19)) "
+"? 1 : 2);\n"
 "X-Generator: Weblate 4.13-dev\n"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-submit"
-msgstr "Prisijungti"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-github-submit"
-msgstr "GitHub"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.new-password"
-msgstr "Įveskite naują slaptažodį"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-google-submit"
-msgstr "Google"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.password"
-msgstr "Slaptažodis"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -78,12 +58,24 @@ msgid "auth.login-here"
 msgstr "Prisijungimas čia"
 
 #: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Prisijungti"
+
+#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
 msgstr "Malonu Jus vėl matyti!"
 
 #: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
@@ -92,6 +84,10 @@ msgstr "Prisijungti su LDAP"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID prisijungimas"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Įveskite naują slaptažodį"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.newsletter-subscription"
@@ -117,6 +113,10 @@ msgstr "Slaptažodžio atkūrimo nuoroda išsiųsta į jūsų pašto dėžutę."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Sėkmingai prisijungė prie komandos"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Slaptažodis"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
@@ -161,6 +161,9 @@ msgstr "Sukurti paskyrą"
 msgid "auth.sidebar-tagline"
 msgstr "Atviro kodo dizaino ir prototipų kūrimo sprendimas."
 
+msgid "auth.terms-of-service"
+msgstr "Paslaugų teikimo sąlygos"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr ""
@@ -171,14 +174,25 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Išsiuntėme patvirtinimo el. laišką adresu"
 
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Ar tikrai norite pašalinti šią nuorodą? Jei tai padarysite, ji niekam "
+"nebebus pasiekiama"
+
 msgid "common.share-link.get-link"
 msgstr "Gauti nuorodą"
 
-msgid "common.share-link.permissions-can-view"
-msgstr "Galima peržiūrėti"
+msgid "common.share-link.link-copied-success"
+msgstr "Nuoroda sėkmingai nukopijuota"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Nuoroda sėkmingai ištrinta"
 
 msgid "common.share-link.permissions-can-access"
 msgstr "Gali pasiekti"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Galima peržiūrėti"
 
 msgid "common.share-link.permissions-hint"
 msgstr "Kiekvienas, turintis nuorodą, turės prieigą"
@@ -204,6 +218,22 @@ msgstr "Parinkti puslapiai"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Pridėti kaip bendrinamą biblioteką"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Keisti el. paštą"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(kopija)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ Sukurti naują komandą"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Jūsų Penpot"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.delete-team"
@@ -235,6 +265,13 @@ msgid "dashboard.export-frames"
 msgstr "Eksportuokite darbalaukius į PDF..."
 
 #: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Eksportuoti į PDF"
+
+msgid "dashboard.export-multi"
+msgstr "Eksportuoti Penpot %s failus"
+
+#: src/app/main/ui/export.cljs
 msgid "dashboard.export-multiple.selected"
 msgstr "Pasirinkta %s iš %s elementų"
 
@@ -245,8 +282,8 @@ msgstr "Eksportuoti"
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
-"Galite pridėti eksportavimo nustatymus prie elementų iš dizaino ypatybių ("
-"dešinės šoninės juostos apačioje)."
+"Galite pridėti eksportavimo nustatymus prie elementų iš dizaino ypatybių "
+"(dešinės šoninės juostos apačioje)."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
@@ -268,62 +305,16 @@ msgstr "* Gali apimti komponentus, grafiką, spalvas ir (arba) tipografiją."
 
 msgid "dashboard.export.explain"
 msgstr ""
-"Viename ar keliuose failuose, kuriuos norite eksportuoti, naudojamos bendros "
-"bibliotekos. Ką norite daryti su jų komponentais*?"
+"Viename ar keliuose failuose, kuriuos norite eksportuoti, naudojamos "
+"bendros bibliotekos. Ką norite daryti su jų komponentais*?"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"failai su bendromis bibliotekomis bus įtraukti į eksportą, išlaikant jų "
+"susiejimą."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Eksportuoti bendrai naudojamas bibliotekas"
-
-msgid "dashboard.export.options.merge.message"
-msgstr ""
-"Jūsų failas bus eksportuotas su visais išoriniais komponentais, sujungtais į "
-"failų biblioteką."
-
-msgid "dashboard.export.options.merge.title"
-msgstr "Įtraukti bendrai naudojamus bibliotekos komponentus į failų bibliotekas"
-
-msgid "dashboard.export.title"
-msgstr "Eksportuoti failus"
-
-msgid "dashboard.fonts.empty-placeholder"
-msgstr "Vis dar neįdiegėte tinkintų šriftų."
-
-msgid "auth.terms-of-service"
-msgstr "Paslaugų teikimo sąlygos"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.change-email"
-msgstr "Keisti el. paštą"
-
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-msgid "dashboard.copy-suffix"
-msgstr "(kopija)"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.create-new-team"
-msgstr "+ Sukurti naują komandą"
-
-msgid "common.share-link.confirm-deletion-link-description"
-msgstr ""
-"Ar tikrai norite pašalinti šią nuorodą? Jei tai padarysite, ji niekam "
-"nebebus pasiekiama"
-
-msgid "common.share-link.link-copied-success"
-msgstr "Nuoroda sėkmingai nukopijuota"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "Nuoroda sėkmingai ištrinta"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.default-team-name"
-msgstr "Jūsų Penpot"
-
-msgid "dashboard.export-multi"
-msgstr "Eksportuoti Penpot %s failus"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-frames.title"
-msgstr "Eksportuoti į PDF"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
@@ -335,10 +326,16 @@ msgstr ""
 "Bendrai naudojamus bibliotekos komponentus traktuokite kaip pagrindinius "
 "objektus"
 
-msgid "dashboard.export.options.all.message"
+msgid "dashboard.export.options.merge.message"
 msgstr ""
-"failai su bendromis bibliotekomis bus įtraukti į eksportą, išlaikant jų "
-"susiejimą."
+"Jūsų failas bus eksportuotas su visais išoriniais komponentais, sujungtais "
+"į failų biblioteką."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Įtraukti bendrai naudojamus bibliotekos komponentus į failų bibliotekas"
+
+msgid "dashboard.export.title"
+msgstr "Eksportuoti failus"
 
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Šriftas ištrintas"
@@ -346,3 +343,6 @@ msgstr "Šriftas ištrintas"
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.dismiss-all"
 msgstr "Atmesti visus"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Vis dar neįdiegėte tinkintų šriftų."

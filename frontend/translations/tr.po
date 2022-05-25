@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-04-04 11:11+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
-"tr/>\n"
+"Language-Team: Turkish "
+"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -257,8 +257,9 @@ msgstr "Burada hiç dosyan yok"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Olamaz! Henüz dosyanız yok! Bazı şablonları denemek isterseniz [Kütüphaneler "
-"ve şablonlar](https://penpot.app/libraries-templates.html) sayfasına gidin"
+"Olamaz! Henüz dosyanız yok! Bazı şablonları denemek isterseniz "
+"[Kütüphaneler ve şablonlar](https://penpot.app/libraries-templates.html) "
+"sayfasına gidin"
 
 msgid "dashboard.export-frames"
 msgstr "Çalışma yüzeylerini PDF olarak dışarı aktar..."
@@ -353,18 +354,19 @@ msgstr[1] "%s yazı tipi eklendi"
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Buraya yüklediğiniz herhangi bir web yazı tipi, bu takımın dosyalarının "
-"metin özelliklerinde bulunan yazı tipi ailesi listesine eklenecek. Aynı yazı "
-"tipi ailesi adına sahip yazı tipleri, **tek yazı tipi ailesi** olarak "
-"gruplandırılacak. Yazı tiplerini şu biçimlerde yükleyebilirsiniz: **TTF, OTF "
-"ve WOFF** (yalnızca bir tane gerekli olacak)."
+"metin özelliklerinde bulunan yazı tipi ailesi listesine eklenecek. Aynı "
+"yazı tipi ailesi adına sahip yazı tipleri, **tek yazı tipi ailesi** olarak "
+"gruplandırılacak. Yazı tiplerini şu biçimlerde yükleyebilirsiniz: **TTF, "
+"OTF ve WOFF** (yalnızca bir tane gerekli olacak)."
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sadece kendinize ait veya Penpot'ta kullanılabilecek bir lisansa sahip olan "
-"yazi tiplerini yükleyebilirsiniz. [Penpot'un Kullanım Şartları](https://"
-"penpot.app/terms.html) içindeki İçerik hakları bölümünden ayrıntılı bilgi "
-"alabilirsiniz. Ayrıca [yazı tipi lisanslama](https://www.typography.com/faq) "
-"hakkında daha fazla bilgi almak isteyebilirsiniz."
+"yazi tiplerini yükleyebilirsiniz. [Penpot'un Kullanım "
+"Şartları](https://penpot.app/terms.html) içindeki İçerik hakları bölümünden "
+"ayrıntılı bilgi alabilirsiniz. Ayrıca [yazı tipi "
+"lisanslama](https://www.typography.com/faq) hakkında daha fazla bilgi almak "
+"isteyebilirsiniz."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -456,6 +458,14 @@ msgstr "+ Yeni Proje"
 msgid "dashboard.new-project-prefix"
 msgstr "Yeni Proje"
 
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr "Bana Penpot ile ilgili haberler, ürün güncellemeleri ve tavsiyeler gönder."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Bülten aboneliği"
+
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "\"%s\" için sonuç bulunamadı"
@@ -511,6 +521,10 @@ msgstr "Hesabınızı kaldırmak mı istiyorsunuz?"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Paylaşılan Kütüphane olarak sil"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Ayarları kaydet"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.search-placeholder"
@@ -722,8 +736,8 @@ msgstr "Parola en az 8 karakterden oluşmalı"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr ""
-"Profilinizde sessize alınmış e-postalar var (spam raporları veya yüksek geri "
-"dönüşler sebebiyle)."
+"Profilinizde sessize alınmış e-postalar var (spam raporları veya yüksek "
+"geri dönüşler sebebiyle)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
@@ -740,6 +754,10 @@ msgstr "Sahip takımdan ayrılamaz, sahip rolünü yeniden atamanız gerekir."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Hizmet şartlarımızı ve gizlilik politikamızı kabul etmelisin."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "Jetonun süresi geçti"
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -1039,6 +1057,9 @@ msgstr "Yönetici"
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.all"
 msgstr "Hepsi"
+
+msgid "labels.and"
+msgstr "ve"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
@@ -1495,7 +1516,8 @@ msgstr "Yeni e-postayı doğrulayın"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"“%s” e-posta adresinize kimliğinizi doğrulamak için bir e-posta göndereceğiz."
+"“%s” e-posta adresinize kimliğinizi doğrulamak için bir e-posta "
+"göndereceğiz."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1538,7 +1560,8 @@ msgstr "Konuşmayı sil"
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.message"
 msgstr ""
-"Bu konuşmayı silmek istediğinden emin misin? Konudaki tüm yorumlar silinecek."
+"Bu konuşmayı silmek istediğinden emin misin? Konudaki tüm yorumlar "
+"silinecek."
 
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.title"
@@ -1825,12 +1848,40 @@ msgstr "github'da erişebilir"
 msgid "onboarding.contrib.title"
 msgstr "Açık Kaynağa Katkıda Bulunan Birisi?"
 
+msgid "onboarding.newsletter.accept"
+msgstr "Evet, abone ol"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr "Abonelik talebiniz iletildi, size onaylamak için bir e-posta göndereceğiz."
+
+msgid "onboarding.newsletter.decline"
+msgstr "Hayır, teşekkürler"
+
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"Ürün geliştirmedeki ilerleme ve haberlerden haberdar olmak için bültenimize "
+"abone olun."
+
+msgid "onboarding.newsletter.policy"
+msgstr "Gizlilik Politikası."
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "Gizliliğe önem verdiğimiz için, işte bizim "
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"Size yalnızca ilgili e-postaları göndereceğiz. Aboneliğinizi istediğiniz "
+"zaman kullanıcı profilinizden veya herhangi bir bültenimizdeki abonelikten "
+"çıkma bağlantısı aracılığıyla iptal edebilirsiniz."
+
+msgid "onboarding.newsletter.title"
+msgstr "Penpot haberlerini almak ister misiniz?"
+
 msgid "onboarding.slide.0.alt"
 msgstr "Tasarımlar oluşturun"
 
 msgid "onboarding.slide.0.desc1"
-msgstr ""
-"Tüm takım üyeleriyle iş birliği içinde güzel kullanıcı arayüzleri oluşturun."
+msgstr "Tüm takım üyeleriyle iş birliği içinde güzel kullanıcı arayüzleri oluşturun."
 
 msgid "onboarding.slide.0.desc2"
 msgstr ""
@@ -1881,6 +1932,12 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Paylaşılan bir doğruluk kaynağı"
 
+msgid "onboarding.team-input-placeholder"
+msgstr "Yeni takım adı gir"
+
+msgid "onboarding.team.create.button"
+msgstr "Takım oluştur"
+
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "Biriyle mi çalışıyorsunuz? Projelerde birlikte çalışmak ve tasarım "
@@ -1891,6 +1948,9 @@ msgstr "Yeni takım adı gir"
 
 msgid "onboarding.team.create.title"
 msgstr "Takım oluştur"
+
+msgid "onboarding.team.skip-and-invite-later"
+msgstr "Atla ve daha sonra davet et"
 
 msgid "onboarding.team.start.button"
 msgstr "Hemen başla"
@@ -2008,8 +2068,8 @@ msgstr "%s - Penpot"
 
 msgid "viewer.breaking-change.description"
 msgstr ""
-"Bu paylaşılabilir bağlantı artık geçerli değil. Yeni bir tane oluşturun veya "
-"sahibinden yeni bir tane isteyin."
+"Bu paylaşılabilir bağlantı artık geçerli değil. Yeni bir tane oluşturun "
+"veya sahibinden yeni bir tane isteyin."
 
 msgid "viewer.breaking-change.message"
 msgstr "Üzgünüm!"
@@ -2142,8 +2202,7 @@ msgstr "Grup oluştur"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group-hint"
-msgstr ""
-"Ögeleriniz otomatik olarak \"grup adı / öge adı\" olarak adlandırılacak"
+msgstr "Ögeleriniz otomatik olarak \"grup adı / öge adı\" olarak adlandırılacak"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
@@ -2318,8 +2377,16 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Çalışma yüzeyi adlarını gizle"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-assets"
+msgstr "Varlıkları gizle"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Izgaraları gizle"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-layers"
+msgstr "Katmanları gizle"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2361,8 +2428,16 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Çalışma yüzeylerinin adlarını göster"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-assets"
+msgstr "Varlıkları göster"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Izgarayı göster"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-layers"
+msgstr "Katmanları göster"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -2634,6 +2709,11 @@ msgstr "1 ögeyi dışa aktar"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
 msgstr "Son ek"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-complete"
+msgstr "Dışa aktarma tamamlandı"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
@@ -3048,6 +3128,14 @@ msgstr "Katman grubu"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Seçili katmanlar"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "Daha fazla renk"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Daha fazla kütüphane rengi"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.navigate-to"
 msgstr "Git"
@@ -3097,12 +3185,16 @@ msgstr "Yazı tipi ara"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
 msgstr ""
-"Diğer çalışma yüzeyine bağlantı taşımak için bir şekil, çalışma yüzeyi ya da "
-"grup seçin."
+"Diğer çalışma yüzeyine bağlantı taşımak için bir şekil, çalışma yüzeyi ya "
+"da grup seçin."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-artboard"
 msgstr "Çalışma yüzeyi seç"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "Seçilen renkler"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.selection-fill"
@@ -3346,8 +3438,7 @@ msgstr "Dikey hizalama"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
-msgstr ""
-"Prototip görünümünü çalıştırmak için başlıktaki oynatma düğmesini kullan."
+msgstr "Prototip görünümünü çalıştırmak için başlıktaki oynatma düğmesini kullan."
 
 msgid "workspace.options.width"
 msgstr "Genişlik"
@@ -3782,95 +3873,3 @@ msgstr "Güncelle"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Jetonun süresi geçti"
-
-msgid "onboarding.team-input-placeholder"
-msgstr "Yeni takım adı gir"
-
-msgid "onboarding.team.create.button"
-msgstr "Takım oluştur"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Atla ve daha sonra davet et"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Varlıkları gizle"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Katmanları gizle"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Varlıkları göster"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Katmanları göster"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Bülten aboneliği"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.save-settings"
-msgstr "Ayarları kaydet"
-
-msgid "labels.and"
-msgstr "ve"
-
-msgid "onboarding.newsletter.decline"
-msgstr "Hayır, teşekkürler"
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Gizliliğe önem verdiğimiz için, işte bizim "
-
-msgid "onboarding.newsletter.title"
-msgstr "Penpot haberlerini almak ister misiniz?"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
-msgid "workspace.options.more-colors"
-msgstr "Daha fazla renk"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
-msgid "workspace.options.more-lib-colors"
-msgstr "Daha fazla kütüphane rengi"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-msg"
-msgstr ""
-"Bana Penpot ile ilgili haberler, ürün güncellemeleri ve tavsiyeler gönder."
-
-msgid "onboarding.newsletter.accept"
-msgstr "Evet, abone ol"
-
-msgid "onboarding.newsletter.acceptance-message"
-msgstr ""
-"Abonelik talebiniz iletildi, size onaylamak için bir e-posta göndereceğiz."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
-msgid "workspace.options.selection-color"
-msgstr "Seçilen renkler"
-
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Ürün geliştirmedeki ilerleme ve haberlerden haberdar olmak için bültenimize "
-"abone olun."
-
-msgid "onboarding.newsletter.policy"
-msgstr "Gizlilik Politikası."
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Size yalnızca ilgili e-postaları göndereceğiz. Aboneliğinizi istediğiniz "
-"zaman kullanıcı profilinizden veya herhangi bir bültenimizdeki abonelikten "
-"çıkma bağlantısı aracılığıyla iptal edebilirsiniz."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
-msgid "workspace.options.exporting-complete"
-msgstr "Dışa aktarma tamamlandı"

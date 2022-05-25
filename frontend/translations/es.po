@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-12-09 04:50+0000\n"
 "Last-Translator: Rubén <rubenx@mail.com>\n"
-"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
-"es/>\n"
+"Language-Team: Spanish "
+"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -319,8 +319,8 @@ msgstr "Exportar librerias compartidas"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"Las librerias compartidas no se incluirán en la exportación y ningún recurso "
-"será incluido en la librería. "
+"Las librerias compartidas no se incluirán en la exportación y ningún "
+"recurso será incluido en la librería. "
 
 msgid "dashboard.export.options.detach.title"
 msgstr "Usar los recursos como objetos básicos"
@@ -364,9 +364,10 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sólo deberías cargar fuentes que te pertenecen o de las que tienes una "
 "licencia que te permita usarlas en Penpot. Encuentra más información en la "
-"sección de Derechos de Contenido: [Penpot's Terms of Service](https://penpot."
-"app/terms.html). También te puede interesar leer más sobre licencias "
-"tipográficas: [font licensing](https://www.typography.com/faq)."
+"sección de Derechos de Contenido: [Penpot's Terms of "
+"Service](https://penpot.app/terms.html). También te puede interesar leer "
+"más sobre licencias tipográficas: [font "
+"licensing](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -385,8 +386,7 @@ msgid "dashboard.import.import-message"
 msgstr "%s files have been imported succesfully."
 
 msgid "dashboard.import.import-warning"
-msgstr ""
-"Algunos ficheros contenían objetos erroneos que no han sido importados."
+msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Procesando colores"
@@ -462,7 +462,8 @@ msgstr "Nuevo Proyecto"
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-msg"
 msgstr ""
-"Envíame noticias, actualizaciones de producto y recomendaciones sobre Penpot."
+"Envíame noticias, actualizaciones de producto y recomendaciones sobre "
+"Penpot."
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"
@@ -693,6 +694,13 @@ msgstr "Autenticación con google esta dehabilitada en el servidor"
 msgid "errors.invalid-color"
 msgstr "Color no válido"
 
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Invitación inválida"
+
+msgid "errors.invite-invalid.info"
+msgstr "Esta invitación puede haber sido cancelada o ha expirado."
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "La autheticacion via LDAP esta deshabilitada."
@@ -747,11 +755,8 @@ msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Debes aceptar nuestros términos de servicio y política de privacidad."
 
 #: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.invite-invalid"
-msgstr "Invitación inválida"
-
-msgid "errors.invite-invalid.info"
-msgstr "Esta invitación puede haber sido cancelada o ha expirado."
+msgid "errors.token-expired"
+msgstr "Token expirado"
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -808,9 +813,9 @@ msgstr "Asunto"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Por favor describe el motivo de tu mensaje, especificando si es un problema, "
-"una idea o una duda. Alguien de nuestro equipo responderá tan pronto como "
-"sea posible."
+"Por favor describe el motivo de tu mensaje, especificando si es un "
+"problema, una idea o una duda. Alguien de nuestro equipo responderá tan "
+"pronto como sea posible."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -1035,15 +1040,16 @@ msgstr "Información"
 msgid "history.alert-message"
 msgstr "Estás viendo la versión %s"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Atajos de teclado"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.about-penpot"
 msgstr "Acerca de Penpot"
 
 msgid "labels.accept"
 msgstr "Aceptar"
-
-msgid "labels.back"
-msgstr "Volver"
 
 msgid "labels.add-custom-font"
 msgstr "Añadir fuente personalizada"
@@ -1058,6 +1064,9 @@ msgstr "Todo"
 
 msgid "labels.and"
 msgstr "y"
+
+msgid "labels.back"
+msgstr "Volver"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
@@ -1189,6 +1198,10 @@ msgstr "Estilos"
 msgid "labels.fonts"
 msgstr "Fuentes"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Repositorio de Github"
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/settings/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -1201,10 +1214,6 @@ msgstr "Volver"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.help-center"
 msgstr "Centro de ayuda"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.tutorials"
-msgstr "Tutoriales"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
@@ -1241,10 +1250,6 @@ msgstr "Idioma"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.libraries-and-templates"
 msgstr "Bibliotecas y Plantillas"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.github-repo"
-msgstr "Repositorio de Github"
 
 msgid "labels.link"
 msgstr "Enlace"
@@ -1286,8 +1291,7 @@ msgstr "No hay invitaciones"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
-msgstr ""
-"Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
+msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.auth-info"
@@ -1408,8 +1412,7 @@ msgstr "Enviando…"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.desc-message"
-msgstr ""
-"Estamos en una operación de mantenimiento programado de nuestros sistemas."
+msgstr "Estamos en una operación de mantenimiento programado de nuestros sistemas."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.main-message"
@@ -1449,6 +1452,10 @@ msgstr "Comenzar"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
 msgstr "Status"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Tutoriales"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
@@ -1517,8 +1524,7 @@ msgstr "Verificar el nuevo correo"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
-msgstr ""
-"Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
+msgstr "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1816,8 +1822,8 @@ msgstr "Forma equipo"
 
 msgid "onboarding.choice.team-up-desc"
 msgstr ""
-"¿Estás trabajando con alguien? Crea un equipo e invita a la gente a trabajar "
-"juntos en proyectos y a compartir recursos de diseño."
+"¿Estás trabajando con alguien? Crea un equipo e invita a la gente a "
+"trabajar juntos en proyectos y a compartir recursos de diseño."
 
 msgid "onboarding.choice.team-up.create-team"
 msgstr "El nombre de tu equipo"
@@ -1836,11 +1842,11 @@ msgstr ""
 "También podrás invitar integrantes y cambiar roles más tarde desde la "
 "sección del equipo."
 
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr " Crear equipo y enviar invitaciones"
-
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr " Crear equipo e invitar después"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr " Crear equipo y enviar invitaciones"
 
 msgid "onboarding.choice.title"
 msgstr "Te damos la bienvenida a Penpot"
@@ -1900,8 +1906,7 @@ msgid "onboarding.slide.0.alt"
 msgstr "Crea diseños"
 
 msgid "onboarding.slide.0.desc1"
-msgstr ""
-"Crea bellos interfaces en colaboración con todas las personas del equipo."
+msgstr "Crea bellos interfaces en colaboración con todas las personas del equipo."
 
 msgid "onboarding.slide.0.desc2"
 msgstr ""
@@ -1915,8 +1920,7 @@ msgid "onboarding.slide.1.alt"
 msgstr "Prototipos interactivos"
 
 msgid "onboarding.slide.1.desc1"
-msgstr ""
-"Crea interacciones completas para imitar el comportamiento del producto."
+msgstr "Crea interacciones completas para imitar el comportamiento del producto."
 
 msgid "onboarding.slide.1.desc2"
 msgstr ""
@@ -1943,8 +1947,8 @@ msgstr "Especificaciones de código"
 
 msgid "onboarding.slide.3.desc1"
 msgstr ""
-"Sincroniza diseño y código de todos tus estilos y componentes con a snippets "
-"de código."
+"Sincroniza diseño y código de todos tus estilos y componentes con a "
+"snippets de código."
 
 msgid "onboarding.slide.3.desc2"
 msgstr ""
@@ -1953,6 +1957,12 @@ msgstr ""
 
 msgid "onboarding.slide.3.title"
 msgstr "Una \"fuente de la verdad\" compartida"
+
+msgid "onboarding.team-input-placeholder"
+msgstr "Introduce el nuevo nombre del equipo"
+
+msgid "onboarding.team.create.button"
+msgstr "Crea un equipo"
 
 msgid "onboarding.team.create.desc1"
 msgstr ""
@@ -1964,6 +1974,9 @@ msgstr "Introduce el nombre del equipo"
 
 msgid "onboarding.team.create.title"
 msgstr "Crear equipo"
+
+msgid "onboarding.team.skip-and-invite-later"
+msgstr "Saltar e invitar más tarde"
 
 msgid "onboarding.team.start.button"
 msgstr "Comenzar directamente"
@@ -2008,6 +2021,420 @@ msgstr "Ir al login"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Varios"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Básicos"
+
+msgid "shortcut-section.dashboard"
+msgstr "Panel"
+
+msgid "shortcut-section.viewer"
+msgstr "Modo visualización"
+
+msgid "shortcut-section.workspace"
+msgstr "Área de trabajo"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Alineamiento"
+
+msgid "shortcut-subsection.edit"
+msgstr "Editar"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Genérico"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Genérico"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Menu principal"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "Modificar capas"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navegación"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navegación"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Navegación"
+
+msgid "shortcut-subsection.panels"
+msgstr "Paneles"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Ruta"
+
+msgid "shortcut-subsection.shape"
+msgstr "Formas"
+
+msgid "shortcut-subsection.tools"
+msgstr "Herramientas"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zoom"
+
+msgid "shortcuts.add-comment"
+msgstr "Añadir comentarios"
+
+msgid "shortcuts.add-node"
+msgstr "Añadir nodo"
+
+msgid "shortcuts.align-bottom"
+msgstr "Alinear abajo"
+
+msgid "shortcuts.align-hcenter"
+msgstr "Alinear al centro horizontalmente"
+
+msgid "shortcuts.align-left"
+msgstr "Alinear a la izquierda"
+
+msgid "shortcuts.align-right"
+msgstr "Alinear a la derecha"
+
+msgid "shortcuts.align-top"
+msgstr "Alinear arriba"
+
+msgid "shortcuts.align-vcenter"
+msgstr "Alinear al centro verticalmente"
+
+msgid "shortcuts.artboard-selection"
+msgstr "Crear tablero desde la selección"
+
+msgid "shortcuts.bool-difference"
+msgstr "Diferencia"
+
+msgid "shortcuts.bool-exclude"
+msgstr "Exclusión"
+
+msgid "shortcuts.bool-intersection"
+msgstr "Interescción"
+
+msgid "shortcuts.bool-union"
+msgstr "Unión"
+
+msgid "shortcuts.bring-back"
+msgstr "Enviar detrás"
+
+msgid "shortcuts.bring-backward"
+msgstr "Enviar al fondo"
+
+msgid "shortcuts.bring-forward"
+msgstr "Mover al frente"
+
+msgid "shortcuts.bring-front"
+msgstr "Mover hacia adelante"
+
+msgid "shortcuts.clear-undo"
+msgstr "Limpiar historial"
+
+msgid "shortcuts.copy"
+msgstr "Copiar"
+
+msgid "shortcuts.create-component"
+msgstr "Crear componente"
+
+msgid "shortcuts.create-new-project"
+msgstr "Crear nuevo"
+
+msgid "shortcuts.cut"
+msgstr "Cortar"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "Reducir zoom"
+
+msgid "shortcuts.delete"
+msgstr "Borrar"
+
+msgid "shortcuts.delete-node"
+msgstr "Borrar nodo"
+
+msgid "shortcuts.detach-component"
+msgstr "Desacoplar instancia"
+
+msgid "shortcuts.draw-curve"
+msgstr "Curva"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "Elipse"
+
+msgid "shortcuts.draw-frame"
+msgstr "Tablero"
+
+msgid "shortcuts.draw-nodes"
+msgstr "Dibujar nodos"
+
+msgid "shortcuts.draw-path"
+msgstr "Ruta"
+
+msgid "shortcuts.draw-rect"
+msgstr "Rectángulo"
+
+msgid "shortcuts.draw-text"
+msgstr "Texto"
+
+msgid "shortcuts.duplicate"
+msgstr "Duplicar"
+
+msgid "shortcuts.escape"
+msgstr "Cancelar"
+
+msgid "shortcuts.export-shapes"
+msgstr "Exportar elementos"
+
+msgid "shortcuts.fit-all"
+msgstr "Zoom abarcar todo"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Voltear horizontalmente"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Voltear verticalmente"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Ir a borradores"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Ir a bibliotecas compartidas"
+
+msgid "shortcuts.go-to-search"
+msgstr "Buscar"
+
+msgid "shortcuts.group"
+msgstr "Agrupar"
+
+msgid "shortcuts.h-distribute"
+msgstr "Distribuir horizontalmente"
+
+msgid "shortcuts.hide-ui"
+msgstr "Mostrar/ocultar interfaz"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Aumentar zoom"
+
+msgid "shortcuts.insert-image"
+msgstr "Insertar imagen"
+
+msgid "shortcuts.join-nodes"
+msgstr "Unir nodos"
+
+msgid "shortcuts.make-corner"
+msgstr "Convertir en esquina"
+
+msgid "shortcuts.make-curve"
+msgstr "Convertir en curva"
+
+msgid "shortcuts.mask"
+msgstr "Máscara"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Fusionar nodos"
+
+msgid "shortcuts.move"
+msgstr "Mover"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Mover rápidamente hacia abajo"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Mover rápidamente hacia la izquierda"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Mover rápidamente hacia la derecha"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Mover rápidamente hacia arriba"
+
+msgid "shortcuts.move-nodes"
+msgstr "Mover nodo"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Mover hacia abajo"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Mover hacia la izquierda"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Mover hacia la derecha"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Mover hacia arriba"
+
+msgid "shortcuts.next-frame"
+msgstr "Siguiente tablero"
+
+msgid "shortcuts.opacity-0"
+msgstr "Opacidad 100%"
+
+msgid "shortcuts.opacity-1"
+msgstr "Opacidad 10%"
+
+msgid "shortcuts.opacity-2"
+msgstr "Opacidad 20%"
+
+msgid "shortcuts.opacity-3"
+msgstr "Opacidad 30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "Opacidad 40%"
+
+msgid "shortcuts.opacity-5"
+msgstr "Opacidad 50%"
+
+msgid "shortcuts.opacity-6"
+msgstr "Opacidad 60%"
+
+msgid "shortcuts.opacity-7"
+msgstr "Opacidad 70%"
+
+msgid "shortcuts.opacity-8"
+msgstr "Opacidad 80%"
+
+msgid "shortcuts.opacity-9"
+msgstr "Opacidad 90%"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Abrir selector de color"
+
+msgid "shortcuts.open-comments"
+msgstr "Comentarios"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Ir al dashboard"
+
+msgid "shortcuts.open-handoff"
+msgstr "Ir a handoff"
+
+msgid "shortcuts.open-interactions"
+msgstr "Ir a interacciones"
+
+msgid "shortcuts.open-viewer"
+msgstr "Ir al modo de visualización"
+
+msgid "shortcuts.open-workspace"
+msgstr "Ir al área de trabajo"
+
+msgid "shortcuts.paste"
+msgstr "Pegar"
+
+msgid "shortcuts.prev-frame"
+msgstr "Tablero anterior"
+
+msgid "shortcuts.redo"
+msgstr "Rehacer"
+
+msgid "shortcuts.reset-zoom"
+msgstr "Reiniciar zoom"
+
+msgid "shortcuts.search-placeholder"
+msgstr "Buscar atajos"
+
+msgid "shortcuts.select-all"
+msgstr "Seleccionar todo"
+
+msgid "shortcuts.separate-nodes"
+msgstr "Separar nodos"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "Mostrar rejilla a pixel"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "Mostrar atajos de teclado"
+
+msgid "shortcuts.snap-nodes"
+msgstr "Alinear nodos"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Activar alineación a rejilla de pixel"
+
+msgid "shortcuts.start-editing"
+msgstr "Comenzar edición"
+
+msgid "shortcuts.start-measure"
+msgstr "Comenzar medida"
+
+msgid "shortcuts.stop-measure"
+msgstr "Terminar medida"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Activar miniaturas"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "Atajos de teclado"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Alternar alineación"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Mostrar/ocultar recursos"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Mostrar/ocultar paleta de colores"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Mostrar/ocultar focus mode"
+
+msgid "shortcuts.toggle-grid"
+msgstr "Mostrar/ocultar rejilla"
+
+msgid "shortcuts.toggle-history"
+msgstr "Mostrar/ocultar histórico"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Mostrar/ocultar capas"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Bloquear/Desbloquear"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Bloquear/Desbloquear proporciones"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Mostrar/ocultar reglas"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "Alternar escalado de texto"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Alinear a la rejilla"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Alinear a las guias"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Mostrar/ocultar paleta de textos"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Mostrar/ocultar elemento"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Alternar estilo de zoom"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Activar/desactivar pantalla completa"
+
+msgid "shortcuts.undo"
+msgstr "Deshacer"
+
+msgid "shortcuts.ungroup"
+msgstr "Desagrupar"
+
+msgid "shortcuts.unmask"
+msgstr "Deshacer máscara"
+
+msgid "shortcuts.v-distribute"
+msgstr "Distribuir verticalmente"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Zoom a selección"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.font-providers"
@@ -2370,8 +2797,16 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Ocultar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-assets"
+msgstr "Ocultar recursos"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Ocultar rejillas"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-layers"
+msgstr "Ocultar capas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2397,12 +2832,12 @@ msgid "workspace.header.menu.option.file"
 msgstr "Archivo"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.preferences"
-msgstr "Preferencias"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.help-info"
 msgstr "Ayuda e información"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Preferencias"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.view"
@@ -2417,8 +2852,16 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-assets"
+msgstr "Mostrar recursos"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Mostrar rejilla"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-layers"
+msgstr "Mostrar capas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3408,8 +3851,7 @@ msgstr "Alineación vertical"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
-msgstr ""
-"Usa el botón de play de la cabecera para arrancar la vista de prototipo."
+msgstr "Usa el botón de play de la cabecera para arrancar la vista de prototipo."
 
 msgid "workspace.options.width"
 msgstr "Ancho"
@@ -3708,20 +4150,16 @@ msgid "workspace.toolbar.rect"
 msgstr "Rectángulo (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Atajos de teclado (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
 msgstr "Texto (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text-palette"
 msgstr "Tipografías (%s)"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.shortcuts"
-msgstr "Atajos de teclado (%s)"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "label.shortcuts"
-msgstr "Atajos de teclado"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
@@ -3852,446 +4290,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
-msgid "shortcuts.title"
-msgstr "Atajos de teclado"
-
-msgid "shortcuts.search-placeholder"
-msgstr "Buscar atajos"
-
-msgid "shortcuts.add-comment"
-msgstr "Añadir comentarios"
-
-msgid "shortcuts.add-node"
-msgstr "Añadir nodo"
-
-msgid "shortcuts.align-bottom"
-msgstr "Alinear abajo"
-
-msgid "shortcuts.align-hcenter"
-msgstr "Alinear al centro horizontalmente"
-
-msgid "shortcuts.align-left"
-msgstr "Alinear a la izquierda"
-
-msgid "shortcuts.align-right"
-msgstr "Alinear a la derecha"
-
-msgid "shortcuts.align-top"
-msgstr "Alinear arriba"
-
-msgid "shortcuts.align-vcenter"
-msgstr "Alinear al centro verticalmente"
-
-msgid "shortcuts.artboard-selection"
-msgstr "Crear tablero desde la selección"
-
-msgid "shortcuts.bool-difference"
-msgstr "Diferencia"
-
-msgid "shortcuts.bool-exclude"
-msgstr "Exclusión"
-
-msgid "shortcuts.bool-intersection"
-msgstr "Interescción"
-
-msgid "shortcuts.bool-union"
-msgstr "Unión"
-
-msgid "shortcuts.bring-back"
-msgstr "Enviar detrás"
-
-msgid "shortcuts.bring-backward"
-msgstr "Enviar al fondo"
-
-msgid "shortcuts.bring-forward"
-msgstr "Mover al frente"
-
-msgid "shortcuts.bring-front"
-msgstr "Mover hacia adelante"
-
-msgid "shortcuts.clear-undo"
-msgstr "Limpiar historial"
-
-msgid "shortcuts.copy"
-msgstr "Copiar"
-
-msgid "shortcuts.create-component"
-msgstr "Crear componente"
-
-msgid "shortcuts.create-new-project"
-msgstr "Crear nuevo"
-
-msgid "shortcuts.cut"
-msgstr "Cortar"
-
-msgid "shortcuts.decrease-zoom"
-msgstr "Reducir zoom"
-
-msgid "shortcuts.delete"
-msgstr "Borrar"
-
-msgid "shortcuts.delete-node"
-msgstr "Borrar nodo"
-
-msgid "shortcuts.detach-component"
-msgstr "Desacoplar instancia"
-
-msgid "shortcuts.draw-curve"
-msgstr "Curva"
-
-msgid "shortcuts.draw-ellipse"
-msgstr "Elipse"
-
-msgid "shortcuts.draw-frame"
-msgstr "Tablero"
-
-msgid "shortcuts.draw-nodes"
-msgstr "Dibujar nodos"
-
-msgid "shortcuts.draw-path"
-msgstr "Ruta"
-
-msgid "shortcuts.draw-rect"
-msgstr "Rectángulo"
-
-msgid "shortcuts.draw-text"
-msgstr "Texto"
-
-msgid "shortcuts.duplicate"
-msgstr "Duplicar"
-
-msgid "shortcuts.escape"
-msgstr "Cancelar"
-
-msgid "shortcuts.export-shapes"
-msgstr "Exportar elementos"
-
-msgid "shortcuts.fit-all"
-msgstr "Zoom abarcar todo"
-
-msgid "shortcuts.flip-horizontal"
-msgstr "Voltear horizontalmente"
-
-msgid "shortcuts.flip-vertical"
-msgstr "Voltear verticalmente"
-
-msgid "shortcuts.go-to-drafts"
-msgstr "Ir a borradores"
-
-msgid "shortcuts.go-to-libs"
-msgstr "Ir a bibliotecas compartidas"
-
-msgid "shortcuts.go-to-search"
-msgstr "Buscar"
-
-msgid "shortcuts.group"
-msgstr "Agrupar"
-
-msgid "shortcuts.h-distribute"
-msgstr "Distribuir horizontalmente"
-
-msgid "shortcuts.hide-ui"
-msgstr "Mostrar/ocultar interfaz"
-
-msgid "shortcuts.increase-zoom"
-msgstr "Aumentar zoom"
-
-msgid "shortcuts.insert-image"
-msgstr "Insertar imagen"
-
-msgid "shortcuts.join-nodes"
-msgstr "Unir nodos"
-
-msgid "shortcuts.make-corner"
-msgstr "Convertir en esquina"
-
-msgid "shortcuts.make-curve"
-msgstr "Convertir en curva"
-
-msgid "shortcuts.mask"
-msgstr "Máscara"
-
-msgid "shortcuts.merge-nodes"
-msgstr "Fusionar nodos"
-
-msgid "shortcuts.move"
-msgstr "Mover"
-
-msgid "shortcuts.move-fast-down"
-msgstr "Mover rápidamente hacia abajo"
-
-msgid "shortcuts.move-fast-left"
-msgstr "Mover rápidamente hacia la izquierda"
-
-msgid "shortcuts.move-fast-right"
-msgstr "Mover rápidamente hacia la derecha"
-
-msgid "shortcuts.move-fast-up"
-msgstr "Mover rápidamente hacia arriba"
-
-msgid "shortcuts.move-nodes"
-msgstr "Mover nodo"
-
-msgid "shortcuts.move-unit-down"
-msgstr "Mover hacia abajo"
-
-msgid "shortcuts.move-unit-left"
-msgstr "Mover hacia la izquierda"
-
-msgid "shortcuts.move-unit-right"
-msgstr "Mover hacia la derecha"
-
-msgid "shortcuts.move-unit-up"
-msgstr "Mover hacia arriba"
-
-msgid "shortcuts.next-frame"
-msgstr "Siguiente tablero"
-
-msgid "shortcuts.opacity-0"
-msgstr "Opacidad 100%"
-
-msgid "shortcuts.opacity-1"
-msgstr "Opacidad 10%"
-
-msgid "shortcuts.opacity-2"
-msgstr "Opacidad 20%"
-
-msgid "shortcuts.opacity-3"
-msgstr "Opacidad 30%"
-
-msgid "shortcuts.opacity-4"
-msgstr "Opacidad 40%"
-
-msgid "shortcuts.opacity-5"
-msgstr "Opacidad 50%"
-
-msgid "shortcuts.opacity-6"
-msgstr "Opacidad 60%"
-
-msgid "shortcuts.opacity-7"
-msgstr "Opacidad 70%"
-
-msgid "shortcuts.opacity-8"
-msgstr "Opacidad 80%"
-
-msgid "shortcuts.opacity-9"
-msgstr "Opacidad 90%"
-
-msgid "shortcuts.open-color-picker"
-msgstr "Abrir selector de color"
-
-msgid "shortcuts.open-comments"
-msgstr "Comentarios"
-
-msgid "shortcuts.open-dashboard"
-msgstr "Ir al dashboard"
-
-msgid "shortcuts.open-handoff"
-msgstr "Ir a handoff"
-
-msgid "shortcuts.open-interactions"
-msgstr "Ir a interacciones"
-
-msgid "shortcuts.open-viewer"
-msgstr "Ir al modo de visualización"
-
-msgid "shortcuts.open-workspace"
-msgstr "Ir al área de trabajo"
-
-msgid "shortcuts.paste"
-msgstr "Pegar"
-
-msgid "shortcuts.prev-frame"
-msgstr "Tablero anterior"
-
-msgid "shortcuts.redo"
-msgstr "Rehacer"
-
-msgid "shortcuts.reset-zoom"
-msgstr "Reiniciar zoom"
-
-msgid "shortcuts.select-all"
-msgstr "Seleccionar todo"
-
-msgid "shortcuts.separate-nodes"
-msgstr "Separar nodos"
-
-msgid "shortcuts.show-pixel-grid"
-msgstr "Mostrar rejilla a pixel"
-
-msgid "shortcuts.show-shortcuts"
-msgstr "Mostrar atajos de teclado"
-
-msgid "shortcuts.snap-nodes"
-msgstr "Alinear nodos"
-
-msgid "shortcuts.snap-pixel-grid"
-msgstr "Activar alineación a rejilla de pixel"
-
-msgid "shortcuts.start-editing"
-msgstr "Comenzar edición"
-
-msgid "shortcuts.start-measure"
-msgstr "Comenzar medida"
-
-msgid "shortcuts.stop-measure"
-msgstr "Terminar medida"
-
-msgid "shortcuts.thumbnail-set"
-msgstr "Activar miniaturas"
-
-msgid "shortcuts.toggle-alignment"
-msgstr "Alternar alineación"
-
-msgid "shortcuts.toggle-assets"
-msgstr "Mostrar/ocultar recursos"
-
-msgid "shortcuts.toggle-colorpalette"
-msgstr "Mostrar/ocultar paleta de colores"
-
-msgid "shortcuts.toggle-focus-mode"
-msgstr "Mostrar/ocultar focus mode"
-
-msgid "shortcuts.toggle-grid"
-msgstr "Mostrar/ocultar rejilla"
-
-msgid "shortcuts.toggle-history"
-msgstr "Mostrar/ocultar histórico"
-
-msgid "shortcuts.toggle-layers"
-msgstr "Mostrar/ocultar capas"
-
-msgid "shortcuts.toggle-lock"
-msgstr "Bloquear/Desbloquear"
-
-msgid "shortcuts.toggle-lock-size"
-msgstr "Bloquear/Desbloquear proporciones"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Mostrar/ocultar reglas"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Alternar escalado de texto"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Alinear a la rejilla"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Alinear a las guias"
-
-msgid "shortcuts.toggle-textpalette"
-msgstr "Mostrar/ocultar paleta de textos"
-
-msgid "shortcuts.toggle-visibility"
-msgstr "Mostrar/ocultar elemento"
-
-msgid "shortcuts.toggle-zoom-style"
-msgstr "Alternar estilo de zoom"
-
-msgid "shortcuts.toogle-fullscreen"
-msgstr "Activar/desactivar pantalla completa"
-
-msgid "shortcuts.undo"
-msgstr "Deshacer"
-
-msgid "shortcuts.ungroup"
-msgstr "Desagrupar"
-
-msgid "shortcuts.unmask"
-msgstr "Deshacer máscara"
-
-msgid "shortcuts.v-distribute"
-msgstr "Distribuir verticalmente"
-
-msgid "shortcuts.zoom-selected"
-msgstr "Zoom a selección"
-
-# SECTIONS
-msgid "shortcut-section.basics"
-msgstr "Básicos"
-
-msgid "shortcut-section.workspace"
-msgstr "Área de trabajo"
-
-msgid "shortcut-section.dashboard"
-msgstr "Panel"
-
-msgid "shortcut-section.viewer"
-msgstr "Modo visualización"
-
-# SUBSECTIONS
-msgid "shortcut-subsection.alignment"
-msgstr "Alineamiento"
-
-msgid "shortcut-subsection.zoom-workspace"
-msgstr "Zoom"
-
-msgid "shortcut-subsection.modify-layers"
-msgstr "Modificar capas"
-
-msgid "shortcut-subsection.tools"
-msgstr "Herramientas"
-
-msgid "shortcut-subsection.edit"
-msgstr "Editar"
-
-msgid "shortcut-subsection.path-editor"
-msgstr "Ruta"
-
-msgid "shortcut-subsection.navigation-workspace"
-msgstr "Navegación"
-
-msgid "shortcut-subsection.main-menu"
-msgstr "Menu principal"
-
-msgid "shortcut-subsection.shape"
-msgstr "Formas"
-
-msgid "shortcut-subsection.panels"
-msgstr "Paneles"
-
-msgid "shortcut-subsection.navigation-dashboard"
-msgstr "Navegación"
-
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Genérico"
-
-msgid "shortcut-subsection.navigation-viewer"
-msgstr "Navegación"
-
-msgid "shortcut-subsection.general-viewer"
-msgstr "Genérico"
-
-msgid "shortcut-subsection.zoom-viewer"
-msgstr "Zoom"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Token expirado"
-
-msgid "onboarding.team-input-placeholder"
-msgstr "Introduce el nuevo nombre del equipo"
-
-msgid "onboarding.team.create.button"
-msgstr "Crea un equipo"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Saltar e invitar más tarde"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Ocultar recursos"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Ocultar capas"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Mostrar recursos"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Mostrar capas"

@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-01-20 20:55+0000\n"
 "Last-Translator: Voxybuns <fossati.val@gmail.com>\n"
-"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
-"fr/>\n"
+"Language-Team: French "
+"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -102,8 +102,7 @@ msgstr "Mot de passe changé avec succès"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr ""
-"Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer."
+msgstr "Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
@@ -166,8 +165,8 @@ msgstr "Conditions générales d'utilisation"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr ""
-"En créant un compte, vous acceptez nos conditions générales d'utilisation et "
-"notre politique de confidentialité."
+"En créant un compte, vous acceptez nos conditions générales d'utilisation "
+"et notre politique de confidentialité."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -258,8 +257,16 @@ msgstr "Vous n’avez encore aucun fichier ici"
 msgid "dashboard.export-frames"
 msgstr "Exporter les plans de travail comme PDF..."
 
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Exporter en PDF"
+
 msgid "dashboard.export-multi"
 msgstr "Exporter %s fichiers"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exporter"
 
 msgid "dashboard.export-single"
 msgstr "Exporter le fichier"
@@ -292,8 +299,8 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Ne téléchargez que des polices que vous possédez ou dont la license vous "
 "permet de les utiliser dans Penpot. Vous trouverez plus d'informations dans "
-"la section Propriété des Contenus des [conditions générales d'utilisation de "
-"Penpot](https://penpot.app/terms.html). Vous pouvez également vous "
+"la section Propriété des Contenus des [conditions générales d'utilisation "
+"de Penpot](https://penpot.app/terms.html). Vous pouvez également vous "
 "renseigner sur les [licenses de polices](https://www.typography.com/faq)."
 
 msgid "dashboard.import"
@@ -585,8 +592,8 @@ msgstr "L’image ne semble pas être valide."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
 msgstr ""
-"L'adresse e-mail du profil que vous invitez est ignorée (signalée comme spam "
-"ou taux de rebond élevé)."
+"L'adresse e-mail du profil que vous invitez est ignorée (signalée comme "
+"spam ou taux de rebond élevé)."
 
 msgid "errors.network"
 msgstr "Impossible de se connecter au serveur principal."
@@ -604,8 +611,8 @@ msgstr "Le mot de passe doit contenir au moins 8 caractères"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr ""
-"L'adresse e-mail de votre profil est ignorée (signalée comme spam ou taux de "
-"rebond élevé)."
+"L'adresse e-mail de votre profil est ignorée (signalée comme spam ou taux "
+"de rebond élevé)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
@@ -615,6 +622,10 @@ msgid "errors.terms-privacy-agreement-invalid"
 msgstr ""
 "Vous devez accepter nos conditions générales d'utilisation et notre "
 "politique de confidentialité."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.token-expired"
+msgstr "Jeton expiré"
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -909,8 +920,8 @@ msgstr "Tous"
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
-"Il semble que vous deviez attendre un peu et réessayer ; nous effectuons une "
-"petite maintenance de nos serveurs."
+"Il semble que vous deviez attendre un peu et réessayer ; nous effectuons "
+"une petite maintenance de nos serveurs."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.main-message"
@@ -1035,8 +1046,8 @@ msgstr "Polices installées"
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
 msgstr ""
-"Un problème s’est produit. Veuillez réessayer l’opération et, si le problème "
-"persiste, contacter le service technique."
+"Un problème s’est produit. Veuillez réessayer l’opération et, si le "
+"problème persiste, contacter le service technique."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
@@ -1249,9 +1260,9 @@ msgstr "Ajouter comme Bibliothèque Partagée"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"Une fois ajoutées en tant que Bibliothèque Partagée, les ressources de cette "
-"bibliothèque de fichiers seront disponibles pour être utilisées parmi le "
-"reste de vos fichiers."
+"Une fois ajoutées en tant que Bibliothèque Partagée, les ressources de "
+"cette bibliothèque de fichiers seront disponibles pour être utilisées parmi "
+"le reste de vos fichiers."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1265,8 +1276,8 @@ msgstr "Vérifier la nouvelle adresse e‑mail"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"Nous enverrons un e‑mail à votre adresse actuelle « %s » pour vérifier votre "
-"identité."
+"Nous enverrons un e‑mail à votre adresse actuelle « %s » pour vérifier "
+"votre identité."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1346,8 +1357,8 @@ msgstr "Suppression du style de police"
 
 msgid "modals.delete-font.message"
 msgstr ""
-"Êtes-vous sûr de vouloir supprimer cette police ? Elle ne se chargera pas si "
-"elle est utilisée dans un fichier."
+"Êtes-vous sûr de vouloir supprimer cette police ? Elle ne se chargera pas "
+"si elle est utilisée dans un fichier."
 
 msgid "modals.delete-font.title"
 msgstr "Suppression de la police"
@@ -1851,8 +1862,16 @@ msgid "workspace.header.menu.enable-snap-grid"
 msgstr "Aligner sur la grille"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-assets"
+msgstr "Masquer les ressources"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Masquer la grille"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-layers"
+msgstr "Masquer les calques"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -1867,8 +1886,16 @@ msgid "workspace.header.menu.select-all"
 msgstr "Tout sélectionner"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-assets"
+msgstr "Montrer les ressources"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Montrer la grille"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-layers"
+msgstr "Montrer les calques"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -2838,31 +2865,3 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Jeton expiré"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Masquer les ressources"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Masquer les calques"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Montrer les ressources"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Montrer les calques"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-frames.title"
-msgstr "Exporter en PDF"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "dashboard.export-shapes"
-msgstr "Exporter"
