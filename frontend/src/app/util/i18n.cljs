@@ -22,6 +22,7 @@
    {:label "Català" :value "ca"}
    {:label "Français (community)" :value "fr"}
    {:label "Deutsch (community)" :value "de"}
+   {:label "Norsk - Bokmål (community)" :value "nb_no"}
    {:label "Portuguese - Brazil (community)" :value "pt_br"}
    {:label "Polski (community)" :value "pl"}
    {:label "Русский (community)" :value "ru"}
@@ -30,7 +31,9 @@
    {:label "Ελληνική γλώσσα (community)" :value "el"}
    {:label "עִבְרִית (community)" :value "he"}
    {:label "عربي/عربى (community)" :value "ar"}
-   {:label "简体中文 (community)" :value "zh_cn"}])
+   {:label "فارسی (community)" :value "fa"}
+   {:label "简体中文 (community)" :value "zh_cn"}
+   {:label "中国传统的 (community)" :value "zh_hant"}])
 
 (defn- parse-locale
   [locale]
