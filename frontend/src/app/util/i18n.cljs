@@ -22,10 +22,11 @@
    {:label "Català" :value "ca"}
    {:label "Français (community)" :value "fr"}
    {:label "Deutsch (community)" :value "de"}
+   {:label "Portuguese - Brazil (community)" :value "pt_br"}
+   {:label "Polski (community)" :value "pl"}
    {:label "Русский (community)" :value "ru"}
+   {:label "Rumanian (community)" :value "ro"}
    {:label "Türkçe (community)" :value "tr"}
-   {:label "Rumanian (communit)" :value "ro"}
-   {:label "Portuguese (Brazil, community)" :value "pt_br"}
    {:label "Ελληνική γλώσσα (community)" :value "el"}
    {:label "עִבְרִית (community)" :value "he"}
    {:label "عربي/عربى (community)" :value "ar"}
