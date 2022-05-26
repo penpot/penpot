@@ -12,7 +12,7 @@
 
 (defn use-node-store
   "Hook responsible of storing the rendered DOM node in memory while not being used"
-  [thumbnail? node-ref rendered?]
+  [thumbnail? node-ref rendered? render-frame?]
 
   (let [;; when `true` the node is in memory
         in-memory? (mf/use-var true)
@@ -33,13 +33,13 @@
                (swap! re-render inc)))))]
 
     (mf/use-effect
-     (mf/deps thumbnail?)
+     (mf/deps thumbnail? render-frame?)
      (fn []
-       (when (and (some? @parent-ref) (some? @node-ref) @rendered? thumbnail?)
+       (when (and (some? @parent-ref) (some? @node-ref) @rendered? (and thumbnail? (not render-frame?)))
          (.removeChild @parent-ref @node-ref)
          (reset! in-memory? true))
 
-       (when (and (some? @node-ref) @in-memory? (not thumbnail?))
+       (when (and (some? @node-ref) @in-memory? (or (not thumbnail?) render-frame?))
          (.appendChild @parent-ref @node-ref)
          (reset! in-memory? false))))
 

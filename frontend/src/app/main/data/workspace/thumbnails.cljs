@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.thumbnails
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
@@ -14,6 +13,8 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.util.dom :as dom]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -26,45 +27,47 @@
        (rx/filter #(= % id))
        (rx/take 1)))
 
+(defn thumbnail-stream
+  [object-id]
+  (rx/create
+   (fn [subs]
+     (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'" object-id))]
+       (if (some? node)
+         (-> node
+             (.toBlob (fn [blob]
+                        (rx/push! subs blob)
+                        (rx/end! subs))
+                      "image/png"))
+
+         ;; If we cannot find the node we send `nil` and the upsert will delete the thumbnail
+         (do (rx/push! subs nil)
+             (rx/end! subs)))))))
+
 (defn update-thumbnail
   "Updates the thumbnail information for the given frame `id`"
-  [page-id frame-id data]
-  (let [lock (uuid/next)
-        object-id (dm/str page-id frame-id)]
+  [page-id frame-id]
+  (ptk/reify ::update-thumbnail
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [object-id  (dm/str page-id frame-id)
+            file-id (:current-file-id state)
+            blob-result (thumbnail-stream object-id)]
 
-    (ptk/reify ::update-thumbnail
-      IDeref
-      (-deref [_] {:object-id object-id :data data})
-      
-      ptk/UpdateEvent
-      (update [_ state]
-        (-> state
-            (assoc-in [:workspace-file :thumbnails object-id] data)
-            (cond-> (nil? (get-in state [::update-thumbnail-lock object-id]))
-              (assoc-in [::update-thumbnail-lock object-id] lock))))
+        (->> blob-result
+             (rx/merge-map
+              (fn [blob]
+                (if (some? blob)
+                  (wapi/read-file-as-data-url blob)
+                  (rx/of nil))))
 
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (when (= lock (get-in state [::update-thumbnail-lock object-id]))
-          (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))
-                params {:file-id (:current-file-id state)
-                        :object-id object-id}]
-            ;; Sends the first event and debounce the rest. Will only make one update once
-            ;; the 2 second debounce is finished
-            (rx/merge
-             (->> stream
-                  (rx/filter (ptk/type? ::update-thumbnail))
-                  (rx/map deref)
-                  (rx/filter #(= object-id (:object-id %)))
-                  (rx/debounce 2000)
-                  (rx/take 1)
-                  (rx/map :data)
-                  (rx/flat-map #(rp/mutation! :upsert-file-object-thumbnail (assoc params :data %)))
-                  (rx/map #(fn [state] (d/dissoc-in state [::update-thumbnail-lock object-id])))
-                  (rx/take-until stopper))
-
-             (->> (rx/of (update-thumbnail page-id frame-id data))
-                  (rx/observe-on :async)))))))))
+             (rx/merge-map
+              (fn [data]
+                (let [params {:file-id file-id :object-id object-id :data data}]
+                  (rx/merge
+                   ;; Update the local copy of the thumbnails so we don't need to request it again
+                   (rx/of #(assoc-in % [:workspace-file :thumbnails object-id] data))
+                   (->> (rp/mutation! :upsert-file-object-thumbnail params)
+                        (rx/ignore)))))))))))
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"
@@ -156,5 +159,3 @@
       (let [page-id (get state :current-page-id)
             old-shape-thumbnail (get-in state [:workspace-file :thumbnails (dm/str page-id old-id)])]
         (-> state (assoc-in [:workspace-file :thumbnails (dm/str page-id new-id)] old-shape-thumbnail))))))
-
-

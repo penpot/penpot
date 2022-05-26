@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.persistence
   (:require
+   [app.common.data :as d]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.spec :as us]
@@ -17,6 +18,7 @@
    [app.main.data.fonts :as df]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.http :as http]
@@ -138,16 +140,27 @@
                      :revn (:revn file)
                      :session-id sid
                      :changes-with-metadata (into [] changes)}]
+
         (when (= file-id (:id params))
           (->> (rp/mutation :update-file params)
                (rx/mapcat (fn [lagged]
                             (log/debug :hint "changes persisted" :lagged (count lagged))
                             (let [lagged (cond->> lagged
                                            (= #{sid} (into #{} (map :session-id) lagged))
-                                           (map #(assoc % :changes [])))]
-                              (->> (rx/of lagged)
-                                   (rx/mapcat seq)
-                                   (rx/map #(shapes-changes-persisted file-id %))))))
+                                           (map #(assoc % :changes [])))
+
+                                  frame-updates
+                                  (-> (group-by :page-id changes)
+                                      (d/update-vals #(into #{} (mapcat :frames) %)))]
+
+                              (rx/merge
+                               (->> (rx/from frame-updates)
+                                    (rx/flat-map (fn [[page-id frames]]
+                                              (->> frames (map #(vector page-id %)))))
+                                    (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail page-id frame-id))))
+                               (->> (rx/of lagged)
+                                    (rx/mapcat seq)
+                                    (rx/map #(shapes-changes-persisted file-id %)))))))
                (rx/catch (fn [cause]
                            (rx/concat
                             (rx/of (rt/assign-exception cause))

@@ -107,6 +107,30 @@
              (rx/of (update-indices page-id changes))))
           (rx/empty))))))
 
+(defn changed-frames
+  "Extracts the frame-ids changed in the given changes"
+  [changes objects]
+
+  (let [change->ids
+        (fn [change]
+          (case (:type change)
+            :add-obj
+            [(:parent-id change)]
+
+            (:mod-obj :del-obj)
+            [(:id change)]
+
+            :mov-objects
+            (d/concat-vec (:shapes change) [(:parent-id change)])
+
+            []))]
+    (into #{}
+          (comp (mapcat change->ids)
+                (keep #(if (= :frame (get-in objects [% :type]))
+                         %
+                         (get-in objects [% :frame-id])))
+                (remove #(= uuid/zero %)))
+          changes)))
 
 (defn commit-changes
   [{:keys [redo-changes undo-changes
@@ -115,15 +139,18 @@
   (log/debug :msg "commit-changes"
              :js/redo-changes redo-changes
              :js/undo-changes undo-changes)
-  (let [error  (volatile! nil)]
+  (let [error  (volatile! nil)
+        page-id (:current-page-id @st/state)
+        frames (changed-frames redo-changes (wsh/lookup-page-objects @st/state))]
     (ptk/reify ::commit-changes
       cljs.core/IDeref
       (-deref [_]
-
         {:file-id file-id
          :hint-events @st/last-events
          :hint-origin (ptk/type origin)
-         :changes redo-changes})
+         :changes redo-changes
+         :page-id page-id
+         :frames frames})
 
       ptk/UpdateEvent
       (update [_ state]
