@@ -9,7 +9,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.frame :as frame]
    [app.util.dom :as dom]
@@ -83,7 +85,12 @@
                    img-node    (mf/ref-val frame-image-ref)]
                (when (draw-thumbnail-canvas! canvas-node img-node)
                  (reset! image-url nil)
-                 (reset! render-frame? false))))))
+                 (reset! render-frame? false))
+
+               ;; If we don't have the thumbnail data saved (normaly the first load) we update the data
+               ;; when available
+               (when (not @thumbnail-data-ref)
+                 (st/emit! (dwt/update-thumbnail page-id id) ))))))
 
         generate-thumbnail
         (mf/use-callback
@@ -183,7 +190,7 @@
           :width fixed-width
           :height fixed-height
           ;; DEBUG
-          :style {:filter (when (debug? :thumbnails) "sepia(1)")}}]]
+          :style {:filter (when (debug? :thumbnails) "invert(1)")}}]]
 
        (when (some? @image-url)
          [:image {:ref frame-image-ref
