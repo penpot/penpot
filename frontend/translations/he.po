@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-27 23:09+0000\n"
+"PO-Revision-Date: 2022-05-28 21:16+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 4.12-dev\n"
+"X-Generator: Weblate 4.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2655,9 +2655,12 @@ msgstr "ייצוא הבחירה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
-#, fuzzy
 msgid "workspace.options.export-object"
-msgstr "ייצוא רכיב"
+msgid_plural ""
+msgstr[0] "ייצוא רכיב"
+msgstr[1] "ייצוא שני רכיבים"
+msgstr[2] "ייצוא %s רכיבים"
+msgstr[3] "ייצוא %s רכיבים"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3824,3 +3827,468 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "מאגר GitHub"
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "שם הצוות שלך"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "הזמנת חברים"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr "תהיה לך אפשרות להזמין חברים ולהחליף את תפקידיהם בהמשך בסעיף הצוות."
+
+msgid "shortcut-subsection.shape"
+msgstr "צורות"
+
+msgid "shortcuts.align-left"
+msgstr "יישור שמאלה"
+
+msgid "shortcuts.align-top"
+msgstr "יישור לראש"
+
+msgid "shortcuts.bring-backward"
+msgstr "הרחקה לאחור"
+
+msgid "shortcuts.copy"
+msgstr "העתקה"
+
+msgid "shortcuts.clear-undo"
+msgstr "פינוי ביטול"
+
+msgid "shortcuts.cut"
+msgstr "גזירה"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "התרחקות"
+
+msgid "shortcuts.draw-curve"
+msgstr "עיקול"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "אליפסה"
+
+msgid "shortcuts.draw-frame"
+msgstr "לוח אומנות"
+
+msgid "shortcuts.draw-nodes"
+msgstr "ציור נתיב"
+
+msgid "shortcuts.draw-rect"
+msgstr "ריבוע"
+
+msgid "shortcuts.draw-text"
+msgstr "טקסט"
+
+msgid "shortcuts.duplicate"
+msgstr "שכפול"
+
+msgid "shortcuts.escape"
+msgstr "ביטול"
+
+msgid "shortcuts.export-shapes"
+msgstr "ייצוא צורות"
+
+msgid "shortcuts.fit-all"
+msgstr "כיוון תקריב כדי להציג הכול"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "מעבר לטיוטות"
+
+msgid "shortcuts.go-to-libs"
+msgstr "מעבר לספריות המשותפות"
+
+msgid "shortcuts.go-to-search"
+msgstr "חיפוש"
+
+msgid "shortcuts.group"
+msgstr "קבוצה"
+
+msgid "shortcuts.h-distribute"
+msgstr "פיזור אופקית"
+
+msgid "shortcuts.join-nodes"
+msgstr "צירוף מפרקים"
+
+msgid "shortcuts.make-corner"
+msgstr "הפיכה לפינה"
+
+msgid "shortcuts.open-workspace"
+msgstr "מעבר לסביבת עבודה"
+
+msgid "shortcuts.separate-nodes"
+msgstr "הפרדת מפרקים"
+
+msgid "shortcuts.start-editing"
+msgstr "התחלת עריכה"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "החלפת מצב יישור דינמי"
+
+msgid "shortcuts.toggle-assets"
+msgstr "החלפת מצב נכסים"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "קיצורי דרך (%s)"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "הצגת/הסתרת קיצורי דרך"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "הצגת/הסתרת רשת פיקסלים"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "הצמדה לרשת פיקסלים"
+
+msgid "shortcuts.prev-frame"
+msgstr "לוח אומנות קודם"
+
+msgid "shortcuts.redo"
+msgstr "ביצוע חוזר"
+
+msgid "shortcuts.reset-zoom"
+msgstr "איפוס תקריב"
+
+msgid "shortcuts.select-all"
+msgstr "בחירה בהכול"
+
+msgid "shortcuts.snap-nodes"
+msgstr "הצמדה למפרקים"
+
+msgid "shortcuts.stop-measure"
+msgstr "עצירת מדידה"
+
+msgid "shortcuts.start-measure"
+msgstr "התחלת מדידה"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "הגדרת תמונות ממוזערות"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "ההזמנה שגויה"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "ניווט"
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "נא למלא את שם הצוות"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "כללי"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "תקריב"
+
+msgid "shortcuts.delete-node"
+msgstr "מחיקת מפרק"
+
+msgid "errors.invite-invalid.info"
+msgstr "ההזמנה כנראה בוטלה או שתוקפה פג."
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "ניווט"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "מדריכים"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "לאחר מתן שם לצוות שלך, יתאפשר לך להזמין אנשים להצטרף."
+
+msgid "shortcut-subsection.panels"
+msgstr "לוחות"
+
+msgid "shortcuts.align-right"
+msgstr "יישור ימינה"
+
+msgid "shortcuts.bring-back"
+msgstr "שליחה אחורה"
+
+msgid "shortcuts.create-component"
+msgstr "יצירת רכיב"
+
+msgid "shortcuts.bring-forward"
+msgstr "קידום"
+
+msgid "shortcuts.bring-front"
+msgstr "הבאה לחזית"
+
+msgid "shortcuts.create-new-project"
+msgstr "יצירת חדש"
+
+msgid "shortcuts.delete"
+msgstr "מחיקה"
+
+msgid "shortcuts.detach-component"
+msgstr "ניתוק רכיב"
+
+msgid "shortcuts.draw-path"
+msgstr "נתיב"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "היפוך אופקי"
+
+msgid "shortcuts.merge-nodes"
+msgstr "מיזוג מפרקים"
+
+msgid "shortcuts.flip-vertical"
+msgstr "היפוך אנכי"
+
+msgid "shortcuts.hide-ui"
+msgstr "הצגת/הסתרת מנשק משתמש"
+
+msgid "shortcuts.increase-zoom"
+msgstr "התקרבות"
+
+msgid "shortcuts.mask"
+msgstr "מסכה"
+
+msgid "shortcuts.insert-image"
+msgstr "הוספת תמונה"
+
+msgid "shortcuts.make-curve"
+msgstr "הפיכה לעיקול"
+
+msgid "labels.back"
+msgstr "חזרה"
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "יצירת צוות והזמנה בהמשך"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "יצירת צוות ושליחת הזמנות"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "עזרה ומידע"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "קיצורי דרך"
+
+msgid "shortcuts.search-placeholder"
+msgstr "חיפוש בקיצורי הדרך"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "קיצורי מקלדת"
+
+msgid "shortcuts.align-hcenter"
+msgstr "יישור למרכז אופקית"
+
+msgid "shortcuts.add-comment"
+msgstr "הערות"
+
+msgid "shortcuts.add-node"
+msgstr "הוספת מפרק"
+
+msgid "shortcuts.align-bottom"
+msgstr "יישור לתחתית"
+
+msgid "shortcuts.bool-union"
+msgstr "איחוד בוליאני"
+
+msgid "shortcuts.align-vcenter"
+msgstr "יישור למרכז אנכית"
+
+msgid "shortcuts.artboard-selection"
+msgstr "יצירת לוח אומנות מהבחירה"
+
+msgid "shortcuts.bool-difference"
+msgstr "הבדל בוליאני"
+
+msgid "shortcuts.bool-exclude"
+msgstr "החרגה בוליאנית"
+
+msgid "shortcuts.bool-intersection"
+msgstr "הצלבה בוליאנית"
+
+msgid "shortcuts.move"
+msgstr "העברה"
+
+msgid "shortcuts.move-fast-down"
+msgstr "העברה למטה מהר"
+
+msgid "shortcuts.move-fast-left"
+msgstr "העברה שמאלה מהר"
+
+msgid "shortcuts.move-fast-right"
+msgstr "העברה ימינה מהר"
+
+msgid "shortcuts.move-fast-up"
+msgstr "העברה למעלה מהר"
+
+msgid "shortcuts.move-nodes"
+msgstr "העברת מפרק"
+
+msgid "shortcuts.opacity-0"
+msgstr "הגדרת אטימות ל־100%"
+
+msgid "shortcuts.opacity-1"
+msgstr "הגדרת אטימות ל־10%"
+
+msgid "shortcuts.move-unit-down"
+msgstr "העברה למטה"
+
+msgid "shortcuts.move-unit-left"
+msgstr "העברה שמאלה"
+
+msgid "shortcuts.move-unit-right"
+msgstr "העברה ימינה"
+
+msgid "shortcuts.move-unit-up"
+msgstr "העברה למעלה"
+
+msgid "shortcuts.next-frame"
+msgstr "לוח האומנות הבא"
+
+msgid "shortcuts.opacity-6"
+msgstr "הגדרת אטימות ל־60%"
+
+msgid "shortcuts.opacity-7"
+msgstr "הגדרת אטימות ל־70%"
+
+msgid "shortcuts.opacity-8"
+msgstr "הגדרת אטימות ל־80%"
+
+msgid "shortcuts.opacity-9"
+msgstr "הגדרת אטימות ל־90%"
+
+msgid "shortcuts.opacity-2"
+msgstr "הגדרת אטימות ל־20%"
+
+msgid "shortcuts.opacity-3"
+msgstr "הגדרת אטימות ל־30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "הגדרת אטימות ל־40%"
+
+msgid "shortcuts.opacity-5"
+msgstr "הגדרת אטימות ל־50%"
+
+msgid "shortcuts.open-handoff"
+msgstr "מעבר לסעיף הנחיות צופים"
+
+msgid "shortcuts.open-viewer"
+msgstr "מעבר לסעיף תפעול משתמש"
+
+msgid "shortcuts.open-interactions"
+msgstr "מעבר לסעיף תפעול משתמש"
+
+msgid "shortcuts.open-color-picker"
+msgstr "בוחר צבעים"
+
+msgid "shortcuts.open-dashboard"
+msgstr "מעבר ללוח בקרה"
+
+msgid "shortcuts.paste"
+msgstr "הדבקה"
+
+msgid "shortcuts.open-comments"
+msgstr "מעבר לסעיף הערות צופים"
+
+msgid "shortcuts.toggle-lock"
+msgstr "נעילת הנבחרים"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "החלפת מצב שינוי קנה מידה של כתב"
+
+msgid "shortcuts.toggle-history"
+msgstr "החלפת הצגת היסטוריה"
+
+msgid "shortcuts.toggle-layers"
+msgstr "החלפת הצגת שכבות"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "נעילת יחס"
+
+msgid "shortcuts.toggle-rules"
+msgstr "הצגת/הסתרת סרגלים"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "החלפת מצב לוח צבעים"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "החלפת מצב מיקוד"
+
+msgid "shortcuts.toggle-grid"
+msgstr "הצגת/הסתרת רשת"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "הצמדה לרשת"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "החלפת לוח טקסט"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "הצמדה לקווים מנחים"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "החלפת מצב הצגה"
+
+msgid "shortcuts.undo"
+msgstr "ביטול"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "החלפת מילוי מסך"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "החלפת סגנון תקריב"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "יסודות"
+
+msgid "shortcut-section.workspace"
+msgstr "סביבת עבודה"
+
+msgid "shortcuts.zoom-selected"
+msgstr "התמקדות על הנבחר"
+
+msgid "shortcuts.v-distribute"
+msgstr "פיזור אנכי"
+
+msgid "shortcuts.unmask"
+msgstr "ביטול מסכה"
+
+msgid "shortcuts.ungroup"
+msgstr "פירוק קבוצה"
+
+msgid "shortcut-subsection.tools"
+msgstr "כלים"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "תקריב"
+
+msgid "shortcut-section.dashboard"
+msgstr "לוח בקרה"
+
+msgid "shortcut-section.viewer"
+msgstr "מציג"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "יישור"
+
+msgid "shortcut-subsection.edit"
+msgstr "עריכה"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "תפריט ראשי"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "שינוי שכבות"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "ניווט"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "נתיבים"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "כללי"
