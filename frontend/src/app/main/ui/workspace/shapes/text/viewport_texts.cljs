@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.rect :as gshr]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
@@ -61,25 +62,34 @@
       (and (some? shape) (some? editor-content))
       (assoc :content (d/txt-merge content editor-content)))))
 
+(defn overlaps-position-data?
+  [bounding-box position-data]
+  (let [fix-rect #(assoc % :y (- (:y %) (:height %)))]
+    (->> position-data
+         (some #(gshr/overlaps-rects? bounding-box (fix-rect %)))
+         (boolean))))
+
 (defn- update-text-shape
-  [{:keys [grow-type id migrate]} node]
+  [{:keys [grow-type id migrate points]} node]
   ;; Check if we need to update the size because it's auto-width or auto-height
   ;; Update the position-data of every text fragment
   (p/let [position-data (utp/calc-position-data node)]
-    (st/emit! (dwt/update-position-data id position-data))
+    (let [bounding-box (gsh/points->selrect points)]
+      ;; At least one paragraph needs to be inside the bounding box
+      (when (overlaps-position-data? bounding-box position-data)
+        (st/emit! (dwt/update-position-data id position-data)))
 
-    (when (contains? #{:auto-height :auto-width} grow-type)
-      (let [{:keys [width height]}
-            (-> (dom/query node ".paragraph-set")
-                (dom/get-client-size))
-            width (mth/ceil width)
-            height (mth/ceil height)]
-        (when (and (not (mth/almost-zero? width))
-                   (not (mth/almost-zero? height))
-                   (not migrate))
-          (st/emit! (dwt/resize-text id width height))))))
-
-  (st/emit! (dwt/clean-text-modifier id)))
+      (when (contains? #{:auto-height :auto-width} grow-type)
+        (let [{:keys [width height]}
+              (-> (dom/query node ".paragraph-set")
+                  (dom/get-client-size))
+              width (mth/ceil width)
+              height (mth/ceil height)]
+          (when (and (not (mth/almost-zero? width))
+                     (not (mth/almost-zero? height))
+                     (not migrate))
+            (st/emit! (dwt/resize-text id width height))))))
+    (st/emit! (dwt/clean-text-modifier id))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id]} node]

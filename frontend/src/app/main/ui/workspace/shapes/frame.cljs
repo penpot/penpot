@@ -84,7 +84,7 @@
             disable-thumbnail? (d/not-empty? (dm/get-in modifiers [(:id shape) :modifiers]))
 
             [on-load-frame-dom render-frame? thumbnail-renderer]
-            (ftr/use-render-thumbnail page-id shape node-ref rendered? disable-thumbnail?)
+            (ftr/use-render-thumbnail page-id shape node-ref rendered? disable-thumbnail? @force-render)
 
             on-frame-load
             (fns/use-node-store thumbnail? node-ref rendered? render-frame?)]
@@ -129,5 +129,5 @@
           [:g.frame-thumbnail-wrapper
            {:id (dm/str "thumbnail-container-" (:id shape))
             ;; Hide the thumbnail when not displaying
-            :opacity (when (and @rendered? (not thumbnail?)) 0)}
+            :opacity (when (and @rendered? (not thumbnail?) (not render-frame?)) 0)}
            thumbnail-renderer]]]))))
