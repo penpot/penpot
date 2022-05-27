@@ -44,8 +44,7 @@ marked.use({renderer});
 // Templates
 
 function readLocales() {
-  // const langs = ["ar", "he", "ca", "de", "el", "en", "es", "fr", "it", "tr", "ru", "zh_CN", "pt_BR", "ro"];
-  const langs = ["ar", "he", "ca", "de", "el", "en", "es", "fr", "tr", "ru", "zh_CN", "pt_BR", "ro"];
+  const langs = ["ar", "ca", "de", "el", "en", "es", "fa", "fr", "he", "nb_NO", "pl", "pt_BR", "ro", "ru", "tr", "zh_CN", "zh_Hant"];
   const result = {};
 
   for (let lang of langs) {

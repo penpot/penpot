@@ -81,14 +81,28 @@
                           :timeout 6000
                           :method :get}))
 
-          (validate-response [{:keys [status body] :as res}]
-            (when-not (= 200 status)
+          (retrieve-emails []
+            (if (some? (:emails-uri provider))
+              (http-client {:uri (:emails-uri provider)
+                            :headers {"Authorization" (str (:type tdata) " " (:token tdata))}
+                            :timeout 6000
+                            :method :get})
+              (p/resolved {:status 200})))
+
+          (validate-response [[retrieve-res emails-res]]
+            (when-not (s/int-in-range? 200 300 (:status retrieve-res))
               (ex/raise :type :internal
                         :code :unable-to-retrieve-user-info
                         :hint "unable to retrieve user info"
-                        :http-status status
-                        :http-body body))
-            res)
+                        :http-status (:status retrieve-res)
+                        :http-body (:body retrieve-res)))
+            (when-not (s/int-in-range? 200 300 (:status emails-res))
+              (ex/raise :type :internal
+                        :code :unable-to-retrieve-user-info
+                        :hint "unable to retrieve user info"
+                        :http-status (:status emails-res)
+                        :http-body (:body emails-res)))
+            [retrieve-res emails-res])
 
           (get-email [info]
             (let [attr-kw (cf/get :oidc-email-attr :email)]
@@ -98,10 +112,13 @@
             (let [attr-kw (cf/get :oidc-name-attr :name)]
               (get info attr-kw)))
 
-          (process-response [{:keys [body]}]
-            (let [info (json/read body)]
+          (process-response [[retrieve-res emails-res]]
+            (let [info (json/read (:body retrieve-res))
+                  email (if (some? (:extract-email-callback provider))
+                          ((:extract-email-callback provider) emails-res)
+                          (get-email info))]
               {:backend  (:name provider)
-               :email    (get-email info)
+               :email    email
                :fullname (get-name info)
                :props (->> (dissoc info :name :email)
                            (qualify-props provider))}))
@@ -116,7 +133,7 @@
                         :info info))
             info)]
 
-    (-> (retrieve)
+    (-> (p/all [(retrieve) (retrieve-emails)])
         (p/then' validate-response)
         (p/then' process-response)
         (p/then' validate-info))))
@@ -386,15 +403,25 @@
         (assoc-in cfg [:providers "google"] opts))
       cfg)))
 
+(defn extract-github-email
+  [response]
+  (let [emails (json/read (:body response))
+        primary-email (->> emails
+                           (filter #(:primary %))
+                           first)]
+  (:email primary-email)))
+
 (defn- initialize-github-provider
   [cfg]
-  (let [opts {:client-id     (cf/get :github-client-id)
-              :client-secret (cf/get :github-client-secret)
-              :scopes        #{"read:user" "user:email"}
-              :auth-uri      "https://github.com/login/oauth/authorize"
-              :token-uri     "https://github.com/login/oauth/access_token"
-              :user-uri      "https://api.github.com/user"
-              :name          "github"}]
+  (let [opts {:client-id              (cf/get :github-client-id)
+              :client-secret          (cf/get :github-client-secret)
+              :scopes                 #{"read:user" "user:email"}
+              :auth-uri               "https://github.com/login/oauth/authorize"
+              :token-uri              "https://github.com/login/oauth/access_token"
+              :emails-uri             "https://api.github.com/user/emails"
+              :extract-email-callback extract-github-email
+              :user-uri               "https://api.github.com/user"
+              :name                   "github"}]
     (if (and (string? (:client-id opts))
              (string? (:client-secret opts)))
       (do

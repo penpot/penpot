@@ -236,14 +236,6 @@ msgid "feedback.description"
 msgstr "Beskrivelse"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Gå til diskusjoner"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "Lagdiskusjoner"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Emne"
 

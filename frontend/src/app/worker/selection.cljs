@@ -125,7 +125,8 @@
         match-criteria?
         (fn [shape]
           (and (not (:hidden shape))
-               (not (:blocked shape))
+               (or (= :frame (:type shape)) ;; We return frames even if blocked
+                   (not (:blocked shape)))
                (or (not frame-id) (= frame-id (:frame-id shape)))
                (case (:type shape)
                  :frame   include-frames?

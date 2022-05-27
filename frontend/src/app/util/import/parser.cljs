@@ -7,6 +7,7 @@
 (ns app.util.import.parser
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.spec.interactions :as cti]
@@ -213,16 +214,29 @@
            (reduce add-attrs node-attrs))
 
       (= type :frame)
-      (let [;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have
+      (let [;; Old .penpot files doesn't have "g" nodes. They have a clipPath reference as a node attribute
+            to-url #(dm/str "url(#" % ")")
+            frame-clip-rect-node  (->> (find-all-nodes node :defs)
+                                   (mapcat #(find-all-nodes % :clipPath))
+                                   (filter #(= (to-url (:id (:attrs %))) (:clip-path node-attrs)))
+                                   (mapcat #(find-all-nodes % #{:rect :path}))
+                                   (first))
+
+            ;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have
             g-nodes    (find-all-nodes node :g)
             defs-nodes (flatten (map #(find-all-nodes % :defs) g-nodes))
             gg-nodes   (flatten (map #(find-all-nodes % :g) g-nodes))
+
+
             rect-nodes (flatten [[(find-all-nodes node :rect)]
                                  (map #(find-all-nodes % #{:rect :path}) defs-nodes)
                                  (map #(find-all-nodes % #{:rect :path}) g-nodes)
                                  (map #(find-all-nodes % #{:rect :path}) gg-nodes)])
             svg-node (d/seek #(= "frame-background" (get-in % [:attrs :class])) rect-nodes)]
-        (merge (add-attrs {} (:attrs svg-node)) node-attrs))
+        (merge
+         (add-attrs {} (:attrs frame-clip-rect-node))
+         (add-attrs {} (:attrs svg-node))
+         node-attrs))
 
       (= type :svg-raw)
       (let [svg-content (get-data node :penpot:svg-content)

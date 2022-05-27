@@ -558,3 +558,11 @@
             (seq (.-children node)))]
     (->> root-node
          (tree-seq branch? get-children))))
+
+(defn check-font? [font]
+  (let [fonts (.-fonts globals/document)]
+    (.check fonts font)))
+
+(defn load-font [font]
+  (let [fonts (.-fonts globals/document)]
+    (.load fonts font)))

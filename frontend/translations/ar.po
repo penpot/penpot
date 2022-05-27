@@ -568,24 +568,6 @@ msgid "feedback.description"
 msgstr "وصف"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "اذهب إلى المناقشات"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "انضم إلى منتدى التواصل التعاوني لفريق Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"يمكنك طرح الأسئلة والإجابة عليها، إجراء محادثات مفتوحة، ومتابعة القرارات "
-"التي تؤثر على المشروع."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "مناقشات الفريق"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "موضوع"
 

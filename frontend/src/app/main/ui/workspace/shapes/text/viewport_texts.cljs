@@ -23,6 +23,7 @@
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as utp]
    [app.util.timers :as ts]
+   [promesa.core :as p]
    [rumext.alpha :as mf]))
 
 (defn strip-position-data [shape]
@@ -61,37 +62,39 @@
       (assoc :content (d/txt-merge content editor-content)))))
 
 (defn- update-text-shape
-  [{:keys [grow-type id]} node]
+  [{:keys [grow-type id migrate]} node]
   ;; Check if we need to update the size because it's auto-width or auto-height
-  (when (contains? #{:auto-height :auto-width} grow-type)
-    (let [{:keys [width height]}
-          (-> (dom/query node ".paragraph-set")
-              (dom/get-client-size))
-          width (mth/ceil width)
-          height (mth/ceil height)]
-      (when (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
-        (st/emit! (dwt/resize-text id width height)))))
-
   ;; Update the position-data of every text fragment
-  (let [position-data (utp/calc-position-data node)]
-    (st/emit! (dwt/update-position-data id position-data)))
+  (p/let [position-data (utp/calc-position-data node)]
+    (st/emit! (dwt/update-position-data id position-data))
+
+    (when (contains? #{:auto-height :auto-width} grow-type)
+      (let [{:keys [width height]}
+            (-> (dom/query node ".paragraph-set")
+                (dom/get-client-size))
+            width (mth/ceil width)
+            height (mth/ceil height)]
+        (when (and (not (mth/almost-zero? width))
+                   (not (mth/almost-zero? height))
+                   (not migrate))
+          (st/emit! (dwt/resize-text id width height))))))
 
   (st/emit! (dwt/clean-text-modifier id)))
 
 (defn- update-text-modifier
   [{:keys [grow-type id]} node]
-  (let [position-data (utp/calc-position-data node)
-        props {:position-data position-data}
+  (p/let [position-data (utp/calc-position-data node)
+          props {:position-data position-data}
 
-        props
-        (if (contains? #{:auto-height :auto-width} grow-type)
-          (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
-                width (mth/ceil width)
-                height (mth/ceil height)]
-            (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
-              (assoc props :width width :height height)
-              props))
-          props)]
+          props
+          (if (contains? #{:auto-height :auto-width} grow-type)
+            (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
+                  width (mth/ceil width)
+                  height (mth/ceil height)]
+              (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
+                (assoc props :width width :height height)
+                props))
+            props)]
 
     (st/emit! (dwt/update-text-modifier id props))))
 
@@ -228,7 +231,14 @@
          (mf/deps text-shapes modifiers)
          #(d/update-vals text-shapes (partial process-shape modifiers)))
 
-        editing-shape (get text-shapes edition)]
+        editing-shape (get text-shapes edition)
+
+        ;; This memo is necesary so the viewport-text-wrapper memoize its props correctly
+        text-shapes-wrapper
+        (mf/use-memo
+         (mf/deps text-shapes edition)
+         (fn []
+           (dissoc text-shapes edition)))]
 
     ;; We only need the effect to run on "mount" because the next fonts will be changed when the texts are
     ;; edited
@@ -242,5 +252,5 @@
      (when editing-shape
        [:& viewport-text-editing {:shape editing-shape}])
 
-     [:& viewport-texts-wrapper {:text-shapes (dissoc text-shapes edition)
+     [:& viewport-texts-wrapper {:text-shapes text-shapes-wrapper
                                  :modifiers modifiers}]]))

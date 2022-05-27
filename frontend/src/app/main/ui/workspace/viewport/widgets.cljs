@@ -135,35 +135,36 @@
            (on-frame-leave (:id frame))))
         text-pos-x (if (:use-for-thumbnail? frame) 15 0)]
 
-    [:*
-     (when (:use-for-thumbnail? frame)
-       [:g {:transform (str (when (and selected? modifiers)
-                              (str (:displacement modifiers) " "))
-                            (text-transform label-pos zoom))}
-        [:svg {:x 0
-               :y -9
-               :width 12
-               :height 12
-               :class "workspace-frame-icon"
+    (when (not (:hidden frame))
+      [:*
+       (when (:use-for-thumbnail? frame)
+         [:g {:transform (str (when (and selected? modifiers)
+                                (str (:displacement modifiers) " "))
+                              (text-transform label-pos zoom))}
+          [:svg {:x 0
+                 :y -9
+                 :width 12
+                 :height 12
+                 :class "workspace-frame-icon"
+                 :style {:fill (when selected? "var(--color-primary-dark)")}
+                 :visibility (if show-artboard-names? "visible" "hidden")}
+           [:use {:href "#icon-set-thumbnail"}]]])
+       [:text {:x text-pos-x
+               :y 0
+               :width width
+               :height 20
+               :class "workspace-frame-label"
+               :transform (str (when (and selected? modifiers)
+                                 (str (:displacement modifiers) " "))
+                               (text-transform label-pos zoom))
                :style {:fill (when selected? "var(--color-primary-dark)")}
-               :visibility (if show-artboard-names? "visible" "hidden")}
-         [:use {:href "#icon-set-thumbnail"}]]])
-     [:text {:x text-pos-x
-             :y 0
-             :width width
-             :height 20
-             :class "workspace-frame-label"
-             :transform (str (when (and selected? modifiers)
-                               (str (:displacement modifiers) " "))
-                             (text-transform label-pos zoom))
-             :style {:fill (when selected? "var(--color-primary-dark)")}
-             :visibility (if show-artboard-names? "visible" "hidden")
-             :on-mouse-down on-mouse-down
-             :on-double-click on-double-click
-             :on-context-menu on-context-menu
-             :on-pointer-enter on-pointer-enter
-             :on-pointer-leave on-pointer-leave}
-      (:name frame)]]))
+               :visibility (if show-artboard-names? "visible" "hidden")
+               :on-mouse-down on-mouse-down
+               :on-double-click on-double-click
+               :on-context-menu on-context-menu
+               :on-pointer-enter on-pointer-enter
+               :on-pointer-leave on-pointer-leave}
+        (:name frame)]])))
 
 (mf/defc frame-titles
   {::mf/wrap-props false

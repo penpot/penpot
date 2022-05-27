@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as sql]
    [app.rpc.mutations.files :as m.files]
    [app.rpc.queries.profile :as profile]
    [app.util.blob :as blob]
@@ -59,7 +60,7 @@
   "select revn, changes, data from file_change where file_id=? and revn = ?")
 
 (defn prepare-response
-  [{:keys [params] :as request} body]
+  [{:keys [params] :as request} body filename]
   (when-not body
     (ex/raise :type :not-found
               :code :enpty-data
@@ -69,8 +70,7 @@
                         :body    body
                         :headers {"content-type" "application/transit+json"})
     (contains? params :download)
-    (update :headers assoc "content-disposition" "attachment")))
-
+    (update :headers assoc "content-disposition" (str "attachment; filename=" filename))))
 
 (defn- retrieve-file-data
   [{:keys [pool]} {:keys [params] :as request}]
@@ -78,8 +78,9 @@
     (ex/raise :type :authentication
               :code :only-admins-allowed))
 
-  (let [file-id (some-> (get-in request [:params :file-id]) uuid/uuid)
-        revn    (some-> (get-in request [:params :revn]) d/parse-integer)]
+  (let [file-id  (some-> (get-in request [:params :file-id]) uuid/uuid)
+        revn     (some-> (get-in request [:params :revn]) d/parse-integer)
+        filename (str file-id)]
     (when-not file-id
       (ex/raise :type :validation
                 :code :missing-arguments))
@@ -88,9 +89,9 @@
                  (some-> (db/exec-one! pool [sql:retrieve-single-change file-id revn]) :data)
                  (some-> (db/get-by-id pool :file file-id) :data))]
       (if (contains? params :download)
-        (-> (prepare-response request data)
+        (-> (prepare-response request data filename)
             (update :headers assoc "content-type" "application/octet-stream"))
-        (prepare-response request (some-> data blob/decode))))))
+        (prepare-response request (some-> data blob/decode) filename)))))
 
 (defn- upload-file-data
   [{:keys [pool]} {:keys [profile-id params] :as request}]
@@ -98,12 +99,20 @@
         data       (some-> params :file :path fs/slurp-bytes blob/decode)]
 
     (if (and data project-id)
-      (let [fname (str "imported-file-" (dt/now))]
-        (m.files/create-file pool {:id (uuid/next)
-                                   :name fname
-                                   :project-id project-id
-                                   :profile-id profile-id
-                                   :data data})
+      (let [fname (str "imported-file-" (dt/now))
+            file-id (try
+                      (uuid/uuid (-> params :file :filename))
+                      (catch Exception _ (uuid/next)))
+            file (db/exec-one! pool (sql/select :file {:id file-id}))]
+        (if file
+          (db/update! pool :file
+                      {:data (blob/encode data)}
+                      {:id file-id})
+          (m.files/create-file pool {:id file-id
+                                     :name fname
+                                     :project-id project-id
+                                     :profile-id profile-id
+                                     :data data}))
         (yrs/response 200 "OK"))
       (yrs/response 500 "ERROR"))))
 
@@ -121,8 +130,9 @@
     (ex/raise :type :authentication
               :code :only-admins-allowed))
 
-  (let [file-id (some-> (get-in request [:params :id]) uuid/uuid)
-        revn    (or (get-in request [:params :revn]) "latest")]
+  (let [file-id  (some-> (get-in request [:params :id]) uuid/uuid)
+        revn     (or (get-in request [:params :revn]) "latest")
+        filename (str file-id)]
 
     (when (or (not file-id) (not revn))
       (ex/raise :type :validation
@@ -132,7 +142,7 @@
     (cond
       (d/num-string? revn)
       (let [item (db/exec-one! pool [sql:retrieve-single-change file-id (d/parse-integer revn)])]
-        (prepare-response request (some-> item :changes blob/decode vec)))
+        (prepare-response request (some-> item :changes blob/decode vec) filename))
 
       (str/includes? revn ":")
       (let [[start end] (->> (str/split revn #":")
@@ -144,7 +154,8 @@
                                    (map :changes)
                                    (map blob/decode)
                                    (mapcat identity)
-                                   (vec))))
+                                   (vec))
+                          filename))
       :else
       (ex/raise :type :validation :code :invalid-arguments))))
 
@@ -176,8 +187,7 @@
                                               (some-> report :error :trace))
                            :params        (:params report)}]
               (-> (io/resource "templates/error-report.tmpl")
-                  (tmpl/render params))))
-          ]
+                  (tmpl/render params))))]
 
     (when-not (authorized? pool request)
       (ex/raise :type :authentication

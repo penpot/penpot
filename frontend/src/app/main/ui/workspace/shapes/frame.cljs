@@ -71,11 +71,6 @@
             frame-id           (:id shape)
             page-id            (mf/use-ctx ctx/current-page-id)
 
-            thumbnail-data-ref (mf/use-memo (mf/deps page-id frame-id) #(refs/thumbnail-frame-data page-id frame-id))
-            thumbnail-data     (mf/deref thumbnail-data-ref)
-
-            thumbnail?         (and thumbnail? (some? thumbnail-data))
-
             ;; References to the current rendered node and the its parentn
             node-ref           (mf/use-var nil)
 
@@ -88,11 +83,11 @@
 
             disable-thumbnail? (d/not-empty? (dm/get-in modifiers [(:id shape) :modifiers]))
 
-            [on-load-frame-dom thumb-renderer]
-            (ftr/use-render-thumbnail page-id shape node-ref rendered? thumbnail-data-ref disable-thumbnail?)
+            [on-load-frame-dom render-frame? thumbnail-renderer]
+            (ftr/use-render-thumbnail page-id shape node-ref rendered? disable-thumbnail?)
 
             on-frame-load
-            (fns/use-node-store thumbnail? node-ref rendered?)]
+            (fns/use-node-store thumbnail? node-ref rendered? render-frame?)]
 
         (fdm/use-dynamic-modifiers objects @node-ref modifiers)
 
@@ -115,9 +110,9 @@
                 (rx/dispose! sub)))))
 
         (mf/use-effect
-         (mf/deps shape fonts thumbnail? on-load-frame-dom @force-render)
+         (mf/deps shape fonts thumbnail? on-load-frame-dom @force-render render-frame?)
          (fn []
-           (when (and (some? @node-ref) (or @rendered? (not thumbnail?) @force-render))
+           (when (and (some? @node-ref) (or @rendered? (not thumbnail?) @force-render render-frame?))
              (mf/mount
               (mf/element frame-shape
                           #js {:ref on-load-frame-dom :shape shape :fonts fonts})
@@ -128,12 +123,11 @@
         [:& (mf/provider ctx/render-ctx) {:value render-id}
          [:g.frame-container {:id (dm/str "frame-container-" (:id shape))
                               :key "frame-container"
-                              :ref on-frame-load}
+                              :ref on-frame-load
+                              :opacity (when (:hidden shape) 0)}
           [:& ff/fontfaces-style {:fonts fonts}]
-          [:g.frame-thumbnail-wrapper {:id (dm/str "thumbnail-container-" (:id shape))}
-           [:> frame/frame-thumbnail {:key (dm/str (:id shape))
-                                      :shape (cond-> shape
-                                               (some? thumbnail-data)
-                                               (assoc :thumbnail thumbnail-data))}]
-
-           thumb-renderer]]]))))
+          [:g.frame-thumbnail-wrapper
+           {:id (dm/str "thumbnail-container-" (:id shape))
+            ;; Hide the thumbnail when not displaying
+            :opacity (when (and @rendered? (not thumbnail?)) 0)}
+           thumbnail-renderer]]]))))

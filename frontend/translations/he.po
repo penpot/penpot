@@ -665,8 +665,7 @@ msgstr "כתובת הדוא״ל לאימות חייבת להיות תואמת"
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "כתובת הדוא״ל „%s” דווחה כספאם או שההודעות תוקפצנה לצמיתות."
 
-#: src/app/main/ui/auth/verify_token.cljs,
-#: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
 msgstr "קרה משהו לא טוב."
 
@@ -767,24 +766,6 @@ msgstr "מעניין אותך לדבר? מזמינים אותו ל־Gitter"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "תיאור"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "מעבר לדיונים"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "מזמינים אותך להצטרף לפורום התקשורת של Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"ניתן לשאול ולענות על שאלות, לנהל דיונים פתוחים ולעקוב אחר החלטות שמשפיעות "
-"על המיזם."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "דיונים צוותיים"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
@@ -1206,8 +1187,7 @@ msgstr ""
 msgid "labels.internal-error.main-message"
 msgstr "שגיאה פנימית"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
 msgstr "הזמנות"
 
@@ -1229,11 +1209,11 @@ msgstr "יציאה"
 msgid "labels.manage-fonts"
 msgstr "ניהול גופנים"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
 msgstr "חבר"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "חברים"
 
@@ -1349,9 +1329,7 @@ msgstr "הסרה"
 msgid "labels.remove-member"
 msgstr "הסרת חבר"
 
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
 msgstr "שינוי שם"
 
@@ -1363,7 +1341,7 @@ msgstr "שינוי שם לצוות"
 msgid "labels.resend-invitation"
 msgstr "שליחת ההזמנה מחדש"
 
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "ניסיון חוזר"
 
@@ -1455,7 +1433,7 @@ msgstr "סביבת עבודה"
 msgid "labels.write-new-comment"
 msgstr "כתיבת הערה חדשה"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
 msgstr "(אני)"
 
@@ -2277,8 +2255,7 @@ msgstr "מיקוד פעיל"
 msgid "workspace.focus.selection"
 msgstr "בחירה"
 
-#: src/app/main/data/workspace/libraries.cljs,
-#: src/app/main/ui/components/color_bullet.cljs
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.linear"
 msgstr "מדרג קווי"
 
@@ -2648,13 +2625,11 @@ msgstr "עיצוב"
 msgid "workspace.options.export"
 msgstr "ייצוא"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "ייצוא הבחירה"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 #, fuzzy
 msgid "workspace.options.export-object"
 msgstr "ייצוא רכיב"
@@ -2668,18 +2643,15 @@ msgstr "סיומת"
 msgid "workspace.options.exporting-complete"
 msgstr "הייצוא הושלם"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.exporting-object"
 msgstr "מתבצע ייצוא…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "הייצוא נכשל"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-slow"
 msgstr "הייצוא אטי בהגזמה"
 
@@ -3123,8 +3095,7 @@ msgstr "פינות בודדות"
 msgid "workspace.options.recent-fonts"
 msgstr "אחרונים"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.retry"
 msgstr "לנסות שוב"
 
@@ -3634,8 +3605,7 @@ msgstr "צורות"
 msgid "workspace.sidebar.layers.texts"
 msgstr "טקסטים"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs,
-#: src/app/main/ui/handoff/attributes/svg.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "מאפייני SVG יובאו"
 

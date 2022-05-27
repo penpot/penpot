@@ -9,9 +9,11 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.transit :as transit]
+   [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.util.dom :as dom]
-   [app.util.text-position-data :as tpd]))
+   [app.util.text-position-data :as tpd]
+   [promesa.core :as p]))
 
 (defn parse-text-nodes
   "Given a text node retrieves the rectangles for everyone of its paragraphs and its text."
@@ -27,6 +29,27 @@
      (map parse-entry)
      (tpd/parse-text-nodes parent-node text-node))))
 
+(def load-promises (atom {}))
+
+(defn load-font
+  [font]
+  (if (contains? @load-promises font)
+    (get @load-promises font)
+    (let [load-promise (dom/load-font font)]
+      (swap! load-promises assoc font load-promise)
+      load-promise)))
+
+(defn resolve-font
+  [^js node]
+
+  (let [styles (js/getComputedStyle node)
+        font (.getPropertyValue styles "font")]
+    (if (dom/check-font? font)
+      (p/resolved font)
+      (let [font-id (.getPropertyValue styles "--font-id")]
+        (-> (fonts/ensure-loaded! font-id)
+            (p/then #(when (not (dom/check-font? font))
+                       (load-font font))))))))
 
 (defn calc-text-node-positions
   [base-node viewport zoom]
@@ -58,22 +81,25 @@
                      :width (- (:x p2) (:x p1))
                      :height (- (:y p2) (:y p1)))))
 
-          text-nodes (dom/query-all base-node ".text-node, span[data-text]")]
-
-      (->> text-nodes
-           (mapcat
-            (fn [parent-node]
-              (let [direction (.-direction (js/getComputedStyle parent-node))]
-                (->> (.-childNodes parent-node)
-                     (mapcat #(parse-text-nodes parent-node direction %))))))
-           (mapv #(update % :position translate-rect))))))
+          text-nodes (dom/query-all base-node ".text-node, span[data-text]")
+          load-fonts (->> text-nodes (map resolve-font))]
+      (-> (p/all load-fonts)
+          (p/then
+           (fn []
+             (->> text-nodes
+                  (mapcat
+                   (fn [parent-node]
+                     (let [direction (.-direction (js/getComputedStyle parent-node))]
+                       (->> (.-childNodes parent-node)
+                            (mapcat #(parse-text-nodes parent-node direction %))))))
+                  (mapv #(update % :position translate-rect)))))))))
 
 (defn calc-position-data
   [base-node]
   (let [viewport      (dom/get-element "render")
         zoom          (or (get-in @st/state [:workspace-local :zoom]) 1)]
     (when (and (some? base-node) (some? viewport))
-      (let [text-data     (calc-text-node-positions base-node viewport zoom)]
+      (p/let [text-data (calc-text-node-positions base-node viewport zoom)]
         (when (d/not-empty? text-data)
           (->> text-data
                (mapv (fn [{:keys [node position text direction]}]

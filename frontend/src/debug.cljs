@@ -64,6 +64,9 @@
 
     ;; Disable thumbnail cache
     :disable-thumbnail-cache
+
+    ;; Disable frame thumbnails
+    :disable-frame-thumbnails
     })
 
 ;; These events are excluded when we activate the :events flag

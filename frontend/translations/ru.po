@@ -721,25 +721,6 @@ msgid "feedback.description"
 msgstr "Подробности"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Зайти в обсуждения"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Посетите форум для совместного обсуждения планов на Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Там вы можете задавать вопросы, проследить за неоднозначными задачами, и "
-"поучаствовать в принятии решений по проекту."
-
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
-msgid "feedback.discussions-title"
-msgstr "Командный форум"
-
-#: src/app/main/ui/settings/feedback.cljs
 #, fuzzy
 msgid "feedback.subject"
 msgstr "Краткое описание"

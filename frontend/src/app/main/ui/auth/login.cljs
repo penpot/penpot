@@ -75,7 +75,6 @@
 
         on-succes
         (fn [data]
-          (prn "SUCCESS" data)
           (when-let [token (:invitation-token data)]
             (st/emit! (rt/nav :auth-verify-token {} {:token token}))))
 

@@ -81,13 +81,12 @@
 
      [:hr]
 
-     [:h2 (tr "feedback.discussions-title")]
-     [:p (tr "feedback.discussions-subtitle1")]
-     [:p (tr "feedback.discussions-subtitle2")]
+     [:h2 (tr "feedback.twitter-title")]
+     [:p (tr "feedback.twitter-subtitle1")]
 
      [:a.btn-secondary.btn-large
-      {:href "https://github.com/penpot/penpot/discussions" :target "_blank"}
-      (tr "feedback.discussions-go-to")]
+      {:href "https://twitter.com/PenpotSupport" :target "_blank"}
+      (tr "feedback.twitter-go-to")]
 
      [:hr]
 

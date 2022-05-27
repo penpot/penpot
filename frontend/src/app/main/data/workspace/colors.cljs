@@ -279,7 +279,10 @@
 
                                                           :always
                                                           (d/without-nils))]
-                                          (assoc-in shape [:strokes index] new-attrs)))))))))
+                                          (-> shape
+                                              (cond-> (not (contains? shape :strokes))
+                                                (assoc :strokes []))
+                                              (assoc-in [:strokes index] new-attrs))))))))))
 
 (defn change-shadow
   [ids attrs index]

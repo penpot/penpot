@@ -18,6 +18,14 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+## 1.13.1-beta
+
+### :bug: Bugs fixed
+
+- Fix problem with text positioning
+- Fix issue with thumbnail generation before fonts loading
+- Fix unable to hide artboards
+- Fix problem with fonts cache causing hanging in certain pages
 
 ## 1.13.0-beta
 

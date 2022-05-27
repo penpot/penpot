@@ -9,19 +9,20 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
-   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.shapes.frame :as frame]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [cuerdas.core :as str]
+   [debug :refer [debug?]]
    [rumext.alpha :as mf]))
 
-;; (def thumbnail-scale-factor 2)
-
-(defn- draw-thumbnail-canvas
+(defn- draw-thumbnail-canvas!
   [canvas-node img-node]
   (try
     (when (and (some? canvas-node) (some? img-node))
@@ -29,19 +30,12 @@
             canvas-width   (.-width canvas-node)
             canvas-height  (.-height canvas-node)]
 
-        ;; TODO: Expermient with different scale factors
-        ;; (set! (.-width canvas-node) (* thumbnail-scale-factor canvas-width))
-        ;; (set! (.-height canvas-node) (* thumbnail-scale-factor canvas-height))
-        ;; (.setTransform canvas-context thumbnail-scale-factor 0 0 thumbnail-scale-factor 0 0)
-        ;; (set! (.-imageSmoothingEnabled canvas-context) true)
-        ;; (set! (.-imageSmoothingQuality canvas-context) "high")
-
         (.clearRect canvas-context 0 0 canvas-width canvas-height)
         (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
-        (.toDataURL canvas-node "image/png" 1.0)))
+        true))
     (catch :default err
       (.error js/console err)
-      nil)))
+      false)))
 
 (defn- remove-image-loading
   "Remove the changes related to change a url for its embed value. This is necessary
@@ -59,7 +53,7 @@
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
-  [page-id {:keys [id x y width height] :as shape} node-ref rendered? thumbnail-data-ref disable?]
+  [page-id {:keys [id x y width height] :as shape} node-ref rendered? disable?]
 
   (let [frame-canvas-ref (mf/use-ref nil)
         frame-image-ref (mf/use-ref nil)
@@ -78,16 +72,25 @@
 
         updates-str (mf/use-memo #(rx/subject))
 
+        thumbnail-data-ref (mf/use-memo (mf/deps page-id id) #(refs/thumbnail-frame-data page-id id))
+        thumbnail-data     (mf/deref thumbnail-data-ref)
+
+        render-frame? (mf/use-state (not thumbnail-data))
+
         on-image-load
         (mf/use-callback
          (fn []
            (ts/raf
             #(let [canvas-node (mf/ref-val frame-canvas-ref)
-                   img-node    (mf/ref-val frame-image-ref)
-                   thumb-data  (draw-thumbnail-canvas canvas-node img-node)]
-               (when (some? thumb-data)
-                 (st/emit! (dw/update-thumbnail page-id id thumb-data))
-                 (reset! image-url nil))))))
+                   img-node    (mf/ref-val frame-image-ref)]
+               (when (draw-thumbnail-canvas! canvas-node img-node)
+                 (reset! image-url nil)
+                 (reset! render-frame? false))
+
+               ;; If we don't have the thumbnail data saved (normaly the first load) we update the data
+               ;; when available
+               (when (not @thumbnail-data-ref)
+                 (st/emit! (dwt/update-thumbnail page-id id) ))))))
 
         generate-thumbnail
         (mf/use-callback
@@ -115,7 +118,7 @@
          (fn []
            (when (and (some? @node-ref) @regenerate-thumbnail)
              (let [loading-images? (some? (dom/query @node-ref "[data-loading='true']"))
-                   loading-fonts? (some? (dom/query (dm/str "#frame-container-" (:id shape) " style[data-loading='true']")))]
+                   loading-fonts? (some? (dom/query (dm/str "#frame-container-" (:id shape) " > style[data-loading='true']")))]
                (when (and (not loading-images?) (not loading-fonts?))
                  (generate-thumbnail)
                  (reset! regenerate-thumbnail false))))))
@@ -172,18 +175,28 @@
             (reset! observer-ref nil)))))
 
     [on-load-frame-dom
-     (when (some? @image-url)
-       (mf/html
-        [:g.thumbnail-rendering
-         [:foreignObject {:x x :y y :width width :height height}
-          [:canvas {:ref frame-canvas-ref
-                    :width fixed-width
-                    :height fixed-height}]]
+     @render-frame?
+     (mf/html
+      [:*
+       [:> frame/frame-thumbnail {:key (dm/str (:id shape))
+                                  :shape (cond-> shape
+                                           (some? thumbnail-data)
+                                           (assoc :thumbnail thumbnail-data))}]
 
+       [:foreignObject {:x x :y y :width width :height height}
+        [:canvas.thumbnail-canvas
+         {:ref frame-canvas-ref
+          :data-object-id (dm/str page-id (:id shape))
+          :width fixed-width
+          :height fixed-height
+          ;; DEBUG
+          :style {:filter (when (debug? :thumbnails) "invert(1)")}}]]
+
+       (when (some? @image-url)
          [:image {:ref frame-image-ref
                   :x (:x shape)
                   :y (:y shape)
                   :href @image-url
                   :width (:width shape)
                   :height (:height shape)
-                  :on-load on-image-load}]]))]))
+                  :on-load on-image-load}])])]))

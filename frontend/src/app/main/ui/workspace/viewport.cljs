@@ -71,8 +71,8 @@
         focus             (mf/deref refs/workspace-focus-selected)
 
         objects-ref       (mf/use-memo #(refs/workspace-page-objects-by-id page-id))
-        base-objects      (-> (mf/deref objects-ref)
-                              (ui-hooks/with-focus-objects focus))
+        objects           (mf/deref objects-ref)
+        base-objects      (-> objects (ui-hooks/with-focus-objects focus))
 
         modifiers         (mf/deref refs/workspace-modifiers)
 
@@ -245,7 +245,7 @@
       [:g {:pointer-events "none" :opacity 0}
        [:& stv/viewport-texts {:key (dm/str "texts-" page-id)
                                :page-id page-id
-                               :objects base-objects
+                               :objects objects
                                :modifiers modifiers
                                :edition edition}]]]
 

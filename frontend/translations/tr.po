@@ -682,8 +682,7 @@ msgstr "Doğrulama e-postası eşleşmiyor"
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "«%s» e-postasının spam veya kalıcı olarak geri döndüğü bildirildi."
 
-#: src/app/main/ui/auth/verify_token.cljs,
-#: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
 msgstr "Bir şeyler ters gitti."
 
@@ -788,24 +787,6 @@ msgstr "Sohbet etmek ister misin? Glitter'da bizimle sohbet edebilirsin"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Açıklama"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Tartışmalar bölümüne git"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Penpot takımı ortak iletişim forumuna katıl."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Soru sorabilir ve soruları cevaplayabilir, açık uçlu tartışmalar yapabilir "
-"ve projeyi etkileyen kararları takip edebilirsin."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "Takım tartışmaları"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
@@ -1230,8 +1211,7 @@ msgstr ""
 msgid "labels.internal-error.main-message"
 msgstr "İç Hata"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
 msgstr "Davetler"
 
@@ -1253,11 +1233,11 @@ msgstr "Oturumu kapat"
 msgid "labels.manage-fonts"
 msgstr "Yazı tiplerini yönet"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
 msgstr "Üye"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "Üyeler"
 
@@ -1369,9 +1349,7 @@ msgstr "Kaldır"
 msgid "labels.remove-member"
 msgstr "Üyeyi kaldır"
 
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
 msgstr "Yeniden adlandır"
 
@@ -1383,7 +1361,7 @@ msgstr "Takımı yeniden adlandır"
 msgid "labels.resend-invitation"
 msgstr "Daveti yeniden gönder"
 
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "Yeniden dene"
 
@@ -1476,7 +1454,7 @@ msgstr "Çalışma alanı"
 msgid "labels.write-new-comment"
 msgstr "Yeni yorum yaz"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
 msgstr "(siz)"
 
@@ -2324,8 +2302,7 @@ msgstr "Odaklanma açık"
 msgid "workspace.focus.selection"
 msgstr "Seçim"
 
-#: src/app/main/data/workspace/libraries.cljs,
-#: src/app/main/ui/components/color_bullet.cljs
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.linear"
 msgstr "Doğrusal degrade"
 
@@ -2695,6 +2672,15 @@ msgstr "Tasarım"
 msgid "workspace.options.export"
 msgstr "Dışa aktar"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Seçimi dışa aktar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#, fuzzy
+msgid "workspace.options.export-object"
+msgstr "Dışa aktar"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-multiple"
@@ -2720,13 +2706,11 @@ msgstr "Dışa aktarma tamamlandı"
 msgid "workspace.options.exporting-object"
 msgstr "Dışa aktarılıyor…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "Dışa aktarılamadı"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, #: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-slow"
 msgstr "Dışa aktarma beklenmedik şekilde yavaş"
 
@@ -3170,8 +3154,7 @@ msgstr "Tek köşe"
 msgid "workspace.options.recent-fonts"
 msgstr "Son kullanılanlar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.retry"
 msgstr "Yeniden dene"
 
@@ -3683,8 +3666,7 @@ msgstr "Şekiller"
 msgid "workspace.sidebar.layers.texts"
 msgstr "Metinler"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs,
-#: src/app/main/ui/handoff/attributes/svg.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "İçe Aktarılan SVG Öznitelikleri"
 
