@@ -28,3 +28,11 @@
   [shape]
   (gpr/points->selrect (position-data-points shape)))
 
+(defn overlaps-position-data?
+  "Checks if the given position data is inside the shape"
+  [{:keys [points]} position-data]
+  (let [bounding-box (gpr/points->selrect points)
+        fix-rect #(assoc % :y (- (:y %) (:height %)))]
+    (->> position-data
+         (some #(gpr/overlaps-rects? bounding-box (fix-rect %)))
+         (boolean))))

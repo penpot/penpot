@@ -144,7 +144,7 @@
     (mf/use-effect
      (mf/deps @render-frame? thumbnail-data)
      (fn []
-       (if (and (some? thumbnail-data) @render-frame?)
+       (when (and (some? thumbnail-data) @render-frame?)
          (reset! render-frame? false))))
 
     (mf/use-effect
