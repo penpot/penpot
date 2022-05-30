@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.text :as gsht]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
@@ -21,7 +22,7 @@
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
-   [app.util.text-svg-position :as utp]
+   [app.util.text-svg-position :as tsp]
    [app.util.timers :as ts]
    [promesa.core :as p]
    [rumext.alpha :as mf]))
@@ -62,11 +63,13 @@
       (assoc :content (d/txt-merge content editor-content)))))
 
 (defn- update-text-shape
-  [{:keys [grow-type id migrate]} node]
+  [{:keys [grow-type id migrate] :as shape} node]
   ;; Check if we need to update the size because it's auto-width or auto-height
   ;; Update the position-data of every text fragment
-  (p/let [position-data (utp/calc-position-data node)]
-    (st/emit! (dwt/update-position-data id position-data))
+  (p/let [position-data (tsp/calc-position-data node)]
+    ;; At least one paragraph needs to be inside the bounding box
+    (when (gsht/overlaps-position-data? shape position-data)
+      (st/emit! (dwt/update-position-data id position-data)))
 
     (when (contains? #{:auto-height :auto-width} grow-type)
       (let [{:keys [width height]}
@@ -77,13 +80,12 @@
         (when (and (not (mth/almost-zero? width))
                    (not (mth/almost-zero? height))
                    (not migrate))
-          (st/emit! (dwt/resize-text id width height))))))
-
-  (st/emit! (dwt/clean-text-modifier id)))
+          (st/emit! (dwt/resize-text id width height)))))
+    (st/emit! (dwt/clean-text-modifier id))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id]} node]
-  (p/let [position-data (utp/calc-position-data node)
+  (p/let [position-data (tsp/calc-position-data node)
           props {:position-data position-data}
 
           props
