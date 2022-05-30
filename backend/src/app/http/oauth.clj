@@ -119,7 +119,7 @@
                           (get-email info))]
               {:backend  (:name provider)
                :email    email
-               :fullname (get-name info)
+               :fullname (or (get-name info) email)
                :props (->> (dissoc info :name :email)
                            (qualify-props provider))}))
 
