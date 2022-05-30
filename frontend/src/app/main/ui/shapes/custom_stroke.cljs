@@ -375,7 +375,7 @@
 
       (d/not-empty? (:fills shape))
       (let [fill-props
-            (attrs/extract-fill-attrs (get-in shape [:fills 0]) render-id 0)
+            (attrs/extract-fill-attrs (get-in shape [:fills 0]) render-id 0 (:type shape))
 
             style (-> (obj/get props "style")
                       (obj/clone)
