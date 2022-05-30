@@ -2225,10 +2225,10 @@ msgid "shortcuts.open-handoff"
 msgstr "Go to viewer handoff section"
 
 msgid "shortcuts.open-interactions"
-msgstr "Go to viewer intertactions section"
+msgstr "Go to viewer interactions section"
 
 msgid "shortcuts.open-viewer"
-msgstr "Go to viewer intertactions section"
+msgstr "Go to viewer interactions section"
 
 msgid "shortcuts.open-workspace"
 msgstr "Go to workspace"
