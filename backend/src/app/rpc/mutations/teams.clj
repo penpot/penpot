@@ -400,7 +400,7 @@
 (defn- create-team-invitation
   [{:keys [conn tokens team profile role email] :as cfg}]
   (let [member    (profile/retrieve-profile-data-by-email conn email)
-        token-exp (dt/in-future "48h")
+        token-exp (dt/in-future "168h") ;; 7 days
         itoken    (tokens :generate
                           {:iss :team-invitation
                            :exp token-exp
