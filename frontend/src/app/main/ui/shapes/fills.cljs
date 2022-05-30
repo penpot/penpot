@@ -53,7 +53,8 @@
                                        :width width
                                        :data-loading loading?}
                             (= :path (:type shape))
-                            (obj/set! "patternTransform" transform))]
+                            (obj/set! "patternTransform" transform))
+            type (:type shape)]
 
         (for [[shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
           [:* {:key (dm/str shape-index)}
@@ -73,7 +74,7 @@
                               (obj/set! "id" fill-id))
               [:g
                (for [[fill-index value] (-> (d/enumerate (:fills shape [])) reverse)]
-                 [:> :rect (-> (attrs/extract-fill-attrs value render-id fill-index)
+                 [:> :rect (-> (attrs/extract-fill-attrs value render-id fill-index type)
                                (obj/set! "key" (dm/str fill-index))
                                (obj/set! "width" width)
                                (obj/set! "height" height))])
