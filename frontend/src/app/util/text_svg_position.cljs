@@ -7,6 +7,7 @@
 (ns app.util.text-svg-position
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.transit :as transit]
    [app.main.fonts :as fonts]
@@ -43,13 +44,20 @@
   [^js node]
 
   (let [styles (js/getComputedStyle node)
-        font (.getPropertyValue styles "font")]
-    (if (dom/check-font? font)
-      (p/resolved font)
-      (let [font-id (.getPropertyValue styles "--font-id")]
-        (-> (fonts/ensure-loaded! font-id)
-            (p/then #(when (not (dom/check-font? font))
-                       (load-font font))))))))
+        font (.getPropertyValue styles "font")
+        font (if (or (not font) (empty? font))
+               ;; Firefox 95 won't return the font correctly.
+               ;; We can get the font shorthand with the font-size + font-family
+               (dm/str (.getPropertyValue styles "font-size")
+                       " "
+                       (.getPropertyValue styles "font-family"))
+               font)
+
+        font-id (.getPropertyValue styles "--font-id")]
+
+    (-> (fonts/ensure-loaded! font-id)
+        (p/then #(when (not (dom/check-font? font))
+                   (load-font font))))))
 
 (defn calc-text-node-positions
   [base-node viewport zoom]
