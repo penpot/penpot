@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
@@ -158,7 +158,7 @@
             (cond-> new-shape
               true
               (as-> $
-                (geom/move $ delta)
+                (gsh/move $ delta)
                 (assoc $ :frame-id frame-id)
                 (assoc $ :parent-id
                        (or (:parent-id $) (:frame-id $)))
@@ -1150,7 +1150,7 @@
         origin-root-pos (shape-pos origin-root)
         dest-root-pos   (shape-pos dest-root)
         delta           (gpt/subtract dest-root-pos origin-root-pos)]
-    (geom/move shape delta)))
+    (gsh/move shape delta)))
 
 (defn- make-change
   [container change]

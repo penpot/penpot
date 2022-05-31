@@ -311,7 +311,7 @@
            :zoom zoom}])
 
        [:& widgets/frame-titles
-        {:objects objects-modified
+        {:objects base-objects
          :selected selected
          :zoom zoom
          :modifiers modifiers

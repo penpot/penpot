@@ -7,7 +7,7 @@
 (ns app.main.ui.viewer.handoff.render
   "The main container for a frame in handoff mode"
   (:require
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
@@ -87,7 +87,7 @@
       [props]
       (let [shape (unchecked-get props "shape")
             childs (mapv #(get objects %) (:shapes shape))
-            shape  (geom/transform-shape shape)
+            shape  (gsh/transform-shape shape)
 
             props (-> (obj/create)
                       (obj/merge! props)
@@ -166,8 +166,8 @@
             (mf/use-memo (mf/deps objects)
                          #(svg-raw-container-factory objects))]
         (when (and shape (not (:hidden shape)))
-          (let [shape (-> (geom/transform-shape shape)
-                          (geom/translate-to-frame frame))
+          (let [shape (-> (gsh/transform-shape shape)
+                          (gsh/translate-to-frame frame))
                 opts #js {:shape shape
                           :frame frame}]
             (case (:type shape)

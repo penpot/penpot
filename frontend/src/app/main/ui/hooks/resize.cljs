@@ -6,6 +6,7 @@
 
 (ns app.main.ui.hooks.resize
   (:require
+   [app.main.ui.hooks :as hooks]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.main.ui.context :as ctx]
@@ -77,26 +78,31 @@
   (let [prev-val-ref (mf/use-ref nil)
         current-observer-ref (mf/use-ref nil)
 
+        callback-ref (hooks/use-update-var {:callback callback})
+
         ;; We use the ref as a callback when the dom node is ready (or change)
         node-ref
         (mf/use-callback
-         (mf/deps callback)
          (fn [^js node]
-           (let [^js current-observer (mf/ref-val current-observer-ref)
-                 ^js prev-val         (mf/ref-val prev-val-ref)]
+           (when (some? node)
+             (let [^js current-observer (mf/ref-val current-observer-ref)
+                   ^js prev-val         (mf/ref-val prev-val-ref)]
 
-             (when (and (not= prev-val node) (some? current-observer))
-               (log/debug :action "disconnect" :js/prev-val prev-val :js/node node)
-               (.disconnect current-observer)
-               (mf/set-ref-val! current-observer-ref nil))
+               (when (and (not= prev-val node) (some? current-observer))
+                 (log/debug :action "disconnect" :js/prev-val prev-val :js/node node)
+                 (.disconnect current-observer)
+                 (mf/set-ref-val! current-observer-ref nil))
 
-             (when (and (not= prev-val node) (some? node))
-               (let [^js observer
-                     (js/ResizeObserver. #(callback last-resize-type (dom/get-client-size node)))]
-                 (mf/set-ref-val! current-observer-ref observer)
-                 (log/debug :action "observe"  :js/node node :js/observer observer)
-                 (.observe observer node))))
-           (mf/set-ref-val! prev-val-ref node)))]
+               (when (and (not= prev-val node) (some? node))
+                 (let [^js observer
+                       (js/ResizeObserver.
+                        #(let [callback (get @callback-ref :callback)]
+                           (callback last-resize-type (dom/get-client-size node))))]
+                   (mf/set-ref-val! current-observer-ref observer)
+                   (log/debug :action "observe"  :js/node node :js/observer observer)
+                   (.observe observer node))))
+
+             (mf/set-ref-val! prev-val-ref node))))]
 
     (mf/use-effect
      (fn []

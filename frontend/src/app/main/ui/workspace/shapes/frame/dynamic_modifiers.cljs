@@ -89,8 +89,9 @@
       frame?
       [shape-node
        (dom/query shape-node ".frame-children")
-       (dom/query (str "#thumbnail-container-" id))
-       (dom/query (str "#thumbnail-" id))]
+       (dom/query (dm/str "#thumbnail-container-" id))
+       (dom/query (dm/str "#thumbnail-" id))
+       (dom/query (dm/str "#frame-title-" id))]
 
       ;; For groups we don't want to transform the whole group but only
       ;; its filters/masks

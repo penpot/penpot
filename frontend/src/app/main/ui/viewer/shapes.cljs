@@ -8,7 +8,7 @@
   "The main container for a frame in viewer mode"
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.spec.interactions :as cti]
    [app.main.data.viewer :as dv]
@@ -204,7 +204,7 @@
               :stroke-width (if interactions-show? 1 0)
               :fill-opacity (if interactions-show? 0.2 0)
               :style {:pointer-events (when frame? "none")}
-              :transform (geom/transform-matrix shape)}])))
+              :transform (gsh/transform-str shape)}])))
 
 (defn generic-wrapper-factory
   "Wrap some svg shape and add interaction controls"
@@ -306,7 +306,7 @@
       [props]
       (let [shape     (obj/get props "shape")
             childs    (mapv #(get objects %) (:shapes shape))
-            shape     (geom/transform-shape shape)
+            shape     (gsh/transform-shape shape)
             props     (obj/merge! #js {} props
                                   #js {:shape shape
                                        :childs childs
@@ -384,9 +384,9 @@
             (mf/use-memo (mf/deps objects)
                          #(svg-raw-container-factory objects))]
         (when (and shape (not (:hidden shape)))
-          (let [shape (-> (geom/transform-shape shape)
-                          (geom/translate-to-frame frame)
-                          (cond-> fixed? (geom/move delta)))
+          (let [shape (-> (gsh/transform-shape shape)
+                          (gsh/translate-to-frame frame)
+                          (cond-> fixed? (gsh/move delta)))
 
                 opts #js {:shape shape
                           :objects objects}]

@@ -159,6 +159,7 @@
 (dm/export gtr/move)
 (dm/export gtr/absolute-move)
 (dm/export gtr/transform-matrix)
+(dm/export gtr/transform-str)
 (dm/export gtr/inverse-transform-matrix)
 (dm/export gtr/transform-point-center)
 (dm/export gtr/transform-rect)

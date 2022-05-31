@@ -8,7 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
@@ -192,7 +192,7 @@
    ::mf/forward-ref true}
   [props ref]
   (let [shape (obj/get props "shape")
-        transform (str (geom/transform-matrix shape))
+        transform (gsh/transform-str shape)
 
         {:keys [id x y width height content]} shape
         grow-type (obj/get props "grow-type") ;; This is only needed in workspace

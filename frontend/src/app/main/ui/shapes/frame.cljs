@@ -28,12 +28,14 @@
   [{:keys [shape render-id]}]
   (when (= :frame (:type shape))
     (let [{:keys [x y width height]} shape
+          transform (gsh/transform-str shape)
           props (-> (attrs/extract-style-attrs shape)
                     (obj/merge!
                      #js {:x x
                           :y y
                           :width width
-                          :height height}))
+                          :height height
+                          :transform transform}))
           path? (some? (.-d props))]
       [:clipPath {:id (frame-clip-id shape render-id) :class "frame-clip"}
        (if path?
@@ -46,12 +48,12 @@
   (let [shape (obj/get props "shape")]
     (when (:thumbnail shape)
       (let [{:keys [x y width height show-content]} shape
-            transform (gsh/transform-matrix shape)
+            transform (gsh/transform-str shape)
             props (-> (attrs/extract-style-attrs shape)
                       (obj/merge!
                        #js {:x x
                             :y y
-                            :transform (str transform)
+                            :transform transform
                             :width width
                             :height height
                             :className "frame-background"}))
@@ -91,13 +93,13 @@
           shape      (unchecked-get props "shape")
           {:keys [x y width height show-content]} shape
 
-          transform (gsh/transform-matrix shape)
+          transform (gsh/transform-str shape)
 
           props (-> (attrs/extract-style-attrs shape)
                     (obj/merge!
                      #js {:x x
                           :y y
-                          :transform (str transform)
+                          :transform transform
                           :width width
                           :height height
                           :className "frame-background"}))

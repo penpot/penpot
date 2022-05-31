@@ -170,7 +170,7 @@
             :height size
             :fill (if (debug? :handlers) "blue" "none")
             :stroke-width 0
-            :transform (str transform)
+            :transform (dm/str transform)
             :on-mouse-down on-rotate}]))
 
 (mf/defc resize-point-handler
@@ -224,7 +224,7 @@
         height (/ resize-side-height zoom)
         offset-y (if (= align :outside) (- height) (- (/ height 2)))
         target-y (+ y offset-y)
-        transform-str (str (gmt/multiply transform (gmt/rotate-matrix angle (gpt/point x y))))]
+        transform-str (dm/str (gmt/multiply transform (gmt/rotate-matrix angle (gpt/point x y))))]
     [:g.resize-handler
      (when show-handler?
        [:circle {:r (/ resize-point-radius zoom)
@@ -271,13 +271,13 @@
         current-transform (mf/deref refs/current-transform)
 
         selrect (:selrect shape)
-        transform (gsh/transform-matrix shape {:no-flip true})]
+        transform (gsh/transform-str shape {:no-flip true})]
 
     (when (not (#{:move :rotate} current-transform))
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
        ;; Selection rect
        [:& selection-rect {:rect selrect
-                           :transform (str transform)
+                           :transform transform
                            :zoom zoom
                            :color color
                            :on-move-selected on-move-selected
@@ -327,7 +327,7 @@
   (let [{:keys [x y width height]} shape]
     [:g.controls
      [:rect.main {:x x :y y
-                  :transform (str (gsh/transform-matrix shape))
+                  :transform (gsh/transform-str shape)
                   :width width
                   :height height
                   :pointer-events "visible"

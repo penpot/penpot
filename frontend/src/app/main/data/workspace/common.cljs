@@ -338,11 +338,9 @@
       (let [page-id  (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
 
-            to-move-shapes (->> (cph/get-immediate-children objects)
-                                (remove cph/frame-shape?)
-                                (d/enumerate)
-                                (filterv (comp shapes :id second))
-                                (mapv second))
+            to-move-shapes (into []
+                                 (map (d/getf objects))
+                                 (reverse (cph/sort-z-index objects shapes)))
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)

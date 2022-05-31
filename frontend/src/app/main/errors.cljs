@@ -7,6 +7,7 @@
 (ns app.main.errors
   "Generic error handling"
   (:require
+   [cuerdas.core :as str]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -200,9 +201,12 @@
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]
-            (.preventDefault ^js event)
-            (some-> (unchecked-get event "error")
-                    (on-unhandled-error)))]
+            ;; EvalError is a debug error that happens for unknown reason
+            (when-not (str/includes? (.-message event) "EvalError")
+              (.error js/console event)
+              (.preventDefault ^js event)
+              (some-> (unchecked-get event "error")
+                      (on-unhandled-error))))]
     (.addEventListener glob/window "error" on-error)
     (fn []
       (.removeEventListener glob/window "error" on-error))))

@@ -23,7 +23,7 @@
         zoom (obj/get props "zoom" 1)
 
         color (unchecked-get props "color")
-        transform (gsh/transform-matrix shape)
+        transform (gsh/transform-str shape)
         path? (= :path (:type shape))
         path-data
         (mf/use-memo

@@ -7,6 +7,7 @@
 (ns app.common.geom.shapes.transforms
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
@@ -143,15 +144,28 @@
   ([shape params]
    (transform-matrix shape params (or (gco/center-shape shape) (gpt/point 0 0))))
 
-  ([{:keys [flip-x flip-y] :as shape} {:keys [no-flip]} shape-center]
+  ([{:keys [flip-x flip-y transform] :as shape} {:keys [no-flip]} shape-center]
    (-> (gmt/matrix)
        (gmt/translate shape-center)
 
-       (gmt/multiply (:transform shape (gmt/matrix)))
+       (cond-> (some? transform)
+         (gmt/multiply transform))
+
        (cond->
            (and (not no-flip) flip-x) (gmt/scale (gpt/point -1 1))
            (and (not no-flip) flip-y) (gmt/scale (gpt/point 1 -1)))
        (gmt/translate (gpt/negate shape-center)))))
+
+(defn transform-str
+  ([shape]
+   (transform-str shape nil))
+
+  ([{:keys [transform flip-x flip-y] :as shape} {:keys [no-flip]}]
+   (when (and (some? shape)
+              (or (some? transform)
+                  (and (not no-flip) flip-x)
+                  (and (not no-flip) flip-y)))
+     (dm/str (transform-matrix shape)))))
 
 (defn inverse-transform-matrix
   ([shape]

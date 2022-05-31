@@ -94,8 +94,10 @@
 (mf/defc frame-title
   {::mf/wrap [mf/memo]}
   [{:keys [frame modifiers selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
-  (let [{:keys [width x y]} (gsh/transform-shape frame)
+  (let [{:keys [width x y]} frame
         label-pos (gpt/point x (- y (/ 10 zoom)))
+
+        frame-transform (gsh/transform-str frame)
 
         on-mouse-down
         (mf/use-callback
@@ -137,11 +139,10 @@
         text-pos-x (if (:use-for-thumbnail? frame) 15 0)]
 
     (when (not (:hidden frame))
-      [:*
+      [:g {:id (dm/str "frame-title-" (:id frame))
+           :transform frame-transform}
        (when (:use-for-thumbnail? frame)
-         [:g {:transform (str (when (and selected? modifiers)
-                                (str (:displacement modifiers) " "))
-                              (text-transform label-pos zoom))}
+         [:g {:transform (dm/str (text-transform label-pos zoom))}
           [:svg {:x 0
                  :y -9
                  :width 12
@@ -155,9 +156,7 @@
                :width width
                :height 20
                :class "workspace-frame-label"
-               :transform (str (when (and selected? modifiers)
-                                 (str (:displacement modifiers) " "))
-                               (text-transform label-pos zoom))
+               :transform (dm/str (text-transform label-pos zoom))
                :style {:fill (when selected? "var(--color-primary-dark)")}
                :visibility (if show-artboard-names? "visible" "hidden")
                :on-mouse-down on-mouse-down

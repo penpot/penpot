@@ -60,7 +60,7 @@
                   (obj/set! "preserveAspectRatio" "none"))]
 
     [:& (mf/provider svg-ids-ctx) {:value ids-mapping}
-     [:g.svg-raw {:transform (dm/str (gsh/transform-matrix shape))}
+     [:g.svg-raw {:transform (gsh/transform-str shape)}
       [:> "svg" attrs children]]]))
 
 (mf/defc svg-element
