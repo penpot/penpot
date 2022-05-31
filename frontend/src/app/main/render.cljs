@@ -433,6 +433,7 @@
 (mf/defc component-symbol
   [{:keys [id data] :as props}]
   (let [name    (:name data)
+        path    (:path data)
         objects (-> (:objects data)
                     (adapt-objects-for-shape id))
         object  (get objects id)
@@ -448,7 +449,7 @@
          (mf/deps objects)
          (fn [] (group-wrapper-factory objects)))]
 
-    [:> "symbol" #js {:id (str id) :viewBox vbox}
+    [:> "symbol" #js {:id (str id) :viewBox vbox "penpot:path" path}
      [:title name]
      [:> shape-container {:shape object}
       [:& group-wrapper {:shape object :view-box vbox}]]]))
