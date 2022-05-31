@@ -52,7 +52,6 @@
              left-click?   (and (not panning) (= 1 (.-which event)))
              middle-click? (and (not panning) (= 2 (.-which event)))
 
-             frame? (= :frame type)
              selected? (contains? selected id)]
 
          (cond
@@ -96,7 +95,7 @@
                  drawing-tool
                  (st/emit! (dd/start-drawing drawing-tool))
 
-                 (or (not id) (and frame? (not selected?)) mod?)
+                 (or (not id) mod?)
                  (st/emit! (dw/handle-area-selection shift? mod?))
 
                  (not drawing-tool)
@@ -157,12 +156,10 @@
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
              mod? (kbd/mod? event)
-             hovering? (some? @hover)
-             frame? (= :frame (:type @hover))]
+             hovering? (some? @hover)]
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt? meta?))
 
          (when (and hovering?
-                    (or (not frame?) mod?)
                     (not @space?)
                     (not edition)
                     (not drawing-path?)

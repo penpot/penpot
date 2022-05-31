@@ -306,8 +306,11 @@
    (fn [{:keys [modifiers objects]}]
      (let [keys (->> modifiers
                      (keys)
-                     (filter #(or (= frame-id %)
-                                  (= frame-id (get-in objects [% :frame-id])))))]
+                     (filter (fn [id]
+                               (let [shape (get objects id)]
+                                 (or (= frame-id id)
+                                     (and (= frame-id (:frame-id shape))
+                                          (not (= :frame (:type shape)))))))))]
        (select-keys modifiers keys)))
    workspace-modifiers-with-objects
    =))

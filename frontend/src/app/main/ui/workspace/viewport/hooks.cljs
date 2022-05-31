@@ -10,6 +10,7 @@
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
+   [app.common.data :as d]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
@@ -112,6 +113,9 @@
         hover-disabled-ref (mf/use-ref hover-disabled?)
         focus-ref (mf/use-ref focus)
 
+        last-point-ref (mf/use-var nil)
+        mod-str (mf/use-memo #(rx/subject))
+
         query-point
         (mf/use-callback
          (mf/deps page-id)
@@ -133,15 +137,23 @@
         (mf/use-memo
           (fn []
             (rx/merge
+             ;; This stream works to "refresh" the outlines when the control is pressed
+             ;; but the mouse has not been moved from its position.
+             (->> mod-str
+                  (rx/observe-on :async)
+                  (rx/map #(deref last-point-ref)))
+
              (->> move-stream
                   ;; When transforming shapes we stop querying the worker
                   (rx/filter #(not (some? (mf/ref-val transform-ref))))
-                  (rx/merge-map query-point))
+                  (rx/merge-map query-point)
+                  (rx/tap #(reset! last-point-ref %)))
 
              (->> move-stream
                   ;; When transforming shapes we stop querying the worker
                   (rx/filter #(some? (mf/ref-val transform-ref)))
-                  (rx/map (constantly nil))))))]
+                  (rx/map (constantly nil))
+                  (rx/tap #(reset! last-point-ref %))))))]
 
     ;; Refresh the refs on a value change
     (mf/use-effect
@@ -154,7 +166,9 @@
 
     (mf/use-effect
      (mf/deps @mod?)
-     #(mf/set-ref-val! mod-ref @mod?))
+     (fn []
+       (rx/push! mod-str :update)
+       (mf/set-ref-val! mod-ref @mod?)))
 
     (mf/use-effect
      (mf/deps selected)
@@ -172,10 +186,11 @@
      over-shapes-stream
      (mf/deps page-id objects)
      (fn [ids]
-       #_(prn "??hover-ids" (->> ids (map #(get-in objects [% :name]))))
-       (let [is-group?
-             (fn [id]
-               (contains? #{:group :bool} (get-in objects [id :type])))
+       (let [ids (into
+                  (d/ordered-set)
+                  (cph/sort-z-index objects ids))
+
+             grouped? (fn [id] (contains? #{:group :bool} (get-in objects [id :type])))
 
              selected (mf/ref-val selected-ref)
              focus (mf/ref-val focus-ref)
@@ -188,12 +203,11 @@
                           (into (filter #(group-empty-space? % objects ids)) ids)
 
                           mod?
-                          (into (filter is-group?) ids))
+                          (into (filter grouped?) ids))
 
              hover-shape (->> ids
-                              (filter (comp not remove-id?))
-                              (filter #(or (empty? focus)
-                                           (cp/is-in-focus? objects focus %)))
+                              (remove remove-id?)
+                              (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
                               (first)
                               (get objects))]
          (reset! hover hover-shape)

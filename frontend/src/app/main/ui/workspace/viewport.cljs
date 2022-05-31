@@ -155,7 +155,12 @@
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
         show-grids?              (contains? layout :display-grid)
-        show-outlines?           (and (nil? transform) (not edition) (not drawing-obj) (not (#{:comments :path :curve} drawing-tool)))
+
+        show-outlines?           (and (nil? transform)
+                                      (not edition)
+                                      (not drawing-obj)
+                                      (not (#{:comments :path :curve} drawing-tool)))
+
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
@@ -279,12 +284,7 @@
          [:& outline/shape-outlines
           {:objects base-objects
            :selected selected
-           :hover (cond
-                    (and @hover (or @mod? (not= :frame (:type @hover))))
-                    #{(:id @hover)}
-
-                    @frame-hover
-                    #{@frame-hover})
+           :hover #{(:id @hover) @frame-hover}
            :edition edition
            :zoom zoom}])
 

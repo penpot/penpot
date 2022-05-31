@@ -1224,8 +1224,8 @@
                   ;;                            (+ (get z-index %)
                   ;;                               (get z-index (get-in objects [% :frame-id]))))))
 
-                  selected (-> (cph/sort-z-index objects selected)
-                               (into (d/ordered-set)))]
+                  selected (->> (cph/sort-z-index objects selected)
+                                (into (d/ordered-set)))]
 
               (assoc data :selected selected)))
 
