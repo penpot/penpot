@@ -150,7 +150,11 @@
              :workspace-undo {}
              :workspace-project project
              :workspace-file (assoc file :initialized true)
-             :workspace-data (:data file)
+             :workspace-data (-> (:data file)
+                                 ;; DEBUG: Uncomment this to try out migrations in local without changing
+                                 ;; the version number
+                                 #_(assoc :version 17)
+                                 #_(app.common.pages.migrations/migrate-data 19))
              :workspace-libraries (d/index-by :id libraries)))
 
     ptk/WatchEvent

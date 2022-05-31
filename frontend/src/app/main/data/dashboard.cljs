@@ -79,7 +79,8 @@
               (dissoc :dashboard-shared-files)
               (dissoc :dashboard-recent-files)
               (dissoc :dashboard-team-members)
-              (dissoc :dashboard-team-stats)))))
+              (dissoc :dashboard-team-stats)
+              (update :workspace-global dissoc :default-font)))))
 
     ptk/WatchEvent
     (watch [_ state stream]

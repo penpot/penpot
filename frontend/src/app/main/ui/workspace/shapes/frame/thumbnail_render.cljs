@@ -53,7 +53,7 @@
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
-  [page-id {:keys [id x y width height] :as shape} node-ref rendered? disable?]
+  [page-id {:keys [id x y width height] :as shape} node-ref rendered? disable? force-render]
 
   (let [frame-canvas-ref (mf/use-ref nil)
         frame-image-ref (mf/use-ref nil)
@@ -85,12 +85,13 @@
                    img-node    (mf/ref-val frame-image-ref)]
                (when (draw-thumbnail-canvas! canvas-node img-node)
                  (reset! image-url nil)
-                 (reset! render-frame? false))
 
-               ;; If we don't have the thumbnail data saved (normaly the first load) we update the data
-               ;; when available
-               (when (not @thumbnail-data-ref)
-                 (st/emit! (dwt/update-thumbnail page-id id) ))))))
+                 ;; If we don't have the thumbnail data saved (normaly the first load) we update the data
+                 ;; when available
+                 (when (not @thumbnail-data-ref)
+                   (st/emit! (dwt/update-thumbnail page-id id) ))
+
+                 (reset! render-frame? false))))))
 
         generate-thumbnail
         (mf/use-callback
@@ -139,6 +140,18 @@
              (let [observer (js/MutationObserver. (partial rx/push! updates-str))]
                (.observe observer node #js {:childList true :attributes true :attributeOldValue true :characterData true :subtree true})
                (reset! observer-ref observer)))))]
+
+    (mf/use-effect
+     (mf/deps @render-frame? thumbnail-data)
+     (fn []
+       (when (and (some? thumbnail-data) @render-frame?)
+         (reset! render-frame? false))))
+
+    (mf/use-effect
+     (mf/deps force-render)
+     (fn []
+       (when force-render
+         (rx/push! updates-str :update))))
 
     (mf/use-effect
      (fn []
@@ -190,7 +203,9 @@
           :width fixed-width
           :height fixed-height
           ;; DEBUG
-          :style {:filter (when (debug? :thumbnails) "invert(1)")}}]]
+          :style {:filter (when (debug? :thumbnails) "invert(1)")
+                  :width "100%"
+                  :height "100%"}}]]
 
        (when (some? @image-url)
          [:image {:ref frame-image-ref

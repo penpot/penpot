@@ -28,6 +28,7 @@ RUN set -ex; \
         libasound2 \
         libatk1.0-0 \
         libatk-bridge2.0-0 \
+        libatomic1 \
         libcairo2 \
         libcups2 \
         libdbus-1-3 \

@@ -10,6 +10,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
+   [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.pages :as cp]
@@ -406,6 +407,22 @@
   (letfn [(update-object [object]
             (cond-> object
               (cph/text-shape? object)
+              (dissoc :position-data)))
+
+          (update-container [container]
+            (update container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (update :components d/update-vals update-container))))
+
+(defmethod migrate 19
+  [data]
+  (letfn [(update-object [object]
+            (cond-> object
+              (and (cph/text-shape? object)
+                   (d/not-empty? (:position-data object))
+                   (not (gsht/overlaps-position-data? object (:position-data object))))
               (dissoc :position-data)))
 
           (update-container [container]

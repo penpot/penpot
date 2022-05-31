@@ -18,6 +18,14 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+## 1.13.2-beta
+
+### :bug: Bugs fixed
+
+- Improved performance when out of focus mode
+- Improved performance for thumbnail generation
+- Fix problem with out of sync thumbnails
+
 ## 1.13.1-beta
 
 ### :bug: Bugs fixed
