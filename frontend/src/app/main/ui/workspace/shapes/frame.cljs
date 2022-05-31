@@ -6,6 +6,8 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
+   [app.main.store :as st]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
@@ -45,8 +47,7 @@
   [new-props old-props]
   (and
        (= (unchecked-get new-props "thumbnail?") (unchecked-get old-props "thumbnail?"))
-       (= (unchecked-get new-props "shape") (unchecked-get old-props "shape"))
-       (= (unchecked-get new-props "objects") (unchecked-get old-props "objects"))))
+       (= (unchecked-get new-props "shape") (unchecked-get old-props "shape"))))
 
 (defn frame-wrapper-factory
   [shape-wrapper]
@@ -59,7 +60,7 @@
 
       (let [shape              (unchecked-get props "shape")
             thumbnail?         (unchecked-get props "thumbnail?")
-            objects            (unchecked-get props "objects")
+            objects            (wsh/lookup-page-objects @st/state)
 
             render-id          (mf/use-memo #(str (uuid/next)))
             fonts              (mf/use-memo (mf/deps shape objects) #(ff/shape->fonts shape objects))

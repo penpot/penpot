@@ -146,13 +146,45 @@
   function is executed in the render hot path."
   [objects]
   (let [lookup (d/getf objects)
+        xform  (comp (remove #(= uuid/zero %))
+                     (keep lookup)
+                     (filter frame-shape?)
+                     (map :id))]
+    (->> (keys objects)
+         (into [] xform))))
+
+(defn get-frames
+  "Retrieves all frame objects as vector. It is not implemented in
+  function of `get-immediate-children` for performance reasons. This
+  function is executed in the render hot path."
+  [objects]
+  (let [lookup (d/getf objects)
+        xform  (comp (remove #(= uuid/zero %))
+                     (keep lookup)
+                     (filter frame-shape?))]
+    (->> (keys objects)
+         (into [] xform))))
+
+(defn get-nested-frames
+  [objects frame-id]
+  (into #{}
+        (comp (filter frame-shape?)
+              (map :id))
+        (get-children objects frame-id)))
+
+(defn get-root-frames-ids
+  "Retrieves all frame objects as vector. It is not implemented in
+  function of `get-immediate-children` for performance reasons. This
+  function is executed in the render hot path."
+  [objects]
+  (let [lookup (d/getf objects)
         xform  (comp (keep lookup)
                      (filter frame-shape?)
                      (map :id))]
     (->> (:shapes (lookup uuid/zero))
          (into [] xform))))
 
-(defn get-frames
+(defn get-root-frames
   "Retrieves all frame objects as vector. It is not implemented in
   function of `get-immediate-children` for performance reasons. This
   function is executed in the render hot path."
@@ -163,15 +195,62 @@
     (->> (:shapes (lookup uuid/zero))
          (into [] xform))))
 
+(defn- get-base
+  [objects id-a id-b]
+
+  (let [parents-a (reverse (get-parents-seq objects id-a))
+        parents-b (reverse (get-parents-seq objects id-b))
+
+        [base base-child-a base-child-b]
+        (loop [parents-a (rest parents-a)
+               parents-b (rest parents-b)
+               base uuid/zero]
+          (if (not= (first parents-a) (first parents-b))
+            [base (first parents-a) (first parents-b)]
+            (recur (rest parents-a) (rest parents-b) (first parents-a))))
+
+        index-base-a (when base-child-a (get-position-on-parent objects base-child-a))
+        index-base-b (when base-child-b (get-position-on-parent objects base-child-b))]
+
+    [base index-base-a index-base-b]))
+
+(defn is-shape-over-shape?
+  [objects base-shape-id over-shape-id]
+
+  (let [[base parent-a parent-b] (get-base objects base-shape-id over-shape-id)]
+    (cond
+      (= base base-shape-id)
+      ;; over-shape is a child of base-shape. Will be over if base is a root-frame
+      (= uuid/zero (get-in objects [base-shape-id :parent-id]))
+
+      (= base over-shape-id)
+      (not= uuid/zero (get-in objects [over-shape-id :parent-id]))
+
+      :else
+      (< parent-a parent-b))))
+
+(defn sort-z-index
+  [objects ids]
+  (letfn [(comp [id-a id-b]
+            (cond
+              (= id-a id-b) 0
+              (is-shape-over-shape? objects id-a id-b) 1
+              :else -1))]
+    (sort comp ids)))
+
 (defn frame-id-by-position
   [objects position]
-  (let [frames (get-frames objects)]
-    (or
-     (->> frames
-          (reverse)
-          (d/seek #(and position (gsh/has-point? % position)))
-          :id)
-     uuid/zero)))
+  (let [frames (->> (get-frames objects)
+                    (filter #(and position (gsh/has-point? % position))))
+
+        top-frame
+        (reduce (fn [current-top frame]
+                  (if (is-shape-over-shape? objects (:id current-top) (:id frame))
+                    frame
+                    current-top))
+                (first frames)
+                (rest frames))]
+    (or (:id top-frame) uuid/zero)))
 
 (declare indexed-shapes)
 

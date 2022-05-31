@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.widgets
   (:require
+   [app.common.uuid :as uuid]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -182,15 +183,16 @@
 
     [:g.frame-titles
      (for [frame frames]
-       [:& frame-title {:key (dm/str "frame-title-" (:id frame))
-                        :frame frame
-                        :selected? (contains? selected (:id frame))
-                        :zoom zoom
-                        :show-artboard-names? show-artboard-names?
-                        :modifiers modifiers
-                        :on-frame-enter on-frame-enter
-                        :on-frame-leave on-frame-leave
-                        :on-frame-select on-frame-select}])]))
+       (when (= (:frame-id frame) uuid/zero)
+         [:& frame-title {:key (dm/str "frame-title-" (:id frame))
+                          :frame frame
+                          :selected? (contains? selected (:id frame))
+                          :zoom zoom
+                          :show-artboard-names? show-artboard-names?
+                          :modifiers modifiers
+                          :on-frame-enter on-frame-enter
+                          :on-frame-leave on-frame-leave
+                          :on-frame-select on-frame-select}]))]))
 
 (mf/defc frame-flow
   [{:keys [flow frame modifiers selected? zoom on-frame-enter on-frame-leave on-frame-select]}]

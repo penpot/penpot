@@ -86,12 +86,17 @@
 
         index              (reduce index-shape initial-quadtree shapes)
 
-        z-index            (cp/calculate-z-index objects)]
+        ;;z-index            (cp/calculate-z-index objects)
+        ]
 
-    {:index index :z-index z-index :bounds bounds}))
+    {:index index
+     ;;:z-index z-index
+     :bounds bounds}))
 
 (defn- update-index
-  [{index :index z-index :z-index :as data} old-objects new-objects]
+  [{index :index
+    ;; z-index :z-index
+    :as data} old-objects new-objects]
   (let [changes? (fn [id]
                    (not= (get old-objects id)
                          (get new-objects id)))
@@ -112,12 +117,16 @@
         index-shape (make-index-shape new-objects parents-index clip-parents-index)
         index (reduce index-shape new-index shapes)
 
-        z-index (cp/update-z-index z-index changed-ids old-objects new-objects)]
+        ;;z-index (cp/update-z-index z-index changed-ids old-objects new-objects)
+        ]
 
-    (assoc data :index index :z-index z-index)))
+    (assoc data :index index ;;:z-index z-index
+           )))
 
 (defn- query-index
-  [{index :index z-index :z-index} rect frame-id full-frame? include-frames? ignore-groups? clip-children? reverse?]
+  [{index :index
+    ;;z-index :z-index
+    } rect frame-id full-frame? include-frames? ignore-groups? clip-children? reverse?]
   (let [result (-> (qdt/search index (clj->js rect))
                    (es6-iterator-seq))
 
@@ -145,10 +154,10 @@
         (fn [clip-parents]
           (->> clip-parents (some (comp not overlaps?)) not))
 
-        add-z-index
-        (fn [{:keys [id frame-id] :as shape}]
-          (assoc shape :z (+ (get z-index id)
-                             (get z-index frame-id 0))))
+        ;;add-z-index
+        ;;(fn [{:keys [id frame-id] :as shape}]
+        ;;  (assoc shape :z (+ (get z-index id)
+        ;;                     (get z-index frame-id 0))))
 
         ;; Shapes after filters of overlapping and criteria
         matching-shapes
@@ -160,14 +169,15 @@
                     (filter (if clip-children?
                               (comp overlaps-parent? :clip-parents)
                               (constantly true)))
-                    (map add-z-index))
+                    #_(map add-z-index))
               result)
 
-        keyfn (if reverse? (comp - :z) :z)]
+        ;;keyfn (if reverse? (comp - :z) :z)
+        ]
 
     (into (d/ordered-set)
           (->> matching-shapes
-               (sort-by keyfn)
+               #_(sort-by keyfn)
                (map :id)))))
 
 
@@ -208,7 +218,7 @@
   (when-let [index (get @state page-id)]
     (query-index index rect frame-id full-frame? include-frames? ignore-groups? clip-children? reverse?)))
 
-(defmethod impl/handler :selection/query-z-index
+#_(defmethod impl/handler :selection/query-z-index
   [{:keys [page-id objects ids]}]
   (when-let [{z-index :z-index} (get @state page-id)]
     (->> ids (map #(+ (get z-index %)

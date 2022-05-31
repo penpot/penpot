@@ -11,10 +11,12 @@
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
-(defn calculate-frame-z-index
+#_(defn calculate-frame-z-index
   [z-index frame-id base-idx objects]
 
-  (let [is-frame?    (fn [id] (= :frame (get-in objects [id :type])))
+  (let [is-root-frame?    (fn [id]
+                            (and (= :frame (get-in objects [id :type]))
+                                 (= uuid/zero (get-in objects [id :parent-id]))))
         children     (or (get-in objects [frame-id :shapes]) [])]
 
     (if (empty? children)
@@ -25,8 +27,8 @@
              z-index z-index]
 
         (let [children  (get-in objects [current :shapes])
-              is-frame? (is-frame? current)
-              pending   (if (not is-frame?)
+              is-root-frame? (is-root-frame? current)
+              pending   (if (not is-root-frame?)
                           (d/concat-vec pending children)
                           pending)]
 
@@ -41,12 +43,12 @@
 ;; internal z-index. To calculate the "final" z-index we add the shape z-index with
 ;; the z-index of its frame. This way we can update the z-index per frame without
 ;; the need of recalculate all the frames
-(defn calculate-z-index
+#_(defn calculate-z-index
   "Given a collection of shapes calculates their z-index. Greater index
   means is displayed over other shapes with less index."
   [objects]
 
-  (let [frames  (cph/get-frames objects)
+  (let [frames  (cph/get-root-frames objects)
 
         by-frame (cph/objects-by-frame objects)
         frame-base-idx (d/update-vals by-frame count)
@@ -57,7 +59,7 @@
           (fn [z-index {:keys [id]}]
             (calculate-frame-z-index z-index id (get frame-base-idx id) objects)) z-index))))
 
-(defn update-z-index
+#_(defn update-z-index
   "Updates the z-index given a set of ids to change and the old and new objects
   representations"
   [z-index changed-ids old-objects new-objects]

@@ -316,7 +316,7 @@
                              :color color}
                props (map->obj (merge common-props props))]
            (case type
-             :rotation (when (not= :frame (:type shape)) [:> rotation-handler props])
+             :rotation [:> rotation-handler props]
              :resize-point [:> resize-point-handler props]
              :resize-side [:> resize-side-handler props])))])))
 

@@ -261,25 +261,21 @@
 (defn get-shape-layer-position
   [objects selected attrs]
 
-  (if (= :frame (:type attrs))
-    ;; Frames are always positioned on the root frame
-    [uuid/zero uuid/zero nil]
+  ;; Calculate the frame over which we're drawing
+  (let [position @ms/mouse-position
+        frame-id (:frame-id attrs (cph/frame-id-by-position objects position))
+        shape (when-not (empty? selected)
+                (cph/get-base-shape objects selected))]
 
-    ;; Calculate the frame over which we're drawing
-    (let [position @ms/mouse-position
-          frame-id (:frame-id attrs (cph/frame-id-by-position objects position))
-          shape (when-not (empty? selected)
-                  (cph/get-base-shape objects selected))]
+    ;; When no shapes has been selected or we're over a different frame
+    ;; we add it as the latest shape of that frame
+    (if (or (not shape) (not= (:frame-id shape) frame-id))
+      [frame-id frame-id nil]
 
-      ;; When no shapes has been selected or we're over a different frame
-      ;; we add it as the latest shape of that frame
-      (if (or (not shape) (not= (:frame-id shape) frame-id))
-        [frame-id frame-id nil]
-
-        ;; Otherwise, we add it to next to the selected shape
-        (let [index (cph/get-position-on-parent objects (:id shape))
-              {:keys [frame-id parent-id]} shape]
-          [frame-id parent-id (inc index)])))))
+      ;; Otherwise, we add it to next to the selected shape
+      (let [index (cph/get-position-on-parent objects (:id shape))
+            {:keys [frame-id parent-id]} shape]
+        [frame-id parent-id (inc index)]))))
 
 (defn make-new-shape
   [attrs objects selected]
@@ -325,7 +321,7 @@
                      selected)
 
              changes  (-> (pcb/empty-changes it page-id)
-                          (pcb/add-object shape {:index (when (= :frame (:type shape)) 0)}))]
+                          (pcb/add-object shape #_{:index (when (= :frame (:type shape)) 0)}))]
 
          (rx/concat
           (rx/of (dch/commit-changes changes)

@@ -45,7 +45,7 @@
   [props]
   (let [shape (obj/get props "shape")]
     (when (:thumbnail shape)
-      (let [{:keys [x y width height]} shape
+      (let [{:keys [x y width height show-content]} shape
             transform (gsh/transform-matrix shape)
             props (-> (attrs/extract-style-attrs shape)
                       (obj/merge!
@@ -59,8 +59,9 @@
             render-id (mf/use-ctx muc/render-ctx)]
 
         [:*
-         [:g {:clip-path (frame-clip-url shape render-id)}
-          [:& frame-clip-def {:shape shape :render-id render-id}]
+         [:g {:clip-path (when (not show-content) (frame-clip-url shape render-id))}
+          (when (not show-content)
+            [:& frame-clip-def {:shape shape :render-id render-id}])
           [:& shape-fills {:shape shape}
            (if path?
              [:> :path props]
@@ -88,7 +89,7 @@
     [props]
     (let [childs     (unchecked-get props "childs")
           shape      (unchecked-get props "shape")
-          {:keys [x y width height]} shape
+          {:keys [x y width height show-content]} shape
 
           transform (gsh/transform-matrix shape)
 
@@ -104,7 +105,8 @@
           render-id (mf/use-ctx muc/render-ctx)]
 
       [:*
-       [:g {:clip-path (frame-clip-url shape render-id)}
+       [:g {:clip-path (when (not show-content)
+                         (frame-clip-url shape render-id))}
         [:& shape-fills {:shape shape}
          (if path?
            [:> :path props]

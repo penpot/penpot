@@ -3890,6 +3890,12 @@ msgstr "X"
 msgid "workspace.options.y"
 msgstr "Y"
 
+msgid "workspace.options.clip-content"
+msgstr "Clip content"
+
+msgid"workspace.options.show-in-viewer"
+msgstr "Show in view mode"
+
 msgid "workspace.path.actions.add-node"
 msgstr "Add node (%s)"
 

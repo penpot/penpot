@@ -82,6 +82,8 @@
             :r1 :r2 :r3 :r4
             :selrect
             :points
+            :show-content
+            :hide-in-viewer
 
             :opacity
             :blend-mode

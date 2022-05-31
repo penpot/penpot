@@ -172,6 +172,7 @@
      over-shapes-stream
      (mf/deps page-id objects)
      (fn [ids]
+       #_(prn "??hover-ids" (->> ids (map #(get-in objects [% :name]))))
        (let [is-group?
              (fn [id]
                (contains? #{:group :bool} (get-in objects [id :type])))
@@ -221,7 +222,7 @@
   [objects hover-ids selected active-frames zoom transform vbox]
 
   (let [frame?                 #(= :frame (get-in objects [% :type]))
-        all-frames             (mf/use-memo (mf/deps objects) #(cph/get-frames-ids objects))
+        all-frames             (mf/use-memo (mf/deps objects) #(cph/get-root-frames-ids objects))
         selected-frames        (mf/use-memo (mf/deps selected) #(->> all-frames (filter selected)))
         xf-selected-frame      (comp (remove frame?) (map #(get-in objects [% :frame-id])))
         selected-shapes-frames (mf/use-memo (mf/deps selected) #(into #{} xf-selected-frame selected))
