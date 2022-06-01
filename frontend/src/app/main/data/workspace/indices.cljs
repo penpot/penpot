@@ -6,12 +6,11 @@
 
 (ns app.main.data.workspace.indices
   (:require
-   [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.data.workspace.indices.object-tree :as dwi-object-tree]
-   [app.main.refs :as refs]
    [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.indices.object-tree :as dwi-object-tree]
+   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.refs :as refs]
    [beicon.core :as rx]
-   [app.common.data :as d]
    [potok.core :as ptk]))
 
 (def stop-indexing? (ptk/type? ::stop-indexing))
@@ -19,7 +18,7 @@
 (def objects-changes #{:add-obj :mod-obj :del-obj :mov-objects})
 
 (defn stop-indexing
-  [file-id]
+  []
   (ptk/reify ::stop-indexing
     ptk/UpdateEvent
     (update [_ state]
@@ -41,13 +40,11 @@
   (ptk/reify ::update-indexing
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)]
-        (-> state
-            (update :index-object-tree dwi-object-tree/update-index shape-id change-type old-objects new-objects))))))
+      (-> state
+          (update :index-object-tree dwi-object-tree/update-index shape-id change-type old-objects new-objects)))))
 
 (defn start-indexing
-  [file-id]
-
+  []
   (ptk/reify ::start-indexing
     ptk/UpdateEvent
     (update [_ state]
@@ -56,7 +53,7 @@
             (assoc :index-object-tree (dwi-object-tree/init-index objects)))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ stream]
       (let [stopper (->> stream (rx/filter stop-indexing?) (rx/take 1))
             objects-delta (->> (rx/from-atom refs/workspace-page-objects {:emit-current-value? true}) (rx/buffer 2 1))]
         (->> stream

@@ -6,10 +6,10 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.measures
   (:require
-   [app.main.constants :refer [size-presets]]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.spec.radius :as ctr]
+   [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
    [app.main.refs :as refs]
@@ -203,13 +203,6 @@
         on-radius-r2-change #(on-radius-4-change % :r2)
         on-radius-r3-change #(on-radius-4-change % :r3)
         on-radius-r4-change #(on-radius-4-change % :r4)
-
-        on-change-clip-content
-        (mf/use-callback
-         (mf/deps ids)
-         (fn [event]
-           (let [value (-> event dom/get-target dom/checked?)]
-             (dch/update-shapes ids (fn [shape]) (assoc shape :show-content (not value))))))
 
         on-change-clip-content
         (mf/use-callback

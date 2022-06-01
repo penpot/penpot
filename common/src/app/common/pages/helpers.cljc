@@ -18,14 +18,24 @@
 ;; GENERIC SHAPE SELECTORS AND PREDICATES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn root-frame?
+(defn root?
   [{:keys [id type]}]
-  (and (= type :frame)
-       (= id uuid/zero)))
+  (and (= type :frame) (= id uuid/zero)))
+
+(defn root-frame?
+  ([objects id]
+   (root-frame? (get objects id)))
+
+  ([{:keys [frame-id type]}]
+   (and (= type :frame)
+        (= frame-id uuid/zero))))
 
 (defn frame-shape?
-  [{:keys [type]}]
-  (= type :frame))
+  ([objects id]
+   (frame-shape? (get objects id)))
+
+  ([{:keys [type]}]
+   (= type :frame)))
 
 (defn group-shape?
   [{:keys [type]}]
@@ -230,13 +240,29 @@
       (< parent-a parent-b))))
 
 (defn sort-z-index
-  [objects ids]
-  (letfn [(comp [id-a id-b]
-            (cond
-              (= id-a id-b) 0
-              (is-shape-over-shape? objects id-a id-b) 1
-              :else -1))]
-    (sort comp ids)))
+  ([objects ids]
+   (sort-z-index objects ids nil))
+
+  ([objects ids {:keys [bottom-frames?]}]
+   (letfn [(comp [id-a id-b]
+             (let [type-a (dm/get-in objects [id-a :type])
+                   type-b (dm/get-in objects [id-b :type])]
+               (cond
+                 (and bottom-frames? (= :frame type-a) (not= :frame type-b))
+                 1
+
+                 (and bottom-frames? (not= :frame type-a) (= :frame type-b))
+                 -1
+
+                 (= id-a id-b)
+                 0
+
+                 (is-shape-over-shape? objects id-a id-b)
+                 1
+
+                 :else
+                 -1)))]
+     (sort comp ids))))
 
 (defn frame-id-by-position
   [objects position]

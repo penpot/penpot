@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages.helpers :as cph]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as ui-hooks]
@@ -156,6 +157,7 @@
         show-gradient-handlers?  (= (count selected) 1)
         show-grids?              (contains? layout :display-grid)
 
+        show-frame-outline?      (= transform :move)
         show-outlines?           (and (nil? transform)
                                       (not edition)
                                       (not drawing-obj)
@@ -280,6 +282,14 @@
        (when show-text-editor?
          [:& editor/text-editor-svg {:shape editing-shape}])
 
+       (when show-frame-outline?
+         [:& outline/shape-outlines
+          {:objects base-objects
+           :hover #{(->> @hover-ids
+                         (filter #(cph/frame-shape? base-objects %))
+                         (first))}
+           :zoom zoom}])
+
        (when show-outlines?
          [:& outline/shape-outlines
           {:objects base-objects
@@ -314,7 +324,6 @@
         {:objects base-objects
          :selected selected
          :zoom zoom
-         :modifiers modifiers
          :show-artboard-names? show-artboard-names?
          :on-frame-enter on-frame-enter
          :on-frame-leave on-frame-leave

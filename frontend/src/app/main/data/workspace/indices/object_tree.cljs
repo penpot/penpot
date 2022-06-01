@@ -4,25 +4,13 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.data.workspace.indices.object-tree
-  (:require
-   [app.common.pages.helpers :as cph]
-   ))
+(ns app.main.data.workspace.indices.object-tree)
 
 (defn objects-tree
-  [objects]
-
-  
-  
-  )
+  [_objects])
 
 (defn init-index
-  [objects]
-
-  
-
-  )
+  [_objects])
 
 (defn update-index
-  [index shape-id change-type old-objects new-objects]
-  )
+  [_index _shape-id _change-type _old-objects _new-objects])

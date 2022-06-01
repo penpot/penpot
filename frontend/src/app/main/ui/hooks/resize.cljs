@@ -6,10 +6,10 @@
 
 (ns app.main.ui.hooks.resize
   (:require
-   [app.main.ui.hooks :as hooks]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.storage :refer [storage]]
    [rumext.alpha :as mf]))

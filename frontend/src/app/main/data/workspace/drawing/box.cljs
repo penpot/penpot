@@ -75,7 +75,7 @@
                                          :height 0.01})
                         (cond-> (and (cph/frame-shape? shape)
                                      (not= fid uuid/zero))
-                          (assoc :fills [] :show-content true :hide-in-viewer true))
+                          (assoc :fills [] :hide-in-viewer true))
 
                         (assoc :frame-id fid)
                         (assoc :initialized? true)

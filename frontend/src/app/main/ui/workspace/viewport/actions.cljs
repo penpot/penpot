@@ -50,9 +50,7 @@
              mod?   (kbd/mod? event)
 
              left-click?   (and (not panning) (= 1 (.-which event)))
-             middle-click? (and (not panning) (= 2 (.-which event)))
-
-             selected? (contains? selected id)]
+             middle-click? (and (not panning) (= 2 (.-which event)))]
 
          (cond
            middle-click?
@@ -155,7 +153,6 @@
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
-             mod? (kbd/mod? event)
              hovering? (some? @hover)]
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt? meta?))
 

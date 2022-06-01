@@ -6,11 +6,11 @@
 
 (ns app.main.ui.workspace.viewport.widgets
   (:require
-   [app.common.uuid :as uuid]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.refs :as refs]
@@ -93,7 +93,7 @@
 
 (mf/defc frame-title
   {::mf/wrap [mf/memo]}
-  [{:keys [frame modifiers selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
+  [{:keys [frame selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
   (let [{:keys [width x y]} frame
         label-pos (gpt/point x (- y (/ 10 zoom)))
 

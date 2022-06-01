@@ -7,7 +7,6 @@
 (ns app.main.errors
   "Generic error handling"
   (:require
-   [cuerdas.core :as str]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -21,6 +20,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
 (defn on-error

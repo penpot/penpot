@@ -169,7 +169,7 @@
   [objects object-id]
   (let [object   (get objects object-id)
         object   (cond->> object
-                   (cph/root-frame? object)
+                   (cph/root? object)
                    (adapt-root-frame objects))
 
         ;; Replace the previous object with the new one

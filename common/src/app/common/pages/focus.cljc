@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
-   [app.common.pages.indices :as cpi]
    [app.common.uuid :as uuid]))
 
 (defn focus-objects

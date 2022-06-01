@@ -6,11 +6,11 @@
 
 (ns app.main.ui.workspace.viewport.hooks
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
-   [app.common.data :as d]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
@@ -130,8 +130,7 @@
                   :page-id page-id
                   :rect rect
                   :include-frames? true
-                  :clip-children? (not mod?)
-                  :reverse? true}))))) ;; we want the topmost shape to be selected first
+                  :clip-children? (not mod?)})))))
 
         over-shapes-stream
         (mf/use-memo
@@ -145,14 +144,7 @@
 
              (->> move-stream
                   ;; When transforming shapes we stop querying the worker
-                  (rx/filter #(not (some? (mf/ref-val transform-ref))))
                   (rx/merge-map query-point)
-                  (rx/tap #(reset! last-point-ref %)))
-
-             (->> move-stream
-                  ;; When transforming shapes we stop querying the worker
-                  (rx/filter #(some? (mf/ref-val transform-ref)))
-                  (rx/map (constantly nil))
                   (rx/tap #(reset! last-point-ref %))))))]
 
     ;; Refresh the refs on a value change
@@ -186,21 +178,25 @@
      over-shapes-stream
      (mf/deps page-id objects)
      (fn [ids]
-       (let [ids (into
+       (let [selected (mf/ref-val selected-ref)
+             focus (mf/ref-val focus-ref)
+             mod? (mf/ref-val mod-ref)
+
+             ids (into
                   (d/ordered-set)
-                  (cph/sort-z-index objects ids))
+                  (cph/sort-z-index objects ids {:bottom-frames? mod?}))
 
              grouped? (fn [id] (contains? #{:group :bool} (get-in objects [id :type])))
 
-             selected (mf/ref-val selected-ref)
-             focus (mf/ref-val focus-ref)
 
-             mod? (mf/ref-val mod-ref)
 
              remove-xfm (mapcat #(cph/get-parent-ids objects %))
              remove-id? (cond-> (into #{} remove-xfm selected)
                           (not mod?)
-                          (into (filter #(group-empty-space? % objects ids)) ids)
+                          (into
+                           (filter #(or (and (cph/root-frame? objects %) (d/not-empty? (get-in objects [% :shapes])))
+                                        (group-empty-space? % objects ids)))
+                           ids)
 
                           mod?
                           (into (filter grouped?) ids))

@@ -6,14 +6,14 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
-   [app.main.store :as st]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.embed :as embed]

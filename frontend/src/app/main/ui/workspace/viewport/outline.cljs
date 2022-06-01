@@ -8,8 +8,6 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
-   [app.main.refs :as refs]
    [app.util.object :as obj]
    [app.util.path.format :as upf]
    [clojure.set :as set]
@@ -41,7 +39,7 @@
 
         common {:fill "none"
                 :stroke color
-                :strokeWidth (/ 1 zoom)
+                :strokeWidth (/ 2 zoom)
                 :pointerEvents "none"
                 :transform transform}
 
@@ -82,15 +80,12 @@
   [props]
   (let [selected  (or (obj/get props "selected") #{})
         hover     (or (obj/get props "hover") #{})
+
         objects   (obj/get props "objects")
         edition   (obj/get props "edition")
         zoom      (obj/get props "zoom")
 
-        transform (mf/deref refs/current-transform)
-
-        outlines-ids  (->> (set/union selected hover)
-                           (cph/clean-loops objects))
-
+        outlines-ids  (set/union selected hover)
         show-outline? (fn [shape] (and (not (:hidden shape))
                                        (not (:blocked shape))))
 
@@ -100,6 +95,6 @@
                     (filterv show-outline?)
                     (filter some?))]
 
-    [:g.outlines {:display (when (some? transform) "none")}
+    [:g.outlines
      [:& shape-outlines-render {:shapes shapes
                                 :zoom zoom}]]))

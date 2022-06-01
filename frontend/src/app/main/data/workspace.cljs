@@ -6,8 +6,6 @@
 
 (ns app.main.data.workspace
   (:require
-   [app.main.data.workspace.indices :as dwidx]
-   
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -34,6 +32,7 @@
    [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]
+   [app.main.data.workspace.indices :as dwidx]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
@@ -130,7 +129,7 @@
                           (rx/merge
                            (rx/of (dwn/initialize team-id file-id)
                                   (dwp/initialize-file-persistence file-id)
-                                  (dwidx/start-indexing file-id))
+                                  (dwidx/start-indexing))
 
                            (->> stream
                                 (rx/filter #(= ::dwc/index-initialized %))
@@ -197,7 +196,7 @@
     (watch [_ _ _]
       (rx/merge
        (rx/of (dwn/finalize file-id))
-       (rx/of (dwidx/stop-indexing file-id))
+       (rx/of (dwidx/stop-indexing))
        (->> (rx/of ::dwp/finalize)
             (rx/observe-on :async))))))
 
