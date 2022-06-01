@@ -8,6 +8,18 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+## 1.13.3-beta
+
+### :bug: Bugs fixed
+
+- Fix docker dependencies
+- Sets invitations expirations to 7 days
+- Add safety measure for text positions
+- Fix old texts with opacity and no fill
+- Remove default font on team change
+- Fix github auth without name
+- Fix problems with font loading in Firefox 95
+
 ## 1.13.2-beta
 
 ### :bug: Bugs fixed
