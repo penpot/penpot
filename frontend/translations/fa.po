@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-05-31 13:14+0000\n"
+"PO-Revision-Date: 2022-06-03 19:13+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -1184,3 +1184,50 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "وای نه! شما هنوز هیچ فایلی ندارید! اگر می‌خواهید چند الگو را امتحان کنید، به "
 "[کتابخانه‌ها و الگوها] بروید (https://penpot.app/libraries-templates.html)"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "اطلاعات نحوه تنظیم اکسپورت در پنپات."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "انتخاب اکسپورت"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"فایل‌های دارای کتابخانه‌های مشترک در اکسپورت گنجانده می‌شوند و پیوند خود را "
+"حفظ می‌کنند."
+
+msgid "dashboard.export.options.all.title"
+msgstr "اکسپورت کتابخانه‌های مشترک"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"کتابخانه‌های مشترک در صادرات گنجانده نخواهند شد و هیچ دارایی به کتابخانه "
+"اضافه نخواهد شد. "
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"فایل شما با تمام دارایی‌های خارجی که در کتابخانه فایل ادغام شده‌اند اکسپورت "
+"می‌شود."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"می‌توانید تنظیمات اکسپورت را از ویژگی‌های طراحی (در پایین نوار کناری سمت "
+"راست) به عناصر اضافه کنید."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"یک یا چند فایلی که می‌خواهید اکسپورت کنید از کتابخانه‌های مشترک استفاده می‌"
+"کنند. با دارایی‌های آن‌ها چه می‌خواهید بکنید*؟"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "هیچ عنصری با تنظیمات اکسپورت وجود ندارد."
+
+msgid "dashboard.export.options.detach.title"
+msgstr "دارایی‌های کتابخانه مشترک را به عنوان اشیاء اساسی در نظر بگیرید"
+
+msgid "dashboard.export-single"
+msgstr "اکسپورت فایل پنپات"
