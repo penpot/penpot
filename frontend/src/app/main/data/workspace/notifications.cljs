@@ -189,10 +189,14 @@
 (s/def ::file-change-event
   (s/keys :req-un [::type ::profile-id ::file-id ::session-id ::revn ::changes]))
 
+
 (defn handle-file-change
   [{:keys [file-id changes] :as msg}]
   (us/assert ::file-change-event msg)
   (ptk/reify ::handle-file-change
+    IDeref
+    (-deref [_] {:changes changes})
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [position-data-operation?

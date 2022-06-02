@@ -18,6 +18,10 @@
   ([state page-id]
    (get-in state [:workspace-data :pages-index page-id])))
 
+(defn lookup-data-objects
+  [data page-id]
+  (dm/get-in data [:pages-index page-id :objects]))
+
 (defn lookup-page-objects
   ([state]
    (lookup-page-objects state (:current-page-id state)))
