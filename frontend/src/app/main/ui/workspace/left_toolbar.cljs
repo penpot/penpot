@@ -47,16 +47,17 @@
                          :position (gpt/point x y)}]
              (st/emit! (dwm/upload-media-workspace params)))))]
 
-    [:li.tooltip.tooltip-right
-     {:alt (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
-      :on-click on-click}
-     [:*
-      i/image
-      [:& file-uploader {:input-id "image-upload"
-                         :accept cm/str-image-types
-                         :multi true
-                         :ref ref
-                         :on-selected on-files-selected}]]]))
+    [:li
+     [:button.tooltip.tooltip-right
+      {:alt (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
+       :on-click on-click}
+      [:*
+       i/image
+       [:& file-uploader {:input-id "image-upload"
+                          :accept cm/str-image-types
+                          :multi true
+                          :ref ref
+                          :on-selected on-files-selected}]]]]))
 
 (mf/defc left-toolbar
   {::mf/wrap [mf/memo]
@@ -67,61 +68,69 @@
         select-drawtool   #(st/emit! :interrupt (dw/select-for-drawing %))
         edition           (mf/deref refs/selected-edition)]
     [:aside.left-toolbar
-     [:div.left-toolbar-inside
-      [:ul.left-toolbar-options
-       [:li.tooltip.tooltip-right
+     [:ul.left-toolbar-options
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
          :class (when (and (nil? selected-drawtool)
                            (not edition)) "selected")
          :on-click #(st/emit! :interrupt)}
-        i/pointer-inner]
-       [:li.tooltip.tooltip-right
+        i/pointer-inner]]
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
          :class (when (= selected-drawtool :frame) "selected")
          :on-click (partial select-drawtool :frame)
          :data-test "artboard-btn"}
-        i/artboard]
-       [:li.tooltip.tooltip-right
+        i/artboard]]
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
          :class (when (= selected-drawtool :rect) "selected")
          :on-click (partial select-drawtool :rect)
          :data-test "rect-btn"}
-        i/box]
-       [:li.tooltip.tooltip-right
+        i/box]]
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
          :class (when (= selected-drawtool :circle) "selected")
          :on-click (partial select-drawtool :circle)
          :data-test "ellipse-btn"}
-        i/circle]
-       [:li.tooltip.tooltip-right
+        i/circle]]
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
          :class (when (= selected-drawtool :text) "selected")
          :on-click (partial select-drawtool :text)}
-        i/text]
+        i/text]]
 
-       [:& image-upload]
+      [:& image-upload]
 
-       [:li.tooltip.tooltip-right
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
          :class (when (= selected-drawtool :curve) "selected")
          :on-click (partial select-drawtool :curve)
          :data-test "curve-btn"}
-        i/pencil]
-       [:li.tooltip.tooltip-right
+        i/pencil]]
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
          :class (when (= selected-drawtool :path) "selected")
          :on-click (partial select-drawtool :path)
          :data-test "path-btn"}
-        i/pen]
+        i/pen]]
 
-       [:li.tooltip.tooltip-right
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.comments" (sc/get-tooltip :add-comment))
          :class (when (= selected-drawtool :comments) "selected")
          :on-click (partial select-drawtool :comments)}
-        i/chat]]
+        i/chat]]]
 
-      [:ul.left-toolbar-options.panels
-       [:li.tooltip.tooltip-right
+     [:ul.left-toolbar-options.panels
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
          :class (when (contains? layout :textpalette) "selected")
          :on-click (fn []
@@ -130,9 +139,10 @@
                      (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :colorpalette)
                                                  (-> (dw/toggle-layout-flag :textpalette)
                                                      (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
-        "Ag"]
+        "Ag"]]
 
-       [:li.tooltip.tooltip-right
+      [:li
+       [:button.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
          :class (when (contains? layout :colorpalette) "selected")
          :on-click (fn []
@@ -141,8 +151,9 @@
                      (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
                                                  (-> (dw/toggle-layout-flag :colorpalette)
                                                      (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
-        i/palette]
-       [:li.tooltip.tooltip-right.separator
+        i/palette]]
+      [:li
+       [:button.tooltip.tooltip-right.separator
         {:alt (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))
          :class (when (contains? layout :shortcuts) "selected")
          :on-click (fn []
