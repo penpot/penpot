@@ -9,6 +9,7 @@
 - Added selected colors widget in right sidebar [Taiga #2485](https://tree.taiga.io/project/penpot/us/2485)
 - Added fixed elements when scrolling [Taiga #1533](https://tree.taiga.io/project/penpot/us/1533)
 - Multiple team invitations on onboarding [Taiga #3084](https://tree.taiga.io/project/penpot/us/3084)
+- Change text properties position at the sidebar [Taiga #3047](https://tree.taiga.io/project/penpot/us/3047)
 
 ### :bug: Bugs fixed
 - Fix menu file not accessible in certain conditions [Taiga #3385](https://tree.taiga.io/project/penpot/issue/3385)

@@ -72,6 +72,11 @@
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]
+     
+     [:& text-menu
+      {:ids ids
+       :type type
+       :values text-values}]
 
      [:& fill-menu
       {:ids ids
@@ -94,7 +99,4 @@
       {:ids ids
        :values (select-keys shape [:blur])}]
 
-     [:& text-menu
-      {:ids ids
-       :type type
-       :values text-values}]]))
+     ]))
