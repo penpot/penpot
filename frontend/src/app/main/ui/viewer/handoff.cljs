@@ -25,7 +25,7 @@
     (st/emit! (dv/select-shape (:id frame)))))
 
 (mf/defc viewport
-  [{:keys [local file page frame index viewer-pagination]}]
+  [{:keys [local file page frame index viewer-pagination size]}]
   (let [on-mouse-wheel
         (fn [event]
           (when (kbd/mod? event)
@@ -60,7 +60,7 @@
      [:div.handoff-svg-wrapper {:on-click (handle-select-frame frame)}
       [:& viewer-pagination {:index index :num-frames (count (:frames page)) :left-bar true :right-bar true}]
       [:div.handoff-svg-container
-       [:& render-frame-svg {:frame frame :page page :local local}]]]
+       [:& render-frame-svg {:frame frame :page page :local local :size size}]]]
 
      [:& right-sidebar {:frame frame
                         :selected (:selected local)

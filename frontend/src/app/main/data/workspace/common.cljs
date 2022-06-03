@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.proportions :as gpr]
-   [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
@@ -58,13 +57,6 @@
              (rx/map (constantly ::index-initialized)))))))
 
 ;; --- Common Helpers & Events
-
-;; TODO: looks duplicate
-
-(defn get-frame-at-point
-  [objects point]
-  (let [frames (cph/get-frames objects)]
-    (d/seek #(gsh/has-point? % point) frames)))
 
 (defn- extract-numeric-suffix
   [basename]

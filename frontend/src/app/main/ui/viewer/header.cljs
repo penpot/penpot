@@ -157,6 +157,7 @@
        [:ul.dropdown
         (for [id (get-in file [:data :pages])]
           [:li {:id (str id)
+                :key (str id)
                 :on-click (partial navigate-to id)}
            (get-in file [:data :pages-index id :name])])]]]
 

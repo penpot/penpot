@@ -762,8 +762,8 @@
                  (rx/map (partial set-modifiers ids))
                  (rx/take-until stopper))
 
-            (rx/of (apply-modifiers ids)
-                   (calculate-frame-for-move ids)
+            (rx/of (calculate-frame-for-move ids)
+                   (apply-modifiers ids)
                    (finish-transform)))))))))
 
 (s/def ::direction #{:up :down :right :left})
@@ -854,9 +854,8 @@
 
             moving-shapes (->> ids
                                (cph/clean-loops objects)
-                               (map #(get objects %))
-                               (remove #(or (nil? %)
-                                            (= (:frame-id %) frame-id))))
+                               (keep #(get objects %))
+                               (remove #(= (:frame-id %) frame-id)))
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)

@@ -13,7 +13,6 @@
    [app.main.store :as st]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
-   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
@@ -154,6 +153,10 @@
       (let [shape (unchecked-get props "shape")
             frame (unchecked-get props "frame")
 
+            frame-container
+            (mf/use-memo (mf/deps objects)
+                         #(frame-container-factory objects))
+
             group-container
             (mf/use-memo (mf/deps objects)
                          #(group-container-factory objects))
@@ -171,6 +174,7 @@
                 opts #js {:shape shape
                           :frame frame}]
             (case (:type shape)
+              :frame   [:> frame-container opts]
               :text    [:> text-wrapper opts]
               :rect    [:> rect-wrapper opts]
               :path    [:> path-wrapper opts]
@@ -181,46 +185,31 @@
               :svg-raw [:> svg-raw-container opts])))))))
 
 (mf/defc render-frame-svg
-  [{:keys [page frame local]}]
+  [{:keys [page frame local size]}]
   (let [objects (mf/use-memo
                  (mf/deps page frame)
-                 (prepare-objects page frame))
-
+                 (prepare-objects page frame size))
 
         ;; Retrieve frame again with correct modifier
         frame   (get objects (:id frame))
-
-        zoom    (:zoom local 1)
-
-        {:keys [_ _ width height]} (filters/get-filters-bounds frame)
-        padding (filters/calculate-padding frame)
-        x (- (:horizontal padding))
-        y (- (:vertical padding))
-        width (+ width (* 2 (:horizontal padding)))
-        height (+ height (* 2 (:vertical padding)))
-
-        vbox    (str x " " y " " width " " height)
-
-        width   (* width zoom)
-        height  (* height zoom)
-
         render  (mf/use-memo
                  (mf/deps objects)
                  #(frame-container-factory objects))]
 
     [:svg
      {:id "svg-frame"
-      :view-box vbox
-      :width width
-      :height height
+      :view-box (:vbox size)
+      :width (:width size)
+      :height (:height size)
       :version "1.1"
       :xmlnsXlink "http://www.w3.org/1999/xlink"
       :xmlns "http://www.w3.org/2000/svg"
       :fill "none"}
 
-     [:& render {:shape frame :view-box vbox}]
+     [:& render {:shape frame :view-box (:vbox size)}]
      [:& selection-feedback
       {:frame frame
        :objects objects
-       :local local}]]))
+       :local local
+       :size size}]]))
 

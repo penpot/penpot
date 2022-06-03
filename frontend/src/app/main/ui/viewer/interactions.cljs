@@ -25,11 +25,11 @@
    [rumext.alpha :as mf]))
 
 (defn prepare-objects
-  [page frame]
+  [page frame size]
   (fn []
     (let [objects   (:objects page)
           frame-id  (:id frame)
-          modifier  (-> (gpt/point (:x frame) (:y frame))
+          modifier  (-> (gpt/point (:x size) (:y size))
                         (gpt/negate)
                         (gmt/translate-matrix))
 
@@ -43,8 +43,8 @@
   {::mf/wrap [mf/memo]}
   [{:keys [page interactions-mode frame base-frame frame-offset size]}]
   (let [objects       (mf/use-memo
-                       (mf/deps page frame)
-                       (prepare-objects page frame))
+                       (mf/deps page frame size)
+                       (prepare-objects page frame size))
 
         wrapper       (mf/use-memo
                        (mf/deps objects)

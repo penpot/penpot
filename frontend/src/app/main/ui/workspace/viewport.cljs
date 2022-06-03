@@ -287,6 +287,7 @@
           {:objects base-objects
            :hover #{(->> @hover-ids
                          (filter #(cph/frame-shape? base-objects %))
+                         (remove selected)
                          (first))}
            :zoom zoom}])
 
@@ -400,14 +401,6 @@
 
        [:& widgets/viewport-actions]
 
-       (when show-prototypes?
-         [:& interactions/interactions
-          {:selected selected
-           :zoom zoom
-           :objects objects-modified
-           :current-transform transform
-           :hover-disabled? hover-disabled?}])
-
        [:& scroll-bars/viewport-scrollbars
         {:objects base-objects
          :zoom zoom
@@ -444,6 +437,12 @@
             :shapes selected-shapes
             :zoom zoom
             :edition edition
-            :disable-handlers (or drawing-tool edition @space?)}]])
+            :disable-handlers (or drawing-tool edition @space?)}]
 
-       ]]]))
+          (when show-prototypes?
+            [:& interactions/interactions
+             {:selected selected
+              :zoom zoom
+              :objects objects-modified
+              :current-transform transform
+              :hover-disabled? hover-disabled?}])])]]]))

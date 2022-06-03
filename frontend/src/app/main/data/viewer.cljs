@@ -11,7 +11,6 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.interactions :as cti]
-   [app.common.uuid :as uuid]
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
    [app.main.repo :as rp]
@@ -88,10 +87,10 @@
 
 (defn select-frames
   [{:keys [objects] :as page}]
-  (let [root (get objects uuid/zero)]
-    (into [] (comp (map #(get objects %))
-                   (filter #(= :frame (:type %))))
-          (reverse (:shapes root)))))
+  (into []
+        (comp (map (d/getf objects))
+              (remove :hide-in-viewer))
+        (cph/sort-z-index objects (cph/get-frames-ids objects))))
 
 ;; --- Data Fetching
 

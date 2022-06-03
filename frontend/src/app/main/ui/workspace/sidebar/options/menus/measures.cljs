@@ -38,7 +38,7 @@
 (def ^:private type->options
   {:bool    #{:size :position :rotation}
    :circle  #{:size :position :rotation}
-   :frame   #{:presets :size :position :radius :clip-content :show-in-viewer}
+   :frame   #{:presets :size :position :rotation :radius :clip-content :show-in-viewer}
    :group   #{:size :position :rotation}
    :image   #{:size :position :rotation :radius}
    :path    #{:size :position :rotation}

@@ -278,6 +278,11 @@
                 (rest frames))]
     (or (:id top-frame) uuid/zero)))
 
+(defn frame-by-position
+  [objects position]
+  (let [frame-id (frame-id-by-position objects position)]
+    (get objects frame-id)))
+
 (declare indexed-shapes)
 
 (defn get-base-shape

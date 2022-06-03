@@ -376,6 +376,10 @@
             (mf/use-memo (mf/deps objects)
                          #(group-container-factory objects))
 
+            frame-container
+            (mf/use-memo (mf/deps objects)
+                         #(frame-container-factory objects))
+
             bool-container
             (mf/use-memo (mf/deps objects)
                          #(bool-container-factory objects))
@@ -391,7 +395,7 @@
                 opts #js {:shape shape
                           :objects objects}]
             (case (:type shape)
-              :frame   [:g.empty]
+              :frame   [:> frame-container opts]
               :text    [:> text-wrapper opts]
               :rect    [:> rect-wrapper opts]
               :path    [:> path-wrapper opts]

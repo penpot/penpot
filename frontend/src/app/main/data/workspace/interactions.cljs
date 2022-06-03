@@ -182,10 +182,17 @@
             selected-shape (get objects selected-shape-id)
             selected-shape-frame-id (:frame-id selected-shape)
             start-frame (get objects selected-shape-frame-id)
-            end-frame   (dwc/get-frame-at-point objects position)]
-        (cond-> state
-          (not= position initial-pos) (assoc-in [:workspace-local :draw-interaction-to] position)
-          (not= start-frame end-frame) (assoc-in [:workspace-local :draw-interaction-to-frame] end-frame))))))
+            end-frame   (cph/frame-by-position objects position)
+
+            position (when (not= position initial-pos) position)
+            end-frame (when (and (not= (:id end-frame) uuid/zero )
+                                 (not= (:id end-frame) (:id start-frame))
+                                 (not= (:id end-frame) selected-shape-id)
+                                 (not (:hide-in-viewer end-frame)))
+                        end-frame)]
+        (-> state
+            (assoc-in [:workspace-local :draw-interaction-to] position)
+            (assoc-in [:workspace-local :draw-interaction-to-frame] end-frame))))))
 
 (defn finish-edit-interaction
   [index initial-pos]
@@ -199,32 +206,49 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [position @ms/mouse-position
-            page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            frame    (dwc/get-frame-at-point objects position)
+      (let [position     @ms/mouse-position
+            page-id      (:current-page-id state)
+            objects      (wsh/lookup-page-objects state page-id)
+            target-frame (cph/frame-by-position objects position)
 
-            shape-id (-> state wsh/lookup-selected first)
-            shape    (get objects shape-id)]
+            shape-id     (-> state wsh/lookup-selected first)
+            shape        (get objects shape-id)
 
-        (when (and shape (not (= position initial-pos)))
-          (if (nil? frame)
-            (when index
-              (rx/of (remove-interaction shape index)))
-            (let [frame (if (or (= (:id frame) (:id shape))
-                                (= (:id frame) (:frame-id shape)))
-                          nil ;; Drop onto self frame -> set destination to none
-                          frame)]
-              (if (nil? index)
-                (rx/of (add-new-interaction shape (:id frame)))
-                (rx/of (update-interaction shape index
-                                           (fn [interaction]
-                                             (cond-> interaction
-                                               (not (csi/has-destination interaction))
-                                               (csi/set-action-type :navigate)
+            invalid-target? (or (nil? target-frame)
+                                (= (:id target-frame) uuid/zero)
+                                (= (:id target-frame) (:id shape))
+                                (= (:id target-frame) (:frame-id shape))
+                                (:hide-in-viewer target-frame))
 
-                                               :always
-                                               (csi/set-destination (:id frame))))))))))))))
+            change-interaction
+            (fn [interaction]
+              (cond-> interaction
+                (not (csi/has-destination interaction))
+                (csi/set-action-type :navigate)
+
+                :always
+                (csi/set-destination (:id target-frame))))]
+
+        (cond
+          (or (nil? shape)
+
+              ;; Didn't changed the position for the interaction
+              (= position initial-pos)
+
+              ;; New interaction but invalid target
+              (and (nil? index) invalid-target?))
+          nil
+
+          ;; Dropped interaction in an invalid target. We remove it
+          (and (some? index) invalid-target?)
+          (rx/of (remove-interaction shape index))
+
+          (nil? index)
+          (rx/of (add-new-interaction shape (:id target-frame)))
+
+          :else
+          (rx/of (update-interaction shape index change-interaction)))))))
+
 ;; --- Overlays
 
 (declare move-overlay-pos)

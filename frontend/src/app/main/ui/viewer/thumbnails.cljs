@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.thumbnails
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.data.viewer :as dv]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -114,6 +115,7 @@
                              :total (count frames)}
       (for [[i frame] (d/enumerate frames)]
         [:& thumbnail-item {:index i
+                            :key (dm/str (:id frame) "-" i)
                             :frame frame
                             :objects objects
                             :on-click on-item-click
