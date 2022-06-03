@@ -82,6 +82,7 @@
 
         frame? (= :frame type)
         group? (= :group type)
+        text? (= :text type)
         mask?  (and group? masked-group?)]
 
     (cond
@@ -102,6 +103,10 @@
         (d/concat-vec
          (dom/query-all shape-defs ".svg-def")
          (dom/query-all shape-defs ".svg-mask-wrapper")))
+
+      text?
+      [shape-node
+       (dom/query shape-node ".text-container")]
 
       :else
       [shape-node])))
@@ -184,6 +189,15 @@
 
             (dom/class? node "frame-children")
             (set-transform-att! node "transform" (gmt/inverse transform))
+
+            (dom/class? node "text-container")
+            (let [modifiers (dissoc modifiers :displacement :rotation)]
+              (when (not (gsh/empty-modifiers? modifiers))
+                (let [mtx (-> shape
+                              (assoc :modifiers modifiers)
+                              (gsh/transform-shape)
+                              (gsh/transform-matrix {:no-flip true}))]
+                  (override-transform-att! node "transform" mtx))))
 
             (or (= (dom/get-tag-name node) "mask")
                 (= (dom/get-tag-name node) "filter"))
