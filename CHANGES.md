@@ -27,6 +27,7 @@
 - Remove default font on team change
 - Fix github auth without name
 - Fix problems with font loading in Firefox 95
+- Fix auto scroll layers in Firefox [Taiga #3531](https://tree.taiga.io/project/penpot/issue/3531)
 
 ## 1.13.2-beta
 
