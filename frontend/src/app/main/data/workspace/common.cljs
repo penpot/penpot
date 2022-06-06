@@ -313,7 +313,10 @@
                      selected)
 
              changes  (-> (pcb/empty-changes it page-id)
-                          (pcb/add-object shape #_{:index (when (= :frame (:type shape)) 0)}))]
+                          (pcb/with-objects objects)
+                          (pcb/add-object shape)
+                          (cond-> (some? (:parent-id attrs))
+                            (pcb/change-parent (:parent-id attrs) [shape])))]
 
          (rx/concat
           (rx/of (dch/commit-changes changes)

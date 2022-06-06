@@ -1673,20 +1673,22 @@
     (watch [_ state _]
       (let [page-id       (:current-page-id state)
             objects       (wsh/lookup-page-objects state page-id)
-            shapes        (cph/get-immediate-children objects)
             selected      (wsh/lookup-selected state)
-            selected-objs (map #(get objects %) selected)
-            has-frame?    (some #(= (:type %) :frame) selected-objs)]
-        (when (not (or (empty? selected) has-frame?))
+            selected-objs (map #(get objects %) selected)]
+        (when (d/not-empty? selected)
           (let [srect    (gsh/selection-rect selected-objs)
-                frame-id (:frame-id (first shapes))
+                frame-id (get-in objects [(first selected) :frame-id])
+                parent-id (get-in objects [(first selected) :parent-id])
                 shape    (-> (cp/make-minimal-shape :frame)
                              (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
-                             (assoc :frame-id frame-id)
+                             (assoc :frame-id frame-id :parent-id parent-id)
+                             (cond-> (not= frame-id uuid/zero)
+                               (assoc :fills [] :hide-in-viewer true))
                              (cp/setup-rect-selrect))]
             (rx/of
              (dwu/start-undo-transaction)
              (dwc/add-shape shape)
+
              (dwc/move-shapes-into-frame (:id shape) selected)
              (dwu/commit-undo-transaction))))))))
 

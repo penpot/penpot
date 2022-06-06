@@ -227,17 +227,19 @@
 (defn is-shape-over-shape?
   [objects base-shape-id over-shape-id]
 
-  (let [[base parent-a parent-b] (get-base objects base-shape-id over-shape-id)]
+  (let [[base index-a index-b] (get-base objects base-shape-id over-shape-id)]
     (cond
       (= base base-shape-id)
-      ;; over-shape is a child of base-shape. Will be over if base is a root-frame
-      (= uuid/zero (get-in objects [base-shape-id :parent-id]))
+
+      (and (frame-shape? objects over-shape-id)
+           (root-frame? objects over-shape-id))
 
       (= base over-shape-id)
-      (not= uuid/zero (get-in objects [over-shape-id :parent-id]))
+      (or (not (frame-shape? objects over-shape-id))
+          (not (root-frame? objects over-shape-id)))
 
       :else
-      (< parent-a parent-b))))
+      (> index-a index-b))))
 
 (defn sort-z-index
   ([objects ids]
@@ -266,17 +268,11 @@
 
 (defn frame-id-by-position
   [objects position]
-  (let [frames (->> (get-frames objects)
-                    (filter #(and position (gsh/has-point? % position))))
-
-        top-frame
-        (reduce (fn [current-top frame]
-                  (if (is-shape-over-shape? objects (:id current-top) (:id frame))
-                    frame
-                    current-top))
-                (first frames)
-                (rest frames))]
-    (or (:id top-frame) uuid/zero)))
+  (let [top-frame
+        (->> (get-frames-ids objects)
+             (sort-z-index objects)
+             (d/seek #(and position (gsh/has-point? (get objects %) position))))]
+    (or top-frame uuid/zero)))
 
 (defn frame-by-position
   [objects position]
@@ -630,3 +626,8 @@
 
     (-> (select-keys objects selected+parents)
         (d/update-vals remove-children))))
+
+(defn is-child?
+  [objects parent-id candidate-child-id]
+  (let [parents (get-parents-seq objects candidate-child-id)]
+    (some? (d/seek #(= % parent-id) parents))))
