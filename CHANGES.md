@@ -4,6 +4,13 @@
 
 ### :boom: Breaking changes
 ### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :heart: Community contributions by (Thank you!)
+
+## 1.14.0-beta
+
+### :sparkles: New features
 
 - Added shortcut panel in workspace [Taiga #36](https://tree.taiga.io/project/penpot/us/36)
 - Added selected colors widget in right sidebar [Taiga #2485](https://tree.taiga.io/project/penpot/us/2485)
@@ -15,9 +22,6 @@
 - Fix menu file not accessible in certain conditions [Taiga #3385](https://tree.taiga.io/project/penpot/issue/3385)
 - Remove deprecated menu options [Taiga #3333](https://tree.taiga.io/project/penpot/issue/3333)
 - Prototype connection should be under the rules [Taiga #3384](https://tree.taiga.io/project/penpot/issue/3384)
-
-### :arrow_up: Deps updates
-### :heart: Community contributions by (Thank you!)
 
 ## 1.13.4-beta
 
