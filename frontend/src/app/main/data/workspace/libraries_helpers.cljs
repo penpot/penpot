@@ -121,7 +121,9 @@
                                          path
                                          name
                                          new-shapes
-                                         updated-shapes))]
+                                         updated-shapes
+                                         (:id group)
+                                         page-id))]
       [group new-shape changes])))
 
 (defn duplicate-component

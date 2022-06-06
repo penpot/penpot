@@ -362,6 +362,11 @@
        (or (= (:shape-ref shape-inst) (:id shape-main))
            (= (:shape-ref shape-inst) (:shape-ref shape-main)))))
 
+(defn is-main-instance?
+  [shape-id page-id component]
+  (and (= shape-id (:main-instance-id component))
+       (= page-id (:main-instance-page component))))
+
 (defn get-component-root
   [component]
   (get-in component [:objects (:id component)]))

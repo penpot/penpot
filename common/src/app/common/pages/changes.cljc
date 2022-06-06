@@ -392,11 +392,13 @@
 ;; -- Components
 
 (defmethod process-change :add-component
-  [data {:keys [id name path shapes]}]
+  [data {:keys [id name path main-instance-id main-instance-page shapes]}]
   (assoc-in data [:components id]
             {:id id
              :name name
              :path path
+             :main-instance-id main-instance-id
+             :main-instance-page main-instance-page
              :objects (d/index-by :id shapes)}))
 
 (defmethod process-change :mod-component

@@ -532,7 +532,7 @@
         (apply-changes-local))))
 
 (defn add-component
-  [changes id path name new-shapes updated-shapes]
+  [changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
@@ -566,6 +566,8 @@
                              :id id
                              :path path
                              :name name
+                             :main-instance-id main-instance-id
+                             :main-instance-page main-instance-page
                              :shapes new-shapes})
                       (into (map mk-change) updated-shapes))))
         (update :undo-changes 
@@ -611,5 +613,7 @@
                                          :id id
                                          :name (:name prev-component)
                                          :path (:path prev-component)
+                                         :main-instance-id (:main-instance-id prev-component)
+                                         :main-instance-page (:main-instance-page prev-component)
                                          :shapes (vals (:objects prev-component))}))))
 

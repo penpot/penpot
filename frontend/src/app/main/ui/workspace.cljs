@@ -114,10 +114,13 @@
 (mf/defc workspace
   {::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name] :as props}]
-  (let [file    (mf/deref refs/workspace-file)
-        project (mf/deref refs/workspace-project)
-        layout  (mf/deref refs/workspace-layout)
-        wglobal (mf/deref refs/workspace-global)
+  (let [file          (mf/deref refs/workspace-file)
+        project       (mf/deref refs/workspace-project)
+        layout        (mf/deref refs/workspace-layout)
+        wglobal       (mf/deref refs/workspace-global)
+        wglobal       (mf/deref refs/workspace-global)
+        libraries     (mf/deref refs/workspace-libraries)
+        local-library (mf/deref refs/workspace-local-library)
 
         background-color (:background-color wglobal)]
 
@@ -145,23 +148,26 @@
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
-        [:section#workspace {:style {:background-color background-color}}
-         (when (not (:hide-ui layout))
-           [:& header {:file file
-                       :page-id page-id
-                       :project project
-                       :layout layout}])
+        [:& (mf/provider ctx/libraries) {:value (assoc libraries
+                                                       (:id local-library)
+                                                       {:data local-library})}
+         [:section#workspace {:style {:background-color background-color}}
+          (when (not (:hide-ui layout))
+            [:& header {:file file
+                        :page-id page-id
+                        :project project
+                        :layout layout}])
 
-         [:& context-menu]
+          [:& context-menu]
 
-         (if (and (and file project)
-                  (:initialized file))
-           [:& workspace-page {:key (dm/str "page-" page-id)
-                               :page-id page-id
-                               :file file
-                               :wglobal wglobal
-                               :layout layout}]
-           [:& workspace-loader])]]]]]))
+          (if (and (and file project)
+                   (:initialized file))
+            [:& workspace-page {:key (dm/str "page-" page-id)
+                                :page-id page-id
+                                :file file
+                                :wglobal wglobal
+                                :layout layout}]
+            [:& workspace-loader])]]]]]]))
 
 
 
