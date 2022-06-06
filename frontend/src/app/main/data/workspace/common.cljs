@@ -124,7 +124,7 @@
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         ;; Editors handle their own undo's
-        (when-not (or (some? edition) (and (not-empty drawing) (nil? (:object drawing))))
+        (when (and (nil? edition) (nil? (:object drawing)))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
@@ -420,19 +420,26 @@
                  (reverse)
                  (into (d/ordered-set)))
 
-            empty-parents-xform
-            (comp
-             (map (fn [id] (get objects id)))
-             (map (fn [{:keys [shapes type] :as obj}]
-                    (when (and (= :group type)
-                               (zero? (count (remove #(contains? ids %) shapes))))
-                      obj)))
-             (take-while some?)
-             (map :id))
+            find-all-empty-parents (fn recursive-find-empty-parents [empty-parents]
+                                     (let [all-ids (into empty-parents ids)
+                                           empty-parents-xform
+                                           (comp
+                                            (map (fn [id] (get objects id)))
+                                            (map (fn [{:keys [shapes type] :as obj}]
+                                                   (when (and (= :group type)
+                                                              (zero? (count (remove #(contains? all-ids %) shapes))))
+                                                     obj)))
+                                            (take-while some?)
+                                            (map :id))
+                                           calculated-empty-parents (into #{} empty-parents-xform all-parents)]
+
+                                       (if (= empty-parents calculated-empty-parents)
+                                         empty-parents
+                                         (recursive-find-empty-parents calculated-empty-parents))))
 
             empty-parents
             ;; Any parent whose children are all deleted, must be deleted too.
-            (into (d/ordered-set) empty-parents-xform all-parents)
+            (into (d/ordered-set) (find-all-empty-parents #{}))
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-page page)
@@ -448,13 +455,13 @@
                         (pcb/update-shapes (map :id interacting-shapes)
                                            (fn [shape]
                                              (update shape :interactions
-                                               (fn [interactions]
-                                                 (when interactions
-                                                   (d/removev #(and (csi/has-destination %)
-                                                                    (contains? ids (:destination %)))
-                                                              interactions))))))
+                                                     (fn [interactions]
+                                                       (when interactions
+                                                         (d/removev #(and (csi/has-destination %)
+                                                                          (contains? ids (:destination %)))
+                                                                    interactions))))))
                         (cond->
-                          (seq starting-flows)
+                         (seq starting-flows)
                           (pcb/update-page-option :flows (fn [flows]
                                                            (reduce #(csp/remove-flow %1 (:id %2))
                                                                    flows

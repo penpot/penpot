@@ -19,6 +19,17 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+## 1.13.4-beta
+
+### :bug: Bugs fixed
+
+- Fix undo when drawing curves [Taiga #3523](https://tree.taiga.io/project/penpot/issue/3523)
+- Fix issue with text edition and certain fonts (WorkSans, Raleway, ...) and foreign objects [Taiga #3521](https://tree.taiga.io/project/penpot/issue/3521)
+- Fix thumbnail generation when concurrent edition [Taiga #3522](https://tree.taiga.io/project/penpot/issue/3522)
+- Fix environment imporot for exporter in Docker
+- Fix auto scroll layers in Firefox [Taiga #3531](https://tree.taiga.io/project/penpot/issue/3531)
+- Fix base background not visible for imported SVG
+
 ## 1.13.3-beta
 
 ### :bug: Bugs fixed

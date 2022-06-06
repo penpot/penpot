@@ -26,7 +26,7 @@
    :http-server-port 6061
    :http-server-host "localhost"
    :redis-uri "redis://redis/0"
-   :exporter-domain-whitelist #{"localhost:3449"}})
+   :domain-white-list #{"localhost:3449"}})
 
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-host ::us/string)
@@ -45,7 +45,7 @@
                    ::http-server-host
                    ::browser-pool-max
                    ::browser-pool-min
-                   ::domain-whitelist]))
+                   ::domain-white-list]))
 
 (defn- read-env
   [prefix]

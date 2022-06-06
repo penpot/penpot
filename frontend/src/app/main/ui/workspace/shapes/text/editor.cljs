@@ -7,9 +7,10 @@
 (ns app.main.ui.workspace.shapes.text.editor
   (:require
    ["draft-js" :as draft]
-   [app.common.geom.matrix :as gmt]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.text :as gsht]
    [app.common.text :as txt]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
@@ -255,30 +256,37 @@
       (-> (gpt/subtract pt box)
           (gpt/multiply zoom)))))
 
-(mf/defc text-editor-viewport
+(mf/defc text-editor-svg
   {::mf/wrap-props false}
   [props]
   (let [shape        (obj/get props "shape")
-        viewport-ref (obj/get props "viewport-ref")
-        zoom         (obj/get props "zoom")
 
-        position
-        (-> (gpt/point (-> shape :selrect :x)
-                       (-> shape :selrect :y))
-            (translate-point-from-viewport (mf/ref-val viewport-ref) zoom))
+        clip-id
+        (dm/str "text-edition-clip" (:id shape))
 
-        top-left-corner (gpt/point (/ (:width shape) 2) (/ (:height shape) 2))
+        text-modifier-ref
+        (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
 
-        transform
-        (-> (gmt/matrix)
-            (gmt/scale (gpt/point zoom))
-            (gmt/multiply (gsh/transform-matrix shape nil top-left-corner)))]
+        text-modifier
+        (mf/deref text-modifier-ref)
 
-    [:div {:style {:position "absolute"
-                   :left (str (:x position) "px")
-                   :top  (str (:y position) "px")
-                   :pointer-events "all"
-                   :transform (str transform)
-                   :transform-origin "left top"}}
+        bounding-box
+        (gsht/position-data-bounding-box text-modifier)]
 
-     [:& text-shape-edit-html {:shape shape :key (str (:id shape))}]]))
+    [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)
+                     :transform (dm/str (gsh/transform-matrix shape))}
+     [:defs
+      [:clipPath {:id clip-id}
+       [:rect {:x (min (:x bounding-box) (:x shape))
+               :y (min (:y bounding-box) (:y shape))
+               :width (max (:width bounding-box) (:width shape))
+               :height (max (:height bounding-box) (:height shape))
+               :fill "red"}]]]
+
+     [:foreignObject {:x (:x shape) :y (:y shape) :width "100%" :height "100%"
+                      :externalResourcesRequired true}
+      [:div {:style {:position "absolute"
+                     :left 0
+                     :top  0
+                     :pointer-events "all"}}
+       [:& text-shape-edit-html {:shape shape :key (str (:id shape))}]]]]))

@@ -355,7 +355,7 @@
           (assoc :svg-attrs (dissoc attrs :x :y :width :height :href :xlink:href))))))
 
 (defn parse-svg-element [frame-id svg-data element-data unames]
-  (let [{:keys [tag attrs]} element-data
+  (let [{:keys [tag attrs hidden]} element-data
         attrs (usvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
         name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)))
@@ -401,6 +401,9 @@
                           (assoc :svg-defs (select-keys (:defs svg-data) references))
                           (setup-fill)
                           (setup-stroke))
+
+                shape (cond-> shape
+                        hidden (assoc :hidden true))
 
                 children (cond->> (:content element-data)
                            (or (= tag :g) (= tag :svg))
@@ -471,6 +474,7 @@
                                              :height (str (:height root-shape))
                                              :fill "none"
                                              :id "base-background"}
+                                     :hidden true
                                      :content []}
 
               svg-data (-> svg-data

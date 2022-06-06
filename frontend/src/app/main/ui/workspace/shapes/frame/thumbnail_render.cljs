@@ -32,6 +32,7 @@
 
         (.clearRect canvas-context 0 0 canvas-width canvas-height)
         (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
+        (.removeAttribute canvas-node "data-empty")
         true))
     (catch :default err
       (.error js/console err)
@@ -74,6 +75,8 @@
 
         thumbnail-data-ref (mf/use-memo (mf/deps page-id id) #(refs/thumbnail-frame-data page-id id))
         thumbnail-data     (mf/deref thumbnail-data-ref)
+
+        prev-thumbnail-data (hooks/use-previous thumbnail-data)
 
         render-frame? (mf/use-state (not thumbnail-data))
 
@@ -142,6 +145,12 @@
                (reset! observer-ref observer)))))]
 
     (mf/use-effect
+     (mf/deps thumbnail-data)
+     (fn []
+       (when (and (some? prev-thumbnail-data) (nil? thumbnail-data))
+         (rx/push! updates-str :update))))
+
+    (mf/use-effect
      (mf/deps @render-frame? thumbnail-data)
      (fn []
        (when (and (some? thumbnail-data) @render-frame?)
@@ -198,8 +207,10 @@
 
        [:foreignObject {:x x :y y :width width :height height}
         [:canvas.thumbnail-canvas
-         {:ref frame-canvas-ref
+         {:key (dm/str "thumbnail-canvas-" (:id shape))
+          :ref frame-canvas-ref
           :data-object-id (dm/str page-id (:id shape))
+          :data-empty true
           :width fixed-width
           :height fixed-height
           ;; DEBUG

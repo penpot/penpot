@@ -324,7 +324,8 @@
             props    (obj/merge! #js {} props
                                  #js {:childs childs
                                       :objects objects})]
-        [:> group-wrapper props]))))
+        (when (not-empty childs)
+          [:> group-wrapper props])))))
 
 (defn bool-container-factory
   [objects]

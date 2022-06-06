@@ -23,7 +23,41 @@
    [expound.alpha :as expound]
    [fipp.edn :refer [pprint]]))
 
+;; ==== Utility functions
+
+(defn reset-file-data
+  "Hardcode replace of the data of one file."
+  [system id data]
+  (db/with-atomic [conn (:app.db/pool system)]
+    (db/update! conn :file
+                {:data data}
+                {:id id})))
+
+(defn get-file
+  "Get the migrated data of one file."
+  [system id]
+  (-> (:app.db/pool system)
+      (db/get-by-id :file id)
+      (update :data app.util.blob/decode)
+      (update :data pmg/migrate-data)))
+
+(defn duplicate-file
+  "This is a raw version of duplication of file just only for forensic analysis."
+  [system file-id email]
+  (db/with-atomic [conn (:app.db/pool system)]
+    (when-let [profile (some->> (prof/retrieve-profile-data-by-email conn (str/lower email))
+                                (prof/populate-additional-data conn))]
+      (when-let [file (db/exec-one! conn (sql/select :file {:id file-id}))]
+        (let [params (assoc file
+                            :id (uuid/next)
+                            :project-id (:default-project-id profile))]
+          (db/insert! conn :file params)
+          (:id file))))))
+
 (defn update-file
+  "Apply a function to the data of one file. Optionally save the changes or not.
+  
+  The function receives the decoded and migrated file data."
   ([system id f] (update-file system id f false))
   ([system id f save?]
    (db/with-atomic [conn (:app.db/pool system)]
@@ -40,85 +74,115 @@
                      {:id (:id file)}))
        (update file :data blob/decode)))))
 
-(defn reset-file-data
-  [system id data]
-  (db/with-atomic [conn (:app.db/pool system)]
-    (db/update! conn :file
-                {:data data}
-                {:id id})))
+(defn analyze-files
+  "Apply a function to all files in the database, reading them in batches. Do not change data.
+  
+  The function receives an object with some properties of the file and the decoded data, and
+  an empty atom where it may accumulate statistics, if desired."
+  [system {:keys [sleep chunk-size max-chunks on-file]
+           :or {sleep 1000 chunk-size 10 max-chunks ##Inf}}]
+  (let [stats (atom {})]
+    (letfn [(retrieve-chunk [conn cursor]
+              (let [sql (str "select id, name, modified_at, data from file "
+                             " where modified_at < ? and deleted_at is null "
+                             " order by modified_at desc limit ?")]
+                (->> (db/exec! conn [sql cursor chunk-size])
+                     (map #(update % :data blob/decode)))))
 
-(defn get-file
-  [system id]
-  (-> (:app.db/pool system)
-      (db/get-by-id :file id)
-      (update :data app.util.blob/decode)
-      (update :data pmg/migrate-data)))
+            (process-chunk [chunk]
+              (loop [files chunk]
+                (when-let [file (first files)]
+                  (on-file file stats)
+                  (recur (rest files)))))]
 
-(defn duplicate-file
-  "This is a raw version of duplication of file just only for forensic analysis"
-  [system file-id email]
-  (db/with-atomic [conn (:app.db/pool system)]
-    (when-let [profile (some->> (prof/retrieve-profile-data-by-email conn (str/lower email))
-                                (prof/populate-additional-data conn))]
-      (when-let [file (db/exec-one! conn (sql/select :file {:id file-id}))]
-        (let [params (assoc file
-                            :id (uuid/next)
-                            :project-id (:default-project-id profile))]
-          (db/insert! conn :file params)
-          (:id file))))))
+      (db/with-atomic [conn (:app.db/pool system)]
+        (loop [cursor (dt/now)
+               chunks 0]
+          (when (< chunks max-chunks)
+            (let [chunk (retrieve-chunk conn cursor)]
+              (when-not (empty? chunk)
+                (let [cursor (-> chunk last :modified-at)]
+                  (process-chunk chunk)
+                  (Thread/sleep (inst-ms (dt/duration sleep)))
+                  (recur cursor (inc chunks)))))))
+        @stats))))
 
-(defn repair-orphaned-components
-  "We have detected some cases of component instances that are not nested, but
-  however they have not the :component-root? attribute (so the system considers
-  them nested). This script fixes this adding them the attribute.
+(defn update-pages
+  "Apply a function to all pages of one file. The function receives a page and returns an updated page."
+  [data f]
+  (update data :pages-index d/update-vals f))
 
-  Use it with the update-file function above."
-  [data]
-  (let [update-page
-        (fn [page]
-          (prn "================= Page:" (:name page))
-          (letfn [(is-nested? [object]
-                    (and (some? (:component-id object))
-                         (nil? (:component-root? object))))
+(defn update-shapes
+  "Apply a function to all shapes of one page The function receives a shape and returns an updated shape"
+  [page f]
+  (update page :objects d/update-vals f))
 
-                  (is-instance? [object]
-                    (some? (:shape-ref object)))
 
-                  (get-parent [object]
-                    (get (:objects page) (:parent-id object)))
+;; ==== Specific fixes
 
-                  (update-object [object]
-                    (if (and (is-nested? object)
-                             (not (is-instance? (get-parent object))))
-                      (do
-                        (prn "Orphan:" (:name object))
-                        (assoc object :component-root? true))
-                      object))]
+(defn repair-orphaned-shapes
+  "There are some shapes whose parent has been deleted. This
+  function detects them and puts them as children of the root node."
+  ([file _] ; to be called from analyze-files to search for files with the problem
+   (repair-orphaned-shapes (:data file)))
 
-            (update page :objects d/update-vals update-object)))]
+  ([data]
+   (let [is-orphan? (fn [shape objects]
+                      (and (some? (:parent-id shape))
+                           (nil? (get objects (:parent-id shape)))))
 
-    (update data :pages-index d/update-vals update-page)))
+         update-page (fn [page]
+                       (let [objects (:objects page)
+                             orphans (set (filter #(is-orphan? % objects) (vals objects)))]
+                         (if (seq orphans)
+                           (do
+                             (prn (:id data) "file has" (count orphans) "broken shapes")
+                             (-> page
+                                 (update-shapes (fn [shape]
+                                                  (if (orphans shape)
+                                                    (assoc shape :parent-id uuid/zero)
+                                                    shape)))
+                                 (update-in [:objects uuid/zero :shapes]
+                                            (fn [shapes] (into shapes (map :id orphans))))))
+                           page)))]
 
-(defn repair-idless-components
-  "There are some files that contains components with no :id attribute.
-  This function detects them and repairs it.
+     (update-pages data update-page))))
 
-  Use it with the update-file function above."
-  [data]
-  (letfn [(update-component [id component]
-            (if (nil? (:id component))
-              (do
-                (prn (:id data) "Broken component" (:name component) id)
-                (assoc component :id id))
-              component))]
 
-    (update data :components #(d/mapm update-component %))))
+;; DO NOT DELETE already used scripts, could be taken as templates for easyly writing new ones
+;; -------------------------------------------------------------------------------------------
 
-(defn analyze-idless-components
-  "Scan all files to check if there are any one with idless components.
-  (Does not save the changes, only used to detect affected files)."
-  [file _]
-  (repair-idless-components (:data file)))
+;; (defn repair-orphaned-components
+;;   "We have detected some cases of component instances that are not nested, but
+;;   however they have not the :component-root? attribute (so the system considers
+;;   them nested). This script fixes this adding them the attribute.
+;;
+;;   Use it with the update-file function above."
+;;   [data]
+;;   (let [update-page
+;;         (fn [page]
+;;           (prn "================= Page:" (:name page))
+;;           (letfn [(is-nested? [object]
+;;                     (and (some? (:component-id object))
+;;                          (nil? (:component-root? object))))
+;;
+;;                   (is-instance? [object]
+;;                     (some? (:shape-ref object)))
+;;
+;;                   (get-parent [object]
+;;                     (get (:objects page) (:parent-id object)))
+;;
+;;                   (update-object [object]
+;;                     (if (and (is-nested? object)
+;;                              (not (is-instance? (get-parent object))))
+;;                       (do
+;;                         (prn "Orphan:" (:name object))
+;;                         (assoc object :component-root? true))
+;;                       object))]
+;;
+;;             (update page :objects d/update-vals update-object)))]
+;;
+;;     (update data :pages-index d/update-vals update-page)))
 
 ;; (defn check-image-shapes
 ;;   [{:keys [data] :as file} stats]
@@ -137,33 +201,4 @@
 ;;                   data)
 ;;     (when @affected?
 ;;       (swap! stats update :affected-files (fnil inc 0)))))
-
-(defn analyze-files
-  [system {:keys [sleep chunk-size max-chunks on-file]
-           :or {sleep 1000 chunk-size 10 max-chunks ##Inf}}]
-  (let [stats (atom {})]
-    (letfn [(retrieve-chunk [conn cursor]
-              (let [sql (str "select id, name, modified_at, data from file "
-                             " where modified_at < ? and deleted_at is null "
-                             " order by modified_at desc limit ?")]
-                (->> (db/exec! conn [sql cursor chunk-size])
-                     (map #(update % :data blob/decode)))))
-
-            (process-chunk [chunk]
-              (loop [items chunk]
-                (when-let [item (first items)]
-                  (on-file item stats)
-                  (recur (rest items)))))]
-
-      (db/with-atomic [conn (:app.db/pool system)]
-        (loop [cursor (dt/now)
-               chunks 0]
-          (when (< chunks max-chunks)
-            (let [chunk (retrieve-chunk conn cursor)]
-              (when-not (empty? chunk)
-                (let [cursor (-> chunk last :modified-at)]
-                  (process-chunk chunk)
-                  (Thread/sleep (inst-ms (dt/duration sleep)))
-                  (recur cursor (inc chunks)))))))
-        @stats))))
 

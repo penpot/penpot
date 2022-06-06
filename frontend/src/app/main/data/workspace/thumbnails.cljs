@@ -10,6 +10,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -31,7 +32,9 @@
   [object-id]
   (rx/create
    (fn [subs]
-     (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'" object-id))]
+     ;; We look in the DOM a canvas that 1) matches the id and 2) that it's not empty
+     ;; will be empty on first rendering before drawing the thumbnail and we don't want to store that
+     (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%']:not([data-empty])" object-id))]
        (if (some? node)
          (-> node
              (.toBlob (fn [blob]
@@ -42,6 +45,14 @@
          ;; If we cannot find the node we send `nil` and the upsert will delete the thumbnail
          (do (rx/push! subs nil)
              (rx/end! subs)))))))
+
+(defn clear-thumbnail
+  [page-id frame-id]
+  (ptk/reify ::clear-thumbnail
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [object-id  (dm/str page-id frame-id)]
+        (assoc-in state [:workspace-file :thumbnails object-id] nil)))))
 
 (defn update-thumbnail
   "Updates the thumbnail information for the given frame `id`"
@@ -71,50 +82,39 @@
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"
-  [[event [old-objects new-objects]]]
+  [[event [old-data new-data]]]
   (let [changes (-> event deref :changes)
 
         extract-ids
-        (fn [{type :type :as change}]
+        (fn [{:keys [page-id type] :as change}]
           (case type
-            :add-obj [(:id change)]
-            :mod-obj [(:id change)]
-            :del-obj [(:id change)]
-            :reg-objects (:shapes change)
-            :mov-objects (:shapes change)
+            :add-obj [[page-id (:id change)]]
+            :mod-obj [[page-id (:id change)]]
+            :del-obj [[page-id (:id change)]]
+            :mov-objects (->> (:shapes change) (map #(vector page-id %)))
             []))
 
         get-frame-id
-        (fn [id]
-          (let [shape (or (get new-objects id)
-                          (get old-objects id))]
-            (or (and (cph/frame-shape? shape) id) (:frame-id shape))))
+        (fn [[page-id id]]
+          (let [old-objects (wsh/lookup-data-objects old-data page-id)
+                new-objects (wsh/lookup-data-objects new-data page-id)
 
-        ;; Extracts the frames and then removes nils and the root frame
-        xform (comp (mapcat extract-ids)
-                    (map get-frame-id)
-                    (remove nil?)
-                    (filter #(not= uuid/zero %))
-                    (filter #(contains? new-objects %)))]
+                new-shape (get new-objects id)
+                old-shape (get old-objects id)
 
-    (into #{} xform changes)))
+                old-frame-id (if (cph/frame-shape? old-shape) id (:frame-id old-shape))
+                new-frame-id (if (cph/frame-shape? new-shape) id (:frame-id new-shape))]
 
-(defn thumbnail-change?
-  "Checks if a event is only updating thumbnails to ignore in the thumbnail generation process"
-  [event]
-  (let [changes (-> event deref :changes)
+            (cond-> #{}
+              (and old-frame-id (not= uuid/zero old-frame-id))
+              (conj [page-id old-frame-id])
 
-        is-thumbnail-op?
-        (fn [{type :type attr :attr}]
-          (and (= type :set)
-               (= attr :thumbnail)))
-
-        is-thumbnail-change?
-        (fn [change]
-          (and (= (:type change) :mod-obj)
-               (->> change :operations (every? is-thumbnail-op?))))]
-
-    (->> changes (every? is-thumbnail-change?))))
+              (and new-frame-id (not= uuid/zero new-frame-id))
+              (conj [page-id new-frame-id]))))]
+    (into #{}
+          (comp (mapcat extract-ids)
+                (mapcat get-frame-id))
+          changes)))
 
 (defn watch-state-changes
   "Watch the state for changes inside frames. If a change is detected will force a rendering
@@ -123,32 +123,39 @@
   (ptk/reify ::watch-state-changes
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (->> stream
-                         (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
-                                         (= ::watch-state-changes (ptk/type %)))))
+      (let [stopper
+            (->> stream
+                 (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
+                                 (= ::watch-state-changes (ptk/type %)))))
 
-            objects-stream (->> (rx/concat
-                                 (rx/of nil)
-                                 (rx/from-atom refs/workspace-page-objects {:emit-current-value? true}))
-                                ;; We need to keep the old-objects so we can check the frame for the
-                                ;; deleted objects
-                                (rx/buffer 2 1))
+            workspace-data-str
+            (->> (rx/concat
+                  (rx/of nil)
+                  (rx/from-atom refs/workspace-data {:emit-current-value? true}))
+                 ;; We need to keep the old-objects so we can check the frame for the
+                 ;; deleted objects
+                 (rx/buffer 2 1))
 
-            frame-changes (->> stream
-                               (rx/filter dch/commit-changes?)
+            change-str
+            (->> stream
+                 (rx/filter #(or (dch/commit-changes? %)
+                                 (= (ptk/type %) :app.main.data.workspace.notifications/handle-file-change)))
+                 (rx/observe-on :async))
 
-                               ;; Async so we wait for additional side-effects of commit-changes
-                               (rx/observe-on :async)
-                               (rx/filter (complement thumbnail-change?))
-                               (rx/with-latest-from objects-stream)
-                               (rx/map extract-frame-changes)
-                               (rx/share))]
+            frame-changes-str
+            (->> change-str
+                 (rx/with-latest-from workspace-data-str)
+                 (rx/flat-map extract-frame-changes)
+                 (rx/share))]
 
-        (->> frame-changes
-             (rx/flat-map
-              (fn [ids]
-                (->> (rx/from ids)
-                     (rx/map #(ptk/data-event ::force-render %)))))
+        (->> (rx/merge
+              (->> frame-changes-str
+                   (rx/filter (fn [[page-id _]] (not= page-id (:current-page-id @st/state))))
+                   (rx/map (fn [[page-id frame-id]] (clear-thumbnail page-id frame-id))))
+
+              (->> frame-changes-str
+                   (rx/filter (fn [[page-id _]] (= page-id (:current-page-id @st/state))))
+                   (rx/map (fn [[_ frame-id]] (ptk/data-event ::force-render frame-id)))))
              (rx/take-until stopper))))))
 
 (defn duplicate-thumbnail

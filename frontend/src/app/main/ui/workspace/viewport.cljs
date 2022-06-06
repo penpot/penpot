@@ -187,10 +187,7 @@
 
     [:div.viewport
      [:div.viewport-overlays {:ref overlays-ref}
-      (when show-text-editor?
-        [:& editor/text-editor-viewport {:shape editing-shape
-                                         :viewport-ref viewport-ref
-                                         :zoom zoom}])
+
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
                                      :vport vport
@@ -275,6 +272,9 @@
        :on-pointer-up    on-pointer-up}
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
+       (when show-text-editor?
+         [:& editor/text-editor-svg {:shape editing-shape}])
+
        (when show-outlines?
          [:& outline/shape-outlines
           {:objects base-objects
