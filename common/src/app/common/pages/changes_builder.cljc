@@ -372,8 +372,8 @@
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
-        objects (lookup-objects changes)
 
+        objects (lookup-objects changes)
         xform   (comp
                   (mapcat #(cons % (cph/get-parent-ids objects %)))
                   (map (d/getf objects))
@@ -409,7 +409,8 @@
 
         resize-parent
         (fn [changes parent]
-          (let [children (->> parent :shapes (map (d/getf objects)))
+          (let [objects (lookup-objects changes)
+                children (->> parent :shapes (map (d/getf objects)))
                 resized-parent (cond
                                  (empty? children) ;; a parent with no children will be deleted,
                                  nil               ;; so it does not need resize
@@ -434,12 +435,12 @@
                 (if (seq rops)
                   (-> changes
                       (update :redo-changes conj (assoc change :operations rops))
-                      (update :undo-changes d/preconj (assoc change :operations uops)))
+                      (update :undo-changes d/preconj (assoc change :operations uops))
+                      (apply-changes-local))
                   changes))
               changes)))]
 
-    (-> (reduce resize-parent changes all-parents)
-        (apply-changes-local))))
+    (reduce resize-parent changes all-parents)))
 
 ;; Library changes
 
