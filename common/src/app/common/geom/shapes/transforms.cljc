@@ -161,11 +161,12 @@
    (transform-str shape nil))
 
   ([{:keys [transform flip-x flip-y] :as shape} {:keys [no-flip]}]
-   (when (and (some? shape)
-              (or (some? transform)
-                  (and (not no-flip) flip-x)
-                  (and (not no-flip) flip-y)))
-     (dm/str (transform-matrix shape)))))
+   (if (and (some? shape)
+            (or (some? transform)
+                (and (not no-flip) flip-x)
+                (and (not no-flip) flip-y)))
+     (dm/str (transform-matrix shape))
+     "")))
 
 (defn inverse-transform-matrix
   ([shape]

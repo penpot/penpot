@@ -3,6 +3,9 @@
 ## :rocket: Next
 
 ### :sparkles: New features
+
+- Allow for nested boards inside other boards and groups
+
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

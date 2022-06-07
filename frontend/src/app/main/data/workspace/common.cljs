@@ -333,15 +333,20 @@
       (let [page-id  (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
 
-            to-move-shapes (into []
-                                 (map (d/getf objects))
-                                 (reverse (cph/sort-z-index objects shapes)))
+            to-move-shapes
+            (into []
+                  (map (d/getf objects))
+                  (reverse (cph/sort-z-index objects shapes)))
 
-            changes (-> (pcb/empty-changes it page-id)
-                        (pcb/with-objects objects)
-                        (pcb/change-parent frame-id to-move-shapes 0))]
+            changes
+            (when (d/not-empty? to-move-shapes)
+              (-> (pcb/empty-changes it page-id)
+                  (pcb/with-objects objects)
+                  (pcb/change-parent frame-id to-move-shapes 0)))]
 
-        (rx/of (dch/commit-changes changes))))))
+        (if (some? changes)
+          (rx/of (dch/commit-changes changes))
+          (rx/empty))))))
 
 (s/def ::set-of-uuid
   (s/every ::us/uuid :kind set?))

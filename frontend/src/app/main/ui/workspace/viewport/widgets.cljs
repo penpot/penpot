@@ -140,9 +140,9 @@
 
     (when (not (:hidden frame))
       [:g {:id (dm/str "frame-title-" (:id frame))
-           :transform frame-transform}
+           }
        (when (:use-for-thumbnail? frame)
-         [:g {:transform (dm/str (text-transform label-pos zoom))}
+         [:g {:transform (dm/str frame-transform " " (text-transform label-pos zoom))}
           [:svg {:x 0
                  :y -9
                  :width 12
@@ -156,7 +156,7 @@
                :width width
                :height 20
                :class "workspace-frame-label"
-               :transform (dm/str (text-transform label-pos zoom))
+               :transform (dm/str frame-transform " " (text-transform label-pos zoom))
                :style {:fill (when selected? "var(--color-primary-dark)")}
                :visibility (if show-artboard-names? "visible" "hidden")
                :on-mouse-down on-mouse-down

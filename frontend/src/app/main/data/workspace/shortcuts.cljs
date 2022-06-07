@@ -208,8 +208,8 @@
 
    ;; TOOLS
 
-   :draw-frame           {:tooltip "A"
-                          :command "a"
+   :draw-frame           {:tooltip "B"
+                          :command ["b" "a"]
                           :subsections [:tools :basics]
                           :fn #(st/emit! (dwd/select-for-drawing :frame))}
 

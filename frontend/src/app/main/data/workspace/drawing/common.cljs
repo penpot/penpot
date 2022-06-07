@@ -10,7 +10,9 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.worker :as uw]
    [beicon.core :as rx]
@@ -29,7 +31,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [tool (get-in state [:workspace-drawing :tool])
-            shape (get-in state [:workspace-drawing :object])]
+            shape (get-in state [:workspace-drawing :object])
+            objects (wsh/lookup-page-objects state)]
         (rx/concat
          (when (:initialized? shape)
            (let [page-id (:current-page-id state)
@@ -68,7 +71,10 @@
               (if (= :frame (:type shape))
                 (->> (uw/ask! {:cmd :selection/query
                                :page-id page-id
-                               :rect (:selrect shape)})
+                               :rect (:selrect shape)
+                               :include-frames? true
+                               :full-frame? true})
+                     (rx/map #(cph/clean-loops objects %))
                      (rx/map #(dwc/move-shapes-into-frame (:id shape) %)))
                 (rx/empty)))))
 
