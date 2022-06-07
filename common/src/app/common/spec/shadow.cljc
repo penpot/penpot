@@ -13,7 +13,7 @@
 
 ;;; SHADOW EFFECT
 
-(s/def ::id uuid?)
+(s/def ::id (s/nilable uuid?))
 (s/def ::style #{:drop-shadow :inner-shadow})
 (s/def ::offset-x ::us/safe-number)
 (s/def ::offset-y ::us/safe-number)
@@ -28,7 +28,7 @@
 (s/def ::file-id (s/nilable uuid?))
 (s/def ::ref-id (s/nilable uuid?))
 
-(s/def ::shadow-color
+(s/def :shadow/color
   (s/keys :opt-un [::color
                    ::opacity
                    ::gradient
@@ -38,7 +38,7 @@
 (s/def ::shadow-props
   (s/keys :req-un [:internal.shadow/id
                    :internal.shadow/style
-                   ::shadow-color
+                   :shadow/color
                    :internal.shadow/offset-x
                    :internal.shadow/offset-y
                    :internal.shadow/blur
