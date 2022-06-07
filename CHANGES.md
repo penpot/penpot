@@ -2,7 +2,6 @@
 
 ## :rocket: Next
 
-### :boom: Breaking changes
 ### :sparkles: New features
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
