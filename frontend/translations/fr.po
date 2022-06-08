@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-01-20 20:55+0000\n"
-"Last-Translator: Voxybuns <fossati.val@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2022-06-11 09:14+0000\n"
+"Last-Translator: Locness <locness3@orange.fr>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.11-dev\n"
+"X-Generator: Weblate 4.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2865,3 +2865,212 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Invitation invalide"
+
+#, fuzzy
+msgid "errors.invite-invalid.info"
+msgstr "Cette invitation est peut-être annulée ou a expiré."
+
+msgid "labels.close"
+msgstr "Fermer"
+
+msgid "labels.export"
+msgstr "Exporter"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Dépôt GitHub"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Tutoriels"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Votre compte"
+
+msgid "dashboard.export.options.all.title"
+msgstr "Exporter les bibliothèques partagées"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Les bibliothèques partagées ne seront pas incluses dans l'exportation et "
+"aucune ressource ne sera ajoutée à la librairie. "
+
+msgid "dashboard.import.analyze-error"
+msgstr "Oups ! Nous n'avons pas pu importer ce fichier"
+
+msgid "dashboard.import.import-error"
+msgstr ""
+"Un problème est survenu lors de l'importation du fichier. Le fichier n'a pas "
+"été importé."
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Traitement des composants"
+
+msgid "dashboard.import.import-message"
+msgstr "%s fichiers ont été importés avec succès."
+
+#, fuzzy
+msgid "dashboard.import.progress.process-media"
+msgstr "Traitement des médias"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Traitement de la page : %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Traitement des typographies"
+
+msgid "labels.continue"
+msgstr "Continuer"
+
+msgid "labels.workspace"
+msgstr "Espace de travail"
+
+#, fuzzy
+msgid "labels.edit-file"
+msgstr "Modifier le fichier"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s de %s éléments sélectionnés"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 police ajoutée"
+msgstr[1] "%s polices ajoutées"
+
+#: src/app/main/ui/settings/profile.cljs
+#, fuzzy
+msgid "dashboard.newsletter-msg"
+msgstr ""
+"Envoyez-moi des actualités, des mises à jour du produit, et des "
+"recommandations à propos de Penpot."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Abonnement à la newsletter"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Enregistrer les paramètres"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Composants à mettre à jour :"
+
+msgid "errors.auth.unable-to-login"
+msgstr ""
+"Il semblerait que vous n'êtes pas authentifié ou que votre session a expiré."
+
+msgid "errors.email-as-password"
+msgstr "Vous ne pouvez pas utiliser votre adresse e-mail comme mot de passe"
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "Composant"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Masque"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "À propos de Penpot"
+
+msgid "labels.and"
+msgstr "et"
+
+msgid "labels.continue-with"
+msgstr "Continuer avec"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Supprimer l'invitation"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "labels.expired-invitation"
+msgstr "Expirée"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Centre d'aide"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Invitations"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "labels.libraries-and-templates"
+msgstr "Bibliothèques et modèles"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Membre"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "En attente"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "labels.remove-member"
+msgstr "Retirer le membre"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Renvoyer l'invitation"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(vous)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"Vous êtes le propriétaire de cette équipe. Avant de la quitter, veuillez "
+"sélectionner un autre membre pour le promouvoir en propriétaire."
+
+msgid "modals.invite-member.emails"
+msgstr "Adresse e-mail, séparées par des virgules"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Comme vous êtes le seul membre de l'équipe, celle-ci sera supprimée avec ses "
+"projets et fichiers."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Êtes-vous sûr de vouloir quitter l'équipe %s ?"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Exporter la sélection"
+
+msgid "labels.next"
+msgstr "Suivant"
+
+#, fuzzy
+msgid "labels.back"
+msgstr "Retour"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "Il n'y a pas d'invitations."
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Raccourcis"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Envoi des données au serveur (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Envoi du fichier : %s"
