@@ -166,6 +166,7 @@
 (dm/export gtr/update-group-selrect)
 (dm/export gtr/update-mask-selrect)
 (dm/export gtr/resize-modifiers)
+(dm/export gtr/change-orientation-modifiers)
 (dm/export gtr/rotation-modifiers)
 (dm/export gtr/merge-modifiers)
 (dm/export gtr/transform-shape)
