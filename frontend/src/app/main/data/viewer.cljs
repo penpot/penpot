@@ -303,6 +303,18 @@
            (dcm/close-thread)
            (rt/nav :viewer pparams (assoc qparams :index (inc index)))))))))
 
+
+(def select-first-frame
+  (ptk/reify ::select-first-frame
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [route   (:route state)
+            qparams (:query-params route)
+            pparams (:path-params route)]
+        (rx/of
+         (dcm/close-thread)
+         (rt/nav :viewer pparams (assoc qparams :index 0)))))))
+
 (s/def ::interactions-mode #{:hide :show :show-on-click})
 
 (defn set-interactions-mode

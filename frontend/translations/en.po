@@ -1182,6 +1182,9 @@ msgstr "Help Center"
 msgid "labels.hide-resolved-comments"
 msgstr "Hide resolved comments"
 
+msgid "labels.show-comments-list"
+msgstr "Show comments list"
+
 msgid "labels.icons"
 msgstr "Icons"
 

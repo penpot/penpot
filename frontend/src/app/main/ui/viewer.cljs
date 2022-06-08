@@ -24,7 +24,7 @@
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.share-link]
    [app.main.ui.static :as static]
-   [app.main.ui.viewer.comments :refer [comments-layer]]
+   [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar]]   
    [app.main.ui.viewer.handoff :as handoff]
    [app.main.ui.viewer.header :refer [header]]
    [app.main.ui.viewer.interactions :as interactions]
@@ -32,6 +32,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.webapi :as wapi]
+   [cuerdas.core :as str]
    [goog.events :as events]
    [rumext.alpha :as mf]))
 
@@ -59,6 +60,113 @@
             {:width  (* width zoom)
              :height (* height zoom)
              :vbox   (str "0 0 " width " " height)})))
+
+
+(mf/defc viewer-pagination
+  [{:keys [index num-frames left-bar right-bar] :as props}]
+  [:*
+   (when (pos? index)
+     [:div.viewer-go-prev {:class (when left-bar "left-bar")}
+      [:div.arrow {:on-click #(st/emit! dv/select-prev-frame)} i/go-prev]])
+   (when (< (+ index 1) num-frames)
+     [:div.viewer-go-next {:class (when right-bar "right-bar")}
+      [:div.arrow {:on-click #(st/emit! dv/select-next-frame)} i/go-next]])
+   [:div.viewer-bottom {:class (when left-bar "left-bar")}
+    [:div.reset {:on-click #(st/emit! dv/select-first-frame)} i/reset]
+    [:div.counter (str/join " / " [(+ index 1) num-frames])]
+    [:span]]])
+
+
+(mf/defc viewer-wrapper
+  [{:keys [wrapper-size scroll orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
+           size frame interactions-mode overlays zoom close-overlay section index] :as props}]
+  (let [{clist :list} (mf/deref refs/comments-local)
+        show-comments-list (and (= section :comments) (= :show clist))]
+    [:*
+     [:& viewer-pagination {:index index :num-frames (count (:frames page)) :right-bar show-comments-list}]
+
+     (when show-comments-list
+       [:& comments-sidebar {:users users :frame frame :page page}])
+     
+     [:div.viewer-wrapper
+      {:style {:width (:width wrapper-size)
+               :height (:height wrapper-size)}}
+      [:& (mf/provider ctx/scroll-ctx) {:value @scroll}
+       [:div.viewer-clipper
+        [:*
+         (when orig-frame
+           [:div.viewport-container
+            {:ref orig-viewport-ref
+             :style {:width (:width orig-size)
+                     :height (:height orig-size)
+                     :position "relative"}}
+
+            [:& interactions/viewport
+             {:frame orig-frame
+              :base-frame orig-frame
+              :frame-offset (gpt/point 0 0)
+              :size orig-size
+              :page page
+              :file file
+              :users users
+              :interactions-mode :hide}]])
+
+         [:div.viewport-container
+          {:ref current-viewport-ref
+           :style {:width (:width size)
+                   :height (:height size)
+                   :position "relative"}}
+
+          [:& interactions/viewport
+           {:frame frame
+            :base-frame frame
+            :frame-offset (gpt/point 0 0)
+            :size size
+            :page page
+            :file file
+            :users users
+            :interactions-mode interactions-mode}]
+
+          (for [overlay overlays]
+            (let [size-over (calculate-size (:frame overlay) zoom)]
+              [:*
+               (when (or (:close-click-outside overlay)
+                         (:background-overlay  overlay))
+                 [:div.viewer-overlay-background
+                  {:class (dom/classnames
+                           :visible (:background-overlay overlay))
+                   :style {:width (:width wrapper-size)
+                           :height (:height wrapper-size)
+                           :position "absolute"
+                           :left 0
+                           :top 0}
+                   :on-click #(when (:close-click-outside overlay)
+                                (close-overlay (:frame overlay)))}])
+               [:div.viewport-container.viewer-overlay
+                     
+                {:id (str "overlay-" (-> overlay :frame :id))
+                 :style {:width (:width size-over)
+                         :height (:height size-over)
+                         :left (* (:x (:position overlay)) zoom)
+                         :top (* (:y (:position overlay)) zoom)}}
+                [:& interactions/viewport
+                 {:frame (:frame overlay)
+                  :base-frame frame
+                  :frame-offset (:position overlay)
+                  :size size-over
+                  :page page
+                  :file file
+                  :users users
+                  :interactions-mode interactions-mode}]]]))]]
+
+        (when (= section :comments)
+          [:& comments-layer {:file file
+                              :users users
+                              :frame frame
+                              :page page
+                              :zoom zoom}])]]]]))
+
+
 
 (mf/defc viewer
   [{:keys [params data]}]
@@ -119,11 +227,6 @@
          (fn [_]
            (when (= section :comments)
              (st/emit! (dcm/close-thread)))))
-
-        close-overlay
-        (mf/use-callback
-         (fn [frame]
-           (st/emit! (dv/close-overlay (:id frame)))))
 
         set-up-new-size
         (mf/use-callback
@@ -288,85 +391,28 @@
              :page page
              :file file
              :section section
-             :local local}]
+             :local local
+             :index index
+             :viewer-pagination viewer-pagination}]
 
-           [:*
-            [:div.viewer-wrapper
-             {:style {:width (:width wrapper-size)
-                      :height (:height wrapper-size)}}
-             [:& (mf/provider ctx/scroll-ctx) {:value @scroll}
-              [:div.viewer-clipper
-               [:*
-                (when orig-frame
-                  [:div.viewport-container
-                   {:ref orig-viewport-ref
-                    :style {:width (:width orig-size)
-                            :height (:height orig-size)
-                            :position "relative"}}
-
-                   [:& interactions/viewport
-                    {:frame orig-frame
-                     :base-frame orig-frame
-                     :frame-offset (gpt/point 0 0)
-                     :size orig-size
-                     :page page
-                     :file file
-                     :users users
-                     :interactions-mode :hide}]])
-
-                [:div.viewport-container
-                 {:ref current-viewport-ref
-                  :style {:width (:width size)
-                          :height (:height size)
-                          :position "relative"}}
-
-                 [:& interactions/viewport
-                  {:frame frame
-                   :base-frame frame
-                   :frame-offset (gpt/point 0 0)
-                   :size size
-                   :page page
-                   :file file
-                   :users users
-                   :interactions-mode interactions-mode}]
-
-                 (for [overlay overlays]
-                   (let [size-over (calculate-size (:frame overlay) zoom)]
-                     [:*
-                      (when (or (:close-click-outside overlay)
-                                (:background-overlay  overlay))
-                        [:div.viewer-overlay-background
-                         {:class (dom/classnames
-                                  :visible (:background-overlay overlay))
-                          :style {:width (:width wrapper-size)
-                                  :height (:height wrapper-size)
-                                  :position "absolute"
-                                  :left 0
-                                  :top 0}
-                          :on-click #(when (:close-click-outside overlay)
-                                       (close-overlay (:frame overlay)))}])
-                      [:div.viewport-container.viewer-overlay
-                       {:id (str "overlay-" (str (:id (:frame overlay))))
-                        :style {:width (:width size-over)
-                                :height (:height size-over)
-                                :left (* (:x (:position overlay)) zoom)
-                                :top (* (:y (:position overlay)) zoom)}}
-                       [:& interactions/viewport
-                        {:frame (:frame overlay)
-                         :base-frame frame
-                         :frame-offset (:position overlay)
-                         :size size-over
-                         :page page
-                         :file file
-                         :users users
-                         :interactions-mode interactions-mode}]]]))]]
-
-               (when (= section :comments)
-                 [:& comments-layer {:file file
-                                     :users users
-                                     :frame frame
-                                     :page page
-                                     :zoom zoom}])]]]]))]]]))
+                       
+            [:& viewer-wrapper
+             {:wrapper-size wrapper-size
+              :scroll scroll
+              :orig-frame orig-frame
+              :orig-viewport-ref orig-viewport-ref
+              :orig-size orig-size
+              :page page
+              :file file
+              :users users
+              :current-viewport-ref current-viewport-ref              
+              :size size
+              :frame frame
+              :interactions-mode interactions-mode
+              :overlays overlays
+              :zoom zoom
+              :section section
+              :index index}]))]]]))
 
 ;; --- Component: Viewer Page
 

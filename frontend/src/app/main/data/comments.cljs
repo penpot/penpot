@@ -243,7 +243,7 @@
           (update :workspace-drawing dissoc :comment)))))
 
 (defn update-filters
-  [{:keys [mode show] :as params}]
+  [{:keys [mode show list] :as params}]
   (ptk/reify ::update-filters
     ptk/UpdateEvent
     (update [_ state]
@@ -254,7 +254,10 @@
                   (assoc :mode mode)
 
                   (some? show)
-                  (assoc :show show)))))))
+                  (assoc :show show)
+
+                  (some? list)
+                  (assoc :list list)))))))
 
 (s/def ::create-draft-params
   (s/keys :req-un [::page-id ::file-id ::position]))
