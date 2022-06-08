@@ -61,7 +61,7 @@
                     :page-id page-id
                     :object-id (mapv :id objects)
                     :route "objects"}
-            uri    (-> (or uri (cf/get :public-uri))
+            uri    (-> (cf/get :public-uri)
                        (assoc :path "/render.html")
                        (assoc :query (u/map->query-string params)))]
       (bw/exec! (prepare-options uri) (partial render uri)))))

@@ -63,6 +63,6 @@
                   (on-object (assoc object :path path))
                   (p/recur (rest objects))))))]
 
-    (let [base-uri (or uri (cf/get :public-uri))]
+    (let [base-uri (cf/get :public-uri)]
       (bw/exec! (prepare-options base-uri)
                 (partial render base-uri)))))
