@@ -8,6 +8,12 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+
+## 1.13.5-beta
+
+### :bug: Bugs fixed
+- Fix orientation artboard preset not working with differently sized artboards [Taiga #3548](https://tree.taiga.io/project/penpot/issue/3548)
+
 ## 1.13.4-beta
 
 ### :bug: Bugs fixed
