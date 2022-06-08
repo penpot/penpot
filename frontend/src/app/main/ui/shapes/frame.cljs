@@ -45,7 +45,8 @@
 (mf/defc frame-thumbnail
   {::mf/wrap-props false}
   [props]
-  (let [shape (obj/get props "shape")]
+  (let [shape (obj/get props "shape")
+        bounds (or (obj/get props "bounds") (:selrect shape))]
     (when (:thumbnail shape)
       (let [{:keys [x y width height show-content]} shape
             transform (gsh/transform-str shape)
@@ -72,10 +73,10 @@
           [:image.frame-thumbnail
            {:id (dm/str "thumbnail-" (:id shape))
             :href (:thumbnail shape)
-            :x (:x shape)
-            :y (:y shape)
-            :width (:width shape)
-            :height (:height shape)
+            :x (:x bounds)
+            :y (:y bounds)
+            :width (:width bounds)
+            :height (:height bounds)
             ;; DEBUG
             :style {:filter (when (debug? :thumbnails) "sepia(1)")}}]]
 

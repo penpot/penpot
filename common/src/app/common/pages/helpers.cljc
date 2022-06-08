@@ -14,6 +14,8 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
+(declare reduce-objects)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GENERIC SHAPE SELECTORS AND PREDICATES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -187,12 +189,21 @@
   function of `get-immediate-children` for performance reasons. This
   function is executed in the render hot path."
   [objects]
-  (let [lookup (d/getf objects)
-        xform  (comp (keep lookup)
-                     (filter frame-shape?)
-                     (map :id))]
-    (->> (:shapes (lookup uuid/zero))
-         (into [] xform))))
+  (let [add-frame
+        (fn [result shape]
+          (cond-> result
+            (frame-shape? shape)
+            (conj (:id shape))))]
+    (reduce-objects objects (complement frame-shape?) add-frame [])))
+
+(defn get-root-shapes-ids
+  [objects]
+  (let [add-shape
+        (fn [result shape]
+          (cond-> result
+            (not (frame-shape? shape))
+            (conj (:id shape))))]
+    (reduce-objects objects (complement frame-shape?) add-shape [])))
 
 (defn get-root-frames
   "Retrieves all frame objects as vector. It is not implemented in
@@ -631,3 +642,28 @@
   [objects parent-id candidate-child-id]
   (let [parents (get-parents-seq objects candidate-child-id)]
     (some? (d/seek #(= % parent-id) parents))))
+
+(defn reduce-objects
+  ([objects reducer-fn init-val]
+   (reduce-objects objects nil reducer-fn init-val))
+
+  ([objects check-children? reducer-fn init-val]
+   (let [root-children (get-in objects [uuid/zero :shapes])]
+     (if (empty? root-children)
+       init-val
+
+       (loop [current-val init-val
+              current-id  (first root-children)
+              pending-ids (rest root-children)]
+
+
+         (let [current-shape (get objects current-id)
+               next-val (reducer-fn current-val current-shape)
+               next-pending-ids
+               (if (or (nil? check-children?) (check-children? current-shape))
+                 (concat (or (:shapes current-shape) []) pending-ids)
+                 pending-ids)]
+
+           (if (empty? next-pending-ids)
+             next-val
+             (recur next-val (first next-pending-ids) (rest next-pending-ids)))))))))

@@ -10,7 +10,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
-   [app.common.uuid :as uuid]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
@@ -189,23 +188,28 @@
              grouped? (fn [id] (contains? #{:group :bool} (get-in objects [id :type])))
 
 
+             selected-with-parents
+             (into #{} (mapcat #(cph/get-parent-ids objects %)) selected)
 
-             remove-xfm (mapcat #(cph/get-parent-ids objects %))
-             remove-id? (cond-> (into #{} remove-xfm selected)
-                          (not mod?)
-                          (into
-                           (filter #(or (and (cph/root-frame? objects %) (d/not-empty? (get-in objects [% :shapes])))
-                                        (group-empty-space? % objects ids)))
-                           ids)
+             root-frame-with-data? #(and (cph/root-frame? objects %) (d/not-empty? (get-in objects [% :shapes])))
 
-                          mod?
-                          (into (filter grouped?) ids))
+             ;; Set with the elements to remove from the hover list
+             remove-id?
+             (cond-> selected-with-parents
+               (not mod?)
+               (into (filter #(or (root-frame-with-data? %)
+                                  (group-empty-space? % objects ids)))
+                     ids)
 
-             hover-shape (->> ids
-                              (remove remove-id?)
-                              (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
-                              (first)
-                              (get objects))]
+               mod?
+               (into (filter grouped?) ids))
+
+             hover-shape
+             (->> ids
+                  (remove remove-id?)
+                  (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
+                  (first)
+                  (get objects))]
          (reset! hover hover-shape)
          (reset! hover-ids ids))))))
 
@@ -214,13 +218,7 @@
   (let [root-frame-ids
         (mf/use-memo
          (mf/deps objects)
-         (fn []
-           (let [frame? (into #{} (cph/get-frames-ids objects))
-                 ;; Removes from zero/shapes attribute all the frames so we can ask only for
-                 ;; the non-frame children
-                 objects (-> objects
-                             (update-in [uuid/zero :shapes] #(filterv (comp not frame?) %)))]
-             (cph/get-children-ids objects uuid/zero))))
+         #(cph/get-root-shapes-ids objects))
         modifiers (select-keys modifiers root-frame-ids)]
     (sfd/use-dynamic-modifiers objects globals/document modifiers)))
 
@@ -238,14 +236,13 @@
         selected-shapes-frames (mf/use-memo (mf/deps selected) #(into #{} xf-selected-frame selected))
 
         active-selection       (when (and (not= transform :move) (= (count selected-frames) 1)) (first selected-frames))
-        hover-frame            (last @hover-ids)
-        last-hover-frame       (mf/use-var nil)]
+        last-hover-ids       (mf/use-var nil)]
 
     (mf/use-effect
-     (mf/deps hover-frame)
+     (mf/deps @hover-ids)
      (fn []
-       (when (some? hover-frame)
-         (reset! last-hover-frame hover-frame))))
+       (when (d/not-empty? @hover-ids)
+         (reset! last-hover-ids (set @hover-ids)))))
 
     (mf/use-effect
      (mf/deps objects @hover-ids selected zoom transform vbox)
@@ -258,7 +255,9 @@
        ;; - If no hovering over any frames we keep the previous active one
        ;; - Check always that the active frames are inside the vbox
 
-       (let [is-active-frame?
+       (let [hover-ids? (set @hover-ids)
+
+             is-active-frame?
              (fn [id]
                (or
                 ;; Zoom > 130% shows every frame
@@ -267,7 +266,7 @@
                 ;; Zoom >= 25% will show frames hovering
                 (and
                  (>= zoom 0.25)
-                 (or (= id hover-frame) (= id @last-hover-frame)))
+                 (or (contains? hover-ids? id) (contains? @last-hover-ids id)))
 
                 ;; Otherwise, if it's a selected frame
                 (= id active-selection)

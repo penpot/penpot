@@ -270,6 +270,14 @@
        (into [] (keep (d/getf objects)) children-ids)))
    workspace-page-objects =))
 
+(defn all-children-objects
+  [id]
+  (l/derived
+   (fn [objects]
+     (let [children-ids (cph/get-children-ids objects id)]
+       (into [] (keep (d/getf objects)) children-ids)))
+   workspace-page-objects =))
+
 (def workspace-page-options
   (l/derived :options workspace-page))
 

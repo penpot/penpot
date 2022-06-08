@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
@@ -54,7 +55,7 @@
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
-  [page-id {:keys [id x y width height] :as shape} node-ref rendered? disable? force-render]
+  [page-id {:keys [id] :as shape} node-ref rendered? disable? force-render]
 
   (let [frame-canvas-ref (mf/use-ref nil)
         frame-image-ref (mf/use-ref nil)
@@ -63,13 +64,21 @@
 
         regenerate-thumbnail (mf/use-var false)
 
-        fixed-width (mth/clamp (:width shape) 250 2000)
-        fixed-height (/ (* (:height shape) fixed-width) (:width shape))
+        all-children-ref (mf/use-memo (mf/deps id) #(refs/all-children-objects id))
+        all-children (mf/deref all-children-ref)
+
+        {:keys [x y width height] :as shape-bb}
+        (if (:show-content shape)
+          (gsh/selection-rect all-children)
+          (-> shape :points gsh/points->selrect))
+
+        fixed-width (mth/clamp width 250 2000)
+        fixed-height (/ (* height fixed-width) width)
 
         image-url    (mf/use-state nil)
         observer-ref (mf/use-var nil)
 
-        shape-ref (hooks/use-update-var shape)
+        shape-bb-ref (hooks/use-update-var shape-bb)
 
         updates-str (mf/use-memo #(rx/subject))
 
@@ -101,7 +110,8 @@
          (fn []
            (let [node @node-ref
                  frame-html (dom/node->xml node)
-                 {:keys [x y width height]} @shape-ref
+
+                 {:keys [x y width height]} @shape-bb-ref
 
                  style-node (dom/query (dm/str "#frame-container-" (:id shape) " style"))
                  style-str (or (-> style-node dom/node->xml) "")
@@ -201,6 +211,7 @@
      (mf/html
       [:*
        [:> frame/frame-thumbnail {:key (dm/str (:id shape))
+                                  :bounds shape-bb
                                   :shape (cond-> shape
                                            (some? thumbnail-data)
                                            (assoc :thumbnail thumbnail-data))}]
@@ -220,9 +231,9 @@
 
        (when (some? @image-url)
          [:image {:ref frame-image-ref
-                  :x (:x shape)
-                  :y (:y shape)
+                  :x x
+                  :y y
                   :href @image-url
-                  :width (:width shape)
-                  :height (:height shape)
+                  :width width
+                  :height height
                   :on-load on-image-load}])])]))

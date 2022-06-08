@@ -6,9 +6,9 @@
 
 (ns app.main.ui.viewer.comments
   (:require
-   [app.common.geom.shapes :as gsh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
    [app.main.refs :as refs]

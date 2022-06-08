@@ -22,3 +22,4 @@
 (def current-page-id    (mf/create-context nil))
 (def current-file-id    (mf/create-context nil))
 (def scroll-ctx         (mf/create-context nil))
+(def active-frames-ctx  (mf/create-context nil))
