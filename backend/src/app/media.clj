@@ -18,6 +18,7 @@
    [clojure.java.io :as io]
    [clojure.java.shell :as sh]
    [clojure.spec.alpha :as s]
+   [clojure.string :as st]
    [cuerdas.core :as str]
    [datoteka.core :as fs])
   (:import
@@ -50,7 +51,6 @@
      (ex/raise :type :validation
                :code :media-type-not-allowed
                :hint "Seems like you are uploading an invalid media object"))
-
    upload))
 
 (defmulti process :cmd)
@@ -68,7 +68,9 @@
 
 (defn run
   [params]
-  (try
+  ;; TODO: reenable this
+  (process params)
+  #_(try
     (process params)
     (catch Throwable e
       (process-error e))))
@@ -164,6 +166,7 @@
   [{:keys [input] :as params}]
   (us/assert ::input input)
   (let [{:keys [path mtype]} input]
+
     (if (= mtype "image/svg+xml")
       (let [info (some-> path slurp svg/pre-process svg/parse get-basic-info-from-svg)]
         (when-not info
@@ -172,8 +175,8 @@
                     :hint "uploaded svg does not provides dimensions"))
         (merge input info))
 
-      (let [instance (Info. (str path))
-            mtype'   (.getProperty instance "Mime type")]
+      (let [instance (Info. (str path) true)
+            mtype' (str "image/" (st/lower-case (.getImageFormat instance)))]
         (when (and (string? mtype)
                    (not= mtype mtype'))
           (ex/raise :type :validation
