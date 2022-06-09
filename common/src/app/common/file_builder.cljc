@@ -222,9 +222,13 @@
 
 (defn close-artboard [file]
   (assert (nil? (:current-component-id file)))
-  (-> file
-      (assoc :current-frame-id root-frame)
-      (update :parent-stack pop)))
+
+  (let [parent-id (peek (get file :parent-stack))
+        parent (lookup-shape file parent-id)
+        current-frame-id (or (:frame-id parent) root-frame)]
+    (-> file
+        (assoc :current-frame-id current-frame-id)
+        (update :parent-stack pop))))
 
 (defn add-group [file data]
   (let [frame-id (:current-frame-id file)

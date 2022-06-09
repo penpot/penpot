@@ -79,8 +79,7 @@
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))
             shape  (gsh/transform-shape shape)]
-        [:> shape-container {:shape shape}
-         [:& frame-shape {:shape shape :childs childs}]]))))
+        [:& frame-shape {:shape shape :childs childs}]))))
 
 (defn group-wrapper-factory
   [objects]
@@ -255,8 +254,9 @@
               [:& frame/frame-thumbnail {:shape item}]]
 
              frame?
-             [:& frame-wrapper {:shape item
-                                :key (:id item)}]
+             [:> shape-container {:shape item}
+              [:& frame-wrapper {:shape item
+                                 :key (:id item)}]]
              :else
              [:& shape-wrapper {:shape item
                                 :key (:id item)}])))]]]))
@@ -389,42 +389,44 @@
         text-shapes   (sequence (filter cph/text-shape?) (vals objects))
         render-texts? (and render-texts? (d/seek (comp nil? :position-data) text-shapes))]
 
-    [:& (mf/provider embed/context) {:value render-embed?}
-     [:svg {:id (dm/str "screenshot-" object-id)
-            :view-box vbox
-            :width width
-            :height height
-            :version "1.1"
-            :xmlns "http://www.w3.org/2000/svg"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"
-            ;; Fix Chromium bug about color of html texts
-            ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
-            :style {:-webkit-print-color-adjust :exact}
-            :fill "none"}
+    [:& (mf/provider export/include-metadata-ctx) {:value true}
+     [:& (mf/provider embed/context) {:value render-embed?}
+      [:svg {:id (dm/str "screenshot-" object-id)
+             :view-box vbox
+             :width width
+             :height height
+             :version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             ;; Fix Chromium bug about color of html texts
+             ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
+             :style {:-webkit-print-color-adjust :exact}
+             :fill "none"}
 
-      (let [fonts (ff/shape->fonts object objects)]
-        [:& ff/fontfaces-style {:fonts fonts}])
+       (let [fonts (ff/shape->fonts object objects)]
+         [:& ff/fontfaces-style {:fonts fonts}])
 
-      (case (:type object)
-        :frame [:& frame-wrapper {:shape object :view-box vbox}]
-        :group [:> shape-container {:shape object}
-                [:& group-wrapper {:shape object}]]
-        [:& shape-wrapper {:shape object}])]
+       (case (:type object)
+         :frame [:> shape-container {:shape object}
+                 [:& frame-wrapper {:shape object :view-box vbox}]]
+         :group [:> shape-container {:shape object}
+                 [:& group-wrapper {:shape object}]]
+         [:& shape-wrapper {:shape object}])]
 
-     ;; Auxiliary SVG for rendering text-shapes
-     (when render-texts?
-       (for [object text-shapes]
-         [:& (mf/provider muc/text-plain-colors-ctx) {:value true}
-          [:svg
-           {:id (dm/str "screenshot-text-" (:id object))
-            :view-box (dm/str "0 0 " (:width object) " " (:height object))
-            :width (:width object)
-            :height (:height object)
-            :version "1.1"
-            :xmlns "http://www.w3.org/2000/svg"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"
-            :fill "none"}
-           [:& shape-wrapper {:shape (assoc object :x 0 :y 0)}]]]))]))
+      ;; Auxiliary SVG for rendering text-shapes
+      (when render-texts?
+        (for [object text-shapes]
+          [:& (mf/provider muc/text-plain-colors-ctx) {:value true}
+           [:svg
+            {:id (dm/str "screenshot-text-" (:id object))
+             :view-box (dm/str "0 0 " (:width object) " " (:height object))
+             :width (:width object)
+             :height (:height object)
+             :version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :fill "none"}
+            [:& shape-wrapper {:shape (assoc object :x 0 :y 0)}]]]))]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SPRITES (DEBUG)

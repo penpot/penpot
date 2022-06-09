@@ -105,9 +105,10 @@
   "Returns a vector of parents of the specified shape."
   [objects shape-id]
   (loop [result [] id shape-id]
-    (if-let [parent-id (dm/get-in objects [id :parent-id])]
-      (recur (conj result parent-id) parent-id)
-      result)))
+    (let [parent-id (dm/get-in objects [id :parent-id])]
+      (if (and (some? parent-id) (not= parent-id id))
+        (recur (conj result parent-id) parent-id)
+        result))))
 
 (defn get-frame
   "Get the frame that contains the shape. If the shape is already a
@@ -241,16 +242,15 @@
   (let [[base index-a index-b] (get-base objects base-shape-id over-shape-id)]
     (cond
       (= base base-shape-id)
-
-      (and (frame-shape? objects over-shape-id)
-           (root-frame? objects over-shape-id))
+      (and (frame-shape? objects base-shape-id)
+           (root-frame? objects base-shape-id))
 
       (= base over-shape-id)
       (or (not (frame-shape? objects over-shape-id))
           (not (root-frame? objects over-shape-id)))
 
       :else
-      (> index-a index-b))))
+      (< index-a index-b))))
 
 (defn sort-z-index
   ([objects ids]
@@ -667,3 +667,10 @@
            (if (empty? next-pending-ids)
              next-val
              (recur next-val (first next-pending-ids) (rest next-pending-ids)))))))))
+
+(defn selected-with-children
+  [objects selected]
+
+  (into selected
+        (mapcat #(get-children-ids objects %))
+        selected))
