@@ -556,6 +556,32 @@
     (watch [_ _ _]
       (rx/of (apply-modifiers ids)))))
 
+(defn change-orientation
+  "Change orientation of shapes, from the sidebar options form.
+  Will ignore pixel snap used in the options side panel"
+  [ids orientation]
+  (us/verify (s/coll-of ::us/uuid) ids)
+  (us/verify #{:horiz :vert} orientation)
+  (ptk/reify ::change-orientation
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects     (wsh/lookup-page-objects state)
+            layout      (get state :workspace-layout)
+            snap-pixel? (contains? layout :snap-pixel-grid)
+
+            update-modifiers
+            (fn [state id]
+              (let [shape     (get objects id)
+                    modifiers (gsh/change-orientation-modifiers shape orientation)]
+                (-> state
+                    (update :workspace-modifiers
+                            #(set-objects-modifiers % objects shape modifiers false snap-pixel?)))))]
+        (reduce update-modifiers state ids)))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (apply-modifiers ids)))))
+
 ;; -- Rotate --------------------------------------------------------
 
 (defn start-rotate
@@ -786,7 +812,7 @@
 
              (rx/of (apply-modifiers selected)
                     (finish-transform))))
-            (rx/empty))))))
+          (rx/empty))))))
 
 (s/def ::x number?)
 (s/def ::y number?)

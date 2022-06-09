@@ -110,12 +110,7 @@
 
         on-orientation-clicked
         (fn [orientation]
-          (let [width (:width values)
-                height (:height values)
-                new-width (if (= orientation :horiz) (max width height) (min width height))
-                new-height (if (= orientation :horiz) (min width height) (max width height))]
-            (st/emit! (udw/update-dimensions ids :width new-width)
-                      (udw/update-dimensions ids :height new-height))))
+          (st/emit! (udw/change-orientation ids orientation)))
 
         on-size-change
         (mf/use-callback
