@@ -426,6 +426,31 @@
      :resize-transform shape-transform
      :resize-transform-inverse shape-transform-inv}))
 
+(defn change-orientation-modifiers
+  [shape orientation]
+  (us/assert map? shape)
+  (us/verify #{:horiz :vert} orientation)
+  (let [width (:width shape)
+        height (:height shape)
+        new-width (if (= orientation :horiz) (max width height) (min width height))
+        new-height (if (= orientation :horiz) (min width height) (max width height))
+
+        shape-transform (:transform shape)
+        shape-transform-inv (:transform-inverse shape)
+        shape-center (gco/center-shape shape)
+        {sr-width :width sr-height :height} (:selrect shape)
+
+        origin (cond-> (gpt/point (:selrect shape))
+                 (some? shape-transform)
+                 (transform-point-center shape-center shape-transform))
+
+        scalev (gpt/divide (gpt/point new-width new-height)
+                           (gpt/point sr-width sr-height))]
+    {:resize-vector scalev
+     :resize-origin origin
+     :resize-transform shape-transform
+     :resize-transform-inverse shape-transform-inv}))
+
 (defn rotation-modifiers
   [shape center angle]
   (let [displacement (let [shape-center (gco/center-shape shape)]

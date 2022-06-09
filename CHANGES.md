@@ -22,6 +22,12 @@
 - Remove deprecated menu options [Taiga #3333](https://tree.taiga.io/project/penpot/issue/3333)
 - Prototype connection should be under the rules [Taiga #3384](https://tree.taiga.io/project/penpot/issue/3384)
 
+
+## 1.13.5-beta
+
+### :bug: Bugs fixed
+- Fix orientation artboard preset not working with differently sized artboards [Taiga #3548](https://tree.taiga.io/project/penpot/issue/3548)
+
 ## 1.13.4-beta
 
 ### :bug: Bugs fixed
