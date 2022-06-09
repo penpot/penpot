@@ -7,8 +7,8 @@
 (ns app.main.data.workspace.notifications
   (:require
    [app.common.data :as d]
+   [app.common.pages.changes-spec :as pcs]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
    [app.common.uuid :as uuid]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace.changes :as dch]
@@ -184,7 +184,7 @@
 (s/def ::file-id uuid?)
 (s/def ::session-id uuid?)
 (s/def ::revn integer?)
-(s/def ::changes ::spec.change/changes)
+(s/def ::changes ::pcs/changes)
 
 (s/def ::file-change-event
   (s/keys :req-un [::type ::profile-id ::file-id ::session-id ::revn ::changes]))

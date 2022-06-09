@@ -4,12 +4,11 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.file
+(ns app.common.types.file
   (:require
    [app.common.spec :as us]
-   [app.common.spec.color :as color]
-   [app.common.spec.page :as page]
-   [app.common.spec.typography]
+   [app.common.types.color :as ctc]
+   [app.common.types.page :as ctp]
    [clojure.spec.alpha :as s]))
 
 (s/def :internal.media-object/name string?)
@@ -31,13 +30,13 @@
           :opt-un [:internal.media-object/path]))
 
 (s/def ::colors
-  (s/map-of uuid? ::color/color))
+  (s/map-of uuid? ::ctc/color))
 
 (s/def ::recent-colors
-  (s/coll-of ::color/recent-color :kind vector?))
+  (s/coll-of ::ctc/recent-color :kind vector?))
 
 (s/def ::typographies
-  (s/map-of uuid? :app.common.spec.typography/typography))
+  (s/map-of uuid? :ctst/typography))
 
 (s/def ::pages
   (s/coll-of uuid? :kind vector?))
@@ -46,10 +45,10 @@
   (s/map-of uuid? ::media-object))
 
 (s/def ::pages-index
-  (s/map-of uuid? ::page/page))
+  (s/map-of uuid? ::ctp/page))
 
 (s/def ::components
-  (s/map-of uuid? ::page/container))
+  (s/map-of uuid? ::ctp/container))
 
 (s/def ::data
   (s/keys :req-un [::pages-index

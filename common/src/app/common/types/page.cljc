@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.page
+(ns app.common.types.page
   (:require
    [app.common.data :as d]
    [app.common.spec :as us]
-   [app.common.spec.shape :as shape]
+   [app.common.types.shape :as cts]
    [clojure.spec.alpha :as s]))
 
 ;; --- Grid options
@@ -90,7 +90,7 @@
 
 (s/def ::id uuid?)
 (s/def ::name string?)
-(s/def ::objects (s/map-of uuid? ::shape/shape))
+(s/def ::objects (s/map-of uuid? ::cts/shape))
 
 (s/def ::page
   (s/keys :req-un [::id ::name ::objects ::options]))

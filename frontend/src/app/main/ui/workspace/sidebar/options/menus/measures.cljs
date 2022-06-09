@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.spec.radius :as ctr]
+   [app.common.types.shape.radius :as ctsr]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
@@ -99,8 +99,8 @@
 
         show-presets-dropdown? (mf/use-state false)
 
-        radius-mode      (ctr/radius-mode values)
-        all-equal?       (ctr/all-equal? values)
+        radius-mode      (ctsr/radius-mode values)
+        all-equal?       (ctsr/all-equal? values)
         radius-multi?    (mf/use-state nil)
         radius-input-ref (mf/use-ref nil)
 
@@ -154,7 +154,7 @@
          (fn [update-fn]
            (dch/update-shapes ids-with-children
                               (fn [shape]
-                                (if (ctr/has-radius? shape)
+                                (if (ctsr/has-radius? shape)
                                   (update-fn shape)
                                   shape)))))
 
@@ -163,21 +163,21 @@
          (mf/deps ids)
          (fn [_value]
            (if all-equal?
-             (st/emit! (change-radius ctr/switch-to-radius-1))
+             (st/emit! (change-radius ctsr/switch-to-radius-1))
              (reset! radius-multi? true))))
 
         on-switch-to-radius-4
         (mf/use-callback
          (mf/deps ids)
          (fn [_value]
-           (st/emit! (change-radius ctr/switch-to-radius-4))
+           (st/emit! (change-radius ctsr/switch-to-radius-4))
            (reset! radius-multi? false)))
 
         on-radius-1-change
         (mf/use-callback
          (mf/deps ids)
          (fn [value]
-           (st/emit! (change-radius #(ctr/set-radius-1 % value)))))
+           (st/emit! (change-radius #(ctsr/set-radius-1 % value)))))
 
         on-radius-multi-change
         (mf/use-callback
@@ -185,15 +185,15 @@
          (fn [event]
            (let [value (-> event dom/get-target dom/get-value d/parse-integer)]
              (when (some? value)
-               (st/emit! (change-radius ctr/switch-to-radius-1)
-                         (change-radius #(ctr/set-radius-1 % value)))
+               (st/emit! (change-radius ctsr/switch-to-radius-1)
+                         (change-radius #(ctsr/set-radius-1 % value)))
                (reset! radius-multi? false)))))
 
         on-radius-4-change
         (mf/use-callback
          (mf/deps ids)
          (fn [value attr]
-           (st/emit! (change-radius #(ctr/set-radius-4 % attr value)))))
+           (st/emit! (change-radius #(ctsr/set-radius-4 % attr value)))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)

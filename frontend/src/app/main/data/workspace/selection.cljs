@@ -14,8 +14,8 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.interactions :as cti]
-   [app.common.spec.page :as ctp]
+   [app.common.types.page :as ctp]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
@@ -326,7 +326,7 @@
                               :shapes [])
                        (dissoc :use-for-thumbnail?)
                        (gsh/move delta)
-                       (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
+                       (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 
         changes (-> (pcb/add-object changes new-frame)
                     (pcb/amend-last-change #(assoc % :old-id (:id obj))))
@@ -361,7 +361,7 @@
                                  :frame-id frame-id)
                           (dissoc :shapes)
                           (gsh/move delta)
-                          (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
+                          (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 
           changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))]

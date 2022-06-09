@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.blur
+(ns app.common.types.shape.blur
   (:require
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))

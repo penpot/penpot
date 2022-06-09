@@ -10,9 +10,9 @@
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.changes-spec :as pcs]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -159,8 +159,8 @@
                                 [:workspace-data]
                                 [:workspace-libraries file-id :data])]
           (try
-            (us/assert ::spec.change/changes redo-changes)
-            (us/assert ::spec.change/changes undo-changes)
+            (us/assert ::pcs/changes redo-changes)
+            (us/assert ::pcs/changes undo-changes)
 
             (update-in state path (fn [file]
                                     (-> file

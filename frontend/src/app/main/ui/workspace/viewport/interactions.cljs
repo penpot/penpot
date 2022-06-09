@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.spec.interactions :as cti]
+   [app.common.types.shape.interactions :as ctsi]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -275,7 +275,7 @@
      [:g.non-selected
       (for [shape active-shapes]
         (for [[index interaction] (d/enumerate (:interactions shape))]
-          (let [dest-shape (when (cti/destination? interaction)
+          (let [dest-shape (when (ctsi/destination? interaction)
                              (get objects (:destination interaction)))
                 selected? (contains? selected (:id shape))
                 level (calc-level index (:interactions shape))]
@@ -304,7 +304,7 @@
         (if (seq (:interactions shape))
           (for [[index interaction] (d/enumerate (:interactions shape))]
             (when-not (= index editing-interaction-index)
-              (let [dest-shape (when (cti/destination? interaction)
+              (let [dest-shape (when (ctsi/destination? interaction)
                                  (get objects (:destination interaction)))
                     level (calc-level index (:interactions shape))]
                 [:g {:key (dm/str "interaction-path-" (:id shape) "-" index)}

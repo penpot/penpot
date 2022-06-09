@@ -7,7 +7,6 @@
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
-   [app.common.spec.file :as spec.file]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]

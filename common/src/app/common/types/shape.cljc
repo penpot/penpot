@@ -4,17 +4,17 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.shape
+(ns app.common.types.shape
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
-   [app.common.spec.blur :as blur]
-   [app.common.spec.color :as color]
-   [app.common.spec.export :as export]
-   [app.common.spec.interactions :as cti]
-   [app.common.spec.radius :as radius]
-   [app.common.spec.shadow :as shadow]
+   [app.common.types.color :as ctc]
+   [app.common.types.shape.blur :as ctsb]
+   [app.common.types.shape.export :as ctse]
+   [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.shape.radius :as ctsr]
+   [app.common.types.shape.shadow :as ctss]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]))
 
@@ -47,7 +47,7 @@
 
 (s/def ::fill-color string?)
 (s/def ::fill-opacity ::us/safe-number)
-(s/def ::fill-color-gradient (s/nilable ::color/gradient))
+(s/def ::fill-color-gradient (s/nilable ::ctc/gradient))
 (s/def ::fill-color-ref-file (s/nilable uuid?))
 (s/def ::fill-color-ref-id (s/nilable uuid?))
 
@@ -69,7 +69,7 @@
 (s/def ::proportion ::us/safe-number)
 (s/def ::proportion-lock boolean?)
 (s/def ::stroke-color string?)
-(s/def ::stroke-color-gradient (s/nilable ::color/gradient))
+(s/def ::stroke-color-gradient (s/nilable ::ctc/gradient))
 (s/def ::stroke-color-ref-file (s/nilable uuid?))
 (s/def ::stroke-color-ref-id (s/nilable uuid?))
 (s/def ::stroke-opacity ::us/safe-number)
@@ -102,7 +102,7 @@
   (s/keys :req-un [::x ::y ::x1 ::y1 ::x2 ::y2 ::width ::height]))
 
 (s/def ::exports
-  (s/coll-of ::export/export :kind vector?))
+  (s/coll-of ::ctse/export :kind vector?))
 
 (s/def ::points
   (s/every ::gpt/point :kind vector?))
@@ -187,12 +187,12 @@
                    ::constraints-h
                    ::constraints-v
                    ::fixed-scroll
-                   ::radius/rx
-                   ::radius/ry
-                   ::radius/r1
-                   ::radius/r2
-                   ::radius/r3
-                   ::radius/r4
+                   ::ctsr/rx
+                   ::ctsr/ry
+                   ::ctsr/r1
+                   ::ctsr/r2
+                   ::ctsr/r3
+                   ::ctsr/r4
                    ::x
                    ::y
                    ::exports
@@ -213,9 +213,9 @@
                    ::width
                    ::height
                    ::masked-group?
-                   ::cti/interactions
-                   ::shadow/shadow
-                   ::blur/blur
+                   ::ctsi/interactions
+                   ::ctss/shadow
+                   ::ctsb/blur
                    ::opacity
                    ::blend-mode]))
 

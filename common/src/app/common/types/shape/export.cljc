@@ -4,11 +4,10 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.export
+(ns app.common.types.shape.export
   (:require
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
-
 
 (s/def ::suffix string?)
 (s/def ::scale ::us/safe-number)
@@ -18,5 +17,4 @@
   (s/keys :req-un [::type
                    ::suffix
                    ::scale]))
-
 

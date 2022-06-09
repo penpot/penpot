@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.change
+(ns app.common.pages.changes-spec
   (:require
    [app.common.spec :as us]
-   [app.common.spec.color :as color]
-   [app.common.spec.file :as file]
-   [app.common.spec.page :as page]
-   [app.common.spec.shape :as shape]
-   [app.common.spec.typography :as typg]
+   [app.common.types.color :as ctc]
+   [app.common.types.file :as ctf]
+   [app.common.types.page :as ctp]
+   [app.common.types.shape :as cts]
+   [app.common.types.typography :as ctt]
    [clojure.spec.alpha :as s]))
 
 (s/def ::index integer?)
@@ -52,7 +52,7 @@
   (s/keys :req-un [:internal.changes.set-option/option
                    :internal.changes.set-option/value]))
 
-(s/def :internal.changes.add-obj/obj ::shape/shape)
+(s/def :internal.changes.add-obj/obj ::cts/shape)
 
 (defn- valid-container-id-frame?
   [o]
@@ -89,18 +89,18 @@
          valid-container-id?))
 
 (defmethod change-spec :reg-objects [_]
-  (s/and (s/keys :req-un [::shape/shapes]
+  (s/and (s/keys :req-un [::cts/shapes]
                  :opt-un [::page-id ::component-id])
          valid-container-id?))
 
 (defmethod change-spec :mov-objects [_]
-  (s/and (s/keys :req-un [::parent-id ::shape/shapes]
+  (s/and (s/keys :req-un [::parent-id ::cts/shapes]
                  :opt-un [::page-id ::component-id ::index])
          valid-container-id?))
 
 (defmethod change-spec :add-page [_]
   (s/or :empty (s/keys :req-un [::id ::name])
-        :complete (s/keys :req-un [::page/page])))
+        :complete (s/keys :req-un [::ctp/page])))
 
 (defmethod change-spec :mod-page [_]
   (s/keys :req-un [::id ::name]))
@@ -112,21 +112,21 @@
   (s/keys :req-un [::id ::index]))
 
 (defmethod change-spec :add-color [_]
-  (s/keys :req-un [::color/color]))
+  (s/keys :req-un [::ctc/color]))
 
 (defmethod change-spec :mod-color [_]
-  (s/keys :req-un [::color/color]))
+  (s/keys :req-un [::ctc/color]))
 
 (defmethod change-spec :del-color [_]
   (s/keys :req-un [::id]))
 
-(s/def :internal.changes.add-recent-color/color ::color/recent-color)
+(s/def :internal.changes.add-recent-color/color ::ctc/recent-color)
 
 (defmethod change-spec :add-recent-color [_]
   (s/keys :req-un [:internal.changes.add-recent-color/color]))
 
 
-(s/def :internal.changes.add-media/object ::file/media-object)
+(s/def :internal.changes.add-media/object ::ctf/media-object)
 (defmethod change-spec :add-media [_]
   (s/keys :req-un [:internal.changes.add-media/object]))
 
@@ -149,7 +149,7 @@
   (s/keys :req-un [::id]))
 
 (s/def :internal.changes.add-component/shapes
-  (s/coll-of ::shape/shape))
+  (s/coll-of ::cts/shape))
 
 (defmethod change-spec :add-component [_]
   (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]
@@ -163,13 +163,13 @@
   (s/keys :req-un [::id]))
 
 (defmethod change-spec :add-typography [_]
-  (s/keys :req-un [::typg/typography]))
+  (s/keys :req-un [::ctt/typography]))
 
 (defmethod change-spec :mod-typography [_]
-  (s/keys :req-un [::typg/typography]))
+  (s/keys :req-un [::ctt/typography]))
 
 (defmethod change-spec :del-typography [_]
-  (s/keys :req-un [::typg/id]))
+  (s/keys :req-un [::ctt/id]))
 
 (s/def ::change (s/multi-spec change-spec :type))
 (s/def ::changes (s/coll-of ::change))

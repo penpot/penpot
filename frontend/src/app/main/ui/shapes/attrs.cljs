@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.common.spec.radius :as ctr]
-   [app.common.spec.shape :refer [stroke-caps-line stroke-caps-marker]]
+   [app.common.types.shape :refer [stroke-caps-line stroke-caps-marker]]
+   [app.common.types.shape.radius :as ctsr]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
@@ -31,7 +31,7 @@
 
 
 (defn add-border-radius [attrs {:keys [x y width height] :as shape}]
-  (case (ctr/radius-mode shape)
+  (case (ctsr/radius-mode shape)
     :radius-1
     (let [radius (gsh/shape-corners-1 shape)]
       (obj/merge! attrs #js {:rx radius :ry radius}))

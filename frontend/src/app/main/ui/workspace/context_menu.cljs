@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
-   [app.common.spec.page :as csp]
+   [app.common.types.page :as ctp]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -329,7 +329,7 @@
         is-frame?       (and single? has-frame?)]
 
     (when (and prototype? is-frame?)
-      (let [flow (csp/get-frame-flow flows (-> shapes first :id))]
+      (let [flow (ctp/get-frame-flow flows (-> shapes first :id))]
         (if (some? flow)
           [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
                           :on-click (do-remove-flow flow)}]

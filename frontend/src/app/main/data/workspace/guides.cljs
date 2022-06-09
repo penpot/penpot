@@ -10,7 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.spec :as us]
-   [app.common.spec.page :as csp]
+   [app.common.types.page :as ctp]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
@@ -24,7 +24,7 @@
       (merge guide))))
 
 (defn update-guides [guide]
-  (us/verify ::csp/guide guide)
+  (us/verify ::ctp/guide guide)
   (ptk/reify ::update-guides
     ptk/WatchEvent
     (watch [it state _]
@@ -36,7 +36,7 @@
         (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guide [guide]
-  (us/verify ::csp/guide guide)
+  (us/verify ::ctp/guide guide)
   (ptk/reify ::remove-guide
     ptk/UpdateEvent
     (update [_ state]
