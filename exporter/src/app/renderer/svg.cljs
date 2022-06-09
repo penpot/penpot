@@ -114,7 +114,7 @@
      :height height}))
 
 (defn render
-  [{:keys [page-id file-id objects token scale suffix type uri]} on-object]
+  [{:keys [page-id file-id objects token scale type]} on-object]
   (letfn [(convert-to-ppm [pngpath]
             (l/trace :fn :convert-to-ppm)
             (let [basepath (path/dirname pngpath)

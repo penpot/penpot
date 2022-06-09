@@ -24,7 +24,7 @@
    [promesa.core :as p]))
 
 (defn render
-  [{:keys [file-id page-id token scale type uri objects] :as params} on-object]
+  [{:keys [file-id page-id token scale type objects] :as params} on-object]
   (letfn [(prepare-options [uri]
             #js {:screen #js {:width bw/default-viewport-width
                               :height bw/default-viewport-height}
