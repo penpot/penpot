@@ -1241,8 +1241,8 @@
           ;; Prepare the shape object. Mainly needed for image shapes
           ;; for retrieve the image data and convert it to the
           ;; data-url.
-          (prepare-object [objects selected {:keys [type] :as obj}]
-            (let [obj (maybe-translate obj objects selected)]
+          (prepare-object [objects selected+children {:keys [type] :as obj}]
+            (let [obj (maybe-translate obj objects selected+children)]
               (if (= type :image)
                 (let [url (cfg/resolve-file-media (:metadata obj))]
                   (->> (http/send! {:method :get
@@ -1265,9 +1265,9 @@
                   (update res :images conj img-part))
                 res)))
 
-          (maybe-translate [shape objects selected]
+          (maybe-translate [shape objects selected+children]
             (if (and (not= (:type shape) :frame)
-                     (not (contains? selected (:frame-id shape))))
+                     (not (contains? selected+children (:frame-id shape))))
               ;; When the parent frame is not selected we change to relative
               ;; coordinates
               (let [frame (get objects (:frame-id shape))]
@@ -1284,6 +1284,8 @@
         (let [objects  (wsh/lookup-page-objects state)
               selected (->> (wsh/lookup-selected state)
                             (cph/clean-loops objects))
+
+              selected+children (cph/selected-with-children objects selected)
               pdata    (reduce (partial collect-object-ids objects) {} selected)
               initial  {:type :copied-shapes
                         :file-id (:current-file-id state)
@@ -1293,7 +1295,7 @@
 
 
           (->> (rx/from (seq (vals pdata)))
-               (rx/merge-map (partial prepare-object objects selected))
+               (rx/merge-map (partial prepare-object objects selected+children))
                (rx/reduce collect-data initial)
                (rx/map (partial sort-selected state))
                (rx/map t/encode-str)
