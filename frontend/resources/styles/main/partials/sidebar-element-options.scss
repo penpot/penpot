@@ -625,7 +625,9 @@
   }
 }
 
-.radius-options {
+.radius-options,
+.padding-options,
+.margin-options {
   align-items: center;
   border: 1px solid $color-gray-60;
   border-radius: 4px;
@@ -634,7 +636,9 @@
   padding: 8px;
   width: 64px;
 
-  .radius-icon {
+  .radius-icon,
+  .padding-icon,
+  .margin-icon {
     display: flex;
     align-items: center;
 
@@ -1580,6 +1584,270 @@
 
     svg {
       visibility: visible;
+    }
+  }
+}
+
+.layout-menu {
+  svg {
+    height: 16px;
+    width: 16px;
+    fill: $color-gray-30;
+  }
+  .direction-gap {
+    display: flex;
+    justify-content: space-between;
+    .direction {
+      display: flex;
+      .dir {
+        margin-right: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: none;
+        border: none;
+        cursor: pointer;
+
+        &.right {
+          svg {
+            transform: rotate(180deg);
+          }
+        }
+        &.top {
+          svg {
+            transform: rotate(-90deg);
+          }
+        }
+        &.bottom {
+          svg {
+            transform: rotate(90deg);
+          }
+        }
+        &.active,
+        &:hover {
+          svg {
+            fill: $color-primary;
+          }
+        }
+      }
+    }
+    .gap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      .icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 7px;
+        &.rotated {
+          transform: rotate(90deg);
+        }
+        &.activated {
+          svg {
+            fill: $color-primary;
+          }
+        }
+      }
+      input {
+        font-size: 0.75rem;
+        min-width: 0;
+        padding: 0.25rem;
+        width: 50px;
+        height: 20px;
+        margin: 0;
+      }
+    }
+  }
+
+  .layout-container {
+    border: 1px solid $color-gray-60;
+    border-radius: 3px;
+    margin: 5px 0;
+    .layout-entry {
+      display: flex;
+      align-items: center;
+      color: $color-gray-20;
+      height: 38px;
+      cursor: pointer;
+      &:hover {
+        svg {
+          fill: $color-primary;
+        }
+      }
+    }
+
+    .layout-info {
+      font-size: $fs12;
+      width: 100%;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      &::first-letter {
+        text-transform: capitalize;
+      }
+    }
+
+    .layout-body {
+      display: flex;
+      align-items: center;
+      margin: 7px;
+      .selects-wrapper {
+        width: 100%;
+        margin-left: 12px;
+        select {
+          text-transform: capitalize;
+        }
+        option {
+          text-transform: capitalize;
+        }
+      }
+
+      .orientation-grid {
+        background-color: $color-gray-60;
+        .button-wrapper {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          grid-template-rows: 1fr 1fr 1fr;
+          width: 47px;
+          height: 47px;
+          border: 1px solid $color-gray-30;
+          margin: 12px;
+          .orientation {
+            background: none;
+            border: none;
+            height: 14px;
+            width: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2px;
+            cursor: pointer;
+
+            .icon {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              svg {
+                fill: none;
+                height: 10px;
+                width: 10px;
+              }
+              &.rotated {
+                transform: rotate(90deg);
+              }
+            }
+
+            &.active {
+              .icon {
+                svg {
+                  fill: $color-primary;
+                }
+              }
+            }
+            &:hover {
+              .icon {
+                svg {
+                  fill: $color-gray-20;
+                }
+              }
+            }
+          }
+        }
+        &.col {
+          .button-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr;
+            .orientation {
+              height: 100%;
+              justify-content: space-between;
+              flex-direction: column;
+            }
+          }
+        }
+        &.row {
+          .button-wrapper {
+            display: grid;
+            grid-template-rows: 1fr 1fr 1fr;
+            grid-template-columns: 1fr;
+            .orientation {
+              width: 100%;
+              justify-content: space-between;
+              padding: 2px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.layout-item-menu {
+  .layout-behavior {
+    display: flex;
+    align-items: center;
+    margin: 9px 0;
+    .button-wrapper {
+      border: 1px solid $color-gray-60;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      .behavior-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+        .icon {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 26px;
+          width: 26px;
+          svg {
+            height: 16px;
+            width: 16px;
+            fill: $color-gray-30;
+          }
+        }
+        &:hover,
+        &.activated {
+          svg {
+            fill: $color-primary;
+          }
+        }
+      }
+      &.horizontal {
+        margin-right: 8px;
+        svg {
+          transform: rotate(90deg);
+        }
+      }
+    }
+  }
+  .advanced-ops {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: $fs12;
+    color: $color-gray-30;
+    &:hover {
+      svg {
+        fill: $color-primary;
+      }
+    }
+  }
+  .advanced-ops-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    .input-element {
+      width: 100%;
+      &::after {
+        width: 100px;
+      }
     }
   }
 }

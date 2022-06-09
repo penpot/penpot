@@ -2497,10 +2497,6 @@ msgstr "行"
 msgid "workspace.options.grid.square"
 msgstr "正方形"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "网格与布局"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
 msgstr "编组填充"

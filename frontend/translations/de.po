@@ -2813,10 +2813,6 @@ msgstr "Zeile"
 msgid "workspace.options.grid.square"
 msgstr "Quadrat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "Raster & Layouts"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
 msgstr "Gruppe füllen"

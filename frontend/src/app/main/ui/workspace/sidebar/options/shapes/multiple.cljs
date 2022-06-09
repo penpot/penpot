@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :as cpc]
    [app.common.text :as txt]
+   [app.main.constants :refer [has-layout-item]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -18,6 +19,8 @@
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout :refer [layout-attrs layout-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
@@ -130,15 +133,17 @@
     :exports    :shape}})
 
 (def group->attrs
-  {:measure    measure-attrs
-   :layer      layer-attrs
-   :constraint constraint-attrs
-   :fill       fill-attrs
-   :shadow     shadow-attrs
-   :blur       blur-attrs
-   :stroke     stroke-attrs
-   :text       ot/attrs
-   :exports    exports-attrs})
+  {:measure     measure-attrs
+   :layer       layer-attrs
+   :constraint  constraint-attrs
+   :fill        fill-attrs
+   :shadow      shadow-attrs
+   :blur        blur-attrs
+   :stroke      stroke-attrs
+   :text        ot/attrs
+   :exports     exports-attrs
+   :layout      layout-attrs
+   :layout-item layout-item-attrs})
 
 (def shadow-keys [:style :color :offset-x :offset-y :blur :spread])
 
@@ -242,17 +247,20 @@
         all-types (into #{} (map :type shapes))
 
         has-text? (contains? all-types :text)
-
+        
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
 
-        [layer-ids      layer-values
-         constraint-ids constraint-values
-         fill-ids       fill-values
-         shadow-ids     shadow-values
-         blur-ids       blur-values
-         stroke-ids     stroke-values
-         text-ids       text-values
-         exports-ids    exports-values]
+
+        [layer-ids       layer-values
+         constraint-ids  constraint-values
+         fill-ids        fill-values
+         shadow-ids      shadow-values
+         blur-ids        blur-values
+         stroke-ids      stroke-values
+         text-ids        text-values
+         exports-ids     exports-values
+         layout-ids      layout-values
+         layout-item-ids layout-item-values]
         (mf/use-memo
          (mf/deps objects-no-measures)
          (fn []
@@ -266,11 +274,20 @@
              (get-attrs shapes objects-no-measures :blur)
              (get-attrs shapes objects-no-measures :stroke)
              (get-attrs shapes objects-no-measures :text)
-             (get-attrs shapes objects-no-measures :exports)])))]
+             (get-attrs shapes objects-no-measures :exports)
+             (get-attrs shapes objects-no-measures :layout)
+             (get-attrs shapes objects-no-measures :layout-item)
+             ])))]
 
     [:div.options
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
+
+     (when-not (empty? layout-ids)
+       [:& layout-menu {:type type :ids layout-ids :values layout-values}])
+     
+     (when has-layout-item
+       [:& layout-item-menu {:type type :ids layout-item-ids :values layout-item-values}])
 
      (when-not (empty? constraint-ids)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
@@ -284,7 +301,7 @@
      (when-not (empty? stroke-ids)
        [:& stroke-menu {:type type :ids stroke-ids :show-caps show-caps :values stroke-values
                         :disable-stroke-style has-text?}])
-     
+
      (when-not (empty? shapes)
        [:& color-selection-menu {:type type :shapes (vals objects-no-measures)}])
 

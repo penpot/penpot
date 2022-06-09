@@ -2034,10 +2034,6 @@ msgstr "Строки"
 msgid "workspace.options.grid.square"
 msgstr "Квадрат"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "Сетка и Макеты"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
 msgstr "Заливка для группы"

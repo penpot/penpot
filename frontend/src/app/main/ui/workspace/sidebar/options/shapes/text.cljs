@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
    [app.common.data :as d]
+   [app.main.constants :refer [has-layout-item]]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
@@ -14,6 +15,7 @@
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu fill-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
@@ -56,7 +58,8 @@
                      (dwt/current-text-values
                       {:editor-state editor-state
                        :shape shape
-                       :attrs text-attrs}))]
+                       :attrs text-attrs}))
+        layout-item-values (select-keys shape layout-item-attrs)]
 
     [:*
      [:& measures-menu
@@ -64,7 +67,11 @@
        :type type
        :values (select-keys shape measure-attrs)
        :shape shape}]
-
+     (when has-layout-item
+       [:& layout-item-menu {:ids ids
+                             :type type
+                             :values layout-item-values
+                             :shape shape}])
      [:& constraints-menu
       {:ids ids
        :values (select-keys shape constraint-attrs)}]
@@ -72,7 +79,7 @@
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]
-     
+
      [:& text-menu
       {:ids ids
        :type type
@@ -97,6 +104,4 @@
 
      [:& blur-menu
       {:ids ids
-       :values (select-keys shape [:blur])}]
-
-     ]))
+       :values (select-keys shape [:blur])}]]))

@@ -2813,10 +2813,6 @@ msgstr "Satırlar"
 msgid "workspace.options.grid.square"
 msgstr "Kare"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "Izgara ve Yerleşim Düzenleri"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
 msgstr "Grubu doldur"
