@@ -2740,10 +2740,6 @@ msgstr "Rzędy"
 msgid "workspace.options.grid.square"
 msgstr "Kwadrat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "Siatka i układy"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
 msgstr "Wypełnienie grupy"

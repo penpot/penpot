@@ -1706,10 +1706,6 @@ msgstr "Σειρές"
 msgid "workspace.options.grid.square"
 msgstr "τετράγωνο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "Πλέγμα & Διατάξεις"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
 msgstr "Συμπλήρωση ομάδας"

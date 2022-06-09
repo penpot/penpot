@@ -2754,10 +2754,6 @@ msgstr "שורות"
 msgid "workspace.options.grid.square"
 msgstr "ריבוע"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "רשת ופריסות"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
 msgstr "מילוי קבוצה"

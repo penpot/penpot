@@ -6,10 +6,13 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
+   [app.main.constants :refer [has-layout-item]]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout :refer [layout-attrs layout-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
@@ -21,12 +24,22 @@
         type (:type shape)
         stroke-values (select-keys shape stroke-attrs)
         layer-values (select-keys shape layer-attrs)
-        measure-values (select-keys shape measure-attrs)]
+        measure-values (select-keys shape measure-attrs)
+        layout-values (select-keys shape layout-attrs)
+        layout-item-values (select-keys shape layout-item-attrs)]
     [:*
      [:& measures-menu {:ids [(:id shape)]
                         :values measure-values
                         :type type
                         :shape shape}]
+     (when has-layout-item
+       [:& layout-menu {:type type :ids [(:id shape)] :values layout-values}])
+     
+     (when has-layout-item
+       [:& layout-item-menu {:ids ids
+                             :type type
+                             :values layout-item-values
+                             :shape shape}])
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]
