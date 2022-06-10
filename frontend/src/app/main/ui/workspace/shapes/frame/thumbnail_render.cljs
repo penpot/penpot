@@ -33,7 +33,6 @@
 
         (.clearRect canvas-context 0 0 canvas-width canvas-height)
         (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
-        (.removeAttribute canvas-node "data-empty")
         true))
     (catch :default err
       (.error js/console err)
@@ -87,7 +86,11 @@
 
         prev-thumbnail-data (hooks/use-previous thumbnail-data)
 
+        ;; State to indicate to the parent that should render the frame
         render-frame? (mf/use-state (not thumbnail-data))
+
+        ;; State variable to select whether we show the image thumbnail or the canvas thumbnail
+        show-frame-thumbnail (mf/use-state (some? thumbnail-data))
 
         on-image-load
         (mf/use-callback
@@ -98,6 +101,8 @@
                (when (draw-thumbnail-canvas! canvas-node img-node)
                  (reset! image-url nil)
 
+                 (when @show-frame-thumbnail
+                   (reset! show-frame-thumbnail false))
                  ;; If we don't have the thumbnail data saved (normaly the first load) we update the data
                  ;; when available
                  (when (not @thumbnail-data-ref)
@@ -210,18 +215,19 @@
      @render-frame?
      (mf/html
       [:*
-       [:> frame/frame-thumbnail {:key (dm/str (:id shape))
-                                  :bounds shape-bb
-                                  :shape (cond-> shape
-                                           (some? thumbnail-data)
-                                           (assoc :thumbnail thumbnail-data))}]
+       (when @show-frame-thumbnail
+         [:> frame/frame-thumbnail {:key (dm/str (:id shape))
+                                    :bounds shape-bb
+                                    :shape (cond-> shape
+                                             (some? thumbnail-data)
+                                             (assoc :thumbnail thumbnail-data))}])
 
        [:foreignObject {:x x :y y :width width :height height}
         [:canvas.thumbnail-canvas
          {:key (dm/str "thumbnail-canvas-" (:id shape))
           :ref frame-canvas-ref
           :data-object-id (dm/str page-id (:id shape))
-          :data-empty true
+          :data-empty @show-frame-thumbnail
           :width fixed-width
           :height fixed-height
           ;; DEBUG

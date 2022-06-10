@@ -43,4 +43,4 @@
          (.appendChild @parent-ref @node-ref)
          (reset! in-memory? false))))
 
-    on-frame-load))
+    [on-frame-load @in-memory?]))

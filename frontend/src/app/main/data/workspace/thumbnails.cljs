@@ -34,7 +34,7 @@
    (fn [subs]
      ;; We look in the DOM a canvas that 1) matches the id and 2) that it's not empty
      ;; will be empty on first rendering before drawing the thumbnail and we don't want to store that
-     (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%']:not([data-empty])" object-id))]
+     (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'][data-empty='false']" object-id))]
        (if (some? node)
          (-> node
              (.toBlob (fn [blob]
