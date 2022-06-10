@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-06-11 09:14+0000\n"
-"Last-Translator: Locness <locness3@orange.fr>\n"
+"Last-Translator: Alexandre Pawlak <alexpawlak@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -3074,3 +3074,52 @@ msgstr "Envoi des données au serveur (%s/%s)"
 
 msgid "dashboard.import.progress.upload-media"
 msgstr "Envoi du fichier : %s"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Oh non ! Vous n'avez pas encore de fichiers ! Si vous voulez essayer avec "
+"des modèles, allez sur [Bibliothèques et modèles] (https://penpot.app/"
+"libraries-templates.html)"
+
+msgid "dashboard.export.title"
+msgstr "Exporter les fichiers"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"Les fichiers avec des bibliothèques partagées seront inclus dans "
+"l'exportation, en maintenant leur liaison."
+
+#, fuzzy
+msgid "dashboard.export.options.detach.title"
+msgstr ""
+"Traiter les ressources de la bibliothèque partagée comme des objets basiques"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Il n'y a pas d'éléments avec des paramètres d'exportation."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Rejeter tout"
+
+msgid "dashboard.export.options.merge.title"
+msgstr ""
+"Inclure les ressources des bibliothèques partagées dans les bibliothèques de "
+"fichiers"
+
+#: src/app/main/ui/export.cljs
+#, fuzzy
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Information sur comment mettre en place des exportations à Penpot."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+#, fuzzy
+msgid "dashboard.fonts.upload-all"
+msgstr "Uploader tout"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Votre fichier sera exporté avec toutes les ressources externes fusionnées "
+"dans la bibliothèque de fichiers."
