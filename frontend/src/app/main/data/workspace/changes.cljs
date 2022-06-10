@@ -10,6 +10,7 @@
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.change :as spec.change]
    [app.common.uuid :as uuid]
@@ -126,9 +127,7 @@
             []))]
     (into #{}
           (comp (mapcat change->ids)
-                (keep #(if (= :frame (get-in objects [% :type]))
-                         %
-                         (get-in objects [% :frame-id])))
+                (keep #(cph/get-shape-id-root-frame objects %))
                 (remove #(= uuid/zero %)))
           changes)))
 

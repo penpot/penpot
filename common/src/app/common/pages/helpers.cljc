@@ -674,3 +674,12 @@
   (into selected
         (mapcat #(get-children-ids objects %))
         selected))
+
+(defn get-shape-id-root-frame
+  [objects shape-id]
+  (->> (get-parents-seq objects shape-id)
+       (map (d/getf objects))
+       (d/seek #(and (= :frame (:type %))
+                     (= uuid/zero (:frame-id %))))
+
+       :id))

@@ -70,6 +70,14 @@
          selected (dm/get-in state [:workspace-local :selected])]
      (process-selected-shapes objects selected options))))
 
+(defn lookup-shape
+  ([state id]
+   (lookup-shape state (:current-page-id state) id))
+
+  ([state page-id id]
+   (let [objects (lookup-page-objects state page-id)]
+     (get objects id))))
+
 (defn lookup-shapes
   ([state ids]
    (lookup-shapes state (:current-page-id state) ids))

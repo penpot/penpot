@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
@@ -58,77 +59,83 @@
        ::mf/wrap-props false}
       [props]
 
-      (let [shape              (unchecked-get props "shape")
-            thumbnail?         (unchecked-get props "thumbnail?")
-            objects            (wsh/lookup-page-objects @st/state)
-
-            render-id          (mf/use-memo #(str (uuid/next)))
-            fonts              (mf/use-memo (mf/deps shape objects) #(ff/shape->fonts shape objects))
-            fonts              (-> fonts (hooks/use-equal-memo))
-
-            force-render       (mf/use-state false)
-
-            ;; Thumbnail data
+      (let [shape (unchecked-get props "shape")
             frame-id           (:id shape)
-            page-id            (mf/use-ctx ctx/current-page-id)
 
             ;; References to the current rendered node and the its parentn
             node-ref           (mf/use-var nil)
 
-            ;; when `true` we've called the mount for the frame
-            rendered?          (mf/use-var false)
+            objects            (wsh/lookup-page-objects @st/state)
 
             ;; Modifiers
             modifiers-ref      (mf/use-memo (mf/deps frame-id) #(refs/workspace-modifiers-by-frame-id frame-id))
-            modifiers          (mf/deref modifiers-ref)
-
-            disable-thumbnail? (d/not-empty? (dm/get-in modifiers [(:id shape) :modifiers]))
-
-            [on-load-frame-dom render-frame? thumbnail-renderer]
-            (ftr/use-render-thumbnail page-id shape node-ref rendered? disable-thumbnail? @force-render)
-
-            [on-frame-load in-memory?]
-            (fns/use-node-store thumbnail? node-ref rendered? render-frame?)]
+            modifiers          (mf/deref modifiers-ref)]
 
         (fdm/use-dynamic-modifiers objects @node-ref modifiers)
 
-        (mf/use-effect
-         (mf/deps fonts)
-         (fn []
-           (->> (rx/from fonts)
-                (rx/merge-map fonts/fetch-font-css)
-                (rx/ignore))))
+        (if-not (cph/root-frame? shape)
+          [:& frame-shape {:shape shape :ref node-ref}]
 
-        (mf/use-effect
-         (fn []
-           ;; When a change in the data is received a "force-render" event is emited
-           ;; that will force the component to be mounted in memory
-           (let [sub
-                 (->> (dwt/force-render-stream (:id shape))
-                      (rx/take-while #(not @rendered?))
-                      (rx/subs #(reset! force-render true)))]
-             #(when sub
-                (rx/dispose! sub)))))
+          ;; If the current shape is root we handle its thumbnail and the dynamic modifiers
+          (let [thumbnail?         (unchecked-get props "thumbnail?")
 
-        (mf/use-effect
-         (mf/deps shape fonts thumbnail? on-load-frame-dom @force-render render-frame?)
-         (fn []
-           (when (and (some? @node-ref) (or @rendered? (not thumbnail?) @force-render render-frame?))
-             (mf/mount
-              (mf/element frame-shape
-                          #js {:ref on-load-frame-dom :shape shape :fonts fonts})
+                render-id          (mf/use-memo #(str (uuid/next)))
+                fonts              (mf/use-memo (mf/deps shape objects) #(ff/shape->fonts shape objects))
+                fonts              (-> fonts (hooks/use-equal-memo))
 
-              @node-ref)
-             (when (not @rendered?) (reset! rendered? true)))))
+                force-render       (mf/use-state false)
 
-        [:& (mf/provider ctx/render-ctx) {:value render-id}
-         [:g.frame-container {:id (dm/str "frame-container-" (:id shape))
-                              :key "frame-container"
-                              :ref on-frame-load
-                              :opacity (when (:hidden shape) 0)}
-          [:& ff/fontfaces-style {:fonts fonts}]
-          [:g.frame-thumbnail-wrapper
-           {:id (dm/str "thumbnail-container-" (:id shape))
-            ;; Hide the thumbnail when not displaying
-            :opacity (when (and @rendered? (not thumbnail?) (not render-frame?) (not in-memory?)) 0)}
-           thumbnail-renderer]]]))))
+                ;; Thumbnail data
+                page-id            (mf/use-ctx ctx/current-page-id)
+
+                ;; when `true` we've called the mount for the frame
+                rendered?          (mf/use-var false)
+
+                disable-thumbnail? (d/not-empty? (dm/get-in modifiers [(:id shape) :modifiers]))
+
+                [on-load-frame-dom render-frame? thumbnail-renderer]
+                (ftr/use-render-thumbnail page-id shape node-ref rendered? disable-thumbnail? @force-render)
+
+                [on-frame-load in-memory?]
+                (fns/use-node-store thumbnail? node-ref rendered? render-frame?)]
+
+            (mf/use-effect
+             (mf/deps fonts)
+             (fn []
+               (->> (rx/from fonts)
+                    (rx/merge-map fonts/fetch-font-css)
+                    (rx/ignore))))
+
+            (mf/use-effect
+             (fn []
+               ;; When a change in the data is received a "force-render" event is emited
+               ;; that will force the component to be mounted in memory
+               (let [sub
+                     (->> (dwt/force-render-stream (:id shape))
+                          (rx/take-while #(not @rendered?))
+                          (rx/subs #(reset! force-render true)))]
+                 #(when sub
+                    (rx/dispose! sub)))))
+
+            (mf/use-effect
+             (mf/deps shape fonts thumbnail? on-load-frame-dom @force-render render-frame?)
+             (fn []
+               (when (and (some? @node-ref) (or @rendered? (not thumbnail?) @force-render render-frame?))
+                 (mf/mount
+                  (mf/element frame-shape
+                              #js {:ref on-load-frame-dom :shape shape :fonts fonts})
+
+                  @node-ref)
+                 (when (not @rendered?) (reset! rendered? true)))))
+
+            [:& (mf/provider ctx/render-ctx) {:value render-id}
+             [:g.frame-container {:id (dm/str "frame-container-" (:id shape))
+                                  :key "frame-container"
+                                  :ref on-frame-load
+                                  :opacity (when (:hidden shape) 0)}
+              [:& ff/fontfaces-style {:fonts fonts}]
+              [:g.frame-thumbnail-wrapper
+               {:id (dm/str "thumbnail-container-" (:id shape))
+                ;; Hide the thumbnail when not displaying
+                :opacity (when (and @rendered? (not thumbnail?) (not render-frame?) (not in-memory?)) 0)}
+               thumbnail-renderer]]]))))))
