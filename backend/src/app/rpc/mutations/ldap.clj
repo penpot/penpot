@@ -27,7 +27,8 @@
 (s/def ::info-data
   (s/keys :req-un [::fullname ::email ::backend]))
 
-(defn ^java.lang.AutoCloseable connect
+(defn connect
+  ^java.lang.AutoCloseable
   []
   (let [params {:ssl?      (cfg/get :ldap-ssl)
                 :startTLS? (cfg/get :ldap-starttls)

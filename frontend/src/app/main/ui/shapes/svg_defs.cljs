@@ -11,7 +11,6 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.shapes.filters :as f]
-   [app.util.object :as obj]
    [app.util.svg :as usvg]
    [rumext.alpha :as mf]))
 
@@ -68,7 +67,7 @@
           [wrapper wrapper-props] (if (= tag :mask)
                                     ["g" #js {:className "svg-mask-wrapper"
                                               :transform (str transform)}]
-                                    [mf/Fragment (obj/new)])]
+                                    [mf/Fragment #js {}])]
 
       [:> (name tag) (clj->js attrs)
        [:> wrapper wrapper-props

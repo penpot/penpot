@@ -5,7 +5,7 @@
 
   org.clojure/clojure {:mvn/version "1.10.3"}
   binaryage/devtools {:mvn/version "RELEASE"}
-  metosin/reitit-core {:mvn/version "0.5.17"}
+  metosin/reitit-core {:mvn/version "0.5.18"}
 
   funcool/beicon {:mvn/version "2021.07.05-1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
@@ -13,9 +13,9 @@
   funcool/rumext {:mvn/version "2022.04.19-148"}
   funcool/tubax {:mvn/version "2021.05.20-0"}
 
-  instaparse/instaparse {:mvn/version "1.4.10"}
-  garden/garden {:mvn/version "1.3.10"}
-
+  instaparse/instaparse {:mvn/version "1.4.12"}
+  garden/garden {:git/url "https://github.com/noprompt/garden"
+                 :git/sha "05590ecb5f6fa670856f3d1ab400aa4961047480"}
   }
 
  :aliases
@@ -32,9 +32,9 @@
   :dev
   {:extra-paths ["dev"]
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.17.8"}
+   {thheller/shadow-cljs {:mvn/version "2.19.3"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    cider/cider-nrepl {:mvn/version "0.28.3"}}}
+    cider/cider-nrepl {:mvn/version "0.28.4"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}

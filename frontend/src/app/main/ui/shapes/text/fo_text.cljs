@@ -212,11 +212,11 @@
       :y y
       :id id
       :data-colors (->> colors (str/join ","))
-      :data-mapping (-> color-mapping-inverse (clj->js) (js/JSON.stringify))
+      :data-mapping (-> color-mapping-inverse clj->js js/JSON.stringify)
       :transform transform
       :width  (if (#{:auto-width} grow-type) 100000 width)
       :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
-      :style (-> (obj/new) (attrs/add-layer-props shape))
+      :style  (-> (obj/create) (attrs/add-layer-props shape))
       :ref ref}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`

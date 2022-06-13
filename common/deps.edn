@@ -1,9 +1,9 @@
 {:deps
- {org.clojure/clojure {:mvn/version "1.10.3"}
+ {org.clojure/clojure {:mvn/version "1.11.1"}
   org.clojure/data.json {:mvn/version "2.4.0"}
   org.clojure/tools.cli {:mvn/version "1.0.206"}
-  metosin/jsonista {:mvn/version "0.3.5"}
-  org.clojure/clojurescript {:mvn/version "1.11.4"}
+  metosin/jsonista {:mvn/version "0.3.6"}
+  org.clojure/clojurescript {:mvn/version "1.11.57"}
 
   ;; Logging
   org.apache.logging.log4j/log4j-api {:mvn/version "2.17.2"}
@@ -13,7 +13,7 @@
   org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.17.2"}
   org.slf4j/slf4j-api {:mvn/version "2.0.0-alpha1"}
 
-  selmer/selmer {:mvn/version "1.12.50"}
+  selmer/selmer {:mvn/version "1.12.51"}
   criterium/criterium {:mvn/version "0.4.6"}
 
   expound/expound {:mvn/version "0.9.0"}
@@ -22,7 +22,7 @@
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/promesa {:mvn/version "8.0.450"}
-  funcool/cuerdas {:mvn/version "2022.03.27-397"}
+  funcool/cuerdas {:mvn/version "2022.06.13-401"}
 
   lambdaisland/uri {:mvn/version "1.13.95"
                     :exclusions [org.clojure/data.json]}
@@ -33,7 +33,7 @@
   com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
 
   ;; exception printing
-  fipp/fipp {:mvn/version "0.6.25"}
+  fipp/fipp {:mvn/version "0.6.26"}
   io.aviso/pretty {:mvn/version "1.1.1"}
   environ/environ {:mvn/version "1.2.0"}}
  :paths ["src"]
@@ -42,7 +42,7 @@
   {:extra-deps
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
     org.clojure/test.check {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.17.8"}
+    thheller/shadow-cljs {:mvn/version "2.19.3"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}

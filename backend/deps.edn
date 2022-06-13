@@ -1,13 +1,13 @@
 {:deps
  {penpot/common {:local/root "../common"}
-  org.clojure/clojure {:mvn/version "1.10.3"}
+  org.clojure/clojure {:mvn/version "1.11.1"}
   org.clojure/core.async {:mvn/version "1.5.648"}
 
   ;; Logging
   org.zeromq/jeromq {:mvn/version "0.5.2"}
 
   com.taoensso/nippy {:mvn/version "3.1.1"}
-  com.github.luben/zstd-jni {:mvn/version "1.5.2-2"}
+  com.github.luben/zstd-jni {:mvn/version "1.5.2-3"}
   org.clojure/data.fressian {:mvn/version "1.0.0"}
 
   io.prometheus/simpleclient {:mvn/version "0.15.0"}
@@ -17,23 +17,23 @@
                                                  org.eclipse.jetty/jetty-servlet]}
   io.prometheus/simpleclient_httpserver {:mvn/version "0.15.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.1.6.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "6.1.8.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
-  funcool/yetti {:git/tag "v9.1" :git/sha "63f35d9"
+  funcool/yetti {:git/tag "v9.2" :git/sha "4ddcc03"
                  :git/url "https://github.com/funcool/yetti.git"
                  :exclusions [org.slf4j/slf4j-api]}
 
-  com.github.seancorfield/next.jdbc {:mvn/version "1.2.772"}
-  metosin/reitit-core {:mvn/version "0.5.16"}
-  org.postgresql/postgresql {:mvn/version "42.3.3"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.2.780"}
+  metosin/reitit-core {:mvn/version "0.5.18"}
+  org.postgresql/postgresql {:mvn/version "42.4.0"}
   com.zaxxer/HikariCP {:mvn/version "5.0.1"}
   funcool/datoteka {:mvn/version "2.0.0"}
 
   buddy/buddy-hashers {:mvn/version "1.8.158"}
   buddy/buddy-sign {:mvn/version "3.4.333"}
 
-  org.jsoup/jsoup {:mvn/version "1.14.3"}
+  org.jsoup/jsoup {:mvn/version "1.15.1"}
   org.im4java/im4java {:mvn/version "1.4.0"}
   org.lz4/lz4-java {:mvn/version "1.8.0"}
 
@@ -43,11 +43,11 @@
   io.sentry/sentry {:mvn/version "5.6.1"}
 
   dawran6/emoji {:mvn/version "0.1.5"}
-  markdown-clj/markdown-clj {:mvn/version "1.11.0"}
+  markdown-clj/markdown-clj {:mvn/version "1.11.1"}
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.17.136"}}
+  software.amazon.awssdk/s3 {:mvn/version "2.17.209"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases
@@ -64,7 +64,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.7.7" :git/sha "1474ad6"}}
+   {io.github.clojure/tools.build {:git/tag "v0.8.2" :git/sha "ba1a2bf"}}
    :ns-default build}
 
   :test

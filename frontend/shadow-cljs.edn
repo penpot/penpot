@@ -29,7 +29,7 @@
              :depends-on #{:shared}}}
 
    :compiler-options
-   {:output-feature-set :es8
+   {:output-feature-set :es2020
     :output-wrapper false
     :warnings {:fn-deprecated false}}
 

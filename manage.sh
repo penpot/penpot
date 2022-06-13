@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -ex
 
 export ORGANIZATION="penpotapp";
 export DEVENV_IMGNAME="$ORGANIZATION/devenv";

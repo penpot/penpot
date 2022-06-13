@@ -213,7 +213,7 @@
   [& args]
   `(jdbc/with-transaction ~@args))
 
-(defn ^Connection open
+(defn open
   [pool]
   (jdbc/get-connection pool))
 

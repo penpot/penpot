@@ -130,7 +130,8 @@
 (def default-timeout
   (dt/duration {:seconds 30}))
 
-(defn- ^Region lookup-region
+(defn- lookup-region
+  ^Region
   [region]
   (Region/of (name region)))
 
