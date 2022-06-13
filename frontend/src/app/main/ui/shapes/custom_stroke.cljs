@@ -428,7 +428,7 @@
         elem-name (obj/get child "type")
         render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-ctx))
         stroke-id (dm/fmt "strokes-%" (:id shape))
-        stroke-props (-> (obj/new)
+        stroke-props (-> (obj/create)
                          (obj/set! "id" stroke-id)
                          (cond->
                           ;; There is a blur

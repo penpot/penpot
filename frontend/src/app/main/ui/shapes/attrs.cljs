@@ -169,7 +169,7 @@
          [svg-attrs svg-styles]
          (extract-svg-attrs render-id svg-defs svg-attrs)
 
-         styles (-> (obj/get props "style" (obj/new))
+         styles (-> (obj/get props "style" (obj/create))
                     (obj/merge! svg-styles)
                     (add-layer-props shape))
 
@@ -211,24 +211,24 @@
 
 (defn extract-style-attrs
   [shape]
-  (-> (obj/new)
+  (-> (obj/create)
       (add-style-attrs shape)))
 
 (defn extract-fill-attrs
   [fill-data render-id index type]
-  (let [fill-styles (-> (obj/get fill-data "style" (obj/new))
+  (let [fill-styles (-> (obj/get fill-data "style" (obj/create))
                         (add-fill fill-data render-id index type))]
-    (-> (obj/new)
+    (-> (obj/create)
         (obj/set! "style" fill-styles))))
 
 (defn extract-stroke-attrs
   [stroke-data index render-id]
-  (let [stroke-styles (-> (obj/get stroke-data "style" (obj/new))
+  (let [stroke-styles (-> (obj/get stroke-data "style" (obj/create))
                           (add-stroke stroke-data render-id index))]
-    (-> (obj/new)
+    (-> (obj/create)
         (obj/set! "style" stroke-styles))))
 
 (defn extract-border-radius-attrs
   [shape]
-  (-> (obj/new)
+  (-> (obj/create)
       (add-border-radius shape)))

@@ -89,7 +89,7 @@
             childs (mapv #(get objects %) (:shapes shape))
             shape  (geom/transform-shape shape)
 
-            props (-> (obj/new)
+            props (-> (obj/create)
                       (obj/merge! props)
                       (obj/merge! #js {:shape shape
                                        :childs childs}))]
@@ -105,7 +105,7 @@
       [props]
       (let [shape  (unchecked-get props "shape")
             childs (mapv #(get objects %) (:shapes shape))
-            props (-> (obj/new)
+            props (-> (obj/create)
                       (obj/merge! props)
                       (obj/merge! #js {:childs childs}))]
         [:> group-wrapper props]))))
@@ -121,7 +121,7 @@
       (let [shape    (unchecked-get props "shape")
             children (->> (cph/get-children-ids objects (:id shape))
                           (select-keys objects))
-            props    (-> (obj/new)
+            props    (-> (obj/create)
                          (obj/merge! props)
                          (obj/merge! #js {:childs children}))]
         [:> bool-wrapper props]))))
@@ -136,7 +136,7 @@
       [props]
       (let [shape  (unchecked-get props "shape")
             childs (mapv #(get objects %) (:shapes shape))
-            props (-> (obj/new)
+            props (-> (obj/create)
                       (obj/merge! props)
                       (obj/merge! #js {:childs childs}))]
         [:> svg-raw-wrapper props]))))

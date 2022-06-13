@@ -262,7 +262,7 @@
     (when (= (:type shape) :svg-raw)
       (let [shape (-> shape (d/update-in-when [:content :attrs :style] str->style))
             props
-            (-> (obj/new)
+            (-> (obj/create)
                 (obj/set! "penpot:x" (:x shape))
                 (obj/set! "penpot:y" (:y shape))
                 (obj/set! "penpot:width" (:width shape))
@@ -328,7 +328,7 @@
 
 (mf/defc export-data
   [{:keys [shape]}]
-  (let [props (-> (obj/new) (add-data shape) (add-library-refs shape))]
+  (let [props (-> (obj/create) (add-data shape) (add-library-refs shape))]
     [:> "penpot:shape" props
      (export-shadow-data       shape)
      (export-blur-data         shape)

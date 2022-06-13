@@ -34,18 +34,18 @@
             ;  Firefox bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1734805
             [clip-wrapper clip-props]
             (if masked-group?
-              ["g" (-> (obj/new)
+              ["g" (-> (obj/create)
                        (obj/set! "clipPath" (clip-url render-id mask)))]
               [mf/Fragment nil])
 
             [mask-wrapper mask-props]
             (if masked-group?
-              ["g" (-> (obj/new)
-                       (obj/set! "mask"     (mask-url render-id mask)))]
+              ["g" (-> (obj/create)
+                       (obj/set! "mask" (mask-url render-id mask)))]
               [mf/Fragment nil])
 
             ;; This factory is generic, it's used for viewer, workspace and handoff.
-            ;; These props are generated in viewer wrappers only, in the rest of the 
+            ;; These props are generated in viewer wrappers only, in the rest of the
             ;; cases these props will be nil, not affecting the code.
             delta          (unchecked-get props "delta")
             fixed?         (unchecked-get props "fixed?")]
