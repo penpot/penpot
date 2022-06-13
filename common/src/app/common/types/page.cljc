@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.types.shape :as cts]
+   [app.common.uuid :as uuid]
    [clojure.spec.alpha :as s]))
 
 ;; --- Grid options
@@ -94,6 +95,23 @@
 
 (s/def ::page
   (s/keys :req-un [::id ::name ::objects ::options]))
+
+;; --- Initialization
+
+(def root uuid/zero)
+
+(def empty-page-data
+  {:options {}
+   :objects {root
+             {:id root
+              :type :frame
+              :name "Root Frame"}}})
+
+(defn make-empty-page
+  [id name]
+  (assoc empty-page-data
+         :id id
+         :name name))
 
 ;; --- Helpers for flow
 

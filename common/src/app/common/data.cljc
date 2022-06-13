@@ -173,6 +173,10 @@
   [data]
   (into {} (remove (comp nil? second)) data))
 
+(defn vec-without-nils
+  [coll]
+  (into [] (remove nil?) coll))
+
 (defn without-qualified
   [data]
   (into {} (remove (comp qualified-keyword? first)) data))

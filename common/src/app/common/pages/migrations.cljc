@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gsht]
@@ -15,6 +16,10 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.container :as ctc]
+   [app.common.types.page :as ctp]
+   [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -431,6 +436,73 @@
     (-> data
         (update :pages-index d/update-vals update-container)
         (update :components d/update-vals update-container))))
+
+(defmethod migrate 20
+  [data]
+  (let [page-id (uuid/next)
+
+        components (->> (:components data)
+                        vals
+                        (sort-by :name))
+
+        add-library-page
+        (fn [data]
+          (let [page (ctp/make-empty-page page-id "Library page")]
+            (-> data
+                (ctpl/add-page page))))
+
+        add-main-instance
+        (fn [data component position]
+          (let [page (ctpl/get-page data page-id)
+
+                [new-shape new-shapes]
+                (ctc/instantiate-component page
+                                           component
+                                           (:id data)
+                                           position)
+
+                add-shape
+                (fn [data shape]
+                  (update-in data [:pages-index page-id]
+                             #(ctst/add-shape (:id shape)
+                                              shape
+                                              %
+                                              (:frame-id shape)
+                                              (:parent-id shape)
+                                              nil     ; <- As shapes are ordered, we can safely add each
+                                              true))) ;    one at the end of the parent's children list.
+
+                update-component
+                (fn [component]
+                  (assoc component
+                         :main-instance-id (:id new-shape)
+                         :main-instance-page page-id))]
+
+            (as-> data $
+              (reduce add-shape $ new-shapes)
+              (update-in $ [:components (:id component)] update-component))))
+
+        add-instance-grid
+        (fn [data components]
+          (let [position-seq (ctst/generate-shape-grid
+                               (map cph/get-component-root components)
+                               50)]
+            (loop [data           data
+                   components-seq (seq components)
+                   position-seq   position-seq]
+              (let [component (first components-seq)
+                    position  (first position-seq)]
+                (if (nil? component)
+                  data
+                  (recur (add-main-instance data component position)
+                         (rest components-seq)
+                         (rest position-seq)))))))]
+
+    (if (empty? components)
+      data
+      (-> data
+          (add-library-page)
+          (add-instance-grid components)))))
 
 ;; TODO: pending to do a migration for delete already not used fill
 ;; and stroke props. This should be done for >1.14.x version.

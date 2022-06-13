@@ -272,10 +272,13 @@
   original ones.
 
   Returns the cloned object, the list of all new objects (including
-  the cloned one), and possibly a list of original objects modified."
+  the cloned one), and possibly a list of original objects modified.
+
+  The list of objects are returned in tree traversal order, respecting
+  the order of the children of each parent."
 
   ([object parent-id objects update-new-object]
-   (clone-object object parent-id objects update-new-object identity))
+   (clone-object object parent-id objects update-new-object (fn [object _] object)))
 
   ([object parent-id objects update-new-object update-original-object]
    (let [new-id (uuid/next)]
@@ -315,4 +318,28 @@
             (into new-direct-children [new-child])
             (into new-children new-child-objects)
             (into updated-children updated-child-objects))))))))
+
+(defn generate-shape-grid
+  "Generate a sequence of positions that lays out the list of
+  shapes in a grid of equal-sized rows and columns."
+  [shapes gap]
+  (let [shapes-bounds (map gsh/bounding-box shapes)
+
+        grid-size   (mth/ceil (mth/sqrt (count shapes)))
+        row-size    (+ (apply max (map :height shapes-bounds))
+                       gap)
+        column-size (+ (apply max (map :width shapes-bounds))
+                       gap)
+
+        next-pos (fn [position]
+                   (let [counter (inc (:counter (meta position)))
+                         row     (quot counter grid-size)
+                         column  (mod counter grid-size)
+                         new-pos (gpt/point (* column column-size)
+                                            (* row row-size))]
+                     (with-meta new-pos
+                                {:counter counter})))]
+    (iterate next-pos
+             (with-meta (gpt/point 0 0)
+                        {:counter 0}))))
 

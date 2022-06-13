@@ -17,7 +17,10 @@
    [app.common.pages.init :as init]
    [app.common.spec :as us]
    [app.common.pages.changes-spec :as pcs]
-   [app.common.types.shape :as cts]))
+   [app.common.types.page :as ctp]
+   [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific helpers
@@ -27,10 +30,6 @@
   "Clear collection from specified obj and without nil values."
   [coll o]
   (into [] (filter #(not= % o)) coll))
-
-(defn vec-without-nils
-  [coll]
-  (into [] (remove nil?) coll))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Transformation Changes
@@ -74,44 +73,9 @@
 
 (defmethod process-change :add-obj
   [data {:keys [id obj page-id component-id frame-id parent-id index ignore-touched]}]
-  (letfn [(update-parent-shapes [shapes]
-            ;; Ensure that shapes is always a vector.
-            (let [shapes (into [] shapes)]
-              (cond
-                (some #{id} shapes)
-                shapes
-
-                (nil? index)
-                (conj shapes id)
-
-                :else
-                (cph/insert-at-index shapes index [id]))))
-
-          (update-parent [parent]
-            (-> parent
-                (update :shapes update-parent-shapes)
-                (update :shapes vec-without-nils)
-                (cond-> (and (:shape-ref parent)
-                             (not= (:id parent) frame-id)
-                             (not ignore-touched))
-                  (-> (update :touched cph/set-touched-group :shapes-group)
-                      (dissoc :remote-synced?)))))
-
-          ;; TODO: this looks wrong, why we allow nil values?
-          (update-objects [objects parent-id]
-            (if (and (or (nil? parent-id) (contains? objects parent-id))
-                     (or (nil? frame-id) (contains? objects frame-id)))
-              (-> objects
-                  (assoc id (-> obj
-                                (assoc :frame-id frame-id)
-                                (assoc :parent-id parent-id)
-                                (assoc :id id)))
-                  (update parent-id update-parent))
-              objects))
-
-          (update-container [data]
-            (let [parent-id (or parent-id frame-id)]
-              (update data :objects update-objects parent-id)))]
+  (let [update-container
+        (fn [container]
+          (ctst/add-shape id obj container frame-id parent-id index ignore-touched))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id] update-container)
@@ -237,7 +201,7 @@
                              ;; We need to ensure that no `nil` in the
                              ;; shapes list after adding all the
                              ;; incoming shapes to the parent.
-                             (update :shapes vec-without-nils))]
+                             (update :shapes d/vec-without-nils))]
               (cond-> parent
                 (and (:shape-ref parent) (= (:type parent) :group) (not ignore-touched))
                 (-> (update :touched cph/set-touched-group :shapes-group)
@@ -258,7 +222,7 @@
 
                   (-> objects
                       (d/update-in-when [pid :shapes] without-obj sid)
-                      (d/update-in-when [pid :shapes] vec-without-nils)
+                      (d/update-in-when [pid :shapes] d/vec-without-nils)
                       (cond-> component? (d/update-when pid #(-> %
                                                                  (update :touched cph/set-touched-group :shapes-group)
                                                                  (dissoc :remote-synced?)))))))))
@@ -323,22 +287,11 @@
   [data {:keys [id name page]}]
   (when (and id name page)
     (ex/raise :type :conflict
-              :hint "name or page should be provided, never both"))
-  (letfn [(conj-if-not-exists [pages id]
-            (cond-> pages
-              (not (d/seek #(= % id) pages))
-              (conj id)))]
-    (if (and (string? name) (uuid? id))
-      (let [page (assoc init/empty-page-data
-                        :id id
-                        :name name)]
-        (-> data
-            (update :pages conj-if-not-exists id)
-            (update :pages-index assoc id page)))
-
-      (-> data
-          (update :pages conj-if-not-exists (:id page))
-          (update :pages-index assoc (:id page) page)))))
+              :hint "id+name or page should be provided, never both"))
+  (let [page (if (and (string? name) (uuid? id))
+               (ctp/make-empty-page id name)
+               page)]
+    (ctpl/add-page data page)))
 
 (defmethod process-change :mod-page
   [data {:keys [id name]}]

@@ -13,6 +13,7 @@
    [app.common.pages.changes :as ch]
    [app.common.pages.changes-spec :as pcs]
    [app.common.pages.init :as init]
+   [app.common.types.page :as ctp]
    [app.common.spec :as us]
    [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
@@ -179,8 +180,7 @@
 
   (assert (nil? (:current-component-id file)))
   (let [page-id (or (:id data) (uuid/next))
-        page (-> init/empty-page-data
-                 (assoc :id page-id)
+        page (-> (ctp/make-empty-page page-id "Page-1")
                  (d/deep-merge data))]
     (-> file
         (commit-change
