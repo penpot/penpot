@@ -237,16 +237,18 @@
     [base index-base-a index-base-b]))
 
 (defn is-shape-over-shape?
-  [objects base-shape-id over-shape-id]
+  [objects base-shape-id over-shape-id {:keys [top-frames?]}]
 
   (let [[base index-a index-b] (get-base objects base-shape-id over-shape-id)]
     (cond
       (= base base-shape-id)
-      (and (frame-shape? objects base-shape-id)
+      (and (not top-frames?)
+           (frame-shape? objects base-shape-id)
            (root-frame? objects base-shape-id))
 
       (= base over-shape-id)
-      (or (not (frame-shape? objects over-shape-id))
+      (or top-frames?
+          (not (frame-shape? objects over-shape-id))
           (not (root-frame? objects over-shape-id)))
 
       :else
@@ -256,7 +258,7 @@
   ([objects ids]
    (sort-z-index objects ids nil))
 
-  ([objects ids {:keys [bottom-frames?]}]
+  ([objects ids {:keys [bottom-frames?] :as options}]
    (letfn [(comp [id-a id-b]
              (let [type-a (dm/get-in objects [id-a :type])
                    type-b (dm/get-in objects [id-b :type])]
@@ -270,7 +272,7 @@
                  (= id-a id-b)
                  0
 
-                 (is-shape-over-shape? objects id-a id-b)
+                 (is-shape-over-shape? objects id-a id-b options)
                  1
 
                  :else
@@ -683,3 +685,15 @@
                      (= uuid/zero (:frame-id %))))
 
        :id))
+
+(defn get-viewer-frames
+  ([objects]
+   (get-viewer-frames objects nil))
+
+  ([objects {:keys [all-frames?]}]
+   (into []
+         (comp (map (d/getf objects))
+               (if all-frames?
+                 identity
+                 (remove :hide-in-viewer)))
+         (sort-z-index objects (get-frames-ids objects) {:top-frames? true}))))

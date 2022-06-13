@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport.widgets
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -253,9 +254,10 @@
         on-frame-leave  (unchecked-get props "on-frame-leave")
         on-frame-select (unchecked-get props "on-frame-select")]
     [:g.frame-flows
-     (for [flow flows]
+     (for [[index flow] (d/enumerate flows)]
        (let [frame (get objects (:starting-frame flow))]
-         [:& frame-flow {:flow flow
+         [:& frame-flow {:key (dm/str (:id frame) "-" index)
+                         :flow flow
                          :frame frame
                          :selected? (contains? selected (:id frame))
                          :zoom zoom

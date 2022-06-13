@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.interactions
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.spec.interactions :as csi]
    [app.common.spec.page :as csp]
@@ -178,10 +179,10 @@
 
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]
-  (let [objects             (deref refs/workspace-page-objects)
-        destination         (get objects (:destination interaction))
-        frames              (mf/with-memo [objects]
-                              (cph/get-frames objects))
+  (let [objects              (deref refs/workspace-page-objects)
+        destination          (get objects (:destination interaction))
+
+        frames               (mf/with-memo [objects] (cph/get-viewer-frames objects {:all-frames? (not= :navigate (:action-type interaction))}))
 
         overlay-pos-type     (:overlay-pos-type interaction)
         close-click-outside? (:close-click-outside interaction false)
@@ -313,7 +314,8 @@
            (for [[value name] (event-type-names)]
              (when-not (and (= value :after-delay)
                             (not= (:type shape) :frame))
-               [:option {:value (str value)} name]))]]
+               [:option {:key (dm/str value)
+                         :value (dm/str value)} name]))]]
 
          ; Delay
          (when (csi/has-delay interaction)
@@ -334,7 +336,8 @@
            {:value (str (:action-type interaction))
             :on-change change-action-type}
            (for [[value name] (action-type-names)]
-             [:option {:value (str value)} name])]]
+             [:option {:key (dm/str "action-" value)
+                       :value (str value)} name])]]
 
          ; Destination
          (when (csi/has-destination interaction)
@@ -349,7 +352,8 @@
              (for [frame frames]
                (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
                           (not= (:id frame) (:frame-id shape))) ; nor a shape to its container frame
-                 [:option {:value (str (:id frame))} (:name frame)]))]])
+                 [:option {:key (dm/str "destination-" (:id frame))
+                           :value (str (:id frame))} (:name frame)]))]])
 
          ; Preserve scroll
          (when (csi/has-preserve-scroll interaction)
@@ -568,7 +572,8 @@
           [:div.interactions-help (tr "workspace.options.use-play-button")]])]
       [:div.groups
        (for [[index interaction] (d/enumerate interactions)]
-         [:& interaction-entry {:index index
+         [:& interaction-entry {:key (dm/str (:id shape) "-" index)
+                                :index index
                                 :shape shape
                                 :interaction interaction
                                 :update-interaction update-interaction

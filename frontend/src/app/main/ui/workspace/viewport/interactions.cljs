@@ -280,7 +280,7 @@
                 selected? (contains? selected (:id shape))
                 level (calc-level index (:interactions shape))]
             (when-not selected?
-              [:& interaction-path {:key (dm/str (:id shape) "-" index)
+              [:& interaction-path {:key (dm/str "non-selected-" (:id shape) "-" index)
                                     :index index
                                     :level level
                                     :orig-shape shape
@@ -307,35 +307,32 @@
               (let [dest-shape (when (cti/destination? interaction)
                                  (get objects (:destination interaction)))
                     level (calc-level index (:interactions shape))]
-                [:*
-                  [:& interaction-path {:key (dm/str (:id shape) "-" index)
-                                        :index index
-                                        :level level
-                                        :orig-shape shape
-                                        :dest-shape dest-shape
-                                        :selected selected
-                                        :selected? true
-                                        :action-type (:action-type interaction)
-                                        :zoom zoom}]
-                  (when (and (or (= (:action-type interaction) :open-overlay)
-                                 (= (:action-type interaction) :toggle-overlay))
-                             (= (:overlay-pos-type interaction) :manual))
-                    (if (and (some? move-overlay-to)
-                             (= move-overlay-index index))
-                      [:& overlay-marker {:key (dm/str "pos" (:id shape) "-" index)
-                                          :index index
-                                          :orig-shape shape
-                                          :dest-shape dest-shape
-                                          :position move-overlay-to
-                                          :objects objects
-                                          :hover-disabled? hover-disabled?}]
-                      [:& overlay-marker {:key (dm/str "pos" (:id shape) "-" index)
-                                          :index index
-                                          :orig-shape shape
-                                          :dest-shape dest-shape
-                                          :position (:overlay-position interaction)
-                                          :objects objects
-                                          :hover-disabled? hover-disabled?}]))])))
+                [:g {:key (dm/str "interaction-path-" (:id shape) "-" index)}
+                 [:& interaction-path {:index index
+                                       :level level
+                                       :orig-shape shape
+                                       :dest-shape dest-shape
+                                       :selected selected
+                                       :selected? true
+                                       :action-type (:action-type interaction)
+                                       :zoom zoom}]
+                 (when (and (or (= (:action-type interaction) :open-overlay)
+                                (= (:action-type interaction) :toggle-overlay))
+                            (= (:overlay-pos-type interaction) :manual))
+                   (if (and (some? move-overlay-to)
+                            (= move-overlay-index index))
+                     [:& overlay-marker {:index index
+                                         :orig-shape shape
+                                         :dest-shape dest-shape
+                                         :position move-overlay-to
+                                         :objects objects
+                                         :hover-disabled? hover-disabled?}]
+                     [:& overlay-marker {:index index
+                                         :orig-shape shape
+                                         :dest-shape dest-shape
+                                         :position (:overlay-position interaction)
+                                         :objects objects
+                                         :hover-disabled? hover-disabled?}]))])))
           (when (and shape
                      (not (cph/unframed-shape? shape))
                      (not (#{:move :rotate} current-transform)))

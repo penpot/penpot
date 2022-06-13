@@ -85,13 +85,6 @@
     (update [_ state]
       (dissoc state :viewer))))
 
-(defn select-frames
-  [{:keys [objects] :as page}]
-  (into []
-        (comp (map (d/getf objects))
-              (remove :hide-in-viewer))
-        (cph/sort-z-index objects (cph/get-frames-ids objects))))
-
 ;; --- Data Fetching
 
 (s/def ::fetch-bundle-params
@@ -119,7 +112,9 @@
   (let [pages (->> (get-in file [:data :pages])
                    (map (fn [page-id]
                           (let [data (get-in file [:data :pages-index page-id])]
-                            [page-id (assoc data :frames (select-frames data))])))
+                            [page-id (assoc data
+                                            :frames (cph/get-viewer-frames (:objects data))
+                                            :all-frames (cph/get-viewer-frames (:objects data) {:all-frames? true}))])))
                    (into {}))]
 
     (ptk/reify ::bundle-fetched
@@ -491,7 +486,7 @@
       (let [route    (:route state)
             qparams  (:query-params route)
             page-id  (:page-id qparams)
-            frames   (get-in state [:viewer :pages page-id :frames])
+            frames   (get-in state [:viewer :pages page-id :all-frames])
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (get-in state [:viewer-local :overlays])]
         (if-not (some #(= (:frame %) frame) overlays)
@@ -516,7 +511,7 @@
       (let [route    (:route state)
             qparams  (:query-params route)
             page-id  (:page-id qparams)
-            frames   (get-in state [:viewer :pages page-id :frames])
+            frames   (get-in state [:viewer :pages page-id :all-frames])
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (get-in state [:viewer-local :overlays])]
         (if-not (some #(= (:frame %) frame) overlays)

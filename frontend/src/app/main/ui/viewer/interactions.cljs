@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.interactions
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
@@ -127,8 +128,9 @@
        [:& dropdown {:show @show-dropdown?
                      :on-close hide-dropdown}
         [:ul.dropdown.with-check
-         (for [flow flows]
-           [:li {:class (dom/classnames :selected (= (:id flow) (:id @current-flow)))
+         (for [[index flow] (d/enumerate flows)]
+           [:li {:key (dm/str "flow-" (:id flow) "-" index)
+                 :class (dom/classnames :selected (= (:id flow) (:id @current-flow)))
                  :on-click #(select-flow flow)}
             [:span.icon i/tick]
             [:span.label (:name flow)]])]]])))

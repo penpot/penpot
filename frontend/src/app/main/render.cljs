@@ -389,7 +389,7 @@
         text-shapes   (sequence (filter cph/text-shape?) (vals objects))
         render-texts? (and render-texts? (d/seek (comp nil? :position-data) text-shapes))]
 
-    [:& (mf/provider export/include-metadata-ctx) {:value true}
+    [:& (mf/provider export/include-metadata-ctx) {:value false}
      [:& (mf/provider embed/context) {:value render-embed?}
       [:svg {:id (dm/str "screenshot-" object-id)
              :view-box vbox
