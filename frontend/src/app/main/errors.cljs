@@ -184,14 +184,19 @@
 
 (defn on-unhandled-error
   [error]
-  (if (instance? ExceptionInfo error)
-    (-> error ex-data ptk/handle-error)
-    (let [hint (ex-message error)
-          msg  (dm/str "Unhandled Internal Error: " hint)]
-      (ts/schedule #(st/emit! (rt/assign-exception error)))
-      (js/console.group msg)
-      (ex/ignoring (js/console.error error))
-      (js/console.groupEnd msg))))
+  (letfn [(is-ignorable-exception? [cause]
+            (condp = (ex-message cause)
+              "Possible side-effect in debug-evaluate" true
+              false))]
+    (if (instance? ExceptionInfo error)
+      (-> error ex-data ptk/handle-error)
+      (when-not (is-ignorable-exception? error)
+        (let [hint (ex-message error)
+              msg  (dm/str "Unhandled Internal Error: " hint)]
+          (ts/schedule #(st/emit! (rt/assign-exception error)))
+          (js/console.group msg)
+          (ex/ignoring (js/console.error error))
+          (js/console.groupEnd msg))))))
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]
