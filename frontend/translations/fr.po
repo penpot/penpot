@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-11 09:14+0000\n"
+"PO-Revision-Date: 2022-06-14 07:44+0000\n"
 "Last-Translator: Alexandre Pawlak <alexpawlak@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -3091,7 +3091,6 @@ msgstr ""
 "Les fichiers avec des bibliothèques partagées seront inclus dans "
 "l'exportation, en maintenant leur liaison."
 
-#, fuzzy
 msgid "dashboard.export.options.detach.title"
 msgstr ""
 "Traiter les ressources de la bibliothèque partagée comme des objets basiques"
@@ -3110,7 +3109,6 @@ msgstr ""
 "fichiers"
 
 #: src/app/main/ui/export.cljs
-#, fuzzy
 msgid "dashboard.export-shapes.how-to-link"
 msgstr "Information sur comment mettre en place des exportations à Penpot."
 
@@ -3123,3 +3121,10 @@ msgid "dashboard.export.options.merge.message"
 msgstr ""
 "Votre fichier sera exporté avec toutes les ressources externes fusionnées "
 "dans la bibliothèque de fichiers."
+
+#: src/app/main/ui/export.cljs
+#, fuzzy
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Vous pouvez ajouter des paramètres d'exportation aux éléments à partir des "
+"propriétés de design (en bas de la barre latérale droite)."
