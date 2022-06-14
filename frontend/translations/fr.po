@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-06-15 08:19+0000\n"
-"Last-Translator: Alexandre Pawlak <alexpawlak@gmail.com>\n"
+"Last-Translator: Locness <locness3@orange.fr>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -3086,7 +3086,8 @@ msgstr ""
 
 msgid "dashboard.export.options.detach.title"
 msgstr ""
-"Traiter les ressources de la bibliothèque partagée comme des objets basiques"
+"Considérer les ressources des bibliothèques partagées comme des objets "
+"basiques"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.no-elements"
@@ -3232,3 +3233,6 @@ msgstr ""
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Entrez le nom de l'équipe"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Traitement des couleurs"
