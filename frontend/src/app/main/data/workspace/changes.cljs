@@ -162,7 +162,10 @@
             (us/assert ::spec.change/changes redo-changes)
             (us/assert ::spec.change/changes undo-changes)
 
-            (update-in state path cp/process-changes redo-changes false)
+            (update-in state path (fn [file]
+                                    (-> file
+                                        (cp/process-changes redo-changes false)
+                                        (cph/update-object-indices page-id))))
 
             (catch :default err
               (log/error :js/error err)

@@ -32,7 +32,6 @@
    [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]
-   [app.main.data.workspace.indices :as dwidx]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
@@ -128,9 +127,7 @@
                               team-id (dm/get-in bundle [:project :team-id])]
                           (rx/merge
                            (rx/of (dwn/initialize team-id file-id)
-                                  (dwp/initialize-file-persistence file-id)
-                                  (dwidx/start-indexing))
-
+                                  (dwp/initialize-file-persistence file-id))
                            (->> stream
                                 (rx/filter #(= ::dwc/index-initialized %))
                                 (rx/take 1)
@@ -153,6 +150,7 @@
              :workspace-project project
              :workspace-file (assoc file :initialized true)
              :workspace-data (-> (:data file)
+                                 (cph/start-object-indices)
                                  ;; DEBUG: Uncomment this to try out migrations in local without changing
                                  ;; the version number
                                  #_(assoc :version 17)
@@ -196,7 +194,6 @@
     (watch [_ _ _]
       (rx/merge
        (rx/of (dwn/finalize file-id))
-       (rx/of (dwidx/stop-indexing))
        (->> (rx/of ::dwp/finalize)
             (rx/observe-on :async))))))
 

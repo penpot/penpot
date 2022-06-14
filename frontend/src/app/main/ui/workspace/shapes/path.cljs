@@ -14,6 +14,12 @@
    [app.main.ui.workspace.shapes.path.common :as pc]
    [rumext.alpha :as mf]))
 
+(defn apply-content-modifiers
+  [shape content-modifiers]
+  (let [shape (update shape :content upc/apply-content-modifiers content-modifiers)
+        [_ new-selrect] (helpers/content->points+selrect shape (:content shape))]
+    (assoc shape :selrect new-selrect)))
+
 (mf/defc path-wrapper
   {::mf/wrap-props false}
   [props]
@@ -22,11 +28,7 @@
         content-modifiers (mf/deref content-modifiers-ref)
         editing-id (mf/deref refs/selected-edition)
         editing? (= editing-id (:id shape))
-        shape (update shape :content upc/apply-content-modifiers content-modifiers)
-
-        [_ new-selrect]
-        (helpers/content->points+selrect shape (:content shape))
-        shape (assoc shape :selrect new-selrect)]
+        shape (mf/use-memo (mf/deps shape content-modifiers) #(apply-content-modifiers shape content-modifiers))]
 
     [:> shape-container {:shape shape
                          :pointer-events (when editing? "none")}

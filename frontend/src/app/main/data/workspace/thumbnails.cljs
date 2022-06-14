@@ -73,12 +73,13 @@
 
              (rx/merge-map
               (fn [data]
-                (let [params {:file-id file-id :object-id object-id :data data}]
-                  (rx/merge
-                   ;; Update the local copy of the thumbnails so we don't need to request it again
-                   (rx/of #(assoc-in % [:workspace-file :thumbnails object-id] data))
-                   (->> (rp/mutation! :upsert-file-object-thumbnail params)
-                        (rx/ignore)))))))))))
+                (when (some? file-id)
+                  (let [params {:file-id file-id :object-id object-id :data data}]
+                    (rx/merge
+                     ;; Update the local copy of the thumbnails so we don't need to request it again
+                     (rx/of #(assoc-in % [:workspace-file :thumbnails object-id] data))
+                     (->> (rp/mutation! :upsert-file-object-thumbnail params)
+                          (rx/ignore))))))))))))
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"

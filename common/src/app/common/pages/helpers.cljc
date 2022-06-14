@@ -153,30 +153,23 @@
           (:shapes)
           (keep lookup)))))
 
-(defn get-frames-ids
-  "Retrieves all frame objects as vector. It is not implemented in
-  function of `get-immediate-children` for performance reasons. This
-  function is executed in the render hot path."
-  [objects]
-  (let [lookup (d/getf objects)
-        xform  (comp (remove #(= uuid/zero %))
-                     (keep lookup)
-                     (filter frame-shape?)
-                     (map :id))]
-    (->> (keys objects)
-         (into [] xform))))
-
 (defn get-frames
-  "Retrieves all frame objects as vector. It is not implemented in
-  function of `get-immediate-children` for performance reasons. This
-  function is executed in the render hot path."
+  "Retrieves all frame objects as vector"
   [objects]
-  (let [lookup (d/getf objects)
-        xform  (comp (remove #(= uuid/zero %))
-                     (keep lookup)
-                     (filter frame-shape?))]
-    (->> (keys objects)
-         (into [] xform))))
+  (if (contains? (meta objects) ::index-frames)
+    (::index-frames (meta objects))
+    (let [lookup (d/getf objects)
+          xform  (comp (remove #(= uuid/zero %))
+                       (keep lookup)
+                       (filter frame-shape?))]
+      (->> (keys objects)
+           (into [] xform)))))
+
+(defn get-frames-ids
+  "Retrieves all frame ids as vector"
+  [objects]
+  (->> (get-frames objects)
+       (mapv :id)))
 
 (defn get-nested-frames
   [objects frame-id]
@@ -197,25 +190,19 @@
             (conj (:id shape))))]
     (reduce-objects objects (complement frame-shape?) add-frame [])))
 
-(defn get-root-shapes-ids
+(defn get-root-shapes
   [objects]
   (let [add-shape
         (fn [result shape]
           (cond-> result
             (not (frame-shape? shape))
-            (conj (:id shape))))]
+            (conj shape)))]
     (reduce-objects objects (complement frame-shape?) add-shape [])))
 
-(defn get-root-frames
-  "Retrieves all frame objects as vector. It is not implemented in
-  function of `get-immediate-children` for performance reasons. This
-  function is executed in the render hot path."
+(defn get-root-shapes-ids
   [objects]
-  (let [lookup (d/getf objects)
-        xform  (comp (keep lookup)
-                     (filter frame-shape?))]
-    (->> (:shapes (lookup uuid/zero))
-         (into [] xform))))
+  (->> (get-root-shapes objects)
+       (mapv :id)))
 
 (defn- get-base
   [objects id-a id-b]
@@ -697,3 +684,22 @@
                  identity
                  (remove :hide-in-viewer)))
          (sort-z-index objects (get-frames-ids objects) {:top-frames? true}))))
+
+
+(defn start-page-index
+  [objects]
+  (with-meta objects {::index-frames (get-frames objects)}))
+
+(defn update-page-index
+  [objects]
+  (with-meta objects {::index-frames (get-frames objects)}))
+
+(defn start-object-indices
+  [file]
+  (letfn [(process-index [page-index page-id]
+            (update-in page-index [page-id :objects] start-page-index))]
+    (update file :pages-index #(reduce process-index % (keys %)))))
+
+(defn update-object-indices
+  [file page-id]
+  (update-in file [:pages-index page-id :objects] update-page-index))
