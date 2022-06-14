@@ -16,6 +16,7 @@
 - Added fixed elements when scrolling [Taiga #1533](https://tree.taiga.io/project/penpot/us/1533)
 - Multiple team invitations on onboarding [Taiga #3084](https://tree.taiga.io/project/penpot/us/3084)
 - Change text properties position at the sidebar [Taiga #3047](https://tree.taiga.io/project/penpot/us/3047)
+- Group assets by drag and drop [Taiga #2831](https://tree.taiga.io/project/penpot/us/2831)
 
 ### :bug: Bugs fixed
 - Fix menu file not accessible in certain conditions [Taiga #3385](https://tree.taiga.io/project/penpot/issue/3385)
@@ -77,7 +78,6 @@
 
 ### :sparkles: New features
 
-- Group assets by drag and drop [Taiga #2831](https://tree.taiga.io/project/penpot/us/2831)
 - Search and filter layers [Taiga #2564](https://tree.taiga.io/project/penpot/us/2564)
 - Exporting big files flow [Taiga #2218](https://tree.taiga.io/project/penpot/us/2218)
 - Multiexport from main menu [Taiga #520](https://tree.taiga.io/project/penpot/us/28541)
