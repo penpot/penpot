@@ -77,14 +77,15 @@
 
 (defn get-nodes
   "Retrieve the DOM nodes to apply the matrix transformation"
-  [base-node {:keys [id type masked-group?]}]
-  (let [shape-node (dom/query base-node (str "#shape-" id))
+  [base-node {:keys [id type masked-group?] :as shape}]
+  (let [shape-node (if (= (.-id base-node) (dm/str "shape-" id))
+                     base-node
+                     (dom/query base-node (dm/str "#shape-" id)))
 
         frame? (= :frame type)
         group? (= :group type)
         text? (= :text type)
         mask?  (and group? masked-group?)]
-
     (cond
       frame?
       [shape-node

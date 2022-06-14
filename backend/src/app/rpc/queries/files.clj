@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
@@ -289,7 +290,7 @@
                           frame (-> page :objects cph/get-frames)]
                       (assoc frame :page-id (:id page)))))
 
-          ;; function responsible to filter objects data strucuture of
+          ;; function responsible to filter objects data structure of
           ;; all unneded shapes if a concrete frame is provided. If no
           ;; frame, the objects is returned untouched.
           (filter-objects [objects frame-id]
@@ -307,10 +308,24 @@
                       object-id (str page-id frame-id)
                       frame (if-let [thumb (get thumbnails object-id)]
                               (assoc frame :thumbnail thumb :shapes [])
-                              (dissoc frame :thumbnail))]
+                              (dissoc frame :thumbnail))
+
+                      children-ids
+                      (cph/get-children-ids objects frame-id)
+
+                      bounds
+                      (when (:show-content frame)
+                        (gsh/selection-rect (->> children-ids (map (d/getf objects)))))
+
+                      frame
+                      (cond-> frame
+                        (some? bounds)
+                        (assoc :children-bounds bounds))]
+
                   (if (:thumbnail frame)
-                    (recur (-> (assoc objects frame-id frame)
-                               (d/without-keys (cph/get-children-ids objects frame-id)))
+                    (recur (-> objects
+                               (assoc frame-id frame)
+                               (d/without-keys children-ids))
                            (rest frames))
                     (recur (assoc objects frame-id frame)
                            (rest frames))))

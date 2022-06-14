@@ -61,8 +61,12 @@
 
 (defn- calculate-dimensions
   [objects]
-  (let [shapes (cph/get-immediate-children objects)
-        rect   (gsh/selection-rect shapes)]
+  (let [rect
+        (->> (cph/get-immediate-children objects)
+             (map #(if (some? (:children-bounds %))
+                     (:children-bounds %)
+                     (:selrect %)))
+             (gsh/join-selrects))]
     (-> rect
         (update :x mth/finite 0)
         (update :y mth/finite 0)
@@ -77,9 +81,12 @@
         frame-shape   (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-wrapper
       [{:keys [shape] :as props}]
+
       (let [childs (mapv #(get objects %) (:shapes shape))
             shape  (gsh/transform-shape shape)]
-        [:& frame-shape {:shape shape :childs childs}]))))
+        (if (some? (:thumbnail shape))
+          [:& frame/frame-thumbnail {:shape shape :bounds (:children-bounds shape)}]
+          [:& frame-shape {:shape shape :childs childs}])))))
 
 (defn group-wrapper-factory
   [objects]
@@ -251,7 +258,7 @@
            (cond
              (and frame? thumbnails? (some? (:thumbnail item)))
              [:> shape-container {:shape item}
-              [:& frame/frame-thumbnail {:shape item}]]
+              [:& frame/frame-thumbnail {:shape item :bounds (:children-bounds item)}]]
 
              frame?
              [:> shape-container {:shape item}
@@ -271,9 +278,11 @@
   (let [frame-id          (:id frame)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
+        bounds (or (:children-bounds frame) (:selrect frame))
+
         modifier
-        (mf/with-memo [(:x frame) (:y frame)]
-          (-> (gpt/point (:x frame) (:y frame))
+        (mf/with-memo [(:x bounds) (:y bounds)]
+          (-> (gpt/point (:x bounds) (:y bounds))
               (gpt/negate)
               (gmt/translate-matrix)))
 
@@ -292,9 +301,9 @@
         (mf/with-memo [objects]
           (frame-wrapper-factory objects))
 
-        width  (* (:width frame) zoom)
-        height (* (:height frame) zoom)
-        vbox   (format-viewbox {:width (:width frame 0) :height (:height frame 0)})]
+        width  (* (:width bounds) zoom)
+        height (* (:height bounds) zoom)
+        vbox   (format-viewbox {:width (:width bounds 0) :height (:height bounds 0)})]
 
     [:svg {:view-box vbox
            :width (ust/format-precision width viewbox-decimal-precision)
@@ -310,7 +319,7 @@
        ;; Render the frame thumbnail
        (let [frame (gsh/transform-shape frame)]
          [:> shape-container {:shape frame}
-          [:& frame/frame-thumbnail {:shape frame}]]))]))
+          [:& frame/frame-thumbnail {:shape frame :bounds (assoc bounds :x 0 :y 0)}]]))]))
 
 
 ;; Component for rendering a thumbnail of a single componenent. Mainly

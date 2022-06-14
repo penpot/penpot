@@ -645,6 +645,13 @@
         (transform-bounds center modifiers)
         (gpr/points->selrect))))
 
+(defn transform-selrect-matrix
+  [selrect mtx]
+  (-> selrect
+      (gpr/rect->points)
+      (gco/transform-points mtx)
+      (gpr/points->selrect)))
+
 (defn selection-rect
   "Returns a rect that contains all the shapes and is aware of the
   rotation of each shape. Mainly used for multiple selection."
