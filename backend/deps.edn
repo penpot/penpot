@@ -34,7 +34,9 @@
   buddy/buddy-sign {:mvn/version "3.4.333"}
 
   org.jsoup/jsoup {:mvn/version "1.15.1"}
-  org.im4java/im4java {:mvn/version "1.4.0"}
+  org.im4java/im4java {:git/tag "1.4.0-penpot-2" :git/sha "e2b3e16"
+                       :git/url "https://github.com/penpot/im4java"}
+
   org.lz4/lz4-java {:mvn/version "1.8.0"}
 
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
