@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.loggers.audit :as audit]
    [app.metrics :as mtx]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
@@ -279,10 +280,14 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn id)
-    (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-key-share true})]
+    (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-key-share true})
+          team-id (retrieve-team-id conn (:project-id file))]
       (files/check-edition-permissions! conn profile-id id)
-      (update-file (assoc cfg :conn  conn)
-                   (assoc params :file file)))))
+      (with-meta
+        (update-file (assoc cfg :conn  conn)
+                     (assoc params :file file))
+        {::audit/props {:project-id (:project-id file)
+                        :team-id team-id}}))))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
