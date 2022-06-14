@@ -59,7 +59,7 @@
 
 ;; --- BACKEND INIT
 
-(s/def ::region #{:eu-central-1})
+(s/def ::region ::us/keyword)
 (s/def ::bucket ::us/string)
 (s/def ::prefix ::us/string)
 (s/def ::endpoint ::us/string)
@@ -68,9 +68,10 @@
   (s/keys :opt-un [::region ::bucket ::prefix ::endpoint ::wrk/executor]))
 
 (defmethod ig/prep-key ::backend
-  [_ {:keys [prefix] :as cfg}]
+  [_ {:keys [prefix region] :as cfg}]
   (cond-> (d/without-nils cfg)
-    prefix (assoc :prefix prefix)))
+    (some? prefix) (assoc :prefix prefix)
+    (nil? region)  (assoc :region :eu-central-1)))
 
 (defmethod ig/init-key ::backend
   [_ cfg]
