@@ -62,10 +62,10 @@
 (defn- calculate-dimensions
   [objects]
   (let [rect
-        (->> (cph/get-immediate-children objects)
+        (->> (cph/get-root-objects objects)
              (map #(if (some? (:children-bounds %))
                      (:children-bounds %)
-                     (:selrect %)))
+                     (gsh/points->selrect (:points %))))
              (gsh/join-selrects))]
     (-> rect
         (update :x mth/finite 0)
@@ -82,9 +82,10 @@
     (mf/fnc frame-wrapper
       [{:keys [shape] :as props}]
 
-      (let [childs (mapv #(get objects %) (:shapes shape))
+      (let [render-thumbnails? (mf/use-ctx muc/render-thumbnails)
+            childs (mapv #(get objects %) (:shapes shape))
             shape  (gsh/transform-shape shape)]
-        (if (some? (:thumbnail shape))
+        (if (and render-thumbnails? (some? (:thumbnail shape)))
           [:& frame/frame-thumbnail {:shape shape :bounds (:children-bounds shape)}]
           [:& frame-shape {:shape shape :childs childs}])))))
 
@@ -221,52 +222,37 @@
         vbox    (format-viewbox dim)
         bgcolor (dm/get-in data [:options :background] default-color)
 
-        frame-wrapper
-        (mf/use-memo
-         (mf/deps objects)
-         #(frame-wrapper-factory objects))
-
         shape-wrapper
         (mf/use-memo
          (mf/deps objects)
          #(shape-wrapper-factory objects))]
 
-    [:& (mf/provider embed/context) {:value render-embed?}
-     [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}
-      [:svg {:view-box vbox
-             :version "1.1"
-             :xmlns "http://www.w3.org/2000/svg"
-             :xmlnsXlink "http://www.w3.org/1999/xlink"
-             :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
-             :style {:width "100%"
-                     :height "100%"
-                     :background bgcolor}
-             :fill "none"}
+    [:& (mf/provider muc/render-thumbnails) {:value thumbnails?}
+     [:& (mf/provider embed/context) {:value render-embed?}
+      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}
+       [:svg {:view-box vbox
+              :version "1.1"
+              :xmlns "http://www.w3.org/2000/svg"
+              :xmlnsXlink "http://www.w3.org/1999/xlink"
+              :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+              :style {:width "100%"
+                      :height "100%"
+                      :background bgcolor}
+              :fill "none"}
 
-       (when include-metadata?
-         [:& export/export-page {:options (:options data)}])
+        (when include-metadata?
+          [:& export/export-page {:options (:options data)}])
 
 
-       (let [shapes (->> shapes
-                         (remove cph/frame-shape?)
-                         (mapcat #(cph/get-children-with-self objects (:id %))))
-             fonts (ff/shapes->fonts shapes)]
-         [:& ff/fontfaces-style {:fonts fonts}])
+        (let [shapes (->> shapes
+                          (remove cph/frame-shape?)
+                          (mapcat #(cph/get-children-with-self objects (:id %))))
+              fonts (ff/shapes->fonts shapes)]
+          [:& ff/fontfaces-style {:fonts fonts}])
 
-       (for [item shapes]
-         (let [frame? (= (:type item) :frame)]
-           (cond
-             (and frame? thumbnails? (some? (:thumbnail item)))
-             [:> shape-container {:shape item}
-              [:& frame/frame-thumbnail {:shape item :bounds (:children-bounds item)}]]
-
-             frame?
-             [:> shape-container {:shape item}
-              [:& frame-wrapper {:shape item
-                                 :key (:id item)}]]
-             :else
-             [:& shape-wrapper {:shape item
-                                :key (:id item)}])))]]]))
+        (for [item shapes]
+          [:& shape-wrapper {:shape item
+                             :key (:id item)}])]]]]))
 
 
 ;; Component that serves for render frame thumbnails, mainly used in
@@ -278,7 +264,7 @@
   (let [frame-id          (:id frame)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
-        bounds (or (:children-bounds frame) (:selrect frame))
+        bounds (or (:children-bounds frame) (gsh/points->rect (:points frame)))
 
         modifier
         (mf/with-memo [(:x bounds) (:y bounds)]

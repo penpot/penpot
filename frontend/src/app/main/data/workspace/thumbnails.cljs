@@ -56,30 +56,35 @@
 
 (defn update-thumbnail
   "Updates the thumbnail information for the given frame `id`"
-  [page-id frame-id]
-  (ptk/reify ::update-thumbnail
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [object-id  (dm/str page-id frame-id)
-            file-id (:current-file-id state)
-            blob-result (thumbnail-stream object-id)]
+  ([page-id frame-id]
+   (update-thumbnail nil page-id frame-id))
 
-        (->> blob-result
-             (rx/merge-map
-              (fn [blob]
-                (if (some? blob)
-                  (wapi/read-file-as-data-url blob)
-                  (rx/of nil))))
+  ([file-id page-id frame-id]
+   (ptk/reify ::update-thumbnail
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [object-id  (dm/str page-id frame-id)
+             file-id (or file-id (:current-file-id state))
+             blob-result (thumbnail-stream object-id)]
 
-             (rx/merge-map
-              (fn [data]
-                (when (some? file-id)
-                  (let [params {:file-id file-id :object-id object-id :data data}]
-                    (rx/merge
-                     ;; Update the local copy of the thumbnails so we don't need to request it again
-                     (rx/of #(assoc-in % [:workspace-file :thumbnails object-id] data))
-                     (->> (rp/mutation! :upsert-file-object-thumbnail params)
-                          (rx/ignore))))))))))))
+         (->> blob-result
+              (rx/merge-map
+               (fn [blob]
+                 (if (some? blob)
+                   (wapi/read-file-as-data-url blob)
+                   (rx/of nil))))
+
+              (rx/merge-map
+               (fn [data]
+                 (if (some? file-id)
+                   (let [params {:file-id file-id :object-id object-id :data data}]
+                     (rx/merge
+                      ;; Update the local copy of the thumbnails so we don't need to request it again
+                      (rx/of #(assoc-in % [:workspace-file :thumbnails object-id] data))
+                      (->> (rp/mutation! :upsert-file-object-thumbnail params)
+                           (rx/ignore))))
+
+                   (rx/empty))))))))))
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"

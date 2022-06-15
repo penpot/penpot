@@ -190,7 +190,16 @@
             (conj (:id shape))))]
     (reduce-objects objects (complement frame-shape?) add-frame [])))
 
+(defn get-root-objects
+  "Get all the objects under the root object"
+  [objects]
+  (let [add-shape
+        (fn [result shape]
+          (conj result shape))]
+    (reduce-objects objects (complement frame-shape?) add-shape [])))
+
 (defn get-root-shapes
+  "Get all shapes that are not frames"
   [objects]
   (let [add-shape
         (fn [result shape]
@@ -688,11 +697,11 @@
 
 (defn start-page-index
   [objects]
-  (with-meta objects {::index-frames (get-frames objects)}))
+  (with-meta objects {::index-frames (get-frames (with-meta objects nil))}))
 
 (defn update-page-index
   [objects]
-  (with-meta objects {::index-frames (get-frames objects)}))
+  (with-meta objects {::index-frames (get-frames (with-meta objects nil))}))
 
 (defn start-object-indices
   [file]
