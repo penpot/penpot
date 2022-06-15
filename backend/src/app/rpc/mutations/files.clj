@@ -27,6 +27,7 @@
    [promesa.core :as p]))
 
 (declare create-file)
+(declare retrieve-team-id)
 
 ;; --- Helpers & Specs
 
@@ -48,8 +49,11 @@
 (sv/defmethod ::create-file
   [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
-    (proj/check-edition-permissions! conn profile-id project-id)
-    (create-file conn params)))
+    (let [team-id (retrieve-team-id conn project-id)]
+      (proj/check-edition-permissions! conn profile-id project-id)
+      (with-meta
+        (create-file conn params)
+        {::audit/props {:team-id team-id}}))))
 
 (defn create-file-role
   [conn {:keys [file-id profile-id role]}]
@@ -246,7 +250,6 @@
 
 (declare insert-change)
 (declare retrieve-lagged-changes)
-(declare retrieve-team-id)
 (declare send-notifications)
 (declare update-file)
 
