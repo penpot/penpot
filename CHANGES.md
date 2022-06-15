@@ -28,6 +28,7 @@
 
 ### :bug: Bugs fixed
 - Fix orientation artboard preset not working with differently sized artboards [Taiga #3548](https://tree.taiga.io/project/penpot/issue/3548)
+- Fix background on export arboards [Taiga #1991](https://tree.taiga.io/project/penpot/issue/1991)
 
 ## 1.13.4-beta
 

@@ -421,7 +421,6 @@
   [props node svg-data]
 
   (let [fill (:fill svg-data)
-        hide-fill-on-export      (get-meta node :hide-fill-on-export str->bool)
         fill-color-ref-id        (get-meta node :fill-color-ref-id uuid/uuid)
         fill-color-ref-file      (get-meta node :fill-color-ref-file uuid/uuid)
         meta-fill-color          (get-meta node :fill-color)
@@ -454,9 +453,6 @@
       (uc/hex? fill)
       (assoc :fill-color fill
              :fill-opacity (-> svg-data (:fill-opacity "1") d/parse-double))
-
-      (some? hide-fill-on-export)
-      (assoc :hide-fill-on-export hide-fill-on-export)
 
       (some? fill-color-ref-id)
       (assoc :fill-color-ref-id fill-color-ref-id
@@ -883,6 +879,8 @@
 
           (assoc :fills (parse-fills node svg-data))
           (assoc :strokes (parse-strokes node svg-data))
+
+          (assoc :hide-fill-on-export      (get-meta node :hide-fill-on-export str->bool))
 
           (cond-> (= :svg-raw type)
             (add-svg-content node))
