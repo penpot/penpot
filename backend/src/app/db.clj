@@ -55,54 +55,66 @@
 (s/def ::migrations map?)
 (s/def ::name keyword?)
 (s/def ::password ::us/string)
-(s/def ::read-only ::us/boolean)
 (s/def ::uri ::us/not-empty-string)
 (s/def ::username ::us/string)
 (s/def ::validation-timeout ::us/integer)
+(s/def ::read-only? ::us/boolean)
 
-(defmethod ig/pre-init-spec ::pool [_]
-  (s/keys :req-un [::uri ::name
+(s/def ::pool-options
+  (s/keys :opt-un [::uri ::name
                    ::min-size
                    ::max-size
                    ::connection-timeout
-                   ::validation-timeout]
-          :opt-un [::migrations
+                   ::validation-timeout
+                   ::migrations
                    ::username
                    ::password
                    ::mtx/metrics
-                   ::read-only]))
+                   ::read-only?]))
+
+(def defaults
+  {:name :main
+   :min-size 0
+   :max-size 30
+   :connection-timeout 10000
+   :validation-timeout 10000
+   :idle-timeout 120000 ; 2min
+   :max-lifetime 1800000 ; 30m
+   :read-only? false})
 
 (defmethod ig/prep-key ::pool
   [_ cfg]
-  (merge {:name :main
-          :min-size 0
-          :max-size 30
-          :connection-timeout 10000
-          :validation-timeout 10000
-          :idle-timeout 120000 ; 2min
-          :max-lifetime 1800000 ; 30m
-          :read-only false}
-         (d/without-nils cfg)))
+  (merge defaults (d/without-nils cfg)))
+
+;; Don't validate here, just validate that a map is received.
+(defmethod ig/pre-init-spec ::pool [_] ::pool-options)
 
 (defmethod ig/init-key ::pool
-  [_ {:keys [migrations name read-only] :as cfg}]
-  (l/info :hint "initialize connection pool"
-          :name (d/name name)
-          :uri (:uri cfg)
-          :read-only read-only
-          :with-credentials (and (contains? cfg :username)
-                                 (contains? cfg :password))
-          :min-size (:min-size cfg)
-          :max-size (:max-size cfg))
+  [_ {:keys [migrations read-only? uri] :as cfg}]
+  (if uri
+    (let [pool (create-pool cfg)]
+      (l/info :hint "initialize connection pool"
+              :name (d/name (:name cfg))
+              :uri uri
+              :read-only read-only?
+              :with-credentials (and (contains? cfg :username)
+                                     (contains? cfg :password))
+              :min-size (:min-size cfg)
+              :max-size (:max-size cfg))
+      (when-not read-only?
+        (some->> (seq migrations) (apply-migrations! pool)))
+      pool)
 
-  (let [pool (create-pool cfg)]
-    (when-not read-only
-      (some->> (seq migrations) (apply-migrations! pool)))
-    pool))
+    (do
+      (l/warn :hint "unable to initialize pool, missing url"
+              :name (d/name (:name cfg))
+              :read-only read-only?)
+      nil)))
 
 (defmethod ig/halt-key! ::pool
   [_ pool]
-  (.close ^HikariDataSource pool))
+  (when pool
+    (.close ^HikariDataSource pool)))
 
 (defn- apply-migrations!
   [pool migrations]
@@ -126,7 +138,7 @@
       (.setJdbcUrl           (str "jdbc:" uri))
       (.setPoolName          (d/name (:name cfg)))
       (.setAutoCommit true)
-      (.setReadOnly          (:read-only cfg))
+      (.setReadOnly          (:read-only? cfg))
       (.setConnectionTimeout (:connection-timeout cfg))
       (.setValidationTimeout (:validation-timeout cfg))
       (.setIdleTimeout       (:idle-timeout cfg))
