@@ -3,6 +3,9 @@
 ## :rocket: Next
 
 ### :sparkles: New features
+
+- Navigate to the original link after log in [Taiga #3624](https://tree.taiga.io/project/penpot/issue/3624)
+
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

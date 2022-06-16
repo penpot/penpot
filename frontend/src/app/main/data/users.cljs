@@ -157,8 +157,13 @@
   accepting invitation, or third party auth signup or singin."
   [profile]
   (letfn [(get-redirect-event []
-            (let [team-id (:default-team-id profile)]
-              (rt/nav' :dashboard-projects {:team-id team-id})))]
+            (let [team-id (:default-team-id profile)
+                  redirect-url (:redirect-url @storage)]
+              (if (some? redirect-url)
+                (do
+                  (swap! storage dissoc :redirect-url)
+                  (.replace js/location redirect-url))
+                (rt/nav' :dashboard-projects {:team-id team-id}))))]
     (ptk/reify ::logged-in
       IDeref
       (-deref [_] profile)
