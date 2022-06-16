@@ -186,32 +186,14 @@ msgstr "Link skopiowano pomyślnie"
 msgid "common.share-link.link-deleted-success"
 msgstr "Link usunięto pomyślnie"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "Można uzyskać dostęp"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Można zobaczyć"
-
 msgid "common.share-link.permissions-hint"
 msgstr "Każdy, kto ma link, będzie miał dostęp"
 
 msgid "common.share-link.placeholder"
 msgstr "Tutaj pojawi się link do udostępniania"
 
-msgid "common.share-link.remove-link"
-msgstr "Usuń link"
-
 msgid "common.share-link.title"
 msgstr "Udostępnij prototypy"
-
-msgid "common.share-link.view-all-pages"
-msgstr "Wszystkie strony"
-
-msgid "common.share-link.view-current-page"
-msgstr "Tylko ta strona"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Wybrane strony"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"

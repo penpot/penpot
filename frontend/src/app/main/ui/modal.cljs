@@ -84,5 +84,6 @@
   []
   (let [modal (mf/deref modal-ref)]
     (when modal
+      (.log js/console "modal"(clj->js modal))
       [:& modal-wrapper {:data modal
                          :key (:id modal)}])))

@@ -188,32 +188,14 @@ msgstr "Link wurde erfolgreich kopiert"
 msgid "common.share-link.link-deleted-success"
 msgstr "Link wurde erfolgreich gelöscht"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "Freigabe für"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Sichtbar"
-
 msgid "common.share-link.permissions-hint"
 msgstr "Jeder mit dem Link kann auf die Datei zugreifen"
 
 msgid "common.share-link.placeholder"
 msgstr "Link zum Teilen wird hier erscheinen"
 
-msgid "common.share-link.remove-link"
-msgstr "Link entfernen"
-
 msgid "common.share-link.title"
 msgstr "Prototypen teilen"
-
-msgid "common.share-link.view-all-pages"
-msgstr "Alle Seiten"
-
-msgid "common.share-link.view-current-page"
-msgstr "Nur diese Seite"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Ausgewählte Seiten"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs

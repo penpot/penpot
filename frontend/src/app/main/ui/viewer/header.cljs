@@ -77,7 +77,8 @@
         (mf/use-callback
          (mf/deps page)
          (fn []
-           (modal/show! :share-link {:page page :file file})))]
+           (modal/show! :share-link {:page page :file file})
+           (modal/allow-click-outside!)))]
 
     [:div.options-zone
      (case section
