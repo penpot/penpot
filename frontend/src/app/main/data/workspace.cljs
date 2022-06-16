@@ -1214,12 +1214,6 @@
                   ;; selected and its parents
                   objects (cph/selected-subtree objects selected)
 
-                  ;;z-index (cp/calculate-z-index objects)
-                  ;;z-values (->> selected
-                  ;;              (map #(vector %
-                  ;;                            (+ (get z-index %)
-                  ;;                               (get z-index (get-in objects [% :frame-id]))))))
-
                   selected (->> (cph/sort-z-index objects selected)
                                 (into (d/ordered-set)))]
 

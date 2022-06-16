@@ -214,13 +214,19 @@
     [on-load-frame-dom
      @render-frame?
      (mf/html
-      [:*
+      [:& frame/frame-container {:bounds shape-bb
+                                 :shape (cond-> shape
+                                          (some? thumbnail-data)
+                                          (assoc :thumbnail thumbnail-data))}
+
        (when @show-frame-thumbnail
-         [:> frame/frame-thumbnail {:key (dm/str (:id shape))
-                                    :bounds shape-bb
-                                    :shape (cond-> shape
-                                             (some? thumbnail-data)
-                                             (assoc :thumbnail thumbnail-data))}])
+         [:> frame/frame-thumbnail-image
+          {:key (dm/str (:id shape))
+           :bounds shape-bb
+           :shape (cond-> shape
+                    (some? thumbnail-data)
+                    (assoc :thumbnail thumbnail-data))}])
+
 
        [:foreignObject {:x x :y y :width width :height height}
         [:canvas.thumbnail-canvas

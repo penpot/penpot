@@ -87,21 +87,20 @@
 
         opts  #js {:shape shape :thumbnail? thumbnail?}]
     (when (and (some? shape) (not (:hidden shape)))
-      [:*
-       (case (:type shape)
-         :path    [:> path/path-wrapper opts]
-         :text    [:> text/text-wrapper opts]
-         :group   [:> group-wrapper opts]
-         :rect    [:> rect-wrapper opts]
-         :image   [:> image-wrapper opts]
-         :circle  [:> circle-wrapper opts]
-         :svg-raw [:> svg-raw-wrapper opts]
-         :bool    [:> bool-wrapper opts]
+      (case (:type shape)
+        :path    [:> path/path-wrapper opts]
+        :text    [:> text/text-wrapper opts]
+        :group   [:> group-wrapper opts]
+        :rect    [:> rect-wrapper opts]
+        :image   [:> image-wrapper opts]
+        :circle  [:> circle-wrapper opts]
+        :svg-raw [:> svg-raw-wrapper opts]
+        :bool    [:> bool-wrapper opts]
 
-         ;; Only used when drawing a new frame.
-         :frame [:> frame-wrapper opts]
+        ;; Only used when drawing a new frame.
+        :frame [:> frame-wrapper opts]
 
-         nil)])))
+        nil))))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))

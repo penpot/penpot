@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.fonts :as fonts]
@@ -78,8 +77,6 @@
 
           ;; If the current shape is root we handle its thumbnail and the dynamic modifiers
           (let [thumbnail?         (unchecked-get props "thumbnail?")
-
-                render-id          (mf/use-memo #(str (uuid/next)))
                 fonts              (mf/use-memo (mf/deps shape objects) #(ff/shape->fonts shape objects))
                 fonts              (-> fonts (hooks/use-equal-memo))
 
@@ -96,7 +93,7 @@
                 [on-load-frame-dom render-frame? thumbnail-renderer]
                 (ftr/use-render-thumbnail page-id shape node-ref rendered? disable-thumbnail? @force-render)
 
-                [on-frame-load in-memory?]
+                on-frame-load
                 (fns/use-node-store thumbnail? node-ref rendered? render-frame?)]
 
             (mf/use-effect
@@ -128,7 +125,7 @@
                   @node-ref)
                  (when (not @rendered?) (reset! rendered? true)))))
 
-            [:& (mf/provider ctx/render-ctx) {:value render-id}
+            [:*
              [:g.frame-container {:id (dm/str "frame-container-" (:id shape))
                                   :key "frame-container"
                                   :ref on-frame-load
@@ -137,5 +134,6 @@
               [:g.frame-thumbnail-wrapper
                {:id (dm/str "thumbnail-container-" (:id shape))
                 ;; Hide the thumbnail when not displaying
-                :opacity (when (and @rendered? (not thumbnail?) (not render-frame?) (not in-memory?)) 0)}
-               thumbnail-renderer]]]))))))
+                :opacity (when (and @rendered? (not thumbnail?) (not render-frame?)) 0)}
+               [:& shape-container {:shape shape}
+                thumbnail-renderer]]]]))))))

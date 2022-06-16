@@ -223,8 +223,14 @@
         (loop [parents-a (rest parents-a)
                parents-b (rest parents-b)
                base uuid/zero]
-          (if (not= (first parents-a) (first parents-b))
+          (cond
+            (not= (first parents-a) (first parents-b))
             [base (first parents-a) (first parents-b)]
+
+            (or (empty? parents-a) (empty? parents-b))
+            [uuid/zero (first parents-a) (first parents-b)]
+
+            :else
             (recur (rest parents-a) (rest parents-b) (first parents-a))))
 
         index-base-a (when base-child-a (get-position-on-parent objects base-child-a))

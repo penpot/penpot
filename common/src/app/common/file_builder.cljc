@@ -223,7 +223,7 @@
 (defn close-artboard [file]
   (assert (nil? (:current-component-id file)))
 
-  (let [parent-id (peek (get file :parent-stack))
+  (let [parent-id (-> file :parent-id peek)
         parent (lookup-shape file parent-id)
         current-frame-id (or (:frame-id parent) root-frame)]
     (-> file
