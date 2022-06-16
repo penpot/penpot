@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.spec :as us]
    [app.common.spec.page :as spec.page]
    [app.common.uuid :as uuid]
@@ -718,3 +719,7 @@
 (defn update-object-indices
   [file page-id]
   (update-in file [:pages-index page-id :objects] update-page-index))
+
+(defn rotated-frame?
+  [frame]
+  (not (mth/almost-zero? (:rotation frame 0))))

@@ -8,6 +8,7 @@
   (:require
    [app.main.constants :refer [has-layout-item]]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
@@ -25,6 +26,7 @@
         stroke-values (select-keys shape stroke-attrs)
         layer-values (select-keys shape layer-attrs)
         measure-values (select-keys shape measure-attrs)
+        constraint-values (select-keys shape constraint-attrs)
         layout-values (select-keys shape layout-attrs)
         layout-item-values (select-keys shape layout-item-attrs)]
     [:*
@@ -32,6 +34,8 @@
                         :values measure-values
                         :type type
                         :shape shape}]
+     [:& constraints-menu {:ids ids
+                           :values constraint-values}]
      (when has-layout-item
        [:& layout-menu {:type type :ids [(:id shape)] :values layout-values}])
      
