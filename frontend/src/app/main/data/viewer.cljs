@@ -384,7 +384,9 @@
         (rx/of (rt/nav screen pparams (assoc qparams :index index)))))))
 
 (defn go-to-frame
-  ([frame-id] (go-to-frame frame-id nil))
+  ([frame-id]
+   (go-to-frame frame-id nil))
+
   ([frame-id animation]
    (us/verify ::us/uuid frame-id)
    (us/verify (s/nilable ::cti/animation) animation)
@@ -414,8 +416,7 @@
              page-id (:page-id qparams)
              frames  (get-in state [:viewer :pages page-id :frames])
              index   (d/index-of-pred frames #(= (:id %) frame-id))]
-         (when index
-           (rx/of (go-to-frame-by-index index))))))))
+         (rx/of (go-to-frame-by-index (or index 0))))))))
 
 (defn go-to-frame-auto
   []

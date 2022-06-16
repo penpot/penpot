@@ -171,25 +171,30 @@
                  (rx/map #(move-edit-interaction initial-pos %)))
             (rx/of (finish-edit-interaction index initial-pos))))))))
 
+
+(defn get-target-frame
+  [state position]
+
+  (let [objects (wsh/lookup-page-objects state)
+        from-id (-> state wsh/lookup-selected first)
+        from-shape (wsh/lookup-shape state from-id)
+
+        from-frame-id (if (cph/frame-shape? from-shape)
+                        from-id (:frame-id from-shape))
+
+        target-frame (cph/frame-by-position objects position)]
+
+    (when (and (not= (:id target-frame) uuid/zero)
+               (not= (:id target-frame) from-frame-id)
+               (not (:hide-in-viewer target-frame)))
+      target-frame)))
+
 (defn move-edit-interaction
-  [initial-pos position]
+  [_initial-pos position]
   (ptk/reify ::move-edit-interaction
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            selected-shape-id (-> state wsh/lookup-selected first)
-            selected-shape (get objects selected-shape-id)
-            selected-shape-frame-id (:frame-id selected-shape)
-            start-frame (get objects selected-shape-frame-id)
-            end-frame   (cph/frame-by-position objects position)
-
-            position (when (not= position initial-pos) position)
-            end-frame (when (and (not= (:id end-frame) uuid/zero )
-                                 (not= (:id end-frame) (:id start-frame))
-                                 (not= (:id end-frame) selected-shape-id)
-                                 (not (:hide-in-viewer end-frame)))
-                        end-frame)]
+      (let [end-frame (get-target-frame state position)]
         (-> state
             (assoc-in [:workspace-local :draw-interaction-to] position)
             (assoc-in [:workspace-local :draw-interaction-to-frame] end-frame))))))
@@ -207,18 +212,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [position     @ms/mouse-position
-            page-id      (:current-page-id state)
-            objects      (wsh/lookup-page-objects state page-id)
-            target-frame (cph/frame-by-position objects position)
-
+            target-frame (get-target-frame state position)
             shape-id     (-> state wsh/lookup-selected first)
-            shape        (get objects shape-id)
-
-            invalid-target? (or (nil? target-frame)
-                                (= (:id target-frame) uuid/zero)
-                                (= (:id target-frame) (:id shape))
-                                (= (:id target-frame) (:frame-id shape))
-                                (:hide-in-viewer target-frame))
+            shape        (wsh/lookup-shape state shape-id)
 
             change-interaction
             (fn [interaction]
@@ -236,11 +232,11 @@
               (= position initial-pos)
 
               ;; New interaction but invalid target
-              (and (nil? index) invalid-target?))
+              (and (nil? index) (nil? target-frame)))
           nil
 
           ;; Dropped interaction in an invalid target. We remove it
-          (and (some? index) invalid-target?)
+          (and (some? index) (nil? target-frame))
           (rx/of (remove-interaction shape index))
 
           (nil? index)
