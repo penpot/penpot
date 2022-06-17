@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-03 19:13+0000\n"
+"PO-Revision-Date: 2022-06-19 04:19+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -249,7 +249,7 @@ msgid "dashboard.empty-files"
 msgstr "شما هنوز هیچ فایلی در اینجا ندارید"
 
 msgid "dashboard.export-frames"
-msgstr "خروجی آرت‌بوردها به پی‌دی‌اف..."
+msgstr "خروجی آرت‌بوردها به پی‌دی‌اف…"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -284,7 +284,7 @@ msgstr "لغو"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-ok"
-msgstr "باشه"
+msgstr "بله"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
@@ -814,7 +814,7 @@ msgstr "بالا"
 
 #: src/app/main/ui/workspace/sidebar/options.cljs
 msgid "workspace.options.design"
-msgstr "طرح"
+msgstr "طراحی"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export"
@@ -1231,3 +1231,1091 @@ msgstr "دارایی‌های کتابخانه مشترک را به عنوان �
 
 msgid "dashboard.export-single"
 msgstr "اکسپورت فایل پنپات"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "دعوت نامعتبر"
+
+msgid "errors.invite-invalid.info"
+msgstr "این دعوت ممکن است لغو یا منقضی شده باشد."
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-not-allowed"
+msgstr "به نظر می‌رسد که این یک تصویر معتبر نیست."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "آموزش‌ها"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.body"
+msgstr "آیا مطمئن هستید که می‌خواهید این صفحه را حذف کنید؟"
+
+msgid "shortcuts.copy"
+msgstr "کپی"
+
+msgid "shortcuts.draw-curve"
+msgstr "منحنی"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "بیضی"
+
+msgid "shortcuts.draw-frame"
+msgstr "آرت‌بورد"
+
+msgid "shortcuts.draw-path"
+msgstr "مسیر"
+
+msgid "shortcuts.draw-rect"
+msgstr "مستطیل"
+
+msgid "shortcuts.draw-text"
+msgstr "متن"
+
+msgid "shortcuts.group"
+msgstr "گروه"
+
+msgid "shortcuts.mask"
+msgstr "ماسک"
+
+msgid "shortcuts.move"
+msgstr "انتقال"
+
+msgid "shortcuts.undo"
+msgstr "واگرد"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-members"
+msgstr "اعضا - %s - پن‌پات"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "title.settings.profile"
+msgstr "پروفایل - پن‌پات"
+
+#: src/app/main/ui/viewer/header.cljs
+#, fuzzy
+msgid "viewer.header.interactions"
+msgstr "فعل و انفعالات"
+
+#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+msgid "viewer.empty-state"
+msgstr "هیچ آرت‌بوردی در صفحه یافت نشد."
+
+#: src/app/main/ui/workspace.cljs
+#, fuzzy
+msgid "title.workspace"
+msgstr "%s - پن‌پات"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.remove-link"
+msgstr "حذف لینک"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.placeholder"
+msgstr "لینک اشتراک‌گذاری در اینجا ظاهر می‌شود"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.subtitle"
+msgstr "هر کسی که لینک را داشته باشد دسترسی خواهد داشت"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.assets"
+msgstr "دارایی‌ها"
+
+#: src/app/main/ui/workspace/header.cljs
+#, fuzzy
+msgid "workspace.header.saving"
+msgstr "ذخیره‌کردن"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.save-error"
+msgstr "خطا در ذخیره"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.unsaved"
+msgstr "تغییرات ذخیره نشده"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "هل"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, fuzzy
+msgid "workspace.options.grid.params.set-default"
+msgstr "تنظیم به عنوان پیش‌فرض"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "مدت‌زمان"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-none"
+msgstr "(تنظیم نشده)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, fuzzy
+msgid "workspace.options.layer-options.blend-mode.darken"
+msgstr "تاریک"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#, fuzzy
+msgid "workspace.options.stroke"
+msgstr "استروک"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "تصاویر"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "ماسک‌ها"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "شکل‌ها"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "میانبرها (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-main"
+msgstr "به‌روزرسانی کامپوننت اصلی"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+#, fuzzy
+msgid "workspace.shape.menu.select-layer"
+msgstr "انتخاب لایه"
+
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "شکل‌ها"
+
+msgid "workspace.undo.entry.multiple.component"
+msgstr "کامپوننت‌ها"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.delete"
+msgstr "%s حذف شد"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr ""
+"اخبار، به‌روزرسانی‌های محصول و توصیه‌های مربوط به Penpot را برای من ارسال "
+"کنید."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "اشتراک خبرنامه"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "۱ فونت اضافه شد"
+msgstr[1] "%s فونت اضافه شد"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "پروژه‌های پین شده در اینجا ظاهر می‌شوند"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "رمزعبور با موفقیت ذخیره شد!"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "آدرس ایمیل شما با موفقیت به‌روز شد"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "آدرس ایمیل شما با موفقیت تایید شد"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "dashboard.promote-to-owner"
+msgstr "ارتقا به مالک"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "باز کردن فایل در تب جدید"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "تغییر رمزعبور"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "ذخیره تنظیمات"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "آیا می‌خواهید حساب خود را حذف کنید؟"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-theme"
+msgstr "انتخاب تم"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "زبان رابط کاربری را انتخاب کنید"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, fuzzy
+msgid "dashboard.show-all-files"
+msgstr "نمایش همه فایل‌ها"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "فایل شما با موفقیت حذف شد"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "پروژه شما با موفقیت حذف شد"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "dashboard.success-duplicate-file"
+msgstr "فایل شما با موفقیت duplicate شد"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+#, fuzzy
+msgid "dashboard.success-duplicate-project"
+msgstr "پروژه شما با موفقیت duplicate شد"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "فایل شما با موفقیت منتقل شد"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-info"
+msgstr "اطلاعات تیم"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.switch-team"
+msgstr "تغییر تیم"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "اعضای تیم"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "پروژه‌های تیم"
+
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "حساب شما"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.title-search"
+msgstr "نتایج جستجو"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+msgid "dashboard.update-settings"
+msgstr "به‌روزرسانی تنظیمات"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.theme-change"
+msgstr "تم رابط کاربری"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "نام شما"
+
+#: src/app/main/ui/confirm.cljs
+#, fuzzy
+msgid "ds.component-subtitle"
+msgstr "کامپوننت‌ها برای به‌روزرسانی:"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "پن‌پات شما"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "مطمئنی؟"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, fuzzy
+msgid "ds.updated-at"
+msgstr "به‌روزشده: %s"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+#, fuzzy
+msgid "errors.email-already-exists"
+msgstr "ایمیل قبلا استفاده شده است"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.email-already-validated"
+msgstr "ایمیل قبلاً تأیید شده است."
+
+msgid "errors.email-as-password"
+msgstr "شما نمی‌توانید از ایمیل خود به عنوان رمزعبور استفاده کنید"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-invalid-confirmation"
+msgstr "ایمیل تأیید باید مطابقت داشته باشد"
+
+msgid "errors.media-format-unsupported"
+msgstr "فرمت تصویر پشتیبانی نمی‌شود (باید svg، jpg یا png باشد)."
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "errors.generic"
+msgstr "اشتباهی رخ داده است."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.google-auth-not-enabled"
+msgstr "احراز هویت با گوگل در بک‌اند غیرفعال است"
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "رنگ نامعتبر"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "احراز هویت LDAP غیرفعال است."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "تصویر برای درج خیلی بزرگ است (باید کمتر از 5 مگابایت باشد)."
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-mismatch"
+msgstr "به نظر می‌رسد که محتوای تصویر با پسوند فایل مطابقت ندارد."
+
+#: src/app/main/ui/settings/password.cljs
+#, fuzzy
+msgid "errors.password-too-short"
+msgstr "رمزعبور باید حداقل 8 کاراکتر باشد"
+
+msgid "errors.network"
+msgstr "اتصال به سرور بک‌اند امکان‌پذیر نیست."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-invalid-confirmation"
+msgstr "رمزعبور تأیید باید مطابقت داشته باشد"
+
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "errors.unexpected-error"
+msgstr "یک خطای غیرمنتظره رخ داد."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "توکن ناشناخته"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.wrong-credentials"
+msgstr "به نظر می‌رسد نام‌کاربری یا رمزعبور اشتباه است."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "errors.registration-disabled"
+msgstr "ثبت‌نام در حال حاضر غیرفعال است."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.wrong-old-password"
+msgstr "رمزعبور قدیمی اشتباه است"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-start"
+msgstr "پیوستن به چت"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-go-to"
+msgstr "برو سراغ بحث‌ها"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discussions-title"
+msgstr "بحث‌های تیمی"
+
+msgid "handoff.attributes.typography.text-transform.uppercase"
+msgstr "حروف بزرگ"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "در انتظار"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shared-libraries"
+msgstr "کتابخانه‌های مشترک"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "وضعیت"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "حساب شما"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(شما)"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info"
+msgstr ""
+"با حذف کردن حساب خود، تمام پروژه‌ها و آرشیوهای فعلی خود را از دست خواهید داد."
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.title"
+msgstr "آیا مطمئن هستید که می‌خواهید حساب خود را حذف کنید؟"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.title"
+msgstr "حذف صفحه"
+
+#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+msgid "title.viewer"
+msgstr "%s - حالت مشاهده - پن‌پات"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-settings"
+msgstr "تنظیمات - %s - پن‌پات"
+
+#, fuzzy
+msgid "viewer.breaking-change.message"
+msgstr "متاسفم!"
+
+msgid "viewer.breaking-change.description"
+msgstr ""
+"این لینک قابل اشتراک‌گذاری دیگر معتبر نیست. یک مورد جدید ایجاد کنید یا از "
+"مالک یک مورد جدید بخواهید."
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.fullscreen"
+msgstr "تمام صفحه"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.copy-link"
+msgstr "کپی کردن لینک"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-variant-id"
+msgstr "گونه"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.text-transform"
+msgstr "تبدیل متن"
+
+msgid "workspace.focus.selection"
+msgstr "انتخاب"
+
+#: src/app/main/ui/workspace/header.cljs
+#, fuzzy
+msgid "workspace.header.menu.option.view"
+msgstr "بازدید"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "پنهان کردن پالت فونت‌ها"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.save-color"
+msgstr "ذخیره استایل رنگ"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.no-libraries-need-sync"
+msgstr "هیچ کتابخانه مشترکی وجود ندارد که نیاز به به‌روزرسانی داشته باشد"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.search-shared-libraries"
+msgstr "جستجوی کتابخانه‌های مشترک"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-destination"
+msgstr "مقصد"
+
+#, fuzzy
+msgid "workspace.options.radius"
+msgstr "گردی"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "تلاش دوباره"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-bottom"
+msgstr "تراز پایین"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-middle"
+msgstr "تراز وسط"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-left"
+msgstr "تراز چپ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.align-center"
+msgstr "تراز در مرکز"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-width"
+msgstr "عرض خودکار"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-height"
+msgstr "ارتفاع خودکار"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-top"
+msgstr "تراز بالا"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-right"
+msgstr "تراز راست"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.underline"
+msgstr "خط‌زیر"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title-selection"
+msgstr "متن انتخابی"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.title-group"
+msgstr "متن گروهی"
+
+msgid "workspace.options.text-options.vertical-align"
+msgstr "تراز عمودی"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.use-play-button"
+msgstr "از دکمه پخش در هدر برای اجرای نمای پروتوتایپ استفاده کنید."
+
+msgid "workspace.path.actions.add-node"
+msgstr "افزودن گره (%s)"
+
+msgid "workspace.path.actions.delete-node"
+msgstr "حذف گره (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.back"
+msgstr "فرستادن به پشت"
+
+#, fuzzy
+msgid "workspace.path.actions.move-nodes"
+msgstr "انتقال گره‌ها (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.backward"
+msgstr "فرستادن به عقب"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-component"
+msgstr "ایجاد کامپوننت"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+#, fuzzy
+msgid "workspace.shape.menu.flow-start"
+msgstr "شروع فلو"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "چرخش عمودی"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.forward"
+msgstr "جلو بیاورید"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.go-main"
+msgstr "به فایل کامپوننت اصلی بروید"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.front"
+msgstr "به جلو بیاورید"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "نمایش/پنهان کردن رابط کاربری"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "تبدیل به مسیر"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-main"
+msgstr "نمایش کامپوننت اصلی"
+
+#, fuzzy
+msgid "workspace.shape.menu.union"
+msgstr "متحد"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.history"
+msgstr "تاریخچه (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "به‌روزرسانی کامپوننت‌های اصلی"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "کامپوننت‌ها"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "آرت‌بوردها"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "گروه‌ها"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.assets"
+msgstr "دارایی‌ها"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "متن‌ها"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.frame"
+msgstr "آرت‌بورد (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.comments"
+msgstr "نظرات (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.color-palette"
+msgstr "پالت رنگ (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.path"
+msgstr "مسیر (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.move"
+msgstr "انتقال (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.image"
+msgstr "تصویر (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "تایپوگرافی‌ها (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.rect"
+msgstr "مستطیل (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text"
+msgstr "متن (%s)"
+
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "اشیاء"
+
+msgid "workspace.undo.entry.multiple.group"
+msgstr "گروه‌ها"
+
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "آرت‌بورد"
+
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "منحنی‌ها"
+
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "مستطیل‌ها"
+
+msgid "workspace.undo.entry.multiple.path"
+msgstr "مسیرها"
+
+msgid "workspace.undo.entry.multiple.page"
+msgstr "صفحات"
+
+msgid "workspace.undo.entry.single.image"
+msgstr "تصویر"
+
+msgid "workspace.undo.entry.single.group"
+msgstr "گروه"
+
+msgid "workspace.undo.entry.single.frame"
+msgstr "آرت‌بورد"
+
+msgid "workspace.undo.entry.single.curve"
+msgstr "منحنی"
+
+msgid "workspace.undo.entry.single.component"
+msgstr "کامپوننت"
+
+msgid "workspace.undo.entry.single.shape"
+msgstr "شکل"
+
+msgid "workspace.undo.entry.single.rect"
+msgstr "مستطیل"
+
+msgid "workspace.undo.entry.single.path"
+msgstr "مسیر"
+
+msgid "workspace.undo.entry.single.page"
+msgstr "صفحه"
+
+msgid "workspace.undo.entry.single.multiple"
+msgstr "شیء"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s از %s عناصر انتخاب‌شده"
+
+msgid "dashboard.export.title"
+msgstr "خروجی از فایل‌ها"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "فونت حذف شد"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "ردکردن همه"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "شما هنوز هیچ فونت سفارشی‌ای نصب نکرده‌اید."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "آپلود همه"
+
+msgid "dashboard.import"
+msgstr "ایمپورت کردن فایل‌های پن‌پات"
+
+#, fuzzy
+msgid "dashboard.import.analyze-error"
+msgstr "اوه! ما نتوانستیم این فایل را ایمپورت کنیم"
+
+msgid "dashboard.import.import-message"
+msgstr "فایل‌های %s با موفقیت ایمپورت شد."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "در حال پردازش رنگ‌ها"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "در حال پردازش کامپوننت‌ها"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "در حال پردازش تایپوگرافی‌ها"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "در حال آپلود اطلاعات روی سرور (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "در حال آپلود فایل: %s"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "دعوت به تیم"
+
+msgid "dashboard.export.options.merge.title"
+msgstr "دارایی‌های کتابخانه مشترک را در کتابخانه‌های فایل قرار دهید"
+
+msgid "dashboard.import.import-error"
+msgstr "مشکلی در ایمپورت کردن فایل وجود داشت. فایل ایمپورت نشد."
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "کتابخانه‌های مشترک"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "خروج از تیم"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "در حال بارگذاری فایل‌های شما …"
+
+msgid "dashboard.loading-fonts"
+msgstr "در حال بارگیری فونت‌های شما …"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "انتقال به تیم دیگر"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ فایل جدید"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "فایل جدید"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ پروژه جدید"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "پروژه جدید"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.line-height"
+msgstr "ارتفاع خط"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"لطفاً دلیل ایمیل خود را توضیح دهید و مشخص کنید که آیا یک مشکل، ایده یا شک "
+"است. یکی از اعضای تیم ما در اسرع وقت پاسخ خواهد داد."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "generic.error"
+msgstr "خطایی رخ داده است"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "خانواده فونت"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "ارتفاع خط"
+
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "حروف کوچک"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "خط‌زیر"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "عضو"
+
+msgid "labels.and"
+msgstr "و"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.release-notes"
+msgstr "یادداشت‌های انتشار"
+
+#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+msgid "viewer.frame-not-found"
+msgstr "آرت‌بورد یافت نشد."
+
+msgid "viewer.header.comments-section"
+msgstr "نظرات (%s)"
+
+msgid "workspace.path.actions.merge-nodes"
+msgstr "ادغام گره‌ها (%s)"
+
+msgid "workspace.sidebar.layers.search"
+msgstr "جستجوی لایه‌ها"
+
+msgid "workspace.undo.entry.multiple.text"
+msgstr "متن‌ها"
+
+msgid "shortcuts.delete"
+msgstr "حذف"
+
+msgid "shortcut-section.dashboard"
+msgstr "داشبورد"
+
+msgid "shortcut-section.viewer"
+msgstr "بیننده"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"هر وب فونتی که در اینجا آپلود کنید به لیست خانواده فونت‌های موجود در ویژگی‌"
+"های متن فایل‌های این تیم اضافه می‌شود. فونت‌هایی با نام یکسان به عنوان یک **"
+"خانواده فونت تک** گروه‌بندی می‌شوند. می‌توانید فونت‌هایی را با فرمت‌های زیر "
+"بارگذاری کنید: **TTF، OTF و WOFF** (فقط یکی مورد نیاز خواهد بود)."
+
+msgid "workspace.undo.entry.single.circle"
+msgstr "دایره"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.new"
+msgstr "%s جدید"
+
+#, fuzzy
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "جامد"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+#, fuzzy
+msgid "handoff.attributes.stroke"
+msgstr "استروک"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type"
+msgstr "نوع"
+
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "دایره‌ها"
+
+msgid "shortcuts.paste"
+msgstr "چسباندن"
+
+msgid "labels.back"
+msgstr "بازگشت"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "میانبرها"
+
+msgid "shortcuts.escape"
+msgstr "لغو"
+
+msgid "shortcuts.add-comment"
+msgstr "نظرات"
+
+msgid "shortcuts.go-to-search"
+msgstr "جستجو"
+
+msgid "dashboard.export-multi"
+msgstr "خروجی فایل‌های %s پن‌پات"
+
+msgid "dashboard.export.detail"
+msgstr "* ممکن است شامل کامپوننت‌ها، گرافیک، رنگ‌ها و/یا تایپوگرافی باشد."
+
+#, fuzzy
+msgid "dashboard.import.progress.process-media"
+msgstr "در حال پردازش رسانه‌ها"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "در حال پردازش صفحه: %s"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "جستجو برای “%s“…"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "مالک نمی‌تواند تیم را ترک کند، شما باید نقش مالک را مجدداً اختصاص دهید."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "اعضای کافی برای ترک تیم وجود ندارد، احتمالاً می‌خواهید آن را حذف کنید."
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "دانلود تصویر منبع"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "اندازه فونت"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.letter-spacing"
+msgstr "فاصله بین حروف"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.letter-spacing"
+msgstr "فاصله بین حروف"
+
+#, fuzzy
+msgid "workspace.options.text-options.text-case"
+msgstr "کیس"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.ellipse"
+msgstr "بیضی (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.curve"
+msgstr "منحنی (%s)"
+
+msgid "workspace.undo.entry.single.typography"
+msgstr "دارایی‌های تایپوگرافی"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.unknown"
+msgstr "عملیات بیش‌از %s"
+
+msgid "workspace.undo.entry.single.text"
+msgstr "متن"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.there-are-updates"
+msgstr "به‌روزرسانی در کتابخانه‌های مشترک وجود دارد"
+
+msgid "workspace.viewport.click-to-close-path"
+msgstr "برای بستن مسیر کلیک کنید"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.update"
+msgstr "به‌روزرسانی"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.dismiss"
+msgstr "رد"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.title"
+msgstr "تاریخچه"
+
+#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
+msgid "notifications.profile-saved"
+msgstr "پروفایل با موفقیت ذخیره شد!"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.no-shared-libraries-available"
+msgstr "هیچ کتابخانه مشترکی در دسترس نیست"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "title.dashboard.shared-libraries"
+msgstr "کتابخانه‌های مشترک - %s - پن‌پات"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-libraries"
+msgstr "کتابخانه‌های مشترک"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "نمایش پالت فونت‌ها"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-transform"
+msgstr "تبدیل متن"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "انتقال به"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "اعضای %s"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "انتقال فایل‌های %s به"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "dashboard.remove-shared"
+msgstr "حذف به عنوان کتابخانه مشترک"
+
+#: src/app/main/data/workspace.cljs
+msgid "errors.clipboard-not-implemented"
+msgstr "مرورگر شما نمی‌تواند این عملیات را انجام دهد"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "فایل‌های شما با موفقیت منتقل شدند"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "پروژه شما با موفقیت منتقل شد"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"شما فقط باید فونت‌هایی را که مالک آنها هستید یا مجوز استفاده از آنها را در "
+"Penpot دارید آپلود کنید. در بخش حقوق محتوا [شرایط خدمات Penpot] "
+"(https://penpot.app/terms.html) اطلاعات بیشتری کسب کنید. همچنین ممکن است "
+"بخواهید درباره [مجوز فونت] (https://www.typography.com/faq) مطالعه کنید."
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.create-link"
+msgstr "ایجاد لینک"
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr "شما باید شرایط خدمات و سیاست حفظ حریم‌خصوصی ما را بپذیرید."
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "استایل فونت"
+
+#, fuzzy
+msgid "onboarding.welcome.desc2"
+msgstr ""
+"Penpot به لطف ترکیبی از ویژگی‌های اصلی، بلوغ، پایداری و اعتبارسنجی شگفت‌"
+"انگیز جامعه به‌عنوان یک کل، در اولین نسخه بتا خود قرار دارد، که از آن "
+"استقبال می‌کنید."
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"ما فقط ایمیل‌های مربوطه را برای شما ارسال می‌کنیم. شما می‌توانید در هر زمان "
+"در پروفایل کاربری خود یا از طریق پیوند لغو اشتراک در هر یک از خبرنامه‌های ما،"
+" اشتراک خود را لغو کنید."
