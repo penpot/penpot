@@ -315,7 +315,7 @@
 
                       bounds
                       (when (:show-content frame)
-                        (gsh/selection-rect (->> children-ids (map (d/getf objects)))))
+                        (gsh/selection-rect (concat [frame] (->> children-ids (map (d/getf objects))))))
 
                       frame
                       (cond-> frame

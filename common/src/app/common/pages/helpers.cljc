@@ -52,6 +52,10 @@
   [{:keys [type]}]
   (= type :image))
 
+(defn svg-raw-shape?
+  [{:keys [type]}]
+  (= type :svg-raw))
+
 (defn unframed-shape?
   "Checks if it's a non-frame shape in the top level."
   [shape]

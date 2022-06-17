@@ -68,7 +68,7 @@
 
         {:keys [x y width height] :as shape-bb}
         (if (:show-content shape)
-          (gsh/selection-rect all-children)
+          (gsh/selection-rect (concat [shape] all-children))
           (-> shape :points gsh/points->selrect))
 
         fixed-width (mth/clamp width 250 2000)

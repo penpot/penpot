@@ -203,12 +203,17 @@
                     (update :width + (* 2 (:horizontal padding)))
                     (update :height + (* 2 (:vertical padding))))]
 
-    (if (cph/group-shape? object)
-      (if (:masked-group? object)
-        (get-object-bounds objects (-> object :shapes first))
-        (->> (:shapes object)
-             (into [bounds] (map (partial get-object-bounds objects)))
-             (gsh/join-rects)))
+    (cond
+      (and (cph/group-shape? object) (:masked-group? object))
+      (get-object-bounds objects (-> object :shapes first))
+
+      (or (cph/group-shape? object)
+          (and (cph/frame-shape? object) (:show-content object)))
+      (->> (:shapes object)
+           (into [bounds] (map (partial get-object-bounds objects)))
+           (gsh/join-rects))
+
+      :else
       bounds)))
 
 (mf/defc page-svg

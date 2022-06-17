@@ -86,7 +86,7 @@
 
 (mf/defc viewer-wrapper
   [{:keys [wrapper-size scroll orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
-           size frame interactions-mode overlays zoom close-overlay section index] :as props}]
+           size frame interactions-mode overlays zoom close-overlay section index children-bounds] :as props}]
   (let [{clist :list} (mf/deref refs/comments-local)
         show-comments-list (and (= section :comments) (= :show clist))]
     [:*
@@ -172,8 +172,6 @@
                               :frame frame
                               :page page
                               :zoom zoom}])]]]]))
-
-
 
 (mf/defc viewer
   [{:keys [params data]}]
@@ -407,7 +405,7 @@
              :file file
              :section section
              :local local
-             :size size}
+             :size size
              :index index
              :viewer-pagination viewer-pagination}]
 
@@ -428,7 +426,8 @@
               :overlays overlays
               :zoom zoom
               :section section
-              :index index}]))]]]))
+              :index index
+              :children-bounds children-bounds}]))]]]))
 
 ;; --- Component: Viewer Page
 

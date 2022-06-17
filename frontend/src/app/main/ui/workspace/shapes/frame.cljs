@@ -40,7 +40,7 @@
             childs        (mf/deref childs-ref)]
 
         [:& (mf/provider embed/context) {:value true}
-         [:& shape-container {:shape shape :ref ref}
+         [:& shape-container {:shape shape :ref ref :disable-shadows? true}
           [:& frame-shape {:shape shape :childs childs} ]]]))))
 
 (defn check-props
@@ -125,7 +125,7 @@
                   @node-ref)
                  (when (not @rendered?) (reset! rendered? true)))))
 
-            [:*
+            [:& shape-container {:shape shape}
              [:g.frame-container {:id (dm/str "frame-container-" (:id shape))
                                   :key "frame-container"
                                   :ref on-frame-load
@@ -135,5 +135,4 @@
                {:id (dm/str "thumbnail-container-" (:id shape))
                 ;; Hide the thumbnail when not displaying
                 :opacity (when (and @rendered? (not thumbnail?) (not render-frame?)) 0)}
-               [:& shape-container {:shape shape}
-                thumbnail-renderer]]]]))))))
+               thumbnail-renderer]]]))))))

@@ -6,6 +6,8 @@
 
 (ns app.main.ui.viewer.thumbnails
   (:require
+   [app.common.pages.helpers :as cph]
+   [app.common.geom.shapes :as gsh]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.viewer :as dv]
@@ -76,12 +78,14 @@
   {::mf/wrap [mf/memo
               #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [selected? frame on-click index objects]}]
-  [:div.thumbnail-item {:on-click #(on-click % index)}
-   [:div.thumbnail-preview
-    {:class (dom/classnames :selected selected?)}
-    [:& render/frame-svg {:frame frame :objects objects :show-thumbnails? true}]]
-   [:div.thumbnail-info
-    [:span.name {:title (:name frame)} (:name frame)]]])
+  (let [children-ids (cph/get-children-ids objects (:id frame))
+        children-bounds (gsh/selection-rect (concat [frame] (->> children-ids (keep (d/getf objects)))))]
+    [:div.thumbnail-item {:on-click #(on-click % index)}
+     [:div.thumbnail-preview
+      {:class (dom/classnames :selected selected?)}
+      [:& render/frame-svg {:frame (assoc frame :children-bounds children-bounds) :objects objects :show-thumbnails? true}]]
+     [:div.thumbnail-info
+      [:span.name {:title (:name frame)} (:name frame)]]]))
 
 (mf/defc thumbnails-panel
   [{:keys [frames page index show?] :as props}]

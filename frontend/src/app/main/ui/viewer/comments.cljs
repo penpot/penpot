@@ -164,7 +164,6 @@
                                :on-submit on-draft-submit
                                :zoom zoom}])]]]))
 
-
 (mf/defc comments-sidebar
   [{:keys [users frame page]}]
   (let [profile     (mf/deref refs/profile)
@@ -173,7 +172,7 @@
         threads     (->> (vals threads-map)
                          (dcm/apply-filters cstate profile)
                          (filter (fn [{:keys [position]}]
-                                   (frame-contains? frame position))))]
+                                   (gsh/has-point? frame position))))]
     [:aside.settings-bar.settings-bar-right.comments-right-sidebar
      [:div.settings-bar-inside
       [:& wc/comments-sidebar {:users users :threads threads :page-id (:id page)}]]]))
