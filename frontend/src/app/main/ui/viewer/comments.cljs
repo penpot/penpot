@@ -15,6 +15,7 @@
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.comments :as wc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -22,7 +23,7 @@
 
 (mf/defc comments-menu
   []
-  (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
+  (let [{cmode :mode cshow :show clist :list} (mf/deref refs/comments-local)
 
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
@@ -36,7 +37,12 @@
         update-show
         (mf/use-callback
          (fn [mode]
-           (st/emit! (dcm/update-filters {:show mode}))))]
+           (st/emit! (dcm/update-filters {:show mode}))))
+
+        update-list
+        (mf/use-callback
+         (fn [show-list]
+           (st/emit! (dcm/update-filters {:list show-list}))))]
 
     [:div.view-options {:on-click toggle-dropdown}
      [:span.label (tr "labels.comments")]
@@ -59,7 +65,14 @@
        [:li {:class (dom/classnames :selected (= :pending cshow))
              :on-click #(update-show (if (= :pending cshow) :all :pending))}
         [:span.icon i/tick]
-        [:span.label (tr "labels.hide-resolved-comments")]]]]]))
+        [:span.label (tr "labels.hide-resolved-comments")]]
+
+       [:hr]
+
+       [:li {:class (dom/classnames :selected (= :show clist))
+             :on-click #(update-list (if (= :show clist) :hide :show))}
+        [:span.icon i/tick]
+        [:span.label (tr "labels.show-comments-list")]]]]]))
 
 
 (defn- frame-contains?
@@ -156,3 +169,17 @@
                                :on-cancel on-draft-cancel
                                :on-submit on-draft-submit
                                :zoom zoom}])]]]))
+
+
+(mf/defc comments-sidebar
+  [{:keys [users frame page]}]
+  (let [profile     (mf/deref refs/profile)
+        cstate      (mf/deref refs/comments-local)
+        threads-map (mf/deref threads-ref)
+        threads     (->> (vals threads-map)
+                         (dcm/apply-filters cstate profile)
+                         (filter (fn [{:keys [position]}]
+                                   (frame-contains? frame position))))]
+    [:aside.settings-bar.settings-bar-right.comments-right-sidebar
+     [:div.settings-bar-inside
+      [:& wc/comments-sidebar {:users users :threads threads :page-id (:id page)}]]]))

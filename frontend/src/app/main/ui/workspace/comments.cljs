@@ -57,20 +57,23 @@
       [:span.label (tr "labels.hide-resolved-comments")]]]))
 
 (mf/defc comments-sidebar
-  []
+  [{:keys [users threads page-id]}]
   (let [threads-map (mf/deref refs/threads-ref)
         profile     (mf/deref refs/profile)
-        users       (mf/deref refs/users)
+        users-refs  (mf/deref refs/users)
+        users       (or users users-refs)
         local       (mf/deref refs/comments-local)
         options?    (mf/use-state false)
+        threads     (if (nil? threads)
+                      (->> (vals threads-map)
+                           (sort-by :modified-at)
+                           (reverse)
+                           (dcm/apply-filters local profile))
+                      threads)
+        tgroups (->> threads
+                     (dcm/group-threads-by-page))
 
-        tgroups     (->> (vals threads-map)
-                         (sort-by :modified-at)
-                         (reverse)
-                         (dcm/apply-filters local profile)
-                         (dcm/group-threads-by-page))
-
-        page-id     (mf/use-ctx ctx/current-page-id)
+        page-id     (or page-id (mf/use-ctx ctx/current-page-id))
 
         on-thread-click
         (mf/use-callback
@@ -87,7 +90,7 @@
 
     [:div.comments-section.comment-threads-section
      [:div.workspace-comment-threads-sidebar-header
-      [:div.label "Comments"]
+      [:div.label (tr "labels.comments")]
       [:div.options {:on-click #(reset! options? true)}
        [:div.label (case (:mode local)
                      (nil :all) (tr "labels.all")

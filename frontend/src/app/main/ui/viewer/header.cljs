@@ -107,18 +107,17 @@
         i/full-screen)]
 
      (when (:is-admin permissions)
-       [:span.btn-primary {:on-click open-share-dialog} (tr "labels.share-prototype")])
+       [:span.btn-primary {:on-click open-share-dialog} i/export [:span (tr "labels.share-prototype")]])
 
      (when (:can-edit permissions)
        [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])]))
 
 (mf/defc header-sitemap
-  [{:keys [project file page frame index] :as props}]
+  [{:keys [project file page frame] :as props}]
   (let [project-name   (:name project)
         file-name      (:name file)
         page-name      (:name page)
         frame-name     (:name frame)
-        total          (count (:frames page))
         show-dropdown? (mf/use-state false)
 
         toggle-thumbnails
@@ -151,7 +150,7 @@
       [:span "/"]
 
       [:span.page-name page-name]
-      [:span.icon i/arrow-down]
+
 
       [:& dropdown {:show @show-dropdown?
                     :on-close close-dropdown}
@@ -161,12 +160,12 @@
                 :on-click (partial navigate-to id)}
            (get-in file [:data :pages-index id :name])])]]]
 
+     [:span.icon {:on-click open-dropdown} i/arrow-down]
      [:div.current-frame
       {:on-click toggle-thumbnails}
       [:span.label "/"]
-      [:span.label frame-name]
-      [:span.icon i/arrow-down]
-      [:span.counters (str (inc index) " / " total)]]]))
+      [:span.label frame-name]]
+     [:span.icon {:on-click toggle-thumbnails} i/arrow-down]]))
 
 
 (mf/defc header

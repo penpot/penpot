@@ -6,13 +6,13 @@
 
 (ns app.main.ui.viewer.handoff
   (:require
-   [app.main.data.viewer :as dv]
+   [app.main.data.viewer :as dv]   
    [app.main.store :as st]
    [app.main.ui.viewer.handoff.left-sidebar :refer [left-sidebar]]
    [app.main.ui.viewer.handoff.render :refer [render-frame-svg]]
    [app.main.ui.viewer.handoff.right-sidebar :refer [right-sidebar]]
    [app.util.dom :as dom]
-   [app.util.keyboard :as kbd]
+   [app.util.keyboard :as kbd]   
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
@@ -25,7 +25,7 @@
     (st/emit! (dv/select-shape (:id frame)))))
 
 (mf/defc viewport
-  [{:keys [local file page frame]}]
+  [{:keys [local file page frame index viewer-pagination]}]
   (let [on-mouse-wheel
         (fn [event]
           (when (kbd/mod? event)
@@ -58,6 +58,7 @@
                        :local local
                        :page page}]
      [:div.handoff-svg-wrapper {:on-click (handle-select-frame frame)}
+      [:& viewer-pagination {:index index :num-frames (count (:frames page)) :left-bar true :right-bar true}]
       [:div.handoff-svg-container
        [:& render-frame-svg {:frame frame :page page :local local}]]]
 
