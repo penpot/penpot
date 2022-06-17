@@ -267,7 +267,8 @@
       [:& thumbnails-panel {:frames frames
                             :show? (:show-thumbnails local false)
                             :page page
-                            :index index}]
+                            :index index
+                            :thumbnail-data (:thumbnails file)}]
       [:section.viewer-section {:id "viewer-section"
                                 :ref viewer-section-ref
                                 :class (if fullscreen? "fullscreen" "")}
