@@ -223,6 +223,15 @@
          (update :undo-changes d/preconj del-change)
          (apply-changes-local)))))
 
+(defn add-objects
+  ([changes objects]
+   (add-objects changes objects nil))
+
+  ([changes objects params]
+   (reduce #(add-object %1 %2 params)
+           changes
+           objects)))
+
 (defn change-parent
   ([changes parent-id shapes]
    (change-parent changes parent-id shapes nil))

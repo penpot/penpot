@@ -276,7 +276,11 @@
        (dorun (for [component (vals components)]
                 (do
                   (println)
-                  (println (str/format "[%s]" (:name component)))
+                  (println (str/format "[%s]" (:name component))
+                           (when show-ids
+                             (str/format " (main: %s/%s)"
+                                         (:main-instance-page component)
+                                         (:main-instance-id component))))
                   (show-shape (:id component) 0 (:objects component)))))))))
 
 (defn ^:export dump-tree

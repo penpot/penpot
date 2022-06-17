@@ -355,19 +355,23 @@
             unames         (into #{} (map :name) all-components)
             new-name       (ctst/generate-unique-name unames (:name component))
 
-            [new-shape new-shapes _updated-shapes main-instance main-instance-page]
-            (dwlh/duplicate-component component)
+            main-instance-page  (wsh/lookup-page state (:main-instance-page component))
+            main-instance-shape (ctn/get-shape main-instance-page (:main-instance-id component))
 
-            _ (prn "OJOOOOOOOOOOOOOOO falta calcular main-instance")
+            [new-component-shape new-component-shapes
+             new-main-instance-shape new-main-instance-shapes]
+            (dwlh/duplicate-component component main-instance-page main-instance-shape)
 
-            changes (-> (pcb/empty-changes it nil) ;; no objects are changed
-                        (pcb/with-objects nil)     ;; in the current page
-                        (pcb/add-component (:id new-shape)
+            changes (-> (pcb/empty-changes it nil)
+                        (pcb/with-page main-instance-page)
+                        (pcb/with-objects (:objects main-instance-page))
+                        (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
+                        (pcb/add-component (:id new-component-shape)
                                            (:path component)
                                            new-name
-                                           new-shapes
+                                           new-component-shapes
                                            []
-                                           (:id main-instance)
+                                           (:id new-main-instance-shape)
                                            (:id main-instance-page)))]
 
         (rx/of (dch/commit-changes changes))))))

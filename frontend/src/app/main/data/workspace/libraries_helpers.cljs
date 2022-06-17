@@ -130,12 +130,29 @@
 (defn duplicate-component
   "Clone the root shape of the component and all children. Generate new
   ids from all of them."
-  [component]
-  (let [component-root (cph/get-component-root component)]
-    (ctst/clone-object component-root
-                      nil
-                      (get component :objects)
-                      identity)))
+  [component main-instance-page main-instance-shape]
+  (let [position (gpt/add (gpt/point (:x main-instance-shape) (:y main-instance-shape))
+                          (gpt/point (+ (:width main-instance-shape) 50) 0))
+
+        component-root (cph/get-component-root component)
+
+        [new-component-shape new-component-shapes _]
+        (ctst/clone-object component-root
+                           nil
+                           (get component :objects)
+                           identity)
+
+
+        [new-instance-shape new-instance-shapes]
+        (ctn/instantiate-component main-instance-page
+                                   {:id (:id new-component-shape)
+                                    :name (:name new-component-shape)
+                                    :objects (d/index-by :id new-component-shapes)}
+                                   (:component-file main-instance-shape)
+                                   position)]
+
+    [new-component-shape new-component-shapes
+     new-instance-shape new-instance-shapes]))
 
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."
