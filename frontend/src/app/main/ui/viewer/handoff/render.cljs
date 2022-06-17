@@ -30,24 +30,26 @@
 (declare shape-container-factory)
 
 (defn handle-hover-shape
-  [{:keys [type id]} hover?]
+  [shape hover?]
   (fn [event]
-    (when-not (#{:group :frame} type)
+    (when-not (or (cph/group-shape? shape)
+                  (cph/root-frame? shape))
       (dom/prevent-default event)
       (dom/stop-propagation event)
-      (st/emit! (dv/hover-shape id hover?)))))
+      (st/emit! (dv/hover-shape (:id shape) hover?)))))
 
-(defn select-shape [{:keys [type id]}]
+(defn select-shape [shape]
   (fn [event]
-    (when-not (#{:group :frame} type)
+    (when-not (or (cph/group-shape? shape)
+                  (cph/root-frame? shape))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (cond
         (.-shiftKey ^js event)
-        (st/emit! (dv/toggle-selection id))
+        (st/emit! (dv/toggle-selection (:id shape)))
 
         :else
-        (st/emit! (dv/select-shape id))))))
+        (st/emit! (dv/select-shape (:id shape)))))))
 
 (defn shape-wrapper-factory
   [component]

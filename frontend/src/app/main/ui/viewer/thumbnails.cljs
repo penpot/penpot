@@ -6,10 +6,10 @@
 
 (ns app.main.ui.viewer.thumbnails
   (:require
-   [app.common.pages.helpers :as cph]
-   [app.common.geom.shapes :as gsh]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes :as gsh]
+   [app.common.pages.helpers :as cph]
    [app.main.data.viewer :as dv]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -85,7 +85,8 @@
      [:div.thumbnail-preview
       {:class (dom/classnames :selected selected?)}
       [:& render/frame-svg {:frame (-> frame
-                                       (assoc :thumbnail (get thumbnail-data (dm/str page-id (:id frame)))))
+                                       (assoc :thumbnail (get thumbnail-data (dm/str page-id (:id frame))))
+                                       (assoc :children-bounds children-bounds))
                             :objects objects
                             :show-thumbnails? true}]]
      [:div.thumbnail-info

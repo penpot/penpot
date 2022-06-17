@@ -277,18 +277,33 @@
               (gpt/negate)
               (gmt/translate-matrix)))
 
+        children-ids
+        (cph/get-children-ids objects frame-id)
+
         objects
         (mf/with-memo [frame-id objects modifier]
           (let [update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)]
-            (->> (cph/get-children-ids objects frame-id)
+            (->> children-ids
                  (into [frame-id])
                  (reduce update-fn objects))))
 
         frame
         (mf/with-memo [modifier]
-          (assoc-in frame [:modifiers :displacement] modifier))
+          (-> frame
+              (assoc-in [:modifiers :displacement] modifier)
+              (gsh/transform-shape)))
 
-        wrapper
+        bounds
+        (if (:show-content frame)
+          (gsh/selection-rect (concat [frame] (->> children-ids (map (d/getf objects)))))
+          (-> frame :points gsh/points->rect))
+
+        frame
+        (cond-> frame
+          (and (some? bounds) (nil? (:children-bounds bounds)))
+          (assoc :children-bounds bounds))
+
+        frame-wrapper
         (mf/with-memo [objects]
           (frame-wrapper-factory objects))
 
@@ -296,21 +311,18 @@
         height (* (:height bounds) zoom)
         vbox   (format-viewbox {:width (:width bounds 0) :height (:height bounds 0)})]
 
-    [:svg {:view-box vbox
-           :width (ust/format-precision width viewbox-decimal-precision)
-           :height (ust/format-precision height viewbox-decimal-precision)
-           :version "1.1"
-           :xmlns "http://www.w3.org/2000/svg"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
-           :fill "none"}
-     (if (or (not show-thumbnails?) (nil? (:thumbnail frame)))
-       [:& wrapper {:shape frame :view-box vbox}]
+    [:& (mf/provider muc/render-thumbnails) {:value show-thumbnails?}
+     [:svg {:view-box vbox
+            :width (ust/format-precision width viewbox-decimal-precision)
+            :height (ust/format-precision height viewbox-decimal-precision)
+            :version "1.1"
+            :xmlns "http://www.w3.org/2000/svg"
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+            :fill "none"}
 
-       ;; Render the frame thumbnail
-       (let [frame (gsh/transform-shape frame)]
-         [:> shape-container {:shape frame}
-          [:& frame/frame-thumbnail {:shape frame :bounds (assoc bounds :x 0 :y 0)}]]))]))
+      [:> shape-container {:shape frame}
+       [:& frame-wrapper {:shape frame :view-box vbox}]]]]))
 
 
 ;; Component for rendering a thumbnail of a single componenent. Mainly
