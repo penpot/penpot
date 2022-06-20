@@ -271,20 +271,24 @@
         (mf/deref text-modifier-ref)
 
         bounding-box
-        (gsht/position-data-bounding-box text-modifier)]
+        (gsht/position-data-bounding-box text-modifier)
+
+        x      (min (:x bounding-box) (:x shape))
+        y      (min (:y bounding-box) (:y shape))
+        width  (max (:width bounding-box) (:width shape))
+        height (max (:height bounding-box) (:height shape))]
 
     [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)
                      :transform (dm/str (gsh/transform-matrix shape))}
      [:defs
       [:clipPath {:id clip-id}
-       [:rect {:x (min (:x bounding-box) (:x shape))
-               :y (min (:y bounding-box) (:y shape))
-               :width (max (:width bounding-box) (:width shape))
-               :height (max (:height bounding-box) (:height shape))
+       [:rect {:x (or x (:x shape))
+               :y (or y (:y shape))
+               :width (or width (:width shape))
+               :height (or height (:height shape))
                :fill "red"}]]]
 
-     [:foreignObject {:x (:x shape) :y (:y shape) :width "100%" :height "100%"
-                      :externalResourcesRequired true}
+     [:foreignObject {:x (:x shape) :y (:y shape) :width "100%" :height "100%"}
       [:div {:style {:position "absolute"
                      :left 0
                      :top  0
