@@ -375,7 +375,7 @@
   [{:keys [component renaming listing-thumbs? selected-components
            on-asset-click on-context-menu on-drag-start do-rename
            cancel-rename selected-components-full selected-components-paths]}]
-  (let [item-ref       (mf/use-ref)
+  (let [item-ref (mf/use-ref)
 
         dragging? (mf/use-state false)
 
@@ -407,8 +407,7 @@
          (fn [event]
            (on-asset-drag-start event component selected-components item-ref :components on-drag-start)))]
 
-    [:div {:key (:id component)
-           :ref item-ref
+    [:div {:ref item-ref
            :class (dom/classnames
                    :selected (contains? selected-components (:id component))
                    :grid-cell @listing-thumbs?
@@ -426,23 +425,24 @@
      [:& component-svg {:group (get-in component [:objects (:id component)])
                         :objects (:objects component)}]
      (let [renaming? (= renaming (:id component))]
-       [:& editable-label
-        {:class (dom/classnames
-                      :cell-name @listing-thumbs?
-                      :item-name (not @listing-thumbs?)
-                      :editing renaming?)
-         :value (cph/merge-path-item (:path component) (:name component))
-         :tooltip (cph/merge-path-item (:path component) (:name component))
-         :display-value (if @listing-thumbs?
-                          (:name component)
-                          (cph/compact-name (:path component)
-                                            (:name component)))
-         :editing? renaming?
-         :disable-dbl-click? true
-         :on-change do-rename
-         :on-cancel cancel-rename}]
-       (when @dragging?
-         [:div.dragging]))]))
+       [:*
+        [:& editable-label
+         {:class-name (dom/classnames
+                        :cell-name @listing-thumbs?
+                        :item-name (not @listing-thumbs?)
+                        :editing renaming?)
+          :value (cph/merge-path-item (:path component) (:name component))
+          :tooltip (cph/merge-path-item (:path component) (:name component))
+          :display-value (if @listing-thumbs?
+                           (:name component)
+                           (cph/compact-name (:path component)
+                                             (:name component)))
+          :editing? renaming?
+          :disable-dbl-click? true
+          :on-change do-rename
+          :on-cancel cancel-rename}]
+        (when @dragging?
+          [:div.dragging])])]))
 
 (mf/defc components-group
   [{:keys [file-id prefix groups open-groups renaming listing-thumbs? selected-components on-asset-click
@@ -510,6 +510,7 @@
              [:div.drop-space])
            (for [component components]
              [:& components-item {:component component
+                                  :key (:id component)
                                   :renaming renaming
                                   :listing-thumbs? listing-thumbs?
                                   :selected-components selected-components
@@ -751,8 +752,7 @@
          (fn [event]
            (on-asset-drag-start event object selected-objects item-ref :graphics on-drag-start)))]
 
-    [:div {:key (:id object)
-           :ref item-ref
+    [:div {:ref item-ref
            :class-name (dom/classnames
                         :selected (contains? selected-objects (:id object))
                         :grid-cell @listing-thumbs?
@@ -769,23 +769,24 @@
             :draggable false}] ;; Also need to add css pointer-events: none
 
      (let [renaming? (= renaming (:id object))]
-       [:& editable-label
-        {:class-name (dom/classnames
-                      :cell-name @listing-thumbs?
-                      :item-name (not @listing-thumbs?)
-                      :editing renaming?)
-         :value (cph/merge-path-item (:path object) (:name object))
-         :tooltip (cph/merge-path-item (:path object) (:name object))
-         :display-value (if @listing-thumbs?
-                          (:name object)
-                          (cph/compact-name (:path object)
-                                            (:name object)))
-         :editing? renaming?
-         :disable-dbl-click? true
-         :on-change do-rename
-         :on-cancel cancel-rename}]
-       (when @dragging?
-         [:div.dragging]))]))
+       [:*
+        [:& editable-label
+         {:class-name (dom/classnames
+                        :cell-name @listing-thumbs?
+                        :item-name (not @listing-thumbs?)
+                        :editing renaming?)
+          :value (cph/merge-path-item (:path object) (:name object))
+          :tooltip (cph/merge-path-item (:path object) (:name object))
+          :display-value (if @listing-thumbs?
+                           (:name object)
+                           (cph/compact-name (:path object)
+                                             (:name object)))
+          :editing? renaming?
+          :disable-dbl-click? true
+          :on-change do-rename
+          :on-cancel cancel-rename}]
+        (when @dragging?
+          [:div.dragging])])]))
 
 (mf/defc graphics-group
   [{:keys [file-id prefix groups open-groups renaming listing-thumbs? selected-objects on-asset-click
@@ -852,7 +853,8 @@
                   (some? groups))
              [:div.drop-space])
            (for [object objects]
-             [:& graphics-item {:object object
+             [:& graphics-item {:key (:id object)
+                                :object object
                                 :renaming renaming
                                 :listing-thumbs? listing-thumbs?
                                 :selected-objects selected-objects
