@@ -84,13 +84,14 @@
                  "   and backend = ?"
                  "   and deleted_at is null"
                  " limit 1")]
-    (db/exec-one! conn [sql hash bucket (name backend)])))
+    (some-> (db/exec-one! conn [sql hash bucket (name backend)])
+            (update :metadata db/decode-transit-pgobject))))
 
 (defn- create-database-object
   [{:keys [conn backend executor]} {:keys [::content ::expired-at ::touched-at] :as params}]
   (us/assert ::storage-content content)
   (px/with-dispatch executor
-    (let [id     (uuid/random)
+    (let [id     (uuid/next)
 
           mdata  (cond-> (get-metadata params)
                    (satisfies? impl/IContentHash content)
@@ -106,13 +107,15 @@
                    (get-database-object-by-hash conn backend (:bucket mdata) (:hash mdata)))
 
           result (or result
-                     (db/insert! conn :storage-object
-                                 {:id id
-                                  :size (count content)
-                                  :backend (name backend)
-                                  :metadata (db/tjson mdata)
-                                  :deleted-at expired-at
-                                  :touched-at touched-at}))]
+                     (-> (db/insert! conn :storage-object
+                                     {:id id
+                                      :size (count content)
+                                      :backend (name backend)
+                                      :metadata (db/tjson mdata)
+                                      :deleted-at expired-at
+                                      :touched-at touched-at})
+                         (update :metadata db/decode-transit-pgobject)
+                         (update :metadata assoc ::created? true)))]
 
       (StorageObject. (:id result)
                       (:size result)
@@ -120,7 +123,7 @@
                       (:deleted-at result)
                       (:touched-at result)
                       backend
-                      mdata
+                      (:metadata result)
                       nil))))
 
 (def ^:private sql:retrieve-storage-object
@@ -173,9 +176,10 @@
   (p/let [storage (assoc storage :conn (or conn pool))
           object  (create-database-object storage params)]
 
-    ;; Store the data finally on the underlying storage subsystem.
-    (-> (impl/resolve-backend storage backend)
-        (impl/put-object object content))
+    (when (::created? (meta object))
+      ;; Store the data finally on the underlying storage subsystem.
+      (-> (impl/resolve-backend storage backend)
+          (impl/put-object object content)))
 
     object))
 
