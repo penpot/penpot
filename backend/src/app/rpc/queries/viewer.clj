@@ -53,8 +53,10 @@
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
   (p/let [slink  (slnk/retrieve-share-link pool file-id share-id)
           perms  (files/get-permissions pool profile-id file-id share-id)
+          thumbs (files/retrieve-object-thumbnails cfg file-id)
           bundle (p/-> (retrieve-bundle cfg file-id)
-                       (assoc :permissions perms))]
+                       (assoc :permissions perms)
+                       (assoc-in [:file :thumbnails] thumbs))]
 
     ;; When we have neither profile nor share, we just return a not
     ;; found response to the user.

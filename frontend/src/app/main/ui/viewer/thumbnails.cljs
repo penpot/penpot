@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.thumbnails
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.data.viewer :as dv]
    [app.main.render :as render]
    [app.main.store :as st]
@@ -74,21 +75,24 @@
 (mf/defc thumbnail-item
   {::mf/wrap [mf/memo
               #(mf/deferred % ts/idle-then-raf)]}
-  [{:keys [selected? frame on-click index objects]}]
+  [{:keys [selected? frame on-click index objects page-id thumbnail-data]}]
+
   [:div.thumbnail-item {:on-click #(on-click % index)}
    [:div.thumbnail-preview
     {:class (dom/classnames :selected selected?)}
-    [:& render/frame-svg {:frame frame :objects objects :show-thumbnails? true}]]
+    [:& render/frame-svg {:frame (-> frame
+                                     (assoc :thumbnail (get thumbnail-data (dm/str page-id (:id frame)))))
+                          :objects objects
+                          :show-thumbnails? true}]]
    [:div.thumbnail-info
     [:span.name {:title (:name frame)} (:name frame)]]])
 
 (mf/defc thumbnails-panel
-  [{:keys [frames page index show?] :as props}]
+  [{:keys [frames page index show? thumbnail-data] :as props}]
   (let [expanded? (mf/use-state false)
         container (mf/use-ref)
 
         objects   (:objects page)
-
         on-close  #(st/emit! dv/toggle-thumbnails-panel)
         selected  (mf/use-var false)
 
@@ -115,6 +119,8 @@
       (for [[i frame] (d/enumerate frames)]
         [:& thumbnail-item {:index i
                             :frame frame
+                            :page-id (:id page)
                             :objects objects
                             :on-click on-item-click
-                            :selected? (= i index)}])]]))
+                            :selected? (= i index)
+                            :thumbnail-data thumbnail-data}])]]))

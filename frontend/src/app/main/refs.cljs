@@ -349,14 +349,17 @@
 
 ;; ---- Viewer refs
 
-(def viewer-file
-  (l/derived :viewer-file st/state))
-
-(def viewer-project
-  (l/derived :viewer-file st/state))
-
 (def viewer-data
   (l/derived :viewer st/state))
+
+(def viewer-file
+  (l/derived :file viewer-data))
+
+(def viewer-thumbnails
+  (l/derived :thumbnails viewer-file))
+
+(def viewer-project
+  (l/derived :project viewer-data))
 
 (def viewer-state
   (l/derived :viewer st/state))
