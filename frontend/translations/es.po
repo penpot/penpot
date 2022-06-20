@@ -4058,6 +4058,12 @@ msgstr "X"
 msgid "workspace.options.y"
 msgstr "Y"
 
+msgid "workspace.options.clip-content"
+msgstr "Truncar contenido"
+
+msgid"workspace.options.show-in-viewer"
+msgstr "Mostrar en modo visualización"
+
 msgid "workspace.path.actions.add-node"
 msgstr "Añadir nodo (%s)"
 

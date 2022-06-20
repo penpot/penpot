@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.interactions
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
@@ -25,11 +26,11 @@
    [rumext.alpha :as mf]))
 
 (defn prepare-objects
-  [page frame]
+  [page frame size]
   (fn []
     (let [objects   (:objects page)
           frame-id  (:id frame)
-          modifier  (-> (gpt/point (:x frame) (:y frame))
+          modifier  (-> (gpt/point (:x size) (:y size))
                         (gpt/negate)
                         (gmt/translate-matrix))
 
@@ -43,8 +44,8 @@
   {::mf/wrap [mf/memo]}
   [{:keys [page interactions-mode frame base-frame frame-offset size]}]
   (let [objects       (mf/use-memo
-                       (mf/deps page frame)
-                       (prepare-objects page frame))
+                       (mf/deps page frame size)
+                       (prepare-objects page frame size))
 
         wrapper       (mf/use-memo
                        (mf/deps objects)
@@ -127,8 +128,9 @@
        [:& dropdown {:show @show-dropdown?
                      :on-close hide-dropdown}
         [:ul.dropdown.with-check
-         (for [flow flows]
-           [:li {:class (dom/classnames :selected (= (:id flow) (:id @current-flow)))
+         (for [[index flow] (d/enumerate flows)]
+           [:li {:key (dm/str "flow-" (:id flow) "-" index)
+                 :class (dom/classnames :selected (= (:id flow) (:id @current-flow)))
                  :on-click #(select-flow flow)}
             [:span.icon i/tick]
             [:span.label (:name flow)]])]]])))

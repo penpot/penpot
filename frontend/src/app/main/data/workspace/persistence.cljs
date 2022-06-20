@@ -157,7 +157,7 @@
                                (->> (rx/from frame-updates)
                                     (rx/flat-map (fn [[page-id frames]]
                                               (->> frames (map #(vector page-id %)))))
-                                    (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail page-id frame-id))))
+                                    (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail (:id file) page-id frame-id))))
                                (->> (rx/of lagged)
                                     (rx/mapcat seq)
                                     (rx/map #(shapes-changes-persisted file-id %)))))))

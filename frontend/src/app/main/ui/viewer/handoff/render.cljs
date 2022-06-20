@@ -7,13 +7,12 @@
 (ns app.main.ui.viewer.handoff.render
   "The main container for a frame in handoff mode"
   (:require
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
-   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
@@ -31,24 +30,26 @@
 (declare shape-container-factory)
 
 (defn handle-hover-shape
-  [{:keys [type id]} hover?]
+  [shape hover?]
   (fn [event]
-    (when-not (#{:group :frame} type)
+    (when-not (or (cph/group-shape? shape)
+                  (cph/root-frame? shape))
       (dom/prevent-default event)
       (dom/stop-propagation event)
-      (st/emit! (dv/hover-shape id hover?)))))
+      (st/emit! (dv/hover-shape (:id shape) hover?)))))
 
-(defn select-shape [{:keys [type id]}]
+(defn select-shape [shape]
   (fn [event]
-    (when-not (#{:group :frame} type)
+    (when-not (or (cph/group-shape? shape)
+                  (cph/root-frame? shape))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (cond
         (.-shiftKey ^js event)
-        (st/emit! (dv/toggle-selection id))
+        (st/emit! (dv/toggle-selection (:id shape)))
 
         :else
-        (st/emit! (dv/select-shape id))))))
+        (st/emit! (dv/select-shape (:id shape)))))))
 
 (defn shape-wrapper-factory
   [component]
@@ -87,7 +88,7 @@
       [props]
       (let [shape (unchecked-get props "shape")
             childs (mapv #(get objects %) (:shapes shape))
-            shape  (geom/transform-shape shape)
+            shape  (gsh/transform-shape shape)
 
             props (-> (obj/create)
                       (obj/merge! props)
@@ -154,6 +155,10 @@
       (let [shape (unchecked-get props "shape")
             frame (unchecked-get props "frame")
 
+            frame-container
+            (mf/use-memo (mf/deps objects)
+                         #(frame-container-factory objects))
+
             group-container
             (mf/use-memo (mf/deps objects)
                          #(group-container-factory objects))
@@ -166,11 +171,12 @@
             (mf/use-memo (mf/deps objects)
                          #(svg-raw-container-factory objects))]
         (when (and shape (not (:hidden shape)))
-          (let [shape (-> (geom/transform-shape shape)
-                          (geom/translate-to-frame frame))
+          (let [shape (-> (gsh/transform-shape shape)
+                          (gsh/translate-to-frame frame))
                 opts #js {:shape shape
                           :frame frame}]
             (case (:type shape)
+              :frame   [:> frame-container opts]
               :text    [:> text-wrapper opts]
               :rect    [:> rect-wrapper opts]
               :path    [:> path-wrapper opts]
@@ -181,46 +187,31 @@
               :svg-raw [:> svg-raw-container opts])))))))
 
 (mf/defc render-frame-svg
-  [{:keys [page frame local]}]
+  [{:keys [page frame local size]}]
   (let [objects (mf/use-memo
                  (mf/deps page frame)
-                 (prepare-objects page frame))
-
+                 (prepare-objects page frame size))
 
         ;; Retrieve frame again with correct modifier
         frame   (get objects (:id frame))
-
-        zoom    (:zoom local 1)
-
-        {:keys [_ _ width height]} (filters/get-filters-bounds frame)
-        padding (filters/calculate-padding frame)
-        x (- (:horizontal padding))
-        y (- (:vertical padding))
-        width (+ width (* 2 (:horizontal padding)))
-        height (+ height (* 2 (:vertical padding)))
-
-        vbox    (str x " " y " " width " " height)
-
-        width   (* width zoom)
-        height  (* height zoom)
-
         render  (mf/use-memo
                  (mf/deps objects)
                  #(frame-container-factory objects))]
 
     [:svg
      {:id "svg-frame"
-      :view-box vbox
-      :width width
-      :height height
+      :view-box (:vbox size)
+      :width (:width size)
+      :height (:height size)
       :version "1.1"
       :xmlnsXlink "http://www.w3.org/1999/xlink"
       :xmlns "http://www.w3.org/2000/svg"
       :fill "none"}
 
-     [:& render {:shape frame :view-box vbox}]
+     [:& render {:shape frame :view-box (:vbox size)}]
      [:& selection-feedback
       {:frame frame
        :objects objects
-       :local local}]]))
+       :local local
+       :size size}]]))
 

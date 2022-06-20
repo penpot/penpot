@@ -95,6 +95,10 @@
         (add! :constraints-v)
         (add! :fixed-scroll)
 
+        (cond-> frame?
+          (-> (add! :show-content)
+              (add! :hide-in-viewer)))
+
         (cond-> (and (or rect? image? frame?) (some? (:r1 shape)))
           (-> (add! :r1)
               (add! :r2)

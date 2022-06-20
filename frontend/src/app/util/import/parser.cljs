@@ -789,10 +789,14 @@
           :content node-content}))))
 
 (defn add-frame-data [props node]
-  (let [grids (parse-grids node)]
-    (cond-> props
-      (d/not-empty? grids)
-      (assoc :grids grids))))
+  (let [grids (parse-grids node)
+        show-content (get-meta node :show-content str->bool)
+        hide-in-viewer (get-meta node :hide-in-viewer str->bool)]
+    (-> props
+        (assoc :show-content show-content)
+        (assoc :hide-in-viewer hide-in-viewer)
+        (cond-> (d/not-empty? grids)
+          (assoc :grids grids)))))
 
 (defn has-image?
   [node]

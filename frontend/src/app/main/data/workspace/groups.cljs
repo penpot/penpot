@@ -21,7 +21,6 @@
   [objects selected]
   (->> selected
        (map #(get objects %))
-       (filter #(not= :frame (:type %)))
        (map #(assoc % ::index (cph/get-position-on-parent objects (:id %))))
        (sort-by ::index)))
 

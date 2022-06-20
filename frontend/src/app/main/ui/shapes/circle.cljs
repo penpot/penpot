@@ -6,7 +6,7 @@
 
 (ns app.main.ui.shapes.circle
   (:require
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.util.object :as obj]
@@ -17,7 +17,7 @@
   [props]
   (let [shape (unchecked-get props "shape")
         {:keys [x y width height]} shape
-        transform (geom/transform-matrix shape)
+        transform (gsh/transform-str shape)
 
         cx (+ x (/ width 2))
         cy (+ y (/ height 2))

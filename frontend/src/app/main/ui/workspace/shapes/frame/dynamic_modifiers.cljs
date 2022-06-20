@@ -77,39 +77,42 @@
 
 (defn get-nodes
   "Retrieve the DOM nodes to apply the matrix transformation"
-  [base-node {:keys [id type masked-group?]}]
-  (let [shape-node (dom/query base-node (str "#shape-" id))
+  [base-node {:keys [id type masked-group?] :as shape}]
+  (when (some? base-node)
+    (let [shape-node (if (= (.-id base-node) (dm/str "shape-" id))
+                       base-node
+                       (dom/query base-node (dm/str "#shape-" id)))
 
-        frame? (= :frame type)
-        group? (= :group type)
-        text? (= :text type)
-        mask?  (and group? masked-group?)]
+          frame? (= :frame type)
+          group? (= :group type)
+          text? (= :text type)
+          mask?  (and group? masked-group?)]
+      (cond
+        frame?
+        [shape-node
+         (dom/query shape-node ".frame-children")
+         (dom/query (dm/str "#thumbnail-container-" id))
+         (dom/query (dm/str "#thumbnail-" id))
+         (dom/query (dm/str "#frame-title-" id))]
 
-    (cond
-      frame?
-      [shape-node
-       (dom/query shape-node ".frame-children")
-       (dom/query (str "#thumbnail-container-" id))
-       (dom/query (str "#thumbnail-" id))]
+        ;; For groups we don't want to transform the whole group but only
+        ;; its filters/masks
+        mask?
+        [(dom/query shape-node ".mask-clip-path")
+         (dom/query shape-node ".mask-shape")]
 
-      ;; For groups we don't want to transform the whole group but only
-      ;; its filters/masks
-      mask?
-      [(dom/query shape-node ".mask-clip-path")
-       (dom/query shape-node ".mask-shape")]
+        group?
+        (let [shape-defs (dom/query shape-node "defs")]
+          (d/concat-vec
+           (dom/query-all shape-defs ".svg-def")
+           (dom/query-all shape-defs ".svg-mask-wrapper")))
 
-      group?
-      (let [shape-defs (dom/query shape-node "defs")]
-        (d/concat-vec
-         (dom/query-all shape-defs ".svg-def")
-         (dom/query-all shape-defs ".svg-mask-wrapper")))
+        text?
+        [shape-node
+         (dom/query shape-node ".text-container")]
 
-      text?
-      [shape-node
-       (dom/query shape-node ".text-container")]
-
-      :else
-      [shape-node])))
+        :else
+        [shape-node]))))
 
 (defn transform-region!
   [node modifiers]

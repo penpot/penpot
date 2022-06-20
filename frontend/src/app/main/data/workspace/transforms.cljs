@@ -181,50 +181,58 @@
       (assoc :grow-type :fixed))))
 
 (defn- apply-modifiers
-  [ids]
-  (us/verify (s/coll-of uuid?) ids)
-  (ptk/reify ::apply-modifiers
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects           (wsh/lookup-page-objects state)
-            ids-with-children (into (vec ids) (mapcat #(cph/get-children-ids objects %)) ids)
-            object-modifiers  (get state :workspace-modifiers)
-            shapes            (map (d/getf objects) ids)
-            ignore-tree       (->> (map #(get-ignore-tree object-modifiers objects %) shapes)
-                                   (reduce merge {}))]
+  ([ids]
+   (apply-modifiers ids nil))
 
-        (rx/of (dwu/start-undo-transaction)
-               (dwg/move-frame-guides ids-with-children)
-               (dch/update-shapes
-                ids-with-children
-                (fn [shape]
-                  (let [modif (get object-modifiers (:id shape))
-                        text-shape? (cph/text-shape? shape)]
-                    (-> shape
-                        (merge modif)
-                        (gsh/transform-shape)
-                        (cond-> text-shape?
-                          (update-grow-type shape)))))
-                {:reg-objects? true
-                 :ignore-tree ignore-tree
-                 ;; Attributes that can change in the transform. This way we don't have to check
-                 ;; all the attributes
-                 :attrs [:selrect
-                         :points
-                         :x
-                         :y
-                         :width
-                         :height
-                         :content
-                         :transform
-                         :transform-inverse
-                         :rotation
-                         :position-data
-                         :flip-x
-                         :flip-y
-                         :grow-type]})
-               (clear-local-transform)
-               (dwu/commit-undo-transaction))))))
+  ([ids {:keys [undo-transation?] :or {undo-transation? true}}]
+   (us/verify (s/coll-of uuid?) ids)
+   (ptk/reify ::apply-modifiers
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects           (wsh/lookup-page-objects state)
+             ids-with-children (into (vec ids) (mapcat #(cph/get-children-ids objects %)) ids)
+             object-modifiers  (get state :workspace-modifiers)
+             shapes            (map (d/getf objects) ids)
+             ignore-tree       (->> (map #(get-ignore-tree object-modifiers objects %) shapes)
+                                    (reduce merge {}))]
+
+         (rx/concat
+          (if undo-transation?
+            (rx/of (dwu/start-undo-transaction))
+            (rx/empty))
+          (rx/of (dwg/move-frame-guides ids-with-children)
+                 (dch/update-shapes
+                  ids-with-children
+                  (fn [shape]
+                    (let [modif (get object-modifiers (:id shape))
+                          text-shape? (cph/text-shape? shape)]
+                      (-> shape
+                          (merge modif)
+                          (gsh/transform-shape)
+                          (cond-> text-shape?
+                            (update-grow-type shape)))))
+                  {:reg-objects? true
+                   :ignore-tree ignore-tree
+                   ;; Attributes that can change in the transform. This way we don't have to check
+                   ;; all the attributes
+                   :attrs [:selrect
+                           :points
+                           :x
+                           :y
+                           :width
+                           :height
+                           :content
+                           :transform
+                           :transform-inverse
+                           :rotation
+                           :position-data
+                           :flip-x
+                           :flip-y
+                           :grow-type]})
+                 (clear-local-transform))
+          (if undo-transation?
+            (rx/of (dwu/commit-undo-transaction))
+            (rx/empty))))))))
 
 (defn- check-delta
   "If the shape is a component instance, check its relative position respect the
@@ -762,9 +770,11 @@
                  (rx/map (partial set-modifiers ids))
                  (rx/take-until stopper))
 
-            (rx/of (apply-modifiers ids)
+            (rx/of (dwu/start-undo-transaction)
                    (calculate-frame-for-move ids)
-                   (finish-transform)))))))))
+                   (apply-modifiers ids {:undo-transation? false})
+                   (finish-transform)
+                   (dwu/commit-undo-transaction)))))))))
 
 (s/def ::direction #{:up :down :right :left})
 
@@ -842,6 +852,14 @@
         (rx/of (set-modifiers [id] {:displacement displ} false true)
                (apply-modifiers [id]))))))
 
+(defn check-frame-move?
+  [target-frame-id objects position shape]
+
+  (let [current-frame (get objects (:frame-id shape))]
+    ;; If the current frame contains the point and it's a child of the target
+    (and (gsh/has-point? current-frame position)
+         (cph/is-child? objects target-frame-id (:id current-frame)))))
+
 (defn- calculate-frame-for-move
   [ids]
   (ptk/reify ::calculate-frame-for-move
@@ -854,18 +872,15 @@
 
             moving-shapes (->> ids
                                (cph/clean-loops objects)
-                               (map #(get objects %))
-                               (remove #(or (nil? %)
-                                            (= (:frame-id %) frame-id))))
+                               (keep #(get objects %))
+                               (remove (partial check-frame-move? frame-id objects position)))
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)
                         (pcb/change-parent frame-id moving-shapes))]
 
         (when-not (empty? changes)
-          (rx/of dwu/pop-undo-into-transaction
-                 (dch/commit-changes changes)
-                 (dwu/commit-undo-transaction)
+          (rx/of (dch/commit-changes changes)
                  (dwc/expand-collapse frame-id)))))))
 
 (defn- get-displacement

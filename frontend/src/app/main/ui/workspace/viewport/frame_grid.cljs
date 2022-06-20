@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
    [app.util.geom.grid :as gg]
@@ -126,13 +127,15 @@
 (mf/defc frame-grid
   {::mf/wrap [mf/memo]}
   [{:keys [zoom transform selected focus]}]
-  (let [frames     (mf/deref refs/workspace-frames)
-        moving     (when (= :move transform) selected)
-        is-moving? #(contains? moving (:id %))]
+  (let [frames        (mf/deref refs/workspace-frames)
+        transforming  (when (some? transform) selected)
+        is-transform? #(contains? transforming (:id %))]
 
     [:g.grid-display {:style {:pointer-events "none"}}
-     (for [frame (remove is-moving? frames)]
-       (when (or (empty? focus) (contains? focus (:id frame)))
+     (for [frame frames]
+       (when (and (not (is-transform? frame))
+                  (not (cph/rotated-frame? frame))
+                  (or (empty? focus) (contains? focus (:id frame))))
          [:& grid-display-frame {:key (str "grid-" (:id frame))
                                  :zoom zoom
                                  :frame (gsh/transform-shape frame)}]))]))

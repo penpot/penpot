@@ -52,6 +52,8 @@
 (s/def ::fill-color-ref-id (s/nilable uuid?))
 
 (s/def ::hide-fill-on-export boolean?)
+(s/def ::show-content boolean?)
+(s/def ::hide-in-viewer boolean?)
 
 (s/def ::file-thumbnail boolean?)
 (s/def ::masked-group? boolean?)
@@ -254,8 +256,7 @@
                    :internal.shape.text.position-data/rtl
                    :internal.shape.text.position-data/text
                    :internal.shape.text.position-data/text-decoration
-                   :internal.shape.text.position-data/text-transform]
-          ))
+                   :internal.shape.text.position-data/text-transform]))
 
 (s/def :internal.shape.text.position-data/x ::us/safe-number)
 (s/def :internal.shape.text.position-data/y ::us/safe-number)
@@ -303,7 +304,9 @@
 (defmethod shape-spec :frame [_]
   (s/and ::shape-attrs
          (s/keys :opt-un [::file-thumbnail
-                          ::hide-fill-on-export])))
+                          ::hide-fill-on-export
+                          ::show-content
+                          ::hide-in-viewer])))
 
 (s/def ::shape
   (s/and (s/multi-spec shape-spec :type)

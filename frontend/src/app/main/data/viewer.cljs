@@ -11,7 +11,6 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.interactions :as cti]
-   [app.common.uuid :as uuid]
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
    [app.main.repo :as rp]
@@ -86,13 +85,6 @@
     (update [_ state]
       (dissoc state :viewer))))
 
-(defn select-frames
-  [{:keys [objects] :as page}]
-  (let [root (get objects uuid/zero)]
-    (into [] (comp (map #(get objects %))
-                   (filter #(= :frame (:type %))))
-          (reverse (:shapes root)))))
-
 ;; --- Data Fetching
 
 (s/def ::fetch-bundle-params
@@ -120,7 +112,9 @@
   (let [pages (->> (get-in file [:data :pages])
                    (map (fn [page-id]
                           (let [data (get-in file [:data :pages-index page-id])]
-                            [page-id (assoc data :frames (select-frames data))])))
+                            [page-id (assoc data
+                                            :frames (cph/get-viewer-frames (:objects data))
+                                            :all-frames (cph/get-viewer-frames (:objects data) {:all-frames? true}))])))
                    (into {}))]
 
     (ptk/reify ::bundle-fetched
@@ -390,7 +384,9 @@
         (rx/of (rt/nav screen pparams (assoc qparams :index index)))))))
 
 (defn go-to-frame
-  ([frame-id] (go-to-frame frame-id nil))
+  ([frame-id]
+   (go-to-frame frame-id nil))
+
   ([frame-id animation]
    (us/verify ::us/uuid frame-id)
    (us/verify (s/nilable ::cti/animation) animation)
@@ -420,8 +416,7 @@
              page-id (:page-id qparams)
              frames  (get-in state [:viewer :pages page-id :frames])
              index   (d/index-of-pred frames #(= (:id %) frame-id))]
-         (when index
-           (rx/of (go-to-frame-by-index index))))))))
+         (rx/of (go-to-frame-by-index (or index 0))))))))
 
 (defn go-to-frame-auto
   []
@@ -492,7 +487,7 @@
       (let [route    (:route state)
             qparams  (:query-params route)
             page-id  (:page-id qparams)
-            frames   (get-in state [:viewer :pages page-id :frames])
+            frames   (get-in state [:viewer :pages page-id :all-frames])
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (get-in state [:viewer-local :overlays])]
         (if-not (some #(= (:frame %) frame) overlays)
@@ -517,7 +512,7 @@
       (let [route    (:route state)
             qparams  (:query-params route)
             page-id  (:page-id qparams)
-            frames   (get-in state [:viewer :pages page-id :frames])
+            frames   (get-in state [:viewer :pages page-id :all-frames])
             frame    (d/seek #(= (:id %) frame-id) frames)
             overlays (get-in state [:viewer-local :overlays])]
         (if-not (some #(= (:frame %) frame) overlays)

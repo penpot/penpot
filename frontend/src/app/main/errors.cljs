@@ -20,6 +20,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
 (defn on-error
@@ -200,9 +201,12 @@
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]
-            (.preventDefault ^js event)
-            (some-> (unchecked-get event "error")
-                    (on-unhandled-error)))]
+            ;; EvalError is a debug error that happens for unknown reason
+            (when-not (str/includes? (.-message event) "EvalError")
+              (.error js/console event)
+              (.preventDefault ^js event)
+              (some-> (unchecked-get event "error")
+                      (on-unhandled-error))))]
     (.addEventListener glob/window "error" on-error)
     (fn []
       (.removeEventListener glob/window "error" on-error))))

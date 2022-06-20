@@ -8,8 +8,10 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.main.data.comments :as dcm]
@@ -37,18 +39,23 @@
    [rumext.alpha :as mf]))
 
 (defn- calculate-size
-  [frame zoom]
-  (let [{:keys [_ _ width height]} (filters/get-filters-bounds frame)
+  [frame zoom bounds]
+  (let [frame-bounds (filters/get-filters-bounds frame)
+        {:keys [x y width height]} (if (:show-content frame)
+                                     (gsh/join-rects [bounds frame-bounds])
+                                     frame-bounds)
         padding (filters/calculate-padding frame)
-        x (- (:horizontal padding))
-        y (- (:vertical padding))
+        x (- x (:horizontal padding))
+        y (- y (:vertical padding))
         width (+ width (* 2 (:horizontal padding)))
         height (+ height (* 2 (:vertical padding)))]
     {:base-width  width
      :base-height height
+     :x           x
+     :y           y
      :width       (* width zoom)
      :height      (* height zoom)
-     :vbox        (str x " " y " " width " " height)}))
+     :vbox        (dm/fmt "% % % %" 0 0 width height)}))
 
 (defn- calculate-wrapper
   [size1 size2 zoom]
@@ -79,7 +86,7 @@
 
 (mf/defc viewer-wrapper
   [{:keys [wrapper-size scroll orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
-           size frame interactions-mode overlays zoom close-overlay section index] :as props}]
+           size frame interactions-mode overlays zoom close-overlay section index children-bounds] :as props}]
   (let [{clist :list} (mf/deref refs/comments-local)
         show-comments-list (and (= section :comments) (= :show clist))]
     [:*
@@ -128,7 +135,7 @@
             :interactions-mode interactions-mode}]
 
           (for [overlay overlays]
-            (let [size-over (calculate-size (:frame overlay) zoom)]
+            (let [size-over (calculate-size (:frame overlay) zoom children-bounds)]
               [:*
                (when (or (:close-click-outside overlay)
                          (:background-overlay  overlay))
@@ -166,8 +173,6 @@
                               :page page
                               :zoom zoom}])]]]]))
 
-
-
 (mf/defc viewer
   [{:keys [params data]}]
 
@@ -198,6 +203,13 @@
         zoom   (:zoom local)
         frames (:frames page)
         frame  (get frames index)
+
+        children-bounds
+        (mf/use-memo
+         (mf/deps page (:id frame))
+         #(-> (cph/get-children (:objects page) (:id frame))
+              (gsh/selection-rect)))
+
         fullscreen? (mf/deref refs/viewer-fullscreen?)
         overlays (:overlays local)
         scroll (mf/use-state nil)
@@ -207,12 +219,13 @@
           (d/seek #(= (:id %) (:orig-frame-id current-animation)) frames))
 
         size (mf/use-memo
-              (mf/deps frame zoom)
-              (fn [] (calculate-size frame zoom)))
+              (mf/deps frame zoom children-bounds)
+              (fn [] (calculate-size frame zoom children-bounds)))
 
         orig-size (mf/use-memo
                    (mf/deps orig-frame zoom)
-                   (fn [] (when orig-frame (calculate-size orig-frame zoom))))
+                   (fn [] (when orig-frame
+                            (calculate-size orig-frame zoom children-bounds))))
 
         wrapper-size (mf/use-memo
                       (mf/deps size orig-size zoom)
@@ -305,7 +318,7 @@
             wrapper-size)))))
 
     (mf/use-layout-effect
-     (mf/deps current-animation)
+     (mf/deps current-animation children-bounds)
      (fn []
         ;; Overlay animations may be started when needed.
        (when current-animation
@@ -315,7 +328,7 @@
            (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
                  overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
                                  overlays)
-                 overlay-size (calculate-size (:frame overlay) zoom)
+                 overlay-size (calculate-size (:frame overlay) zoom children-bounds)
                  overlay-position {:x (* (:x (:position overlay)) zoom)
                                    :y (* (:y (:position overlay)) zoom)}]
              (interactions/animate-open-overlay
@@ -329,7 +342,7 @@
            (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
                  overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
                                  overlays)
-                 overlay-size (calculate-size (:frame overlay) zoom)
+                 overlay-size (calculate-size (:frame overlay) zoom children-bounds)
                  overlay-position {:x (* (:x (:position overlay)) zoom)
                                    :y (* (:y (:position overlay)) zoom)}]
              (interactions/animate-close-overlay
@@ -370,7 +383,8 @@
       [:& thumbnails-panel {:frames frames
                             :show? (:show-thumbnails local false)
                             :page page
-                            :index index}]
+                            :index index
+                            :thumbnail-data (:thumbnails file)}]
       [:section.viewer-section {:id "viewer-section"
                                 :ref viewer-section-ref
                                 :class (if fullscreen? "fullscreen" "")}
@@ -392,6 +406,7 @@
              :file file
              :section section
              :local local
+             :size size
              :index index
              :viewer-pagination viewer-pagination}]
 
@@ -412,7 +427,8 @@
               :overlays overlays
               :zoom zoom
               :section section
-              :index index}]))]]]))
+              :index index
+              :children-bounds children-bounds}]))]]]))
 
 ;; --- Component: Viewer Page
 

@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
@@ -48,9 +49,10 @@
   {::mf/forward-ref true
    ::mf/wrap-props false}
   [props ref]
-  (let [shape          (obj/get props "shape")
-        children       (obj/get props "children")
-        pointer-events (obj/get props "pointer-events")
+  (let [shape            (obj/get props "shape")
+        children         (obj/get props "children")
+        pointer-events   (obj/get props "pointer-events")
+        disable-shadows? (obj/get props "disable-shadows?")
 
         type           (:type shape)
         render-id      (mf/use-memo #(str (uuid/next)))
@@ -74,13 +76,14 @@
 
         wrapper-props
         (cond-> wrapper-props
-          (some #(= (:type shape) %) [:group :svg-raw :frame])
-          (obj/set! "filter" (filters/filter-str filter-id shape)))
-
-        wrapper-props
-        (cond-> wrapper-props
           (= :group type)
-          (attrs/add-style-attrs shape render-id))
+          (attrs/add-style-attrs shape render-id)
+
+          (and (or (cph/group-shape? shape)
+                   (cph/frame-shape? shape)
+                   (cph/svg-raw-shape? shape))
+               (not disable-shadows?))
+          (obj/set! "filter" (filters/filter-str filter-id shape)))
 
         svg-group? (and (contains? shape :svg-attrs) (= :group type))
 

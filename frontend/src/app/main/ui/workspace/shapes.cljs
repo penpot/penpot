@@ -13,6 +13,7 @@
   common."
   (:require
    [app.common.pages.helpers :as cph]
+   [app.main.ui.context :as ctx]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.rect :as rect]
@@ -52,7 +53,8 @@
         (mf/use-memo
          (mf/deps objects)
          #(cph/objects-by-frame objects))]
-    [:*
+
+    [:& (mf/provider ctx/active-frames-ctx) {:value active-frames}
      ;; Render font faces only for shapes that are part of the root
      ;; frame but don't belongs to any other frame.
      (let [xform (comp
@@ -75,23 +77,30 @@
    ::mf/wrap-props false}
   [props]
   (let [shape (obj/get props "shape")
-        opts  #js {:shape shape}]
+
+        active-frames
+        (when (cph/root-frame? shape) (mf/use-ctx ctx/active-frames-ctx))
+
+        thumbnail?
+        (and (some? active-frames)
+             (not (contains? active-frames (:id shape))))
+
+        opts  #js {:shape shape :thumbnail? thumbnail?}]
     (when (and (some? shape) (not (:hidden shape)))
-      [:*
-       (case (:type shape)
-         :path    [:> path/path-wrapper opts]
-         :text    [:> text/text-wrapper opts]
-         :group   [:> group-wrapper opts]
-         :rect    [:> rect-wrapper opts]
-         :image   [:> image-wrapper opts]
-         :circle  [:> circle-wrapper opts]
-         :svg-raw [:> svg-raw-wrapper opts]
-         :bool    [:> bool-wrapper opts]
+      (case (:type shape)
+        :path    [:> path/path-wrapper opts]
+        :text    [:> text/text-wrapper opts]
+        :group   [:> group-wrapper opts]
+        :rect    [:> rect-wrapper opts]
+        :image   [:> image-wrapper opts]
+        :circle  [:> circle-wrapper opts]
+        :svg-raw [:> svg-raw-wrapper opts]
+        :bool    [:> bool-wrapper opts]
 
-         ;; Only used when drawing a new frame.
-         :frame [:> frame-wrapper opts]
+        ;; Only used when drawing a new frame.
+        :frame [:> frame-wrapper opts]
 
-         nil)])))
+        nil))))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))

@@ -270,6 +270,14 @@
        (into [] (keep (d/getf objects)) children-ids)))
    workspace-page-objects =))
 
+(defn all-children-objects
+  [id]
+  (l/derived
+   (fn [objects]
+     (let [children-ids (cph/get-children-ids objects id)]
+       (into [] (keep (d/getf objects)) children-ids)))
+   workspace-page-objects =))
+
 (def workspace-page-options
   (l/derived :options workspace-page))
 
@@ -306,8 +314,11 @@
    (fn [{:keys [modifiers objects]}]
      (let [keys (->> modifiers
                      (keys)
-                     (filter #(or (= frame-id %)
-                                  (= frame-id (get-in objects [% :frame-id])))))]
+                     (filter (fn [id]
+                               (let [shape (get objects id)]
+                                 (or (= frame-id id)
+                                     (and (= frame-id (:frame-id shape))
+                                          (not (= :frame (:type shape)))))))))]
        (select-keys modifiers keys)))
    workspace-modifiers-with-objects
    =))
@@ -349,14 +360,17 @@
 
 ;; ---- Viewer refs
 
-(def viewer-file
-  (l/derived :viewer-file st/state))
-
-(def viewer-project
-  (l/derived :viewer-file st/state))
-
 (def viewer-data
   (l/derived :viewer st/state))
+
+(def viewer-file
+  (l/derived :file viewer-data))
+
+(def viewer-thumbnails
+  (l/derived :thumbnails viewer-file))
+
+(def viewer-project
+  (l/derived :project viewer-data))
 
 (def viewer-state
   (l/derived :viewer st/state))

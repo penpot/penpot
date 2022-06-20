@@ -128,7 +128,6 @@
                           (rx/merge
                            (rx/of (dwn/initialize team-id file-id)
                                   (dwp/initialize-file-persistence file-id))
-
                            (->> stream
                                 (rx/filter #(= ::dwc/index-initialized %))
                                 (rx/take 1)
@@ -151,6 +150,7 @@
              :workspace-project project
              :workspace-file (assoc file :initialized true)
              :workspace-data (-> (:data file)
+                                 (cph/start-object-indices)
                                  ;; DEBUG: Uncomment this to try out migrations in local without changing
                                  ;; the version number
                                  #_(assoc :version 17)
@@ -1214,16 +1214,8 @@
                   ;; selected and its parents
                   objects (cph/selected-subtree objects selected)
 
-                  z-index (cp/calculate-z-index objects)
-                  z-values (->> selected
-                                (map #(vector %
-                                              (+ (get z-index %)
-                                                 (get z-index (get-in objects [% :frame-id]))))))
-                  selected
-                  (->> z-values
-                       (sort-by second)
-                       (map first)
-                       (into (d/ordered-set)))]
+                  selected (->> (cph/sort-z-index objects selected)
+                                (into (d/ordered-set)))]
 
               (assoc data :selected selected)))
 
@@ -1240,8 +1232,8 @@
           ;; Prepare the shape object. Mainly needed for image shapes
           ;; for retrieve the image data and convert it to the
           ;; data-url.
-          (prepare-object [objects selected {:keys [type] :as obj}]
-            (let [obj (maybe-translate obj objects selected)]
+          (prepare-object [objects selected+children {:keys [type] :as obj}]
+            (let [obj (maybe-translate obj objects selected+children)]
               (if (= type :image)
                 (let [url (cfg/resolve-file-media (:metadata obj))]
                   (->> (http/send! {:method :get
@@ -1264,9 +1256,9 @@
                   (update res :images conj img-part))
                 res)))
 
-          (maybe-translate [shape objects selected]
+          (maybe-translate [shape objects selected+children]
             (if (and (not= (:type shape) :frame)
-                     (not (contains? selected (:frame-id shape))))
+                     (not (contains? selected+children (:frame-id shape))))
               ;; When the parent frame is not selected we change to relative
               ;; coordinates
               (let [frame (get objects (:frame-id shape))]
@@ -1283,6 +1275,8 @@
         (let [objects  (wsh/lookup-page-objects state)
               selected (->> (wsh/lookup-selected state)
                             (cph/clean-loops objects))
+
+              selected+children (cph/selected-with-children objects selected)
               pdata    (reduce (partial collect-object-ids objects) {} selected)
               initial  {:type :copied-shapes
                         :file-id (:current-file-id state)
@@ -1292,7 +1286,7 @@
 
 
           (->> (rx/from (seq (vals pdata)))
-               (rx/merge-map (partial prepare-object objects selected))
+               (rx/merge-map (partial prepare-object objects selected+children))
                (rx/reduce collect-data initial)
                (rx/map (partial sort-selected state))
                (rx/map t/encode-str)
@@ -1672,20 +1666,22 @@
     (watch [_ state _]
       (let [page-id       (:current-page-id state)
             objects       (wsh/lookup-page-objects state page-id)
-            shapes        (cph/get-immediate-children objects)
             selected      (wsh/lookup-selected state)
-            selected-objs (map #(get objects %) selected)
-            has-frame?    (some #(= (:type %) :frame) selected-objs)]
-        (when (not (or (empty? selected) has-frame?))
+            selected-objs (map #(get objects %) selected)]
+        (when (d/not-empty? selected)
           (let [srect    (gsh/selection-rect selected-objs)
-                frame-id (:frame-id (first shapes))
+                frame-id (get-in objects [(first selected) :frame-id])
+                parent-id (get-in objects [(first selected) :parent-id])
                 shape    (-> (cp/make-minimal-shape :frame)
                              (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
-                             (assoc :frame-id frame-id)
+                             (assoc :frame-id frame-id :parent-id parent-id)
+                             (cond-> (not= frame-id uuid/zero)
+                               (assoc :fills [] :hide-in-viewer true))
                              (cp/setup-rect-selrect))]
             (rx/of
              (dwu/start-undo-transaction)
              (dwc/add-shape shape)
+
              (dwc/move-shapes-into-frame (:id shape) selected)
              (dwu/commit-undo-transaction))))))))
 

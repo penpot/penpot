@@ -65,22 +65,21 @@
             focus   (:workspace-focus-selected state)
             zoom    (get-in state [:workspace-local :zoom] 1)
 
-            frames  (cph/get-frames objects)
-            fid     (or (->> frames
-                             (filter #(gsh/has-point? % initial))
-                             first
-                             :id)
-                        uuid/zero)
+            fid     (cph/frame-id-by-position objects initial)
 
-            shape (-> state
-                      (get-in [:workspace-drawing :object])
-                      (cp/setup-shape {:x (:x initial)
-                                       :y (:y initial)
-                                       :width 0.01
-                                       :height 0.01})
-                      (assoc :frame-id fid)
-                      (assoc :initialized? true)
-                      (assoc :click-draw? true))]
+            shape   (get-in state [:workspace-drawing :object])
+            shape   (-> shape
+                        (cp/setup-shape {:x (:x initial)
+                                         :y (:y initial)
+                                         :width 0.01
+                                         :height 0.01})
+                        (cond-> (and (cph/frame-shape? shape)
+                                     (not= fid uuid/zero))
+                          (assoc :fills [] :hide-in-viewer true))
+
+                        (assoc :frame-id fid)
+                        (assoc :initialized? true)
+                        (assoc :click-draw? true))]
         (rx/concat
          ;; Add shape to drawing state
          (rx/of #(assoc-in state [:workspace-drawing :object] shape))

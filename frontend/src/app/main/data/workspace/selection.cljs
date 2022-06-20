@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
@@ -264,7 +264,7 @@
             ;; in the later vector position
             selected (->> children
                           reverse
-                          (d/seek #(geom/has-point? % position)))]
+                          (d/seek #(gsh/has-point? % position)))]
         (when selected
           (rx/of (select-shape (:id selected))))))))
 
@@ -325,7 +325,7 @@
                               :frame-id uuid/zero
                               :shapes [])
                        (dissoc :use-for-thumbnail?)
-                       (geom/move delta)
+                       (gsh/move delta)
                        (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
         changes (-> (pcb/add-object changes new-frame)
@@ -360,7 +360,7 @@
                                  :parent-id parent-id
                                  :frame-id frame-id)
                           (dissoc :shapes)
-                          (geom/move delta)
+                          (gsh/move delta)
                           (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
 
           changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
@@ -412,7 +412,7 @@
                     (fn [g frame]
                       (let [new-id     (ids-map (:id frame))
                             new-frame  (-> frame
-                                           (geom/move delta))
+                                           (gsh/move delta))
                             new-guides (->> guides
                                             (vals)
                                             (filter #(= (:frame-id %) (:id frame)))

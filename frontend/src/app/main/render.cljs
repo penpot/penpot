@@ -61,8 +61,12 @@
 
 (defn- calculate-dimensions
   [objects]
-  (let [shapes (cph/get-immediate-children objects)
-        rect   (gsh/selection-rect shapes)]
+  (let [rect
+        (->> (cph/get-root-objects objects)
+             (map #(if (some? (:children-bounds %))
+                     (:children-bounds %)
+                     (gsh/points->selrect (:points %))))
+             (gsh/join-selrects))]
     (-> rect
         (update :x mth/finite 0)
         (update :y mth/finite 0)
@@ -77,10 +81,13 @@
         frame-shape   (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-wrapper
       [{:keys [shape] :as props}]
-      (let [childs (mapv #(get objects %) (:shapes shape))
+
+      (let [render-thumbnails? (mf/use-ctx muc/render-thumbnails)
+            childs (mapv #(get objects %) (:shapes shape))
             shape  (gsh/transform-shape shape)]
-        [:> shape-container {:shape shape}
-         [:& frame-shape {:shape shape :childs childs}]]))))
+        (if (and render-thumbnails? (some? (:thumbnail shape)))
+          [:& frame/frame-thumbnail {:shape shape :bounds (:children-bounds shape)}]
+          [:& frame-shape {:shape shape :childs childs}])))))
 
 (defn group-wrapper-factory
   [objects]
@@ -169,7 +176,7 @@
   [objects object-id]
   (let [object   (get objects object-id)
         object   (cond->> object
-                   (cph/root-frame? object)
+                   (cph/root? object)
                    (adapt-root-frame objects))
 
         ;; Replace the previous object with the new one
@@ -196,12 +203,17 @@
                     (update :width + (* 2 (:horizontal padding)))
                     (update :height + (* 2 (:vertical padding))))]
 
-    (if (cph/group-shape? object)
-      (if (:masked-group? object)
-        (get-object-bounds objects (-> object :shapes first))
-        (->> (:shapes object)
-             (into [bounds] (map (partial get-object-bounds objects)))
-             (gsh/join-rects)))
+    (cond
+      (and (cph/group-shape? object) (:masked-group? object))
+      (get-object-bounds objects (-> object :shapes first))
+
+      (or (cph/group-shape? object)
+          (and (cph/frame-shape? object) (:show-content object)))
+      (->> (:shapes object)
+           (into [bounds] (map (partial get-object-bounds objects)))
+           (gsh/join-rects))
+
+      :else
       bounds)))
 
 (mf/defc page-svg
@@ -215,51 +227,37 @@
         vbox    (format-viewbox dim)
         bgcolor (dm/get-in data [:options :background] default-color)
 
-        frame-wrapper
-        (mf/use-memo
-         (mf/deps objects)
-         #(frame-wrapper-factory objects))
-
         shape-wrapper
         (mf/use-memo
          (mf/deps objects)
          #(shape-wrapper-factory objects))]
 
-    [:& (mf/provider embed/context) {:value render-embed?}
-     [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}
-      [:svg {:view-box vbox
-             :version "1.1"
-             :xmlns "http://www.w3.org/2000/svg"
-             :xmlnsXlink "http://www.w3.org/1999/xlink"
-             :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
-             :style {:width "100%"
-                     :height "100%"
-                     :background bgcolor}
-             :fill "none"}
+    [:& (mf/provider muc/render-thumbnails) {:value thumbnails?}
+     [:& (mf/provider embed/context) {:value render-embed?}
+      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}
+       [:svg {:view-box vbox
+              :version "1.1"
+              :xmlns "http://www.w3.org/2000/svg"
+              :xmlnsXlink "http://www.w3.org/1999/xlink"
+              :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+              :style {:width "100%"
+                      :height "100%"
+                      :background bgcolor}
+              :fill "none"}
 
-       (when include-metadata?
-         [:& export/export-page {:options (:options data)}])
+        (when include-metadata?
+          [:& export/export-page {:options (:options data)}])
 
 
-       (let [shapes (->> shapes
-                         (remove cph/frame-shape?)
-                         (mapcat #(cph/get-children-with-self objects (:id %))))
-             fonts (ff/shapes->fonts shapes)]
-         [:& ff/fontfaces-style {:fonts fonts}])
+        (let [shapes (->> shapes
+                          (remove cph/frame-shape?)
+                          (mapcat #(cph/get-children-with-self objects (:id %))))
+              fonts (ff/shapes->fonts shapes)]
+          [:& ff/fontfaces-style {:fonts fonts}])
 
-       (for [item shapes]
-         (let [frame? (= (:type item) :frame)]
-           (cond
-             (and frame? thumbnails? (some? (:thumbnail item)))
-             [:> shape-container {:shape item}
-              [:& frame/frame-thumbnail {:shape item}]]
-
-             frame?
-             [:& frame-wrapper {:shape item
-                                :key (:id item)}]
-             :else
-             [:& shape-wrapper {:shape item
-                                :key (:id item)}])))]]]))
+        (for [item shapes]
+          [:& shape-wrapper {:shape item
+                             :key (:id item)}])]]]]))
 
 
 ;; Component that serves for render frame thumbnails, mainly used in
@@ -271,46 +269,60 @@
   (let [frame-id          (:id frame)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
+        bounds (or (:children-bounds frame) (gsh/points->rect (:points frame)))
+
         modifier
-        (mf/with-memo [(:x frame) (:y frame)]
-          (-> (gpt/point (:x frame) (:y frame))
+        (mf/with-memo [(:x bounds) (:y bounds)]
+          (-> (gpt/point (:x bounds) (:y bounds))
               (gpt/negate)
               (gmt/translate-matrix)))
+
+        children-ids
+        (cph/get-children-ids objects frame-id)
 
         objects
         (mf/with-memo [frame-id objects modifier]
           (let [update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)]
-            (->> (cph/get-children-ids objects frame-id)
+            (->> children-ids
                  (into [frame-id])
                  (reduce update-fn objects))))
 
         frame
         (mf/with-memo [modifier]
-          (assoc-in frame [:modifiers :displacement] modifier))
+          (-> frame
+              (assoc-in [:modifiers :displacement] modifier)
+              (gsh/transform-shape)))
 
-        wrapper
+        bounds
+        (if (:show-content frame)
+          (gsh/selection-rect (concat [frame] (->> children-ids (map (d/getf objects)))))
+          (-> frame :points gsh/points->rect))
+
+        frame
+        (cond-> frame
+          (and (some? bounds) (nil? (:children-bounds bounds)))
+          (assoc :children-bounds bounds))
+
+        frame-wrapper
         (mf/with-memo [objects]
           (frame-wrapper-factory objects))
 
-        width  (* (:width frame) zoom)
-        height (* (:height frame) zoom)
-        vbox   (format-viewbox {:width (:width frame 0) :height (:height frame 0)})]
+        width  (* (:width bounds) zoom)
+        height (* (:height bounds) zoom)
+        vbox   (format-viewbox {:width (:width bounds 0) :height (:height bounds 0)})]
 
-    [:svg {:view-box vbox
-           :width (ust/format-precision width viewbox-decimal-precision)
-           :height (ust/format-precision height viewbox-decimal-precision)
-           :version "1.1"
-           :xmlns "http://www.w3.org/2000/svg"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
-           :fill "none"}
-     (if (or (not show-thumbnails?) (nil? (:thumbnail frame)))
-       [:& wrapper {:shape frame :view-box vbox}]
+    [:& (mf/provider muc/render-thumbnails) {:value show-thumbnails?}
+     [:svg {:view-box vbox
+            :width (ust/format-precision width viewbox-decimal-precision)
+            :height (ust/format-precision height viewbox-decimal-precision)
+            :version "1.1"
+            :xmlns "http://www.w3.org/2000/svg"
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
+            :fill "none"}
 
-       ;; Render the frame thumbnail
-       (let [frame (gsh/transform-shape frame)]
-         [:> shape-container {:shape frame}
-          [:& frame/frame-thumbnail {:shape frame}]]))]))
+      [:> shape-container {:shape frame}
+       [:& frame-wrapper {:shape frame :view-box vbox}]]]]))
 
 
 ;; Component for rendering a thumbnail of a single componenent. Mainly
@@ -389,42 +401,44 @@
         text-shapes   (sequence (filter cph/text-shape?) (vals objects))
         render-texts? (and render-texts? (d/seek (comp nil? :position-data) text-shapes))]
 
-    [:& (mf/provider embed/context) {:value render-embed?}
-     [:svg {:id (dm/str "screenshot-" object-id)
-            :view-box vbox
-            :width width
-            :height height
-            :version "1.1"
-            :xmlns "http://www.w3.org/2000/svg"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"
-            ;; Fix Chromium bug about color of html texts
-            ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
-            :style {:-webkit-print-color-adjust :exact}
-            :fill "none"}
+    [:& (mf/provider export/include-metadata-ctx) {:value false}
+     [:& (mf/provider embed/context) {:value render-embed?}
+      [:svg {:id (dm/str "screenshot-" object-id)
+             :view-box vbox
+             :width width
+             :height height
+             :version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             ;; Fix Chromium bug about color of html texts
+             ;; https://bugs.chromium.org/p/chromium/issues/detail?id=1244560#c5
+             :style {:-webkit-print-color-adjust :exact}
+             :fill "none"}
 
-      (let [fonts (ff/shape->fonts object objects)]
-        [:& ff/fontfaces-style {:fonts fonts}])
+       (let [fonts (ff/shape->fonts object objects)]
+         [:& ff/fontfaces-style {:fonts fonts}])
 
-      (case (:type object)
-        :frame [:& frame-wrapper {:shape object :view-box vbox}]
-        :group [:> shape-container {:shape object}
-                [:& group-wrapper {:shape object}]]
-        [:& shape-wrapper {:shape object}])]
+       (case (:type object)
+         :frame [:> shape-container {:shape object}
+                 [:& frame-wrapper {:shape object :view-box vbox}]]
+         :group [:> shape-container {:shape object}
+                 [:& group-wrapper {:shape object}]]
+         [:& shape-wrapper {:shape object}])]
 
-     ;; Auxiliary SVG for rendering text-shapes
-     (when render-texts?
-       (for [object text-shapes]
-         [:& (mf/provider muc/text-plain-colors-ctx) {:value true}
-          [:svg
-           {:id (dm/str "screenshot-text-" (:id object))
-            :view-box (dm/str "0 0 " (:width object) " " (:height object))
-            :width (:width object)
-            :height (:height object)
-            :version "1.1"
-            :xmlns "http://www.w3.org/2000/svg"
-            :xmlnsXlink "http://www.w3.org/1999/xlink"
-            :fill "none"}
-           [:& shape-wrapper {:shape (assoc object :x 0 :y 0)}]]]))]))
+      ;; Auxiliary SVG for rendering text-shapes
+      (when render-texts?
+        (for [object text-shapes]
+          [:& (mf/provider muc/text-plain-colors-ctx) {:value true}
+           [:svg
+            {:id (dm/str "screenshot-text-" (:id object))
+             :view-box (dm/str "0 0 " (:width object) " " (:height object))
+             :width (:width object)
+             :height (:height object)
+             :version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :fill "none"}
+            [:& shape-wrapper {:shape (assoc object :x 0 :y 0)}]]]))]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SPRITES (DEBUG)

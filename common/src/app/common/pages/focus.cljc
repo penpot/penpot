@@ -8,26 +8,20 @@
   (:require
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
-   [app.common.pages.indices :as cpi]
    [app.common.uuid :as uuid]))
 
 (defn focus-objects
   [objects focus]
-  (let [[ids-with-children z-index]
+  (let [ids-with-children
         (when (d/not-empty? focus)
-          [(into (conj focus uuid/zero)
-                 (mapcat (partial cph/get-children-ids objects))
-                 focus)
-           (cpi/calculate-z-index objects)])
-
-        sort-by-z-index
-        (fn [coll]
-          (->> coll (sort-by (fn [a b] (- (get z-index a) (get z-index b))))))]
+          (into (conj focus uuid/zero)
+                (mapcat (partial cph/get-children-ids objects))
+                focus))]
 
     (cond-> objects
       (some? ids-with-children)
       (-> (select-keys ids-with-children)
-          (assoc-in [uuid/zero :shapes] (sort-by-z-index focus))))))
+          (assoc-in [uuid/zero :shapes] (cph/sort-z-index objects focus))))))
 
 (defn filter-not-focus
   [objects focus ids]

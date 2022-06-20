@@ -15,7 +15,7 @@
   [thumbnail? node-ref rendered? render-frame?]
 
   (let [;; when `true` the node is in memory
-        in-memory? (mf/use-var true)
+        in-memory? (mf/use-state true)
 
         ;; State just for re-rendering
         re-render  (mf/use-state 0)
@@ -32,7 +32,7 @@
                (reset! parent-ref node)
                (swap! re-render inc)))))]
 
-    (mf/use-effect
+    (mf/use-layout-effect
      (mf/deps thumbnail? render-frame?)
      (fn []
        (when (and (some? @parent-ref) (some? @node-ref) @rendered? (and thumbnail? (not render-frame?)))

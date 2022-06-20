@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
    [app.main.refs :as refs]
@@ -75,13 +76,6 @@
         [:span.label (tr "labels.show-comments-list")]]]]]))
 
 
-(defn- frame-contains?
-  [{:keys [x y width height]} {px :x py :y}]
-  (let [x2 (+ x width)
-        y2 (+ y height)]
-    (and (<= x px x2)
-         (<= y py y2))))
-
 (def threads-ref
   (l/derived :comment-threads st/state))
 
@@ -93,11 +87,11 @@
   (let [profile     (mf/deref refs/profile)
         threads-map (mf/deref threads-ref)
 
-        modifier1   (-> (gpt/point (:x frame) (:y frame))
-                        (gpt/negate)
-                        (gmt/translate-matrix))
+        frame-corner (-> frame :points gsh/points->selrect gpt/point)
+        modifier1   (-> (gmt/matrix)
+                        (gmt/translate (gpt/negate frame-corner)))
 
-        modifier2   (-> (gpt/point (:x frame) (:y frame))
+        modifier2   (-> (gpt/point frame-corner)
                         (gmt/translate-matrix))
 
         cstate      (mf/deref refs/comments-local)
@@ -105,7 +99,7 @@
         threads     (->> (vals threads-map)
                          (dcm/apply-filters cstate profile)
                          (filter (fn [{:keys [position]}]
-                                   (frame-contains? frame position))))
+                                   (gsh/has-point? frame position))))
 
         on-bubble-click
         (mf/use-callback
@@ -170,7 +164,6 @@
                                :on-submit on-draft-submit
                                :zoom zoom}])]]]))
 
-
 (mf/defc comments-sidebar
   [{:keys [users frame page]}]
   (let [profile     (mf/deref refs/profile)
@@ -179,7 +172,7 @@
         threads     (->> (vals threads-map)
                          (dcm/apply-filters cstate profile)
                          (filter (fn [{:keys [position]}]
-                                   (frame-contains? frame position))))]
+                                   (gsh/has-point? frame position))))]
     [:aside.settings-bar.settings-bar-right.comments-right-sidebar
      [:div.settings-bar-inside
       [:& wc/comments-sidebar {:users users :threads threads :page-id (:id page)}]]]))
