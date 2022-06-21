@@ -27,9 +27,10 @@
     height: 100%;
     display: flex;
     align-items: center;
+    width: 53px;
 
     .arrow {
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       border-radius: 12px;
@@ -48,6 +49,10 @@
         background: $color-primary;
         fill: $color-black;
       }
+    }
+
+    &:hover .arrow {
+      display: flex;
     }
   }
 
