@@ -14,11 +14,11 @@
   (:require
    ["react-dom/server" :as rds]
    [app.common.colors :as clr]
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.config :as cfg]
@@ -28,7 +28,6 @@
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as export]
-   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.image :as image]
@@ -61,13 +60,11 @@
 
 (defn- calculate-dimensions
   [objects]
-  (let [rect
+  (let [bounds
         (->> (cph/get-root-objects objects)
-             (map #(if (some? (:children-bounds %))
-                     (:children-bounds %)
-                     (gsh/points->selrect (:points %))))
-             (gsh/join-selrects))]
-    (-> rect
+             (map (partial gsb/get-object-bounds objects))
+             (gsh/join-rects))]
+    (-> bounds
         (update :x mth/finite 0)
         (update :y mth/finite 0)
         (update :width mth/finite 100000)
@@ -193,36 +190,12 @@
 
     (reduce updt-fn objects mod-ids)))
 
-(defn get-object-bounds
-  [objects object-id]
-  (let [object  (get objects object-id)
-        padding (filters/calculate-padding object true)
-        bounds  (-> (filters/get-filters-bounds object)
-                    (update :x - (:horizontal padding))
-                    (update :y - (:vertical padding))
-                    (update :width + (* 2 (:horizontal padding)))
-                    (update :height + (* 2 (:vertical padding))))]
-
-    (cond
-      (and (cph/group-shape? object) (:masked-group? object))
-      (get-object-bounds objects (-> object :shapes first))
-
-      (or (cph/group-shape? object)
-          (and (cph/frame-shape? object) (:show-content object)))
-      (->> (:shapes object)
-           (into [bounds] (map (partial get-object-bounds objects)))
-           (gsh/join-rects))
-
-      :else
-      bounds)))
-
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
   [{:keys [data thumbnails? render-embed? include-metadata?] :as props
     :or {render-embed? false include-metadata? false}}]
   (let [objects (:objects data)
         shapes  (cph/get-immediate-children objects)
-
         dim     (calculate-dimensions objects)
         vbox    (format-viewbox dim)
         bgcolor (dm/get-in data [:options :background] default-color)
@@ -248,7 +221,6 @@
         (when include-metadata?
           [:& export/export-page {:options (:options data)}])
 
-
         (let [shapes (->> shapes
                           (remove cph/frame-shape?)
                           (mapcat #(cph/get-children-with-self objects (:id %))))
@@ -262,20 +234,20 @@
 
 ;; Component that serves for render frame thumbnails, mainly used in
 ;; the viewer and handoff
-
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
   [{:keys [objects frame zoom show-thumbnails?] :or {zoom 1} :as props}]
   (let [frame-id          (:id frame)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
-        bounds (or (:children-bounds frame) (gsh/points->rect (:points frame)))
+        bounds (gsb/get-object-bounds objects frame)
 
-        modifier
-        (mf/with-memo [(:x bounds) (:y bounds)]
-          (-> (gpt/point (:x bounds) (:y bounds))
-              (gpt/negate)
-              (gmt/translate-matrix)))
+        ;; Bounds without shadows/blur will be the bounds of the thumbnail
+        bounds2 (gsb/get-object-bounds objects (dissoc frame :shadow :blur))
+
+        delta-bounds (gpt/point (:x bounds) (:y bounds))
+
+        modifier (gmt/translate-matrix (gpt/negate delta-bounds))
 
         children-ids
         (cph/get-children-ids objects frame-id)
@@ -293,19 +265,19 @@
               (assoc-in [:modifiers :displacement] modifier)
               (gsh/transform-shape)))
 
-        bounds
-        (if (:show-content frame)
-          (gsh/selection-rect (concat [frame] (->> children-ids (map (d/getf objects)))))
-          (-> frame :points gsh/points->rect))
-
         frame
         (cond-> frame
           (and (some? bounds) (nil? (:children-bounds bounds)))
-          (assoc :children-bounds bounds))
+          (assoc :children-bounds bounds2))
 
-        frame-wrapper
-        (mf/with-memo [objects]
-          (frame-wrapper-factory objects))
+        frame (-> frame
+                  (update-in [:children-bounds :x] - (:x delta-bounds))
+                  (update-in [:children-bounds :y] - (:y delta-bounds)))
+
+        shape-wrapper
+        (mf/use-memo
+         (mf/deps objects)
+         #(shape-wrapper-factory objects))
 
         width  (* (:width bounds) zoom)
         height (* (:height bounds) zoom)
@@ -321,13 +293,11 @@
             :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
             :fill "none"}
 
-      [:> shape-container {:shape frame}
-       [:& frame-wrapper {:shape frame :view-box vbox}]]]]))
+      [:& shape-wrapper {:shape frame}]]]))
 
 
 ;; Component for rendering a thumbnail of a single componenent. Mainly
 ;; used to render thumbnails on assets panel.
-
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [objects group zoom] :or {zoom 1} :as props}]
@@ -375,7 +345,7 @@
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects object-id render-texts? render-embed?]
+  [{:keys [objects object-id render-embed?]
     :or {render-embed? false}
     :as props}]
   (let [object  (get objects object-id)
@@ -383,30 +353,21 @@
                  (:hide-fill-on-export object)
                  (assoc :fills []))
 
-        {:keys [x y width height]}  (get-object-bounds objects object-id)
-        vbox   (dm/str x " " y " " width " " height)
 
-        frame-wrapper
-        (mf/with-memo [objects]
-          (frame-wrapper-factory objects))
-
-        group-wrapper
-        (mf/with-memo [objects]
-          (group-wrapper-factory objects))
+        bounds (gsb/get-object-bounds objects object)
+        vbox (format-viewbox bounds)
+        fonts (ff/shape->fonts object objects)
 
         shape-wrapper
         (mf/with-memo [objects]
-          (shape-wrapper-factory objects))
-
-        text-shapes   (sequence (filter cph/text-shape?) (vals objects))
-        render-texts? (and render-texts? (d/seek (comp nil? :position-data) text-shapes))]
+          (shape-wrapper-factory objects))]
 
     [:& (mf/provider export/include-metadata-ctx) {:value false}
      [:& (mf/provider embed/context) {:value render-embed?}
       [:svg {:id (dm/str "screenshot-" object-id)
              :view-box vbox
-             :width width
-             :height height
+             :width (:width bounds)
+             :height (:height bounds)
              :version "1.1"
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"
@@ -415,30 +376,8 @@
              :style {:-webkit-print-color-adjust :exact}
              :fill "none"}
 
-       (let [fonts (ff/shape->fonts object objects)]
-         [:& ff/fontfaces-style {:fonts fonts}])
-
-       (case (:type object)
-         :frame [:> shape-container {:shape object}
-                 [:& frame-wrapper {:shape object :view-box vbox}]]
-         :group [:> shape-container {:shape object}
-                 [:& group-wrapper {:shape object}]]
-         [:& shape-wrapper {:shape object}])]
-
-      ;; Auxiliary SVG for rendering text-shapes
-      (when render-texts?
-        (for [object text-shapes]
-          [:& (mf/provider muc/text-plain-colors-ctx) {:value true}
-           [:svg
-            {:id (dm/str "screenshot-text-" (:id object))
-             :view-box (dm/str "0 0 " (:width object) " " (:height object))
-             :width (:width object)
-             :height (:height object)
-             :version "1.1"
-             :xmlns "http://www.w3.org/2000/svg"
-             :xmlnsXlink "http://www.w3.org/1999/xlink"
-             :fill "none"}
-            [:& shape-wrapper {:shape (assoc object :x 0 :y 0)}]]]))]]))
+       [:& ff/fontfaces-style {:fonts fonts}]
+       [:& shape-wrapper {:shape object}]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SPRITES (DEBUG)

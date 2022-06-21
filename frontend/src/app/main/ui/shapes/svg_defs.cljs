@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.shapes.filters :as f]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.util.svg :as usvg]
    [rumext.alpha :as mf]))
 
@@ -87,7 +87,7 @@
                          (d/parse-double (get-in svg-def [:attrs :width]))
                          (d/parse-double (get-in svg-def [:attrs :height])))
           (gsh/transform-rect transform))
-      (f/get-filters-bounds shape))))
+      (gsb/get-shape-filter-bounds shape))))
 
 (mf/defc svg-defs [{:keys [shape render-id]}]
   (let [svg-defs (:svg-defs shape)

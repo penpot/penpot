@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.pages.helpers :as cph]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
@@ -45,7 +46,7 @@
                        :center (/ (:stroke-width shape 0) 2)
                        :outer (:stroke-width shape 0)
                        0)
-        margin (gsh/shape-stroke-margin shape stroke-width)
+        margin (gsb/shape-stroke-margin shape stroke-width)
         bounding-box (-> (gsh/points->selrect (:points shape))
                          (update :x - (+ stroke-width margin))
                          (update :y - (+ stroke-width margin))
