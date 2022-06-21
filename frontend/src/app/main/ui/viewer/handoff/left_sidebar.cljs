@@ -72,7 +72,7 @@
                                                      :icon-layer (= (:type item) :icon))
                               :on-click select-shape}
       [:& si/element-icon {:shape item}]
-      [:& layer-name {:shape item}]
+      [:& layer-name {:shape item :disabled-double-click true}]
 
       (when (and (not disable-collapse?) (:shapes item))
         [:span.toggle-content

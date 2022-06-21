@@ -32,13 +32,14 @@
   (l/derived (l/in [:workspace-local :shape-for-rename]) st/state))
 
 (mf/defc layer-name
-  [{:keys [shape on-start-edit on-stop-edit name-ref] :as props}]
+  [{:keys [shape on-start-edit  disabled-double-click on-stop-edit name-ref] :as props}]
   (let [local            (mf/use-state {})
         shape-for-rename (mf/deref shape-for-rename-ref)
 
         start-edit (fn []
-                     (on-start-edit)
-                     (swap! local assoc :edition true))
+                     (when (not disabled-double-click)
+                       (on-start-edit)
+                       (swap! local assoc :edition true)))
 
         accept-edit (fn []
                       (let [name-input (mf/ref-val name-ref)
