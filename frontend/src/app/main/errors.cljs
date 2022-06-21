@@ -19,6 +19,7 @@
    [app.util.globals :as glob]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
+   [app.util.storage :refer [storage]]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
@@ -50,9 +51,11 @@
 ;; here and not in app.main.errors because of circular dependency.
 (defmethod ptk/handle-error :authentication
   [_]
-  (let [msg (tr "errors.auth.unable-to-login")]
+  (let [msg (tr "errors.auth.unable-to-login")
+        uri (. (. js/document -location) -href)]
     (st/emit! (du/logout {:capture-redirect true}))
-    (ts/schedule 500 #(st/emit! (msg/warn msg)))))
+    (ts/schedule 500 #(st/emit! (msg/warn msg)))
+    (ts/schedule 1000 #(swap! storage assoc :redirect-url uri))))
 
 ;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From

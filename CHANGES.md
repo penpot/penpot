@@ -5,6 +5,7 @@
 ### :sparkles: New features
 
 - Allow for nested and rotated boards inside other boards and groups [Taiga #2874](https://tree.taiga.io/project/penpot/us/2874?milestone=319982)
+- View mode improvements to enable access and use in different conditions [Taiga #3023](https://tree.taiga.io/project/penpot/us/3023)
 
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
@@ -20,12 +21,13 @@
 - Multiple team invitations on onboarding [Taiga #3084](https://tree.taiga.io/project/penpot/us/3084)
 - Change text properties position at the sidebar [Taiga #3047](https://tree.taiga.io/project/penpot/us/3047)
 - Group assets by drag and drop [Taiga #2831](https://tree.taiga.io/project/penpot/us/2831)
-- View mode improvements to enable access and use in different conditions [Taiga #3023](https://tree.taiga.io/project/penpot/us/3023)
+- Navigate to the original link after log in [Taiga #3624](https://tree.taiga.io/project/penpot/issue/3624)
 
 ### :bug: Bugs fixed
 - Fix menu file not accessible in certain conditions [Taiga #3385](https://tree.taiga.io/project/penpot/issue/3385)
 - Remove deprecated menu options [Taiga #3333](https://tree.taiga.io/project/penpot/issue/3333)
 - Prototype connection should be under the rules [Taiga #3384](https://tree.taiga.io/project/penpot/issue/3384)
+- Fix problem with empty text boxes events [Taiga #3627](https://tree.taiga.io/project/penpot/issue/3627)
 
 
 ## 1.13.5-beta
