@@ -1596,6 +1596,7 @@
                                   :editing-id editing-id
                                   :local-data local-data
                                   :on-asset-click on-asset-click
+                                  :on-context-menu on-context-menu
                                   :selected-typographies-full selected-typographies-full
                                   :selected-typographies-paths selected-typographies-paths
                                   :move-typography move-typography}])])
