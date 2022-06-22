@@ -657,7 +657,10 @@
    (reduce-objects objects nil reducer-fn init-val))
 
   ([objects check-children? reducer-fn init-val]
-   (let [root-children (get-in objects [uuid/zero :shapes])]
+   (reduce-objects objects check-children? uuid/zero reducer-fn init-val))
+
+  ([objects check-children? root-id reducer-fn init-val]
+   (let [root-children (get-in objects [root-id :shapes])]
      (if (empty? root-children)
        init-val
 

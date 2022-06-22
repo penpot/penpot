@@ -359,7 +359,6 @@
 
     (p/let [params {:file-id file-id
                     :page-id page-id
-                    :render-texts true
                     :render-embed true
                     :object-id (mapv :id objects)
                     :route "objects"}

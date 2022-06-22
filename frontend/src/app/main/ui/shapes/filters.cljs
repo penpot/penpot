@@ -8,8 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.uuid :as uuid]
    [app.util.color :as color]
    [cuerdas.core :as str]
@@ -108,34 +107,6 @@
              :in2 filter-in
              :result filter-id}])
 
-(defn filter-bounds [shape filter-entry]
-  (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [offset-x offset-y blur spread] :or {offset-x 0 offset-y 0 blur 0 spread 0}} (:params filter-entry)
-        filter-x (min x (+ x offset-x (- spread) (- blur) -5))
-        filter-y (min y (+ y offset-y (- spread) (- blur) -5))
-        filter-width (+ width (mth/abs offset-x) (* spread 2) (* blur 2) 10)
-        filter-height (+ height (mth/abs offset-y) (* spread 2) (* blur 2) 10)]
-    {:x1 filter-x
-     :y1 filter-y
-     :x2 (+ filter-x filter-width)
-     :y2 (+ filter-y filter-height)}))
-
-(defn blur-filters [type value]
-  (->> [value]
-       (remove :hidden)
-       (filter #(= (:type %) type))
-       (map #(hash-map :id (str "filter_" (:id %))
-                       :type (:type %)
-                       :params %))))
-
-(defn shadow-filters [type filters]
-  (->> filters
-       (remove :hidden)
-       (filter #(= (:style %) type))
-       (map #(hash-map :id (str "filter_" (:id %))
-                       :type (:style %)
-                       :params %))))
-
 (mf/defc filter-entry [{:keys [entry]}]
   (let [props #js {:filter-id (:id entry)
                    :filter-in (:filter-in entry)
@@ -148,84 +119,6 @@
       :image-fix [:> image-fix-filter props]
       :blend-filters [:> blend-filters props])))
 
-(defn shape->filters
-  [shape]
-  (d/concat-vec
-   [{:id "BackgroundImageFix" :type :image-fix}]
-
-   ;; Background blur won't work in current SVG specification
-   ;; We can revisit this in the future
-   #_(->> shape :blur   (blur-filters   :background-blur))
-
-   (->> shape :shadow (shadow-filters :drop-shadow))
-   [{:id "shape" :type :blend-filters}]
-   (->> shape :shadow (shadow-filters :inner-shadow))
-   (->> shape :blur   (blur-filters   :layer-blur))))
-
-(defn get-filters-bounds
-  ([shape]
-   (let [filters (shape->filters shape)
-         blur-value (or (-> shape :blur :value) 0)]
-     (get-filters-bounds shape filters blur-value)))
-
-  ([shape filters blur-value]
-
-   (let [svg-root? (and (= :svg-raw (:type shape)) (not= :svg (get-in shape [:content :tag])))
-         {:keys [x y width height]} (:selrect shape)]
-     (if svg-root?
-       ;; When is a raw-svg but not the root we use the whole svg as bound for the filter. Is the maximum
-       ;; we're allowed to display
-       {:x x :y y :width width :height height}
-
-       ;; Otherwise we calculate the bound
-       (let [filter-bounds (->> filters
-                                (filter #(= :drop-shadow (:type %)))
-                                (map (partial filter-bounds shape)))
-             ;; We add the selrect so the minimum size will be the selrect
-             filter-bounds (conj filter-bounds (-> shape :points gsh/points->selrect))
-
-             x1 (apply min (map :x1 filter-bounds))
-             y1 (apply min (map :y1 filter-bounds))
-             x2 (apply max (map :x2 filter-bounds))
-             y2 (apply max (map :y2 filter-bounds))
-
-             x1 (- x1 (* blur-value 2))
-             x2 (+ x2 (* blur-value 2))
-             y1 (- y1 (* blur-value 2))
-             y2 (+ y2 (* blur-value 2))]
-
-         ;; We should move the frame filter coordinates because they should be
-         ;; relative with the frame. By default they come as absolute
-         {:x x1
-          :y y1
-          :width (- x2 x1)
-          :height (- y2 y1)})))))
-
-(defn calculate-padding
-  ([shape]
-   (calculate-padding shape false))
-
-  ([shape ignore-margin?]
-   (let [stroke-width (apply max 0 (map #(case (:stroke-alignment % :center)
-                                           :center (/ (:stroke-width % 0) 2)
-                                           :outer (:stroke-width % 0)
-                                           0) (:strokes shape)))
-
-         margin (if ignore-margin?
-                  0
-                  (apply max 0 (map #(gsh/shape-stroke-margin % stroke-width) (:strokes shape))))
-
-         shadow-width (apply max 0 (map #(case (:style % :drop-shadow)
-                                           :drop-shadow (+ (mth/abs (:offset-x %)) (* (:spread %) 2) (* (:blur %) 2) 10)
-                                           0) (:shadow shape)))
-
-         shadow-height (apply max 0 (map #(case (:style % :drop-shadow)
-                                            :drop-shadow (+ (mth/abs (:offset-y %)) (* (:spread %) 2) (* (:blur %) 2) 10)
-                                            0) (:shadow shape)))]
-
-     {:horizontal (+ stroke-width margin shadow-width)
-      :vertical (+ stroke-width margin shadow-height)})))
-
 (defn change-filter-in
   "Adds the previous filter as `filter-in` parameter"
   [filters]
@@ -234,9 +127,9 @@
 (mf/defc filters
   [{:keys [filter-id shape]}]
 
-  (let [filters       (-> shape shape->filters change-filter-in)
-        bounds        (get-filters-bounds shape filters (or (-> shape :blur :value) 0))
-        padding       (calculate-padding shape)
+  (let [filters       (-> shape gsb/shape->filters change-filter-in)
+        bounds        (gsb/get-rect-filter-bounds (:selrect shape) filters (or (-> shape :blur :value) 0))
+        padding       (gsb/calculate-padding shape)
         selrect       (:selrect shape)
         filter-x      (/ (- (:x bounds) (:x selrect) (:horizontal padding)) (:width selrect))
         filter-y      (/ (- (:y bounds) (:y selrect) (:vertical padding)) (:height selrect))
