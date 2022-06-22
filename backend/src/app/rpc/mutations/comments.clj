@@ -26,19 +26,21 @@
 
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
+(s/def ::share-id (s/nilable ::us/uuid))
 (s/def ::profile-id ::us/uuid)
 (s/def ::position ::gpt/point)
 (s/def ::content ::us/string)
 
 (s/def ::create-comment-thread
-  (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id]))
+  (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::create-comment-thread
   {::retry/max-retries 3
    ::retry/matches retry/conflict-db-insert?}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (files/check-read-permissions! conn profile-id file-id)
+    (files/check-comment-permissions! conn profile-id file-id share-id)
     (create-comment-thread conn params)))
 
 (defn- retrieve-next-seqn
@@ -92,18 +94,20 @@
 ;; --- Mutation: Update Comment Thread Status
 
 (s/def ::id ::us/uuid)
+(s/def ::share-id (s/nilable ::us/uuid))
 
 (s/def ::update-comment-thread-status
-  (s/keys :req-un [::profile-id ::id]))
+  (s/keys :req-un [::profile-id ::id]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread-status
-  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [cthr (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not cthr
         (ex/raise :type :not-found))
 
-      (files/check-read-permissions! conn profile-id (:file-id cthr))
+      (files/check-comment-permissions! conn profile-id (:file-id cthr) share-id)
       (upsert-comment-thread-status! conn profile-id (:id cthr)))))
 
 (def sql:upsert-comment-thread-status
@@ -122,16 +126,17 @@
 
 (s/def ::is-resolved ::us/boolean)
 (s/def ::update-comment-thread
-  (s/keys :req-un [::profile-id ::id ::is-resolved]))
+  (s/keys :req-un [::profile-id ::id ::is-resolved]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread
-  [{:keys [pool] :as cfg} {:keys [profile-id id is-resolved] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id id is-resolved share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not thread
         (ex/raise :type :not-found))
 
-      (files/check-read-permissions! conn profile-id (:file-id thread))
+      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
 
       (db/update! conn :comment-thread
                   {:is-resolved is-resolved}
@@ -142,10 +147,11 @@
 ;; --- Mutation: Add Comment
 
 (s/def ::add-comment
-  (s/keys :req-un [::profile-id ::thread-id ::content]))
+  (s/keys :req-un [::profile-id ::thread-id ::content]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::add-comment
-  [{:keys [pool] :as cfg} {:keys [profile-id thread-id content] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id thread-id content share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (-> (db/get-by-id conn :comment-thread thread-id {:for-update true})
                      (comments/decode-row))
@@ -155,7 +161,7 @@
       (when-not thread (ex/raise :type :not-found))
 
       ;; Permission Checks
-      (files/check-read-permissions! conn profile-id (:file-id thread))
+      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
 
       ;; Update the page-name cachedattribute on comment thread table.
       (when (not= pname (:page-name thread))
@@ -199,10 +205,11 @@
 ;; --- Mutation: Update Comment
 
 (s/def ::update-comment
-  (s/keys :req-un [::profile-id ::id ::content]))
+  (s/keys :req-un [::profile-id ::id ::content]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment
-  [{:keys [pool] :as cfg} {:keys [profile-id id content] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id id content share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [comment (db/get-by-id conn :comment id {:for-update true})
           _       (when-not comment (ex/raise :type :not-found))
@@ -210,7 +217,7 @@
           _       (when-not thread (ex/raise :type :not-found))
           pname   (retrieve-page-name conn thread)]
 
-      (files/check-read-permissions! conn profile-id (:file-id thread))
+      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
 
       ;; Don't allow edit comments to not owners
       (when-not (= (:owner-id thread) profile-id)

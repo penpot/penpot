@@ -387,6 +387,9 @@
 (def users
   (l/derived :users st/state))
 
+(def current-file-comments-users
+  (l/derived :current-file-comments-users st/state))
+
 (def viewer-fullscreen?
   (l/derived (fn [state]
                (dm/get-in state [:viewer-local :fullscreen?]))

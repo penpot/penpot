@@ -33,7 +33,9 @@
    :selected #{}
    :collapsed #{}
    :overlays []
-   :hover nil})
+   :hover nil
+   :share-id ""
+   :file-comments-users []})
 
 (declare fetch-comment-threads)
 (declare fetch-bundle)
@@ -50,7 +52,7 @@
           :opt-un [::share-id ::page-id]))
 
 (defn initialize
-  [{:keys [file-id] :as params}]
+  [{:keys [file-id share-id] :as params}]
   (us/assert ::initialize-params params)
   (ptk/reify ::initialize
     ptk/UpdateEvent
@@ -61,7 +63,8 @@
                   (fn [lstate]
                     (if (nil? lstate)
                       default-local-state
-                      lstate)))))
+                      lstate)))
+          (assoc-in [:viewer-local :share-id] share-id)))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -138,7 +141,7 @@
             (rx/of (go-to-frame-auto))))))))
 
 (defn fetch-comment-threads
-  [{:keys [file-id page-id] :as params}]
+  [{:keys [file-id page-id share-id] :as params}]
   (letfn [(fetched [data state]
             (->> data
                  (filter #(= page-id (:page-id %)))
@@ -153,7 +156,7 @@
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent
       (watch [_ _ _]
-        (->> (rp/query :comment-threads {:file-id file-id})
+        (->> (rp/query :comment-threads {:file-id file-id :share-id share-id})
              (rx/map #(partial fetched %))
              (rx/catch on-error))))))
 

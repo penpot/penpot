@@ -31,7 +31,7 @@
         show-dropdown  (mf/use-fn #(reset! show-dropdown? true))
         hide-dropdown  (mf/use-fn #(reset! show-dropdown? false))
         threads-map    (mf/deref refs/comment-threads)
-        users          (mf/deref refs/users)
+        users          (mf/deref refs/current-file-comments-users)
 
         tgroups        (->> (vals threads-map)
                             (sort-by :modified-at)

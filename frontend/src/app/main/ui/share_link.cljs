@@ -30,8 +30,6 @@
     :who-comment who-comment
     :who-inspect who-inspect})
 
-
-
 (mf/defc share-link-dialog
   {::mf/register modal/components
    ::mf/register-as :share-link}

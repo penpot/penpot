@@ -436,7 +436,6 @@
              (rx/map (constantly (fetch-profile)))
              (rx/catch on-error))))))
 
-
 (defn fetch-users
   [{:keys [team-id] :as params}]
   (us/assert ::us/uuid team-id)
@@ -449,6 +448,20 @@
       (watch [_ _ _]
         (->> (rp/query :team-users {:team-id team-id})
              (rx/map #(partial fetched %)))))))
+
+(defn fetch-file-comments-users
+  [{:keys [team-id] :as params}]
+  (us/assert ::us/uuid team-id)
+  (letfn [(fetched [users state]
+            (->> users
+                 (d/index-by :id)
+                 (assoc state :file-comments-users)))]
+    (ptk/reify ::fetch-team-users
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [share-id (-> state :viewer-local :share-id)]
+          (->> (rp/query :file-comments-users {:team-id team-id :share-id share-id})
+               (rx/map #(partial fetched %))))))))
 
 ;; --- EVENT: request-account-deletion
 

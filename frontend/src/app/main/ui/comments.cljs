@@ -345,7 +345,6 @@
 (mf/defc comment-thread
   [{:keys [item users on-click] :as props}]
   (let [owner (get users (:owner-id item))
-
         on-click*
         (mf/use-callback
          (mf/deps item)

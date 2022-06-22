@@ -98,7 +98,9 @@
        (some? perms) perms
        (some? ldata) {:type :share-link
                       :can-read true
-                      :flags (:flags ldata)}))))
+                      :is-logged (some? profile-id)
+                      :who-comment (:who-comment ldata)
+                      :who-inspect (:who-inspect ldata)}))))
 
 (def has-edit-permissions?
   (perms/make-edition-predicate-fn get-permissions))
@@ -106,11 +108,25 @@
 (def has-read-permissions?
   (perms/make-read-predicate-fn get-permissions))
 
+(def has-comment-permissions?
+  (perms/make-comment-predicate-fn get-permissions))
+
 (def check-edition-permissions!
   (perms/make-check-fn has-edit-permissions?))
 
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
+
+;; A user has comment permissions if she has read permissions, or comment permissions
+(defn check-comment-permissions!
+  [conn profile-id file-id share-id]
+   (let [can-read (has-read-permissions? conn profile-id file-id)
+         can-comment  (has-comment-permissions? conn profile-id file-id share-id)
+         ]
+     (when-not (or can-read can-comment)
+       (ex/raise :type :not-found
+                 :code :object-not-found
+                 :hint "not found"))))
 
 ;; --- Query: Files search
 
