@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-05-25 15:16+0000\n"
-"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
+"PO-Revision-Date: 2022-06-23 12:19+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1319,7 +1319,7 @@ msgstr "Esta página no existe o no tienes permisos para verla."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
-msgstr "¡Huy!"
+msgstr "¡Uy!"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-files"
