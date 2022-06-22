@@ -14,7 +14,6 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.storage.db :as sdb]
    [app.storage.fs :as sfs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
@@ -32,14 +31,12 @@
 
 (s/def ::s3 ::ss3/backend)
 (s/def ::fs ::sfs/backend)
-(s/def ::db ::sdb/backend)
 
 (s/def ::backends
   (s/map-of ::us/keyword
             (s/nilable
              (s/or :s3 ::ss3/backend
-                   :fs ::sfs/backend
-                   :db ::sdb/backend))))
+                   :fs ::sfs/backend))))
 
 (defmethod ig/pre-init-spec ::storage [_]
   (s/keys :req-un [::db/pool ::wrk/executor ::backends]))
@@ -109,7 +106,7 @@
           result (or result
                      (-> (db/insert! conn :storage-object
                                      {:id id
-                                      :size (count content)
+                                      :size (impl/get-size content)
                                       :backend (name backend)
                                       :metadata (db/tjson mdata)
                                       :deleted-at expired-at
@@ -263,7 +260,8 @@
 ;; A task responsible to permanently delete already marked as deleted
 ;; storage files. The storage objects are practically never marked to
 ;; be deleted directly by the api call. The touched-gc is responsible
-;; of collecting the usage of the object and mark it as deleted.
+;; of collecting the usage of the object and mark it as deleted. Only
+;; the TMP files are are created with expiration date in future.
 
 (declare sql:retrieve-deleted-objects-chunk)
 

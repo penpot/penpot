@@ -12,14 +12,17 @@
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.storage.impl :as impl]
+   [app.storage.tmp :as tmp]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
+   [datoteka.core :as fs]
    [integrant.core :as ig]
    [promesa.core :as p]
    [promesa.exec :as px])
   (:import
+   java.io.FilterInputStream
    java.io.InputStream
    java.nio.ByteBuffer
    java.time.Duration
@@ -30,6 +33,7 @@
    org.reactivestreams.Subscription
    software.amazon.awssdk.core.ResponseBytes
    software.amazon.awssdk.core.async.AsyncRequestBody
+   software.amazon.awssdk.core.async.AsyncResponseTransformer
    software.amazon.awssdk.core.client.config.ClientAsyncConfiguration
    software.amazon.awssdk.core.client.config.SdkAdvancedAsyncClientOption
    software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
@@ -107,7 +111,16 @@
 
 (defmethod impl/get-object-data :s3
   [backend object]
-  (get-object-data backend object))
+  (letfn [(no-such-key? [cause]
+            (instance? software.amazon.awssdk.services.s3.model.NoSuchKeyException cause))
+          (handle-not-found [cause]
+            (ex/raise :type :not-found
+                      :code :object-not-found
+                      :hint "s3 object not found"
+                      :cause cause))]
+
+    (-> (get-object-data backend object)
+        (p/catch no-such-key? handle-not-found))))
 
 (defmethod impl/get-object-bytes :s3
   [backend object]
@@ -204,7 +217,7 @@
     (reify
       AsyncRequestBody
       (contentLength [_]
-        (Optional/of (long (count content))))
+        (Optional/of (long (impl/get-size content))))
 
       (^void subscribe [_ ^Subscriber s]
        (let [thread (Thread. #(writer-fn s))]
@@ -216,7 +229,6 @@
                            (cancel [_]
                              (.interrupt thread)
                              (.release sem 1))
-
                            (request [_ n]
                              (.release sem (int n))))))))))
 
@@ -238,16 +250,31 @@
                   ^AsyncRequestBody content))))
 
 (defn get-object-data
-  [{:keys [client bucket prefix]} {:keys [id]}]
-  (p/let [gor (.. (GetObjectRequest/builder)
-                  (bucket bucket)
-                  (key (str prefix (impl/id->path id)))
-                  (build))
-          obj (.getObject ^S3AsyncClient client ^GetObjectRequest gor)
-          ;; rsp (.response ^ResponseInputStream obj)
-          ;; len (.contentLength ^GetObjectResponse rsp)
-          ]
-    (io/input-stream obj)))
+  [{:keys [client bucket prefix]} {:keys [id size]}]
+  (let [gor (.. (GetObjectRequest/builder)
+                (bucket bucket)
+                (key (str prefix (impl/id->path id)))
+                (build))]
+
+    ;; If the file size is greater than 2MiB then stream the content
+    ;; to the filesystem and then read with buffered inputstream; if
+    ;; not, read the contento into memory using bytearrays.
+    (if (> size (* 1024 1024 2))
+      (p/let [path (tmp/tempfile :prefix "penpot.storage.s3.")
+              rxf  (AsyncResponseTransformer/toFile path)
+              _    (.getObject ^S3AsyncClient client
+                               ^GetObjectRequest gor
+                               ^AsyncResponseTransformer rxf)]
+        (proxy [FilterInputStream] [(io/input-stream path)]
+          (close []
+            (fs/delete path)
+            (proxy-super close))))
+
+      (p/let [rxf (AsyncResponseTransformer/toBytes)
+              obj (.getObject ^S3AsyncClient client
+                              ^GetObjectRequest gor
+                              ^AsyncResponseTransformer rxf)]
+        (.asInputStream ^ResponseBytes obj)))))
 
 (defn get-object-bytes
   [{:keys [client bucket prefix]} {:keys [id]}]
@@ -255,7 +282,10 @@
                   (bucket bucket)
                   (key (str prefix (impl/id->path id)))
                   (build))
-          obj (.getObjectAsBytes ^S3AsyncClient client ^GetObjectRequest gor)]
+          rxf (AsyncResponseTransformer/toBytes)
+          obj (.getObjectAsBytes ^S3AsyncClient client
+                                 ^GetObjectRequest gor
+                                 ^AsyncResponseTransformer rxf)]
     (.asByteArray ^ResponseBytes obj)))
 
 (def default-max-age
