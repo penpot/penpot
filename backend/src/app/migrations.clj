@@ -226,6 +226,12 @@
 
    {:name "0072-mod-file-object-thumbnail-table"
     :fn (mg/resource "app/migrations/sql/0072-mod-file-object-thumbnail-table.sql")}
+
+   {:name "0073-mod-file-media-object-constraints"
+    :fn (mg/resource "app/migrations/sql/0073-mod-file-media-object-constraints.sql")}
+
+   {:name "0074-mod-file-library-rel-constraints"
+    :fn (mg/resource "app/migrations/sql/0074-mod-file-library-rel-constraints.sql")}
    ])
 
 

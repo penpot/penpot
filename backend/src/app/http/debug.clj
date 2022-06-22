@@ -5,35 +5,38 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.http.debug
+  (:refer-clojure :exclude [error-handler])
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.pprint :as pp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.db.sql :as sql]
-   [app.rpc.mutations.files :as m.files]
+   [app.http.middleware :as mw]
+   [app.rpc.commands.binfile :as binf]
+   [app.rpc.mutations.files :refer [create-file]]
    [app.rpc.queries.profile :as profile]
    [app.util.blob :as blob]
+   [app.util.bytes :as bs]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]
    [emoji.core :as emj]
-   [fipp.edn :as fpp]
    [integrant.core :as ig]
    [markdown.core :as md]
    [markdown.transformers :as mdt]
-   [promesa.core :as p]
-   [promesa.exec :as px]
    [yetti.request :as yrq]
    [yetti.response :as yrs]))
 
 ;; (selmer.parser/cache-off!)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn authorized?
   [pool {:keys [profile-id]}]
@@ -42,7 +45,22 @@
             admins  (or (cf/get :admins) #{})]
         (contains? admins (:email profile)))))
 
-(defn index
+(defn prepare-response
+  [body]
+  (let [headers {"content-type" "application/transit+json"}]
+    (yrs/response :status 200 :body body :headers headers)))
+
+(defn prepare-download-response
+  [body filename]
+  (let [headers {"content-disposition" (str "attachment; filename=" filename)
+                 "content-type" "application/octet-stream"}]
+    (yrs/response :status 200 :body body :headers headers)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INDEX
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn index-handler
   [{:keys [pool]} request]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
@@ -52,6 +70,9 @@
                 :body    (-> (io/resource "templates/debug.tmpl")
                              (tmpl/render {}))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FILE CHANGES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def sql:retrieve-range-of-changes
   "select revn, changes from file_change where file_id=? and revn >= ? and revn <= ? order by revn")
@@ -59,28 +80,16 @@
 (def sql:retrieve-single-change
   "select revn, changes, data from file_change where file_id=? and revn = ?")
 
-(defn prepare-response
-  [{:keys [params] :as request} body filename]
-  (when-not body
-    (ex/raise :type :not-found
-              :code :enpty-data
-              :hint "empty response"))
-
-  (cond-> (yrs/response :status  200
-                        :body    body
-                        :headers {"content-type" "application/transit+json"})
-    (contains? params :download)
-    (update :headers assoc "content-disposition" (str "attachment; filename=" filename))))
-
 (defn- retrieve-file-data
-  [{:keys [pool]} {:keys [params] :as request}]
+  [{:keys [pool]} {:keys [params profile-id] :as request}]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
 
-  (let [file-id  (some-> (get-in request [:params :file-id]) uuid/uuid)
-        revn     (some-> (get-in request [:params :revn]) d/parse-integer)
+  (let [file-id  (some-> params :file-id parse-uuid)
+        revn     (some-> params :revn parse-long)
         filename (str file-id)]
+
     (when-not file-id
       (ex/raise :type :validation
                 :code :missing-arguments))
@@ -88,35 +97,63 @@
     (let [data (if (integer? revn)
                  (some-> (db/exec-one! pool [sql:retrieve-single-change file-id revn]) :data)
                  (some-> (db/get-by-id pool :file file-id) :data))]
-      (if (contains? params :download)
-        (-> (prepare-response request data filename)
-            (update :headers assoc "content-type" "application/octet-stream"))
-        (prepare-response request (some-> data blob/decode) filename)))))
+
+      (when-not data
+        (ex/raise :type :not-found
+                  :code :enpty-data
+                  :hint "empty response"))
+      (cond
+        (contains? params :download)
+        (prepare-download-response data filename)
+
+        (contains? params :clone)
+        (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
+              data       (some-> data blob/decode)]
+          (create-file pool {:id (uuid/next)
+                             :name (str "Cloned file: " filename)
+                             :project-id project-id
+                             :profile-id profile-id
+                             :data data})
+          (yrs/response 201 "OK CREATED"))
+
+        :else
+        (prepare-response (some-> data blob/decode))))))
+
+(defn- is-file-exists?
+  [pool id]
+  (let [sql "select exists (select 1 from file where id=?) as exists;"]
+    (-> (db/exec-one! pool [sql id]) :exists)))
 
 (defn- upload-file-data
   [{:keys [pool]} {:keys [profile-id params] :as request}]
   (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
-        data       (some-> params :file :path fs/slurp-bytes blob/decode)]
+        data       (some-> params :file :path bs/read-as-bytes blob/decode)]
 
     (if (and data project-id)
-      (let [fname (str "imported-file-" (dt/now))
-            file-id (try
-                      (uuid/uuid (-> params :file :filename))
-                      (catch Exception _ (uuid/next)))
-            file (db/exec-one! pool (sql/select :file {:id file-id}))]
-        (if file
-          (db/update! pool :file
-                      {:data (blob/encode data)}
-                      {:id file-id})
-          (m.files/create-file pool {:id file-id
-                                     :name fname
-                                     :project-id project-id
-                                     :profile-id profile-id
-                                     :data data}))
-        (yrs/response 200 "OK"))
+      (let [fname      (str "Imported file *: " (dt/now))
+            overwrite? (contains? params :overwrite?)
+            file-id    (or (and overwrite? (ex/ignoring (-> params :file :filename parse-uuid)))
+                           (uuid/next))]
+
+        (if (and overwrite? file-id
+                 (is-file-exists? pool file-id))
+          (do
+            (db/update! pool :file
+                        {:data (blob/encode data)}
+                        {:id file-id})
+            (yrs/response 200 "OK UPDATED"))
+
+          (do
+            (create-file pool {:id file-id
+                               :name fname
+                               :project-id project-id
+                               :profile-id profile-id
+                               :data data})
+            (yrs/response 201 "OK CREATED"))))
+
       (yrs/response 500 "ERROR"))))
 
-(defn file-data
+(defn file-data-handler
   [cfg request]
   (case (yrq/method request)
     :get (retrieve-file-data cfg request)
@@ -124,43 +161,47 @@
     (ex/raise :type :http
               :code :method-not-found)))
 
-(defn retrieve-file-changes
-  [{:keys [pool]} request]
+(defn file-changes-handler
+  [{:keys [pool]} {:keys [params] :as request}]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
 
-  (let [file-id  (some-> (get-in request [:params :id]) uuid/uuid)
-        revn     (or (get-in request [:params :revn]) "latest")
-        filename (str file-id)]
+  (letfn [(retrieve-changes [file-id revn]
+            (if (str/includes? revn ":")
+              (let [[start end] (->> (str/split revn #":")
+                                     (map str/trim)
+                                     (map parse-long))]
+                (some->> (db/exec! pool [sql:retrieve-range-of-changes file-id start end])
+                         (map :changes)
+                         (map blob/decode)
+                         (mapcat identity)
+                         (vec)))
 
-    (when (or (not file-id) (not revn))
-      (ex/raise :type :validation
-                :code :invalid-arguments
-                :hint "missing arguments"))
+              (if-let [revn (parse-long revn)]
+                (let [item (db/exec-one! pool [sql:retrieve-single-change file-id revn])]
+                  (some-> item :changes blob/decode vec))
+                (ex/raise :type :validation :code :invalid-arguments))))]
 
-    (cond
-      (d/num-string? revn)
-      (let [item (db/exec-one! pool [sql:retrieve-single-change file-id (d/parse-integer revn)])]
-        (prepare-response request (some-> item :changes blob/decode vec) filename))
+    (let [file-id  (some-> params :id parse-uuid)
+          revn     (or (some-> params :revn parse-long) "latest")
+          filename (str file-id)]
 
-      (str/includes? revn ":")
-      (let [[start end] (->> (str/split revn #":")
-                             (map str/trim)
-                             (map d/parse-integer))
-            items       (db/exec! pool [sql:retrieve-range-of-changes file-id start end])]
-        (prepare-response request
-                          (some->> items
-                                   (map :changes)
-                                   (map blob/decode)
-                                   (mapcat identity)
-                                   (vec))
-                          filename))
-      :else
-      (ex/raise :type :validation :code :invalid-arguments))))
+      (when (or (not file-id) (not revn))
+        (ex/raise :type :validation
+                  :code :invalid-arguments
+                  :hint "missing arguments"))
 
+      (let [data (retrieve-changes file-id revn)]
+        (if (contains? params :download)
+          (prepare-download-response data filename)
+          (prepare-response data))))))
 
-(defn retrieve-error
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ERROR BROWSER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn error-handler
   [{:keys [pool]} request]
   (letfn [(parse-id [request]
             (let [id (get-in request [:path-params :id])
@@ -176,9 +217,8 @@
             (let [context (dissoc report
                                   :trace :cause :params :data :spec-problems
                                   :spec-explain :spec-value :error :explain :hint)
-                  params  {:context (with-out-str
-                                      (fpp/pprint context {:width 200}))
-                           :hint    (:hint report)
+                  params  {:context       (pp/pprint-str context :width 200)
+                           :hint          (:hint report)
                            :spec-explain  (:spec-explain report)
                            :spec-problems (:spec-problems report)
                            :spec-value    (:spec-value report)
@@ -206,7 +246,7 @@
 (def sql:error-reports
   "select id, created_at from server_error_report order by created_at desc limit 100")
 
-(defn retrieve-error-list
+(defn error-list-handler
   [{:keys [pool]} request]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
@@ -219,14 +259,88 @@
                   :headers {"content-type" "text/html; charset=utf-8"
                             "x-robots-tag" "noindex"})))
 
-(defn health-check
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; EXPORT/IMPORT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn export-handler
+  [{:keys [pool] :as cfg} {:keys [params profile-id] :as request}]
+  (let [file-id (some-> params :file-id parse-uuid)
+        libs?   (contains? params :includelibs)
+        clone?  (contains? params :clone)]
+
+    (when-not file-id
+      (ex/raise :type :validation
+                :code :missing-arguments))
+
+    (let [path (-> cfg
+                   (assoc ::binf/file-id file-id)
+                   (assoc ::binf/include-libraries? libs?)
+                   (binf/export!))]
+      (if clone?
+        (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)]
+          (binf/import!
+           (assoc cfg
+                  ::binf/input path
+                  ::binf/overwrite? false
+                  ::binf/profile-id profile-id
+                  ::binf/project-id project-id))
+
+          (yrs/response
+           :status  200
+           :headers {"content-type" "text/plain"}
+           :body    "OK CLONED"))
+
+        (yrs/response
+         :status  200
+         :headers {"content-type" "application/octet-stream"
+                   "content-disposition" (str "attachmen; filename=" file-id ".penpot")}
+         :body    (io/input-stream path))))))
+
+
+(defn import-handler
+  [{:keys [pool] :as cfg} {:keys [params profile-id] :as request}]
+  (when-not (contains? params :file)
+    (ex/raise :type :validation
+              :code :missing-upload-file
+              :hint "missing upload file"))
+
+  (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
+        overwrite? (contains? params :overwrite)
+        migrate? (contains? params :migrate)
+        ignore-index-errors? (contains? params :ignore-index-errors)]
+
+    (when-not project-id
+      (ex/raise :type :validation
+                :code :missing-project
+                :hint "project not found"))
+
+    (binf/import!
+     (assoc cfg
+            ::binf/input (-> params :file :path)
+            ::binf/overwrite? overwrite?
+            ::binf/migrate? migrate?
+            ::binf/ignore-index-errors? ignore-index-errors?
+            ::binf/profile-id profile-id
+            ::binf/project-id project-id))
+
+    (yrs/response
+     :status  200
+     :headers {"content-type" "text/plain"}
+     :body    "OK")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; OTHER SMALL VIEWS/HANDLERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn health-handler
   "Mainly a task that performs a health check."
   [{:keys [pool]} _]
   (db/with-atomic [conn pool]
     (db/exec-one! conn ["select count(*) as count from server_prop;"])
     (yrs/response 200 "OK")))
 
-(defn changelog
+(defn changelog-handler
   [_ _]
   (letfn [(transform-emoji [text state]
             [(emj/emojify text) state])
@@ -238,22 +352,39 @@
                     :body (-> clog slurp md->html))
       (yrs/response :status 404 :body "NOT FOUND"))))
 
-(defn- wrap-async
-  [{:keys [executor] :as cfg} f]
-  (fn [request respond raise]
-    (-> (px/submit! executor #(f cfg request))
-        (p/then respond)
-        (p/catch raise))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INIT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/pre-init-spec ::handlers [_]
-  (s/keys :req-un [::db/pool ::wrk/executor]))
+(def with-authorization
+  {:compile
+   (fn [& _]
+     (fn [handler pool]
+       (fn [request respond raise]
+         (if (authorized? pool request)
+           (handler request respond raise)
+           (raise (ex/error :type :authentication
+                            :code :only-admins-allowed))))))})
 
-(defmethod ig/init-key ::handlers
-  [_ cfg]
-  {:index (wrap-async cfg index)
-   :health-check (wrap-async cfg health-check)
-   :retrieve-file-changes (wrap-async cfg retrieve-file-changes)
-   :retrieve-error (wrap-async cfg retrieve-error)
-   :retrieve-error-list (wrap-async cfg retrieve-error-list)
-   :file-data (wrap-async cfg file-data)
-   :changelog (wrap-async cfg changelog)})
+
+(s/def ::session map?)
+
+(defmethod ig/pre-init-spec ::routes [_]
+  (s/keys :req-un [::db/pool ::wrk/executor ::session]))
+
+(defmethod ig/init-key ::routes
+  [_ {:keys [session pool executor] :as cfg}]
+  ["/dbg" {:middleware [[(:middleware session)]
+                        [with-authorization pool]
+                        [mw/with-promise-async executor]
+                        [mw/with-config cfg]]}
+   ["" {:handler index-handler}]
+   ["/health" {:handler health-handler}]
+   ["/changelog" {:handler changelog-handler}]
+   ;; ["/error-by-id/:id" {:handler error-handler}]
+   ["/error/:id" {:handler error-handler}]
+   ["/error" {:handler error-list-handler}]
+   ["/file/export" {:handler export-handler}]
+   ["/file/import" {:handler import-handler}]
+   ["/file/data" {:handler file-data-handler}]
+   ["/file/changes" {:handler file-changes-handler}]])

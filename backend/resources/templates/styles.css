@@ -14,7 +14,6 @@ pre {
 }
 
 desc {
-  display: flex;
   margin-bottom: 10px;
   font-size: 10px;
   color: #666;
@@ -26,6 +25,15 @@ input[type=text], input[type=submit] {
 
 main {
   margin: 20px;
+}
+
+small {
+  font-size: 9px;
+  color: #888;
+}
+
+small > strong {
+  font-size: 9px;
 }
 
 nav {
@@ -95,16 +103,24 @@ nav > div:not(:last-child) {
 
 .index {
   margin-top: 40px;
+  display: flex;
 }
 
 .index > section {
   padding: 10px;
   background-color: #e3e3e3;
+  max-width: 400px;
+  margin: 5px;
+  height: fit-content;
 }
 
-.index > section:not(:last-child) {
-  margin-bottom: 10px;
+.index fieldset:not(:first-child) {
+  margin-top: 15px;
 }
+
+/* .index > section:not(:last-child) { */
+/*   margin-bottom: 10px; */
+/* } */
 
 
 .index > section > h2 {
@@ -146,5 +162,9 @@ nav > div:not(:last-child) {
 .horizontal-list li > a {
   text-decoration: none;
   color: inherit;
+}
+
+form .row {
+  padding: 5px 0;
 }
 

@@ -129,7 +129,7 @@
     :session       (ig/ref :app.http/session)
     :awsns-handler (ig/ref :app.http.awsns/handler)
     :oauth         (ig/ref :app.http.oauth/handler)
-    :debug         (ig/ref :app.http.debug/handlers)
+    :debug-routes  (ig/ref :app.http.debug/routes)
     :ws            (ig/ref :app.http.websocket/handler)
     :metrics       (ig/ref :app.metrics/metrics)
     :public-uri    (cf/get :public-uri)
@@ -139,9 +139,11 @@
     :rpc           (ig/ref :app.rpc/rpc)
     :executor      (ig/ref [::default :app.worker/executor])}
 
-   :app.http.debug/handlers
-   {:pool (ig/ref :app.db/pool)
-    :executor (ig/ref [::worker :app.worker/executor])}
+   :app.http.debug/routes
+   {:pool     (ig/ref :app.db/pool)
+    :executor (ig/ref [::worker :app.worker/executor])
+    :storage  (ig/ref :app.storage/storage)
+    :session  (ig/ref :app.http/session)}
 
    :app.http.websocket/handler
    {:pool     (ig/ref :app.db/pool)

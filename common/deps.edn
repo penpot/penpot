@@ -22,7 +22,7 @@
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/promesa {:mvn/version "8.0.450"}
-  funcool/cuerdas {:mvn/version "2022.06.13-401"}
+  funcool/cuerdas {:mvn/version "2022.06.16-403"}
 
   lambdaisland/uri {:mvn/version "1.13.95"
                     :exclusions [org.clojure/data.json]}

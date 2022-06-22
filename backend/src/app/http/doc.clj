@@ -34,7 +34,12 @@
                :auth (:auth mdata true)
                :docs (::sv/docs mdata)
                :spec (get-spec-str (::sv/spec mdata))}))]
-    {:query-methods
+
+    {:command-methods
+     (into []
+           (map (partial gen-doc :command))
+           (->> rpc :methods :command (sort-by first)))
+     :query-methods
      (into []
            (map (partial gen-doc :query))
            (->> rpc :methods :query (sort-by first)))

@@ -7,21 +7,16 @@
 (ns app.common.pprint
   (:refer-clojure :exclude [prn])
   (:require
-   [cuerdas.core :as str]
    [fipp.edn :as fpp]))
 
 (defn pprint-str
-  [expr]
-  (binding [*print-level* 8
-            *print-length* 25]
+  [expr & {:keys [width level length]
+           :or {width 110 level 8 length 25}}]
+  (binding [*print-level* level
+            *print-length* length]
     (with-out-str
-      (fpp/pprint expr {:width 110}))))
+      (fpp/pprint expr {:width width}))))
 
 (defn pprint
-  ([expr]
-   (println (pprint-str expr)))
-  ([label expr]
-   (println (str/concat "============ " label "============"))
-   (pprint expr)))
-
-
+  [expr & {:as opts}]
+  (println (pprint-str expr opts)))

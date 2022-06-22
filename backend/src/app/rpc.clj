@@ -87,6 +87,30 @@
                      (let [context {:profile-id profile-id}]
                        (raise (ex/wrap-with-context cause context)))))))))
 
+(defn- rpc-command-handler
+  "Ring handler that dispatches cmd requests and convert between
+  internal async flow into ring async flow."
+  [methods {:keys [profile-id session-id params] :as request} respond raise]
+  (letfn [(handle-response [result]
+            (let [mdata (meta result)]
+              (p/-> (yrs/response 200 result)
+                    (handle-response-transformation request mdata)
+                    (handle-before-comple-hook mdata))))]
+
+    (let [cmd    (keyword (:command params))
+          data   (into {::request request} params)
+          data   (if profile-id
+                   (assoc data :profile-id profile-id ::session-id session-id)
+                   (dissoc data :profile-id))
+
+          method (get methods cmd default-handler)]
+      (-> (method data)
+          (p/then handle-response)
+          (p/then respond)
+          (p/catch (fn [cause]
+                     (let [context {:profile-id profile-id}]
+                       (raise (ex/wrap-with-context cause context)))))))))
+
 (defn- wrap-metrics
   "Wrap service method with metrics measurement."
   [{:keys [metrics ::metrics-id]} f mdata]
@@ -212,6 +236,13 @@
          (map (partial process-method cfg))
          (into {}))))
 
+(defn- resolve-command-methods
+  [cfg]
+  (let [cfg (assoc cfg ::type "command" ::metrics-id :rpc-command-timing)]
+    (->> (sv/scan-ns 'app.rpc.commands.binfile)
+         (map (partial process-method cfg))
+         (into {}))))
+
 (s/def ::storage some?)
 (s/def ::session map?)
 (s/def ::tokens fn?)
@@ -225,7 +256,9 @@
 (defmethod ig/init-key ::rpc
   [_ cfg]
   (let [mq (resolve-query-methods cfg)
-        mm (resolve-mutation-methods cfg)]
-    {:methods {:query mq :mutation mm}
+        mm (resolve-mutation-methods cfg)
+        cm (resolve-command-methods cfg)]
+    {:methods {:query mq :mutation mm :command cm}
+     :command-handler (partial rpc-command-handler cm)
      :query-handler (partial rpc-query-handler mq)
      :mutation-handler (partial rpc-mutation-handler mm)}))

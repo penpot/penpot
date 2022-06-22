@@ -120,16 +120,17 @@
 (s/def ::feedback fn?)
 (s/def ::ws fn?)
 (s/def ::audit-handler fn?)
-(s/def ::debug map?)
 (s/def ::awsns-handler fn?)
 (s/def ::session map?)
+(s/def ::debug-routes vector?)
 
 (defmethod ig/pre-init-spec ::router [_]
   (s/keys :req-un [::rpc ::mtx/metrics ::ws ::oauth ::storage ::assets
-                   ::session ::feedback ::awsns-handler ::debug ::audit-handler]))
+                   ::session ::feedback ::awsns-handler ::debug-routes
+                   ::audit-handler]))
 
 (defmethod ig/init-key ::router
-  [_ {:keys [ws session rpc oauth metrics assets feedback debug] :as cfg}]
+  [_ {:keys [ws session rpc oauth metrics assets feedback debug-routes] :as cfg}]
   (rr/router
    [["" {:middleware [[middleware/server-timing]
                       [middleware/format-response]
@@ -137,20 +138,14 @@
                       [middleware/parse-request]
                       [middleware/errors errors/handle]
                       [middleware/restrict-methods]]}
+
      ["/metrics" {:handler (:handler metrics)}]
      ["/assets" {:middleware [(:middleware session)]}
       ["/by-id/:id" {:handler (:objects-handler assets)}]
       ["/by-file-media-id/:id" {:handler (:file-objects-handler assets)}]
       ["/by-file-media-id/:id/thumbnail" {:handler (:file-thumbnails-handler assets)}]]
 
-     ["/dbg" {:middleware [(:middleware session)]}
-      ["" {:handler (:index debug)}]
-      ["/changelog" {:handler (:changelog debug)}]
-      ["/error-by-id/:id" {:handler (:retrieve-error debug)}]
-      ["/error/:id" {:handler (:retrieve-error debug)}]
-      ["/error" {:handler (:retrieve-error-list debug)}]
-      ["/file/data" {:handler (:file-data debug)}]
-      ["/file/changes" {:handler (:retrieve-file-changes debug)}]]
+     debug-routes
 
      ["/webhooks"
       ["/sns" {:handler (:awsns-handler cfg)
@@ -162,7 +157,6 @@
 
      ["/api" {:middleware [[middleware/cors]
                            (:middleware session)]}
-      ["/health" {:handler (:health-check debug)}]
       ["/_doc" {:handler (doc/handler rpc)
                 :allowed-methods #{:get}}]
       ["/feedback" {:handler feedback
@@ -177,6 +171,7 @@
                         :allowed-methods #{:post}}]
 
       ["/rpc"
+       ["/command/:command" {:handler (:command-handler rpc)}]
        ["/query/:type" {:handler (:query-handler rpc)}]
        ["/mutation/:type" {:handler (:mutation-handler rpc)
                            :allowed-methods #{:post}}]]]]]))
