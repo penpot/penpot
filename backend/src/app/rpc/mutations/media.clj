@@ -17,6 +17,8 @@
    [app.rpc.queries.teams :as teams]
    [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
+   [app.storage.tmp :as tmp]
+   [app.util.bytes :as bs]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -179,11 +181,12 @@
   (* 1024 1024 100)) ; 100MiB
 
 (defn- create-file-media-object-from-url
-  [{:keys [storage http-client] :as cfg} {:keys [url name] :as params}]
+  [{:keys [http-client] :as cfg} {:keys [url name] :as params}]
   (letfn [(parse-and-validate-size [headers]
             (let [size   (some-> (get headers "content-length") d/parse-integer)
                   mtype  (get headers "content-type")
                   format (cm/mtype->format mtype)]
+
               (when-not size
                 (ex/raise :type :validation
                           :code :unknown-size
@@ -203,24 +206,24 @@
                :mtype mtype
                :format format}))
 
-          (get-upload-object [sobj]
-            (p/let [path  (sto/get-object-path storage sobj)
-                    mdata (meta sobj)]
-              {:filename "tempfile"
-               :size (:size sobj)
-               :path path
-               :mtype (:content-type mdata)}))
-
           (download-media [uri]
-            (p/let [{:keys [body headers]} (http-client {:method :get :uri uri} {:response-type :input-stream})
-                    {:keys [size mtype]} (parse-and-validate-size headers)]
+            (-> (http-client {:method :get :uri uri} {:response-type :input-stream})
+                (p/then process-response)))
 
-              (-> (assoc storage :backend :tmp)
-                  (sto/put-object! {::sto/content (sto/content body size)
-                                    ::sto/expired-at (dt/in-future {:minutes 30})
-                                    :content-type mtype
-                                    :bucket "file-media-object"})
-                  (p/then get-upload-object))))]
+          (process-response [{:keys [body headers] :as response}]
+            (let [{:keys [size mtype]} (parse-and-validate-size headers)
+                  path                 (tmp/tempfile :prefix "penpot.media.download.")
+                  written              (bs/write-to-file! body path :size size)]
+
+              (when (not= written size)
+                (ex/raise :type :internal
+                          :code :mismatch-write-size
+                          :hint "unexpected state: unable to write to file"))
+
+              {:filename "tempfile"
+               :size size
+               :path path
+               :mtype mtype}))]
 
     (p/let [content (download-media url)]
       (->> (merge params {:content content :name (or name (:filename content))})

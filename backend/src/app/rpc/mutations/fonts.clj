@@ -71,9 +71,9 @@
             data)
 
           (persist-font-object [data mtype]
-            (when-let [fdata (get data mtype)]
-              (p/let [hash    (calculate-hash fdata)
-                      content (-> (sto/content fdata)
+            (when-let [resource (get data mtype)]
+              (p/let [hash    (calculate-hash resource)
+                      content (-> (sto/content resource)
                                   (sto/wrap-with-hash hash))]
                 (sto/put-object! storage {::sto/content content
                                           ::sto/touched-at (dt/now)

@@ -12,6 +12,7 @@
    [app.storage :as sto]
    [app.test-helpers :as th]
    [app.util.time :as dt]
+   [app.util.bytes :as bs]
    [clojure.java.io :as io]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -197,7 +198,8 @@
                                     :is-shared false})
 
         ttfdata (-> (io/resource "app/test_files/font-1.ttf")
-                    (fs/slurp-bytes))
+                    io/input-stream
+                    bs/read-as-bytes)
 
         mfile   {:filename "sample.jpg"
                  :path (th/tempfile "app/test_files/sample.jpg")
