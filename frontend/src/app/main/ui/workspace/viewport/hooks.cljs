@@ -229,10 +229,12 @@
 (defn setup-active-frames
   [objects hover-ids selected active-frames zoom transform vbox]
 
-  (let [frame?                 #(= :frame (get-in objects [% :type]))
-        all-frames             (mf/use-memo (mf/deps objects) #(cph/get-root-frames-ids objects))
+  (let [all-frames             (mf/use-memo (mf/deps objects) #(cph/get-root-frames-ids objects))
         selected-frames        (mf/use-memo (mf/deps selected) #(->> all-frames (filter selected)))
-        xf-selected-frame      (comp (remove frame?) (map #(get-in objects [% :frame-id])))
+
+        xf-selected-frame      (comp (remove cph/root-frame?)
+                                     (map #(cph/get-shape-id-root-frame objects %)))
+
         selected-shapes-frames (mf/use-memo (mf/deps selected) #(into #{} xf-selected-frame selected))
 
         active-selection       (when (and (not= transform :move) (= (count selected-frames) 1)) (first selected-frames))
@@ -255,7 +257,7 @@
        ;; - If no hovering over any frames we keep the previous active one
        ;; - Check always that the active frames are inside the vbox
 
-       (let [hover-ids? (set @hover-ids)
+       (let [hover-ids? (set (->> @hover-ids (map #(cph/get-shape-id-root-frame objects %))))
 
              is-active-frame?
              (fn [id]
