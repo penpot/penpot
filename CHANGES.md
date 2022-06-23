@@ -11,6 +11,13 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+## 1.14.1-beta
+
+### :bug: Bugs fixed
+
+- Fix crash when double click on viewer assets [Taiga #3625](https://tree.taiga.io/project/penpot/issue/3625)
+- Fix right click on typographies assets [Taiga #3638](https://tree.taiga.io/project/penpot/issue/3638)
+
 ## 1.14.0-beta
 
 ### :sparkles: New features
@@ -24,6 +31,7 @@
 - Navigate to the original link after log in [Taiga #3624](https://tree.taiga.io/project/penpot/issue/3624)
 
 ### :bug: Bugs fixed
+
 - Fix menu file not accessible in certain conditions [Taiga #3385](https://tree.taiga.io/project/penpot/issue/3385)
 - Remove deprecated menu options [Taiga #3333](https://tree.taiga.io/project/penpot/issue/3333)
 - Prototype connection should be under the rules [Taiga #3384](https://tree.taiga.io/project/penpot/issue/3384)

@@ -28,7 +28,13 @@
         content-modifiers (mf/deref content-modifiers-ref)
         editing-id (mf/deref refs/selected-edition)
         editing? (= editing-id (:id shape))
-        shape (mf/use-memo (mf/deps shape content-modifiers) #(apply-content-modifiers shape content-modifiers))]
+
+        shape
+        (mf/use-memo
+         (mf/deps shape content-modifiers)
+         #(cond-> shape
+            (some? content-modifiers)
+            (apply-content-modifiers content-modifiers)))]
 
     [:> shape-container {:shape shape
                          :pointer-events (when editing? "none")}
