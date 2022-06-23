@@ -6,7 +6,6 @@
 
 (ns app.rpc
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
@@ -132,10 +131,13 @@
                    (fn [result _]
                      (when result
                        (let [resultm    (meta result)
-                             profile-id (or (:profile-id params)
+                             profile-id (or (::audit/profile-id resultm)
                                             (:profile-id result)
-                                            (::audit/profile-id resultm))
-                             props      (d/merge params (::audit/props resultm))]
+                                            (:profile-id params))
+                             props      (or (::audit/replace-props resultm)
+                                            (-> params
+                                                (merge (::audit/props resultm))
+                                                (dissoc :type)))]
                          (audit :cmd :submit
                                 :type (or (::audit/type resultm)
                                           (::type cfg))
