@@ -199,6 +199,7 @@
                   "taiga"
                   (cf/get :telemetry-referer))]
     (-> {:referer        referer
+         :public-uri     (cf/get :public-uri)
          :total-teams    (retrieve-num-teams conn)
          :total-projects (retrieve-num-projects conn)
          :total-files    (retrieve-num-files conn)
