@@ -125,7 +125,7 @@
         on-change
         (mf/use-fn
          (fn [new-color old-color]
-           (let [old-color       (-> (or @prev-color* old-color)
+           (let [old-color       (-> (or old-color @prev-color*)
                                      (dissoc :name)
                                      (dissoc :path)
                                      (d/without-nils))
