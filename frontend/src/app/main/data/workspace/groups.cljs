@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
@@ -75,8 +75,8 @@
                         (ctt/generate-unique-name base-name)))
 
         selrect   (gsh/selection-rect shapes)
-        group     (-> (cp/make-minimal-group frame-id selrect gname)
-                      (cp/setup-shape selrect)
+        group     (-> (cts/make-minimal-group frame-id selrect gname)
+                      (cts/setup-shape selrect)
                       (assoc :shapes (mapv :id shapes)
                              :parent-id parent-id
                              :frame-id frame-id

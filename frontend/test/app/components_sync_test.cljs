@@ -4,7 +4,7 @@
     [app.common.data :as d]
     [app.common.geom.point :as gpt]
     [app.common.pages.helpers :as cph]
-    [app.common.types.container :as ctc]
+    [app.common.types.container :as ctn]
     [app.main.data.workspace :as dw]
     [app.main.data.workspace.changes :as dch]
     [app.main.data.workspace.shapes :as dwsh]
@@ -1353,7 +1353,7 @@
             instance1 (thp/get-shape state :instance1)
             instance2 (thp/get-shape state :instance2)
 
-            shape2    (ctc/get-shape (wsh/lookup-page state)
+            shape2    (ctn/get-shape (wsh/lookup-page state)
                                      (first (:shapes instance2)))
 
             update-fn1 (fn [shape]

@@ -9,6 +9,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape :as cts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.layout :as layout]
@@ -69,9 +70,7 @@
   ([state label type props]
    (let [page  (current-page state)
          frame (cph/get-frame (:objects page))
-         shape (-> (cp/make-minimal-shape type)
-                   (cp/setup-shape {:x 0 :y 0 :width 1 :height 1})
-                   (merge props))]
+         shape (cts/make-shape type {:x 0 :y 0 :width 1 :height 1} props)]
      (swap! idmap assoc label (:id shape))
      (update state :workspace-data
              cp/process-changes

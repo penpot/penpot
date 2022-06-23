@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.pages.helpers :as cph]
    [app.common.transit :as t]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard.shortcuts]
    [app.main.data.viewer.shortcuts]
@@ -211,77 +211,9 @@
   ([state show-ids] (dump-tree' state show-ids false))
   ([state show-ids show-touched]
    (let [page-id    (get state :current-page-id)
-         objects    (get-in state [:workspace-data :pages-index page-id :objects])
-         components (get-in state [:workspace-data :components])
-         libraries  (get state :workspace-libraries)
-         root (d/seek #(nil? (:parent-id %)) (vals objects))]
-
-     (letfn [(show-shape [shape-id level objects]
-               (let [shape (get objects shape-id)]
-                 (println (str/pad (str (str/repeat "  " level)
-                                        (:name shape)
-                                        (when (seq (:touched shape)) "*")
-                                        (when show-ids (str/format " <%s>" (:id shape))))
-                                   {:length 20
-                                    :type :right})
-                          (show-component shape objects))
-                 (when show-touched
-                   (when (seq (:touched shape))
-                     (println (str (str/repeat "  " level)
-                                 "    "
-                                 (str (:touched shape)))))
-                   (when (:remote-synced? shape)
-                     (println (str (str/repeat "  " level)
-                                 "    (remote-synced)"))))
-                 (when (:shapes shape)
-                   (dorun (for [shape-id (:shapes shape)]
-                            (show-shape shape-id (inc level) objects))))))
-
-             (show-component [shape objects]
-               (if (nil? (:shape-ref shape))
-                 ""
-                 (let [root-shape        (cph/get-component-shape objects shape)
-                       component-id      (when root-shape (:component-id root-shape))
-                       component-file-id (when root-shape (:component-file root-shape))
-                       component-file    (when component-file-id (get libraries component-file-id nil))
-                       component         (when component-id
-                                           (if component-file
-                                             (get-in component-file [:data :components component-id])
-                                             (get components component-id)))
-                       component-shape   (when (and component (:shape-ref shape))
-                                           (get-in component [:objects (:shape-ref shape)]))]
-                   (str/format " %s--> %s%s%s"
-                               (cond (:component-root? shape) "#"
-                                     (:component-id shape) "@"
-                                     :else "-")
-                               (when component-file (str/format "<%s> " (:name component-file)))
-                               (or (:name component-shape) "?")
-                               (if (or (:component-root? shape)
-                                       (nil? (:component-id shape))
-                                       true)
-                                 ""
-                                 (let [component-id      (:component-id shape)
-                                       component-file-id (:component-file shape)
-                                       component-file    (when component-file-id (get libraries component-file-id nil))
-                                       component         (if component-file
-                                                           (get-in component-file [:data :components component-id])
-                                                           (get components component-id))]
-                                   (str/format " (%s%s)"
-                                               (when component-file (str/format "<%s> " (:name component-file)))
-                                               (:name component))))))))]
-
-       (println "[Page]")
-       (show-shape (:id root) 0 objects)
-
-       (dorun (for [component (vals components)]
-                (do
-                  (println)
-                  (println (str/format "[%s]" (:name component))
-                           (when show-ids
-                             (str/format " (main: %s/%s)"
-                                         (:main-instance-page component)
-                                         (:main-instance-id component))))
-                  (show-shape (:id component) 0 (:objects component)))))))))
+         file-data  (get state :workspace-data)
+         libraries  (get state :workspace-libraries)]
+     (ctf/dump-tree file-data page-id libraries show-ids show-touched))))
 
 (defn ^:export dump-tree
   ([] (dump-tree' @st/state))

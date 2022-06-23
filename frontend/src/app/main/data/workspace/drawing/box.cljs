@@ -9,8 +9,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.drawing.common :as common]
@@ -70,7 +70,7 @@
 
             shape   (get-in state [:workspace-drawing :object])
             shape   (-> shape
-                        (cp/setup-shape {:x (:x initial)
+                        (cts/setup-shape {:x (:x initial)
                                          :y (:y initial)
                                          :width 0.01
                                          :height 0.01})

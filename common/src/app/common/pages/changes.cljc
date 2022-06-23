@@ -14,9 +14,9 @@
    [app.common.math :as mth]
    [app.common.pages.common :refer [component-sync-attrs]]
    [app.common.pages.helpers :as cph]
-   [app.common.pages.init :as init]
    [app.common.spec :as us]
    [app.common.pages.changes-spec :as pcs]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -346,13 +346,13 @@
 
 (defmethod process-change :add-component
   [data {:keys [id name path main-instance-id main-instance-page shapes]}]
-  (assoc-in data [:components id]
-            {:id id
-             :name name
-             :path path
-             :main-instance-id main-instance-id
-             :main-instance-page main-instance-page
-             :objects (d/index-by :id shapes)}))
+  (ctkl/add-component data
+                      id
+                      name
+                      path
+                      main-instance-id
+                      main-instance-page
+                      shapes))
 
 (defmethod process-change :mod-component
   [data {:keys [id name path objects]}]

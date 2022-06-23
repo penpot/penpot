@@ -14,7 +14,6 @@
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -1591,7 +1590,7 @@
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
                          (ctst/frame-id-by-position @ms/mouse-position))
-            shape (cp/setup-rect-selrect
+            shape (cts/setup-rect-selrect
                    {:id id
                     :type :text
                     :name "Text"
@@ -1681,12 +1680,12 @@
           (let [srect    (gsh/selection-rect selected-objs)
                 frame-id (get-in objects [(first selected) :frame-id])
                 parent-id (get-in objects [(first selected) :parent-id])
-                shape    (-> (cp/make-minimal-shape :frame)
+                shape    (-> (cts/make-minimal-shape :frame)
                              (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
                              (assoc :frame-id frame-id :parent-id parent-id)
                              (cond-> (not= frame-id uuid/zero)
                                (assoc :fills [] :hide-in-viewer true))
-                             (cp/setup-rect-selrect))]
+                             (cts/setup-rect-selrect))]
             (rx/of
              (dwu/start-undo-transaction)
              (dwsh/add-shape shape)

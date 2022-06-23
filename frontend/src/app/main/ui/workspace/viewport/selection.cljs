@@ -11,7 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
+   [app.common.types.shape :as cts]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -343,7 +343,7 @@
                #(->> shapes
                      (map gsh/transform-shape)
                      (gsh/selection-rect)
-                     (cp/setup-shape)))
+                     (cts/setup-shape)))
         on-resize
         (fn [current-position _initial-position event]
           (when (dom/left-mouse? event)
@@ -371,7 +371,7 @@
                #(->> shapes
                      (map gsh/transform-shape)
                      (gsh/selection-rect)
-                     (cp/setup-shape)))]
+                     (cts/setup-shape)))]
 
     [:& controls-selection
      {:shape shape

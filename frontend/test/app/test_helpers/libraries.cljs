@@ -8,7 +8,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.types.container :as ctc]
+   [app.common.types.container :as ctn]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -60,7 +60,7 @@
    verify that they are a well constructed instance tree."
   [state root-inst-id]
   (let [page        (thp/current-page state)
-        root-inst   (ctc/get-shape page root-inst-id)
+        root-inst   (ctn/get-shape page root-inst-id)
         shapes-inst (cph/get-children-with-self (:objects page)
                                                 root-inst-id)]
     (is-instance-root (first shapes-inst))
@@ -73,7 +73,7 @@
    verify that they are not a component instance."
   [state root-inst-id]
   (let [page        (thp/current-page state)
-        root-inst   (ctc/get-shape page root-inst-id)
+        root-inst   (ctn/get-shape page root-inst-id)
         shapes-inst (cph/get-children-with-self (:objects page)
                                                 root-inst-id)]
     (run! is-noninstance shapes-inst)
@@ -85,7 +85,7 @@
    the main component and all its shapes."
   [state root-inst-id]
   (let [page          (thp/current-page state)
-        root-inst     (ctc/get-shape page root-inst-id)
+        root-inst     (ctn/get-shape page root-inst-id)
 
         libs          (wsh/get-libraries state)
         component     (cph/get-component libs (:component-id root-inst))
@@ -103,7 +103,7 @@
                               (cph/get-component libs (:component-id component-shape))
 
                               main-shape
-                              (ctc/get-shape component (:shape-ref shape))]
+                              (ctn/get-shape component (:shape-ref shape))]
 
                         (t/is (some? main-shape))))]
 
@@ -123,7 +123,7 @@
    corresponding component shape missing."
   [state root-inst-id]
   (let [page          (thp/current-page state)
-        root-inst     (ctc/get-shape page root-inst-id)
+        root-inst     (ctn/get-shape page root-inst-id)
 
         libs          (wsh/get-libraries state)
         component     (cph/get-component libs (:component-id root-inst))
@@ -141,7 +141,7 @@
                               (cph/get-component libs (:component-id component-shape))
 
                               main-shape
-                              (ctc/get-shape component (:shape-ref shape))]
+                              (ctn/get-shape component (:shape-ref shape))]
 
                         (t/is (some? main-shape))))]
 

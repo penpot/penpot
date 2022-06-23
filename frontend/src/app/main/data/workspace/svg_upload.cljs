@@ -11,9 +11,9 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.spec :refer [max-safe-int min-safe-int]]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -182,7 +182,7 @@
         (assoc :svg-attrs attrs)
         (assoc :svg-viewbox (-> (select-keys svg-data [:width :height])
                                 (assoc :x offset-x :y offset-y)))
-        (cp/setup-rect-selrect))))
+        (cts/setup-rect-selrect))))
 
 (defn create-svg-root [frame-id svg-data]
   (let [{:keys [name x y width height offset-x offset-y]} svg-data]
@@ -194,7 +194,7 @@
          :height height
          :x (+ x offset-x)
          :y (+ y offset-y)}
-        (cp/setup-rect-selrect)
+        (cts/setup-rect-selrect)
         (assoc :svg-attrs (-> (:attrs svg-data)
                               (dissoc :viewBox :xmlns)
                               (d/without-keys usvg/inheritable-props))))))
@@ -214,7 +214,7 @@
         (assoc :svg-attrs (d/without-keys attrs usvg/inheritable-props))
         (assoc :svg-viewbox (-> (select-keys svg-data [:width :height])
                                 (assoc :x offset-x :y offset-y)))
-        (cp/setup-rect-selrect))))
+        (cts/setup-rect-selrect))))
 
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))

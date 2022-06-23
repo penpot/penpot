@@ -24,3 +24,11 @@
         (update :pages conj-if-not-exists (:id page))
         (update :pages-index assoc (:id page) page))))
 
+(defn pages-seq
+  [file-data]
+  (vals (:pages-index file-data)))
+
+(defn update-page
+  [file-data page-id f]
+  (update-in file-data [:pages-index page-id] f))
+

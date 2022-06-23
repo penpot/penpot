@@ -65,6 +65,11 @@
 
     (update container :objects update-objects parent-id)))
 
+(defn set-shape
+  "Replace a shape in the tree with a new one"
+  [container shape]
+  (assoc-in container [:objects (:id shape)] shape))
+
 (defn get-frames
   "Retrieves all frame objects as vector"
   [objects]
@@ -148,7 +153,6 @@
         index-base-b (when base-child-b (cph/get-position-on-parent objects base-child-b))]
 
     [base index-base-a index-base-b]))
-
 
 (defn is-shape-over-shape?
   [objects base-shape-id over-shape-id {:keys [top-frames?]}]

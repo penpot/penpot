@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gsht]
@@ -16,9 +15,10 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
-   [app.common.types.container :as ctc]
+   [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -89,7 +89,7 @@
 
           (fix-empty-points [shape]
             (let [shape (cond-> shape
-                          (empty? (:selrect shape)) (cp/setup-rect-selrect))]
+                          (empty? (:selrect shape)) (cts/setup-rect-selrect))]
               (cond-> shape
                 (empty? (:points shape))
                 (assoc :points (gsh/rect->points (:selrect shape))))))
@@ -456,7 +456,7 @@
           (let [page (ctpl/get-page data page-id)
 
                 [new-shape new-shapes]
-                (ctc/instantiate-component page
+                (ctn/instantiate-component page
                                            component
                                            (:id data)
                                            position)

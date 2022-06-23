@@ -9,8 +9,9 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape :as cts]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -55,7 +56,7 @@
                    (assoc :height 17 :width 4 :grow-type :auto-width)
 
                    click-draw?
-                   (cp/setup-rect-selrect)
+                   (cts/setup-rect-selrect)
 
                    :always
                    (-> (gsh/transform-shape)

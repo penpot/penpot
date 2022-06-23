@@ -16,6 +16,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
@@ -49,7 +50,7 @@
 
 (defn with-objects
   [changes objects]
-  (let [file-data (-> (cp/make-file-data (uuid/next) uuid/zero)
+  (let [file-data (-> (ctf/make-file-data (uuid/next) uuid/zero)
                       (assoc-in [:pages-index uuid/zero :objects] objects))]
     (vary-meta changes assoc ::file-data file-data
                              ::applied-changes-count 0)))

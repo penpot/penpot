@@ -56,46 +56,6 @@
 
 ;; ---- Components and instances creation ----
 
-(defn make-component-shape
-  "Clone the shape and all children. Generate new ids and detach
-  from parent and frame. Update the original shapes to have links
-  to the new ones."
-  [shape objects file-id]
-  (assert (nil? (:component-id shape)))
-  (assert (nil? (:component-file shape)))
-  (assert (nil? (:shape-ref shape)))
-  (let [;; Ensure that the component root is not an instance and
-        ;; it's no longer tied to a frame.
-        update-new-shape (fn [new-shape _original-shape]
-                           (cond-> new-shape
-                             true
-                             (-> (assoc :frame-id nil)
-                                 (dissoc :component-root?))
-
-                             (nil? (:parent-id new-shape))
-                             (dissoc :component-id
-                                     :component-file
-                                     :shape-ref)))
-
-        ;; Make the original shape an instance of the new component.
-        ;; If one of the original shape children already was a component
-        ;; instance, maintain this instanceness untouched.
-        update-original-shape (fn [original-shape new-shape]
-                                (cond-> original-shape
-                                  (nil? (:shape-ref original-shape))
-                                  (-> (assoc :shape-ref (:id new-shape))
-                                      (dissoc :touched))
-
-                                  (nil? (:parent-id new-shape))
-                                  (assoc :component-id (:id new-shape)
-                                         :component-file file-id
-                                         :component-root? true)
-
-                                  (some? (:parent-id new-shape))
-                                  (dissoc :component-root?)))]
-
-    (ctst/clone-object shape nil objects update-new-shape update-original-shape)))
-
 (defn generate-add-component
   "If there is exactly one id, and it's a group, use it as root. Otherwise,
   create a group that contains all ids. Then, make a component with it,
@@ -115,7 +75,7 @@
             (dwg/prepare-create-group it objects page-id shapes name true))
 
           [new-shape new-shapes updated-shapes]
-          (make-component-shape group objects file-id)
+          (ctn/make-component-shape group objects file-id)
 
           changes (-> changes
                       (pcb/add-component (:id new-shape)
