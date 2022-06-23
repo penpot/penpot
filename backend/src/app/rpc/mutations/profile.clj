@@ -137,7 +137,8 @@
                 :exp (dt/in-future "48h")}
 
         token  (tokens :generate params)]
-    {:token token}))
+    (with-meta {:token token}
+      {::audit/profile-id uuid/zero})))
 
 ;; --- MUTATION: Register Profile
 
@@ -175,7 +176,7 @@
               resp   {:invitation-token token}]
           (with-meta resp
             {:transform-response ((:create session) (:id profile))
-             ::audit/props (audit/profile->props profile)
+             ::audit/replace-props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))
 
         ;; If auth backend is different from "penpot" means user is
@@ -184,7 +185,7 @@
         (not= "penpot" (:auth-backend profile))
         (with-meta (profile/strip-private-attrs profile)
           {:transform-response ((:create session) (:id profile))
-           ::audit/props (audit/profile->props profile)
+           ::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})
 
         ;; If the `:enable-insecure-register` flag is set, we proceed
@@ -192,7 +193,7 @@
         (true? is-active)
         (with-meta (profile/strip-private-attrs profile)
           {:transform-response ((:create session) (:id profile))
-           ::audit/props (audit/profile->props profile)
+           ::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})
 
         ;; In all other cases, send a verification email.
@@ -214,7 +215,7 @@
                       :extra-data ptoken})
 
           (with-meta profile
-            {::audit/props (audit/profile->props profile)
+            {::audit/replace-props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))))))
 
 (defn create-profile
