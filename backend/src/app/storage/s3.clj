@@ -59,7 +59,7 @@
 
 ;; --- BACKEND INIT
 
-(s/def ::region #{:eu-central-1})
+(s/def ::region ::us/keyword)
 (s/def ::bucket ::us/string)
 (s/def ::prefix ::us/string)
 (s/def ::endpoint ::us/string)
