@@ -398,7 +398,9 @@
         [:span (tr "labels.github-repo")]]
        [:li  {:on-click #(dom/open-new-window "https://penpot.app/terms.html")}
         [:span (tr "auth.terms-of-service")]]
-       [:li.separator {:on-click #(st/emit! (rt/nav-new-window* {:rname :settings-feedback}))}
+       [:li.separator {:on-click #(st/emit! (when (contains? layout :collapse-left-sidebar) (dw/toggle-layout-flag :collapse-left-sidebar))
+                                            (-> (dw/toggle-layout-flag :shortcuts)
+                                                (vary-meta assoc ::ev/origin "workspace-header")))}
         [:span (tr "label.shortcuts")]
         [:span.shortcut (sc/get-tooltip :show-shortcuts)]]
 
