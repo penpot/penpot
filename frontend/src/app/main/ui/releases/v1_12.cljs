@@ -25,7 +25,7 @@
          [:span.release "Beta version " version]
          [:div.modal-content
           [:p "Penpot continues growing with new features that improve performance, user experience and visual design."]
-          [:p "We are happy to show you a sneak peak of the most important stuff that the Beta 1.12 version brings."]]
+          [:p "We are happy to show you a sneak peek of the most important stuff that the Beta 1.12 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
         [:img.deco {:src "images/deco-left.png" :border "0"}]
