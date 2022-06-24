@@ -125,12 +125,11 @@
         on-change
         (mf/use-fn
          (fn [new-color old-color]
-           (let [old-color       (-> (or old-color @prev-color*)
+           (let [old-color       (-> old-color
                                      (dissoc :name)
                                      (dissoc :path)
                                      (d/without-nils))
                  shapes-by-color (get @grouped-colors* old-color)]
-             (reset! prev-color* new-color)
              (st/emit! (dc/change-color-in-selected new-color shapes-by-color old-color)))))
 
         on-open (mf/use-fn
