@@ -11,6 +11,7 @@ jobs:
       - image: cimg/redis:6.2.6
 
     working_directory: ~/repo
+    resource_class: large
 
     environment:
       # Customize the JVM maximum heap limit
