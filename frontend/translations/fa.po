@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-19 04:19+0000\n"
+"PO-Revision-Date: 2022-06-28 13:16+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -1293,9 +1293,8 @@ msgid "title.settings.profile"
 msgstr "پروفایل - پن‌پات"
 
 #: src/app/main/ui/viewer/header.cljs
-#, fuzzy
 msgid "viewer.header.interactions"
-msgstr "فعل و انفعالات"
+msgstr "تعاملات"
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.empty-state"
@@ -1304,7 +1303,7 @@ msgstr "هیچ آرت‌بوردی در صفحه یافت نشد."
 #: src/app/main/ui/workspace.cljs
 #, fuzzy
 msgid "title.workspace"
-msgstr "%s - پن‌پات"
+msgstr "%s - Penpot"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.remove-link"
@@ -1668,7 +1667,6 @@ msgstr "%s - حالت مشاهده - پن‌پات"
 msgid "title.team-settings"
 msgstr "تنظیمات - %s - پن‌پات"
 
-#, fuzzy
 msgid "viewer.breaking-change.message"
 msgstr "متاسفم!"
 
@@ -1974,7 +1972,6 @@ msgstr "آپلود همه"
 msgid "dashboard.import"
 msgstr "ایمپورت کردن فایل‌های پن‌پات"
 
-#, fuzzy
 msgid "dashboard.import.analyze-error"
 msgstr "اوه! ما نتوانستیم این فایل را ایمپورت کنیم"
 
@@ -2319,3 +2316,117 @@ msgstr ""
 "ما فقط ایمیل‌های مربوطه را برای شما ارسال می‌کنیم. شما می‌توانید در هر زمان "
 "در پروفایل کاربری خود یا از طریق پیوند لغو اشتراک در هر یک از خبرنامه‌های ما،"
 " اشتراک خود را لغو کنید."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "title.settings.password"
+msgstr "رمزعبور - Penpot"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "title.settings.options"
+msgstr "تنظیمات - Penpot"
+
+msgid "shortcuts.v-distribute"
+msgstr "توزیع به صورت عمودی"
+
+msgid "shortcuts.unmask"
+msgstr "برداشتن ماسک"
+
+#, fuzzy
+msgid "shortcuts.ungroup"
+msgstr "حذف گروه"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions"
+msgstr "نشان دادن تعاملات"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hcenter"
+msgstr "تراز کردن مرکز افقی (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.box-filter-all"
+msgstr "تمام دارایی‌ها"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vdistribute"
+msgstr "توزیع فاصله عمودی (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vcenter"
+msgstr "تراز کردن مرکز عمودی (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vbottom"
+msgstr "تراز کردن پایین (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group-hint"
+msgstr ""
+"آیتم‌های شما به طور خودکار به عنوان \"نام گروه / نام آیتم\" نامگذاری می‌شوند"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hdistribute"
+msgstr "توزیع فاصله افقی (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hleft"
+msgstr "تراز به چپ (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hright"
+msgstr "تراز کردن به راست (%s)"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "title.team-invitations"
+msgstr "دعوت‌نامه‌ها - %s - Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "title.settings.feedback"
+msgstr "بازخورد بدهید - Penpot"
+
+msgid "shortcuts.toggle-rules"
+msgstr "نمایش/پنهان کردن خط‌کش‌ها"
+
+#: src/app/main/ui/dashboard/files.cljs
+#, fuzzy
+msgid "title.dashboard.files"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+#, fuzzy
+msgid "title.dashboard.fonts"
+msgstr "فونت‌ها - %s - Penpot"
+
+#: src/app/main/ui/dashboard/search.cljs
+#, fuzzy
+msgid "title.dashboard.search"
+msgstr "جستجو - %s - Penpot"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "title.dashboard.projects"
+msgstr "پروژه‌ها - %s - Penpot"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.dont-show-interactions"
+msgstr "تعاملات را نشان ندهید"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions-on-click"
+msgstr "نمایش تعاملات در کلیک"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "ایجاد یک گروه"
+
+msgid "viewer.header.interactions-section"
+msgstr "تعاملات (%s)"
+
+#, fuzzy
+msgid "shortcuts.toggle-grid"
+msgstr "نمایش/پنهان کردن شبکه‌بندی"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
+msgid "title.default"
+msgstr "Penpot - طراحی آزاد برای تیم‌ها"
