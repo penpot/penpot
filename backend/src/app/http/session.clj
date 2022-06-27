@@ -162,21 +162,22 @@
 
 (defn- make-middleware
   [{:keys [::events-ch store] :as cfg}]
-  {:name :session-middleware
-   :wrap (fn [handler]
-           (fn [request respond raise]
-             (try
-               (-> (retrieve-session store request)
-                   (p/then' #(merge request %))
-                   (p/finally (fn [request cause]
-                                (if cause
-                                  (raise cause)
-                                  (do
+  {:name :session
+   :compile (fn [& _]
+              (fn [handler]
+                (fn [request respond raise]
+                  (try
+                    (-> (retrieve-session store request)
+                        (p/then' #(merge request %))
+                        (p/finally (fn [request cause]
+                                     (if cause
+                                       (raise cause)
+                                       (do
                                     (when-let [session-id (:session-id request)]
                                       (a/offer! events-ch session-id))
                                     (handler request respond raise))))))
-               (catch Throwable cause
-                 (raise cause)))))})
+                    (catch Throwable cause
+                      (raise cause))))))})
 
 
 ;; --- STATE INIT: SESSION

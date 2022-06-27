@@ -9,18 +9,15 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.uuid :as uuid]
+   [app.util.bytes :as bs]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as io])
   (:import
    java.nio.ByteBuffer
-   java.util.UUID
-   java.io.ByteArrayInputStream
-   java.io.InputStream
    java.nio.file.Files
-   org.apache.commons.io.input.BoundedInputStream
-   ))
+   java.nio.file.Path
+   java.util.UUID))
 
 ;; --- API Definition
 
@@ -95,23 +92,23 @@
 (defn coerce-id
   [id]
   (cond
-    (string? id) (uuid/uuid id)
-    (uuid? id) id
-    :else (ex/raise :type :internal
-                    :code :invalid-id-type
-                    :hint "id should be string or uuid")))
+    (string? id) (parse-uuid id)
+    (uuid? id)   id
+    :else        (ex/raise :type :internal
+                           :code :invalid-id-type
+                           :hint "id should be string or uuid")))
 
 (defprotocol IContentObject
-  (size [_] "get object size"))
+  (get-size [_] "get object size"))
 
 (defprotocol IContentHash
   (get-hash [_] "get precalculated hash"))
 
-(defn- make-content
-  [^InputStream is ^long size]
+(defn- path->content
+  [^Path path ^long size]
   (reify
     IContentObject
-    (size [_] size)
+    (get-size [_] size)
 
     io/IOFactory
     (make-reader [this opts]
@@ -119,47 +116,53 @@
     (make-writer [_ _]
       (throw (UnsupportedOperationException. "not implemented")))
     (make-input-stream [_ _]
-      (doto (BoundedInputStream. is size)
-        (.setPropagateClose false)))
+      (-> (io/input-stream path)
+          (bs/bounded-input-stream size)))
     (make-output-stream [_ _]
+      (throw (UnsupportedOperationException. "not implemented")))))
+
+(defn- bytes->content
+  [^bytes data ^long size]
+  (reify
+    IContentObject
+    (get-size [_] size)
+
+    io/IOFactory
+    (make-reader [this opts]
+      (io/make-reader this opts))
+    (make-writer [_ _]
       (throw (UnsupportedOperationException. "not implemented")))
-
-    clojure.lang.Counted
-    (count [_] size)
-
-    java.lang.AutoCloseable
-    (close [_]
-      (.close is))))
+    (make-input-stream [_ _]
+      (-> (bs/bytes-input-stream data)
+          (bs/bounded-input-stream size)))
+    (make-output-stream [_ _]
+      (throw (UnsupportedOperationException. "not implemented")))))
 
 (defn content
   ([data] (content data nil))
   ([data size]
    (cond
      (instance? java.nio.file.Path data)
-     (make-content (io/input-stream data)
-                   (Files/size data))
+     (path->content data (or size (Files/size data)))
 
      (instance? java.io.File data)
-     (content (.toPath ^java.io.File data) nil)
+     (content (.toPath ^java.io.File data) size)
 
      (instance? String data)
-     (let [data (.getBytes data "UTF-8")
-           bais (ByteArrayInputStream. ^bytes data)]
-       (make-content bais (alength data)))
+     (let [data (.getBytes data "UTF-8")]
+       (bytes->content data (alength data)))
 
      (bytes? data)
-     (let [size (alength ^bytes data)
-           bais (ByteArrayInputStream. ^bytes data)]
-       (make-content bais size))
+     (bytes->content data (or size (alength ^bytes data)))
 
-     (instance? InputStream data)
-     (do
-       (when-not size
-         (throw (UnsupportedOperationException. "size should be provided on InputStream")))
-       (make-content data size))
+     ;; (instance? InputStream data)
+     ;; (do
+     ;;   (when-not size
+     ;;     (throw (UnsupportedOperationException. "size should be provided on InputStream")))
+     ;;   (make-content data size))
 
      :else
-     (throw (UnsupportedOperationException. "type not supported")))))
+     (throw (IllegalArgumentException. "invalid argument type")))))
 
 (defn wrap-with-hash
   [content ^String hash]
@@ -171,7 +174,7 @@
 
   (reify
     IContentObject
-    (size [_] (size content))
+    (get-size [_] (get-size content))
 
     IContentHash
     (get-hash [_] hash)
@@ -184,43 +187,17 @@
     (make-input-stream [_ opts]
       (io/make-input-stream content opts))
     (make-output-stream [_ opts]
-      (io/make-output-stream content opts))
-
-    clojure.lang.Counted
-    (count [_] (count content))
-
-    java.lang.AutoCloseable
-    (close [_]
-      (.close ^java.lang.AutoCloseable content))))
+      (io/make-output-stream content opts))))
 
 (defn content?
   [v]
   (satisfies? IContentObject v))
 
-(defn slurp-bytes
-  [content]
-  (with-open [input  (io/input-stream content)
-              output (java.io.ByteArrayOutputStream. (count content))]
-    (io/copy input output)
-    (.toByteArray output)))
-
 (defn calculate-hash
-  [path-or-stream]
-  (let [result (cond
-                 (instance? InputStream path-or-stream)
-                 (let [result (-> (bh/blake2b-256 path-or-stream)
-                                  (bc/bytes->hex))]
-                   (.reset path-or-stream)
-                   result)
-
-                 (string? path-or-stream)
-                 (-> (bh/blake2b-256 path-or-stream)
-                     (bc/bytes->hex))
-
-                 :else
-                 (with-open [is (io/input-stream path-or-stream)]
-                   (-> (bh/blake2b-256 is)
-                       (bc/bytes->hex))))]
+  [resource]
+  (let [result (with-open [input (io/input-stream resource)]
+                 (-> (bh/blake2b-256 input)
+                     (bc/bytes->hex)))]
     (str "blake2b:" result)))
 
 (defn resolve-backend

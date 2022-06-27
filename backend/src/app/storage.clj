@@ -14,7 +14,6 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.storage.db :as sdb]
    [app.storage.fs :as sfs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
@@ -32,14 +31,12 @@
 
 (s/def ::s3 ::ss3/backend)
 (s/def ::fs ::sfs/backend)
-(s/def ::db ::sdb/backend)
 
 (s/def ::backends
   (s/map-of ::us/keyword
             (s/nilable
              (s/or :s3 ::ss3/backend
-                   :fs ::sfs/backend
-                   :db ::sdb/backend))))
+                   :fs ::sfs/backend))))
 
 (defmethod ig/pre-init-spec ::storage [_]
   (s/keys :req-un [::db/pool ::wrk/executor ::backends]))
@@ -84,13 +81,14 @@
                  "   and backend = ?"
                  "   and deleted_at is null"
                  " limit 1")]
-    (db/exec-one! conn [sql hash bucket (name backend)])))
+    (some-> (db/exec-one! conn [sql hash bucket (name backend)])
+            (update :metadata db/decode-transit-pgobject))))
 
 (defn- create-database-object
   [{:keys [conn backend executor]} {:keys [::content ::expired-at ::touched-at] :as params}]
   (us/assert ::storage-content content)
   (px/with-dispatch executor
-    (let [id     (uuid/random)
+    (let [id     (uuid/next)
 
           mdata  (cond-> (get-metadata params)
                    (satisfies? impl/IContentHash content)
@@ -106,13 +104,15 @@
                    (get-database-object-by-hash conn backend (:bucket mdata) (:hash mdata)))
 
           result (or result
-                     (db/insert! conn :storage-object
-                                 {:id id
-                                  :size (count content)
-                                  :backend (name backend)
-                                  :metadata (db/tjson mdata)
-                                  :deleted-at expired-at
-                                  :touched-at touched-at}))]
+                     (-> (db/insert! conn :storage-object
+                                     {:id id
+                                      :size (impl/get-size content)
+                                      :backend (name backend)
+                                      :metadata (db/tjson mdata)
+                                      :deleted-at expired-at
+                                      :touched-at touched-at})
+                         (update :metadata db/decode-transit-pgobject)
+                         (update :metadata assoc ::created? true)))]
 
       (StorageObject. (:id result)
                       (:size result)
@@ -120,7 +120,7 @@
                       (:deleted-at result)
                       (:touched-at result)
                       backend
-                      mdata
+                      (:metadata result)
                       nil))))
 
 (def ^:private sql:retrieve-storage-object
@@ -173,9 +173,10 @@
   (p/let [storage (assoc storage :conn (or conn pool))
           object  (create-database-object storage params)]
 
-    ;; Store the data finally on the underlying storage subsystem.
-    (-> (impl/resolve-backend storage backend)
-        (impl/put-object object content))
+    (when (::created? (meta object))
+      ;; Store the data finally on the underlying storage subsystem.
+      (-> (impl/resolve-backend storage backend)
+          (impl/put-object object content)))
 
     object))
 
@@ -259,7 +260,8 @@
 ;; A task responsible to permanently delete already marked as deleted
 ;; storage files. The storage objects are practically never marked to
 ;; be deleted directly by the api call. The touched-gc is responsible
-;; of collecting the usage of the object and mark it as deleted.
+;; of collecting the usage of the object and mark it as deleted. Only
+;; the TMP files are are created with expiration date in future.
 
 (declare sql:retrieve-deleted-objects-chunk)
 

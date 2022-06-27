@@ -25,6 +25,11 @@
     <Logger name="org.eclipse.jetty" level="error" />
     <Logger name="org.postgresql" level="error" />
 
+    <Logger name="app.msgbus" level="error" />
+    <Logger name="app.http.websocket" level="error" />
+    <Logger name="app.rpc.commands.binfile" level="debug" />
+    <Logger name="app.storage.tmp" level="debug" />
+
     <Logger name="app.cli" level="debug" additivity="false">
       <AppenderRef ref="console"/>
     </Logger>
@@ -35,11 +40,6 @@
 
     <Logger name="app" level="all" additivity="false">
       <AppenderRef ref="main" level="trace" />
-      <AppenderRef ref="zmq" level="debug" />
-    </Logger>
-
-    <Logger name="penpot" level="debug" additivity="false">
-      <AppenderRef ref="main" level="debug" />
       <AppenderRef ref="zmq" level="debug" />
     </Logger>
 

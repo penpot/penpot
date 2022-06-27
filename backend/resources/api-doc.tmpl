@@ -20,6 +20,33 @@
       </header>
       <section class="rpc-doc-content">
 
+        <h2>RPC COMMAND METHODS:</h2>
+        <ul class="rpc-items">
+          {% for item in command-methods %}
+            <li class="rpc-item">
+              <div class="rpc-row-info">
+                {# <div class="type">{{item.type}}</div> #}
+                <div class="name">{{item.name}}</div>
+                <div class="tags">
+                  <span class="tag">
+                    <span>Auth:</span>
+                    <span>{% if item.auth %}YES{% else %}NO{% endif %}</span>
+                  </span>
+                </div>
+              </div>
+              <div class="rpc-row-detail hidden">
+                {% if item.docs %}
+                  <h3>DOCSTRING:</h3>
+                  <p>{{item.docs}}</p>
+                {% endif %}
+
+                <h3>SPEC EXPLAIN:</h3>
+                <pre>{{item.spec}}</pre>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+
         <h2>RPC QUERY METHODS:</h2>
         <ul class="rpc-items">
           {% for item in query-methods %}

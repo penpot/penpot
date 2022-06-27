@@ -71,6 +71,10 @@
    :app.tokens/tokens
    {:keys (ig/ref :app.setup/keys)}
 
+   :app.storage.tmp/cleaner
+   {:executor (ig/ref [::worker :app.worker/executor])
+    :scheduler (ig/ref :app.worker/scheduler)}
+
    :app.storage/gc-deleted-task
    {:pool     (ig/ref :app.db/pool)
     :storage  (ig/ref :app.storage/storage)
@@ -125,7 +129,7 @@
     :session       (ig/ref :app.http/session)
     :awsns-handler (ig/ref :app.http.awsns/handler)
     :oauth         (ig/ref :app.http.oauth/handler)
-    :debug         (ig/ref :app.http.debug/handlers)
+    :debug-routes  (ig/ref :app.http.debug/routes)
     :ws            (ig/ref :app.http.websocket/handler)
     :metrics       (ig/ref :app.metrics/metrics)
     :public-uri    (cf/get :public-uri)
@@ -135,9 +139,11 @@
     :rpc           (ig/ref :app.rpc/rpc)
     :executor      (ig/ref [::default :app.worker/executor])}
 
-   :app.http.debug/handlers
-   {:pool (ig/ref :app.db/pool)
-    :executor (ig/ref [::worker :app.worker/executor])}
+   :app.http.debug/routes
+   {:pool     (ig/ref :app.db/pool)
+    :executor (ig/ref [::worker :app.worker/executor])
+    :storage  (ig/ref :app.storage/storage)
+    :session  (ig/ref :app.http/session)}
 
    :app.http.websocket/handler
    {:pool     (ig/ref :app.db/pool)
@@ -336,22 +342,11 @@
 
     :backends
     {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
-     :assets-db (ig/ref [::assets :app.storage.db/backend])
      :assets-fs (ig/ref [::assets :app.storage.fs/backend])
-
-     :tmp       (ig/ref [::tmp  :app.storage.fs/backend])
-     :fdata-s3  (ig/ref [::fdata :app.storage.s3/backend])
 
      ;; keep this for backward compatibility
      :s3        (ig/ref [::assets :app.storage.s3/backend])
      :fs        (ig/ref [::assets :app.storage.fs/backend])}}
-
-   [::fdata :app.storage.s3/backend]
-   {:region   (cf/get :storage-fdata-s3-region)
-    :bucket   (cf/get :storage-fdata-s3-bucket)
-    :endpoint (cf/get :storage-fdata-s3-endpoint)
-    :prefix   (cf/get :storage-fdata-s3-prefix)
-    :executor (ig/ref [::default :app.worker/executor])}
 
    [::assets :app.storage.s3/backend]
    {:region   (cf/get :storage-assets-s3-region)
@@ -361,12 +356,7 @@
 
    [::assets :app.storage.fs/backend]
    {:directory (cf/get :storage-assets-fs-directory)}
-
-   [::tmp :app.storage.fs/backend]
-   {:directory "/tmp/penpot"}
-
-   [::assets :app.storage.db/backend]
-   {:pool (ig/ref :app.db/pool)}})
+   })
 
 (def system nil)
 

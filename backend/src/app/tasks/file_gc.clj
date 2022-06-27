@@ -82,7 +82,7 @@
                                :kf first
                                :initk (dt/now)))))
 
-(defn- collect-used-media
+(defn collect-used-media
   [data]
   (let [xform (comp
                (map :objects)

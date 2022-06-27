@@ -10,11 +10,12 @@
     <Logger name="com.zaxxer.hikari" level="error" />
     <Logger name="org.eclipse.jetty" level="error" />
 
-    <Logger name="app" level="debug" additivity="false">
-      <AppenderRef ref="console" />
-    </Logger>
+    <Logger name="app.msgbus" level="error" />
+    <Logger name="app.http.websocket" level="error" />
+    <Logger name="app.rpc.commands.binfile" level="debug" />
+    <Logger name="app.storage.tmp" level="debug" />
 
-    <Logger name="penpot" level="fatal" additivity="false">
+    <Logger name="app" level="debug" additivity="false">
       <AppenderRef ref="console" />
     </Logger>
 

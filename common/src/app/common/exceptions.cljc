@@ -50,6 +50,12 @@
   [& exprs]
   `(try* (^:once fn* [] ~@exprs) identity))
 
+(defn with-always
+  "A helper that evaluates an exptession independently if the body
+  raises exception or not."
+  [always-expr & body]
+  `(try ~@body (finally ~always-expr)))
+
 (defn ex-info?
   [v]
   (instance? #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core.ExceptionInfo) v))

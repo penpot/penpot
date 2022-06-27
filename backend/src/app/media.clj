@@ -12,18 +12,16 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.config :as cf]
+   [app.storage.tmp :as tmp]
+   [app.util.bytes :as bs]
    [app.util.svg :as svg]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
-   [clojure.java.io :as io]
    [clojure.java.shell :as sh]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs])
   (:import
-   java.io.ByteArrayInputStream
-   java.io.OutputStream
-   org.apache.commons.io.IOUtils
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation
    org.im4java.core.Info))
@@ -93,18 +91,16 @@
   (let [{:keys [path mtype]} input
         format (or (cm/mtype->format mtype) format)
         ext    (cm/format->extension format)
-        tmp    (fs/create-tempfile :suffix ext)]
+        tmp    (tmp/tempfile :prefix "penpot.media." :suffix ext)]
 
     (doto (ConvertCmd.)
       (.run operation (into-array (map str [path tmp]))))
 
-    (let [thumbnail-data (fs/slurp-bytes tmp)]
-      (fs/delete tmp)
-      (assoc params
-             :format format
-             :mtype  (cm/format->mtype format)
-             :size   (alength ^bytes thumbnail-data)
-             :data   (ByteArrayInputStream. thumbnail-data)))))
+    (assoc params
+           :format format
+           :mtype  (cm/format->mtype format)
+           :size   (fs/size tmp)
+           :data   tmp)))
 
 (defmethod process :generic-thumbnail
   [{:keys [quality width height] :as params}]
@@ -201,59 +197,54 @@
 (defmethod process :generate-fonts
   [{:keys [input] :as params}]
   (letfn [(ttf->otf [data]
-            (let [input-file  (fs/create-tempfile :prefix "penpot")
-                  output-file (fs/path (str input-file ".otf"))
-                  _           (with-open [out (io/output-stream input-file)]
-                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
-                                (.flush ^OutputStream out))
-                  res         (sh/sh "fontforge" "-lang=ff" "-c"
-                                     (str/fmt "Open('%s'); Generate('%s')"
-                                              (str input-file)
-                                              (str output-file)))]
+            (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
+                  foutput (fs/path (str finput ".otf"))
+                  _       (bs/write-to-file! data finput)
+                  res     (sh/sh "fontforge" "-lang=ff" "-c"
+                                 (str/fmt "Open('%s'); Generate('%s')"
+                                          (str finput)
+                                          (str foutput)))]
               (when (zero? (:exit res))
-                (fs/slurp-bytes output-file))))
-
+                foutput)))
 
           (otf->ttf [data]
-            (let [input-file  (fs/create-tempfile :prefix "penpot")
-                  output-file (fs/path (str input-file ".ttf"))
-                  _           (with-open [out (io/output-stream input-file)]
-                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
-                                (.flush ^OutputStream out))
-                  res         (sh/sh "fontforge" "-lang=ff" "-c"
-                                     (str/fmt "Open('%s'); Generate('%s')"
-                                              (str input-file)
-                                              (str output-file)))]
+            (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
+                  foutput (fs/path (str finput ".ttf"))
+                  _       (bs/write-to-file! data finput)
+                  res     (sh/sh "fontforge" "-lang=ff" "-c"
+                                 (str/fmt "Open('%s'); Generate('%s')"
+                                          (str finput)
+                                          (str foutput)))]
               (when (zero? (:exit res))
-                (fs/slurp-bytes output-file))))
+                foutput)))
 
           (ttf-or-otf->woff [data]
-            (let [input-file  (fs/create-tempfile :prefix "penpot" :suffix "")
-                  output-file (fs/path (str input-file ".woff"))
-                  _           (with-open [out (io/output-stream input-file)]
-                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
-                                (.flush ^OutputStream out))
-                  res         (sh/sh "sfnt2woff" (str input-file))]
+            ;; NOTE: foutput is not used directly, it represents the
+            ;; default output of the exection of the underlying
+            ;; command.
+            (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
+                  foutput (fs/path (str finput ".woff"))
+                  _       (bs/write-to-file! data finput)
+                  res     (sh/sh "sfnt2woff" (str finput))]
               (when (zero? (:exit res))
-                (fs/slurp-bytes output-file))))
+                foutput)))
 
           (ttf-or-otf->woff2 [data]
-            (let [input-file  (fs/create-tempfile :prefix "penpot" :suffix "")
-                  output-file (fs/path (str input-file ".woff2"))
-                  _           (with-open [out (io/output-stream input-file)]
-                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
-                                (.flush ^OutputStream out))
-                  res         (sh/sh "woff2_compress" (str input-file))]
+            ;; NOTE: foutput is not used directly, it represents the
+            ;; default output of the exection of the underlying
+            ;; command.
+            (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix ".tmp")
+                  foutput (fs/path (str (fs/base finput) ".woff2"))
+                  _       (bs/write-to-file! data finput)
+                  res      (sh/sh "woff2_compress" (str finput))]
               (when (zero? (:exit res))
-                (fs/slurp-bytes output-file))))
+                foutput)))
 
           (woff->sfnt [data]
-            (let [input-file  (fs/create-tempfile :prefix "penpot" :suffix "")
-                  _           (with-open [out (io/output-stream input-file)]
-                                (IOUtils/writeChunked ^bytes data ^OutputStream out)
-                                (.flush ^OutputStream out))
-                  res         (sh/sh "woff2sfnt" (str input-file)
-                                     :out-enc :bytes)]
+            (let [finput  (tmp/tempfile :prefix "penpot" :suffix "")
+                  _       (bs/write-to-file! data finput)
+                  res     (sh/sh "woff2sfnt" (str finput)
+                                 :out-enc :bytes)]
               (when (zero? (:exit res))
                 (:out res))))
 
