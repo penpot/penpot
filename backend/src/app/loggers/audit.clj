@@ -32,7 +32,7 @@
   [request]
   (or (some-> (yrq/get-header request "x-forwarded-for") (str/split ",") first)
       (yrq/get-header request "x-real-ip")
-      (yrq/remote-addr request)))
+      (some-> (yrq/remote-addr request) str)))
 
 (defn extract-utm-params
   "Extracts additional data from params and namespace them under
