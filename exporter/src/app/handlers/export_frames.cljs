@@ -29,7 +29,6 @@
 (s/def ::file-id ::us/uuid)
 (s/def ::page-id ::us/uuid)
 (s/def ::object-id ::us/uuid)
-(s/def ::uri ::us/uri)
 
 (s/def ::export
   (s/keys :req-un [::file-id ::page-id ::object-id ::name]))
@@ -39,18 +38,18 @@
 
 (s/def ::params
   (s/keys :req-un [::exports]
-          :opt-un [::uri ::name]))
+          :opt-un [::name]))
 
 (defn handler
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports uri profile-id] :as params}]
+  [{:keys [:request/auth-token] :as exchange} {:keys [exports profile-id] :as params}]
   ;; NOTE: we need to have the `:type` prop because the exports
   ;; datastructure preparation uses it for creating the groups.
   (let [exports  (-> (map #(assoc % :type :pdf :scale 1 :suffix "") exports)
-                     (prepare-exports auth-token uri))]
+                     (prepare-exports auth-token))]
     (handle-export exchange (assoc params :exports exports))))
 
 (defn handle-export
-  [exchange {:keys [exports wait uri name profile-id] :as params}]
+  [exchange {:keys [exports wait name profile-id] :as params}]
   (let [total       (count exports)
         topic       (str profile-id)
         resource    (rsc/create :pdf (or name (-> exports first :name)))

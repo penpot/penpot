@@ -15,6 +15,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix shortcut access in main menu [Taiga #3672](https://tree.taiga.io/project/penpot/issue/3672)
+- Fix modify colors in a row in selected colors [Taiga #3653](https://tree.taiga.io/project/penpot/issue/3653)
 - Fix crash when double click on viewer assets [Taiga #3625](https://tree.taiga.io/project/penpot/issue/3625)
 - Fix right click on typographies assets [Taiga #3638](https://tree.taiga.io/project/penpot/issue/3638)
 

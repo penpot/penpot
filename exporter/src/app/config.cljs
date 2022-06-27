@@ -25,15 +25,13 @@
    :host "devenv"
    :http-server-port 6061
    :http-server-host "localhost"
-   :redis-uri "redis://redis/0"
-   :domain-white-list #{"localhost:3449"}})
+   :redis-uri "redis://redis/0"})
 
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-host ::us/string)
 (s/def ::public-uri ::us/uri)
 (s/def ::tenant ::us/string)
 (s/def ::host ::us/string)
-(s/def ::domain-white-list ::us/set-of-str)
 (s/def ::browser-pool-max ::us/integer)
 (s/def ::browser-pool-min ::us/integer)
 
@@ -44,8 +42,7 @@
                    ::http-server-port
                    ::http-server-host
                    ::browser-pool-max
-                   ::browser-pool-min
-                   ::domain-white-list]))
+                   ::browser-pool-min]))
 
 (defn- read-env
   [prefix]

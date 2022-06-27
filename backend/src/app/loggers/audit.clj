@@ -51,7 +51,7 @@
 (defn profile->props
   [profile]
   (-> profile
-      (select-keys [:is-active :is-muted :auth-backend :email :default-team-id :default-project-id :fullname :lang])
+      (select-keys [:id :is-active :is-muted :auth-backend :email :default-team-id :default-project-id :fullname :lang])
       (merge (:props profile))
       (d/without-nils)))
 

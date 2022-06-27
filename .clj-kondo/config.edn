@@ -38,6 +38,9 @@
   :single-key-in
   {:level :warning}
 
+  :non-arg-vec-return-type-hint
+  {:level :off}
+
   :redundant-do
   {:level :off}
 

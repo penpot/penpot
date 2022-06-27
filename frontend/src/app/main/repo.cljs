@@ -130,9 +130,7 @@
 
 (defmethod query :exporter
   [_ params]
-  (let [default {:wait false
-                 :blob? false
-                 :uri (str base-uri)}]
+  (let [default {:wait false :blob? false}]
     (send-export (merge default params))))
 
 (derive :upload-file-media-object ::multipart-upload)

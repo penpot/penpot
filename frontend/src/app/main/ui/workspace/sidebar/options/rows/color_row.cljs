@@ -69,6 +69,8 @@
         shared-libs     (mf/deref refs/workspace-libraries)
         hover-detach    (mf/use-state false)
 
+        on-change-var (h/use-update-var {:fn on-change})
+
         src-colors (if (= (:file-id color) current-file-id)
                      file-colors
                      (get-in shared-libs [(:file-id color) :data :colors]))
@@ -83,18 +85,18 @@
                        (when on-detach (on-detach color)))
 
         change-value (fn [new-value]
-                       (when on-change (on-change (-> color
-                                                      (assoc :color new-value)
-                                                      (dissoc :gradient)))))
+                       (when (:fn @on-change-var) ((:fn @on-change-var) (-> color
+                                                          (assoc :color new-value)
+                                                          (dissoc :gradient)))))
 
         change-opacity (fn [new-opacity]
-                         (when on-change (on-change (assoc color
+                         (when (:fn @on-change-var) ((:fn @on-change-var) (assoc color
                                                            :opacity new-opacity
                                                            :id nil
                                                            :file-id nil))))
 
         handle-pick-color (fn [color]
-                            (when on-change (on-change (merge uc/empty-color color))))
+                            (when (:fn @on-change-var) ((:fn @on-change-var) (merge uc/empty-color color))))
 
         handle-select (fn []
                         (select-only color))
