@@ -173,8 +173,7 @@
         (when (is-authenticated? profile)
           (->> (rx/of (profile-fetched profile)
                       (fetch-teams)
-                      (get-redirect-event)
-                      (ws/initialize))
+                      (get-redirect-event))
                (rx/observe-on :async)))))))
 
 (s/def ::invitation-token ::us/not-empty-string)
