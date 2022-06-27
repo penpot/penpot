@@ -43,6 +43,7 @@
               (rest keys)
               (unchecked-get res key))))))
 
+#_:clj-kondo/ignore
 (defn without
   [obj keys]
   (let [keys (cond
