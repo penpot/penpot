@@ -160,7 +160,6 @@
   "Function responsible to attach local subscription to the
   state. Intended to be used in agent."
   [state cfg topics chan done-ch]
-  (l/trace :hint "subscribe-to-topics" :topics topics ::l/async false)
   (aa/with-closing done-ch
     (let [state (update state :chans assoc chan topics)]
       (reduce (fn [state topic]
@@ -184,15 +183,15 @@
   useful when client disconnects or in-bulk unsubscribe
   operations. Intended to be executed in agent."
   [state cfg channels done-ch]
-  (l/trace :hint "unsubscribe-channels" :chans (count channels) ::l/async false)
   (aa/with-closing done-ch
     (reduce #(unsubscribe-single-channel %1 cfg %2) state channels)))
+
 
 (defn- subscribe
   [{:keys [::state executor] :as cfg} {:keys [topic topics chan]}]
   (let [done-ch (a/chan)
         topics  (into [] (map prefix-topic) (if topic [topic] topics))]
-    (l/trace :hint "subscribe" :topics topics)
+    (l/debug :hint "subscribe" :topics topics)
     (send-via executor state subscribe-to-topics cfg topics chan done-ch)
     done-ch))
 

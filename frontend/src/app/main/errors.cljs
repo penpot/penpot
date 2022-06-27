@@ -106,7 +106,6 @@
 
     (js/console.groupEnd msg)))
 
-
 ;; Error on parsing an SVG
 ;; TODO: looks unused and deprecated
 (defmethod ptk/handle-error :svg-parser

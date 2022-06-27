@@ -163,7 +163,9 @@
                                     (rx/map #(shapes-changes-persisted file-id %)))))))
                (rx/catch (fn [cause]
                            (rx/concat
-                            (rx/of (rt/assign-exception cause))
+                            (if (= :authentication (:type cause))
+                              (rx/empty)
+                              (rx/of (rt/assign-exception cause)))
                             (rx/throw cause))))))))))
 
 
