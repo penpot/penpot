@@ -4,10 +4,12 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.menus.layout
+(ns app.main.ui.workspace.sidebar.options.menus.layout-container
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -15,16 +17,16 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
-(def layout-attrs
-  [:layout          ;; true if active, false if not
-   :layout-dir      ;; :right, :left, :top, :bottom
-   :gap             ;; number could be negative
-   :layout-type     ;; :packed, :space-between, :space-around
-   :wrap-type       ;; :wrap, :no-wrap
-   :padding-type    ;; :simple, :multiple
-   :padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
-   :h-orientation   ;; :top, :center, :bottom
-   :v-orientation]) ;; :left, :center, :right
+(def layout-container-attrs
+  [:layout                 ;; true if active, false if not
+   :layout-dir             ;; :right, :left, :top, :bottom
+   :layout-gap             ;; number could be negative
+   :layout-type            ;; :packed, :space-between, :space-around
+   :layout-wrap-type       ;; :wrap, :no-wrap
+   :layout-padding-type    ;; :simple, :multiple
+   :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
+   :layout-h-orientation   ;; :top, :center, :bottom
+   :layout-v-orientation]) ;; :left, :center, :right
 
 (def grid-pos  [[:top :left]
                 [:top :center]
@@ -35,35 +37,65 @@
                 [:bottom :left]
                 [:bottom :center]
                 [:bottom :right]])
+
 (def grid-rows [:top :center :bottom])
 (def grid-cols [:left :center :right])
 
+(defn- get-layout-icon
+  [dir layout-type v h]
+  (let [col? (= dir (or :left :right))
+        manage-text-icon
+        (if col?
+          (case h
+            :left   i/text-align-left
+            :center i/text-align-center
+            :right  i/text-align-right
+            i/text-align-center)
+
+          (case v
+            :top    i/text-align-left
+            :center i/text-align-center
+            :bottom i/text-align-right
+            i/text-align-center))]
+    (case layout-type
+      :packed        manage-text-icon
+      :space-around  i/space-around
+      :space-between i/space-between)))
+
 (mf/defc direction-row
   [{:keys [dir saved-dir set-direction] :as props}]
-  [:button.dir.tooltip.tooltip-bottom
-   {:class  (dom/classnames :active (= saved-dir dir)
-                            :left   (= :left dir)
-                            :right  (= :right dir)
-                            :top    (= :top dir)
-                            :bottom (= :bottom dir))
-    :key    (dm/str  "direction-" dir)
-    :alt    (tr (dm/str "workspace.options.layout.direction." (d/name dir)))
-    :on-click #(set-direction dir)}
-   i/auto-direction])
+  (let [handle-on-click
+        (mf/use-callback
+         (mf/deps set-direction dir)
+         (fn []
+           (when (some? set-direction)
+             (set-direction dir))))]
+
+    [:button.dir.tooltip.tooltip-bottom
+     {:class  (dom/classnames :active (= saved-dir dir)
+                              :left   (= :left dir)
+                              :right  (= :right dir)
+                              :top    (= :top dir)
+                              :bottom (= :bottom dir))
+      :key    (dm/str  "direction-" dir)
+      :alt    (tr (dm/str "workspace.options.layout.direction." (d/name dir)))
+      :on-click handle-on-click}
+     i/auto-direction]))
 
 (mf/defc orientation-grid
-  [{:keys [manage-orientation test-values get-icon] :as props}]
-  (let [dir       (:layout-dir @test-values)
-        type      (:layout-type @test-values)
+  [{:keys [on-change-orientation values] :as props}]
+  (let [dir       (:layout-dir values)
+        type      (:layout-type values)
         is-col?   (or (= dir :top)
                       (= dir :bottom))
-        saved-pos [(:h-orientation @test-values) (:v-orientation @test-values)]]
+        saved-pos [(:layout-h-orientation values) (:layout-v-orientation values)]]
+
     (if (= type :packed)
       [:div.orientation-grid
        [:div.button-wrapper
         (for [[pv ph] grid-pos]
           [:button.orientation
-           {:on-click (partial manage-orientation pv ph type)
+           {:on-click (partial on-change-orientation pv ph type)
             :class  (dom/classnames
                      :active (= [pv ph] saved-pos)
                      :top    (= :top pv)
@@ -76,14 +108,15 @@
            [:span.icon
             {:class (dom/classnames
                      :rotated is-col?)}
-            (get-icon dir type pv ph)]])]]
+            (get-layout-icon dir type pv ph)]])]]
 
       (if is-col?
         [:div.orientation-grid.col
          [:div.button-wrapper
-          (for [col grid-cols]
+          (for [[idx col] (d/enumerate grid-cols)]
             [:button.orientation
-             {:on-click (partial manage-orientation :top col type)
+             {:key (dm/str idx col)
+              :on-click (partial on-change-orientation :top col type)
               :class  (dom/classnames
                        :active   (= col (second saved-pos))
                        :top      (= :left col)
@@ -91,19 +124,19 @@
                        :bottom   (= :right col))}
              [:span.icon
               {:class (dom/classnames :rotated is-col?)}
-              (get-icon dir type nil col)]
+              (get-layout-icon dir type nil col)]
              [:span.icon
               {:class (dom/classnames :rotated is-col?)}
-              (get-icon dir type nil col)]
+              (get-layout-icon dir type nil col)]
              [:span.icon
               {:class (dom/classnames :rotated is-col?)}
-              (get-icon dir type nil col)]])]]
+              (get-layout-icon dir type nil col)]])]]
 
         [:div.orientation-grid.row
          [:div.button-wrapper
           (for [row grid-rows]
             [:button.orientation
-             {:on-click (partial manage-orientation row :left type)
+             {:on-click (partial on-change-orientation row :left type)
               :class    (dom/classnames
                          :active   (= row (first saved-pos))
                          :top      (= :top row)
@@ -111,30 +144,30 @@
                          :bottom   (= :bottom row))}
              [:span.icon
               {:class (dom/classnames :rotated is-col?)}
-              (get-icon dir type row nil)]
+              (get-layout-icon dir type row nil)]
              [:span.icon
               {:class (dom/classnames :rotated is-col?)}
-              (get-icon dir type row nil)]
+              (get-layout-icon dir type row nil)]
              [:span.icon
               {:class (dom/classnames :rotated is-col?)}
-              (get-icon dir type row nil)]])]]))))
+              (get-layout-icon dir type row nil)]])]]))))
 
 (mf/defc padding-section
-  [{:keys [test-values change-padding-style select-all on-padding-change] :as props}]
+  [{:keys [values on-change-style on-change] :as props}]
 
-  (let [padding-type (:padding-type @test-values)]
+  (let [padding-type (:layout-padding-type values)]
 
     [:div.row-flex
      [:div.padding-options
       [:div.padding-icon.tooltip.tooltip-bottom
        {:class (dom/classnames :selected (= padding-type :simple))
         :alt (tr "workspace.options.layout.padding-simple")
-        :on-click #(change-padding-style :simple)}
+        :on-click #(on-change-style :simple)}
        i/auto-padding]
       [:div.padding-icon.tooltip.tooltip-bottom
        {:class (dom/classnames :selected (= padding-type :multiple))
         :alt (tr "workspace.options.layout.padding")
-        :on-click #(change-padding-style :multiple)}
+        :on-click #(on-change-style :multiple)}
        i/auto-padding-side]]
 
      (cond
@@ -145,9 +178,9 @@
 
          [:> numeric-input
           {:placeholder "--"
-           :on-click select-all
-           :on-change (partial on-padding-change :simple)
-           :value (:p1 (:padding @test-values))}]]]
+           :on-click #(dom/select-target %)
+           :on-change (partial on-change :simple)
+           :value (:p1 (:layout-padding values))}]]]
 
        (= padding-type :multiple)
        (for [num [:p1 :p2 :p3 :p4]]
@@ -161,82 +194,57 @@
           [:div.input-element.mini
            [:> numeric-input
             {:placeholder "--"
-             :on-click select-all
-             :on-change (partial on-padding-change num)
-             :value (num (:padding @test-values))}]]]))]))
+             :on-click #(dom/select-target %)
+             :on-change (partial on-change num)
+             :value (num (:layout-padding values))}]]]))]))
 
-
-
-(mf/defc layout-menu
+(mf/defc layout-container-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type"]))]}
-  [{:keys [_ids _type _values] :as props}]
-  (let [test-values       (mf/use-state {:layout false
-                                         :layout-dir nil
-                                         :gap 0
-                                         :layout-type nil
-                                         :wrap-type nil
-                                         :padding-type nil
-                                         :padding {:p1 0 :p2 0 :p3 0 :p4 0}
-                                         :h-orientation nil
-                                         :v-orientation nil})
-
-        open?             (mf/use-state false)
+  [{:keys [ids type values] :as props}]
+  (let [open?             (mf/use-state false)
         gap-selected?     (mf/use-state false)
         toggle-open       (fn [] (swap! open? not))
 
         on-add-layout
         (fn [_]
-          (reset! test-values {:layout true
-                               :layout-dir :left
-                               :gap 0
-                               :layout-type :packed
-                               :wrap-type :wrap
-                               :padding-type :simple
-                               :padding {:p1 0 :p2 0 :p3 0 :p4 0}
-                               :h-orientation :top
-                               :v-orientation :left}))
+          (st/emit! (dwsl/create-layout ids)))
+
         on-remove-layout
         (fn [_]
-          (reset! test-values {:layout false
-                               :layout-dir nil
-                               :gap 0
-                               :layout-type nil
-                               :wrap-type nil
-                               :padding-type nil
-                               :padding {:p1 0 :p2 0 :p3 0 :p4 0}
-                               :h-orientation nil
-                               :v-orientation nil})
+          (st/emit! (dwsl/remove-layout ids))
           (reset! open? false))
 
         set-direction
         (fn [dir]
-          (swap! test-values assoc :layout-dir dir))
+          (st/emit! (dwsl/update-layout ids {:layout-dir dir})))
 
         set-gap
-        (fn [event]
-          (swap! test-values assoc :gap event))
-
+        (fn [gap]
+          (st/emit! (dwsl/update-layout ids {:layout-gap gap})))
+        
         change-padding-style
         (fn [type]
-          (swap! test-values assoc :padding-type type))
+          (st/emit! (dwsl/update-layout ids {:layout-padding-type type})))
 
         select-all #(dom/select-target %)
 
-        select-all-gap #(do (reset! gap-selected? true)
-                            (dom/select-target %))
+        select-all-gap
+        (fn [event]
+          (reset! gap-selected? true)
+          (dom/select-target event))
 
         on-padding-change
         (fn [type val]
           (if (= type :simple)
-            (swap! test-values assoc :padding {:p1 val :p2 val :p3 val :p4 val})
-            (swap! test-values assoc-in [:padding type] val)))
+            (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p2 val :p3 val :p4 val}}))
+            (st/emit! (dwsl/update-layout ids {:layout-padding {type val}}))))
 
         handle-change-type
         (fn [event]
           (let [target  (dom/get-target event)
                 value   (dom/get-value target)
                 value   (keyword value)]
-            (swap! test-values assoc :layout-type value)))
+            (st/emit! (dwsl/update-layout ids {:layout-type value}))))
 
         handle-wrap-type
         (mf/use-callback
@@ -244,47 +252,32 @@
            (let [target  (dom/get-target event)
                  value   (dom/get-value target)
                  value   (keyword value)]
-             (swap! test-values assoc :wrap-type value))))
+             (st/emit! (dwsl/update-layout ids {:layout-wrap-type value})))))
 
-        manage-orientation
-        (fn [h v]
-          (swap! test-values assoc :h-orientation h :v-orientation v))
-
-        get-icon
-        (fn [dir layout-type v h]
-          (let [col? (= dir (or :left :right))
-                manage-text-icon
-                (if col?
-                  (case h
-                    :left   i/text-align-left
-                    :center i/text-align-center
-                    :right  i/text-align-right
-                    i/text-align-center)
-
-                  (case v
-                    :top    i/text-align-left
-                    :center i/text-align-center
-                    :bottom i/text-align-right
-                    i/text-align-center))]
-            (case layout-type
-              :packed        manage-text-icon
-              :space-around  i/space-around
-              :space-between i/space-between)))
+        handle-change-orientation
+        (fn [h-orientation v-orientation]
+          (st/emit! (dwsl/update-layout ids {:layout-h-orientation h-orientation :layout-v-orientation v-orientation})))
 
         layout-info
         (fn []
-          (let [type        (:layout-type @test-values)
-                dir         (:layout-dir @test-values)
-                is-col?     (or (= dir :top)
-                                (= dir :bottom))
-                h           (:v-orientation @test-values)
-                v           (:h-orientation @test-values)
-                wrap        (:wrap-type @test-values)
-                orientation (if (= type :packed)
-                              (dm/str (tr (dm/str "workspace.options.layout.v." (d/name v))) ", " (tr (dm/str "workspace.options.layout.h." (d/name h))) ", ")
-                              (if is-col?
-                                (dm/str (tr (dm/str "workspace.options.layout.h." (d/name h))) ", ")
-                                (dm/str (tr (dm/str "workspace.options.layout.v." (d/name v)))  ", ")))]
+          (let [type        (:layout-type values)
+                dir         (:layout-dir values)
+                is-col?     (or (= dir :top) (= dir :bottom))
+                h           (:layout-v-orientation values)
+                v           (:layout-h-orientation values)
+                wrap        (:layout-wrap-type values)
+
+                orientation
+                (cond
+                  (= type :packaged)
+                  (dm/str (tr (dm/str "workspace.options.layout.v." (d/name v))) ", "
+                          (tr (dm/str "workspace.options.layout.h." (d/name h))) ", ")
+
+                  is-col?
+                  (dm/str (tr (dm/str "workspace.options.layout.h." (d/name h))) ", ")
+
+                  :else
+                  (dm/str (tr (dm/str "workspace.options.layout.v." (d/name v)))  ", "))]
 
             (dm/str orientation
                     (str/replace (tr (dm/str "workspace.options.layout." (d/name type))) "-" " ") ", "
@@ -294,11 +287,11 @@
      [:div.element-set-title
       [:*
        [:span (tr "workspace.options.layout.title")]
-       (if (= true (:layout @test-values))
+       (if (:layout values)
          [:div.add-page {:on-click on-remove-layout} i/minus]
          [:div.add-page {:on-click on-add-layout} i/close])]]
 
-     (when (= true (:layout @test-values))
+     (when (:layout values)
        [:div.element-set-content.layout-menu
         ;; DIRECTION-GAP
         [:div.direction-gap
@@ -306,14 +299,14 @@
           [:*
            (for [dir [:left :right :bottom :top]]
              [:& direction-row {:dir dir
-                                :saved-dir (:layout-dir @test-values)
+                                :saved-dir (:layout-dir values)
                                 :set-direction set-direction}])]]
          [:div.gap.tooltip.tooltip-bottom-left
           {:alt (tr "workspace.options.layout.gap")}
           [:span.icon
            {:class (dom/classnames
-                    :rotated (or (= (:layout-dir @test-values) :top)
-                                 (= (:layout-dir @test-values) :bottom))
+                    :rotated (or (= (:layout-dir values) :top)
+                                 (= (:layout-dir values) :bottom))
                     :activated (= @gap-selected? true))}
            i/auto-gap]
           [:> numeric-input {:no-validate true
@@ -321,7 +314,7 @@
                              :on-click select-all-gap
                              :on-change set-gap
                              :on-blur #(reset! gap-selected? false)
-                             :value (:gap @test-values)}]]]
+                             :value (:layout-gap values)}]]]
 
         ;; LAYOUT FLEX
         [:div.layout-container
@@ -329,25 +322,24 @@
           {:on-click toggle-open
            :alt (layout-info)}
           [:div.element-set-actions-button i/actions]
-          [:div.layout-info
-           (layout-info)]]
-         (when (= true @open?)
+          [:div.layout-info (layout-info)]]
+
+         (when @open?
            [:div.layout-body
-            [:& orientation-grid {:manage-orientation  manage-orientation :test-values test-values :get-icon get-icon}]
+            [:& orientation-grid {:on-change-orientation handle-change-orientation :values values}]
 
             [:div.selects-wrapper
-             [:select.input-select {:value (d/name (:layout-type @test-values))
+             [:select.input-select {:value (d/name (:layout-type values))
                                     :on-change handle-change-type}
               [:option {:value "packed" :label (tr "workspace.options.layout.packed")}]
               [:option {:value "space-between" :label (tr "workspace.options.layout.space-between")}]
               [:option {:value "space-around" :label (tr "workspace.options.layout.space-around")}]]
 
-             [:select.input-select {:value (d/name (:wrap-type @test-values))
+             [:select.input-select {:value (d/name (:layout-wrap-type values))
                                     :on-change handle-wrap-type}
               [:option {:value "wrap" :label (tr "workspace.options.layout.wrap")}]
               [:option {:value "no-wrap" :label (tr "workspace.options.layout.no-wrap")}]]]])]
 
-        [:& padding-section {:test-values test-values
-                             :change-padding-style change-padding-style
-                             :select-all select-all
-                             :on-padding-change on-padding-change}]])]))
+        [:& padding-section {:values values
+                             :on-change-style change-padding-style
+                             :on-change on-padding-change}]])]))

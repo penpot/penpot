@@ -14,7 +14,7 @@
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout :refer [layout-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
@@ -52,8 +52,8 @@
     [:div.options
      [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
      [:& component-menu {:ids comp-ids :values comp-values :shape-name (:name shape)}]
-     (when-not (empty? layout-ids)
-       [:& layout-menu {:type type :ids layout-ids :values layout-values}])
+     [:& layout-container-menu {:type type :ids layout-ids :values layout-values}]
+
      (when has-layout-item
        [:& layout-item-menu {:type type :ids layout-item-ids :values layout-item-values}])
      [:& constraints-menu {:ids constraint-ids :values constraint-values}]

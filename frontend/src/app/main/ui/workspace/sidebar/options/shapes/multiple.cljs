@@ -19,7 +19,7 @@
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout :refer [layout-attrs layout-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
@@ -142,7 +142,7 @@
    :stroke      stroke-attrs
    :text        ot/attrs
    :exports     exports-attrs
-   :layout      layout-attrs
+   :layout      layout-container-attrs
    :layout-item layout-item-attrs})
 
 (def shadow-keys [:style :color :offset-x :offset-y :blur :spread])
@@ -260,7 +260,7 @@
          stroke-ids      stroke-values
          text-ids        text-values
          exports-ids     exports-values
-         layout-ids      layout-values
+         layout-ids      layout-container-values
          layout-item-ids layout-item-values]
         (mf/use-memo
          (mf/deps objects-no-measures)
@@ -284,8 +284,7 @@
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
-     (when-not (empty? layout-ids)
-       [:& layout-menu {:type type :ids layout-ids :values layout-values}])
+     [:& layout-container-menu {:type type :ids layout-ids :values layout-container-values}]
      
      (when has-layout-item
        [:& layout-item-menu {:type type :ids layout-item-ids :values layout-item-values}])
