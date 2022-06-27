@@ -70,7 +70,6 @@
 (defmulti command-spec :cmd)
 
 (s/def ::id ::us/string)
-(s/def ::uri ::us/uri)
 (s/def ::wait ::us/boolean)
 (s/def ::cmd ::us/keyword)
 
@@ -80,24 +79,13 @@
 
 (s/def ::params
   (s/and (s/keys :req-un [::cmd]
-                 :opt-un [::wait ::uri])
+                 :opt-un [::wait])
          (s/multi-spec command-spec :cmd)))
-
-(defn validate-uri!
-  [uri]
-  (let [white-list (cf/get :domain-white-list #{})
-        default    (cf/get :public-uri)]
-    (when-not (or (contains? white-list (u/get-domain uri))
-                  (= (u/get-domain default) (u/get-domain uri)))
-      (ex/raise :type :validation
-                :code :domain-not-allowed
-                :hint "looks like the uri provided is not part of the white list"))))
 
 (defn handler
   [{:keys [:request/params] :as exchange}]
-  (let [{:keys [cmd uri] :as params} (us/conform ::params params)]
+  (let [{:keys [cmd] :as params} (us/conform ::params params)]
     (l/debug :hint "process-request" :cmd cmd)
-    (some-> uri validate-uri!)
     (case cmd
       :get-resource  (resources/handler exchange)
       :export-shapes (export-shapes/handler exchange params)

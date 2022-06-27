@@ -20,7 +20,6 @@
 (s/def ::file-id ::us/uuid)
 (s/def ::scale ::us/number)
 (s/def ::token ::us/string)
-(s/def ::uri ::us/uri)
 (s/def ::filename ::us/string)
 
 (s/def ::object
@@ -30,8 +29,7 @@
   (s/coll-of ::object :min-count 1))
 
 (s/def ::render-params
-  (s/keys :req-un [::file-id ::page-id ::scale ::token ::type ::objects]
-          :opt-un [::uri]))
+  (s/keys :req-un [::file-id ::page-id ::scale ::token ::type ::objects]))
 
 (defn- render
   [{:keys [type] :as params} on-object]

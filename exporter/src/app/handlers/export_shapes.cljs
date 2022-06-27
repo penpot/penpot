@@ -34,7 +34,6 @@
 (s/def ::scale ::us/number)
 (s/def ::suffix ::us/string)
 (s/def ::type ::us/keyword)
-(s/def ::uri ::us/uri)
 (s/def ::wait ::us/boolean)
 
 (s/def ::export
@@ -45,11 +44,11 @@
 
 (s/def ::params
   (s/keys :req-un [::exports ::profile-id]
-          :opt-un [::uri ::wait ::name]))
+          :opt-un [::wait ::name]))
 
 (defn handler
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports uri] :as params}]
-  (let [exports (prepare-exports exports auth-token uri)]
+  [{:keys [:request/auth-token] :as exchange} {:keys [exports] :as params}]
+  (let [exports (prepare-exports exports auth-token)]
     (if (and (= 1 (count exports))
              (= 1 (count (-> exports first :objects))))
       (handle-single-export exchange (-> params
@@ -58,7 +57,7 @@
       (handle-multiple-export exchange (assoc params :exports exports)))))
 
 (defn- handle-single-export
-  [exchange {:keys [export wait uri profile-id name] :as params}]
+  [exchange {:keys [export wait profile-id name] :as params}]
   (let [topic       (str profile-id)
         resource    (rsc/create (:type export) (or name (:name export)))
 
@@ -98,7 +97,7 @@
       (assoc exchange :response/body (dissoc resource :path)))))
 
 (defn- handle-multiple-export
-  [exchange {:keys [exports wait uri profile-id name] :as params}]
+  [exchange {:keys [exports wait profile-id name] :as params}]
   (let [resource    (rsc/create :zip (or name (-> exports first :name)))
         total       (count exports)
         topic       (str profile-id)
@@ -185,7 +184,7 @@
   default-partition-size 50)
 
 (defn prepare-exports
-  [exports token uri]
+  [exports token]
   (letfn [(process-group [group]
             (sequence (comp (partition-all default-partition-size)
                             (map process-partition))
@@ -196,7 +195,6 @@
              :page-id (:page-id part1)
              :name    (:name part1)
              :token   token
-             :uri     uri
              :type    (:type part1)
              :scale   (:scale part1)
              :objects (mapv part-entry->object part)})
