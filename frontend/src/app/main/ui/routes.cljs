@@ -92,14 +92,22 @@
 
 (defn on-navigate
   [router path]
-  (let [match   (match-path router path)
-        profile (:profile @storage)
-        nopath? (or (= path "") (= path "/"))
-        authed? (and (not (nil? profile))
-                     (not= (:id profile) uuid/zero))]
+  (let [match     (match-path router path)
+        profile   (:profile @storage)
+        nopath?   (or (= path "") (= path "/"))
+        path-name (-> match :data :name)
+        authpath? (some #(= path-name %) '(:auth-login
+                                           :auth-register
+                                           :auth-register-validate
+                                           :auth-register-success
+                                           :auth-recovery-request
+                                           :auth-recovery))
+        authed?   (and (not (nil? profile))
+                       (not= (:id profile) uuid/zero))]
 
     (cond
-      (and nopath? authed? (nil? match))
+      (or (and nopath? authed? (nil? match))
+          (and authpath? authed?))
       (if (not= uuid/zero profile)
         (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))
         (st/emit! (rt/nav :auth-login)))
