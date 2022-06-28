@@ -19,6 +19,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.spec.shape :as spec.shape]
+   [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
@@ -1565,7 +1566,7 @@
   (let [paragraphs (->> (str/lines text)
                         (map str/trim)
                         (mapv #(hash-map :type "paragraph"
-                                         :children [{:text %}])))]
+                                         :children [(merge txt/default-text-attrs {:text %})])))]
     {:type "root"
      :children [{:type "paragraph-set" :children paragraphs}]}))
 

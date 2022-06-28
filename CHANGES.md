@@ -11,6 +11,12 @@
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+## 1.14.2-beta
+
+### :bug: Bugs fixed
+
+- Fix fill information not complete when paste plain text [Taiga #3680](https://tree.taiga.io/project/penpot/issue/3680)
+
 ## 1.14.1-beta
 
 ### :bug: Bugs fixed
