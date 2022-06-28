@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.types.page :as ctp]
+   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -182,7 +183,7 @@
   (let [objects              (deref refs/workspace-page-objects)
         destination          (get objects (:destination interaction))
 
-        frames               (mf/with-memo [objects] (cph/get-viewer-frames objects {:all-frames? (not= :navigate (:action-type interaction))}))
+        frames               (mf/with-memo [objects] (ctt/get-viewer-frames objects {:all-frames? (not= :navigate (:action-type interaction))}))
 
         overlay-pos-type     (:overlay-pos-type interaction)
         close-click-outside? (:close-click-outside interaction false)

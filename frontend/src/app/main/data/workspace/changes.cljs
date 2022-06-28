@@ -13,6 +13,7 @@
    [app.common.pages.changes-spec :as pcs]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -165,7 +166,7 @@
             (update-in state path (fn [file]
                                     (-> file
                                         (cp/process-changes redo-changes false)
-                                        (cph/update-object-indices page-id))))
+                                        (ctst/update-object-indices page-id))))
 
             (catch :default err
               (log/error :js/error err)

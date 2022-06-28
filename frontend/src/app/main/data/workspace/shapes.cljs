@@ -16,6 +16,7 @@
    [app.common.types.page :as csp]
    [app.common.types.shape :as spec.shape]
    [app.common.types.shape.interactions :as csi]
+   [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
@@ -23,7 +24,6 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
-   [app.util.names :as un]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -84,8 +84,8 @@
 
              id       (or (:id attrs) (uuid/next))
              name     (-> objects
-                          (un/retrieve-used-names)
-                          (un/generate-unique-name (:name attrs)))
+                          (ctst/retrieve-used-names)
+                          (ctst/generate-unique-name (:name attrs)))
 
              shape (make-new-shape
                      (assoc attrs :id id :name name)

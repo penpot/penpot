@@ -95,12 +95,6 @@
 (s/def ::page
   (s/keys :req-un [::id ::name ::objects ::options]))
 
-(s/def ::type #{:page :component})
-(s/def ::path (s/nilable string?))
-(s/def ::container
-  (s/keys :req-un [::id ::name ::objects]
-          :opt-un [::type ::path]))
-
 ;; --- Helpers for flow
 
 (defn rename-flow

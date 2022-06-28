@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
    [app.util.geom.grid :as gg]
@@ -134,7 +134,7 @@
     [:g.grid-display {:style {:pointer-events "none"}}
      (for [frame frames]
        (when (and (not (is-transform? frame))
-                  (not (cph/rotated-frame? frame))
+                  (not (ctst/rotated-frame? frame))
                   (or (empty? focus) (contains? focus (:id frame))))
          [:& grid-display-frame {:key (str "grid-" (:id frame))
                                  :zoom zoom

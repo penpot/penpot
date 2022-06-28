@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
+   [app.common.types.shape-tree :as ctt]
    [app.common.spec :as us]
    [app.db :as db]
    [app.db.sql :as sql]
@@ -304,7 +305,7 @@
           (get-thumbnail-frame [data]
             (d/seek :use-for-thumbnail?
                     (for [page  (-> data :pages-index vals)
-                          frame (-> page :objects cph/get-frames)]
+                          frame (-> page :objects ctt/get-frames)]
                       (assoc frame :page-id (:id page)))))
 
           ;; function responsible to filter objects data structure of
@@ -355,7 +356,7 @@
                         (-> data :pages first))
 
           page      (dm/get-in data [:pages-index page-id])
-          frame-ids (if (some? frame) (list frame-id) (map :id (cph/get-frames (:objects page))))
+          frame-ids (if (some? frame) (list frame-id) (map :id (ctt/get-frames (:objects page))))
 
           obj-ids   (map #(str page-id %) frame-ids)
           thumbs    (retrieve-object-thumbnails cfg id obj-ids)]

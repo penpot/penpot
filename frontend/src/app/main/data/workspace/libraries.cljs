@@ -15,7 +15,9 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.color :as ctc]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.shape-tree :as ctst]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
@@ -30,7 +32,6 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
-   [app.util.names :as un]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
@@ -352,7 +353,7 @@
             component      (cph/get-component libraries id)
             all-components (-> state :workspace-data :components vals)
             unames         (into #{} (map :name) all-components)
-            new-name       (un/generate-unique-name unames (:name component))
+            new-name       (ctst/generate-unique-name unames (:name component))
 
             [new-shape new-shapes _updated-shapes main-instance main-instance-page]
             (dwlh/duplicate-component component)
@@ -525,7 +526,7 @@
             libraries     (wsh/get-libraries state)
 
             container     (cph/get-container local-file :page page-id)
-            shape         (cph/get-shape container id)
+            shape         (ctn/get-shape container id)
 
             changes
             (-> (pcb/empty-changes it)

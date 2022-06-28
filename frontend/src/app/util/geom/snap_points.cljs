@@ -8,7 +8,8 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]))
+   [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctst]))
 
 (defn selrect-snap-points [{:keys [x y width height] :as selrect}]
   #{(gpt/point x y)
@@ -38,7 +39,7 @@
 
   (cond
     (and (some? frame)
-         (not (cph/rotated-frame? frame))
+         (not (ctst/rotated-frame? frame))
          (not (cph/root-frame? frame)))
     #{}
 

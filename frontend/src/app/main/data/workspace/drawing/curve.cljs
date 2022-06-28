@@ -8,7 +8,7 @@
   (:require
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
-   [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctt]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
@@ -47,7 +47,7 @@
       (let [objects  (wsh/lookup-page-objects state)
             content  (get-in state [:workspace-drawing :object :content] [])
             position (get-in content [0 :params] nil)
-            frame-id (cph/frame-id-by-position objects position)]
+            frame-id (ctt/frame-id-by-position objects position)]
         (-> state
             (assoc-in [:workspace-drawing :object :frame-id] frame-id))))))
 

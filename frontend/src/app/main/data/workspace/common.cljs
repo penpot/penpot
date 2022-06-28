@@ -7,6 +7,15 @@
 (ns app.main.data.workspace.common
   (:require
    [app.common.logging :as log]
+   [app.common.pages :as cp]
+   [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.helpers :as cph]
+   [app.common.spec :as us]
+   [app.common.types.page :as ctp]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctt]
+   [app.common.types.shape.interactions :as ctsi]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.undo :as dwu]
    [app.main.worker :as uw]

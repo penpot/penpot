@@ -11,6 +11,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -65,7 +66,7 @@
             focus   (:workspace-focus-selected state)
             zoom    (get-in state [:workspace-local :zoom] 1)
 
-            fid     (cph/frame-id-by-position objects initial)
+            fid     (ctt/frame-id-by-position objects initial)
 
             shape   (get-in state [:workspace-drawing :object])
             shape   (-> shape

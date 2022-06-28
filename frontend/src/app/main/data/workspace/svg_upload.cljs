@@ -13,15 +13,14 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.spec :refer [max-safe-int min-safe-int]]
+   [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.util.color :as uc]
-   [app.util.names :as un]
    [app.util.path.parser :as upp]
    [app.util.svg :as usvg]
    [beicon.core :as rx]
@@ -360,7 +359,7 @@
   (let [{:keys [tag attrs hidden]} element-data
         attrs (usvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
-        name (un/generate-unique-name unames (or (:id attrs) (tag->name tag)))
+        name (ctt/generate-unique-name unames (or (:id attrs) (tag->name tag)))
         att-refs (usvg/find-attr-references attrs)
         references (usvg/find-def-references (:defs svg-data) att-refs)
 
@@ -437,17 +436,17 @@
       (try
         (let [page-id  (:current-page-id state)
               objects  (wsh/lookup-page-objects state page-id)
-              frame-id (cph/frame-id-by-position objects position)
+              frame-id (ctt/frame-id-by-position objects position)
               selected (wsh/lookup-selected state)
 
               [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
               x (- x vb-x (/ vb-width 2))
               y (- y vb-y (/ vb-height 2))
 
-              unames (un/retrieve-used-names objects)
+              unames (ctt/retrieve-used-names objects)
 
               svg-name (->> (str/replace (:name svg-data) ".svg" "")
-                            (un/generate-unique-name unames))
+                            (ctt/generate-unique-name unames))
 
               svg-data (-> svg-data
                            (assoc :x x

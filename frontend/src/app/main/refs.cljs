@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctt]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [okulary.core :as l]))
@@ -284,7 +285,7 @@
   (l/derived :options workspace-page))
 
 (def workspace-frames
-  (l/derived cph/get-frames workspace-page-objects =))
+  (l/derived ctt/get-frames workspace-page-objects =))
 
 (def workspace-editor
   (l/derived :workspace-editor st/state))

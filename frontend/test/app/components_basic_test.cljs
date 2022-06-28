@@ -3,6 +3,7 @@
     [app.common.data :as d]
     [app.common.geom.point :as gpt]
     [app.common.pages.helpers :as cph]
+    [app.common.types.container :as ctc]
     [app.main.data.workspace :as dw]
     [app.main.data.workspace.groups :as dwg]
     [app.main.data.workspace.libraries :as dwl]
@@ -520,7 +521,7 @@
                     ;
                     (let [page    (thp/current-page new-state)
                           shape1  (thp/get-shape new-state :shape1)
-                          parent1 (cph/get-shape page (:parent-id shape1))
+                          parent1 (ctc/get-shape page (:parent-id shape1))
 
                           [[group shape1 shape2]
                            [c-group c-shape1 c-shape2]

@@ -14,6 +14,7 @@
    [app.common.pages.changes-spec :as pcs]
    [app.common.pages.init :as init]
    [app.common.spec :as us]
+   [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 

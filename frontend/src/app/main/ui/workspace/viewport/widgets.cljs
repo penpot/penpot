@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
@@ -178,7 +178,7 @@
         on-frame-enter  (unchecked-get props "on-frame-enter")
         on-frame-leave  (unchecked-get props "on-frame-leave")
         on-frame-select (unchecked-get props "on-frame-select")
-        frames          (cph/get-frames objects)]
+        frames          (ctt/get-frames objects)]
 
     [:g.frame-titles
      (for [frame frames]

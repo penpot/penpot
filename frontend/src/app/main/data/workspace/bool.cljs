@@ -11,11 +11,11 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.path.shapes-to-path :as stp]
+   [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.util.names :as un]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]))
@@ -90,8 +90,8 @@
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state)
             base-name (-> bool-type d/name str/capital (str "-1"))
-            name (-> (un/retrieve-used-names objects)
-                     (un/generate-unique-name base-name))
+            name (-> (ctt/retrieve-used-names objects)
+                     (ctt/generate-unique-name base-name))
             shapes  (selected-shapes state)]
 
         (when-not (empty? shapes)

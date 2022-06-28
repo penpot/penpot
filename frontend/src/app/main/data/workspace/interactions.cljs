@@ -12,12 +12,12 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.page :as ctp]
+   [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
-   [app.util.names :as un]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -32,7 +32,7 @@
 
             flows   (get-in page [:options :flows] [])
             unames  (into #{} (map :name flows))
-            name    (un/generate-unique-name unames "Flow-1")
+            name    (ctst/generate-unique-name unames "Flow-1")
 
             new-flow {:id (uuid/next)
                       :name name
@@ -182,7 +182,7 @@
         from-frame-id (if (cph/frame-shape? from-shape)
                         from-id (:frame-id from-shape))
 
-        target-frame (cph/frame-by-position objects position)]
+        target-frame (ctst/frame-by-position objects position)]
 
     (when (and (not= (:id target-frame) uuid/zero)
                (not= (:id target-frame) from-frame-id)
