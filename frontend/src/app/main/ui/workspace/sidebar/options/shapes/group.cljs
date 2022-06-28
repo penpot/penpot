@@ -49,7 +49,7 @@
 
     [:div.options
      [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
-     [:& component-menu {:ids comp-ids :values comp-values}]
+     [:& component-menu {:ids comp-ids :values comp-values :shape-name (:name shape)}]
      (when-not (empty? layout-ids)
        [:& layout-menu {:type type :ids layout-ids :values layout-values}])
      (when has-layout-item
