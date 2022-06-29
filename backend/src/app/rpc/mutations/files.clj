@@ -111,15 +111,28 @@
 ;; --- Mutation: Set File shared
 
 (declare set-file-shared)
+(declare unlink-files)
+(declare absorb-library)
 
 (s/def ::set-file-shared
   (s/keys :req-un [::profile-id ::id ::is-shared]))
 
 (sv/defmethod ::set-file-shared
-  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [id profile-id is-shared] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
+    (when-not is-shared
+        (absorb-library conn params)
+        (unlink-files conn params))
     (set-file-shared conn params)))
+
+(def sql:unlink-files
+  "delete from file_library_rel
+    where library_file_id = ?")
+
+(defn- unlink-files
+  [conn {:keys [id] :as params}]
+  (db/exec-one! conn [sql:unlink-files id]))
 
 (defn- set-file-shared
   [conn {:keys [id is-shared] :as params}]
@@ -138,6 +151,7 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
+    (absorb-library conn params)
     (mark-file-deleted conn params)))
 
 (defn mark-file-deleted
@@ -147,6 +161,35 @@
               {:id id})
   nil)
 
+(def sql:find-files
+  "select file_id 
+    from file_library_rel
+   where library_file_id=?")
+
+(defn absorb-library
+  "Find all files using a shared library, and absorb all library assets
+  into the file local libraries"
+  [conn {:keys [id] :as params}]
+  (let [library (->> (db/get-by-id conn :file id)
+                     (files/decode-row)
+                     (pmg/migrate-file))]
+    (when (:is-shared library)
+      (let [process-file
+            (fn [row]
+              (let [ts (dt/now)
+                    file (->> (db/get-by-id conn :file (:file-id row))
+                              (files/decode-row)
+                              (pmg/migrate-file))
+                    updated-data (ctf/absorb-assets (:data file) (:data library))]
+
+                (db/update! conn :file
+                            {:revn (inc (:revn file))
+                             :data (blob/encode updated-data)
+                             :modified-at ts}
+                            {:id (:id file)})))]
+
+        (dorun (->> (db/exec! conn [sql:find-files id])
+                    (map process-file)))))))
 
 ;; --- Mutation: Link file to library
 

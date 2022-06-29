@@ -6,16 +6,17 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
-   [app.main.data.modal :as modal]
-   [app.main.data.workspace :as dw]
-   [app.main.data.workspace.libraries :as dwl]
-   [app.main.store :as st]
-   [app.main.ui.components.context-menu :refer [context-menu]]
-   [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
-   [rumext.alpha :as mf]))
+    [app.common.pages.helpers :as cph]
+    [app.main.data.modal :as modal]
+    [app.main.data.workspace :as dw]
+    [app.main.data.workspace.libraries :as dwl]
+    [app.main.store :as st]
+    [app.main.ui.components.context-menu :refer [context-menu]]
+    [app.main.ui.context :as ctx]
+    [app.main.ui.icons :as i]
+    [app.util.dom :as dom]
+    [app.util.i18n :as i18n :refer [tr]]
+    [rumext.alpha :as mf]))
 
 (def component-attrs [:component-id :component-file :shape-ref])
 

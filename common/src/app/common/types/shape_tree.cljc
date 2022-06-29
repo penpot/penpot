@@ -326,7 +326,7 @@
 (defn generate-shape-grid
   "Generate a sequence of positions that lays out the list of
   shapes in a grid of equal-sized rows and columns."
-  [shapes gap]
+  [shapes start-pos gap]
   (let [shapes-bounds (map gsh/bounding-box shapes)
 
         grid-size   (mth/ceil (mth/sqrt (count shapes)))
@@ -339,11 +339,12 @@
                    (let [counter (inc (:counter (meta position)))
                          row     (quot counter grid-size)
                          column  (mod counter grid-size)
-                         new-pos (gpt/point (* column column-size)
-                                            (* row row-size))]
+                         new-pos (gpt/add start-pos
+                                          (gpt/point (* column column-size)
+                                                     (* row row-size)))]
                      (with-meta new-pos
                                 {:counter counter})))]
     (iterate next-pos
-             (with-meta (gpt/point 0 0)
+             (with-meta start-pos
                         {:counter 0}))))
 

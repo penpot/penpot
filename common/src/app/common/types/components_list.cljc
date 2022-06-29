@@ -26,3 +26,7 @@
   [file-data component-id]
   (get-in file-data [:components component-id]))
 
+(defn update-component
+  [file-data component-id f]
+  (update-in file-data [:components component-id] f))
+

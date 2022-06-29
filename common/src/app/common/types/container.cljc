@@ -56,6 +56,10 @@
   [container]
   (vals (:objects container)))
 
+(defn update-shape
+  [container shape-id f]
+  (update-in container [:objects shape-id] f))
+
 (defn make-component-shape
   "Clone the shape and all children. Generate new ids and detach
   from parent and frame. Update the original shapes to have links

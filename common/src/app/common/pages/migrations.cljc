@@ -15,7 +15,9 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -439,70 +441,65 @@
 
 (defmethod migrate 20
   [data]
-  (let [page-id (uuid/next)
-
-        components (->> (:components data)
-                        vals
-                        (sort-by :name))
-
-        add-library-page
-        (fn [data]
-          (let [page (ctp/make-empty-page page-id "Library page")]
-            (-> data
-                (ctpl/add-page page))))
-
-        add-main-instance
-        (fn [data component position]
-          (let [page (ctpl/get-page data page-id)
-
-                [new-shape new-shapes]
-                (ctn/instantiate-component page
-                                           component
-                                           (:id data)
-                                           position)
-
-                add-shape
-                (fn [data shape]
-                  (update-in data [:pages-index page-id]
-                             #(ctst/add-shape (:id shape)
-                                              shape
-                                              %
-                                              (:frame-id shape)
-                                              (:parent-id shape)
-                                              nil     ; <- As shapes are ordered, we can safely add each
-                                              true))) ;    one at the end of the parent's children list.
-
-                update-component
-                (fn [component]
-                  (assoc component
-                         :main-instance-id (:id new-shape)
-                         :main-instance-page page-id))]
-
-            (as-> data $
-              (reduce add-shape $ new-shapes)
-              (update-in $ [:components (:id component)] update-component))))
-
-        add-instance-grid
-        (fn [data components]
-          (let [position-seq (ctst/generate-shape-grid
-                               (map cph/get-component-root components)
-                               50)]
-            (loop [data           data
-                   components-seq (seq components)
-                   position-seq   position-seq]
-              (let [component (first components-seq)
-                    position  (first position-seq)]
-                (if (nil? component)
-                  data
-                  (recur (add-main-instance data component position)
-                         (rest components-seq)
-                         (rest position-seq)))))))]
-
+  (let [components (ctkl/components-seq data)]
     (if (empty? components)
       data
-      (-> data
-          (add-library-page)
-          (add-instance-grid components)))))
+      (let [grid-gap 50
+
+            [data page-id start-pos]
+            (ctf/get-or-add-library-page data grid-gap)
+
+            add-main-instance
+            (fn [data component position]
+              (let [page (ctpl/get-page data page-id)
+
+                    [new-shape new-shapes]
+                    (ctn/instantiate-component page
+                                               component
+                                               (:id data)
+                                               position)
+
+                    add-shapes
+                    (fn [page]
+                      (reduce (fn [page shape]
+                                (ctst/add-shape (:id shape)
+                                                shape
+                                                page
+                                                (:frame-id shape)
+                                                (:parent-id shape)
+                                                nil     ; <- As shapes are ordered, we can safely add each
+                                                true))  ;    one at the end of the parent's children list.
+                              page
+                              new-shapes))
+
+                    update-component
+                    (fn [component]
+                      (assoc component
+                             :main-instance-id (:id new-shape)
+                             :main-instance-page page-id))]
+
+                (-> data
+                    (ctpl/update-page page-id add-shapes)
+                    (ctkl/update-component (:id component) update-component))))
+
+            add-instance-grid
+            (fn [data components]
+              (let [position-seq (ctst/generate-shape-grid
+                                   (map cph/get-component-root components)
+                                   start-pos
+                                   grid-gap)]
+                (loop [data           data
+                       components-seq (seq components)
+                       position-seq   position-seq]
+                  (let [component (first components-seq)
+                        position  (first position-seq)]
+                    (if (nil? component)
+                      data
+                      (recur (add-main-instance data component position)
+                             (rest components-seq)
+                             (rest position-seq)))))))]
+
+        (add-instance-grid data (sort-by :name components))))))
 
 ;; TODO: pending to do a migration for delete already not used fill
 ;; and stroke props. This should be done for >1.14.x version.

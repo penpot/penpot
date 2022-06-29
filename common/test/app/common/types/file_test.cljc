@@ -54,25 +54,23 @@
                         file
                         #(ctf/absorb-assets % (:data library)))]
 
-    (println "\n===== library")
-    (ctf/dump-tree (:data library)
-                   library-page-id
-                   {}
-                   true)
+    ;; (println "\n===== library")
+    ;; (ctf/dump-tree (:data library)
+    ;;                library-page-id
+    ;;                {}
+    ;;                true)
 
-    (println "\n===== file")
-    (ctf/dump-tree (:data file)
-                   file-page-id
-                   {library-id {:id library-id
-                                :name "Library 1"
-                                :data library}}
-                   true)
+    ;; (println "\n===== file")
+    ;; (ctf/dump-tree (:data file)
+    ;;                file-page-id
+    ;;                {library-id library}
+    ;;                true)
 
-    (println "\n===== absorbed file")
-    (ctf/dump-tree (:data absorbed-file)
-                   file-page-id
-                   {}
-                   true)
+    ;; (println "\n===== absorbed file")
+    ;; (ctf/dump-tree (:data absorbed-file)
+    ;;                file-page-id
+    ;;                {}
+    ;;                true)
 
     (t/is (= library-id (:id library)))
     (t/is (= file-id (:id absorbed-file)))))

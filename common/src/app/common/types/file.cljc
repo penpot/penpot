@@ -6,18 +6,22 @@
 
 (ns app.common.types.file
   (:require
-   [app.common.data :as d]
-   [app.common.pages.common :refer [file-version]]
-   [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
-   [app.common.types.color :as ctc]
-   [app.common.types.components-list :as ctkl]
-   [app.common.types.container :as ctn]
-   [app.common.types.page :as ctp]
-   [app.common.types.pages-list :as ctpl]
-   [app.common.uuid :as uuid]
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]))
+    [app.common.data :as d]
+    [app.common.geom.point :as gpt]
+    [app.common.geom.shapes :as gsh]
+    [app.common.pages.common :refer [file-version]]
+    [app.common.pages.helpers :as cph]
+    [app.common.spec :as us]
+    [app.common.types.color :as ctc]
+    [app.common.types.component :as ctk]
+    [app.common.types.components-list :as ctkl]
+    [app.common.types.container :as ctn]
+    [app.common.types.page :as ctp]
+    [app.common.types.pages-list :as ctpl]
+    [app.common.types.shape-tree :as ctst]
+    [app.common.uuid :as uuid]
+    [clojure.spec.alpha :as s]
+    [cuerdas.core :as str]))
 
 ;; Specs
 
@@ -97,48 +101,270 @@
   (concat (map #(ctn/make-container % :page) (ctpl/pages-seq file-data))
           (map #(ctn/make-container % :component) (ctkl/components-seq file-data))))
 
+(defn update-container
+  "Update a container inside the file, it can be a page or a component"
+  [file-data container f]
+  (if (ctn/page? container)
+    (ctpl/update-page file-data (:id container) f)
+    (ctkl/update-component file-data (:id container) f)))
+
+(defn find-instances
+  "Find all uses of a component in a file (may be in pages or in the components
+  of the local library).
+  
+  Returns a vector [[container shapes] [container shapes]...]"
+  [file-data component]
+  (let [find-instances-in-container
+        (fn [container component]
+          (let [instances (filter #(ctk/instance-of? % component) (ctn/shapes-seq container))]
+            (when (d/not-empty? instances)
+              [[container instances]])))]
+
+    (mapcat #(find-instances-in-container % component) (containers-seq file-data))))
+
+(defn get-or-add-library-page
+  [file-data grid-gap]
+  "If exists a page named 'Library page', get the id and calculate the position to start
+  adding new components. If not, create it and start at (0, 0)."
+  (let [library-page (d/seek #(= (:name %) "Library page") (ctpl/pages-seq file-data))]
+    (if (some? library-page)
+      (let [compare-pos (fn [pos shape]
+                          (let [bounds (gsh/bounding-box shape)]
+                            (gpt/point (min (:x pos) (get bounds :x 0))
+                                       (max (:y pos) (+ (get bounds :y 0)
+                                                        (get bounds :height 0)
+                                                        grid-gap)))))
+            position (reduce compare-pos
+                             (gpt/point 0 0)
+                             (ctn/shapes-seq library-page))]
+        [file-data (:id library-page) position])
+      (let [library-page (ctp/make-empty-page (uuid/next) "Library page")]
+        [(ctpl/add-page file-data library-page) (:id library-page) (gpt/point 0 0)]))))
+
+(defn- absorb-components
+  [file-data library-data used-components]
+  (let [grid-gap 50
+
+        ; Search for the library page. If not exists, create it.
+        [file-data page-id start-pos]
+        (get-or-add-library-page file-data grid-gap)
+
+        absorb-component
+        (fn [file-data [component instances] position]
+          (let [page (ctpl/get-page file-data page-id)
+
+                ; Make a new main instance for the component
+                [main-instance-shape main-instance-shapes]
+                (ctn/instantiate-component page
+                                           component
+                                           (:id file-data)
+                                           position)
+
+                ; Add all shapes of the main instance to the library page
+                add-main-instance-shapes
+                (fn [page]
+                  (reduce (fn [page shape]
+                            (ctst/add-shape (:id shape)
+                                            shape
+                                            page
+                                            (:frame-id shape)
+                                            (:parent-id shape)
+                                            nil     ; <- As shapes are ordered, we can safely add each
+                                            true))  ;    one at the end of the parent's children list.
+                          page
+                          main-instance-shapes))
+
+                ; Copy the component in the file local library
+                copy-component
+                (fn [file-data]
+                  (ctkl/add-component file-data
+                                      (:id component)
+                                      (:name component)
+                                      (:path component)
+                                      (:id main-instance-shape)
+                                      page-id
+                                      (vals (:objects component))))
+
+                ; Change all existing instances to point to the local file
+                remap-instances
+                (fn [file-data [container shapes]]
+                  (let [remap-instance #(assoc % :component-file (:id file-data))]
+                    (update-container file-data
+                                      container
+                                      #(reduce (fn [container shape]
+                                                 (ctn/update-shape container
+                                                                   (:id shape)
+                                                                   remap-instance))
+                                               %
+                                               shapes))))]
+
+            (as-> file-data $
+              (ctpl/update-page $ page-id add-main-instance-shapes)
+              (copy-component $)
+              (reduce remap-instances $ instances))))
+
+        ; Absorb all used components into the local library. Position
+        ; the main instances in a grid in the library page.
+        add-component-grid
+        (fn [data used-components]
+          (let [position-seq (ctst/generate-shape-grid
+                               (map #(ctk/get-component-root (first %)) used-components)
+                               start-pos
+                               grid-gap)]
+            (loop [data           data
+                   components-seq (seq used-components)
+                   position-seq   position-seq]
+              (let [used-component (first components-seq)
+                    position       (first position-seq)]
+                (if (nil? used-component)
+                  data
+                  (recur (absorb-component data used-component position)
+                         (rest components-seq)
+                         (rest position-seq)))))))]
+
+    (add-component-grid file-data (sort-by #(:name (first %)) used-components))))
+
+(defn- absorb-colors
+  [file-data library-data used-colors]
+  (let [absorb-color
+        (fn [file-data [color usages]]
+          (let [remap-shape #(ctc/remap-colors % (:id file-data) color)
+
+                remap-shapes
+                (fn [file-data [container shapes]]
+                  (update-container file-data
+                                    container
+                                    #(reduce (fn [container shape]
+                                               (ctn/update-shape container
+                                                                 (:id shape)
+                                                                 remap-shape))
+                                             %
+                                             shapes)))]
+          (as-> file-data $
+            (ctcl/add-color $ color)
+            (reduce remap-shapes $ usages))))]
+
+    (reduce absorb-color
+            file-data
+            used-colors)))
+
+(defn- absorb-typographies
+  [file-data library-data used-typographies]
+  (let [absorb-typography
+        (fn [file-data [typography usages]]
+          (let [remap-shape #(cty/remap-typographies % (:id file-data) typography)
+
+                remap-shapes
+                (fn [file-data [container shapes]]
+                  (update-container file-data
+                                    container
+                                    #(reduce (fn [container shape]
+                                               (ctn/update-shape container
+                                                                 (:id shape)
+                                                                 remap-shape))
+                                             %
+                                             shapes)))]
+          (as-> file-data $
+            (ctyl/add-typography $ typography)
+            (reduce remap-shapes $ usages))))]
+
+    (reduce absorb-typography
+            file-data
+            used-typographies)))
+
 (defn absorb-assets
   "Find all assets of a library that are used in the file, and
   move them to the file local library."
   [file-data library-data]
-  (let [library-page-id (uuid/next)
-
-        add-library-page
-        (fn [file-data]
-          (let [page (ctp/make-empty-page library-page-id "Library page")]
-            (-> file-data
-                (ctpl/add-page page))))
-
-        find-instances-in-container
-        (fn [container component]
-          (let [instances (filter #(= (:component-id %) (:id component))
-                                  (ctn/shapes-seq container))]
-            (when (d/not-empty? instances)
-              [[container instances]])))
-
-        find-instances
-        (fn [file-data component]
-          (mapcat #(find-instances-in-container % component) (containers-seq file-data)))
-
-        absorb-component
-        (fn [file-data _component]
-          ;; TODO: complete this
-          file-data)
-
-        used-components
+  (let [; Build a list of all components in the library used in the file
+        ; The list is in the form [[component [[container shapes] [container shapes]...]]...]
+        used-components ; A vector of pair [component instances], where instances is non-empty
         (mapcat (fn [component]
                   (let [instances (find-instances file-data component)]
-                    (when instances
+                    (when (d/not-empty? instances)
                       [[component instances]])))
                 (ctkl/components-seq library-data))]
 
     (if (empty? used-components)
       file-data
-      (as-> file-data $
-        (add-library-page $)
-        (reduce absorb-component
-                $
-                used-components)))))
+      (let [; Search for the library page. If not exists, create it.
+            [file-data page-id start-pos]
+            (get-or-add-library-page file-data)
+
+            absorb-component
+            (fn [file-data [component instances] position]
+              (let [page (ctpl/get-page file-data page-id)
+
+                    ; Make a new main instance for the component
+                    [main-instance-shape main-instance-shapes]
+                    (ctn/instantiate-component page
+                                               component
+                                               (:id file-data)
+                                               position)
+
+                    ; Add all shapes of the main instance to the library page
+                    add-main-instance-shapes
+                    (fn [page]
+                      (reduce (fn [page shape]
+                                (ctst/add-shape (:id shape)
+                                                shape
+                                                page
+                                                (:frame-id shape)
+                                                (:parent-id shape)
+                                                nil     ; <- As shapes are ordered, we can safely add each
+                                                true))  ;    one at the end of the parent's children list.
+                              page
+                              main-instance-shapes))
+
+                    ; Copy the component in the file local library
+                    copy-component
+                    (fn [file-data]
+                      (ctkl/add-component file-data
+                                          (:id component)
+                                          (:name component)
+                                          (:path component)
+                                          (:id main-instance-shape)
+                                          page-id
+                                          (vals (:objects component))))
+
+                    ; Change all existing instances to point to the local file
+                    redirect-instances
+                    (fn [file-data [container shapes]]
+                      (let [redirect-instance #(assoc % :component-file (:id file-data))]
+                        (update-container file-data
+                                          container
+                                          #(reduce (fn [container shape]
+                                                     (ctn/update-shape container
+                                                                       (:id shape)
+                                                                       redirect-instance))
+                                                   %
+                                                   shapes))))]
+
+                (as-> file-data $
+                    (ctpl/update-page $ page-id add-main-instance-shapes)
+                    (copy-component $)
+                    (reduce redirect-instances $ instances))))
+
+            ; Absorb all used components into the local library. Position
+            ; the main instances in a grid in the library page.
+            add-component-grid
+            (fn [data used-components]
+              (let [position-seq (ctst/generate-shape-grid
+                                   (map #(cph/get-component-root (first %)) used-components)
+                                   start-pos
+                                   50)]
+                (loop [data           data
+                       components-seq (seq used-components)
+                       position-seq   position-seq]
+                  (let [used-component (first components-seq)
+                        position       (first position-seq)]
+                    (if (nil? used-component)
+                      data
+                      (recur (absorb-component data used-component position)
+                             (rest components-seq)
+                             (rest position-seq)))))))]
+
+        (add-component-grid file-data (sort-by #(:name (first %)) used-components))))))
 
 ;; Debug helpers
 

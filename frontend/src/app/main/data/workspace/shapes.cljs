@@ -13,10 +13,10 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.types.page :as csp]
-   [app.common.types.shape :as spec.shape]
-   [app.common.types.shape.interactions :as csi]
-   [app.common.types.shape-tree :as ctt]
+   [app.common.types.page :as ctp]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
@@ -28,14 +28,14 @@
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
-(s/def ::shape-attrs ::spec.shape/shape-attrs)
+(s/def ::shape-attrs ::cts/shape-attrs)
 
 (defn get-shape-layer-position
   [objects selected attrs]
 
   ;; Calculate the frame over which we're drawing
   (let [position @ms/mouse-position
-        frame-id (:frame-id attrs (cph/frame-id-by-position objects position))
+        frame-id (:frame-id attrs (ctst/frame-id-by-position objects position))
         shape (when-not (empty? selected)
                 (cph/get-base-shape objects selected))]
 
@@ -52,8 +52,8 @@
 (defn make-new-shape
   [attrs objects selected]
   (let [default-attrs (if (= :frame (:type attrs))
-                        cp/default-frame-attrs
-                        cp/default-shape-attrs)
+                        cts/default-frame-attrs
+                        cts/default-shape-attrs)
 
         selected-non-frames
         (into #{} (comp (map (d/getf objects))
@@ -117,7 +117,7 @@
             to-move-shapes
             (into []
                   (map (d/getf objects))
-                  (reverse (cph/sort-z-index objects shapes)))
+                  (reverse (ctst/sort-z-index objects shapes)))
 
             changes
             (when (d/not-empty? to-move-shapes)
@@ -289,10 +289,10 @@
             y (:y data (- vbc-y (/ height 2)))
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
-                         (cph/frame-id-by-position {:x frame-x :y frame-y}))
-            shape (-> (cp/make-minimal-shape type)
+                         (ctst/frame-id-by-position {:x frame-x :y frame-y}))
+            shape (-> (cts/make-minimal-shape type)
                       (merge data)
                       (merge {:x x :y y})
                       (assoc :frame-id frame-id)
-                      (cp/setup-rect-selrect))]
+                      (cts/setup-rect-selrect))]
         (rx/of (add-shape shape))))))
