@@ -284,8 +284,7 @@
   "Adjust modifiers so they adjust to the pixel grid"
   [modifiers shape]
 
-  (if (or (some? (:resize-transform modifiers))
-          (some? (:resize-transform-2 modifiers)))
+  (if (some? (:resize-transform modifiers))
     ;; If we're working with a rotation we don't handle pixel precision because
     ;; the transformation won't have the precision anyway
     modifiers
@@ -298,7 +297,8 @@
               (gsh/points->rect))
 
           flip-x? (neg? (get-in modifiers [:resize-vector :x]))
-          flip-y? (neg? (get-in modifiers [:resize-vector :y]))
+          flip-y? (or (neg? (get-in modifiers [:resize-vector :y]))
+                      (neg? (get-in modifiers [:resize-vector-2 :y])))
 
           path? (= :path (:type shape))
           vertical-line? (and path? (<= (:width raw-bounds) 0.01))

@@ -539,15 +539,17 @@
            (gmt/translate (gpt/negate center)))))))
 
 (defn- set-flip [shape modifiers]
-  (let [rx (or (get-in modifiers [:resize-vector :x])
-               (get-in modifiers [:resize-vector-2 :x]))
-        ry (or (get-in modifiers [:resize-vector :y])
-               (get-in modifiers [:resize-vector-2 :y]))]
+  (let [rv1x (or (get-in modifiers [:resize-vector :x]) 1)
+        rv1y (or (get-in modifiers [:resize-vector :y]) 1)
+        rv2x (or (get-in modifiers [:resize-vector-2 :x]) 1)
+        rv2y (or (get-in modifiers [:resize-vector-2 :y]) 1)]
     (cond-> shape
-      (and rx (< rx 0)) (-> (update :flip-x not)
-                            (update :rotation -))
-      (and ry (< ry 0)) (-> (update :flip-y not)
-                            (update :rotation -)))))
+      (or (neg? rv1x) (neg? rv2x))
+      (-> (update :flip-x not)
+          (update :rotation -))
+      (or (neg? rv1y) (neg? rv2y))
+      (-> (update :flip-y not)
+          (update :rotation -)))))
 
 (defn- apply-displacement [shape]
   (let [modifiers (:modifiers shape)]
