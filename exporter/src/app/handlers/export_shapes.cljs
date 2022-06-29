@@ -102,8 +102,6 @@
         total       (count exports)
         topic       (str profile-id)
 
-        to-delete   (atom #{})
-
         on-progress (fn [{:keys [done]}]
                       (when-not wait
                         (let [data {:type :export-update
@@ -137,7 +135,6 @@
                                     :on-progress on-progress)
 
         append      (fn [{:keys [filename path] :as object}]
-                      (swap! to-delete conj path)
                       (rsc/add-to-zip! zip path filename))
 
         proc        (-> (p/do
@@ -146,7 +143,6 @@
                               (p/let [proc (rd/render export append)]
                                 (p/recur (rest exports)))))
                           (.finalize zip))
-                        (p/then (fn [_] (p/run! #(sh/rmdir! (path/dirname %)) @to-delete)))
                         (p/then (constantly resource))
                         (p/catch on-error))
         ]

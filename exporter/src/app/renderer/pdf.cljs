@@ -44,8 +44,7 @@
 
           (render-object [page base-uri {:keys [id] :as object}]
             (p/let [uri  (prepare-uri base-uri id)
-                    tmp  (sh/mktmpdir! "pdf-render")
-                    path (path/join tmp (str/concat id (mime/get-extension type)))]
+                    path (sh/tempfile :prefix "penpot.tmp.render.pdf." :suffix (mime/get-extension type))]
               (l/info :uri uri)
               (bw/nav! page uri)
               (p/let [dom (bw/select page (dm/str "#screenshot-" id))]
