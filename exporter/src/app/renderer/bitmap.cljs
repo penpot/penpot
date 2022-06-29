@@ -36,9 +36,8 @@
                  :userAgent bw/default-user-agent})
 
           (render-object [page {:keys [id] :as object}]
-            (p/let [tmpdir (sh/mktmpdir! "bitmap-render")
-                    path   (path/join tmpdir (str/concat id (mime/get-extension type)))
-                    node   (bw/select page (str/concat "#screenshot-" id))]
+            (p/let [path (sh/tempfile :prefix "penpot.tmp.render.bitmap." :suffix (mime/get-extension type))
+                    node (bw/select page (str/concat "#screenshot-" id))]
               (bw/wait-for node)
               (case type
                 :png  (bw/screenshot node {:omit-background? true :type type :path path})

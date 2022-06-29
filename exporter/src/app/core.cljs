@@ -8,10 +8,10 @@
   (:require
    ["process" :as proc]
    [app.browser :as bwr]
-   [app.redis :as redis]
    [app.common.logging :as l]
    [app.config]
    [app.http :as http]
+   [app.redis :as redis]
    [promesa.core :as p]))
 
 (enable-console-print!)

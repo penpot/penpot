@@ -116,24 +116,20 @@
 (defn render
   [{:keys [page-id file-id objects token scale type]} on-object]
   (letfn [(convert-to-ppm [pngpath]
-            (l/trace :fn :convert-to-ppm)
-            (let [basepath (path/dirname pngpath)
-                  ppmpath  (path/join basepath "origin.ppm")]
+            (let [ppmpath (str/concat pngpath "origin.ppm")]
+              (l/trace :fn :convert-to-ppm :path ppmpath)
               (-> (sh/run-cmd! (str "convert " pngpath " " ppmpath))
                   (p/then (constantly ppmpath)))))
 
           (trace-color-mask [pbmpath]
             (l/trace :fn :trace-color-mask :pbmpath pbmpath)
-            (let [basepath (path/dirname pbmpath)
-                  basename (path/basename pbmpath ".pbm")
-                  svgpath  (path/join basepath (str basename ".svg"))]
+            (let [svgpath (str/concat pbmpath ".svg")]
               (-> (sh/run-cmd! (str "potrace --flat -b svg " pbmpath " -o " svgpath))
                   (p/then (constantly svgpath)))))
 
           (generate-color-layer [ppmpath color]
             (l/trace :fn :generate-color-layer :ppmpath ppmpath :color color)
-            (let [basepath (path/dirname ppmpath)
-                  pbmpath  (path/join basepath (str "mask-" (subs color 1) ".pbm"))]
+            (let [pbmpath (str/concat ppmpath ".mask-" (subs color 1) ".pbm")]
               (-> (sh/run-cmd! (str/format "ppmcolormask \"%s\" %s" color ppmpath))
                   (p/then (fn [stdout]
                             (-> (sh/write-file! pbmpath stdout)
@@ -247,15 +243,14 @@
 
           (trace-node [{:keys [data] :as node}]
             (l/trace :fn :trace-node)
-            (p/let [tdpath  (sh/mktmpdir! "svgexport")
-                    pngpath (path/join tdpath "origin.png")
+            (p/let [pngpath (sh/tempfile :prefix "penpot.tmp.render.svg.parse."
+                                         :suffix ".origin.png")
                     _       (sh/write-file! pngpath data)
                     ppmpath (convert-to-ppm pngpath)
                     svgdata (convert-to-svg ppmpath node)]
               (-> node
                   (dissoc :data)
-                  (assoc :tempdir tdpath
-                         :svgdata svgdata))))
+                  (assoc :svgdata svgdata))))
 
           (extract-element-attrs [^js element]
             (let [^js attrs   (.. element -attributes)
@@ -289,17 +284,11 @@
                     shot (bw/screenshot text-node {:omit-background? true :type "png"})]
               [shot node]))
 
-          (clean-temp-data [{:keys [tempdir] :as node}]
-            (p/do!
-             (sh/rmdir! tempdir)
-             (dissoc node :tempdir)))
-
           (extract-txt-node [page item]
             (-> (p/resolved item)
                 (p/then (partial resolve-text-node page))
                 (p/then extract-single-node)
-                (p/then trace-node)
-                (p/then clean-temp-data)))
+                (p/then trace-node)))
 
           (extract-txt-nodes [page {:keys [id] :as objects}]
             (l/trace :fn :process-text-nodes)
@@ -323,9 +312,8 @@
                  :userAgent bw/default-user-agent})
 
           (render-object [page {:keys [id] :as object}]
-            (p/let [tmpdir (sh/mktmpdir! "svg-render")
-                    path   (path/join tmpdir (str/concat id (mime/get-extension type)))
-                    node   (bw/select page (str/concat "#screenshot-" id))]
+            (p/let [path (sh/tempfile :prefix "penpot.tmp.render.svg." :suffix (mime/get-extension type))
+                    node (bw/select page (str/concat "#screenshot-" id))]
               (bw/wait-for node)
               (p/let [xmldata (extract-svg page object)
                       txtdata (extract-txt-nodes page object)

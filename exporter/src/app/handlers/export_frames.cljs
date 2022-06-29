@@ -128,8 +128,8 @@
 
 (defn- join-pdf
   [file-id paths]
-  (p/let [tmpdir (sh/mktmpdir! "join-pdf")
-          path   (path/join tmpdir (str/concat file-id ".pdf"))]
+  (p/let [prefix (str/concat "penpot.tmp.pdfunite." file-id ".")
+          path   (sh/tempfile :prefix prefix :suffix ".pdf")]
     (sh/run-cmd! (str "pdfunite " (str/join " " paths) " " path))
     path))
 
@@ -137,5 +137,4 @@
   [{:keys [path] :as resource} output-path]
   (p/do
     (sh/move! output-path path)
-    (sh/rmdir! (path/dirname output-path))
     resource))
