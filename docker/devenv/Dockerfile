@@ -1,11 +1,11 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v16.15.1 \
-    CLOJURE_VERSION=1.11.1.1124 \
-    CLJKONDO_VERSION=2022.05.31 \
+    CLOJURE_VERSION=1.11.1.1149 \
+    CLJKONDO_VERSION=2022.06.22 \
     BABASHKA_VERSION=0.8.156 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
@@ -44,7 +44,6 @@ RUN set -ex; \
 RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy install --no-install-recommends \
-        python \
         build-essential \
         imagemagick \
         ghostscript \
@@ -104,7 +103,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18%2B36/OpenJDK18U-jdk_x64_linux_hotspot_18_36.tar.gz; \
+    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18.0.1%2B10/OpenJDK18U-jdk_x64_linux_hotspot_18.0.1_10.tar.gz; \
     mkdir -p /usr/lib/jvm/openjdk; \
     cd /usr/lib/jvm/openjdk; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
@@ -120,7 +119,7 @@ RUN set -ex; \
 
 RUN set -ex; \
     curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -; \
-    echo "deb http://apt.postgresql.org/pub/repos/apt focal-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
+    echo "deb http://apt.postgresql.org/pub/repos/apt jammy-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
     apt-get -qqy install postgresql-client-13; \
     rm -rf /var/lib/apt/lists/*;
@@ -132,8 +131,8 @@ RUN set -ex; \
     tar -xf /tmp/nodejs.tar.xz --strip-components=1; \
     chown -R root /usr/local/nodejs; \
     PATH="$PATH:/usr/local/nodejs/bin"; \
-    /usr/local/nodejs/bin/npm install -g yarn; \
-    /usr/local/nodejs/bin/npm install -g svgo; \
+    /usr/local/nodejs/bin/npm install --location=global yarn; \
+    /usr/local/nodejs/bin/npm install --location=global svgo; \
     rm -rf /tmp/nodejs.tar.xz;
 
 # Install clj-kondo
@@ -143,7 +142,6 @@ RUN set -ex; \
     unzip /tmp/clj-kondo.zip; \
     rm /tmp/clj-kondo.zip;
 
-# Install babashka
 RUN set -ex; \
     cd /tmp; \
     curl -LfsSo /tmp/babashka.tar.gz https://github.com/babashka/babashka/releases/download/v$BABASHKA_VERSION/babashka-$BABASHKA_VERSION-linux-amd64.tar.gz; \
@@ -151,8 +149,10 @@ RUN set -ex; \
     tar -xf /tmp/babashka.tar.gz; \
     rm -rf /tmp/babashka.tar.gz;
 
+
+# Install minio client
 RUN set -ex; \
-    curl -LfsSo /tmp/mc https://dl.min.io/client/mc/release/linux-amd64/mc --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15"; \
+    wget -O /tmp/mc https://dl.min.io/client/mc/release/linux-amd64/mc; \
     mv /tmp/mc /usr/local/bin/; \
     chmod +x /usr/local/bin/mc;
 

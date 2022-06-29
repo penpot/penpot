@@ -10,9 +10,10 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.transit :as t]
-   [app.metrics :as mtx]
+   [app.loggers.audit :refer [parse-client-ip]]
    [app.util.time :as dt]
    [clojure.core.async :as a]
+   [yetti.request :as yr]
    [yetti.util :as yu]
    [yetti.websocket :as yws])
   (:import
@@ -25,8 +26,10 @@
 (declare process-output)
 (declare ws-ping!)
 (declare ws-send!)
+(declare filter-options)
 
 (def noop (constantly nil))
+(def identity-3 (fn [_ _ o] o))
 
 (defn handler
   "A WebSocket upgrade handler factory. Returns a handler that can be
@@ -39,94 +42,123 @@
   It also accepts some options that allows you parametrize the
   protocol behavior. The options map will be used as-as for the
   initial data of the `ws` data structure"
-  ([handle-message] (handler handle-message {}))
-  ([handle-message {:keys [::input-buff-size
-                           ::output-buff-size
-                           ::idle-timeout
-                           metrics]
-                    :or {input-buff-size 64
-                         output-buff-size 64
-                         idle-timeout 30000}
-                    :as options}]
-   (fn [{:keys [::yws/channel] :as request}]
-     (let [input-ch   (a/chan input-buff-size)
-           output-ch  (a/chan output-buff-size)
-           pong-ch    (a/chan (a/sliding-buffer 6))
-           close-ch   (a/chan)
+  [& {:keys [::on-rcv-message
+             ::on-snd-message
+             ::on-connect
+             ::input-buff-size
+             ::output-buff-size
+             ::handler
+             ::idle-timeout]
+      :or {input-buff-size 64
+           output-buff-size 64
+           idle-timeout 30000
+           on-connect noop
+           on-snd-message identity-3
+           on-rcv-message identity-3}
+      :as options}]
 
-           options    (atom
-                       (-> options
-                           (assoc ::input-ch input-ch)
-                           (assoc ::output-ch output-ch)
-                           (assoc ::close-ch close-ch)
-                           (assoc ::channel channel)
-                           (dissoc ::metrics)))
+  (assert (fn? on-rcv-message) "'on-rcv-message' should be a function")
+  (assert (fn? on-snd-message) "'on-snd-message' should be a function")
+  (assert (fn? on-connect) "'on-connect' should be a function")
 
-           terminated (atom false)
-           created-at (dt/now)
+  (fn [{:keys [::yws/channel session-id] :as request}]
+    (let [input-ch   (a/chan input-buff-size)
+          output-ch  (a/chan output-buff-size)
+          pong-ch    (a/chan (a/sliding-buffer 6))
+          close-ch   (a/chan)
+          stop-ch    (a/chan)
 
-           on-open
-           (fn [channel]
-             (mtx/run! metrics {:id :websocket-active-connections :inc 1})
-             (yws/idle-timeout! channel (dt/duration idle-timeout)))
+          ip-addr    (parse-client-ip request)
+          uagent     (yr/get-header request "user-agent")
+          id         (inst-ms (dt/now))
 
-           on-terminate
-           (fn [& _args]
-             (when (compare-and-set! terminated false true)
-               (mtx/run! metrics {:id :websocket-active-connections :dec 1})
-               (mtx/run! metrics {:id :websocket-session-timing :val (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0)})
+          options    (-> (filter-options options)
+                         (merge {::id id
+                                 ::input-ch input-ch
+                                 ::output-ch output-ch
+                                 ::close-ch close-ch
+                                 ::stop-ch stop-ch
+                                 ::channel channel
+                                 ::remote-addr ip-addr
+                                 ::http-session-id session-id
+                                 ::user-agent uagent})
+                         (atom))
 
-               (a/close! close-ch)
-               (a/close! pong-ch)
-               (a/close! output-ch)
-               (a/close! input-ch)))
+          ;; call the on-connect hook and memoize the on-terminate instance
+          on-terminate (on-connect options)
 
-           on-error
-           (fn [_ error]
-             (on-terminate)
-             ;; TODO: properly log timeout exceptions
-             (when-not (or (instance? java.nio.channels.ClosedChannelException error)
-                           (instance? java.net.SocketException error))
-               (l/error :hint (ex-message error) :cause error)))
+          on-ws-open
+          (fn [channel]
+            (l/trace :fn "on-ws-open" :conn-id id)
+            (yws/idle-timeout! channel (dt/duration idle-timeout)))
 
-           on-message
-           (fn [_ message]
-             (mtx/run! metrics {:id :websocket-messages-total :labels ["recv"] :inc 1})
-             (try
-               (let [message (t/decode-str message)]
-                 (a/offer! input-ch message))
-               (catch Throwable e
-                 (l/warn :hint "error on decoding incoming message from websocket"
-                         :wsmsg (pr-str message)
-                         :cause e)
-                 (on-terminate))))
+          on-ws-terminate
+          (fn [_ code reason]
+            (l/trace :fn "on-ws-terminate" :conn-id id :code code :reason reason)
+            (a/close! close-ch))
 
-           on-pong
-           (fn [_ buffers]
-             (a/>!! pong-ch (yu/copy-many buffers)))]
+          on-ws-error
+          (fn [_ error]
+            (a/close! close-ch)
+            (when-not (or (instance? java.nio.channels.ClosedChannelException error)
+                          (instance? java.net.SocketException error))
+              (l/error :hint (ex-message error) :cause error)))
 
-       ;; launch heartbeat process
-       (-> @options
-           (assoc ::pong-ch pong-ch)
-           (assoc ::on-close on-terminate)
-           (process-heartbeat))
+          on-ws-message
+          (fn [_ message]
+            (try
+              (let [message (on-rcv-message options message)
+                    message (t/decode-str message)]
+                (a/offer! input-ch message)
+                (swap! options assoc ::last-activity-at (dt/now)))
+              (catch Throwable e
+                (l/warn :hint "error on decoding incoming message from websocket"
+                        :wsmsg (pr-str message)
+                        :cause e)
+                (a/>! close-ch [8801 "decode error"])
+                (a/close! close-ch))))
 
-       ;; Forward all messages from output-ch to the websocket
-       ;; connection
-       (a/go-loop []
-         (when-let [val (a/<! output-ch)]
-           (mtx/run! metrics {:id :websocket-messages-total :labels ["send"] :inc 1})
-           (a/<! (ws-send! channel (t/encode-str val)))
-           (recur)))
+          on-ws-pong
+          (fn [_ buffers]
+            (a/>!! pong-ch (yu/copy-many buffers)))]
 
-       ;; React on messages received from the client
-       (process-input options handle-message)
+      ;; Launch heartbeat process
+      (-> @options
+          (assoc ::pong-ch pong-ch)
+          (process-heartbeat))
 
-       {:on-open on-open
-        :on-error on-error
-        :on-close on-terminate
-        :on-text on-message
-        :on-pong on-pong}))))
+      ;; Wait a close signal
+      (a/go
+        (let [[code reason] (a/<! close-ch)]
+          (a/close! stop-ch)
+          (a/close! pong-ch)
+          (a/close! output-ch)
+          (a/close! input-ch)
+
+          (when (and code reason)
+            (l/trace :hint "close channel condition" :code code :reason reason)
+            (yws/close! channel code reason))
+
+          (when (fn? on-terminate)
+            (on-terminate))))
+
+      ;; Forward all messages from output-ch to the websocket
+      ;; connection
+      (a/go-loop []
+        (when-let [val (a/<! output-ch)]
+          (let [val (on-snd-message options val)]
+            (a/<! (ws-send! channel (t/encode-str val)))
+            (recur))))
+
+      ;; React on messages received from the client
+
+      (process-input options handler)
+
+      {:on-open on-ws-open
+       :on-error on-ws-error
+       :on-close on-ws-terminate
+       :on-text on-ws-message
+       :on-pong on-ws-pong})))
 
 (defn- ws-send!
   [channel s]
@@ -172,14 +204,14 @@
 
 (defn- process-input
   [wsp handler]
-  (let [{:keys [::input-ch ::output-ch ::close-ch]} @wsp
+  (let [{:keys [::input-ch ::output-ch ::stop-ch]} @wsp
         handler (wrap-handler handler)]
     (a/go
       (a/<! (handler wsp {:type :connect}))
       (a/<! (a/go-loop []
               (when-let [message (a/<! input-ch)]
-                (let [[val port] (a/alts! [(handler wsp message) close-ch])]
-                  (when-not (= port close-ch)
+                (let [[val port] (a/alts! [stop-ch (handler wsp message)] :priority true)]
+                  (when-not (= port stop-ch)
                     (cond
                       (ex/ex-info? val)
                       (a/>! output-ch {:type :error :error (ex-data val)})
@@ -193,19 +225,21 @@
       (a/<! (handler wsp {:type :disconnect})))))
 
 (defn- process-heartbeat
-  [{:keys [::channel ::close-ch ::on-close ::pong-ch
+  [{:keys [::channel ::stop-ch ::close-ch ::pong-ch
            ::heartbeat-interval ::max-missed-heartbeats]
     :or {heartbeat-interval 2000
          max-missed-heartbeats 4}}]
   (let [beats (atom #{})]
     (a/go-loop [i 0]
-      (let [[_ port] (a/alts! [close-ch (a/timeout heartbeat-interval)])]
+      (let [[_ port] (a/alts! [stop-ch (a/timeout heartbeat-interval)] :priority true)]
         (when (and (yws/connected? channel)
-                   (not= port close-ch))
+                   (not= port stop-ch))
           (a/<! (ws-ping! channel (encode-beat i)))
           (let [issued (swap! beats conj (long i))]
             (if (>= (count issued) max-missed-heartbeats)
-              (on-close channel -1 "heartbeat-timeout")
+              (do
+                (a/>! close-ch [8802 "heart-beat timeout"])
+                (a/close! close-ch))
               (recur (inc i)))))))
 
     (a/go-loop []
@@ -213,3 +247,11 @@
         (swap! beats disj (decode-beat buffer))
         (recur)))))
 
+(defn- filter-options
+  "Remove from options all namespace qualified keys that matches the
+  current namespace."
+  [options]
+  (into {}
+        (remove (fn [[key]]
+                  (= (namespace key) "app.util.websocket")))
+        options))
