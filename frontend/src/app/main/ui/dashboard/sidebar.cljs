@@ -499,6 +499,8 @@
        [:li.separator {:on-click #(dom/open-new-window "https://help.penpot.app")
                        :data-test "help-center-profile-opt"}
         [:span.text (tr "labels.help-center")]]
+       [:li {:on-click #(dom/open-new-window "https://community.penpot.app")}
+        [:span.text (tr "labels.community")]]
        [:li {:on-click #(dom/open-new-window "https://www.youtube.com/c/Penpot")}
         [:span.text (tr "labels.tutorials")]]
        [:li {:on-click show-release-notes}

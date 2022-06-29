@@ -388,6 +388,8 @@
       [:ul.sub-menu.help-info
        [:li {:on-click #(dom/open-new-window "https://help.penpot.app")}
         [:span (tr "labels.help-center")]]
+       [:li {:on-click #(dom/open-new-window "https://community.penpot.app")}
+        [:span (tr "labels.community")]]
        [:li {:on-click #(dom/open-new-window "https://www.youtube.com/c/Penpot")}
         [:span (tr "labels.tutorials")]]
        [:li {:on-click show-release-notes}

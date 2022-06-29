@@ -1493,6 +1493,10 @@ msgid "labels.status"
 msgstr "Status"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Comunidad"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.tutorials"
 msgstr "Tutoriales"
 
