@@ -9,9 +9,7 @@
   (:require
    ["archiver" :as arc]
    ["fs" :as fs]
-   ["os" :as os]
    ["path" :as path]
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.util.mime :as mime]
@@ -49,7 +47,7 @@
                "content-length" (:size stat)}}))
 
 (defn handler
-  [{:keys [:request/params response] :as exchange}]
+  [{:keys [:request/params] :as exchange}]
   (when-not (contains? params :id)
     (ex/raise :type :validation
               :code :missing-id))

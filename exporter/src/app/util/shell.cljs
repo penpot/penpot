@@ -11,9 +11,9 @@
    ["fs" :as fs]
    ["os" :as os]
    ["path" :as path]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
-   [app.common.exceptions :as ex]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
@@ -34,11 +34,10 @@
             (when (fs/existsSync path)
               (l/trace :hint "permanently remove tempfile" :path path)
               (fs/rmSync path #js {:recursive true})))]
-    (let [ts (js/Date.now)]
-      (l/trace :hint "schedule tempfile deletion"
-               :path path
-               :scheduled-at (.. (js/Date. (+ (js/Date.now) tempfile-minage)) toString))
-      (js/setTimeout remote-tempfile tempfile-minage))))
+    (l/trace :hint "schedule tempfile deletion"
+             :path path
+             :scheduled-at (.. (js/Date. (+ (js/Date.now) tempfile-minage)) toString))
+    (js/setTimeout remote-tempfile tempfile-minage)))
 
 (defn tempfile
   [& {:keys [prefix suffix]
@@ -86,7 +85,7 @@
    (fn [resolve reject]
      (l/trace :fn :run-cmd :cmd cmd)
      (proc/exec cmd #js {:encoding "buffer"}
-                (fn [error stdout stderr]
+                (fn [error stdout _stderr]
                   ;; (l/trace :fn :run-cmd :stdout stdout)
                   (if error
                     (reject error)

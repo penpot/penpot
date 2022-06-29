@@ -7,19 +7,12 @@
 (ns app.renderer.bitmap
   "A bitmap renderer."
   (:require
-   ["path" :as path]
    [app.browser :as bw]
-   [app.common.data :as d]
-   [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.pages :as cp]
-   [app.common.spec :as us]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 

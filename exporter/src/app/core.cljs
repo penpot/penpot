@@ -18,7 +18,7 @@
 (l/initialize!)
 
 (defn start
-  [& args]
+  [& _]
   (l/info :msg "initializing")
   (p/do!
    (bwr/init)

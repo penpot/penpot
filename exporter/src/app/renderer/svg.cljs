@@ -6,20 +6,14 @@
 
 (ns app.renderer.svg
   (:require
-   ["path" :as path]
    ["xml-js" :as xml]
    [app.browser :as bw]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex :include-macros true]
    [app.common.logging :as l]
-   [app.common.pages :as cp]
-   [app.common.spec :as us]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
-   [cljs.spec.alpha :as s]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
    [promesa.core :as p]))
@@ -184,7 +178,7 @@
 
           (get-gradients [id mapping]
             (->> mapping
-                 (filter (fn [[color data]]
+                 (filter (fn [[_color data]]
                            (= (get data "type") "gradient")))
                  (mapv (partial data->gradient-def id))))
 
@@ -227,7 +221,7 @@
 
 
                       elements (cond->> elements
-                                 (not (empty? gradient-defs))
+                                 (seq gradient-defs)
                                  (into [{"type" "element" "name" "defs" "attributes" {}
                                          "elements" gradient-defs}]))]
 

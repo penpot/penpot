@@ -6,9 +6,7 @@
 
 (ns app.handlers.export-shapes
   (:require
-   ["path" :as path]
    [app.common.data :as d]
-   [app.common.exceptions :as exc]
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.handlers.resources :as rsc]
@@ -140,7 +138,8 @@
         proc        (-> (p/do
                           (p/loop [exports (seq exports)]
                             (when-let [export (first exports)]
-                              (p/let [proc (rd/render export append)]
+                              (p/do
+                                (rd/render export append)
                                 (p/recur (rest exports)))))
                           (.finalize zip))
                         (p/then (constantly resource))
