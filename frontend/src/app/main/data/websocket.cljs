@@ -55,6 +55,7 @@
                        (rx/filter (ptk/type? ::initialize) stream))]
 
           (->> (rx/merge
+                (rx/of #(assoc % :ws-conn ws))
                 (->> (ws/get-rcv-stream ws)
                      (rx/filter ws/message-event?)
                      (rx/map :payload)
@@ -69,6 +70,10 @@
 (defn finalize
   []
   (ptk/reify ::finalize
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :ws-conn))
+
     ptk/EffectEvent
     (effect [_ _ _]
       (l/trace :hint "event:finalize" :fn "effect")
