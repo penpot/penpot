@@ -1438,6 +1438,10 @@ msgid "labels.status"
 msgstr "Status"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Community"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.tutorials"
 msgstr "Tutorials"
 
