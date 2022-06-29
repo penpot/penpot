@@ -778,6 +778,18 @@ msgid "feedback.title"
 msgstr "Email"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Go to Penpot forum"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr "We're happy to have you here. If you need help, please search before you post."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Penpot community"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
 msgstr "Go to Twitter"
 

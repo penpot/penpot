@@ -81,6 +81,14 @@
 
      [:hr]
 
+     [:h2 (tr "feedback.discourse-title")]
+     [:p (tr "feedback.discourse-subtitle1")]
+
+     [:a.btn-secondary.btn-large
+      {:href "https://community.penpot.app" :target "_blank"}
+      (tr "feedback.discourse-go-to")]
+     [:hr]
+
      [:h2 (tr "feedback.twitter-title")]
      [:p (tr "feedback.twitter-subtitle1")]
 
