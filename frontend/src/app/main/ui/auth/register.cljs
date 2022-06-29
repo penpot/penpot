@@ -68,16 +68,22 @@
     (st/emit! (dm/error (tr "errors.generic")))))
 
 (defn- handle-prepare-register-success
-  [_ params]
+  [params]
   (st/emit! (rt/nav :auth-register-validate {} params)))
 
+
 (mf/defc register-form
-  [{:keys [params] :as props}]
+  [{:keys [params on-success-callback] :as props}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
         form    (fm/use-form :spec ::register-form
                              :validators [validate]
                              :initial initial)
         submitted? (mf/use-state false)
+
+        on-success (fn [p]
+                     (if (nil? on-success-callback)
+                       (handle-prepare-register-success p)
+                       (on-success-callback p)))
 
         on-submit
         (mf/use-callback
@@ -87,9 +93,9 @@
              (->> (rp/mutation :prepare-register-profile cdata)
                   (rx/map #(merge % params))
                   (rx/finalize #(reset! submitted? false))
-                  (rx/subs (partial handle-prepare-register-success form)
-                           (partial handle-prepare-register-error form))))))
-        ]
+                  (rx/subs
+                   on-success
+                   (partial handle-prepare-register-error form))))))]
 
 
     [:& fm/form {:on-submit on-submit
@@ -113,15 +119,10 @@
        :disabled @submitted?
        :data-test "register-form-submit"}]]))
 
-(mf/defc register-page
-  [{:keys [params] :as props}]
-  [:div.form-container
-   [:h1 {:data-test "registration-title"} (tr "auth.register-title")]
-   [:div.subtitle (tr "auth.register-subtitle")]
 
-   (when (contains? @cf/flags :demo-warning)
-     [:& demo-warning])
-
+(mf/defc register-methods
+  [{:keys [params on-success-callback] :as props}]
+  [:*
    (when login/show-alt-login-buttons?
      [:*
       [:span.separator
@@ -139,7 +140,19 @@
          [:span.text (tr "labels.or")]
          [:span.line]])])
 
-   [:& register-form {:params params}]
+   [:& register-form {:params params :on-success-callback on-success-callback}]])
+
+(mf/defc register-page
+  [{:keys [params] :as props}]
+  [:div.form-container
+
+   [:h1 {:data-test "registration-title"} (tr "auth.register-title")]
+   [:div.subtitle (tr "auth.register-subtitle")]
+
+   (when (contains? @cf/flags :demo-warning)
+     [:& demo-warning])
+
+   [:& register-methods {:params params}]
 
    [:div.links
     [:div.link-entry
@@ -170,7 +183,7 @@
       (st/emit! (dm/error (tr "errors.generic"))))))
 
 (defn- handle-register-success
-  [_form data]
+  [data]
   (cond
     (some? (:invitation-token data))
     (let [token (:invitation-token data)]
@@ -197,10 +210,15 @@
                      ::accept-newsletter-subscription])))
 
 (mf/defc register-validate-form
-  [{:keys [params] :as props}]
+  [{:keys [params on-success-callback] :as props}]
   (let [form       (fm/use-form :spec ::register-validate-form
                                 :initial params)
         submitted? (mf/use-state false)
+
+        on-success (fn [p]
+                     (if (nil? on-success-callback)
+                       (handle-register-success p)
+                       (on-success-callback (:email p))))
 
         on-submit
         (mf/use-callback
@@ -209,9 +227,8 @@
            (let [params (:clean-data @form)]
              (->> (rp/mutation :register-profile params)
                   (rx/finalize #(reset! submitted? false))
-                  (rx/subs (partial handle-register-success form)
-                           (partial handle-register-error form))))))
-        ]
+                  (rx/subs on-success
+                           (partial handle-register-error form))))))]
 
     [:& fm/form {:on-submit on-submit
                  :form form}

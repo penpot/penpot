@@ -29,6 +29,7 @@
    [app.main.ui.viewer.handoff :as handoff]
    [app.main.ui.viewer.header :refer [header]]
    [app.main.ui.viewer.interactions :as interactions]
+   [app.main.ui.viewer.login]
    [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -252,8 +253,9 @@
     (when (nil? page)
       (ex/raise :type :not-found))
 
-    (when (not allowed)
-      (st/emit! (dv/go-to-section :interactions)))
+    (mf/with-effect []
+      (when (not allowed)
+        (st/emit! (dv/go-to-section :interactions))))
 
     ;; Set the page title
     (mf/use-effect

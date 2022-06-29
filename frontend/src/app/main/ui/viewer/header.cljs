@@ -21,6 +21,10 @@
    [app.util.i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
+(defn open-login-dialog
+  []
+  (modal/show! :login-register {}))
+
 (mf/defc zoom-widget
   {::mf/wrap [mf/memo]}
   [{:keys [zoom
@@ -111,7 +115,10 @@
        [:span.btn-primary {:on-click open-share-dialog} i/export [:span (tr "labels.share-prototype")]])
 
      (when (:can-edit permissions)
-       [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])]))
+       [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])
+
+     (when-not (:is-logged permissions)
+       [:span.btn-text-dark {:on-click open-login-dialog} (tr "labels.log-or-sign")])]))
 
 (mf/defc header-sitemap
   [{:keys [project file page frame] :as props}]
@@ -176,12 +183,16 @@
         #(st/emit! (dv/go-to-dashboard))
 
         go-to-handoff
-        (fn []
-          (st/emit! dv/close-thumbnails-panel (dv/go-to-section :handoff)))
+        (fn[]
+          (if (:is-logged permissions)
+           (st/emit! dv/close-thumbnails-panel (dv/go-to-section :handoff))
+           (open-login-dialog)))
 
         navigate
         (fn [section]
-          (st/emit! (dv/go-to-section section)))]
+          (if (or (= section :interactions) (:is-logged permissions))
+            (st/emit! (dv/go-to-section section))
+            (open-login-dialog)))]
 
     [:header.viewer-header
      [:div.nav-zone
@@ -200,8 +211,7 @@
        i/play]
 
       (when (or (:can-edit permissions)
-                (and (true? (:is-logged permissions))
-                     (= (:who-comment permissions) "all")))
+                (= (:who-comment permissions) "all"))
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :comments)
           :class (dom/classnames :active (= section :comments))
@@ -210,7 +220,6 @@
 
       (when (or (= (:type permissions) :membership)
                 (and (= (:type permissions) :share-link)
-                     (true? (:is-logged permissions))
                      (= (:who-inspect permissions) "all")))
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click go-to-handoff

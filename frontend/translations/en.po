@@ -1101,6 +1101,9 @@ msgstr "Continue"
 msgid "labels.continue-with"
 msgstr "Continue with"
 
+msgid "labels.continue-with-penpot"
+msgstr "You can continue with a Penpot account"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
 msgstr "Create"
@@ -1207,6 +1210,9 @@ msgstr "Help Center"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Hide resolved comments"
+
+msgid "labels.log-or-sign"
+msgstr "Log in or sign up"
 
 msgid "labels.show-comments-list"
 msgstr "Show comments list"

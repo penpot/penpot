@@ -63,7 +63,7 @@
                       (on-error error)))))))
 
 (mf/defc login-form
-  [{:keys [params] :as props}]
+  [{:keys [params on-success-callback] :as props}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
 
         error   (mf/use-state false)
@@ -73,10 +73,17 @@
         (fn [_]
           (reset! error (tr "errors.wrong-credentials")))
 
-        on-succes
+        on-success-default
         (fn [data]
           (when-let [token (:invitation-token data)]
             (st/emit! (rt/nav :auth-verify-token {} {:token token}))))
+        
+        on-success
+        (fn [data]
+          (if (nil? on-success-callback)
+            (on-success-default data)
+            (on-success-callback)
+          ))
 
         on-submit
         (mf/use-callback
@@ -84,7 +91,7 @@
            (reset! error nil)
            (let [params (with-meta (:clean-data @form)
                           {:on-error on-error
-                           :on-success on-succes})]
+                           :on-success on-success})]
              (st/emit! (du/login params)))))
 
         on-submit-ldap
@@ -95,7 +102,7 @@
            (let [params (:clean-data @form)]
              (login-with-ldap event (with-meta params
                                       {:on-error on-error
-                                       :on-success on-succes})))))]
+                                       :on-success on-success})))))]
     [:*
      (when-let [message @error]
        [:& msgs/inline-banner
@@ -165,32 +172,37 @@
      [:a {:on-click #(login-with-oauth % :oidc params)}
       (tr "auth.login-with-oidc-submit")]]))
 
+(mf/defc login-methods
+  [{:keys [params on-success-callback] :as props}]
+  [:*
+   (when show-alt-login-buttons?
+     [:*
+      [:span.separator
+       [:span.line]
+       [:span.text (tr "labels.continue-with")]
+       [:span.line]]
+
+      [:div.buttons
+       [:& login-buttons {:params params}]]
+
+      (when (or (contains? @cf/flags :login)
+                (contains? @cf/flags :login-with-ldap))
+        [:span.separator
+         [:span.line]
+         [:span.text (tr "labels.or")]
+         [:span.line]])])
+
+   (when (or (contains? @cf/flags :login)
+             (contains? @cf/flags :login-with-ldap))
+     [:& login-form {:params params :on-success-callback on-success-callback}])])
+
 (mf/defc login-page
   [{:keys [params] :as props}]
   [:div.generic-form.login-form
    [:div.form-container
     [:h1 {:data-test "login-title"} (tr "auth.login-title")]
 
-    (when show-alt-login-buttons?
-      [:*
-       [:span.separator
-        [:span.line]
-        [:span.text (tr "labels.continue-with")]
-        [:span.line]]
-
-       [:div.buttons
-        [:& login-buttons {:params params}]]
-
-       (when (or (contains? @cf/flags :login)
-                 (contains? @cf/flags :login-with-ldap))
-         [:span.separator
-          [:span.line]
-          [:span.text (tr "labels.or")]
-          [:span.line]])])
-
-    (when (or (contains? @cf/flags :login)
-              (contains? @cf/flags :login-with-ldap))
-      [:& login-form {:params params}])
+    [:& login-methods {:params params}]
 
     [:div.links
      (when (contains? @cf/flags :login)

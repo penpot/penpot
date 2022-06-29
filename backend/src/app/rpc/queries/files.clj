@@ -85,7 +85,8 @@
         :is-owner is-owner
         :is-admin (or is-owner is-admin)
         :can-edit (or is-owner is-admin can-edit)
-        :can-read true})))
+        :can-read true
+        :is-logged (some? profile-id)})))
   ([conn profile-id file-id share-id]
    (let [perms  (get-permissions conn profile-id file-id)
          ldata  (retrieve-share-link conn file-id share-id)]
