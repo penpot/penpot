@@ -18,9 +18,9 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.shape :as spec.shape]
    [app.common.text :as txt]
    [app.common.transit :as t]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.events :as ev]
@@ -62,7 +62,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
-(s/def ::shape-attrs ::spec.shape/shape-attrs)
+(s/def ::shape-attrs ::cts/shape-attrs)
 (s/def ::set-of-string
   (s/every string? :kind set?))
 

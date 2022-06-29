@@ -16,8 +16,8 @@
    [app.common.pages.helpers :as cph]
    [app.common.pages.init :as init]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
-   [app.common.spec.shape :as spec.shape]))
+   [app.common.pages.changes-spec :as pcs]
+   [app.common.types.shape :as cts]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific helpers
@@ -49,7 +49,7 @@
    ;; When verify? false we spec the schema validation. Currently used to make just
    ;; 1 validation even if the changes are applied twice
    (when verify?
-     (us/assert ::spec.change/changes items))
+     (us/assert ::pcs/changes items))
 
    (let [result (reduce #(or (process-change %1 %2) %1) data items)]
      ;; Validate result shapes (only on the backend)
@@ -59,7 +59,7 @@
             (doseq [[id shape] (:objects page)]
               (when-not (= shape (get-in data [:pages-index page-id :objects id]))
                 ;; If object has change verify is correct
-                (us/verify ::spec.shape/shape shape))))))
+                (us/verify ::cts/shape shape))))))
 
      result)))
 

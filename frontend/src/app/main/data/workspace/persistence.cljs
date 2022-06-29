@@ -9,9 +9,9 @@
    [app.common.data :as d]
    [app.common.logging :as log]
    [app.common.pages :as cp]
+   [app.common.pages.changes-spec :as pcs]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
-   [app.common.spec.file :as spec.file]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
@@ -199,7 +199,7 @@
                        :updated-at (dt/now)))))))
 
 (s/def ::shapes-changes-persisted
-  (s/keys :req-un [::revn ::spec.change/changes]))
+  (s/keys :req-un [::revn ::pcs/changes]))
 
 (defn shapes-persisted-event? [event]
   (= (ptk/type event) ::changes-persisted))
@@ -237,7 +237,7 @@
 (s/def ::version ::us/integer)
 (s/def ::revn ::us/integer)
 (s/def ::ordering ::us/integer)
-(s/def ::data ::spec.file/data)
+(s/def ::data ::ctf/data)
 
 (s/def ::file ::dd/file)
 (s/def ::project ::dd/project)

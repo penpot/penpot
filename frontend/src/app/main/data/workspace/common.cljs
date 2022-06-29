@@ -13,9 +13,9 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.interactions :as csi]
-   [app.common.spec.page :as csp]
-   [app.common.spec.shape :as spec.shape]
+   [app.common.types.page :as ctp]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -29,7 +29,7 @@
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
 
-(s/def ::shape-attrs ::spec.shape/shape-attrs)
+(s/def ::shape-attrs ::cts/shape-attrs)
 (s/def ::set-of-string (s/every string? :kind set?))
 (s/def ::ordered-set-of-uuid (s/every uuid? :kind d/ordered-set?))
 
@@ -382,7 +382,7 @@
                       ;; If any of the deleted shapes is the destination of
                       ;; some interaction, this must be deleted, too.
                       (let [interactions (:interactions shape)]
-                        (some #(and (csi/has-destination %)
+                        (some #(and (ctsi/has-destination %)
                                     (contains? ids (:destination %)))
                               interactions)))
                     (vals objects))
@@ -451,13 +451,13 @@
                                              (update shape :interactions
                                                      (fn [interactions]
                                                        (when interactions
-                                                         (d/removev #(and (csi/has-destination %)
+                                                         (d/removev #(and (ctsi/has-destination %)
                                                                           (contains? ids (:destination %)))
                                                                     interactions))))))
                         (cond->
                          (seq starting-flows)
                           (pcb/update-page-option :flows (fn [flows]
-                                                           (reduce #(csp/remove-flow %1 (:id %2))
+                                                           (reduce #(ctp/remove-flow %1 (:id %2))
                                                                    flows
                                                                    starting-flows)))))]
 

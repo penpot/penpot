@@ -11,9 +11,9 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes :as ch]
+   [app.common.pages.changes-spec :as pcs]
    [app.common.pages.init :as init]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -44,9 +44,9 @@
                          :frame-id (:current-frame-id file)))]
 
      (when fail-on-spec?
-       (us/verify ::spec.change/change change))
+       (us/verify ::pcs/change change))
 
-     (let [valid? (us/valid? ::spec.change/change change)]
+     (let [valid? (us/valid? ::pcs/change change)]
        #?(:cljs
           (when-not valid? (.warn js/console "Invalid shape" (clj->js change))))
 

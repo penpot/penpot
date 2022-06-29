@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.color
+(ns app.common.types.color
   (:require
     [app.common.data :as d]
     [app.common.spec :as us]

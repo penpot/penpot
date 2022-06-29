@@ -15,7 +15,7 @@
    [app.common.geom.shapes.path :as gsp]
    [app.common.path.bool :as pb]
    [app.common.path.commands :as pc]
-   [app.common.spec.radius :as ctr]))
+   [app.common.types.shape.radius :as ctsr]))
 
 (def ^:const bezier-circle-c 0.551915024494)
 
@@ -152,7 +152,7 @@
 (defn rect->path
   "Creates a bezier curve that approximates a rounded corner rectangle"
   [{:keys [x y width height] :as shape}]
-  (case (ctr/radius-mode shape)
+  (case (ctsr/radius-mode shape)
     :radius-1
     (let [radius (gso/shape-corners-1 shape)]
       (draw-rounded-rect-path x y width height radius))

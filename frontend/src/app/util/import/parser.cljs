@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.spec.interactions :as cti]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.util.color :as uc]
    [app.util.json :as json]
@@ -939,17 +939,17 @@
                  (let [interaction {:event-type  (get-meta node :event-type keyword)
                                     :action-type (get-meta node :action-type keyword)}]
                    (cond-> interaction
-                     (cti/has-delay interaction)
+                     (ctsi/has-delay interaction)
                      (assoc :delay (get-meta node :delay d/parse-double))
 
-                     (cti/has-destination interaction)
+                     (ctsi/has-destination interaction)
                      (assoc :destination     (get-meta node :destination uuid/uuid)
                             :preserve-scroll (get-meta node :preserve-scroll str->bool))
 
-                     (cti/has-url interaction)
+                     (ctsi/has-url interaction)
                      (assoc :url (get-meta node :url str))
 
-                     (cti/has-overlay-opts interaction)
+                     (ctsi/has-overlay-opts interaction)
                      (assoc :overlay-pos-type    (get-meta node :overlay-pos-type keyword)
                             :overlay-position    (gpt/point
                                                    (get-meta node :overlay-position-x d/parse-double)

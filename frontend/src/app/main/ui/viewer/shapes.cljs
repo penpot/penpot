@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.spec.interactions :as cti]
+   [app.common.types.shape.interactions :as ctsi]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -56,10 +56,10 @@
           background-overlay  (:background-overlay interaction)
 
           dest-frame (get objects dest-frame-id)
-          position   (cti/calc-overlay-position interaction
-                                                base-frame
-                                                dest-frame
-                                                frame-offset)]
+          position   (ctsi/calc-overlay-position interaction
+                                                 base-frame
+                                                 dest-frame
+                                                 frame-offset)]
       (when dest-frame-id
         (st/emit! (dv/open-overlay dest-frame-id
                                    position
@@ -123,10 +123,10 @@
           background-overlay  (:background-overlay interaction)
 
           dest-frame (get objects dest-frame-id)
-          position   (cti/calc-overlay-position interaction
-                                                base-frame
-                                                dest-frame
-                                                frame-offset)]
+          position   (ctsi/calc-overlay-position interaction
+                                                 base-frame
+                                                 dest-frame
+                                                 frame-offset)]
       (when dest-frame-id
         (st/emit! (dv/open-overlay dest-frame-id
                                    position
@@ -235,7 +235,7 @@
 
       (if-not svg-element?
         [:> shape-container {:shape shape
-                             :cursor (when (cti/actionable? interactions) "pointer")
+                             :cursor (when (ctsi/actionable? interactions) "pointer")
                              :on-mouse-down #(on-mouse-down % shape base-frame frame-offset objects)
                              :on-mouse-up #(on-mouse-up % shape base-frame frame-offset objects)
                              :on-mouse-enter #(on-mouse-enter % shape base-frame frame-offset objects)

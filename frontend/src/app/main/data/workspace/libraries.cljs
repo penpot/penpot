@@ -11,12 +11,12 @@
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.changes-spec :as pcs]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
-   [app.common.spec.color :as spec.color]
-   [app.common.spec.file :as spec.file]
-   [app.common.spec.typography :as spec.typography]
+   [app.common.types.color :as ctc]
+   [app.common.types.file :as ctf]
+   [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -98,7 +98,7 @@
         color (-> color
                   (assoc :id id)
                   (assoc :name (default-color-name color)))]
-    (us/assert ::spec.color/color color)
+    (us/assert ::ctc/color color)
     (ptk/reify ::add-color
       IDeref
       (-deref [_] color)
@@ -112,7 +112,7 @@
 
 (defn add-recent-color
   [color]
-  (us/assert ::spec.color/recent-color color)
+  (us/assert ::ctc/recent-color color)
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [it _ _]
@@ -141,7 +141,7 @@
 
 (defn update-color
   [color file-id]
-  (us/assert ::spec.color/color color)
+  (us/assert ::ctc/color color)
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-color
     ptk/WatchEvent
@@ -175,7 +175,7 @@
 
 (defn add-media
   [media]
-  (us/assert ::spec.file/media-object media)
+  (us/assert ::ctf/media-object media)
   (ptk/reify ::add-media
     ptk/WatchEvent
     (watch [it _ _]
@@ -217,7 +217,7 @@
   ([typography] (add-typography typography true))
   ([typography edit?]
    (let [typography (update typography :id #(or % (uuid/next)))]
-     (us/assert ::spec.typography/typography typography)
+     (us/assert ::ctt/typography typography)
      (ptk/reify ::add-typography
        IDeref
        (-deref [_] typography)
@@ -244,7 +244,7 @@
 
 (defn update-typography
   [typography file-id]
-  (us/assert ::spec.typography/typography typography)
+  (us/assert ::ctt/typography typography)
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-typography
     ptk/WatchEvent
@@ -462,7 +462,7 @@
 (defn ext-library-changed
   [file-id modified-at revn changes]
   (us/assert ::us/uuid file-id)
-  (us/assert ::spec.change/changes changes)
+  (us/assert ::pcs/changes changes)
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]

@@ -11,7 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
-   [app.common.spec.page :as csp]
+   [app.common.types.page :as ctp]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
@@ -108,7 +108,7 @@
         frames       (:frames page)
         frame        (get frames index)
         current-flow (mf/use-state
-                       (csp/get-frame-flow flows (:id frame)))
+                       (ctp/get-frame-flow flows (:id frame)))
 
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
