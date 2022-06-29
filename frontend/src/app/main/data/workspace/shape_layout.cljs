@@ -8,6 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.transforms :as dwt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -35,8 +37,17 @@
 
 (defn update-layout-positions
   [ids]
-  (ptk/reify ::update-layout-positions))
+  (ptk/reify ::update-layout-positions
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            ids     (->> ids (filter #(get-in objects [% :layout])))]
+        (if (d/not-empty? ids)
+          (rx/of (dwt/set-modifiers ids)
+                 (dwt/apply-modifiers))
+          (rx/empty))))))
 
+;; TODO: Remove constraints from children
 (defn create-layout
   [ids]
   (ptk/reify ::create-layout

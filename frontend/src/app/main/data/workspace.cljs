@@ -45,6 +45,7 @@
    [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwth]
@@ -799,7 +800,8 @@
                                              ids)]
 
         (rx/of (dch/commit-changes changes)
-               (dwco/expand-collapse parent-id))))))
+               (dwco/expand-collapse parent-id)
+               (dwsl/update-layout-positions [parent-id]))))))
 
 (defn relocate-selected-shapes
   [parent-id to-index]

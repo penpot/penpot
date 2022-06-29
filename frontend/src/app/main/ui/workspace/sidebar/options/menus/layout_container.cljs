@@ -200,7 +200,7 @@
 
 (mf/defc layout-container-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type"]))]}
-  [{:keys [ids type values] :as props}]
+  [{:keys [ids _type values] :as props}]
   (let [open?             (mf/use-state false)
         gap-selected?     (mf/use-state false)
         toggle-open       (fn [] (swap! open? not))
@@ -225,8 +225,6 @@
         change-padding-style
         (fn [type]
           (st/emit! (dwsl/update-layout ids {:layout-padding-type type})))
-
-        select-all #(dom/select-target %)
 
         select-all-gap
         (fn [event]

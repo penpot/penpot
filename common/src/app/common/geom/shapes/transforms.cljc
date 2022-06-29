@@ -491,6 +491,7 @@
 
   ([center modifiers]
    (let [displacement (:displacement modifiers)
+         displacement-after (:displacement-after modifiers)
          resize-v1 (:resize-vector modifiers)
          resize-v2 (:resize-vector-2 modifiers)
          origin-1 (:resize-origin modifiers (gpt/point))
@@ -512,6 +513,9 @@
          rt-modif (:rotation modifiers)]
 
      (cond-> (gmt/matrix)
+       (some? displacement-after)
+       (gmt/multiply displacement-after)
+
        (some? resize-1)
        (-> (gmt/translate origin-1)
            (cond-> (some? resize-transform)
