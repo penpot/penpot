@@ -9,9 +9,9 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.rpc.queries.comments :as comments]
    [app.rpc.queries.files :as files]
-   [app.rpc.queries.share-link :as slnk]
-   [app.rpc.queries.teams :as teams]
+   [app.rpc.queries.share-link :as slnk]   
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [promesa.core :as p]))
@@ -23,11 +23,11 @@
   (db/get-by-id pool :project id {:columns [:id :name :team-id]}))
 
 (defn- retrieve-bundle
-  [{:keys [pool] :as cfg} file-id]
+  [{:keys [pool] :as cfg} file-id profile-id]
   (p/let [file    (files/retrieve-file cfg file-id)
           project (retrieve-project pool (:project-id file))
           libs    (files/retrieve-file-libraries cfg false file-id)
-          users   (teams/retrieve-users pool (:team-id project))
+          users   (comments/retrieve-file-comments-users pool file-id profile-id)
 
           links   (->> (db/query pool :share-link {:file-id file-id})
                        (mapv slnk/decode-share-link-row))
@@ -54,7 +54,7 @@
   (p/let [slink  (slnk/retrieve-share-link pool file-id share-id)
           perms  (files/get-permissions pool profile-id file-id share-id)
           thumbs (files/retrieve-object-thumbnails cfg file-id)
-          bundle (p/-> (retrieve-bundle cfg file-id)
+          bundle (p/-> (retrieve-bundle cfg file-id profile-id)
                        (assoc :permissions perms)
                        (assoc-in [:file :thumbnails] thumbs))]
 

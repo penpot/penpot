@@ -60,7 +60,7 @@
   [{:keys [users threads page-id]}]
   (let [threads-map (mf/deref refs/threads-ref)
         profile     (mf/deref refs/profile)
-        users-refs  (mf/deref refs/users)
+        users-refs  (mf/deref refs/current-file-comments-users)
         users       (or users users-refs)
         local       (mf/deref refs/comments-local)
         options?    (mf/use-state false)

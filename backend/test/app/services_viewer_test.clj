@@ -49,7 +49,8 @@
                   :profile-id (:id prof)
                   :file-id (:id file)
                   :pages #{(get-in file [:data :pages 0])}
-                  :flags #{}}
+                  :who-comment "team"
+                  :who-inspect "all"}
             out  (th/mutation! data)]
 
         ;; (th/print-result! out)

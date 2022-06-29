@@ -25,7 +25,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.share-link]
    [app.main.ui.static :as static]
-   [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar]]   
+   [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar]]
    [app.main.ui.viewer.handoff :as handoff]
    [app.main.ui.viewer.header :refer [header]]
    [app.main.ui.viewer.interactions :as interactions]
@@ -84,7 +84,7 @@
 
      (when show-comments-list
        [:& comments-sidebar {:users users :frame frame :page page}])
-     
+
      [:div.viewer-wrapper
       {:style {:width (:width wrapper-size)
                :height (:height wrapper-size)}}
@@ -140,7 +140,7 @@
                    :on-click #(when (:close-click-outside overlay)
                                 (close-overlay (:frame overlay)))}])
                [:div.viewport-container.viewer-overlay
-                     
+
                 {:id (str "overlay-" (-> overlay :frame :id))
                  :style {:width (:width size-over)
                          :height (:height size-over)
@@ -168,6 +168,17 @@
 
   (let [{:keys [page-id section index]} params
         {:keys [file users project permissions]} data
+
+        allowed (or
+                 (= section :interactions)
+                 (and (= section :comments)
+                      (or (:can-edit permissions)
+                          (and (true? (:is-logged permissions))
+                               (= (:who-comment permissions) "all"))))
+                 (and (= section :handoff)
+                      (or (:can-edit permissions)
+                          (and (true? (:is-logged permissions))
+                               (= (:who-inspect permissions) "all")))))
 
         local (mf/deref refs/viewer-local)
 
@@ -240,6 +251,9 @@
 
     (when (nil? page)
       (ex/raise :type :not-found))
+
+    (when (not allowed)
+      (st/emit! (dv/go-to-section :interactions)))
 
     ;; Set the page title
     (mf/use-effect
@@ -394,24 +408,23 @@
              :index index
              :viewer-pagination viewer-pagination}]
 
-                       
-            [:& viewer-wrapper
-             {:wrapper-size wrapper-size
-              :scroll scroll
-              :orig-frame orig-frame
-              :orig-viewport-ref orig-viewport-ref
-              :orig-size orig-size
-              :page page
-              :file file
-              :users users
-              :current-viewport-ref current-viewport-ref              
-              :size size
-              :frame frame
-              :interactions-mode interactions-mode
-              :overlays overlays
-              :zoom zoom
-              :section section
-              :index index}]))]]]))
+           [:& viewer-wrapper
+            {:wrapper-size wrapper-size
+             :scroll scroll
+             :orig-frame orig-frame
+             :orig-viewport-ref orig-viewport-ref
+             :orig-size orig-size
+             :page page
+             :file file
+             :users users
+             :current-viewport-ref current-viewport-ref
+             :size size
+             :frame frame
+             :interactions-mode interactions-mode
+             :overlays overlays
+             :zoom zoom
+             :section section
+             :index index}]))]]]))
 
 ;; --- Component: Viewer Page
 

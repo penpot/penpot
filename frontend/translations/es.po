@@ -188,11 +188,14 @@ msgstr "Enlace copiado satisfactoriamente"
 msgid "common.share-link.link-deleted-success"
 msgstr "Enlace eliminado correctamente"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "Puede acceder a"
+msgid "common.share-link.permissions-can-comment"
+msgstr "Pueden comentar"
 
-msgid "common.share-link.permissions-can-view"
-msgstr "Puede ver"
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Pueden ver código"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Páginas compartidas"
 
 msgid "common.share-link.permissions-hint"
 msgstr "Cualquiera con el enlace puede acceder"
@@ -200,20 +203,31 @@ msgstr "Cualquiera con el enlace puede acceder"
 msgid "common.share-link.placeholder"
 msgstr "El enlace para compartir aparecerá aquí"
 
-msgid "common.share-link.remove-link"
+msgid "common.share-link.destroy-link"
 msgstr "Eliminar enlace"
 
 msgid "common.share-link.title"
 msgstr "Compartir prototipos"
 
-msgid "common.share-link.view-all-pages"
-msgstr "Todas las paginas"
+msgid "common.share-link.view-all"
+msgstr "Selecctionar todas"
 
-msgid "common.share-link.view-current-page"
-msgstr "Solo esta pagina"
+msgid "common.share-link.current-tag"
+msgstr "(actual)"
 
-msgid "common.share-link.view-selected-pages"
-msgstr "Paginas seleccionadas"
+msgid "common.share-link.manage-ops"
+msgstr "Gestionar permisos"
+
+msgid "common.share-link.team-members"
+msgstr "Sólo integrantes del equipo"
+
+msgid "common.share-link.all-users"
+msgstr "Todo usario de Penpot"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 página compartida"
+msgstr[1] "%s páginas compartidas"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs

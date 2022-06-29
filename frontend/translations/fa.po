@@ -189,29 +189,11 @@ msgstr "لینک با موفقیت کپی شد"
 msgid "common.share-link.link-deleted-success"
 msgstr "لینک با موفقیت حذف شد"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "می‌تواند دسترسی داشته باشد"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "می‌تواند مشاهده کند"
-
 msgid "common.share-link.permissions-hint"
 msgstr "هر کسی که لینک داشته باشد دسترسی خواهد داشت"
 
-msgid "common.share-link.remove-link"
-msgstr "حذف لینک"
-
 msgid "common.share-link.title"
 msgstr "اشتراک‌گذاری پروتوتایپ‌ها"
-
-msgid "common.share-link.view-all-pages"
-msgstr "تمام صفحات"
-
-msgid "common.share-link.view-current-page"
-msgstr "فقط این صفحه"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "صفحات انتخاب‌شده"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"

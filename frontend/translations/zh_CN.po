@@ -178,33 +178,14 @@ msgid "common.share-link.link-deleted-success"
 msgstr "链接已移除"
 
 #, fuzzy
-msgid "common.share-link.permissions-can-access"
-msgstr "可访问"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "可浏览"
-
-#, fuzzy
 msgid "common.share-link.permissions-hint"
 msgstr "任何人通过此链接都可访问"
 
 msgid "common.share-link.placeholder"
 msgstr "可分享的链接会在此处显示"
 
-msgid "common.share-link.remove-link"
-msgstr "移除链接"
-
 msgid "common.share-link.title"
 msgstr "分享原型"
-
-msgid "common.share-link.view-all-pages"
-msgstr "全部页面"
-
-msgid "common.share-link.view-current-page"
-msgstr "仅此页面"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "选中的页面"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"

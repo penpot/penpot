@@ -77,7 +77,8 @@
         (mf/use-callback
          (mf/deps page)
          (fn []
-           (modal/show! :share-link {:page page :file file})))]
+           (modal/show! :share-link {:page page :file file})
+           (modal/allow-click-outside!)))]
 
     [:div.options-zone
      (case section
@@ -187,7 +188,7 @@
       [:div.main-icon
        [:a {:on-click go-to-dashboard
             ;; If the user doesn't have permission we disable the link
-            :style {:pointer-events (when-not permissions "none")}} i/logo-icon]]
+            :style {:pointer-events (when-not (:can-edit permissions) "none")}} i/logo-icon]]
 
       [:& header-sitemap {:project project :file file :page page :frame frame :index index}]]
 
@@ -198,7 +199,9 @@
         :alt (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
        i/play]
 
-      (when (:can-edit permissions)
+      (when (or (:can-edit permissions)
+                (and (true? (:is-logged permissions))
+                     (= (:who-comment permissions) "all")))
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :comments)
           :class (dom/classnames :active (= section :comments))
@@ -207,7 +210,8 @@
 
       (when (or (= (:type permissions) :membership)
                 (and (= (:type permissions) :share-link)
-                     (contains? (:flags permissions) :section-handoff)))
+                     (true? (:is-logged permissions))
+                     (= (:who-inspect permissions) "all")))
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click go-to-handoff
           :class (dom/classnames :active (= section :handoff))

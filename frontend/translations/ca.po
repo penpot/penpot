@@ -185,32 +185,14 @@ msgstr "S'ha copiat l'enllaç correctament"
 msgid "common.share-link.link-deleted-success"
 msgstr "S'ha eliminat l'enllaç correctament"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "Pot accedir"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Lector"
-
 msgid "common.share-link.permissions-hint"
 msgstr "Qualsevol persona amb l'enllaç hi tindrà accés"
 
 msgid "common.share-link.placeholder"
 msgstr "L'enllaç per a compartir apareixerà aquí"
 
-msgid "common.share-link.remove-link"
-msgstr "Elimina l'enllaç"
-
 msgid "common.share-link.title"
 msgstr "Compartiu prototips"
-
-msgid "common.share-link.view-all-pages"
-msgstr "Totes les pàgines"
-
-msgid "common.share-link.view-current-page"
-msgstr "Només aquesta pàgina"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Pàgines seleccionades"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
