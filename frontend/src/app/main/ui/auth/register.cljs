@@ -84,7 +84,7 @@
          (fn [form _event]
            (reset! submitted? true)
            (let [cdata (:clean-data @form)]
-             (->> (rp/mutation :prepare-register-profile cdata)
+             (->> (rp/command :prepare-register-profile cdata)
                   (rx/map #(merge % params))
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs (partial handle-prepare-register-success form)
@@ -207,7 +207,7 @@
          (fn [form _event]
            (reset! submitted? true)
            (let [params (:clean-data @form)]
-             (->> (rp/mutation :register-profile params)
+             (->> (rp/command :register-profile params)
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs (partial handle-register-success form)
                            (partial handle-register-error form))))))

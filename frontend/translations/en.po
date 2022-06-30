@@ -699,6 +699,10 @@ msgstr "This invite might be canceled or may be expired."
 msgid "errors.ldap-disabled"
 msgstr "LDAP authentication is disabled."
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Authentication provider not configured."
+
 msgid "errors.media-format-unsupported"
 msgstr "The image format is not supported (must be svg, jpg or png)."
 

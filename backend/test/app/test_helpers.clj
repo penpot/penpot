@@ -9,14 +9,15 @@
    [app.common.data :as d]
    [app.common.flags :as flags]
    [app.common.pages :as cp]
+   [app.common.pprint :as pp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.common.pprint :as pp]
    [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
    [app.media]
    [app.migrations]
+   [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.mutations.files :as files]
    [app.rpc.mutations.profile :as profile]
    [app.rpc.mutations.projects :as projects]
@@ -31,8 +32,8 @@
    [expound.alpha :as expound]
    [integrant.core :as ig]
    [mockery.core :as mk]
-   [yetti.request :as yrq]
-   [promesa.core :as p])
+   [promesa.core :as p]
+   [yetti.request :as yrq])
   (:import org.postgresql.ds.PGSimpleDataSource))
 
 (def ^:dynamic *system* nil)
@@ -59,10 +60,12 @@
                            :app.http/router
                            :app.http.awsns/handler
                            :app.http.session/updater
-                           :app.http.oauth/google
-                           :app.http.oauth/gitlab
-                           :app.http.oauth/github
-                           :app.http.oauth/all
+                           :app.auth.oidc/google-provider
+                           :app.auth.oidc/gitlab-provider
+                           :app.auth.oidc/github-provider
+                           :app.auth.oidc/generic-provider
+                           :app.auth.oidc/routes
+                           ;; :app.auth.ldap/provider
                            :app.worker/executors-monitor
                            :app.http.oauth/handler
                            :app.notifications/handler
@@ -81,9 +84,9 @@
     (try
       (binding [*system* system
                 *pool*   (:app.db/pool system)]
-        (mk/with-mocks [mock1 {:target 'app.rpc.mutations.profile/derive-password
+        (mk/with-mocks [mock1 {:target 'app.rpc.commands.auth/derive-password
                                :return identity}
-                        mock2 {:target 'app.rpc.mutations.profile/verify-password
+                        mock2 {:target 'app.rpc.commands.auth/verify-password
                                :return (fn [a b] {:valid (= a b)})}]
           (next)))
       (finally
@@ -140,8 +143,8 @@
                         :is-demo false}
                        params)]
      (->> params
-          (#'profile/create-profile conn)
-          (#'profile/create-profile-relations conn)))))
+          (cmd.auth/create-profile conn)
+          (cmd.auth/create-profile-relations conn)))))
 
 (defn create-project*
   ([i params] (create-project* *pool* i params))
@@ -267,17 +270,21 @@
        {:error (handle-error e#)
         :result nil})))
 
+(defn command!
+  [{:keys [::type] :as data}]
+  (let [method-fn (get-in *system* [:app.rpc/methods :commands type])]
+    ;; (app.common.pprint/pprint (:app.rpc/methods *system*))
+    (try-on! (method-fn (dissoc data ::type)))))
+
 (defn mutation!
   [{:keys [::type] :as data}]
-  (let [method-fn (get-in *system* [:app.rpc/rpc :methods :mutation type])]
-    (try-on!
-     (method-fn (dissoc data ::type)))))
+  (let [method-fn (get-in *system* [:app.rpc/methods :mutations type])]
+    (try-on! (method-fn (dissoc data ::type)))))
 
 (defn query!
   [{:keys [::type] :as data}]
-  (let [method-fn (get-in *system* [:app.rpc/rpc :methods :query type])]
-    (try-on!
-     (method-fn (dissoc data ::type)))))
+  (let [method-fn (get-in *system* [:app.rpc/methods :queries type])]
+    (try-on! (method-fn (dissoc data ::type)))))
 
 ;; --- UTILS
 

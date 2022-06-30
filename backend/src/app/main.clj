@@ -6,6 +6,7 @@
 
 (ns app.main
   (:require
+   [app.auth.oidc]
    [app.common.logging :as l]
    [app.config :as cf]
    [app.util.time :as dt]
@@ -90,6 +91,9 @@
    :app.http/session
    {:store (ig/ref :app.http.session/store)}
 
+   :app.http.doc/routes
+   {:methods (ig/ref :app.rpc/methods)}
+
    :app.http.session/store
    {:pool     (ig/ref :app.db/pool)
     :tokens   (ig/ref :app.tokens/tokens)
@@ -123,20 +127,81 @@
     :max-body-size           (cf/get :http-server-max-body-size)
     :max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}
 
+   :app.auth.ldap/provider
+   {:host           (cf/get :ldap-host)
+    :port           (cf/get :ldap-port)
+    :ssl            (cf/get :ldap-ssl)
+    :tls            (cf/get :ldap-starttls)
+    :query          (cf/get :ldap-user-query)
+    :attrs-email    (cf/get :ldap-attrs-email)
+    :attrs-fullname (cf/get :ldap-attrs-fullname)
+    :attrs-username (cf/get :ldap-attrs-username)
+    :base-dn        (cf/get :ldap-base-dn)
+    :bind-dn        (cf/get :ldap-bind-dn)
+    :bind-password  (cf/get :ldap-bind-password)
+    :enabled?       (contains? cf/flags :login-with-ldap)}
+
+   :app.auth.oidc/google-provider
+   {:enabled?      (contains? cf/flags :login-with-google)
+    :client-id     (cf/get :google-client-id)
+    :client-secret (cf/get :google-client-secret)}
+
+   :app.auth.oidc/github-provider
+   {:enabled?      (contains? cf/flags :login-with-github)
+    :http-client   (ig/ref :app.http/client)
+    :client-id     (cf/get :github-client-id)
+    :client-secret (cf/get :github-client-secret)}
+
+   :app.auth.oidc/gitlab-provider
+   {:enabled?      (contains? cf/flags :login-with-gitlab)
+    :base-uri      (cf/get :gitlab-base-uri "https://gitlab.com")
+    :client-id     (cf/get :gitlab-client-id)
+    :client-secret (cf/get :gitlab-client-secret)}
+
+   :app.auth.oidc/generic-provider
+   {:enabled?      (contains? cf/flags :login-with-oidc)
+    :http-client   (ig/ref :app.http/client)
+
+    :client-id     (cf/get :oidc-client-id)
+    :client-secret (cf/get :oidc-client-secret)
+
+    :base-uri      (cf/get :oidc-base-uri)
+
+    :token-uri     (cf/get :oidc-token-uri)
+    :auth-uri      (cf/get :oidc-auth-uri)
+    :user-uri      (cf/get :oidc-user-uri)
+
+    :scopes        (cf/get :oidc-scopes)
+    :roles-attr    (cf/get :oidc-roles-attr)
+    :roles         (cf/get :oidc-roles)}
+
+   :app.auth.oidc/routes
+   {:providers   {:google (ig/ref :app.auth.oidc/google-provider)
+                  :github (ig/ref :app.auth.oidc/github-provider)
+                  :gitlab (ig/ref :app.auth.oidc/gitlab-provider)
+                  :oidc   (ig/ref :app.auth.oidc/generic-provider)}
+    :tokens      (ig/ref :app.tokens/tokens)
+    :http-client (ig/ref :app.http/client)
+    :pool        (ig/ref :app.db/pool)
+    :session     (ig/ref :app.http/session)
+    :public-uri  (cf/get :public-uri)
+    :executor    (ig/ref [::default :app.worker/executor])}
+
    :app.http/router
    {:assets        (ig/ref :app.http.assets/handlers)
     :feedback      (ig/ref :app.http.feedback/handler)
     :session       (ig/ref :app.http/session)
     :awsns-handler (ig/ref :app.http.awsns/handler)
-    :oauth         (ig/ref :app.http.oauth/handler)
     :debug-routes  (ig/ref :app.http.debug/routes)
+    :oidc-routes   (ig/ref :app.auth.oidc/routes)
     :ws            (ig/ref :app.http.websocket/handler)
     :metrics       (ig/ref :app.metrics/metrics)
     :public-uri    (cf/get :public-uri)
     :storage       (ig/ref :app.storage/storage)
     :tokens        (ig/ref :app.tokens/tokens)
     :audit-handler (ig/ref :app.loggers.audit/http-handler)
-    :rpc           (ig/ref :app.rpc/rpc)
+    :rpc-routes    (ig/ref :app.rpc/routes)
+    :doc-routes    (ig/ref :app.http.doc/routes)
     :executor      (ig/ref [::default :app.worker/executor])}
 
    :app.http.debug/routes
@@ -162,17 +227,7 @@
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref [::default :app.worker/executor])}
 
-   :app.http.oauth/handler
-   {:rpc         (ig/ref :app.rpc/rpc)
-    :session     (ig/ref :app.http/session)
-    :pool        (ig/ref :app.db/pool)
-    :tokens      (ig/ref :app.tokens/tokens)
-    :audit       (ig/ref :app.loggers.audit/collector)
-    :executor    (ig/ref [::default :app.worker/executor])
-    :http-client (ig/ref :app.http/client)
-    :public-uri  (cf/get :public-uri)}
-
-   :app.rpc/rpc
+   :app.rpc/methods
    {:pool        (ig/ref :app.db/pool)
     :session     (ig/ref :app.http/session)
     :tokens      (ig/ref :app.tokens/tokens)
@@ -181,8 +236,12 @@
     :msgbus      (ig/ref :app.msgbus/msgbus)
     :public-uri  (cf/get :public-uri)
     :audit       (ig/ref :app.loggers.audit/collector)
+    :ldap        (ig/ref :app.auth.ldap/provider)
     :http-client (ig/ref :app.http/client)
     :executors   (ig/ref :app.worker/executors)}
+
+   :app.rpc/routes
+   {:methods (ig/ref :app.rpc/methods)}
 
    :app.worker/worker
    {:executor (ig/ref [::worker :app.worker/executor])

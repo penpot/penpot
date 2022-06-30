@@ -9,14 +9,16 @@
   (:require
    [app.common.data :as d]
    [app.config :as cf]
+   [app.rpc :as-alias rpc]
    [app.util.services :as sv]
    [app.util.template :as tmpl]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
+   [integrant.core :as ig]
    [pretty-spec.core :as ps]
    [yetti.response :as yrs]))
 
-(defn get-spec-str
+(defn- get-spec-str
   [k]
   (with-out-str
     (ps/pprint (s/form k)
@@ -24,8 +26,8 @@
                              "clojure.core.specs.alpha" "score"
                              "clojure.core" nil}})))
 
-(defn prepare-context
-  [rpc]
+(defn- prepare-context
+  [methods]
   (letfn [(gen-doc [type [name f]]
             (let [mdata (meta f)]
               ;; (prn name mdata)
@@ -38,22 +40,32 @@
     {:command-methods
      (into []
            (map (partial gen-doc :command))
-           (->> rpc :methods :command (sort-by first)))
+           (->> methods :commands (sort-by first)))
      :query-methods
      (into []
            (map (partial gen-doc :query))
-           (->> rpc :methods :query (sort-by first)))
+           (->> methods :queries (sort-by first)))
      :mutation-methods
      (into []
            (map (partial gen-doc :mutation))
-           (->> rpc :methods :mutation (sort-by first)))}))
+           (->> methods :mutations (sort-by first)))}))
 
-(defn handler
-  [rpc]
-  (let [context (prepare-context rpc)]
-    (if (contains? cf/flags :backend-api-doc)
+(defn- handler
+  [methods]
+  (if (contains? cf/flags :backend-api-doc)
+    (let [context (prepare-context methods)]
       (fn [_ respond _]
         (respond (yrs/response 200 (-> (io/resource "api-doc.tmpl")
-                                       (tmpl/render context)))))
-      (fn [_ respond _]
-        (respond (yrs/response 404))))))
+                                       (tmpl/render context))))))
+    (fn [_ respond _]
+      (respond (yrs/response 404)))))
+
+
+(defmethod ig/pre-init-spec ::routes [_]
+  (s/keys :req-un [::rpc/methods]))
+
+(defmethod ig/init-key ::routes
+  [_ {:keys [methods] :as cfg}]
+  ["/_doc" {:handler (handler methods)
+            :allowed-methods #{:get}}])
+
