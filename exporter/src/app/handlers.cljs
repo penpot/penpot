@@ -10,22 +10,18 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
-   [app.common.uri :as u]
-   [app.config :as cf]
    [app.handlers.export-frames :as export-frames]
    [app.handlers.export-shapes :as export-shapes]
    [app.handlers.resources :as resources]
    [app.util.transit :as t]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [promesa.core :as p]
-   [reitit.core :as r]))
+   [cuerdas.core :as str]))
 
 (l/set-level! :debug)
 
 (defn on-error
   [error exchange]
-  (let [{:keys [type message code] :as data} (ex-data error)]
+  (let [{:keys [type code] :as data} (ex-data error)]
     (cond
       (or (= :validation type)
           (= :assertion type))

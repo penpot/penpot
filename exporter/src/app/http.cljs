@@ -12,7 +12,6 @@
    ["raw-body" :as raw-body]
    ["stream" :as stream]
    [app.common.logging :as l]
-   [app.common.spec :as us]
    [app.common.transit :as t]
    [app.config :as cf]
    [app.handlers :as handlers]

@@ -8,7 +8,6 @@
   "Mimetype and file extension helpers."
   (:refer-clojure :exclude [get])
   (:require
-   [app.common.data :as d]
    [cljs.core :as c]))
 
 (defn get-extension
@@ -20,7 +19,7 @@
     :pdf  ".pdf"
     :zip  ".zip"))
 
-(defn- get
+(defn get
   [type]
   (case type
     :zip  "application/zip"

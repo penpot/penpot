@@ -9,10 +9,8 @@
    ["generic-pool" :as gp]
    ["generic-pool/lib/errors" :as gpe]
    ["playwright" :as pw]
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.util.object :as obj]
    [promesa.core :as p]))

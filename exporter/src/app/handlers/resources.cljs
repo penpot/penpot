@@ -9,20 +9,18 @@
   (:require
    ["archiver" :as arc]
    ["fs" :as fs]
-   ["os" :as os]
    ["path" :as path]
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
-   [app.util.shell :as sh]
    [app.util.mime :as mime]
+   [app.util.shell :as sh]
    [cljs.core :as c]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
 (defn- get-path
   [type id]
-  (path/join (os/tmpdir) (str/concat  "exporter-resource." (c/name type) "." id)))
+  (path/join sh/tmpdir (str/concat  "penpot.resource." (c/name type) "." id)))
 
 (defn create
   "Generates ephimeral resource object."
@@ -49,7 +47,7 @@
                "content-length" (:size stat)}}))
 
 (defn handler
-  [{:keys [:request/params response] :as exchange}]
+  [{:keys [:request/params] :as exchange}]
   (when-not (contains? params :id)
     (ex/raise :type :validation
               :code :missing-id))
