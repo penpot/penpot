@@ -6,7 +6,7 @@
     [app.common.pages.helpers :as cph]
     [app.main.data.workspace :as dw]
     [app.main.data.workspace.changes :as dch]
-    [app.main.data.workspace.common :as dwc]
+    [app.main.data.workspace.shapes :as dwsh]
     [app.main.data.workspace.libraries :as dwl]
     [app.main.data.workspace.libraries-helpers :as dwlh]
     [app.main.data.workspace.state-helpers :as wsh]
@@ -192,7 +192,7 @@
 
         (ptk/emit!
           store
-          (dwc/delete-shapes #{(:id shape1)})
+          (dwsh/delete-shapes #{(:id shape1)})
           :the/end)))))
 
 (t/deftest test-touched-children-move
@@ -767,7 +767,7 @@
 
         (ptk/emit!
           store
-          (dwc/delete-shapes #{(:id shape1)})
+          (dwsh/delete-shapes #{(:id shape1)})
           (dwl/reset-component (:id instance1))
           :the/end)))))
 
@@ -1538,7 +1538,7 @@
 
         (ptk/emit!
           store
-          (dwc/delete-shapes #{(:id shape1)})
+          (dwsh/delete-shapes #{(:id shape1)})
           (dwl/update-component-sync (:id instance1) (:id file))
           :the/end)))))
 

@@ -15,9 +15,9 @@
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
+   [app.util.names :as un]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -32,7 +32,7 @@
 
             flows   (get-in page [:options :flows] [])
             unames  (into #{} (map :name flows))
-            name    (dwc/generate-unique-name unames "Flow-1")
+            name    (un/generate-unique-name unames "Flow-1")
 
             new-flow {:id (uuid/next)
                       :name name

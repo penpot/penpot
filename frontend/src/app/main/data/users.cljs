@@ -455,7 +455,7 @@
             (->> users
                  (d/index-by :id)
                  (assoc state :file-comments-users)))]
-    (ptk/reify ::fetch-team-users
+    (ptk/reify ::fetch-file-comments-users
       ptk/WatchEvent
       (watch [_ state _]
         (let [share-id (-> state :viewer-local :share-id)]

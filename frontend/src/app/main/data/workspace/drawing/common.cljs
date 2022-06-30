@@ -11,7 +11,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.worker :as uw]
@@ -66,7 +66,7 @@
                 (rx/of (dwu/start-undo-transaction))
                 (rx/empty))
 
-              (rx/of (dwc/add-shape shape {:no-select? (= tool :curve)}))
+              (rx/of (dwsh/add-shape shape {:no-select? (= tool :curve)}))
 
               (if (= :frame (:type shape))
                 (->> (uw/ask! {:cmd :selection/query
@@ -75,7 +75,7 @@
                                :include-frames? true
                                :full-frame? true})
                      (rx/map #(cph/clean-loops objects %))
-                     (rx/map #(dwc/move-shapes-into-frame (:id shape) %)))
+                     (rx/map #(dwsh/move-shapes-into-frame (:id shape) %)))
                 (rx/empty)))))
 
          ;; Delay so the mouse event can read the drawing state

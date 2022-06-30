@@ -28,8 +28,10 @@
    [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]
@@ -43,6 +45,7 @@
    [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
@@ -54,6 +57,7 @@
    [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n]
+   [app.util.names :as un]
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
@@ -264,8 +268,8 @@
       ptk/WatchEvent
       (watch [it state _]
         (let [pages   (get-in state [:workspace-data :pages-index])
-              unames  (dwc/retrieve-used-names pages)
-              name    (dwc/generate-unique-name unames "Page-1")
+              unames  (un/retrieve-used-names pages)
+              name    (un/generate-unique-name unames "Page-1")
 
               changes (-> (pcb/empty-changes it)
                           (pcb/add-empty-page id name))]
@@ -279,9 +283,9 @@
     (watch [it state _]
       (let [id      (uuid/next)
             pages   (get-in state [:workspace-data :pages-index])
-            unames  (dwc/retrieve-used-names pages)
+            unames  (un/retrieve-used-names pages)
             page    (get-in state [:workspace-data :pages-index page-id])
-            name    (dwc/generate-unique-name unames (:name page))
+            name    (un/generate-unique-name unames (:name page))
 
             no_thumbnails_objects (->> (:objects page)
                                       (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
@@ -577,7 +581,7 @@
             hover-guides (get-in state [:workspace-guides :hover])]
         (cond
           (d/not-empty? selected)
-          (rx/of (dwc/delete-shapes selected)
+          (rx/of (dwsh/delete-shapes selected)
                  (dws/deselect-all))
 
           (d/not-empty? hover-guides)
@@ -795,7 +799,7 @@
                                              ids)]
 
         (rx/of (dch/commit-changes changes)
-               (dwc/expand-collapse parent-id))))))
+               (dwco/expand-collapse parent-id))))))
 
 (defn relocate-selected-shapes
   [parent-id to-index]
@@ -820,15 +824,15 @@
 
             (case type
               :text
-              (rx/of (dwc/start-edition-mode id))
+              (rx/of (dwe/start-edition-mode id))
 
               (:group :bool)
-              (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
+              (rx/of (dws/select-shapes (into (d/ordered-set) [(last shapes)])))
 
               :svg-raw
               nil
 
-              (rx/of (dwc/start-edition-mode id)
+              (rx/of (dwe/start-edition-mode id)
                      (dwdp/start-path-edit id)))))))))
 
 
@@ -1548,7 +1552,7 @@
                                  (into (d/ordered-set)))]
 
               (rx/of (dch/commit-changes changes)
-                     (dwc/select-shapes selected))))]
+                     (dws/select-shapes selected))))]
 
     (ptk/reify ::paste-shape
       ptk/WatchEvent
@@ -1597,7 +1601,7 @@
                     :content (as-content text)})]
         (rx/of (dwu/start-undo-transaction)
                (dws/deselect-all)
-               (dwc/add-shape shape)
+               (dwsh/add-shape shape)
                (dwu/commit-undo-transaction))))))
 
 ;; TODO: why not implement it in terms of upload-media-workspace?
@@ -1682,9 +1686,9 @@
                              (cp/setup-rect-selrect))]
             (rx/of
              (dwu/start-undo-transaction)
-             (dwc/add-shape shape)
+             (dwsh/add-shape shape)
+             (dwsh/move-shapes-into-frame (:id shape) selected)
 
-             (dwc/move-shapes-into-frame (:id shape) selected)
              (dwu/commit-undo-transaction))))))))
 
 
@@ -1707,10 +1711,10 @@
 (dm/export dwly/set-opacity)
 
 ;; Common
-(dm/export dwc/add-shape)
-(dm/export dwc/clear-edition-mode)
-(dm/export dwc/select-shapes)
-(dm/export dwc/start-edition-mode)
+(dm/export dwsh/add-shape)
+(dm/export dwe/clear-edition-mode)
+(dm/export dws/select-shapes)
+(dm/export dwe/start-edition-mode)
 
 ;; Drawing
 (dm/export dwd/select-for-drawing)

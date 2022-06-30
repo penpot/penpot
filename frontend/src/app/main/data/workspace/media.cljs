@@ -10,8 +10,8 @@
    [app.common.spec :as us]
    [app.main.data.media :as dmm]
    [app.main.data.messages :as dm]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.svg-upload :as svg]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -72,7 +72,7 @@
                               :height height
                               :mtype mtype
                               :id id}}]
-        (rx/of (dwc/create-and-add-shape :image x y shape))))))
+        (rx/of (dwsh/create-and-add-shape :image x y shape))))))
 
 (defn svg-uploaded
   [svg-data file-id position]

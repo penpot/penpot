@@ -16,9 +16,9 @@
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.util.names :as un]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]))
 
@@ -144,13 +144,13 @@
         delta     (gpt/subtract position orig-pos)
 
         objects   (:objects page)
-        unames    (volatile! (dwc/retrieve-used-names objects))
+        unames    (volatile! (un/retrieve-used-names objects))
 
         frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
 
         update-new-shape
         (fn [new-shape original-shape]
-          (let [new-name (dwc/generate-unique-name @unames (:name new-shape))]
+          (let [new-name (un/generate-unique-name @unames (:name new-shape))]
 
             (when (nil? (:parent-id original-shape))
               (vswap! unames conj new-name))
