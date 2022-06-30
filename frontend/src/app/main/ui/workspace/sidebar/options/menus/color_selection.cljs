@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.text :as txt]
    [app.main.data.workspace.colors :as dc]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
@@ -148,7 +148,7 @@
          (fn [color]
            (let [shapes-by-color (get @grouped-colors* color)
                  ids (into (d/ordered-set) (map :shape-id) shapes-by-color)]
-             (st/emit! (dwc/select-shapes ids)))))]
+             (st/emit! (dws/select-shapes ids)))))]
 
     (mf/with-effect [grouped-colors]
       (reset! grouped-colors* grouped-colors))

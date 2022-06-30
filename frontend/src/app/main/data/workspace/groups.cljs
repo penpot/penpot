@@ -12,8 +12,9 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.util.names :as un]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -70,8 +71,8 @@
                            (= (count shapes) 1)
                            (= (:type (first shapes)) :group))
                     (:name (first shapes))
-                    (-> (dwc/retrieve-used-names objects)
-                        (dwc/generate-unique-name base-name)))
+                    (-> (un/retrieve-used-names objects)
+                        (un/generate-unique-name base-name)))
 
         selrect   (gsh/selection-rect shapes)
         group     (-> (cp/make-minimal-group frame-id selrect gname)
@@ -142,7 +143,7 @@
           (let [[group changes]
                 (prepare-create-group it objects page-id shapes "Group-1" false)]
             (rx/of (dch/commit-changes changes)
-                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
+                   (dws/select-shapes (d/ordered-set (:id group))))))))))
 
 (def ungroup-selected
   (ptk/reify ::ungroup-selected
@@ -203,7 +204,7 @@
                              (pcb/resize-parents [(:id group)]))]
 
             (rx/of (dch/commit-changes changes)
-                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
+                   (dws/select-shapes (d/ordered-set (:id group))))))))))
 
 (def unmask-group
   (ptk/reify ::unmask-group

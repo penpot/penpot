@@ -22,14 +22,15 @@
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
+   [app.util.names :as un]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
@@ -295,7 +296,7 @@
                 (dwlh/generate-add-component it shapes objects page-id file-id)]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
-                     (dwc/select-shapes (d/ordered-set (:id group)))))))))))
+                     (dws/select-shapes (d/ordered-set (:id group)))))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
@@ -351,7 +352,7 @@
             component      (cph/get-component libraries id)
             all-components (-> state :workspace-data :components vals)
             unames         (into #{} (map :name) all-components)
-            new-name       (dwc/generate-unique-name unames (:name component))
+            new-name       (un/generate-unique-name unames (:name component))
 
             [new-shape new-shapes _updated-shapes]
             (dwlh/duplicate-component component)
@@ -401,7 +402,7 @@
                                                  page
                                                  libraries)]
         (rx/of (dch/commit-changes changes)
-               (dwc/select-shapes (d/ordered-set (:id new-shape))))))))
+               (dws/select-shapes (d/ordered-set (:id new-shape))))))))
 
 (defn detach-component
   "Remove all references to components in the shape with the given id,

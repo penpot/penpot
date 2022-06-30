@@ -17,7 +17,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.guides :as dwg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
