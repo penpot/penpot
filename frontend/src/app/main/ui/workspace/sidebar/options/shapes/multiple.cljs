@@ -230,6 +230,7 @@
         shapes-with-children (unchecked-get props "shapes-with-children")
         page-id (unchecked-get props "page-id")
         file-id (unchecked-get props "file-id")
+        shared-libs (unchecked-get props "shared-libs")
         objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
         show-caps (some #(and (= :path (:type %)) (gsh/open-path? %)) shapes)
 
@@ -286,7 +287,7 @@
                         :disable-stroke-style has-text?}])
      
      (when-not (empty? shapes)
-       [:& color-selection-menu {:type type :shapes (vals objects-no-measures)}])
+       [:& color-selection-menu {:file-id file-id :type type :shapes (vals objects-no-measures) :shared-libs shared-libs}])
 
      (when-not (empty? shadow-ids)
        [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])

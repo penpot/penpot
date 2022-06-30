@@ -4,6 +4,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix colors from unlinked libs in color selected widget [Taiga #3712](https://tree.taiga.io/project/penpot/issue/3712)
 - Fix fill information not complete when paste plain text [Taiga #3680](https://tree.taiga.io/project/penpot/issue/3680)
 - Fix problem when resizing groups [Taiga #3702](https://tree.taiga.io/project/penpot/issue/3702)
 

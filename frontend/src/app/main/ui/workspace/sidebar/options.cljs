@@ -36,12 +36,12 @@
 
 (mf/defc shape-options
   {::mf/wrap [#(mf/throttle % 60)]}
-  [{:keys [shape shapes-with-children page-id file-id]}]
+  [{:keys [shape shapes-with-children page-id file-id shared-libs]}]
   [:*
    (case (:type shape)
      :frame   [:& frame/options {:shape shape}]
-     :group   [:& group/options {:shape shape :shape-with-children shapes-with-children}]
-     :text    [:& text/options {:shape shape}]
+     :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
+     :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
      :rect    [:& rect/options {:shape shape}]
      :circle  [:& circle/options {:shape shape}]
      :path    [:& path/options {:shape shape}]
@@ -61,6 +61,7 @@
   [{:keys [selected section shapes shapes-with-children page-id file-id]}]
   (let [drawing           (mf/deref refs/workspace-drawing)
         base-objects      (-> (mf/deref refs/workspace-page-objects))
+        shared-libs       (mf/deref refs/workspace-libraries)
         modifiers         (mf/deref refs/workspace-modifiers)
         objects-modified  (mf/with-memo [base-objects modifiers]
                             (gsh/merge-modifiers base-objects modifiers))
@@ -77,16 +78,19 @@
          (cond
            (d/not-empty? drawing) [:& shape-options {:shape (:object drawing)
                                                      :page-id page-id
-                                                     :file-id file-id}]
+                                                     :file-id file-id
+                                                     :shared-libs shared-libs}]
            (= 0 (count selected)) [:& page/options]
            (= 1 (count selected)) [:& shape-options {:shape (first selected-shapes)
                                                      :page-id page-id
                                                      :file-id file-id
+                                                     :shared-libs shared-libs
                                                      :shapes-with-children shapes-with-children}]
            :else [:& multiple/options {:shapes-with-children shapes-with-children
                                        :shapes selected-shapes
                                        :page-id page-id
-                                       :file-id file-id}])]]
+                                       :file-id file-id
+                                       :shared-libs shared-libs}])]]
 
        [:& tab-element {:id :prototype
                         :title (tr "workspace.options.prototype")}
