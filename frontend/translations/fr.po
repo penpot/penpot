@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-07-01 08:17+0000\n"
-"Last-Translator: Locness <locness3@orange.fr>\n"
+"PO-Revision-Date: 2022-07-02 09:14+0000\n"
+"Last-Translator: Lucie Lesage <lucie@jeci.fr>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -3116,7 +3116,7 @@ msgstr ""
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
 "Vous pouvez ajouter des paramètres d'exportation aux éléments depuis les "
-"propriétés de design (en bas de la barre latérale de droite)"
+"propriétés de design (en bas de la barre latérale de droite)."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
