@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-07-01 08:17+0000\n"
-"Last-Translator: Lucie Lesage <lucie@jeci.fr>\n"
+"Last-Translator: Locness <locness3@orange.fr>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -3113,11 +3113,10 @@ msgstr ""
 "dans la bibliothèque de fichiers."
 
 #: src/app/main/ui/export.cljs
-#, fuzzy
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
-"Vous pouvez ajouter des paramètres d'exportation aux éléments à partir des "
-"propriétés de design (en bas de la barre latérale droite)."
+"Vous pouvez ajouter des paramètres d'exportation aux éléments depuis les "
+"propriétés de design (en bas de la barre latérale de droite)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
