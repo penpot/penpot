@@ -15,6 +15,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -485,7 +486,7 @@
             add-instance-grid
             (fn [data components]
               (let [position-seq (ctst/generate-shape-grid
-                                   (map cph/get-component-root components)
+                                   (map ctk/get-component-root components)
                                    start-pos
                                    grid-gap)]
                 (loop [data           data

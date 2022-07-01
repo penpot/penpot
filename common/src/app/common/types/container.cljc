@@ -18,7 +18,8 @@
 (s/def ::path (s/nilable string?))
 
 (s/def ::container
-  (s/keys :req-un [::id ::name ::ctst/objects]
+  ;; (s/keys :req-un [::id ::name ::ctst/objects]
+  (s/keys :req-un [::id ::name]
           :opt-un [::type ::path]))
 
 (defn make-container

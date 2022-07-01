@@ -1,40 +1,39 @@
-(ns app.test-helpers.libraries
+(ns app.common.test-helpers.components
   (:require
    [cljs.test :as t :include-macros true]
    [cljs.pprint :refer [pprint]]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
-   [app.common.types.container :as ctn]
-   [app.test-helpers.pages :as thp]))
+   [app.common.types.container :as ctn]))
 
 ;; ---- Helpers to manage libraries and synchronization
 
-(defn is-instance-root
+(defn check-instance-root
   [shape]
   (t/is (some? (:shape-ref shape)))
   (t/is (some? (:component-id shape)))
   (t/is (= (:component-root? shape) true)))
 
-(defn is-instance-subroot
+(defn check-instance-subroot
   [shape]
   (t/is (some? (:shape-ref shape)))
   (t/is (some? (:component-id shape)))
   (t/is (nil? (:component-root? shape))))
 
-(defn is-instance-child
+(defn check-instance-child
   [shape]
   (t/is (some? (:shape-ref shape)))
   (t/is (nil? (:component-id shape)))
   (t/is (nil? (:component-file shape)))
   (t/is (nil? (:component-root? shape))))
 
-(defn is-instance-inner
+(defn check-instance-inner
   [shape]
   (if (some? (:component-id shape))
-    (is-instance-subroot shape)
-    (is-instance-child shape)))
+    (check-instance-subroot shape)
+    (check-instance-child shape)))
 
-(defn is-noninstance
+(defn check-noninstance
   [shape]
   (t/is (nil? (:shape-ref shape)))
   (t/is (nil? (:component-id shape)))
@@ -43,7 +42,7 @@
   (t/is (nil? (:remote-synced? shape)))
   (t/is (nil? (:touched shape))))
 
-(defn is-from-file
+(defn check-from-file
   [shape file]
   (t/is (= (:component-file shape)
            (:id file))))
@@ -51,37 +50,33 @@
 (defn resolve-instance
   "Get the shape with the given id and all its children, and
    verify that they are a well constructed instance tree."
-  [state root-inst-id]
-  (let [page        (thp/current-page state)
-        root-inst   (ctn/get-shape page root-inst-id)
+  [page root-inst-id]
+  (let [root-inst   (ctn/get-shape page root-inst-id)
         shapes-inst (cph/get-children-with-self (:objects page)
                                                 root-inst-id)]
-    (is-instance-root (first shapes-inst))
-    (run! is-instance-inner (rest shapes-inst))
+    (check-instance-root (first shapes-inst))
+    (run! check-instance-inner (rest shapes-inst))
 
     shapes-inst))
 
 (defn resolve-noninstance
   "Get the shape with the given id and all its children, and
    verify that they are not a component instance."
-  [state root-inst-id]
-  (let [page        (thp/current-page state)
-        root-inst   (ctn/get-shape page root-inst-id)
+  [page root-inst-id]
+  (let [root-inst   (ctn/get-shape page root-inst-id)
         shapes-inst (cph/get-children-with-self (:objects page)
                                                 root-inst-id)]
-    (run! is-noninstance shapes-inst)
+    (run! check-noninstance shapes-inst)
 
     shapes-inst))
 
 (defn resolve-instance-and-main
   "Get the shape with the given id and all its children, and also
    the main component and all its shapes."
-  [state root-inst-id]
-  (let [page          (thp/current-page state)
-        root-inst     (ctn/get-shape page root-inst-id)
+  [page root-inst-id libraries]
+  (let [root-inst     (ctn/get-shape page root-inst-id)
 
-        libs          (wsh/get-libraries state)
-        component     (cph/get-component libs (:component-id root-inst))
+        component     (cph/get-component libraries (:component-id root-inst))
 
         shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
         shapes-main   (cph/get-children-with-self (:objects component) (:shape-ref root-inst))
@@ -93,7 +88,7 @@
                               (cph/get-component-shape (:objects page) shape)
 
                               component
-                              (cph/get-component libs (:component-id component-shape))
+                              (cph/get-component libraries (:component-id component-shape))
 
                               main-shape
                               (ctn/get-shape component (:shape-ref shape))]
@@ -101,8 +96,8 @@
                         (t/is (some? main-shape))))]
 
     ;; Validate that the instance tree is well constructed
-    (is-instance-root (first shapes-inst))
-    (run! is-instance-inner (rest shapes-inst))
+    (check-instance-root (first shapes-inst))
+    (run! check-instance-inner (rest shapes-inst))
     (t/is (= (count shapes-inst)
              (count shapes-main)
              (count unique-refs)))
@@ -114,12 +109,10 @@
   "Get the shape with the given id and all its children, and also
    the main component and all its shapes. Allows shapes with the
    corresponding component shape missing."
-  [state root-inst-id]
-  (let [page          (thp/current-page state)
-        root-inst     (ctn/get-shape page root-inst-id)
+  [page root-inst-id libraries]
+  (let [root-inst     (ctn/get-shape page root-inst-id)
 
-        libs          (wsh/get-libraries state)
-        component     (cph/get-component libs (:component-id root-inst))
+        component     (cph/get-component libraries (:component-id root-inst))
 
         shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
         shapes-main   (cph/get-children-with-self (:objects component) (:shape-ref root-inst))
@@ -131,7 +124,7 @@
                               (cph/get-component-shape (:objects page) shape)
 
                               component
-                              (cph/get-component libs (:component-id component-shape))
+                              (cph/get-component libraries (:component-id component-shape))
 
                               main-shape
                               (ctn/get-shape component (:shape-ref shape))]
@@ -139,21 +132,19 @@
                         (t/is (some? main-shape))))]
 
     ;; Validate that the instance tree is well constructed
-    (is-instance-root (first shapes-inst))
+    (check-instance-root (first shapes-inst))
 
     [shapes-inst shapes-main component]))
 
 (defn resolve-component
   "Get the component with the given id and all its shapes." 
-  [state component-id]
-  (let [page        (thp/current-page state)
-        libs        (wsh/get-libraries state)
-        component   (cph/get-component libs component-id)
+  [page component-id libraries]
+  (let [component   (cph/get-component libraries component-id)
         root-main   (ctk/get-component-root component)
         shapes-main (cph/get-children-with-self (:objects component) (:id root-main))]
 
     ;; Validate that the component tree is well constructed
-    (run! is-noninstance shapes-main)
+    (run! check-noninstance shapes-main)
 
     [shapes-main component]))
 

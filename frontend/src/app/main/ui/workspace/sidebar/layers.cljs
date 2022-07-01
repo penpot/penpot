@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.collapse :as dwc]
@@ -106,7 +107,7 @@
         component      (when (and (:component-id item) (:component-file item))
                          (cph/get-component libraries (:component-file item) (:component-id item)))
         main-instance? (when component
-                         (cph/is-main-instance? (:id item) (:id page) component))
+                         (ctk/is-main-instance? (:id item) (:id page) component))
 
         toggle-collapse
         (mf/use-fn

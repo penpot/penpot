@@ -102,6 +102,12 @@
                                       :fill-opacity opacity
                                       :fill-color-gradient gradient)))))
 
+(defn attach-fill-color
+  [shape position ref-id ref-file]
+  (-> shape
+      (assoc-in [:fills position :fill-color-ref-id] ref-id)
+      (assoc-in [:fills position :fill-color-ref-file] ref-file)))
+
 (defn detach-fill-color
   [shape position]
   (-> shape
@@ -126,6 +132,12 @@
                                       :stroke-color color
                                       :stroke-opacity opacity
                                       :stroke-color-gradient gradient)))))
+
+(defn attach-stroke-color
+  [shape position ref-id ref-file]
+  (-> shape
+      (assoc-in [:strokes position :stroke-color-ref-id] ref-id)
+      (assoc-in [:strokes position :stroke-color-ref-file] ref-file)))
 
 (defn detach-stroke-color
   [shape position]
@@ -152,6 +164,12 @@
                                       :opacity opacity
                                       :gradient gradient)))))
 
+(defn attach-shadow-color
+  [shape position ref-id ref-file]
+  (-> shape
+      (assoc-in [:shadow position :color :id] ref-id)
+      (assoc-in [:shadow position :color :file-id] ref-file)))
+
 (defn detach-shadow-color
   [shape position]
   (-> shape
@@ -176,6 +194,11 @@
                                       :color color
                                       :opacity opacity
                                       :gradient gradient)))))
+(defn attach-grid-color
+  [shape position ref-id ref-file]
+  (-> shape
+      (assoc-in [:grids position :params :color :id] ref-id)
+      (assoc-in [:grids position :params :color :file-id] ref-file)))
 
 (defn detach-grid-color
   [shape position]
@@ -213,11 +236,87 @@
                 (= (:ref-file %) library-id))
           all-colors)))
 
+(defn uses-library-color?
+  "Check if the shape uses the given library color."
+  [shape library-id color]
+  (let [all-colors (get-all-colors shape)]
+    (some #(and (= (:ref-id %) (:id color))
+                (= (:ref-file %) library-id))
+          all-colors)))
+
+(defn- process-shape-colors
+  "Execute an update function on all colors of a shape."
+  [shape func]
+  (let [process-fill (fn [shape [position fill]]
+                       (func shape
+                             position
+                             (fill->shape-color fill)
+                             set-fill-color
+                             attach-fill-color
+                             detach-fill-color))
+
+        process-stroke (fn [shape [position stroke]]
+                         (func shape
+                               position
+                               (stroke->shape-color stroke)
+                               set-stroke-color
+                               attach-stroke-color
+                               detach-stroke-color))
+
+        process-shadow (fn [shape [position shadow]]
+                         (func shape
+                               position
+                               (shadow->shape-color shadow)
+                               set-shadow-color
+                               attach-shadow-color
+                               detach-shadow-color))
+
+        process-grid (fn [shape [position grid]]
+                       (func shape
+                             position
+                             (grid->shape-color grid)
+                             set-grid-color
+                             attach-grid-color
+                             detach-grid-color))
+
+        process-text-node (fn [node]
+                            (as-> node $
+                              (reduce process-fill $ (d/enumerate (:fills $)))
+                              (reduce process-stroke $ (d/enumerate (:strokes $)))))
+
+        process-text (fn [shape]
+                       (let [content     (:content shape)
+                             new-content (txt/transform-nodes process-text-node content)]
+                         (if (not= content new-content)
+                           (assoc shape :content new-content)
+                           shape)))]
+
+    (as-> shape $
+      (reduce process-fill $ (d/enumerate (:fills $)))
+      (reduce process-stroke $ (d/enumerate (:strokes $)))
+      (reduce process-shadow $ (d/enumerate (:shadow $)))
+      (reduce process-grid $ (d/enumerate (:grids $)))
+      (process-text $))))
+
+(defn remap-colors
+  "Change the shape so that any use of the given color now points to
+  the given library."
+  [shape library-id color]
+  (let [remap-color (fn [shape position shape-color _ attach-fn _]
+                      (if (= (:ref-id shape-color) (:id color))
+                        (attach-fn shape
+                                   position
+                                   (:id color)
+                                   library-id)
+                        shape))]
+
+    (process-shape-colors shape remap-color)))
+
 (defn sync-shape-colors
   "Look for usage of any color of the given library inside the shape,
   and, in this case, copy the library color into the shape."
   [shape library-id library-colors]
-  (let [sync-color (fn [shape position shape-color set-fn detach-fn]
+  (let [sync-color (fn [shape position shape-color set-fn _ detach-fn]
                      (if (= (:ref-file shape-color) library-id)
                        (let [library-color (get library-colors (:ref-id shape-color))]
                          (if (some? library-color)
@@ -227,51 +326,7 @@
                                    (:opacity library-color)
                                    (:gradient library-color))
                            (detach-fn shape position)))
-                       shape))
+                       shape))]
 
-        sync-fill (fn [shape [position fill]]
-                    (sync-color shape
-                                position
-                                (fill->shape-color fill)
-                                set-fill-color
-                                detach-fill-color))
+    (process-shape-colors shape sync-color)))
 
-        sync-stroke (fn [shape [position stroke]]
-                      (sync-color shape
-                                  position
-                                  (stroke->shape-color stroke)
-                                  set-stroke-color
-                                  detach-stroke-color))
-
-        sync-shadow (fn [shape [position shadow]]
-                      (sync-color shape
-                                  position
-                                  (shadow->shape-color shadow)
-                                  set-shadow-color
-                                  detach-shadow-color))
-
-        sync-grid (fn [shape [position grid]]
-                    (sync-color shape
-                                position
-                                (grid->shape-color grid)
-                                set-grid-color
-                                detach-grid-color))
-
-        sync-text-node (fn [node]
-                         (as-> node $
-                           (reduce sync-fill $ (d/enumerate (:fills $)))
-                           (reduce sync-stroke $ (d/enumerate (:strokes $)))))
-
-        sync-text (fn [shape]
-                    (let [content     (:content shape)
-                          new-content (txt/transform-nodes sync-text-node content)]
-                      (if (not= content new-content)
-                        (assoc shape :content new-content)
-                        shape)))]
-
-    (as-> shape $
-       (reduce sync-fill $ (d/enumerate (:fills $)))
-       (reduce sync-stroke $ (d/enumerate (:strokes $)))
-       (reduce sync-shadow $ (d/enumerate (:shadow $)))
-       (reduce sync-grid $ (d/enumerate (:grids $)))
-       (sync-text $))))

@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
     [app.common.pages.helpers :as cph]
+    [app.common.types.component :as ctk]
     [app.main.data.modal :as modal]
     [app.main.data.workspace :as dw]
     [app.main.data.workspace.libraries :as dwl]
@@ -35,7 +36,7 @@
 
         component       (when (and component-id library-id)
                           (cph/get-component libraries library-id component-id))
-        main-instance?  (cph/is-main-instance? id current-page-id component)
+        main-instance?  (ctk/is-main-instance? id current-page-id component)
 
         on-menu-click
         (mf/use-callback

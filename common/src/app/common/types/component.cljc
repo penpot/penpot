@@ -7,7 +7,24 @@
 (ns app.common.types.component)
  
 (defn instance-of?
-  [shape component]
+  [shape file-id component]
   (and (some? (:component-id shape))
-       (= (:component-id shape) (:id component))))
+       (some? (:component-file shape))
+       (= (:component-id shape) (:id component))
+       (= (:component-file shape) file-id)))
+
+(defn is-main-of?
+  [shape-main shape-inst]
+  (and (:shape-ref shape-inst)
+       (or (= (:shape-ref shape-inst) (:id shape-main))
+           (= (:shape-ref shape-inst) (:shape-ref shape-main)))))
+
+(defn is-main-instance?
+  [shape-id page-id component]
+  (and (= shape-id (:main-instance-id component))
+       (= page-id (:main-instance-page component))))
+
+(defn get-component-root
+  [component]
+  (get-in component [:objects (:id component)]))
 

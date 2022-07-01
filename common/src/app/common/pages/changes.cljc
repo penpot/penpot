@@ -17,10 +17,12 @@
    [app.common.spec :as us]
    [app.common.pages.changes-spec :as pcs]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.colors-list :as ctcl]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]))
+   [app.common.types.shape-tree :as ctst]
+   [app.common.types.typographies-list :as ctyl]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific helpers
@@ -309,7 +311,7 @@
 
 (defmethod process-change :add-color
   [data {:keys [color]}]
-  (update data :colors assoc (:id color) color))
+  (ctcl/add-color data color))
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
@@ -375,7 +377,7 @@
 
 (defmethod process-change :add-typography
   [data {:keys [typography]}]
-  (update data :typographies assoc (:id typography) typography))
+  (ctyl/add-typography data typography))
 
 (defmethod process-change :mod-typography
   [data {:keys [typography]}]

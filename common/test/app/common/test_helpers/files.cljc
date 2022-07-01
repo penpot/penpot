@@ -6,14 +6,16 @@
 
 (ns app.common.test-helpers.files
   (:require
-   [app.common.geom.point :as gpt]
-   [app.common.types.components-list :as ctkl]
-   [app.common.types.container :as ctn]
-   [app.common.types.file :as ctf]
-   [app.common.types.pages-list :as ctpl]
-   [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]
-   [app.common.uuid :as uuid]))
+    [app.common.geom.point :as gpt]
+    [app.common.types.components-list :as ctkl]
+    [app.common.types.colors-list :as ctcl]
+    [app.common.types.container :as ctn]
+    [app.common.types.file :as ctf]
+    [app.common.types.pages-list :as ctpl]
+    [app.common.types.shape :as cts]
+    [app.common.types.shape-tree :as ctst]
+    [app.common.types.typographies-list :as ctyl]
+    [app.common.uuid :as uuid]))
 
 (def ^:private idmap (atom {}))
 
@@ -107,4 +109,39 @@
                                                          true))
                                        %
                                        instance-shapes)))))))
+
+(defn sample-color
+  [file label props]
+  (ctf/update-file-data
+    file
+    (fn [file-data]
+      (let [id (uuid/next)
+            props (merge {:id id
+                          :name "Color-1"
+                          :color "#000000"
+                          :opacity 1}
+                         props)]
+        (swap! idmap assoc label id)
+        (ctcl/add-color file-data props)))))
+
+(defn sample-typography
+  [file label props]
+  (ctf/update-file-data
+    file
+    (fn [file-data]
+      (let [id (uuid/next)
+            props (merge {:id id
+                          :name "Typography-1"
+                          :font-id "sourcesanspro"
+                          :font-family "sourcesanspro"
+                          :font-size "14"
+                          :font-style "normal"
+                          :font-variant-id "regular"
+                          :font-weight "400"
+                          :line-height "1.2"
+                          :letter-spacing "0"
+                          :text-transform "none"}
+                         props)]
+        (swap! idmap assoc label id)
+        (ctyl/add-typography file-data props)))))
 

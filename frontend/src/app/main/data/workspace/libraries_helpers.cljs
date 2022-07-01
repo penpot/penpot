@@ -16,8 +16,10 @@
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.typography :as cty]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.state-helpers :as wsh]
    [cljs.spec.alpha :as s]
@@ -94,7 +96,7 @@
   (let [position (gpt/add (gpt/point (:x main-instance-shape) (:y main-instance-shape))
                           (gpt/point (+ (:width main-instance-shape) 50) 0))
 
-        component-root (cph/get-component-root component)
+        component-root (ctk/get-component-root component)
 
         [new-component-shape new-component-shapes _]
         (ctst/clone-object component-root
@@ -243,13 +245,7 @@
 
 (defmethod uses-assets? :typographies
   [_ shape library-id _]
-  (and (= (:type shape) :text)
-       (->> shape
-            :content
-            ;; Check if any node in the content has a reference for the library
-            (txt/node-seq
-              #(and (some? (:typography-ref-id %))
-                    (= (:typography-ref-file %) library-id))))))
+  (cty/uses-library-typographies? shape library-id))
 
 (defmulti generate-sync-shape
   "Generate changes to synchronize one shape from all assets of the given type
@@ -433,7 +429,7 @@
 
         root-inst     shape-inst
         root-main     (when component
-                        (cph/get-component-root component))]
+                        (ctk/get-component-root component))]
 
     (if component
       (generate-sync-shape-direct-recursive changes
@@ -557,7 +553,7 @@
         initial-root? (:component-root? shape-inst)
 
         root-inst     shape-inst
-        root-main     (cph/get-component-root component)]
+        root-main     (ctk/get-component-root component)]
 
     (if component
       (generate-sync-shape-inverse-recursive changes
@@ -691,13 +687,13 @@
         (reduce only-inst-cb changes children-inst)
 
         :else
-        (if (cph/is-main-of? child-main child-inst)
+        (if (ctk/is-main-of? child-main child-inst)
           (recur (next children-inst)
                  (next children-main)
                  (both-cb changes child-inst child-main))
 
-          (let [child-inst' (d/seek #(cph/is-main-of? child-main %) children-inst)
-                child-main' (d/seek #(cph/is-main-of? % child-inst) children-main)]
+          (let [child-inst' (d/seek #(ctk/is-main-of? child-main %) children-inst)
+                child-main' (d/seek #(ctk/is-main-of? % child-inst) children-main)]
             (cond
               (nil? child-inst')
               (recur children-inst
@@ -726,7 +722,7 @@
   [changes component-shape index component container root-instance root-main omit-touched? set-remote-synced?]
   (log/info :msg (str "ADD [P] " (:name component-shape)))
   (let [component-parent-shape (ctn/get-shape component (:parent-id component-shape))
-        parent-shape           (d/seek #(cph/is-main-of? component-parent-shape %)
+        parent-shape           (d/seek #(ctk/is-main-of? component-parent-shape %)
                                        (cph/get-children-with-self (:objects container)
                                                                    (:id root-instance)))
         all-parents            (into [(:id parent-shape)]
@@ -794,7 +790,7 @@
   [changes shape index component page root-instance root-main]
   (log/info :msg (str "ADD [C] " (:name shape)))
   (let [parent-shape           (ctn/get-shape page (:parent-id shape))
-        component-parent-shape (d/seek #(cph/is-main-of? % parent-shape)
+        component-parent-shape (d/seek #(ctk/is-main-of? % parent-shape)
                                        (cph/get-children-with-self (:objects component)
                                                                    (:id root-main)))
         all-parents  (into [(:id component-parent-shape)]

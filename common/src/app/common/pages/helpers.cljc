@@ -205,21 +205,6 @@
   ([libraries library-id component-id]
    (get-in libraries [library-id :data :components component-id])))
 
-(defn is-main-of?
-  [shape-main shape-inst]
-  (and (:shape-ref shape-inst)
-       (or (= (:shape-ref shape-inst) (:id shape-main))
-           (= (:shape-ref shape-inst) (:shape-ref shape-main)))))
-
-(defn is-main-instance?
-  [shape-id page-id component]
-  (and (= shape-id (:main-instance-id component))
-       (= page-id (:main-instance-page component))))
-
-(defn get-component-root
-  [component]
-  (get-in component [:objects (:id component)]))
-
 (defn get-component-shape
   "Get the parent shape linked to a component for this shape, if any"
   [objects shape]

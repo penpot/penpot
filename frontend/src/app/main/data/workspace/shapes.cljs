@@ -13,6 +13,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.component :as ctk]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
@@ -230,7 +231,7 @@
 
                             main-instance?
                             (when component
-                              (cph/is-main-instance? (:id shape) (:id page) component))]
+                              (ctk/is-main-instance? (:id shape) (:id page) component))]
 
                         (if main-instance?
                           (conj components (:component-id shape))

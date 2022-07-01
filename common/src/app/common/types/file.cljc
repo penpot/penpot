@@ -13,12 +13,15 @@
     [app.common.pages.helpers :as cph]
     [app.common.spec :as us]
     [app.common.types.color :as ctc]
+    [app.common.types.colors-list :as ctcl]
     [app.common.types.component :as ctk]
     [app.common.types.components-list :as ctkl]
     [app.common.types.container :as ctn]
     [app.common.types.page :as ctp]
     [app.common.types.pages-list :as ctpl]
     [app.common.types.shape-tree :as ctst]
+    [app.common.types.typography :as cty]
+    [app.common.types.typographies-list :as ctyl]
     [app.common.uuid :as uuid]
     [clojure.spec.alpha :as s]
     [cuerdas.core :as str]))
@@ -91,6 +94,10 @@
 
 ;; Helpers
 
+(defn file-data
+  [file]
+  (:data file))
+
 (defn update-file-data
   [file f]
   (update file :data f))
@@ -108,19 +115,51 @@
     (ctpl/update-page file-data (:id container) f)
     (ctkl/update-component file-data (:id container) f)))
 
-(defn find-instances
-  "Find all uses of a component in a file (may be in pages or in the components
-  of the local library).
-  
-  Returns a vector [[container shapes] [container shapes]...]"
-  [file-data component]
-  (let [find-instances-in-container
-        (fn [container component]
-          (let [instances (filter #(ctk/instance-of? % component) (ctn/shapes-seq container))]
-            (when (d/not-empty? instances)
-              [[container instances]])))]
+;; Asset helpers
 
-    (mapcat #(find-instances-in-container % component) (containers-seq file-data))))
+(defmulti uses-asset?
+  "Checks if a shape uses the given asset."
+  (fn [asset-type _ _ _] asset-type))
+
+(defmethod uses-asset? :component
+  [_ shape library-id component]
+  (ctk/instance-of? shape library-id component))
+
+(defmethod uses-asset? :color
+  [_ shape library-id color]
+  (ctc/uses-library-color? shape library-id color))
+
+(defmethod uses-asset? :typography
+  [_ shape library-id typography]
+  (cty/uses-library-typography? shape library-id typography))
+
+(defn find-asset-type-usages
+  "Find all usages of an asset in a file (may be in pages or in the components
+  of the local library).
+
+  Returns a list ((asset ((container shapes) (container shapes)...))...)"
+  [file-data library-data asset-type]
+  (let [assets-seq (case asset-type
+                     :component (ctkl/components-seq library-data)
+                     :color (ctcl/colors-seq library-data)
+                     :typography (ctyl/typographies-seq library-data))
+
+        find-usages-in-container
+        (fn [container asset]
+          (let [instances (filter #(uses-asset? asset-type % (:id library-data) asset)
+                                  (ctn/shapes-seq container))]
+            (when (d/not-empty? instances)
+              [[container instances]])))
+
+        find-asset-usages
+        (fn [file-data library-id asset-type asset]
+          (mapcat #(find-usages-in-container % asset) (containers-seq file-data)))]
+
+    (mapcat (fn [asset]
+              (let [instances (find-asset-usages file-data (:id library-data) asset-type asset)]
+                (when (d/not-empty? instances)
+                  [[asset instances]])))
+            assets-seq)))
 
 (defn get-or-add-library-page
   [file-data grid-gap]
@@ -276,95 +315,20 @@
   "Find all assets of a library that are used in the file, and
   move them to the file local library."
   [file-data library-data]
-  (let [; Build a list of all components in the library used in the file
-        ; The list is in the form [[component [[container shapes] [container shapes]...]]...]
-        used-components ; A vector of pair [component instances], where instances is non-empty
-        (mapcat (fn [component]
-                  (let [instances (find-instances file-data component)]
-                    (when (d/not-empty? instances)
-                      [[component instances]])))
-                (ctkl/components-seq library-data))]
+  (let [used-components (find-asset-type-usages file-data library-data :component)
+        used-colors (find-asset-type-usages file-data library-data :color)
+        used-typographies (find-asset-type-usages file-data library-data :typography)]
 
-    (if (empty? used-components)
-      file-data
-      (let [; Search for the library page. If not exists, create it.
-            [file-data page-id start-pos]
-            (get-or-add-library-page file-data)
+    (cond-> file-data
+      (d/not-empty? used-components)
+      (absorb-components library-data used-components)
 
-            absorb-component
-            (fn [file-data [component instances] position]
-              (let [page (ctpl/get-page file-data page-id)
+      (d/not-empty? used-colors)
+      (absorb-colors library-data used-colors)
 
-                    ; Make a new main instance for the component
-                    [main-instance-shape main-instance-shapes]
-                    (ctn/instantiate-component page
-                                               component
-                                               (:id file-data)
-                                               position)
+      (d/not-empty? used-typographies)
+      (absorb-typographies library-data used-typographies))))
 
-                    ; Add all shapes of the main instance to the library page
-                    add-main-instance-shapes
-                    (fn [page]
-                      (reduce (fn [page shape]
-                                (ctst/add-shape (:id shape)
-                                                shape
-                                                page
-                                                (:frame-id shape)
-                                                (:parent-id shape)
-                                                nil     ; <- As shapes are ordered, we can safely add each
-                                                true))  ;    one at the end of the parent's children list.
-                              page
-                              main-instance-shapes))
-
-                    ; Copy the component in the file local library
-                    copy-component
-                    (fn [file-data]
-                      (ctkl/add-component file-data
-                                          (:id component)
-                                          (:name component)
-                                          (:path component)
-                                          (:id main-instance-shape)
-                                          page-id
-                                          (vals (:objects component))))
-
-                    ; Change all existing instances to point to the local file
-                    redirect-instances
-                    (fn [file-data [container shapes]]
-                      (let [redirect-instance #(assoc % :component-file (:id file-data))]
-                        (update-container file-data
-                                          container
-                                          #(reduce (fn [container shape]
-                                                     (ctn/update-shape container
-                                                                       (:id shape)
-                                                                       redirect-instance))
-                                                   %
-                                                   shapes))))]
-
-                (as-> file-data $
-                    (ctpl/update-page $ page-id add-main-instance-shapes)
-                    (copy-component $)
-                    (reduce redirect-instances $ instances))))
-
-            ; Absorb all used components into the local library. Position
-            ; the main instances in a grid in the library page.
-            add-component-grid
-            (fn [data used-components]
-              (let [position-seq (ctst/generate-shape-grid
-                                   (map #(cph/get-component-root (first %)) used-components)
-                                   start-pos
-                                   50)]
-                (loop [data           data
-                       components-seq (seq used-components)
-                       position-seq   position-seq]
-                  (let [used-component (first components-seq)
-                        position       (first position-seq)]
-                    (if (nil? used-component)
-                      data
-                      (recur (absorb-component data used-component position)
-                             (rest components-seq)
-                             (rest position-seq)))))))]
-
-        (add-component-grid file-data (sort-by #(:name (first %)) used-components))))))
 
 ;; Debug helpers
 
