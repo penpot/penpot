@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-15 08:19+0000\n"
-"Last-Translator: Locness <locness3@orange.fr>\n"
+"PO-Revision-Date: 2022-07-01 08:17+0000\n"
+"Last-Translator: Lucie Lesage <lucie@jeci.fr>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -255,7 +255,7 @@ msgid "dashboard.empty-files"
 msgstr "Vous n’avez encore aucun fichier ici"
 
 msgid "dashboard.export-frames"
-msgstr "Exporter les plans de travail comme PDF..."
+msgstr "Exporter les plans de travail au format PDF…"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -2928,7 +2928,6 @@ msgstr "Continuer"
 msgid "labels.workspace"
 msgstr "Espace de travail"
 
-#, fuzzy
 msgid "labels.edit-file"
 msgstr "Modifier le fichier"
 
@@ -2988,7 +2987,6 @@ msgid "labels.delete-invitation"
 msgstr "Supprimer l'invitation"
 
 #: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
 msgid "labels.expired-invitation"
 msgstr "Expirée"
 
@@ -3025,7 +3023,6 @@ msgid "labels.you"
 msgstr "(vous)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
 msgid "modals.change-owner-and-leave-confirm.message"
 msgstr ""
 "Vous êtes le propriétaire de cette équipe. Avant de la quitter, veuillez "
@@ -3104,7 +3101,7 @@ msgstr ""
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
-msgstr "Information sur comment mettre en place des exportations à Penpot."
+msgstr "Information sur comment configurer l'export dans Penpot."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -3157,7 +3154,6 @@ msgstr ""
 msgid "onboarding.choice.team-up"
 msgstr "Faites équipe"
 
-#, fuzzy
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "L'e-mail \"%s\" a été signalé comme spam ou a été rejeté."
 
@@ -3236,3 +3232,53 @@ msgstr "Entrez le nom de l'équipe"
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Traitement des couleurs"
+
+msgid "onboarding.choice.title"
+msgstr "Bienvenue dans Penpot"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "Vous pouvez accéder au"
+
+#, fuzzy
+msgid "onboarding.contrib.alt"
+msgstr "Source ouverte"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "et suivre les instructions pour contribuer :)"
+
+msgid "onboarding.contrib.link"
+msgstr "projet sur github"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"Demande d'abonnement envoyé, vous allez recevoir un e-mail de confirmation."
+
+msgid "onboarding.newsletter.decline"
+msgstr "Non, merci"
+
+#, fuzzy
+msgid "onboarding.newsletter.accept"
+msgstr "Oui, je veux être abonné"
+
+#, fuzzy
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"Abonnez-vous à la newsletter pour être tenu informé des développements, du "
+"progrès et des nouveautés du produit."
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "Créer une équipe et envoyer des invitations"
+
+#, fuzzy
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "Créer une équipe et inviter plus tard"
+
+#, fuzzy
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot est à Source Ouverte, fabriqué par et pour la communauté. Si vous "
+"vous voulez collaborer, vous êtes les bienvenues !"
+
+#, fuzzy
+msgid "onboarding.contrib.title"
+msgstr "Contributeur Open Source ?"
