@@ -29,8 +29,9 @@
           libs    (files/retrieve-file-libraries cfg false file-id)
           users   (comments/retrieve-file-comments-users pool file-id profile-id)
 
-          links   (->> (db/query pool :share-link {:file-id file-id})
-                       (mapv slnk/decode-share-link-row))
+          link   (->> (db/query pool :share-link {:file-id file-id} {:order-by [:created-at]})
+                      (map slnk/decode-share-link-row)
+                      (last))
 
           fonts   (db/query pool :team-font-variant
                             {:team-id (:team-id project)
@@ -39,7 +40,7 @@
      :users users
      :fonts fonts
      :project project
-     :share-links links
+     :share-link link
      :libraries libs}))
 
 (s/def ::file-id ::us/uuid)

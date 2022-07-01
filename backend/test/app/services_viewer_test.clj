@@ -38,7 +38,7 @@
         (t/is (nil? (:error out)))
 
         (let [result (:result out)]
-          (t/is (contains? result :share-links))
+          (t/is (contains? result :share-link))
           (t/is (contains? result :permissions))
           (t/is (contains? result :libraries))
           (t/is (contains? result :file))

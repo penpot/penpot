@@ -37,8 +37,8 @@
 (def threads-ref
   (l/derived :comment-threads st/state))
 
-(def share-links
-  (l/derived :share-links st/state))
+(def share-link
+  (l/derived :share-link st/state))
 
 (def export
   (l/derived :export st/state))

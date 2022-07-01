@@ -15,12 +15,12 @@
 ;; SHARE LINK
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn share-link-created
+(defn share-link-created-updated
   [link]
-  (ptk/reify ::share-link-created
+  (ptk/reify ::share-link-created-updated
     ptk/UpdateEvent
     (update [_ state]
-      (update state :share-links (fnil conj []) link))))
+      (assoc state :share-link link))))
 
 (defn create-share-link
   [params]
@@ -28,16 +28,22 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/mutation! :create-share-link params)
-           (rx/map share-link-created)))))
+           (rx/map share-link-created-updated)))))
+
+(defn update-share-link
+  [params]
+  (ptk/reify ::update-share-link
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/mutation! :update-share-link params)
+           (rx/map share-link-created-updated)))))
 
 (defn delete-share-link
   [{:keys [id] :as link}]
   (ptk/reify ::delete-share-link
     ptk/UpdateEvent
     (update [_ state]
-      (update state :share-links
-              (fn [links]
-                (filterv #(not= id (:id %)) links))))
+      (dissoc state :share-link))
 
     ptk/WatchEvent
     (watch [_ _ _]

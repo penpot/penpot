@@ -51,8 +51,7 @@
                            :who-inspect who-inspect
                            :pages pages
                            :owner-id profile-id})]
-    (-> slink
-        (update :pages db/decode-pgarray #{}))))
+    (update slink :pages db/decode-pgarray #{})))
 
 ;; --- Mutation: Delete Share Link
 
@@ -68,3 +67,29 @@
       (files/check-edition-permissions! conn profile-id (:file-id slink))
       (db/delete! conn :share-link {:id id})
       nil)))
+
+;; --- Mutation: Update Share Link
+
+(declare update-share-link)
+
+(s/def ::update-share-link
+  (s/keys :req-un [::id ::profile-id ::file-id ::who-comment ::who-inspect ::pages]))
+
+(sv/defmethod ::update-share-link
+  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  (db/with-atomic [conn pool]
+    (let [slink (db/get-by-id conn :share-link id)]
+      (files/check-edition-permissions! conn profile-id (:file-id slink))
+      (update-share-link conn params))))
+
+(defn update-share-link
+  [conn {:keys [id profile-id pages who-comment who-inspect]}]
+  (let [pages (db/create-array conn "uuid" pages)
+        slink (db/update! conn :share-link
+                          {:who-comment who-comment
+                           :who-inspect who-inspect
+                           :pages pages
+                           :owner-id profile-id}
+                          {:id id})]
+    (-> slink
+        (update :pages db/decode-pgarray #{}))))

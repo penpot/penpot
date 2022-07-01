@@ -25,7 +25,7 @@
 
 (defn prepare-params
   [{:keys [pages who-comment who-inspect]}]
-  
+
    {:pages pages
     :who-comment who-comment
     :who-inspect who-inspect})
@@ -35,20 +35,21 @@
    ::mf/register-as :share-link}
   [{:keys [file page]}]
   (let [current-page page
-        slinks   (mf/deref refs/share-links)
-        router   (mf/deref refs/router)
-        route    (mf/deref refs/route)
+        slink     (mf/deref refs/share-link)
+        router    (mf/deref refs/router)
+        route     (mf/deref refs/route)
 
-        link     (mf/use-state nil)
-        confirm  (mf/use-state false)
-        open-ops (mf/use-state false)
+        link      (mf/use-state nil)
+        confirm   (mf/use-state false)
+        do-update (mf/use-state false)
+        open-ops  (mf/use-state false)
 
-        opts     (mf/use-state
-                  {:pages-mode "current"
-                   :all-pages false
-                   :pages #{(:id page)}
-                   :who-comment "team"
-                   :who-inspect "team"})
+        opts      (mf/use-state
+                   {:pages-mode "current"
+                    :all-pages false
+                    :pages (if slink (:pages slink) #{(:id page)})
+                    :who-comment (if slink (:who-comment slink) "team")
+                    :who-inspect (if slink (:who-inspect slink) "team")})
 
 
         close
@@ -83,13 +84,21 @@
                      (fn [pages]
                        (if checked?
                          (conj pages id)
-                         (disj pages id)))))))
+                         (disj pages id))))
+              (reset! do-update true))))
 
         create-link
         (fn [_]
           (let [params (prepare-params @opts)
                 params (assoc params :file-id (:id file))]
             (st/emit! (dc/create-share-link params))))
+
+        update-link
+        (fn []
+          (when slink
+            (let [params (prepare-params @opts)
+                  params (assoc params :file-id (:id file) :id (:id slink))]
+              (st/emit! (dc/update-share-link params)))))
 
         copy-link
         (fn [_]
@@ -104,10 +113,8 @@
 
         delete-link
         (fn [_]
-          (let [params (prepare-params @opts)
-                slink  (d/seek #(= (:flags %) (:flags params)) slinks)]
-            (reset! confirm false)
-            (st/emit! (dc/delete-share-link slink))))
+          (reset! confirm false)
+          (st/emit! (dc/delete-share-link slink)))
 
         manage-open-ops
         (fn [_]
@@ -117,25 +124,34 @@
         (fn [type event]
           (let [target  (dom/get-target event)
                 value   (dom/get-value target)
-                value   (keyword value)]
+                value   (keyword value)
+                who (if (= type :comment) :who-comment :who-inspect)]
             (reset! confirm false)
-            (if (= type :comment)
-              (swap! opts assoc :who-comment (d/name value))
-              (swap! opts assoc :who-inspect (d/name value)))))]
+            (swap! opts assoc who (d/name value))
+            (reset! do-update true)))]
 
     (mf/use-effect
-     (mf/deps file slinks @opts)
+     (mf/deps @opts @do-update)
      (fn []
-       (let [{:keys [pages who-comment who-inspect] :as params} (prepare-params @opts)
-             slink  (d/seek #(and (= (:who-inspect %) who-inspect) (= (:who-comment %) who-comment) (= (:pages %) pages)) slinks)
-             href   (when slink
+       (when @do-update
+         (reset! do-update false)
+         (update-link))))
+
+    (mf/use-effect
+     (mf/deps file slink)
+     (fn []
+       (let [href   (when slink
                       (let [pparams (:path-params route)
                             qparams (-> (:query-params route)
                                         (assoc :share-id (:id slink))
                                         (assoc :index "0"))
                             href    (rt/resolve router :viewer pparams qparams)]
                         (assoc cf/public-uri :fragment href)))]
-         (reset! link (some-> href str)))))
+         (reset! link (some-> href str))
+         (when slink
+           (swap! opts assoc :who-comment (:who-comment slink))
+           (swap! opts assoc :who-inspect (:who-inspect slink))
+           (swap! opts assoc :pages (:pages slink))))))
 
     [:div.modal-overlay.share-modal
      [:div.modal-container.share-link-dialog

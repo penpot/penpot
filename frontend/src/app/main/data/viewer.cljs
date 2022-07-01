@@ -111,7 +111,7 @@
 (declare go-to-frame-auto)
 
 (defn bundle-fetched
-  [{:keys [project file share-links libraries users permissions] :as bundle}]
+  [{:keys [project file share-link libraries users permissions] :as bundle}]
   (let [pages (->> (get-in file [:data :pages])
                    (map (fn [page-id]
                           (let [data (get-in file [:data :pages-index page-id])]
@@ -124,7 +124,7 @@
       ptk/UpdateEvent
       (update [_ state]
         (-> state
-            (assoc :share-links share-links)
+            (assoc :share-link share-link)
             (assoc :viewer {:libraries (d/index-by :id libraries)
                             :users (d/index-by :id users)
                             :permissions permissions
