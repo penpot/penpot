@@ -415,12 +415,12 @@
 
               (cond
                 (:layout shape)
-                (let [result
-                      (->> children
-                           (reduce (partial set-layout-child (and snap-pixel? resize-modif?))
-                                   (merge {:modif-tree modif-tree}
-                                          (gsh/calc-layout-data shape children transformed-rect))))]
-                  (:modif-tree result))
+                (let [layout-data (gsh/calc-layout-data shape children modif-tree transformed-rect)
+                      children (cond-> children (:reverse? layout-data) reverse)]
+                  (->> children
+                       (reduce (partial set-layout-child (and snap-pixel? resize-modif?))
+                               (merge {:modif-tree modif-tree} layout-data))
+                       :modif-tree))
 
                 :else
                 modif-tree)))]

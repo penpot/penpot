@@ -88,9 +88,11 @@
         type      (:layout-type values)
         is-col?   (or (= dir :top)
                       (= dir :bottom))
-        saved-pos [(:layout-h-orientation values) (:layout-v-orientation values)]]
+        saved-pos [(:layout-h-orientation values)
+                   (:layout-v-orientation values)]]
 
-    (if (= type :packed)
+    (cond
+      (= type :packed)
       [:div.orientation-grid
        [:div.button-wrapper
         (for [[pv ph] grid-pos]
@@ -110,47 +112,48 @@
                      :rotated is-col?)}
             (get-layout-icon dir type pv ph)]])]]
 
-      (if is-col?
-        [:div.orientation-grid.col
-         [:div.button-wrapper
-          (for [[idx col] (d/enumerate grid-cols)]
-            [:button.orientation
-             {:key (dm/str idx col)
-              :on-click (partial on-change-orientation :top col type)
-              :class  (dom/classnames
-                       :active   (= col (second saved-pos))
-                       :top      (= :left col)
-                       :centered (= :center col)
-                       :bottom   (= :right col))}
-             [:span.icon
-              {:class (dom/classnames :rotated is-col?)}
-              (get-layout-icon dir type nil col)]
-             [:span.icon
-              {:class (dom/classnames :rotated is-col?)}
-              (get-layout-icon dir type nil col)]
-             [:span.icon
-              {:class (dom/classnames :rotated is-col?)}
-              (get-layout-icon dir type nil col)]])]]
+      is-col?
+      [:div.orientation-grid.col
+       [:div.button-wrapper
+        (for [[idx col] (d/enumerate grid-cols)]
+          [:button.orientation
+           {:key (dm/str idx col)
+            :on-click (partial on-change-orientation :top col type)
+            :class  (dom/classnames
+                     :active   (= col (second saved-pos))
+                     :top      (= :left col)
+                     :centered (= :center col)
+                     :bottom   (= :right col))}
+           [:span.icon
+            {:class (dom/classnames :rotated is-col?)}
+            (get-layout-icon dir type nil col)]
+           [:span.icon
+            {:class (dom/classnames :rotated is-col?)}
+            (get-layout-icon dir type nil col)]
+           [:span.icon
+            {:class (dom/classnames :rotated is-col?)}
+            (get-layout-icon dir type nil col)]])]]
 
-        [:div.orientation-grid.row
-         [:div.button-wrapper
-          (for [row grid-rows]
-            [:button.orientation
-             {:on-click (partial on-change-orientation row :left type)
-              :class    (dom/classnames
-                         :active   (= row (first saved-pos))
-                         :top      (= :top row)
-                         :centered (= :center row)
-                         :bottom   (= :bottom row))}
-             [:span.icon
-              {:class (dom/classnames :rotated is-col?)}
-              (get-layout-icon dir type row nil)]
-             [:span.icon
-              {:class (dom/classnames :rotated is-col?)}
-              (get-layout-icon dir type row nil)]
-             [:span.icon
-              {:class (dom/classnames :rotated is-col?)}
-              (get-layout-icon dir type row nil)]])]]))))
+      :else
+      [:div.orientation-grid.row
+       [:div.button-wrapper
+        (for [row grid-rows]
+          [:button.orientation
+           {:on-click (partial on-change-orientation row :left type)
+            :class    (dom/classnames
+                       :active   (= row (first saved-pos))
+                       :top      (= :top row)
+                       :centered (= :center row)
+                       :bottom   (= :bottom row))}
+           [:span.icon
+            {:class (dom/classnames :rotated is-col?)}
+            (get-layout-icon dir type row nil)]
+           [:span.icon
+            {:class (dom/classnames :rotated is-col?)}
+            (get-layout-icon dir type row nil)]
+           [:span.icon
+            {:class (dom/classnames :rotated is-col?)}
+            (get-layout-icon dir type row nil)]])]])))
 
 (mf/defc padding-section
   [{:keys [values on-change-style on-change] :as props}]

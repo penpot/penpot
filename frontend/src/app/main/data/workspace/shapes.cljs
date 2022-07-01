@@ -19,6 +19,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [app.util.names :as un]
@@ -98,6 +99,7 @@
 
          (rx/concat
           (rx/of (dch/commit-changes changes)
+                 (dwsl/update-layout-positions [(:parent-id shape)])
                  (when-not no-select?
                    (dws/select-shapes (d/ordered-set id))))
           (when (= :text (:type attrs))
@@ -239,7 +241,8 @@
                                                                    flows
                                                                    starting-flows)))))]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (dwsl/update-layout-positions all-parents))))))
 
 (defn- viewport-center
   [state]
