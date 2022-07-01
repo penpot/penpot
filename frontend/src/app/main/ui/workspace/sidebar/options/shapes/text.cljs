@@ -23,11 +23,13 @@
    [rumext.alpha :as mf]))
 
 (mf/defc options
-  [{:keys [shape] :as props}]
+  [{:keys [shape file-id] :as props}]
   (let [ids    [(:id shape)]
         type   (:type shape)
 
         state-map    (mf/deref refs/workspace-editor-state)
+        shared-libs  (mf/deref refs/workspace-libraries)
+
         editor-state (get state-map (:id shape))
 
         layer-values (select-keys shape layer-attrs)
@@ -96,7 +98,7 @@
                       :disable-stroke-style true}]
 
      (when (= :multiple (:fills fill-values))
-       [:& color-selection-menu {:type type :shapes [shape]}])
+       [:& color-selection-menu {:type type :shapes [shape] :file-id file-id :shared-libs shared-libs}])
 
      [:& shadow-menu
       {:ids ids

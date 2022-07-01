@@ -30,7 +30,9 @@
   [props]
   (let [shape (unchecked-get props "shape")
         shape-with-children (unchecked-get props "shape-with-children")
+        shared-libs (unchecked-get props "shared-libs")
         objects (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
+        file-id (unchecked-get props "file-id")
 
         type :group
         [measure-ids    measure-values]      (get-attrs [shape] objects :measure)
@@ -65,7 +67,9 @@
 
      (when (> (count objects) 2)
        [:& color-selection-menu {:type type
-                                 :shapes (vals objects)}])
+                                 :shapes (vals objects)
+                                 :file-id file-id
+                                 :shared-libs shared-libs}])
 
      (when-not (empty? shadow-ids)
        [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])
