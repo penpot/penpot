@@ -1632,3 +1632,65 @@
     }
   }
 }
+
+//- LOGIN
+.login-register {
+  background-color: $color-white;
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  font-family: "worksans", sans-serif;
+  width: 472px;
+  height: auto;
+  position: relative;
+
+  .title {
+    margin-left: 32px;
+    h2 {
+      font-size: 24px;
+      color: $color-black;
+      line-height: $fs36;
+      letter-spacing: 0px;
+      margin: 0 30px 20px 0;
+    }
+
+    .modal-close-button {
+      margin-top: 7px;
+      margin-right: 12px;
+      justify-content: right;
+      svg {
+        fill: $color-black;
+      }
+    }
+  }
+
+  .modal-bottom {
+    margin: 0 32px;
+    color: #1f1f1f;
+    display: flex;
+    flex-direction: column;
+
+    &.auth-content {
+      align-items: initial;
+      height: auto;
+    }
+
+    .links {
+      margin: 7px 0 0 0;
+      text-align: left;
+    }
+  }
+
+  .modal-footer {
+    justify-content: center;
+    align-items: center;
+
+    .terms-login {
+      position: relative;
+      bottom: 0;
+    }
+  }
+
+  .hint {
+    color: #b1b2b5;
+  }
+}
