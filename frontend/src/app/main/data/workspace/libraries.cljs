@@ -686,7 +686,7 @@
                                         :library-id library-id})))
              (when (and (seq (:redo-changes library-changes))
                         sync-components?)
-               (rx/of (sync-file-2nd-stage file-id library-id))))))))))
+               (rx/of (sync-file-2nd-stage file-id library-id asset-id))))))))))
 
 (defn- sync-file-2nd-stage
   "If some components have been modified, we need to launch another synchronization

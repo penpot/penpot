@@ -153,7 +153,8 @@
        :team team
        :on-load-more on-nav
        :files files
-       :on-create-clicked (partial create-file "dashboard:empty-folder-placeholder")}]]))
+       :on-create-clicked (partial create-file "dashboard:empty-folder-placeholder")
+       :origin :project}]]))
 
 (def recent-files-ref
   (l/derived :dashboard-recent-files st/state))

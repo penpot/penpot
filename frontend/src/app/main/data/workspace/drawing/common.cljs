@@ -11,7 +11,6 @@
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape :as cts]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]

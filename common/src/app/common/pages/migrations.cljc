@@ -15,14 +15,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
-   [app.common.types.component :as ctk]
-   [app.common.types.components-list :as ctkl]
-   [app.common.types.container :as ctn]
-   [app.common.types.file :as ctf]
-   [app.common.types.page :as ctp]
-   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 

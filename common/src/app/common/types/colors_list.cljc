@@ -4,9 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.types.colors-list
-  (:require
-    [app.common.data :as d]))
+(ns app.common.types.colors-list)
 
 (defn colors-seq
   [file-data]

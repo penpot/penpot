@@ -384,7 +384,7 @@
 
 (s/def ::file-data-for-thumbnail
   (s/keys :req-un [::profile-id ::file-id]
-          :opt-in [::components-v2]))
+          :opt-un [::components-v2]))
 
 (sv/defmethod ::file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
@@ -463,6 +463,24 @@
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (check-read-permissions! pool profile-id file-id)
   (retrieve-file-libraries cfg false file-id))
+
+
+;; --- Query: Files that use this File library
+
+(def ^:private sql:library-using-files
+  "SELECT f.id, 
+          f.name
+     FROM file_library_rel AS flr 
+     INNER JOIN file AS f ON f.id = flr.file_id
+    WHERE flr.library_file_id = ?;")
+
+(s/def ::library-using-files
+  (s/keys :req-un [::profile-id ::file-id]))
+
+(sv/defmethod ::library-using-files
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  (check-read-permissions! pool profile-id file-id)
+  (db/exec! pool [sql:library-using-files file-id]))
 
 ;; --- QUERY: team-recent-files
 

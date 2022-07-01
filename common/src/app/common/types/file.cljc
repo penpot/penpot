@@ -20,8 +20,8 @@
     [app.common.types.page :as ctp]
     [app.common.types.pages-list :as ctpl]
     [app.common.types.shape-tree :as ctst]
-    [app.common.types.typography :as cty]
     [app.common.types.typographies-list :as ctyl]
+    [app.common.types.typography :as cty]
     [app.common.uuid :as uuid]
     [clojure.spec.alpha :as s]
     [cuerdas.core :as str]))
@@ -155,11 +155,11 @@
               [[container instances]])))
 
         find-asset-usages
-        (fn [file-data library-id asset-type asset]
+        (fn [file-data asset]
           (mapcat #(find-usages-in-container % asset) (containers-seq file-data)))]
 
     (mapcat (fn [asset]
-              (let [instances (find-asset-usages file-data (:id library-data) asset-type asset)]
+              (let [instances (find-asset-usages file-data asset)]
                 (when (d/not-empty? instances)
                   [[asset instances]])))
             assets-seq)))
@@ -252,7 +252,7 @@
             (assoc-in [:options :components-v2] true))))))
 
 (defn- absorb-components
-  [file-data library-data used-components]
+  [file-data used-components]
   (let [grid-gap 50
 
         ; Search for the library page. If not exists, create it.
@@ -336,7 +336,7 @@
     (add-component-grid file-data (sort-by #(:name (first %)) used-components))))
 
 (defn- absorb-colors
-  [file-data library-data used-colors]
+  [file-data used-colors]
   (let [absorb-color
         (fn [file-data [color usages]]
           (let [remap-shape #(ctc/remap-colors % (:id file-data) color)
@@ -360,7 +360,7 @@
             used-colors)))
 
 (defn- absorb-typographies
-  [file-data library-data used-typographies]
+  [file-data used-typographies]
   (let [absorb-typography
         (fn [file-data [typography usages]]
           (let [remap-shape #(cty/remap-typographies % (:id file-data) typography)
@@ -393,13 +393,13 @@
 
     (cond-> file-data
       (d/not-empty? used-components)
-      (absorb-components library-data used-components)
+      (absorb-components used-components)
 
       (d/not-empty? used-colors)
-      (absorb-colors library-data used-colors)
+      (absorb-colors used-colors)
 
       (d/not-empty? used-typographies)
-      (absorb-typographies library-data used-typographies))))
+      (absorb-typographies used-typographies))))
 
 
 ;; Debug helpers

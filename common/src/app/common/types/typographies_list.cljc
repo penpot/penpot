@@ -4,9 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.types.typographies-list
-  (:require
-    [app.common.data :as d]))
+(ns app.common.types.typographies-list)
 
 (defn typographies-seq
   [file-data]
