@@ -7,6 +7,7 @@
 (ns app.db
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.logging :as l]
@@ -60,17 +61,22 @@
 (s/def ::validation-timeout ::us/integer)
 (s/def ::read-only? ::us/boolean)
 
+(s/def ::statement-timeout ::us/integer)
+(s/def ::idle-in-transaction-timeout ::us/integer)
+
 (s/def ::pool-options
   (s/keys :opt-un [::uri ::name
                    ::min-size
                    ::max-size
                    ::connection-timeout
                    ::validation-timeout
+                   ::statement-timeout
+                   ::idle-in-transaction-timeout
                    ::migrations
                    ::username
                    ::password
-                   ::mtx/metrics
-                   ::read-only?]))
+                   ::read-only?
+                   ::mtx/metrics]))
 
 (def defaults
   {:name :main
@@ -80,6 +86,8 @@
    :validation-timeout 10000
    :idle-timeout 120000 ; 2min
    :max-lifetime 1800000 ; 30m
+   :statement-timeout 300000
+   :idle-in-transaction-timeout 300000
    :read-only? false})
 
 (defmethod ig/prep-key ::pool
@@ -127,10 +135,6 @@
 ;; API & Impl
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def initsql
-  (str "SET statement_timeout = 300000;\n"
-       "SET idle_in_transaction_session_timeout = 300000;"))
-
 (defn- create-datasource-config
   [{:keys [metrics uri] :as cfg}]
   (let [config (HikariConfig.)]
@@ -145,7 +149,11 @@
       (.setMaxLifetime       (:max-lifetime cfg))
       (.setMinimumIdle       (:min-size cfg))
       (.setMaximumPoolSize   (:max-size cfg))
-      (.setConnectionInitSql initsql)
+      (.setConnectionInitSql
+       (dm/fmt "SET statement_timeout=%; SET idle_in_transaction_session_timeout=%;"
+               (:statement-timeout cfg)
+               (:idle-in-transaction-timeout cfg)))
+
       (.setInitializationFailTimeout -1))
 
     ;; When metrics namespace is provided
