@@ -206,7 +206,7 @@
         ;; the returned profile is an NOT authenticated profile, we
         ;; proceed to logout and show an error message.
 
-        (->> (rp/mutation :login (d/without-nils params))
+        (->> (rp/command :login-with-password (d/without-nils params))
              (rx/merge-map (fn [data]
                              (rx/merge
                               (rx/of (fetch-profile))
@@ -292,7 +292,7 @@
    (ptk/reify ::logout
      ptk/WatchEvent
      (watch [_ _ _]
-       (->> (rp/mutation :logout)
+       (->> (rp/command :logout)
             (rx/delay-at-least 300)
             (rx/catch (constantly (rx/of 1)))
             (rx/map #(logged-out params)))))))
@@ -494,7 +494,7 @@
              :or {on-error rx/throw
                   on-success identity}} (meta data)]
 
-        (->> (rp/mutation :request-profile-recovery data)
+        (->> (rp/command :request-profile-recovery data)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -513,7 +513,7 @@
       (let [{:keys [on-error on-success]
              :or {on-error rx/throw
                   on-success identity}} (meta data)]
-        (->> (rp/mutation :recover-profile data)
+        (->> (rp/command :recover-profile data)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -524,7 +524,7 @@
   (ptk/reify ::create-demo-profile
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/mutation :create-demo-profile {})
+      (->> (rp/command :create-demo-profile {})
            (rx/map login)))))
 
 

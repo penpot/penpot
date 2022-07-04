@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.db :as db]
    [app.main :as main]
+   [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.mutations.profile :as profile]
    [app.rpc.queries.profile :refer [retrieve-profile-data-by-email]]
    [clojure.string :as str]
@@ -54,13 +55,13 @@
                                          :type :password}))]
     (try
       (db/with-atomic [conn (:app.db/pool system)]
-        (->> (profile/create-profile conn
+        (->> (cmd.auth/create-profile conn
                                      {:fullname fullname
                                       :email email
                                       :password password
                                       :is-active true
                                       :is-demo false})
-             (profile/create-profile-relations conn)))
+             (cmd.auth/create-profile-relations conn)))
 
       (when (pos? (:verbosity options))
         (println "User created successfully."))

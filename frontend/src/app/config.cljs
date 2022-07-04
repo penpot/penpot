@@ -80,10 +80,6 @@
 (def default-theme  "default")
 (def default-language "en")
 
-(def google-client-id     (obj/get global "penpotGoogleClientID" nil))
-(def gitlab-client-id     (obj/get global "penpotGitlabClientID" nil))
-(def github-client-id     (obj/get global "penpotGithubClientID" nil))
-(def oidc-client-id       (obj/get global "penpotOIDCClientID" nil))
 (def worker-uri           (obj/get global "penpotWorkerURI" "/js/worker.js"))
 (def translations         (obj/get global "penpotTranslations"))
 (def themes               (obj/get global "penpotThemes"))
@@ -99,14 +95,6 @@
 
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" nil))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" nil))
-
-;; maintain for backward compatibility
-(let [login-with-ldap (obj/get global "penpotLoginWithLDAP" false)
-      registration    (obj/get global "penpotRegistrationEnabled" true)]
-  (when login-with-ldap
-    (swap! flags conj :login-with-ldap))
-  (when (false? registration)
-    (swap! flags disj :registration)))
 
 (defn get-public-uri
   []

@@ -73,10 +73,22 @@
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
+(defn- send-command!
+  "A simple helper for a common case of sending and receiving transit
+  data to the penpot mutation api."
+  [id params]
+  (->> (http/send! {:method :post
+                    :uri (u/join base-uri "api/rpc/command/" (name id))
+                    :credentials "include"
+                    :body (http/transit-data params)})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
+
 (defn- dispatch [& args] (first args))
 
 (defmulti query dispatch)
 (defmulti mutation dispatch)
+(defmulti command dispatch)
 
 (defmethod query :default
   [id params]
@@ -90,6 +102,10 @@
   [id params]
   (send-mutation! id params))
 
+(defmethod command :default
+  [id params]
+  (send-command! id params))
+
 (defn query!
   ([id] (query id {}))
   ([id params] (query id params)))
@@ -98,7 +114,11 @@
   ([id] (mutation id {}))
   ([id params] (mutation id params)))
 
-(defmethod mutation :login-with-oauth
+(defn command!
+  ([id] (command id {}))
+  ([id params] (command id params)))
+
+(defmethod command :login-with-oidc
   [_ {:keys [provider] :as params}]
   (let [uri    (u/join base-uri "api/auth/oauth/" (d/name provider))
         params (dissoc params :provider)]
@@ -109,7 +129,7 @@
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
-(defmethod mutation :send-feedback
+(defmethod command :send-feedback
   [_ params]
   (->> (http/send! {:method :post
                     :uri (u/join base-uri "api/feedback")
@@ -128,7 +148,7 @@
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
-(defmethod query :exporter
+(defmethod command :export
   [_ params]
   (let [default {:wait false :blob? false}]
     (send-export (merge default params))))

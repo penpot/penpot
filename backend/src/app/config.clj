@@ -79,7 +79,6 @@
    :ldap-attrs-username "uid"
    :ldap-attrs-email "mail"
    :ldap-attrs-fullname "cn"
-   :ldap-attrs-photo "jpegPhoto"
 
    ;; a server prop key where initial project is stored.
    :initial-project-skey "initial-project"})
@@ -149,7 +148,6 @@
 (s/def ::initial-project-skey ::us/string)
 (s/def ::ldap-attrs-email ::us/string)
 (s/def ::ldap-attrs-fullname ::us/string)
-(s/def ::ldap-attrs-photo ::us/string)
 (s/def ::ldap-attrs-username ::us/string)
 (s/def ::ldap-base-dn ::us/string)
 (s/def ::ldap-bind-dn ::us/string)
@@ -256,7 +254,6 @@
                    ::initial-project-skey
                    ::ldap-attrs-email
                    ::ldap-attrs-fullname
-                   ::ldap-attrs-photo
                    ::ldap-attrs-username
                    ::ldap-base-dn
                    ::ldap-bind-dn

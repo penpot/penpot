@@ -23,10 +23,11 @@
    [rumext.alpha :as mf]))
 
 (def show-alt-login-buttons?
-  (or cf/google-client-id
-      cf/gitlab-client-id
-      cf/github-client-id
-      cf/oidc-client-id))
+  (some (partial contains? @cf/flags)
+        [:login-with-google
+         :login-with-github
+         :login-with-gitlab
+         :login-with-oidc]))
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
@@ -36,19 +37,27 @@
   (s/keys :req-un [::email ::password]
           :opt-un [::invitation-token]))
 
-(defn- login-with-oauth
+(defn- login-with-oidc
   [event provider params]
   (dom/prevent-default event)
-  (->> (rp/mutation! :login-with-oauth (assoc params :provider provider))
+  (->> (rp/command! :login-with-oidc (assoc params :provider provider))
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
-                  (.replace js/location redirect-uri)))))
+                  (.replace js/location redirect-uri))
+                (fn [{:keys [type code] :as error}]
+                  (cond
+                    (and (= type :restriction)
+                         (= code :provider-not-configured))
+                    (st/emit! (dm/error (tr "errors.auth-provider-not-configured")))
+
+                    :else
+                    (st/emit! (dm/error (tr "errors.generic"))))))))
 
 (defn- login-with-ldap
   [event params]
   (dom/prevent-default event)
   (dom/stop-propagation event)
   (let [{:keys [on-error]} (meta params)]
-    (->> (rp/mutation! :login-with-ldap params)
+    (->> (rp/command! :login-with-ldap params)
          (rx/subs (fn [profile]
                     (if-let [token (:invitation-token profile)]
                       (st/emit! (rt/nav :auth-verify-token {} {:token token}))
@@ -56,11 +65,15 @@
                   (fn [{:keys [type code] :as error}]
                     (cond
                       (and (= type :restriction)
-                           (= code :ldap-disabled))
+                           (= code :ldap-not-initialized))
                       (st/emit! (dm/error (tr "errors.ldap-disabled")))
 
                       (fn? on-error)
-                      (on-error error)))))))
+                      (on-error error)
+
+                      :else
+                      (st/emit! (dm/error (tr "errors.generic")))))))))
+
 
 (mf/defc login-form
   [{:keys [params on-success-callback] :as props}]
@@ -141,35 +154,35 @@
 (mf/defc login-buttons
   [{:keys [params] :as props}]
   [:div.auth-buttons
-   (when cf/google-client-id
+   (when (contains? @cf/flags :login-with-google)
      [:a.btn-primary.btn-large.btn-google-auth
-      {:on-click #(login-with-oauth % :google params)}
+      {:on-click #(login-with-oidc % :google params)}
       [:span.logo i/brand-google]
       (tr "auth.login-with-google-submit")])
 
-   (when cf/github-client-id
+   (when (contains? @cf/flags :login-with-github)
      [:a.btn-primary.btn-large.btn-github-auth
-      {:on-click #(login-with-oauth % :github params)}
+      {:on-click #(login-with-oidc % :github params)}
       [:span.logo i/brand-github]
       (tr "auth.login-with-github-submit")])
 
-   (when cf/gitlab-client-id
+   (when (contains? @cf/flags :login-with-gitlab)
      [:a.btn-primary.btn-large.btn-gitlab-auth
-      {:on-click #(login-with-oauth % :gitlab params)}
+      {:on-click #(login-with-oidc % :gitlab params)}
       [:span.logo i/brand-gitlab]
       (tr "auth.login-with-gitlab-submit")])
 
-   (when cf/oidc-client-id
+   (when (contains? @cf/flags :login-with-oidc)
      [:a.btn-primary.btn-large.btn-github-auth
-      {:on-click #(login-with-oauth % :oidc params)}
+      {:on-click #(login-with-oidc % :oidc params)}
       [:span.logo i/brand-openid]
       (tr "auth.login-with-oidc-submit")])])
 
 (mf/defc login-button-oidc
   [{:keys [params] :as props}]
-  (when cf/oidc-client-id
+  (when (contains? @cf/flags :login-with-oidc)
     [:div.link-entry.link-oidc
-     [:a {:on-click #(login-with-oauth % :oidc params)}
+     [:a {:on-click #(login-with-oidc % :oidc params)}
       (tr "auth.login-with-oidc-submit")]]))
 
 (mf/defc login-methods

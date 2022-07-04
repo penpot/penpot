@@ -201,6 +201,7 @@
      (fn [handler executor]
        (fn [request respond raise]
          (-> (px/submit! executor #(handler request))
+             (p/bind p/wrap)
              (p/then respond)
              (p/catch raise)))))})
 

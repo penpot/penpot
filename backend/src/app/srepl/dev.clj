@@ -3,7 +3,7 @@
   (:require
    [app.db :as db]
    [app.config :as cfg]
-   [app.rpc.mutations.profile :refer [derive-password]]
+   [app.rpc.commands.auth :refer [derive-password]]
    [app.main :refer [system]]))
 
 (defn reset-passwords

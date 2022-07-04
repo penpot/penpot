@@ -143,12 +143,10 @@
 
 (defn handle
   [cause request]
-
   (cond
     (or (instance? java.util.concurrent.CompletionException cause)
         (instance? java.util.concurrent.ExecutionException cause))
     (handle-exception (.getCause ^Throwable cause) request)
-
 
     (ex/wrapped? cause)
     (let [context (meta cause)
