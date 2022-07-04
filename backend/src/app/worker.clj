@@ -203,8 +203,7 @@
 
           (instance? Exception val)
           (do
-            (l/warn :cause val
-                    :hint "unexpected error ocurried on polling the database (will resume in some instants)")
+            (l/warn :hint "unexpected error ocurried on polling the database (will resume in some instants)" :cause val)
             (a/<! (a/timeout poll-ms))
             (recur))
 
@@ -377,7 +376,7 @@
   [{:keys [tasks]} item]
   (let [name (d/name (:name item))]
     (try
-      (l/debug :action "execute task"
+      (l/trace :action "execute task"
                :id (:id item)
                :name name
                :retry (:retry-num item))
@@ -425,7 +424,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare schedule-cron-task)
-(declare synchronize-cron-entries)
+(declare synchronize-cron-entries!)
 
 (s/def ::fn (s/or :var var? :fn fn?))
 (s/def ::id keyword?)
@@ -466,8 +465,8 @@
 
           cfg     (assoc cfg :entries entries :running running)]
 
-        (l/info :hint "cron started" :registred-tasks (count entries))
-        (synchronize-cron-entries cfg)
+        (l/info :hint "cron initialized" :tasks (count entries))
+        (synchronize-cron-entries! cfg)
 
         (->> (filter some? entries)
              (run! (partial schedule-cron-task cfg)))
@@ -494,16 +493,12 @@
        on conflict (id)
        do update set cron_expr=?")
 
-(defn- synchronize-cron-item
-  [conn {:keys [id cron]}]
-  (let [cron (str cron)]
-    (l/debug :action "initialize scheduled task" :id id :cron cron)
-    (db/exec-one! conn [sql:upsert-cron-task id cron cron])))
-
-(defn- synchronize-cron-entries
-  [{:keys [pool schedule]}]
+(defn- synchronize-cron-entries!
+  [{:keys [pool entries]}]
   (db/with-atomic [conn pool]
-    (run! (partial synchronize-cron-item conn) schedule)))
+    (doseq [{:keys [id cron]} entries]
+      (l/trace :hint "register cron task" :id id :cron (str cron))
+      (db/exec-one! conn [sql:upsert-cron-task id (str cron) (str cron)]))))
 
 (def sql:lock-cron-task
   "select id from scheduled_task where id=? for update skip locked")
@@ -512,7 +507,7 @@
   [{:keys [executor pool] :as cfg} {:keys [id] :as task}]
   (letfn [(run-task [conn]
             (when (db/exec-one! conn [sql:lock-cron-task (d/name id)])
-              (l/debug :action "execute scheduled task" :id id)
+              (l/trace :hint "execute cron task" :id id)
               ((:fn task) task)))
 
           (handle-task []
@@ -567,9 +562,10 @@
 
 (defmethod ig/init-key ::registry
   [_ {:keys [metrics tasks]}]
+  (l/info :hint "registry initialized" :tasks (count tasks))
   (reduce-kv (fn [res k v]
                (let [tname (name k)]
-                 (l/debug :hint "register task" :name tname)
+                 (l/trace :hint "register task" :name tname)
                  (assoc res k (wrap-task-handler metrics tname v))))
              {}
              tasks))
