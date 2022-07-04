@@ -25,8 +25,8 @@
    :layout-wrap-type       ;; :wrap, :no-wrap
    :layout-padding-type    ;; :simple, :multiple
    :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
-   :layout-h-orientation   ;; :top, :center, :bottom
-   :layout-v-orientation]) ;; :left, :center, :right
+   :layout-h-orientation   ;; :left, :center, :right
+   :layout-v-orientation]) ;; :top, :center, :bottom
 
 (def grid-pos  [[:top :left]
                 [:top :center]
@@ -43,19 +43,18 @@
 
 (defn- get-layout-icon
   [dir layout-type v h]
-  (let [col? (= dir (or :left :right))
+  (let [row? (or (= dir :right) (= dir :left))
         manage-text-icon
-        (if col?
-          (case h
-            :left   i/text-align-left
-            :center i/text-align-center
-            :right  i/text-align-right
-            i/text-align-center)
-
+        (if row?
           (case v
             :top    i/text-align-left
             :center i/text-align-center
             :bottom i/text-align-right
+            i/text-align-center)
+          (case h
+            :left   i/text-align-left
+            :center i/text-align-center
+            :right  i/text-align-right
             i/text-align-center))]
     (case layout-type
       :packed        manage-text-icon
@@ -88,11 +87,10 @@
         type      (:layout-type values)
         is-col?   (or (= dir :top)
                       (= dir :bottom))
-        saved-pos [(:layout-h-orientation values)
-                   (:layout-v-orientation values)]]
+        saved-pos [(:layout-v-orientation values)
+                   (:layout-h-orientation values)]]
 
-    (cond
-      (= type :packed)
+    (if (= type :packed)
       [:div.orientation-grid
        [:div.button-wrapper
         (for [[pv ph] grid-pos]
@@ -109,51 +107,49 @@
             :key    (dm/str pv ph)}
            [:span.icon
             {:class (dom/classnames
-                     :rotated is-col?)}
+                     :rotated (not is-col?))}
             (get-layout-icon dir type pv ph)]])]]
+      (if  (not is-col?)
+        [:div.orientation-grid.row
+         [:div.button-wrapper
+          (for [row grid-rows]
+            [:button.orientation
+             {:on-click (partial on-change-orientation row :left type)
+              :class    (dom/classnames
+                         :active   (= row (first saved-pos))
+                         :top      (= :top row)
+                         :centered (= :center row)
+                         :bottom   (= :bottom row))}
+             [:span.icon
+              {:class (dom/classnames :rotated is-col?)}
+              (get-layout-icon dir type nil row)]
+             [:span.icon
+              {:class (dom/classnames :rotated is-col?)}
+              (get-layout-icon dir type nil row)]
+             [:span.icon
+              {:class (dom/classnames :rotated is-col?)}
+              (get-layout-icon dir type nil row)]])]]
 
-      is-col?
-      [:div.orientation-grid.col
-       [:div.button-wrapper
-        (for [[idx col] (d/enumerate grid-cols)]
-          [:button.orientation
-           {:key (dm/str idx col)
-            :on-click (partial on-change-orientation :top col type)
-            :class  (dom/classnames
-                     :active   (= col (second saved-pos))
-                     :top      (= :left col)
-                     :centered (= :center col)
-                     :bottom   (= :right col))}
-           [:span.icon
-            {:class (dom/classnames :rotated is-col?)}
-            (get-layout-icon dir type nil col)]
-           [:span.icon
-            {:class (dom/classnames :rotated is-col?)}
-            (get-layout-icon dir type nil col)]
-           [:span.icon
-            {:class (dom/classnames :rotated is-col?)}
-            (get-layout-icon dir type nil col)]])]]
-
-      :else
-      [:div.orientation-grid.row
-       [:div.button-wrapper
-        (for [row grid-rows]
-          [:button.orientation
-           {:on-click (partial on-change-orientation row :left type)
-            :class    (dom/classnames
-                       :active   (= row (first saved-pos))
-                       :top      (= :top row)
-                       :centered (= :center row)
-                       :bottom   (= :bottom row))}
-           [:span.icon
-            {:class (dom/classnames :rotated is-col?)}
-            (get-layout-icon dir type row nil)]
-           [:span.icon
-            {:class (dom/classnames :rotated is-col?)}
-            (get-layout-icon dir type row nil)]
-           [:span.icon
-            {:class (dom/classnames :rotated is-col?)}
-            (get-layout-icon dir type row nil)]])]])))
+        [:div.orientation-grid.col
+         [:div.button-wrapper
+          (for [[idx col] (d/enumerate grid-cols)]
+            [:button.orientation
+             {:key (dm/str idx col)
+              :on-click (partial on-change-orientation :top col type)
+              :class  (dom/classnames
+                       :active   (= col (second saved-pos))
+                       :top      (= :left col)
+                       :centered (= :center col)
+                       :bottom   (= :right col))}
+             [:span.icon
+              {:class (dom/classnames :rotated is-col?)}
+              (get-layout-icon dir type col nil)]
+             [:span.icon
+              {:class (dom/classnames :rotated is-col?)}
+              (get-layout-icon dir type col nil)]
+             [:span.icon
+              {:class (dom/classnames :rotated is-col?)}
+              (get-layout-icon dir type col nil)]])]]))))
 
 (mf/defc padding-section
   [{:keys [values on-change-style on-change] :as props}]
@@ -256,7 +252,7 @@
              (st/emit! (dwsl/update-layout ids {:layout-wrap-type value})))))
 
         handle-change-orientation
-        (fn [h-orientation v-orientation]
+        (fn [v-orientation h-orientation]
           (st/emit! (dwsl/update-layout ids {:layout-h-orientation h-orientation :layout-v-orientation v-orientation})))
 
         layout-info
@@ -264,21 +260,19 @@
           (let [type        (:layout-type values)
                 dir         (:layout-dir values)
                 is-col?     (or (= dir :top) (= dir :bottom))
-                h           (:layout-v-orientation values)
-                v           (:layout-h-orientation values)
+                h           (:layout-h-orientation values)
+                v           (:layout-v-orientation values)
+
                 wrap        (:layout-wrap-type values)
 
                 orientation
-                (cond
-                  (= type :packaged)
+                (if (= type :packed)
                   (dm/str (tr (dm/str "workspace.options.layout.v." (d/name v))) ", "
                           (tr (dm/str "workspace.options.layout.h." (d/name h))) ", ")
 
-                  is-col?
-                  (dm/str (tr (dm/str "workspace.options.layout.h." (d/name h))) ", ")
-
-                  :else
-                  (dm/str (tr (dm/str "workspace.options.layout.v." (d/name v)))  ", "))]
+                  (if is-col?
+                    (dm/str (tr (dm/str "workspace.options.layout.h." (d/name h))) ", ")
+                    (dm/str (tr (dm/str "workspace.options.layout.v." (d/name v)))  ", ")))]
 
             (dm/str orientation
                     (str/replace (tr (dm/str "workspace.options.layout." (d/name type))) "-" " ") ", "
