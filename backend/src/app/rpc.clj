@@ -204,8 +204,9 @@
 (defn- process-method
   [cfg vfn]
   (let [mdata (meta vfn)]
+    ;; (prn mdata)
     [(keyword (::sv/name mdata))
-     (wrap cfg (deref vfn) mdata)]))
+     (wrap cfg vfn mdata)]))
 
 (defn- resolve-query-methods
   [cfg]

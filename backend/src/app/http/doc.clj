@@ -14,6 +14,7 @@
    [app.util.template :as tmpl]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [integrant.core :as ig]
    [pretty-spec.core :as ps]
    [yetti.response :as yrs]))
@@ -30,25 +31,26 @@
   [methods]
   (letfn [(gen-doc [type [name f]]
             (let [mdata (meta f)]
-              ;; (prn name mdata)
               {:type (d/name type)
                :name (d/name name)
+               :module (-> (:ns mdata) (str/split ".") last)
                :auth (:auth mdata true)
                :docs (::sv/docs mdata)
                :spec (get-spec-str (::sv/spec mdata))}))]
 
     {:command-methods
-     (into []
-           (map (partial gen-doc :command))
-           (->> methods :commands (sort-by first)))
+     (->> (:commands methods)
+          (map (partial gen-doc :command))
+          (sort-by (juxt :module :name)))
+
      :query-methods
-     (into []
-           (map (partial gen-doc :query))
-           (->> methods :queries (sort-by first)))
+     (->> (:queries methods)
+          (map (partial gen-doc :query))
+          (sort-by (juxt :module :name)))
      :mutation-methods
-     (into []
-           (map (partial gen-doc :mutation))
-           (->> methods :mutations (sort-by first)))}))
+     (->> (:mutations methods)
+          (map (partial gen-doc :query))
+          (sort-by (juxt :module :name)))}))
 
 (defn- handler
   [methods]
