@@ -30,28 +30,28 @@
   (or (= :top layout-dir) (= :bottom layout-dir)))
 
 (defn h-start?
-  [{:keys [layout-v-orientation]}]
-  (= layout-v-orientation :left))
+  [{:keys [layout-h-orientation]}]
+  (= layout-h-orientation :left))
 
 (defn h-center?
-  [{:keys [layout-v-orientation]}]
-  (= layout-v-orientation :center))
-
-(defn h-end?
-  [{:keys [layout-v-orientation]}]
-  (= layout-v-orientation :right))
-
-(defn v-start?
-  [{:keys [layout-h-orientation]}]
-  (= layout-h-orientation :top))
-
-(defn v-center?
   [{:keys [layout-h-orientation]}]
   (= layout-h-orientation :center))
 
-(defn v-end?
+(defn h-end?
   [{:keys [layout-h-orientation]}]
-  (= layout-h-orientation :bottom))
+  (= layout-h-orientation :right))
+
+(defn v-start?
+  [{:keys [layout-v-orientation]}]
+  (= layout-v-orientation :top))
+
+(defn v-center?
+  [{:keys [layout-v-orientation]}]
+  (= layout-v-orientation :center))
+
+(defn v-end?
+  [{:keys [layout-v-orientation]}]
+  (= layout-v-orientation :bottom))
 
 (defn add-padding [transformed-rect {:keys [layout-padding-type layout-padding]}]
   (let [{:keys [p1 p2 p3 p4]} layout-padding

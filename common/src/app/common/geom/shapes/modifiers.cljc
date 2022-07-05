@@ -109,11 +109,10 @@
   (letfn [(set-child [transformed-rect snap-pixel? modif-tree child]
             (let [modifiers (get-in modif-tree [(:id shape) :modifiers])
                   child-modifiers (gct/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)
-                  child-modifiers (cond-> child-modifiers snap-pixel? (set-pixel-precision child))
-                  ]
+                  child-modifiers (cond-> child-modifiers snap-pixel? (set-pixel-precision child))]
               (cond-> modif-tree
                 (not (gtr/empty-modifiers? child-modifiers))
-                (assoc (:id child) {:modifiers child-modifiers}))))]
+                (update-in [(:id child) :modifiers] #(merge % child-modifiers)))))]
     (let [children (map (d/getf objects) (:shapes shape))
           modifiers (get-in modif-tree [(:id shape) :modifiers])
           transformed-rect (gtr/transform-selrect (:selrect shape) modifiers)
@@ -148,7 +147,6 @@
           [_ modif-tree]
           (reduce (partial set-layout-modifiers shape) [layout-data modif-tree] children)]
 
-      ;;(.log js/console "modif-tree" modif-tree)
       modif-tree)))
 
 (defn get-first-layout
@@ -170,7 +168,7 @@
         ;; Layout found. We continue upward but we mark this layout
         (and (= :frame (:type parent))
              (:layout parent))
-        (recur (:id parent) (:id parent))
+        (:id parent)
 
         ;; If group or boolean or other type of group we continue with the last result
         :else
@@ -208,6 +206,6 @@
                   (cond-> (:layout shape)
                     (set-layout-modifiers objects current)))]
 
-          (recur (first pending) (rest pending) modif-tree #_touched-layouts))
+          (recur (first pending) (rest pending) modif-tree))
 
         modif-tree))))
