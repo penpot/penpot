@@ -267,7 +267,8 @@
   [{:keys [pool] :as cfg} {:keys [params profile-id] :as request}]
   (let [file-id (some-> params :file-id parse-uuid)
         libs?   (contains? params :includelibs)
-        clone?  (contains? params :clone)]
+        clone?  (contains? params :clone)
+        embed?  (contains? params :embedassets)]
 
     (when-not file-id
       (ex/raise :type :validation
@@ -275,6 +276,7 @@
 
     (let [path (-> cfg
                    (assoc ::binf/file-id file-id)
+                   (assoc ::binf/embed-assets? embed?)
                    (assoc ::binf/include-libraries? libs?)
                    (binf/export!))]
       (if clone?
@@ -283,6 +285,7 @@
            (assoc cfg
                   ::binf/input path
                   ::binf/overwrite? false
+                  ::binf/ignore-index-errors? true
                   ::binf/profile-id profile-id
                   ::binf/project-id project-id))
 

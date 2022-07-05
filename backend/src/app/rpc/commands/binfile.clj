@@ -330,6 +330,58 @@
   (with-open [^AutoCloseable conn (db/open pool)]
     (db/exec! conn [sql:file-library-rels (db/create-array conn "uuid" ids)])))
 
+(defn- embed-file-assets
+  [pool {:keys [id] :as file}]
+  (letfn [(walk-map-form [state form]
+            (cond
+              (uuid? (:fill-color-ref-file form))
+              (do
+                (vswap! state conj [(:fill-color-ref-file form) :colors (:fill-color-ref-id form)])
+                (assoc form :fill-color-ref-file id))
+
+              (uuid? (:stroke-color-ref-file form))
+              (do
+                (vswap! state conj [(:stroke-color-ref-file form) :colors (:stroke-color-ref-id form)])
+                (assoc form :stroke-color-ref-file id))
+
+              (uuid? (:typography-ref-file form))
+              (do
+                (vswap! state conj [(:typography-ref-file form) :typographies (:typography-ref-id form)])
+                (assoc form :typography-ref-file id))
+
+              (uuid? (:component-file form))
+              (do
+                (vswap! state conj [(:component-file form) :components (:component-id form)])
+                (assoc form :component-file id))
+
+              :else
+              form))
+
+          (process-group-of-assets [data [lib-id items]]
+            ;; NOTE: there are a posibility that shape refers to a not
+            ;; existing file because the file was removed. In this
+            ;; case we just ignore the asset.
+            (if-let [lib (retrieve-file pool lib-id)]
+              (reduce #(process-asset %1 lib %2) data items)
+              data))
+
+          (process-asset [data lib [bucket asset-id]]
+            (let [asset (get-in lib [:data bucket asset-id])
+                  ;; Add a special case for colors that need to have
+                  ;; correctly set the :file-id prop (pending of the
+                  ;; refactor that will remove it).
+                  asset (cond-> asset
+                          (= bucket :colors) (assoc :file-id id))]
+              (update data bucket assoc asset-id asset)))]
+
+    (update file :data (fn [data]
+                         (let [assets (volatile! [])]
+                           (walk/postwalk #(cond->> % (map? %) (walk-map-form assets)) data)
+                           (->> (deref assets)
+                                (filter #(as-> (first %) $ (and (uuid? $) (not= $ id))))
+                                (d/group-by first rest)
+                                (reduce process-group-of-assets data)))))))
+
 (defn write-export!
   "Do the exportation of a speficied file in custom penpot binary
   format. There are some options available for customize the output:
@@ -337,20 +389,28 @@
   `::include-libraries?`: additionaly to the specified file, all the
   linked libraries also will be included (including transitive
   dependencies).
+
+  `::embed-assets?`: instead of including the libraryes, embedd in the
+  same file library all assets used from external libraries.
   "
 
-  [{:keys [pool storage ::output ::file-id ::include-libraries?]}]
-  (let [libs  (when include-libraries?
-                (retrieve-libraries pool file-id))
-        rels  (when include-libraries?
-                (retrieve-library-relations pool (cons file-id libs)))
+  [{:keys [pool storage ::output ::file-id ::include-libraries? ::embed-assets?]}]
+
+  (when (and include-libraries? embed-assets?)
+    (ex/raise :type :restriction
+              :code :mutual-exclusive-options-provided
+              :hint "the `include-libraries?` option is mutually exclusive with `embed-assets?`"))
+
+  (let [libs  (when include-libraries? (retrieve-libraries pool file-id))
+        rels  (when include-libraries? (retrieve-library-relations pool (cons file-id libs)))
         files (into [file-id] libs)
-        sids  (atom #{})]
+        sids  (volatile! #{})]
 
     ;; Write header with metadata
     (l/debug :hint "exportation summary"
              :files (count files)
              :rels  (count rels)
+             :embed-assets? embed-assets?
              :include-libs? include-libraries?
              ::l/async false)
 
@@ -363,12 +423,13 @@
     (l/debug :hint "write section" :section :v1/files :total (count files) ::l/async false)
     (write-label! output :v1/files)
     (doseq [file-id files]
-      (let [file  (retrieve-file pool file-id)
+      (let [file  (cond->> (retrieve-file pool file-id)
+                    embed-assets? (embed-file-assets pool))
             media (retrieve-file-media pool file)]
 
         ;; Collect all storage ids for later write them all under
         ;; specific storage objects section.
-        (swap! sids into (sequence storage-object-id-xf media))
+        (vswap! sids into (sequence storage-object-id-xf media))
 
         (l/trace :hint "write penpot file"
                  :id file-id
