@@ -614,7 +614,7 @@
           (dissoc :modifiers))))))
 
 (defn transform-bounds
-  [points center {:keys [displacement resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
+  [points center {:keys [displacement displacement-after resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
   ;; FIXME: Improve Performance
   (let [resize-transform-inverse (or resize-transform-inverse (gmt/matrix))
 
@@ -628,9 +628,10 @@
 
         resize-origin-2
         (when (some? resize-origin-2)
-          (transform-point-center resize-origin-2 center resize-transform-inverse))]
+          (transform-point-center resize-origin-2 center resize-transform-inverse))
+        ]
 
-    (if (and (nil? displacement) (nil? resize-origin) (nil? resize-origin-2))
+    (if (and (nil? displacement) (nil? resize-origin) (nil? resize-origin-2) (nil? displacement-after))
       points
 
       (cond-> points
@@ -641,7 +642,10 @@
         (gco/transform-points resize-origin (gmt/scale-matrix resize-vector))
 
         (some? resize-origin-2)
-        (gco/transform-points resize-origin-2 (gmt/scale-matrix resize-vector-2))))))
+        (gco/transform-points resize-origin-2 (gmt/scale-matrix resize-vector-2))
+
+        (some? displacement-after)
+        (gco/transform-points displacement-after)))))
 
 (defn transform-selrect
   [selrect modifiers]

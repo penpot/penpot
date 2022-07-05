@@ -197,6 +197,9 @@
       ;; Build final child modifiers. Apply transform again to the result, to get the
       ;; real modifiers that need to be applied to the child, including rotation as needed.
       (cond-> {}
+        (some? (:displacement-after modifiers))
+        (assoc :displacement-after (:displacement-after modifiers))
+
         (or (contains? modifiers-h :displacement)
             (contains? modifiers-v :displacement))
         (assoc :displacement (cond-> (gpt/point (get-in modifiers-h [:displacement :x] 0)

@@ -68,11 +68,11 @@
 
 (defn calc-layout-data
   "Digest the layout data to pass it to the constrains"
-  [{:keys [layout-gap] :as shape} children modif-tree transformed-rect]
+  [{:keys [layout-type layout-gap] :as shape} children modif-tree transformed-rect]
 
-  (let [transformed-rect (-> transformed-rect (add-padding shape))
+  (let [{:keys [x y width height]} (-> transformed-rect (add-padding shape))
         num-children (count children)
-        children-gap (* layout-gap (dec num-children) )
+
         [children-width children-height]
         (->> children
              (map #(-> (merge % (get modif-tree (:id %))) gtr/transform-shape))
@@ -80,13 +80,39 @@
                        [(+ acc-width (-> shape :points gre/points->rect :width))
                         (+ acc-height (-> shape :points gre/points->rect :height))]) [0 0]))
 
-        {:keys [x y width height]} transformed-rect
+        layout-gap
+        (cond
+          (= :packed layout-type)
+          layout-gap
+
+          (= :space-around layout-type)
+          0
+
+          (and (col? shape) (= :space-between layout-type))
+          (/ (- width children-width) (dec num-children))
+
+          (and (row? shape) (= :space-between layout-type))
+          (/ (- height children-height) (dec num-children)))
+
+        margin-x (if (and (col? shape) (= :space-around layout-type))
+                   (/ (- width children-width) (dec num-children) 2)
+                   0)
+
+        margin-y (if (and (row? shape) (= :space-around layout-type))
+                   (/ (- height children-height) (dec num-children) 2)
+                   0)
+
+        children-gap (* layout-gap (dec num-children))
 
         start-x
         (cond
+          (or (and (col? shape) (= :space-between layout-type))
+              (and (col? shape) (= :space-around layout-type)))
+          x
+
           (and (row? shape) (h-center? shape))
           (+ x (/ width 2))
-          
+
           (and (row? shape) (h-end? shape))
           (+ x width)
 
@@ -97,10 +123,14 @@
           (- (+ x width) (+ children-width children-gap))
 
           :else
-          (:x transformed-rect))
+          x)
 
         start-y
         (cond
+          (or (and (row? shape) (= :space-between layout-type))
+              (and (row? shape) (= :space-around layout-type)))
+          y
+
           (and (col? shape) (v-center? shape))
           (+ y (/ height 2))
 
@@ -114,15 +144,18 @@
           (- (+ y height) (+ children-height children-gap))
 
           :else
-          (:y transformed-rect) )]
+          y)]
 
     {:start-x start-x
      :start-y start-y
+     :layout-gap layout-gap
+     :margin-x margin-x
+     :margin-y margin-y
      :reverse? (or (= :left (:layout-dir shape)) (= :bottom (:layout-dir shape)))}))
 
 (defn next-p
   "Calculates the position for the current shape given the layout-data context"
-  [{:keys [layout-gap] :as shape} {:keys [width height]} {:keys [start-x start-y] :as layout-data}]
+  [shape {:keys [width height]} {:keys [start-x start-y layout-gap margin-x margin-y] :as layout-data}]
 
   (let [pos-x
         (cond
@@ -146,8 +179,11 @@
           :else
           start-y)
 
+        pos-x (cond-> pos-x (some? margin-x) (+ margin-x))
+        pos-y (cond-> pos-y (some? margin-y) (+ margin-y))
+
         corner-p (gpt/point pos-x pos-y)
-        
+
         next-x
         (if (col? shape)
           (+ start-x width layout-gap)
@@ -158,6 +194,9 @@
           (+ start-y height layout-gap)
           start-y)
 
+        next-x (cond-> next-x (some? margin-x) (+ margin-x))
+        next-y (cond-> next-y (some? margin-y) (+ margin-y))
+
         layout-data
         (assoc layout-data :start-x next-x :start-y next-y)]
     [corner-p layout-data])
@@ -165,15 +204,15 @@
 
 (defn calc-layout-modifiers
   "Calculates the modifiers for the layout"
-  [parent child current-modifier _modifiers _transformed-rect layout-data]
+  [parent child modifiers layout-data]
 
-  (let [current-modifier (-> current-modifier (dissoc :displacement-after))
-        child           (-> child (assoc :modifiers current-modifier) gtr/transform-shape)
-        bounds          (-> child :points gre/points->selrect)
+  (let [modifiers (-> modifiers (dissoc :displacement-after))
+        child     (-> child (assoc :modifiers modifiers) gtr/transform-shape)
+        bounds    (-> child :points gre/points->selrect)
 
         [corner-p layout-data] (next-p parent bounds layout-data)
 
         delta-p          (-> corner-p (gpt/subtract (gpt/point bounds)))
-        modifiers        (-> current-modifier (assoc :displacement-after (gmt/translate-matrix delta-p)))]
+        modifiers        (-> modifiers (assoc :displacement-after (gmt/translate-matrix delta-p)))]
 
     [modifiers layout-data]))

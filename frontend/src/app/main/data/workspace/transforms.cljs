@@ -110,7 +110,7 @@
 ;; geometric attributes of the shapes.
 
 (declare clear-local-transform)
-(declare set-objects-modifiers)
+
 (declare get-ignore-tree)
 
 (defn set-modifiers
@@ -128,20 +128,17 @@
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [modifiers   (or modifiers (get-in state [:workspace-local :modifiers] {}))
-             page-id     (:current-page-id state)
-             objects     (wsh/lookup-page-objects state page-id)
+
+       (let [objects     (wsh/lookup-page-objects state)
              ids         (into #{} (remove #(get-in objects [% :blocked] false)) ids)
-             layout      (get state :workspace-layout)
-             snap-pixel? (and (not ignore-snap-pixel) (contains? layout :snap-pixel-grid))
 
-             setup-modifiers
-             (fn [state id]
-               (let [shape (get objects id)]
-                 (update state :workspace-modifiers
-                         #(set-objects-modifiers % objects shape modifiers ignore-constraints snap-pixel?))))]
+             snap-pixel? (and (not ignore-snap-pixel)
+                              (contains? (:workspace-layout state) :snap-pixel-grid))
 
-         (reduce setup-modifiers state ids))))))
+             modif-tree
+             (gsh/set-objects-modifiers ids objects (constantly modifiers) ignore-constraints snap-pixel?)]
+
+         (assoc state :workspace-modifiers modif-tree))))))
 
 ;; Rotation use different algorithm to calculate children modifiers (and do not use child constraints).
 (defn- set-rotation-modifiers
@@ -280,162 +277,9 @@
 
     [root transformed-root ignore-geometry?]))
 
-(defn set-pixel-precision
-  "Adjust modifiers so they adjust to the pixel grid"
-  [modifiers shape]
-
-  (if (some? (:resize-transform modifiers))
-    ;; If we're working with a rotation we don't handle pixel precision because
-    ;; the transformation won't have the precision anyway
-    modifiers
-
-    (let [center (gsh/center-shape shape)
-          base-bounds (-> (:points shape) (gsh/points->rect))
-
-          raw-bounds
-          (-> (gsh/transform-bounds (:points shape) center modifiers)
-              (gsh/points->rect))
-
-          flip-x? (neg? (get-in modifiers [:resize-vector :x]))
-          flip-y? (or (neg? (get-in modifiers [:resize-vector :y]))
-                      (neg? (get-in modifiers [:resize-vector-2 :y])))
-
-          path? (= :path (:type shape))
-          vertical-line? (and path? (<= (:width raw-bounds) 0.01))
-          horizontal-line? (and path? (<= (:height raw-bounds) 0.01))
-
-          target-width (if vertical-line?
-                         (:width raw-bounds)
-                         (max 1 (mth/round (:width raw-bounds))))
-
-          target-height (if horizontal-line?
-                          (:height raw-bounds)
-                          (max 1 (mth/round (:height raw-bounds))))
-
-          target-p (cond-> (gpt/round (gpt/point raw-bounds))
-                     flip-x?
-                     (update :x + target-width)
-
-                     flip-y?
-                     (update :y + target-height))
-
-          ratio-width (/ target-width (:width raw-bounds))
-          ratio-height (/ target-height (:height raw-bounds))
-
-          modifiers
-          (-> modifiers
-              (d/without-nils)
-              (d/update-in-when
-               [:resize-vector :x] #(* % ratio-width))
-
-              ;; If the resize-vector-2 modifier arrives means the resize-vector
-              ;; will only resize on the x axis
-              (cond-> (nil? (:resize-vector-2 modifiers))
-                (d/update-in-when
-                 [:resize-vector :y] #(* % ratio-height)))
-
-              (d/update-in-when
-               [:resize-vector-2 :y] #(* % ratio-height)))
-
-          origin (get modifiers :resize-origin)
-          origin-2 (get modifiers :resize-origin-2)
-
-          resize-v  (get modifiers :resize-vector)
-          resize-v-2  (get modifiers :resize-vector-2)
-          displacement  (get modifiers :displacement)
-
-          target-p-inv
-          (-> target-p
-              (gpt/transform
-               (cond-> (gmt/matrix)
-                 (some? displacement)
-                 (gmt/multiply (gmt/inverse displacement))
-
-                 (and (some? resize-v) (some? origin))
-                 (gmt/scale (gpt/inverse resize-v) origin)
-
-                 (and (some? resize-v-2) (some? origin-2))
-                 (gmt/scale (gpt/inverse resize-v-2) origin-2))))
-
-          delta-v (gpt/subtract target-p-inv (gpt/point base-bounds))
-
-          modifiers
-          (-> modifiers
-              (d/update-when :displacement #(gmt/multiply (gmt/translate-matrix delta-v) %))
-              (cond-> (nil? (:displacement modifiers))
-                (assoc :displacement (gmt/translate-matrix delta-v))))]
-      modifiers)))
-
-(defn- set-objects-modifiers
-  [modif-tree objects shape modifiers ignore-constraints snap-pixel?]
-  (letfn [(set-modifiers-rec
-            [modif-tree shape modifiers]
-
-            (let [children (map (d/getf objects) (:shapes shape))
-                  transformed-rect (gsh/transform-selrect (:selrect shape) modifiers)
-
-                  set-layout-child
-                  (fn [snap-pixel? {:keys [modif-tree] :as layout-data} child]
-                    (let [current-modifier (get-in modif-tree [(:id child) :modifiers])
-
-                          ;; child (-> (merge child old-modif) gsh/transform-shape)
-
-                          [child-modifiers next-layout-data] (gsh/calc-layout-modifiers shape child current-modifier modifiers transformed-rect layout-data)
-                          child-modifiers (cond-> child-modifiers snap-pixel? (set-pixel-precision child))
-
-                          ;;child-modifiers (if (some? old-modif)
-                          ;;                  (d/deep-merge (:modifiers old-modif) child-modifiers)
-                          ;;                  child-modifiers)
-
-                          modif-tree
-                          (cond-> modif-tree
-                            (not (gsh/empty-modifiers? child-modifiers))
-                            (set-modifiers-rec child child-modifiers))]
-
-                      (assoc next-layout-data :modif-tree modif-tree)))
-
-                  set-child
-                  (fn [snap-pixel? modif-tree child]
-                    (let [child-modifiers (gsh/calc-child-modifiers shape child modifiers ignore-constraints transformed-rect)
-                          child-modifiers (cond-> child-modifiers snap-pixel? (set-pixel-precision child))]
-                      (cond-> modif-tree
-                        (not (gsh/empty-modifiers? child-modifiers))
-                        (set-modifiers-rec child child-modifiers))))
-
-                  modif-tree
-                  (-> modif-tree
-                      (assoc-in [(:id shape) :modifiers] modifiers))
-
-                  resize-modif?
-                  (or (:resize-vector modifiers) (:resize-vector-2 modifiers))
 
 
-                  modif-tree
-                  (reduce (partial set-child (and snap-pixel? resize-modif?)) modif-tree children)]
 
-              (cond
-                (:layout shape)
-                (let [layout-data (gsh/calc-layout-data shape children modif-tree transformed-rect)
-                      children (cond-> children (:reverse? layout-data) reverse)]
-                  (->> children
-                       (reduce (partial set-layout-child (and snap-pixel? resize-modif?))
-                               (merge {:modif-tree modif-tree} layout-data))
-                       :modif-tree))
-
-                :else
-                modif-tree)))]
-
-    (let [modifiers (cond-> modifiers snap-pixel? (set-pixel-precision shape))
-          modif-tree (set-modifiers-rec modif-tree shape modifiers)
-
-          parent (get objects (:parent-id shape))
-
-          modif-tree
-          (cond-> modif-tree
-            (:layout parent)
-            (set-modifiers-rec parent nil))]
-
-      modif-tree)))
 
 (defn- get-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
@@ -590,18 +434,16 @@
   (ptk/reify ::update-dimensions
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects     (wsh/lookup-page-objects state)
-            layout      (get state :workspace-layout)
-            snap-pixel? (contains? layout :snap-pixel-grid)
+      (let [objects (wsh/lookup-page-objects state)
+            snap-pixel? (and (contains? (:workspace-layout state) :snap-pixel-grid)
+                             (int? value))
+            get-modifier
+            (fn [shape] (gsh/resize-modifiers shape attr value))
 
-            update-modifiers
-            (fn [state id]
-              (let [shape     (get objects id)
-                    modifiers (gsh/resize-modifiers shape attr value)]
-                (-> state
-                    (update :workspace-modifiers
-                            #(set-objects-modifiers % objects shape modifiers false (and snap-pixel? (int? value)))))))]
-        (reduce update-modifiers state ids)))
+            modif-tree
+            (gsh/set-objects-modifiers ids objects get-modifier false snap-pixel?)]
+
+        (assoc state :workspace-modifiers modif-tree)))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -617,17 +459,15 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects     (wsh/lookup-page-objects state)
-            layout      (get state :workspace-layout)
-            snap-pixel? (contains? layout :snap-pixel-grid)
+            snap-pixel? (contains? (get state :workspace-layout) :snap-pixel-grid)
 
-            update-modifiers
-            (fn [state id]
-              (let [shape     (get objects id)
-                    modifiers (gsh/change-orientation-modifiers shape orientation)]
-                (-> state
-                    (update :workspace-modifiers
-                            #(set-objects-modifiers % objects shape modifiers false snap-pixel?)))))]
-        (reduce update-modifiers state ids)))
+            get-modifier
+            (fn [shape] (gsh/change-orientation-modifiers shape orientation))
+
+            modif-tree
+            (gsh/set-objects-modifiers ids objects get-modifier false snap-pixel?)]
+
+        (assoc state :workspace-modifiers modif-tree)))
 
     ptk/WatchEvent
     (watch [_ _ _]
