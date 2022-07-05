@@ -158,26 +158,38 @@
                       :on-accept del-shared})))
 
         on-export-files
+        (fn [event-name binary?]
+          (st/emit! (ptk/event ::ev/event {::ev/name event-name
+                                           ::ev/origin "dashboard"
+                                           :num-files (count files)}))
+
+          (->> (rx/from files)
+               (rx/flat-map
+                (fn [file]
+                  (->> (rp/query :file-libraries {:file-id (:id file)})
+                       (rx/map #(assoc file :has-libraries? (d/not-empty? %))))))
+               (rx/reduce conj [])
+               (rx/subs
+                (fn [files]
+                  (st/emit!
+                   (modal/show
+                    {:type :export
+                     :team-id current-team-id
+                     :has-libraries? (->> files (some :has-libraries?))
+                     :files files
+                     :binary? binary?}))))))
+
+        on-export-binary-files
         (mf/use-callback
          (mf/deps files current-team-id)
          (fn [_]
-           (st/emit! (ptk/event ::ev/event {::ev/name "export-files"
-                                            ::ev/origin "dashboard"
-                                            :num-files (count files)}))
-           (->> (rx/from files)
-                (rx/flat-map
-                 (fn [file]
-                   (->> (rp/query :file-libraries {:file-id (:id file)})
-                        (rx/map #(assoc file :has-libraries? (d/not-empty? %))))))
-                (rx/reduce conj [])
-                (rx/subs
-                 (fn [files]
-                   (st/emit!
-                    (modal/show
-                     {:type :export
-                      :team-id current-team-id
-                      :has-libraries? (->> files (some :has-libraries?))
-                      :files files})))))))
+           (on-export-files "export-binary-files" true)))
+
+        on-export-standard-files
+        (mf/use-callback
+         (mf/deps files current-team-id)
+         (fn [_]
+           (on-export-files "export-standard-files" false)))
 
         ;; NOTE: this is used for detect if component is still mounted
         mounted-ref (mf/use-ref true)]
@@ -210,7 +222,8 @@
                       [[(tr "dashboard.duplicate-multi" file-count) on-duplicate nil "duplicate-multi"]
                        (when (or (seq current-projects) (seq other-teams))
                          [(tr "dashboard.move-to-multi" file-count) nil sub-options "move-to-multi"])
-                       [(tr "dashboard.export-multi" file-count) on-export-files]
+                       [(tr "dashboard.export-binary-multi" file-count) on-export-binary-files]
+                       [(tr "dashboard.export-standard-multi" file-count) on-export-standard-files]
                        [:separator]
                        [(tr "labels.delete-multi-files" file-count) on-delete nil "delete-multi-files"]]
 
@@ -222,7 +235,9 @@
                        (if (:is-shared file)
                          [(tr "dashboard.remove-shared") on-del-shared nil "file-del-shared"]
                          [(tr "dashboard.add-shared") on-add-shared nil "file-add-shared"])
-                       [(tr "dashboard.export-single") on-export-files nil "file-export"]
+                       [:separator]
+                       [(tr "dashboard.download-binary-file") on-export-binary-files nil "download-binary-file"]
+                       [(tr "dashboard.download-standard-file") on-export-standard-files nil "download-standard-file"]
                        [:separator]
                        [(tr "labels.delete") on-delete nil "file-delete"]])]
 
