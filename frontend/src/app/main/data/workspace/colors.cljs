@@ -14,33 +14,9 @@
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
-   [app.main.repo :as rp]
    [app.util.color :as uc]
    [beicon.core :as rx]
    [potok.core :as ptk]))
-
-(def clear-color-for-rename
-  (ptk/reify ::clear-color-for-rename
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-global :color-for-rename] nil))))
-
-(declare rename-color-result)
-
-(defn rename-color
-  [file-id color-id name]
-  (ptk/reify ::rename-color
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/mutation! :rename-color {:id color-id :name name})
-           (rx/map (partial rename-color-result file-id))))))
-
-(defn rename-color-result
-  [_file-id color]
-  (ptk/reify ::rename-color-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-file :colors] #(d/replace-by-id % color)))))
 
 (defn change-palette-selected
   "Change the library used by the general palette tool"
