@@ -75,7 +75,6 @@
 
         [children-width children-height]
         (->> children
-             (map #(-> (merge % (get modif-tree (:id %))) gtr/transform-shape))
              (reduce (fn [[acc-width acc-height] shape]
                        [(+ acc-width (-> shape :points gre/points->rect :width))
                         (+ acc-height (-> shape :points gre/points->rect :height))]) [0 0]))
@@ -99,7 +98,7 @@
                    0)
 
         margin-y (if (and (row? shape) (= :space-around layout-type))
-                   (/ (- height children-height) (dec num-children) 2)
+                   (/ (- height children-height) (inc num-children))
                    0)
 
         children-gap (* layout-gap (dec num-children))
@@ -199,20 +198,17 @@
 
         layout-data
         (assoc layout-data :start-x next-x :start-y next-y)]
-    [corner-p layout-data])
-  )
+    [corner-p layout-data]))
 
 (defn calc-layout-modifiers
   "Calculates the modifiers for the layout"
-  [parent child modifiers layout-data]
+  [parent child layout-data]
 
-  (let [modifiers (-> modifiers (dissoc :displacement-after))
-        child     (-> child (assoc :modifiers modifiers) gtr/transform-shape)
-        bounds    (-> child :points gre/points->selrect)
+  (let [bounds    (-> child :points gre/points->selrect)
 
         [corner-p layout-data] (next-p parent bounds layout-data)
 
-        delta-p          (-> corner-p (gpt/subtract (gpt/point bounds)))
-        modifiers        (-> modifiers (assoc :displacement-after (gmt/translate-matrix delta-p)))]
+        delta-p   (-> corner-p (gpt/subtract (gpt/point bounds)))
+        modifiers {:displacement-after (gmt/translate-matrix delta-p)}]
 
     [modifiers layout-data]))

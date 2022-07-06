@@ -119,27 +119,51 @@
           resize-modif? (or (:resize-vector modifiers) (:resize-vector-2 modifiers))]
       (reduce (partial set-child transformed-rect (and snap-pixel? resize-modif?)) modif-tree children))))
 
+(defn group? [shape]
+  (or (= :group (:type shape))
+      (= :bool (:type shape))))
+
+(defn merge-modifiers
+  [modif-tree ids modifiers]
+  (reduce
+   (fn [modif-tree id]
+     (update-in modif-tree [id :modifiers] #(merge % modifiers)))
+   modif-tree
+   ids))
+
 (defn set-layout-modifiers
   [modif-tree objects id]
 
-  (letfn [(set-layout-modifiers [parent [layout-data modif-tree] child]
-            (let [modifiers (get-in modif-tree [(:id child) :modifiers])
+  (letfn [(transform-child [shape]
+            (let [modifiers (get modif-tree (:id shape))]
+              (cond-> shape
+                (not (group? shape))
+                (-> (merge modifiers) gtr/transform-shape)
 
-                  [modifiers layout-data]
-                  (gcl/calc-layout-modifiers parent child modifiers layout-data)
+                (group? shape)
+                (gtr/apply-group-modifiers objects modif-tree))))
+
+          (set-layout-modifiers [parent [layout-data modif-tree] child]
+            (let [[modifiers layout-data]
+                  (gcl/calc-layout-modifiers parent child layout-data)
 
                   modif-tree
                   (cond-> modif-tree
                     (not (gtr/empty-modifiers? modifiers))
-                    (assoc-in [(:id child) :modifiers] modifiers))]
+                    (merge-modifiers [(:id child)] modifiers)
+
+                    (and (not (gtr/empty-modifiers? modifiers)) (group? child))
+                    (merge-modifiers (:shapes child) modifiers))]
 
               [layout-data modif-tree]))]
 
     (let [shape (get objects id)
-          children (map (d/getf objects) (:shapes shape))
+          children (->> (:shapes shape)
+                        (map (d/getf objects))
+                        (map transform-child))
+
           modifiers (get-in modif-tree [id :modifiers])
 
-          ;;_ (.log js/console "layout" (:name shape) (clj->js modifiers))
           transformed-rect (gtr/transform-selrect (:selrect shape) modifiers)
           layout-data (gcl/calc-layout-data shape children modif-tree transformed-rect)
           children (cond-> children (:reverse? layout-data) reverse)
@@ -191,21 +215,41 @@
   (let [modif-tree (reduce (fn [modif-tree id]
                              (assoc modif-tree id {:modifiers (get-modifier (get objects id))})) {} ids)
 
-        ids (resolve-layout-ids ids objects)]
+        ids (resolve-layout-ids ids objects)
 
-    (loop [current       (first ids)
-           pending       (rest ids)
-           modif-tree    modif-tree]
-      (if (some? current)
-        (let [shape (get objects current)
-              pending (concat pending (:shapes shape))
 
-              modif-tree
-              (-> modif-tree
-                  (set-children-modifiers shape objects ignore-constraints snap-pixel?)
-                  (cond-> (:layout shape)
-                    (set-layout-modifiers objects current)))]
+        ;; First: Calculate children modifiers (constraints, etc)
+        [modif-tree touched-layouts]
+        (loop [current         (first ids)
+               pending         (rest ids)
+               modif-tree      modif-tree
+               touched-layouts (d/ordered-set)]
+          (if (some? current)
+            (let [shape (get objects current)
+                  pending (concat pending (:shapes shape))
 
-          (recur (first pending) (rest pending) modif-tree))
+                  touched-layouts
+                  (cond-> touched-layouts
+                    (:layout shape)
+                    (conj (:id shape)))
 
-        modif-tree))))
+                  modif-tree
+                  (-> modif-tree
+                      (set-children-modifiers shape objects ignore-constraints snap-pixel?))]
+
+              (recur (first pending) (rest pending) modif-tree touched-layouts))
+
+            [modif-tree touched-layouts]))
+
+        ;; Second: Calculate layout positioning
+        modif-tree
+        (loop [current (first touched-layouts)
+               pending (rest touched-layouts)
+               modif-tree modif-tree]
+
+          (if (some? current)
+            (let [modif-tree (set-layout-modifiers modif-tree objects current)]
+              (recur (first pending) (rest pending) modif-tree))
+            modif-tree))]
+
+    modif-tree))

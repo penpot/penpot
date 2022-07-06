@@ -670,3 +670,17 @@
        (map (comp gpr/points->selrect :points transform-shape))
        (gpr/join-selrects)))
 
+(defn apply-group-modifiers
+  "Apply the modifiers to the group children to calculate its selection rect"
+  [group objects modif-tree]
+
+  (let [children
+        (->> (:shapes group)
+             (map (d/getf objects))
+             (map (fn [shape]
+                    (let [modifiers (get modif-tree (:id shape))
+                          shape (-> shape (merge modifiers) transform-shape)]
+                      (if (= :group (:type shape))
+                        (apply-group-modifiers shape objects modif-tree)
+                        shape)))))]
+    (update-group-selrect group children)))
