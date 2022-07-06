@@ -1,4 +1,4 @@
-FROM nginx:latest
+FROM nginx:1.23
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ADD ./bundle-frontend/ /var/www/app/
