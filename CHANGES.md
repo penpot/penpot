@@ -10,6 +10,7 @@
 - Fix efficiency issue on user media storage backend implementation
 - Improve temporal files management on exporter
 - Fix issue related with duplicated websocket sessions
+- Fix typographies not grouping [#2073](https://github.com/penpot/penpot/issues/2073)
 
 ## 1.14.1-beta
 
