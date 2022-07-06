@@ -306,7 +306,7 @@
      SELECT fl.id, fl.deleted_at
        FROM file AS fl
        JOIN file_library_rel AS flr ON (flr.library_file_id = fl.id)
-      WHERE flr.file_id = ?::uuid
+      WHERE flr.file_id = ANY(?)
     UNION
      SELECT fl.id, fl.deleted_at
        FROM file AS fl
@@ -318,8 +318,10 @@
     WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
 
 (defn- retrieve-libraries
-  [pool file-id]
-  (map :id (db/exec! pool [sql:file-libraries file-id])))
+  [pool ids]
+  (with-open [^AutoCloseable conn (db/open pool)]
+    (let [ids (db/create-array conn "uuid" ids)]
+      (map :id (db/exec! pool [sql:file-libraries ids])))))
 
 (def ^:private sql:file-library-rels
   "SELECT * FROM file_library_rel
@@ -394,14 +396,14 @@
   same file library all assets used from external libraries.
   "
 
-  [{:keys [pool storage ::output ::file-id ::include-libraries? ::embed-assets?] :as options}]
+  [{:keys [pool storage ::output ::file-ids ::include-libraries? ::embed-assets?] :as options}]
 
   (us/assert! :spec ::db/pool :val pool)
   (us/assert! :spec ::sto/storage :val storage)
 
   (us/assert!
-   :expr (uuid? file-id)
-   :hint "`file-id` should be an uuid")
+   :expr (every? uuid? file-ids)
+   :hint "`files` should be a vector of uuid")
 
   (us/assert!
    :expr (bs/data-output-stream? output)
@@ -420,9 +422,9 @@
    :expr (not (and include-libraries? embed-assets?))
    :hint "the `include-libraries?` and `embed-assets?` are mutally excluding options")
 
-  (let [libs  (when include-libraries? (retrieve-libraries pool file-id))
-        rels  (when include-libraries? (retrieve-library-relations pool (cons file-id libs)))
-        files (into [file-id] libs)
+  (let [libs  (when include-libraries? (retrieve-libraries pool file-ids))
+        files (into file-ids libs)
+        rels  (when include-libraries? (retrieve-library-relations pool file-ids))
         sids  (volatile! #{})]
 
     ;; Write header with metadata

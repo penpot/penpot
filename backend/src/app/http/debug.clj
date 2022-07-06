@@ -265,17 +265,20 @@
 
 (defn export-handler
   [{:keys [pool] :as cfg} {:keys [params profile-id] :as request}]
-  (let [file-id (some-> params :file-id parse-uuid)
-        libs?   (contains? params :includelibs)
-        clone?  (contains? params :clone)
-        embed?  (contains? params :embedassets)]
 
-    (when-not file-id
+  (let [file-ids (->> (:file-ids params)
+                      (remove empty?)
+                      (map parse-uuid))
+        libs?    (contains? params :includelibs)
+        clone?   (contains? params :clone)
+        embed?   (contains? params :embedassets)]
+
+    (when-not (seq file-ids)
       (ex/raise :type :validation
                 :code :missing-arguments))
 
     (let [path (-> cfg
-                   (assoc ::binf/file-id file-id)
+                   (assoc ::binf/file-ids file-ids)
                    (assoc ::binf/embed-assets? embed?)
                    (assoc ::binf/include-libraries? libs?)
                    (binf/export!))]
@@ -297,7 +300,7 @@
         (yrs/response
          :status  200
          :headers {"content-type" "application/octet-stream"
-                   "content-disposition" (str "attachmen; filename=" file-id ".penpot")}
+                   "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}
          :body    (io/input-stream path))))))
 
 
