@@ -1562,7 +1562,6 @@
          (fn [event]
            (on-drop-asset-group event dragging? prefix selected-typographies-paths selected-typographies-full move-typography)))]
 
-
     [:div {:on-drag-enter on-drag-enter
            :on-drag-leave on-drag-leave
            :on-drag-over on-drag-over
@@ -1588,6 +1587,7 @@
              [:div.drop-space])
            (for [typography typographies]
              [:& typography-item {:typography typography
+                                  :key (dm/str (:id typography))
                                   :file file
                                   :local? local?
                                   :handle-change handle-change
@@ -1605,6 +1605,7 @@
           (when-not (empty? path-item)
             [:& typographies-group {:file-id file-id
                                     :prefix (cph/merge-path-item prefix path-item)
+                                    :key (dm/str path-item)
                                     :groups content
                                     :open-groups open-groups
                                     :file file
