@@ -394,12 +394,31 @@
   same file library all assets used from external libraries.
   "
 
-  [{:keys [pool storage ::output ::file-id ::include-libraries? ::embed-assets?]}]
+  [{:keys [pool storage ::output ::file-id ::include-libraries? ::embed-assets?] :as options}]
 
-  (when (and include-libraries? embed-assets?)
-    (ex/raise :type :restriction
-              :code :mutual-exclusive-options-provided
-              :hint "the `include-libraries?` option is mutually exclusive with `embed-assets?`"))
+  (us/assert! :spec ::db/pool :val pool)
+  (us/assert! :spec ::sto/storage :val storage)
+
+  (us/assert!
+   :expr (uuid? file-id)
+   :hint "`file-id` should be an uuid")
+
+  (us/assert!
+   :expr (bs/data-output-stream? output)
+   :hint "`output` should be an instance of OutputStream")
+
+  (us/assert!
+   :expr (d/boolean-or-nil? include-libraries?)
+   :hint "invalid value provided for `include-libraries?` option, expected boolean")
+
+  (us/assert!
+   :expr (d/boolean-or-nil? embed-assets?)
+   :hint "invalid value provided for `embed-assets?` option, expected boolean")
+
+  (us/assert!
+   :always? true
+   :expr (not (and include-libraries? embed-assets?))
+   :hint "the `include-libraries?` and `embed-assets?` are mutally excluding options")
 
   (let [libs  (when include-libraries? (retrieve-libraries pool file-id))
         rels  (when include-libraries? (retrieve-library-relations pool (cons file-id libs)))
