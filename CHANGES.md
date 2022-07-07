@@ -28,6 +28,7 @@
 - View mode improvements to enable access and use in different conditions [Taiga #3023](https://tree.taiga.io/project/penpot/us/3023)
 - Improved share link options. Now you can allow non-team members to comment and/or inspect [Taiga #3056] (https://tree.taiga.io/project/penpot/us/3056)
 - Signin/Signup from shared link [Taiga #3472](https://tree.taiga.io/project/penpot/us/3472)
+- Support for import/export binary format [Taiga #2991](https://tree.taiga.io/project/penpot/us/2991)
 
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
