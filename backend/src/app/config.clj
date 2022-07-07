@@ -87,10 +87,7 @@
 (s/def ::flags ::us/vec-of-keywords)
 
 ;; DEPRECATED PROPERTIES
-(s/def ::registration-enabled ::us/boolean)
-(s/def ::smtp-enabled ::us/boolean)
 (s/def ::telemetry-enabled ::us/boolean)
-(s/def ::asserts-enabled ::us/boolean)
 ;; END DEPRECATED
 
 (s/def ::audit-log-archive-uri ::us/string)
@@ -274,7 +271,6 @@
                    ::public-uri
                    ::redis-uri
                    ::registration-domain-whitelist
-                   ::registration-enabled
                    ::rlimit-font
                    ::rlimit-file-update
                    ::rlimit-image
@@ -285,7 +281,6 @@
                    ::sentry-trace-sample-rate
                    ::smtp-default-from
                    ::smtp-default-reply-to
-                   ::smtp-enabled
                    ::smtp-host
                    ::smtp-password
                    ::smtp-port
