@@ -604,8 +604,7 @@
                          :response-type :blob
                          :method :get})
                        (rx/map :body)
-                       (rx/mapcat #(rp/command! :import-binfile {:input %
-                                                                 :form-data? true}))
+                       (rx/mapcat #(rp/command! :import-binfile {:file %}))
                        (rx/map
                         (fn [_]
                           {:status :import-finish

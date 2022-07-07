@@ -36,6 +36,10 @@
   [s]
   (instance? OutputStream s))
 
+(defn data-input-stream?
+  [s]
+  (instance? DataInputStream s))
+
 (defn data-output-stream?
   [s]
   (instance? DataOutputStream s))

@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
@@ -83,13 +84,10 @@
    ;; a server prop key where initial project is stored.
    :initial-project-skey "initial-project"})
 
-(s/def ::flags ::us/set-of-keywords)
+(s/def ::flags ::us/vec-of-keywords)
 
 ;; DEPRECATED PROPERTIES
-(s/def ::registration-enabled ::us/boolean)
-(s/def ::smtp-enabled ::us/boolean)
 (s/def ::telemetry-enabled ::us/boolean)
-(s/def ::asserts-enabled ::us/boolean)
 ;; END DEPRECATED
 
 (s/def ::audit-log-archive-uri ::us/string)
@@ -273,7 +271,6 @@
                    ::public-uri
                    ::redis-uri
                    ::registration-domain-whitelist
-                   ::registration-enabled
                    ::rlimit-font
                    ::rlimit-file-update
                    ::rlimit-image
@@ -284,7 +281,6 @@
                    ::sentry-trace-sample-rate
                    ::smtp-default-from
                    ::smtp-default-reply-to
-                   ::smtp-enabled
                    ::smtp-host
                    ::smtp-password
                    ::smtp-port
@@ -351,8 +347,12 @@
                        (str/trim))
                "%version%")))
 
-(def ^:dynamic config (read-config))
-(def ^:dynamic flags  (parse-flags config))
+(defonce ^:dynamic config (read-config))
+
+(defonce ^:dynamic flags
+  (let [flags (parse-flags config)]
+    (l/info :hint "flags initialized" :flags (str/join "," (map name flags)))
+    flags))
 
 (def deletion-delay
   (dt/duration {:days 7}))

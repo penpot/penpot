@@ -268,7 +268,7 @@
 
   (let [file-ids (->> (:file-ids params)
                       (remove empty?)
-                      (map parse-uuid))
+                      (mapv parse-uuid))
         libs?    (contains? params :includelibs)
         clone?   (contains? params :clone)
         embed?   (contains? params :embedassets)]
