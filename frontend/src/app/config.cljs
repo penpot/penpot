@@ -111,11 +111,11 @@
 ;; --- Helper Functions
 
 (defn ^boolean check-browser? [candidate]
-  (us/verify ::browser candidate)
+  (us/verify! ::browser candidate)
   (= candidate @browser))
 
 (defn ^boolean check-platform? [candidate]
-  (us/verify ::platform candidate)
+  (us/verify! ::platform candidate)
   (= candidate @platform))
 
 (defn resolve-profile-photo-url
