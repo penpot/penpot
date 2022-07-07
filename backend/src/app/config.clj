@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
@@ -351,8 +352,12 @@
                        (str/trim))
                "%version%")))
 
-(def ^:dynamic config (read-config))
-(def ^:dynamic flags  (parse-flags config))
+(defonce ^:dynamic config (read-config))
+
+(defonce ^:dynamic flags
+  (let [flags (parse-flags config)]
+    (l/info :hint "flags initialized" :flags (str/join "," (map name flags)))
+    flags))
 
 (def deletion-delay
   (dt/duration {:days 7}))
