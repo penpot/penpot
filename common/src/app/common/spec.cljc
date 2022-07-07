@@ -261,6 +261,33 @@
         message (str "spec verify: '" (pr-str spec) "'")]
     `(spec-assert* ~spec ~x ~message ~context)))
 
+(defmacro assert!
+  "General purpose assertion macro."
+  [& {:keys [expr spec always? hint val]}]
+  (cond
+    (some? spec)
+    (let [context (if-let [nsdata (:ns &env)]
+                    {:ns (str (:name nsdata))
+                     :name (pr-str spec)
+                     :line (:line &env)
+                     :file (:file (:meta nsdata))}
+                    {:ns   (str (ns-name *ns*))
+                     :name (pr-str spec)
+                     :line (:line (meta &form))})
+          message (or hint (str "spec assert: " (pr-str spec)))]
+      (when (or always? *assert*)
+        `(spec-assert* ~spec ~val ~message ~context)))
+
+    (some? expr)
+    (let [message (or hint (str "expr assert: " (pr-str expr)))]
+      (when (or always? *assert*)
+        `(when-not ~expr
+           (ex/raise :type :assertion
+                     :code :expr-validation
+                     :hint ~message))))
+
+    :else nil))
+
 ;; --- Public Api
 
 (defn conform

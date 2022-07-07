@@ -24,12 +24,12 @@
     <Logger name="com.zaxxer.hikari" level="error"/>
     <Logger name="org.postgresql" level="error" />
 
-    <Logger name="app.rpc.commands.binfile" level="trace" />
+    <Logger name="app.rpc.commands.binfile" level="debug" />
     <Logger name="app.storage.tmp" level="trace" />
-    <Logger name="app.worker" level="trace" />
-    <Logger name="app.msgbus" level="trace" />
-    <Logger name="app.http.websocket" level="trace" />
-    <Logger name="app.util.websocket" level="trace" />
+    <Logger name="app.worker" level="info" />
+    <Logger name="app.msgbus" level="info" />
+    <Logger name="app.http.websocket" level="info" />
+    <Logger name="app.util.websocket" level="info" />
 
     <Logger name="app.cli" level="debug" additivity="false">
       <AppenderRef ref="console"/>

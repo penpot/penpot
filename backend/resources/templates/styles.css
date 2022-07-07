@@ -168,3 +168,12 @@ form .row {
   padding: 5px 0;
 }
 
+.set-of-inputs {
+  flex-direction: column;
+  display: flex;
+}
+
+.set-of-inputs input:not(:last-child) {
+  margin-bottom: 3px;
+}
+
