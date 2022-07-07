@@ -83,7 +83,7 @@
    ;; a server prop key where initial project is stored.
    :initial-project-skey "initial-project"})
 
-(s/def ::flags ::us/set-of-keywords)
+(s/def ::flags ::us/vec-of-keywords)
 
 ;; DEPRECATED PROPERTIES
 (s/def ::registration-enabled ::us/boolean)
