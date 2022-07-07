@@ -165,13 +165,26 @@
           modifiers (get-in modif-tree [id :modifiers])
 
           transformed-rect (gtr/transform-selrect (:selrect shape) modifiers)
-          layout-data (gcl/calc-layout-data shape children modif-tree transformed-rect)
-          children (cond-> children (:reverse? layout-data) reverse)
+          layout-data (gcl/calc-layout-data shape children transformed-rect)
+          children (into [] (cond-> children (:reverse? layout-data) reverse))
 
-          [_ modif-tree]
-          (reduce (partial set-layout-modifiers shape) [layout-data modif-tree] children)]
+          max-idx (dec (count children))
+          layout-lines (:layout-lines layout-data)]
 
-      modif-tree)))
+      (loop [modif-tree modif-tree
+             layout-line (first layout-lines)
+             pending (rest layout-lines)
+             from-idx 0]
+        (if (and (some? layout-line) (<= from-idx max-idx))
+          (let [to-idx   (+ from-idx (:num-children layout-line))
+                children (subvec children from-idx to-idx)
+
+                [_ modif-tree]
+                (reduce (partial set-layout-modifiers shape) [layout-line modif-tree] children)]
+
+            (recur modif-tree (first pending) (rest pending) to-idx))
+
+          modif-tree)))))
 
 (defn get-first-layout
   [id objects]
