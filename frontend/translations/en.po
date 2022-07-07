@@ -309,6 +309,18 @@ msgstr "Export selection"
 msgid "dashboard.export-single"
 msgstr "Export Penpot file"
 
+msgid "dashboard.download-binary-file"
+msgstr "Download Penpot file (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Download standard file (.svg + .json)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Download %s Penpot files (.penpot)"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Download %s standard files (.svg + .json)"
+
 msgid "dashboard.export.detail"
 msgstr "* Might include components, graphics, colors and/or typographies."
 

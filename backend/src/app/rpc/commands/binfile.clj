@@ -16,7 +16,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
-   [app.rpc.queries.files :refer [decode-row]]
+   [app.rpc.queries.files :refer [decode-row check-edition-permissions!]]
+   [app.rpc.queries.profile :as profile]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
@@ -84,10 +85,10 @@
   [v type]
   `(let [expected# (get-mark ~type)
          val#      (long ~v)]
-    (when (not= val# expected#)
-      (ex/raise :type :validation
-                :code :unexpected-mark
-                :hint (format "received mark %s, expected %s" val# expected#)))))
+     (when (not= val# expected#)
+       (ex/raise :type :validation
+                 :code :unexpected-mark
+                 :hint (format "received mark %s, expected %s" val# expected#)))))
 
 (defmacro assert-label
   [expr label]
@@ -759,8 +760,8 @@
 
       (finally
         (l/info :hint "exportation finished" :export-id id
-                 :elapsed (str (inst-ms (dt/diff ts (dt/now))) "ms")
-                 :cause @cs)))))
+                :elapsed (str (inst-ms (dt/diff ts (dt/now))) "ms")
+                :cause @cs)))))
 
 (defn import!
   [{:keys [::input] :as cfg}]
@@ -787,12 +788,38 @@
 
 (s/def ::file-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
+(s/def ::include-libraries? ::us/boolean)
+(s/def ::embed-assets? ::us/boolean)
 
 (s/def ::export-binfile
-  (s/keys :req-un [::profile-id ::file-id]))
+  (s/keys :req-un [::profile-id ::file-id ::include-libraries? ::embed-assets?]))
 
-#_:clj-kondo/ignore
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
-  {:hello "world"})
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id include-libraries? embed-assets?] :as params}]
+  (db/with-atomic [conn pool]
+    (check-edition-permissions! conn profile-id file-id)
+    (let [path (export! (assoc cfg
+                               ::file-ids [file-id]
+                               ::embed-assets? embed-assets?
+                               ::include-libraries? include-libraries?))]
+      (with-meta {}
+        {:transform-response (fn [_ response]
+                               (assoc response
+                                      :body (io/input-stream path)
+                                      :headers {"content-type" "application/octet-stream"}))}))))
+
+(s/def ::input ::media/upload)
+
+(s/def ::import-binfile
+  (s/keys :req-un [::profile-id ::input]))
+
+(sv/defmethod ::import-binfile
+  "Import a penpot file in a binary format."
+  [{:keys [pool] :as cfg} {:keys [profile-id input] :as params}]
+  (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)]
+    (import! (assoc cfg
+                    ::input (:path input)
+                    ::project-id project-id
+                    ::ignore-index-errors? true))))
+

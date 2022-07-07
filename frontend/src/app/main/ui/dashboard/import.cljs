@@ -49,7 +49,7 @@
 
   (let [on-file-selected (use-import-file project-id on-finish-import)]
     [:form.import-file
-     [:& file-uploader {:accept ".penpot"
+     [:& file-uploader {:accept ".penpot,.zip"
                         :multi true
                         :ref external-ref
                         :on-selected on-file-selected}]]))
@@ -78,19 +78,20 @@
                  (= uri (:uri file))
                  (assoc :status :analyze-error))))))
 
-(defn set-analyze-result [files uri data]
+(defn set-analyze-result [files uri type data]
   (let [existing-files? (into #{} (->> files (map :file-id) (filter some?)))
         replace-file
         (fn [file]
-          (if (and (= uri (:uri file) )
+          (if (and (= uri (:uri file))
                    (= (:status file) :analyzing))
             (->> (:files data)
-                 (remove (comp existing-files? first) )
+                 (remove (comp existing-files? first))
                  (mapv (fn [[file-id file-data]]
                          (-> file-data
                              (assoc :file-id file-id
                                     :status :ready
-                                    :uri uri)))))
+                                    :uri uri
+                                    :type type)))))
             [file]))]
     (into [] (mapcat replace-file) files)))
 
@@ -139,7 +140,7 @@
     (str message)))
 
 (mf/defc import-entry
-  [{:keys [state file editing?]}]
+  [{:keys [state file editing? can-be-deleted?]}]
 
   (let [loading?       (or (= :analyzing (:status file))
                            (= :importing (:status file)))
@@ -206,9 +207,11 @@
 
         [:div.file-name-label (:name file) (when is-shared? i/library)])
 
-      [:div.edit-entry-buttons
-       [:button {:on-click handle-edit-entry}   i/pencil]
-       [:button {:on-click handle-remove-entry} i/trash]]]
+        [:div.edit-entry-buttons
+         (when (= "application/zip" (:type file))
+           [:button {:on-click handle-edit-entry}   i/pencil])
+         (when can-be-deleted?
+           [:button {:on-click handle-remove-entry} i/trash])]]
 
      (cond
        analyze-error?
@@ -245,21 +248,20 @@
          (fn [files]
            (->> (uw/ask-many!
                  {:cmd :analyze-import
-                  :files (->> files (mapv :uri))})
+                  :files files})
                 (rx/delay-emit emit-delay)
                 (rx/subs
-                 (fn [{:keys [uri data error] :as msg}]
+                 (fn [{:keys [uri data error type] :as msg}]
                    (log/debug :uri uri :data data :error error)
                    (if (some? error)
                      (swap! state update :files set-analyze-error uri)
-                     (swap! state update :files set-analyze-result uri data)))))))
+                     (swap! state update :files set-analyze-result uri type data)))))))
 
         import-files
         (mf/use-callback
          (fn [project-id files]
            (st/emit! (ptk/event ::ev/event {::ev/name "import-files"
                                             :num-files (count files)}))
-
            (->> (uw/ask-many!
                  {:cmd :import-files
                   :project-id project-id
@@ -281,7 +283,7 @@
          (mf/deps project-id (:files @state))
          (fn [event]
            (dom/prevent-default event)
-           (let [files (->> @state :files (filterv #(= :ready (:status %))))]
+           (let [files (->> @state :files (filterv #(and (= :ready (:status %)) (not (:deleted? %)))))]
              (import-files project-id files))
 
            (swap! state
@@ -300,7 +302,8 @@
         warning-files (->> @state :files (filter #(and (= (:status %) :import-finish) (d/not-empty? (:errors %)))) count)
         success-files (->> @state :files (filter #(and (= (:status %) :import-finish) (empty? (:errors %)))) count)
         pending-analysis? (> (->> @state :files (filter #(= (:status %) :analyzing)) count) 0)
-        pending-import? (> (->> @state :files (filter #(= (:status %) :importing)) count) 0)]
+        pending-import? (> (->> @state :files (filter #(= (:status %) :importing)) count) 0)
+        files (->> (:files @state) (filterv (comp not :deleted?)))]
 
     (mf/use-effect
      (fn []
@@ -333,12 +336,13 @@
             [:div.icon i/checkbox-checked]
             [:div.message (tr "dashboard.import.import-message" success-files)]]))
 
-       (for [file (->> (:files @state) (filterv (comp not :deleted?)))]
-         (let [editing?      (and (some? (:file-id file))
-                                  (= (:file-id file) (:editing @state)))]
+       (for [file files]
+         (let [editing? (and (some? (:file-id file))
+                             (= (:file-id file) (:editing @state)))]
            [:& import-entry {:state state
                              :file file
-                             :editing? editing?}]))]
+                             :editing? editing?
+                             :can-be-deleted? (> (count files) 1)}]))]
 
       [:div.modal-footer
        [:div.action-buttons
