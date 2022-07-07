@@ -16,7 +16,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
-   [app.rpc.queries.files :refer [decode-row check-edition-permissions!]]
+   [app.rpc.queries.files :as files]
    [app.rpc.queries.profile :as profile]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
@@ -41,7 +41,32 @@
 (set! *warn-on-reflection* true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; LOW LEVEL STREAM IO
+;; VARS & DEFAULTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Threshold in MiB when we pass from using
+;; in-memory byte-array's to use temporal files.
+(def temp-file-threshold
+  (* 1024 1024 2))
+
+;; Represents the current processing file-id on
+;; export process.
+(def ^:dynamic *file-id*)
+
+;; Stores all media file object references of
+;; processed files on import process.
+(def ^:dynamic *media*)
+
+;; Stores the objects index on reamping subprocess
+;; part of the import process.
+(def ^:dynamic *index*)
+
+;; Has the current connection used on the import
+;; process.
+(def ^:dynamic *conn*)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; LOW LEVEL STREAM IO API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const buffer-size (:xnio/buffer-size yt/defaults))
@@ -61,18 +86,6 @@
     (ex/raise :type :validation
               :code :invalid-mark-id
               :hint (format "invalid mark id %s" id))))
-
-;; (defn buffered-output-stream
-;;   "Returns a buffered output stream that ignores flush calls. This is
-;;   needed because transit-java calls flush very aggresivelly on each
-;;   object write."
-;;   [^java.io.OutputStream os ^long chunk-size]
-;;   (proxy [java.io.BufferedOutputStream] [os (int chunk-size)]
-;;     ;; Explicitly do not forward flush
-;;     (flush [])
-;;     (close []
-;;       (proxy-super flush)
-;;       (proxy-super close)))
 
 (defmacro assert
   [expr hint]
@@ -98,7 +111,7 @@
                  :code :unexpected-label
                  :hint (format "received label %s, expected %s" v# ~label)))))
 
-;; --- PRIMITIVE
+;; --- PRIMITIVE IO
 
 (defn write-byte!
   [^DataOutputStream output data]
@@ -142,7 +155,7 @@
     (swap! *position* + readed)
     readed))
 
-;; --- COMPOSITE
+;; --- COMPOSITE IO
 
 (defn write-uuid!
   [^DataOutputStream output id]
@@ -241,9 +254,6 @@
 
   (copy-stream! output stream size))
 
-(def size-2mib
-  (* 1024 1024 2))
-
 (defn read-stream!
   [^DataInputStream input]
   (l/trace :fn "read-stream!" :position @*position* ::l/async false)
@@ -257,15 +267,12 @@
                 :code :max-file-size-reached
                 :hint (str/ffmt "unable to import storage object with size % bytes" s)))
 
-    (if (> s size-2mib)
-      ;; If size is more than 2MiB, use a temporal file.
+    (if (> s temp-file-threshold)
       (with-open [^OutputStream output (io/output-stream p)]
         (let [readed (bs/copy! input output :offset 0 :size s)]
           (l/trace :fn "read-stream*!" :expected s :readed readed :position @*position* ::l/async false)
           (swap! *position* + readed)
           [s p]))
-
-      ;; If not, use an in-memory byte-array.
       [s (bs/read-as-bytes input :size s)])))
 
 (defmacro assert-read-label!
@@ -278,13 +285,15 @@
                  :hint (format "unxpected label found: %s, expected: %s" readed# expected#)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HIGH LEVEL IMPL
+;; API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- HELPERS
 
 (defn- retrieve-file
   [pool file-id]
   (->> (db/query pool :file {:id file-id})
-       (map decode-row)
+       (map files/decode-row)
        (first)))
 
 (def ^:private sql:file-media-objects
@@ -333,29 +342,130 @@
   (with-open [^AutoCloseable conn (db/open pool)]
     (db/exec! conn [sql:file-library-rels (db/create-array conn "uuid" ids)])))
 
-(defn- embed-file-assets
-  [pool {:keys [id] :as file}]
-  (letfn [(walk-map-form [state form]
+;; --- EXPORT WRITTER
+
+(s/def ::output bs/output-stream?)
+(s/def ::file-ids (s/every ::us/uuid :kind vector? :min-count 1))
+(s/def ::include-libraries? (s/nilable ::us/boolean))
+(s/def ::embed-assets? (s/nilable ::us/boolean))
+
+(s/def ::write-export-options
+  (s/keys :req-un [::db/pool ::sto/storage]
+          :req    [::output ::file-ids]
+          :opt    [::include-libraries? ::embed-assets?]))
+
+(defn write-export!
+  "Do the exportation of a speficied file in custom penpot binary
+  format. There are some options available for customize the output:
+
+  `::include-libraries?`: additionaly to the specified file, all the
+  linked libraries also will be included (including transitive
+  dependencies).
+
+  `::embed-assets?`: instead of including the libraryes, embedd in the
+  same file library all assets used from external libraries.
+  "
+
+  [{:keys [pool storage ::output ::file-ids ::include-libraries? ::embed-assets?] :as options}]
+
+  (us/assert! ::write-export-options options)
+
+  (us/verify!
+   :expr (not (and include-libraries? embed-assets?))
+   :hint "the `include-libraries?` and `embed-assets?` are mutally excluding options")
+
+  (letfn [(write-header [output files]
+            (let [sections [:v1/files :v1/rels :v1/sobjects]
+                  mdata    {:penpot-version (:full cf/version)
+                            :sections sections
+                            :files files}]
+              (write-header! output :version 1 :metadata mdata)))
+
+          (write-files [output files sids]
+            (l/debug :hint "write section" :section :v1/files :total (count files) ::l/async false)
+            (write-label! output :v1/files)
+            (doseq [file-id files]
+              (let [file  (cond-> (retrieve-file pool file-id)
+                            embed-assets? (update :data embed-file-assets file-id))
+                    media (retrieve-file-media pool file)]
+
+                ;; Collect all storage ids for later write them all under
+                ;; specific storage objects section.
+                (vswap! sids into (sequence storage-object-id-xf media))
+
+                (l/trace :hint "write penpot file"
+                         :id file-id
+                         :media (count media)
+                         ::l/async false)
+
+                (doto output
+                  (write-obj! file)
+                  (write-obj! media)))))
+
+          (write-rels [output files]
+            (let [rels (when include-libraries? (retrieve-library-relations pool files))]
+              (l/debug :hint "write section" :section :v1/rels :total (count rels) ::l/async false)
+              (doto output
+                (write-label! :v1/rels)
+                (write-obj! rels))))
+
+          (write-sobjects [output sids]
+            (l/debug :hint "write section"
+                     :section :v1/sobjects
+                     :items (count sids)
+                     ::l/async false)
+
+            ;; Write all collected storage objects
+            (doto output
+              (write-label! :v1/sobjects)
+              (write-obj! sids))
+
+            (let [storage (media/configure-assets-storage storage)]
+              (doseq [id sids]
+                (let [{:keys [size] :as obj} @(sto/get-object storage id)]
+                  (l/trace :hint "write sobject" :id id ::l/async false)
+
+                  (doto output
+                    (write-uuid! id)
+                    (write-obj! (meta obj)))
+
+                  (with-open [^InputStream stream @(sto/get-object-data storage obj)]
+                    (let [written (write-stream! output stream size)]
+                      (when (not= written size)
+                        (ex/raise :type :validation
+                                  :code :mismatch-readed-size
+                                  :hint (str/ffmt "found unexpected object size; size=% written=%" size written)))))))))
+
+          (embed-file-assets [data file-id]
+            (binding [*file-id* file-id]
+              (let [assets (volatile! [])]
+                (walk/postwalk #(cond-> % (map? %) (walk-map-form assets)) data)
+                (->> (deref assets)
+                     (filter #(as-> (first %) $ (and (uuid? $) (not= $ file-id))))
+                     (d/group-by first rest)
+                     (reduce process-group-of-assets data)))))
+
+          (walk-map-form [form state]
             (cond
               (uuid? (:fill-color-ref-file form))
               (do
                 (vswap! state conj [(:fill-color-ref-file form) :colors (:fill-color-ref-id form)])
-                (assoc form :fill-color-ref-file id))
+                (assoc form :fill-color-ref-file *file-id*))
 
               (uuid? (:stroke-color-ref-file form))
               (do
                 (vswap! state conj [(:stroke-color-ref-file form) :colors (:stroke-color-ref-id form)])
-                (assoc form :stroke-color-ref-file id))
+                (assoc form :stroke-color-ref-file *file-id*))
 
               (uuid? (:typography-ref-file form))
               (do
                 (vswap! state conj [(:typography-ref-file form) :typographies (:typography-ref-id form)])
-                (assoc form :typography-ref-file id))
+                (assoc form :typography-ref-file *file-id*))
 
               (uuid? (:component-file form))
               (do
                 (vswap! state conj [(:component-file form) :components (:component-id form)])
-                (assoc form :component-file id))
+                (assoc form :component-file *file-id*))
 
               :else
               form))
@@ -374,133 +484,37 @@
                   ;; correctly set the :file-id prop (pending of the
                   ;; refactor that will remove it).
                   asset (cond-> asset
-                          (= bucket :colors) (assoc :file-id id))]
+                          (= bucket :colors) (assoc :file-id *file-id*))]
               (update data bucket assoc asset-id asset)))]
 
-    (update file :data (fn [data]
-                         (let [assets (volatile! [])]
-                           (walk/postwalk #(cond->> % (map? %) (walk-map-form assets)) data)
-                           (->> (deref assets)
-                                (filter #(as-> (first %) $ (and (uuid? $) (not= $ id))))
-                                (d/group-by first rest)
-                                (reduce process-group-of-assets data)))))))
+    (with-open [output (bs/zstd-output-stream output :level 12)]
+      (with-open [output (bs/data-output-stream output)]
+        (let [libs  (when include-libraries? (retrieve-libraries pool file-ids))
+              files (into file-ids libs)
+              sids  (volatile! #{})]
 
-(defn write-export!
-  "Do the exportation of a speficied file in custom penpot binary
-  format. There are some options available for customize the output:
+          ;; Write header with metadata
+          (l/debug :hint "exportation summary"
+                   :files (count files)
+                   :embed-assets? embed-assets?
+                   :include-libs? include-libraries?
+                   ::l/async false)
 
-  `::include-libraries?`: additionaly to the specified file, all the
-  linked libraries also will be included (including transitive
-  dependencies).
+          (write-header output files)
+          (write-files output files sids)
+          (write-rels output files)
+          (write-sobjects output (vec @sids)))))))
 
-  `::embed-assets?`: instead of including the libraryes, embedd in the
-  same file library all assets used from external libraries.
-  "
+(s/def ::project-id ::us/uuid)
+(s/def ::input bs/input-stream?)
+(s/def ::overwrite? (s/nilable ::us/boolean))
+(s/def ::migrate? (s/nilable ::us/boolean))
+(s/def ::ignore-index-errors? (s/nilable ::us/boolean))
 
-  [{:keys [pool storage ::output ::file-ids ::include-libraries? ::embed-assets?] :as options}]
-
-  (us/assert! :spec ::db/pool :val pool)
-  (us/assert! :spec ::sto/storage :val storage)
-
-  (us/assert!
-   :expr (every? uuid? file-ids)
-   :hint "`files` should be a vector of uuid")
-
-  (us/assert!
-   :expr (bs/data-output-stream? output)
-   :hint "`output` should be an instance of OutputStream")
-
-  (us/assert!
-   :expr (d/boolean-or-nil? include-libraries?)
-   :hint "invalid value provided for `include-libraries?` option, expected boolean")
-
-  (us/assert!
-   :expr (d/boolean-or-nil? embed-assets?)
-   :hint "invalid value provided for `embed-assets?` option, expected boolean")
-
-  (us/assert!
-   :always? true
-   :expr (not (and include-libraries? embed-assets?))
-   :hint "the `include-libraries?` and `embed-assets?` are mutally excluding options")
-
-  (let [libs  (when include-libraries? (retrieve-libraries pool file-ids))
-        files (into file-ids libs)
-        rels  (when include-libraries? (retrieve-library-relations pool file-ids))
-        sids  (volatile! #{})]
-
-    ;; Write header with metadata
-    (l/debug :hint "exportation summary"
-             :files (count files)
-             :rels  (count rels)
-             :embed-assets? embed-assets?
-             :include-libs? include-libraries?
-             ::l/async false)
-
-    (let [sections [:v1/files :v1/rels :v1/sobjects]
-          mdata    {:penpot-version (:full cf/version)
-                    :sections sections
-                    :files files}]
-      (write-header! output :version 1 :metadata mdata))
-
-    (l/debug :hint "write section" :section :v1/files :total (count files) ::l/async false)
-    (write-label! output :v1/files)
-    (doseq [file-id files]
-      (let [file  (cond->> (retrieve-file pool file-id)
-                    embed-assets? (embed-file-assets pool))
-            media (retrieve-file-media pool file)]
-
-        ;; Collect all storage ids for later write them all under
-        ;; specific storage objects section.
-        (vswap! sids into (sequence storage-object-id-xf media))
-
-        (l/trace :hint "write penpot file"
-                 :id file-id
-                 :media (count media)
-                 ::l/async false)
-
-        (doto output
-          (write-obj! file)
-          (write-obj! media))))
-
-    (l/debug :hint "write section" :section :v1/rels :total (count rels) ::l/async false)
-    (doto output
-      (write-label! :v1/rels)
-      (write-obj! rels))
-
-    (let [sids (into [] @sids)]
-      (l/debug :hint "write section"
-               :section :v1/sobjects
-               :items (count sids)
-               ::l/async false)
-
-      ;; Write all collected storage objects
-      (doto output
-        (write-label! :v1/sobjects)
-        (write-obj! sids))
-
-      (let [storage (media/configure-assets-storage storage)]
-        (doseq [id sids]
-          (let [{:keys [size] :as obj} @(sto/get-object storage id)]
-            (l/trace :hint "write sobject" :id id ::l/async false)
-
-            (doto output
-              (write-uuid! id)
-              (write-obj! (meta obj)))
-
-            (with-open [^InputStream stream @(sto/get-object-data storage obj)]
-              (let [written (write-stream! output stream size)]
-                (when (not= written size)
-                  (ex/raise :type :validation
-                            :code :mismatch-readed-size
-                            :hint (str/ffmt "found unexpected object size; size=% written=%" size written)))))))))))
-
-
-;; Dynamic variables for importation process.
-
-(def ^:dynamic *files*)
-(def ^:dynamic *media*)
-(def ^:dynamic *index*)
-(def ^:dynamic *conn*)
+(s/def ::read-import-options
+  (s/keys :req-un [::db/pool ::sto/storage]
+          :req    [::project-id ::input]
+          :opt    [::overwrite? ::migrate? ::ignore-index-errors?]))
 
 (defn read-import!
   "Do the importation of the specified resource in penpot custom binary
@@ -517,9 +531,11 @@
   happen with broken files; defaults to: `false`.
   "
 
-  [{:keys [pool storage ::project-id ::ts ::input ::overwrite? ::migrate? ::ignore-index-errors?]
-    :or {overwrite? false migrate? false ts (dt/now)}
-    :as cfg}]
+  [{:keys [pool storage ::project-id ::timestamp ::input ::overwrite? ::migrate? ::ignore-index-errors?]
+    :or {overwrite? false migrate? false timestamp (dt/now)}
+    :as options}]
+
+  (us/assert! ::read-import-options options)
 
   (letfn [(lookup-index [id]
             (if ignore-index-errors?
@@ -608,12 +624,12 @@
                                     (:modified-at params)
                                     (:data params)])))
 
-          (read-files-section! [input]
+          (read-files-section! [input expected-files]
             (l/debug :hint "reading section" :section :v1/files ::l/async false)
             (assert-read-label! input :v1/files)
 
             ;; Process/Read all file
-            (doseq [expected-file-id *files*]
+            (doseq [expected-file-id expected-files]
               (let [file    (read-obj! input)
                     media'  (read-obj! input)
                     file-id (:id file)]
@@ -648,8 +664,8 @@
                                :revn (:revn file)
                                :is-shared (:is-shared file)
                                :data (blob/encode data)
-                               :created-at ts
-                               :modified-at ts}]
+                               :created-at timestamp
+                               :modified-at timestamp}]
 
                   (l/trace :hint "create file" :id file-id' ::l/async false)
 
@@ -668,7 +684,7 @@
               ;; Insert all file relations
               (doseq [rel rels]
                 (let [rel (-> rel
-                              (assoc :synced-at ts)
+                              (assoc :synced-at timestamp)
                               (update :file-id lookup-index)
                               (update :library-file-id lookup-index))]
                   (l/trace :hint "create file library link"
@@ -717,13 +733,7 @@
                                 (update :file-id lookup-index)
                                 (d/update-when :media-id lookup-index)
                                 (d/update-when :thumbnail-id lookup-index))
-                            {:on-conflict-do-nothing overwrite?}))))
-
-          (read-section! [section input]
-            (case section
-              :v1/rels (read-rels-section! input)
-              :v1/files (read-files-section! input)
-              :v1/sobjects (read-sobjects-section! input)))]
+                            {:on-conflict-do-nothing overwrite?}))))]
 
     (with-open [input (bs/zstd-input-stream input)]
       (with-open [input (bs/data-input-stream input)]
@@ -735,9 +745,13 @@
             (l/debug :hint "import verified" :files files :overwrite? overwrite?)
             (binding [*index* (volatile! (update-index {} files))
                       *media* (volatile! [])
-                      *files* files
                       *conn*  conn]
-              (run! #(read-section! % input) sections))))))))
+
+              (doseq [section sections]
+                (case section
+                  :v1/rels (read-rels-section! input)
+                  :v1/files (read-files-section! input files)
+                  :v1/sobjects (read-sobjects-section! input))))))))))
 
 (defn export!
   [cfg]
@@ -748,11 +762,9 @@
     (try
       (l/info :hint "start exportation" :export-id id)
       (with-open [output (io/output-stream path)]
-        (with-open [output (bs/zstd-output-stream output :level 12)]
-          (with-open [output (bs/data-output-stream output)]
-            (binding [*position* (atom 0)]
-              (write-export! (assoc cfg ::output output))
-              path))))
+        (binding [*position* (atom 0)]
+          (write-export! (assoc cfg ::output output))
+          path))
 
       (catch Throwable cause
         (vreset! cs cause)
@@ -798,7 +810,7 @@
   "Export a penpot file in a binary format."
   [{:keys [pool] :as cfg} {:keys [profile-id file-id include-libraries? embed-assets?] :as params}]
   (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id file-id)
+    (files/check-read-permissions! conn profile-id file-id)
     (let [path (export! (assoc cfg
                                ::file-ids [file-id]
                                ::embed-assets? embed-assets?
@@ -809,17 +821,16 @@
                                       :body (io/input-stream path)
                                       :headers {"content-type" "application/octet-stream"}))}))))
 
-(s/def ::input ::media/upload)
-
+(s/def ::file ::media/upload)
 (s/def ::import-binfile
-  (s/keys :req-un [::profile-id ::input]))
+  (s/keys :req-un [::profile-id ::file]))
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."
-  [{:keys [pool] :as cfg} {:keys [profile-id input] :as params}]
-  (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)]
+  [{:keys [pool] :as cfg} {:keys [profile-id file] :as params}]
+  (let [project-id (-> (profile/retrieve-additional-data pool profile-id) :default-project-id)]
     (import! (assoc cfg
-                    ::input (:path input)
+                    ::input (:path file)
                     ::project-id project-id
                     ::ignore-index-errors? true))))
 

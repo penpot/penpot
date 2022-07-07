@@ -457,8 +457,7 @@
         (fn [file]
           (->> (rp/command! :export-binfile {:file-id (:id file)
                                              :include-libraries? (= export-type :all)
-                                             :embed-assets? (= export-type :merge)
-                                             :blob? true})
+                                             :embed-assets? (= export-type :merge)})
                (rx/map #(hash-map :type :finish
                                   :file-id (:id file)
                                   :filename (:name file)

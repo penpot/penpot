@@ -76,12 +76,12 @@
 (defn- send-command!
   "A simple helper for a common case of sending and receiving transit
   data to the penpot mutation api."
-  [id {:keys [blob? form-data?] :as params}]
+  [id params {:keys [response-type form-data?]}]
   (->> (http/send! {:method :post
                     :uri (u/join base-uri "api/rpc/command/" (name id))
                     :credentials "include"
                     :body (if form-data? (http/form-data params) (http/transit-data params))
-                    :response-type (if blob? :blob :text)})
+                    :response-type (or response-type :text)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
 
@@ -105,7 +105,15 @@
 
 (defmethod command :default
   [id params]
-  (send-command! id params))
+  (send-command! id params nil))
+
+(defmethod command :export-binfile
+  [id params]
+  (send-command! id params {:response-type :blob}))
+
+(defmethod command :import-binfile
+  [id params]
+  (send-command! id params {:form-data? true}))
 
 (defn query!
   ([id] (query id {}))
