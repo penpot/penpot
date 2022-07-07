@@ -5,6 +5,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.test-helpers.pages :as thp]))
 
 ;; ---- Helpers to manage libraries and synchronization

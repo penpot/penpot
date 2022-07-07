@@ -238,9 +238,9 @@
 
 (defn uses-library-color?
   "Check if the shape uses the given library color."
-  [shape library-id color]
+  [shape library-id color-id]
   (let [all-colors (get-all-colors shape)]
-    (some #(and (= (:ref-id %) (:id color))
+    (some #(and (= (:ref-id %) color-id)
                 (= (:ref-file %) library-id))
           all-colors)))
 

@@ -123,15 +123,15 @@
 
 (defmethod uses-asset? :component
   [_ shape library-id component]
-  (ctk/instance-of? shape library-id component))
+  (ctk/instance-of? shape library-id (:id component)))
 
 (defmethod uses-asset? :color
   [_ shape library-id color]
-  (ctc/uses-library-color? shape library-id color))
+  (ctc/uses-library-color? shape library-id (:id color)))
 
 (defmethod uses-asset? :typography
   [_ shape library-id typography]
-  (cty/uses-library-typography? shape library-id typography))
+  (cty/uses-library-typography? shape library-id (:id typography)))
 
 (defn find-asset-type-usages
   "Find all usages of an asset in a file (may be in pages or in the components

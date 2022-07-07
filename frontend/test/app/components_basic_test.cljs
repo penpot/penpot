@@ -341,7 +341,7 @@
      (ptk/emit!
        store
        (dwl/delete-component {:id component-id})
-       (dwl/sync-file (:id file) (:id file))
+       (dwl/sync-file (:id file) (:id file) :components component-id)
        :the/end))))
 
 (t/deftest test-instantiate-component

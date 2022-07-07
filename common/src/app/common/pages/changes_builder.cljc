@@ -112,7 +112,9 @@
           redo-changes  (:redo-changes changes)
           new-changes   (if (< index (count redo-changes))
                           (->> (subvec (:redo-changes changes) index)
-                               (map #(assoc % :page-id uuid/zero)))
+                               (map #(-> %
+                                       (assoc :page-id uuid/zero)
+                                       (dissoc :component-id))))
                           [])
           new-file-data (cp/process-changes file-data new-changes)]
       (vary-meta changes assoc ::file-data new-file-data

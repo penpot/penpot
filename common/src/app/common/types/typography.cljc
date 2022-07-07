@@ -49,13 +49,13 @@
 
 (defn uses-library-typography?
   "Check if the shape uses the given library typography."
-  [shape library-id typography]
+  [shape library-id typography-id]
   (and (= (:type shape) :text)
        (->> shape
             :content
             ;; Check if any node in the content has a reference for the library
             (txt/node-seq
-              #(and (= (:typography-ref-id %) (:id typography))
+              #(and (= (:typography-ref-id %) typography-id)
                     (= (:typography-ref-file %) library-id))))))
 
 (defn remap-typographies

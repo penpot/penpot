@@ -138,7 +138,7 @@
                         (pcb/update-color color))]
     (rx/of (dwu/start-undo-transaction)
            (dch/commit-changes changes)
-           (sync-file (:current-file-id state) file-id)
+           (sync-file (:current-file-id state) file-id :colors (:id color))
            (dwu/commit-undo-transaction))))
 
 (defn update-color
@@ -241,7 +241,7 @@
                     (pcb/update-typography typography))]
     (rx/of (dwu/start-undo-transaction)
            (dch/commit-changes changes)
-           (sync-file (:current-file-id state) file-id)
+           (sync-file (:current-file-id state) file-id :typographies (:id typography))
            (dwu/commit-undo-transaction))))
 
 (defn update-typography
@@ -577,13 +577,15 @@
   (ptk/reify ::update-component-sync
     ptk/WatchEvent
     (watch [_ state _]
-      (let [current-file-id (:current-file-id state)]
+      (let [current-file-id (:current-file-id state)
+            page            (wsh/lookup-page state)
+            shape           (ctn/get-shape page shape-id)]
         (rx/of
          (dwu/start-undo-transaction)
          (update-component shape-id)
-         (sync-file current-file-id file-id)
+         (sync-file current-file-id file-id :components (:component-id shape))
          (when (not= current-file-id file-id)
-           (sync-file file-id file-id))
+           (sync-file file-id file-id :components (:component-id shape)))
          (dwu/commit-undo-transaction))))))
 
 (defn update-component-in-bulk
@@ -603,62 +605,77 @@
   shapes in all pages in the file that use some color, typography or
   component of the library, and copy the new values to the shapes. Do
   it also for shapes inside components of the local file library."
-  [file-id library-id]
-  (us/assert ::us/uuid file-id)
-  (us/assert ::us/uuid library-id)
-  (ptk/reify ::sync-file
-    ptk/UpdateEvent
-    (update [_ state]
-      (if (not= library-id (:current-file-id state))
-        (d/assoc-in-when state [:workspace-libraries library-id :synced-at] (dt/now))
-        state))
+  ([file-id library-id]
+   (sync-file file-id library-id nil nil))
+  ([file-id library-id asset-type asset-id]
+   (us/assert ::us/uuid file-id)
+   (us/assert ::us/uuid library-id)
+   (us/assert (s/nilable #{:colors :components :typographies}) asset-type)
+   (us/assert (s/nilable ::us/uuid) asset-id)
+   (ptk/reify ::sync-file
+     ptk/UpdateEvent
+     (update [_ state]
+       (if (not= library-id (:current-file-id state))
+         (d/assoc-in-when state [:workspace-libraries library-id :synced-at] (dt/now))
+         state))
 
-    ptk/WatchEvent
-    (watch [it state _]
-      (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
-        (log/info :msg "SYNC-FILE"
-                  :file (dwlh/pretty-file file-id state)
-                  :library (dwlh/pretty-file library-id state))
-        (let [file            (wsh/get-file state file-id)
+     ptk/WatchEvent
+     (watch [it state _]
+       (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
+         (log/info :msg "SYNC-FILE"
+                   :file (dwlh/pretty-file file-id state)
+                   :library (dwlh/pretty-file library-id state))
+         (let [file            (wsh/get-file state file-id)
 
-              library-changes (reduce
-                                pcb/concat-changes
-                                (pcb/empty-changes it)
-                                [(dwlh/generate-sync-library it file-id :components library-id state)
-                                 (dwlh/generate-sync-library it file-id :colors library-id state)
-                                 (dwlh/generate-sync-library it file-id :typographies library-id state)])
-              file-changes    (reduce
-                                pcb/concat-changes
-                                (pcb/empty-changes it)
-                                [(dwlh/generate-sync-file it file-id :components library-id state)
-                                 (dwlh/generate-sync-file it file-id :colors library-id state)
-                                 (dwlh/generate-sync-file it file-id :typographies library-id state)])
+               sync-components?   (or (nil? asset-type) (= asset-type :components))
+               sync-colors?       (or (nil? asset-type) (= asset-type :colors))
+               sync-typographies? (or (nil? asset-type) (= asset-type :typographies))
 
-              changes         (pcb/concat-changes library-changes file-changes)]
+               library-changes (reduce
+                                 pcb/concat-changes
+                                 (pcb/empty-changes it)
+                                 [(when sync-components?
+                                    (dwlh/generate-sync-library it file-id :components asset-id library-id state))
+                                  (when sync-colors?
+                                    (dwlh/generate-sync-library it file-id :colors asset-id library-id state))
+                                  (when sync-typographies?
+                                    (dwlh/generate-sync-library it file-id :typographies asset-id library-id state))])
+               file-changes    (reduce
+                                 pcb/concat-changes
+                                 (pcb/empty-changes it)
+                                 [(when sync-components?
+                                    (dwlh/generate-sync-file it file-id :components asset-id library-id state))
+                                  (when sync-colors?
+                                    (dwlh/generate-sync-file it file-id :colors asset-id library-id state))
+                                  (when sync-typographies?
+                                    (dwlh/generate-sync-file it file-id :typographies asset-id library-id state))])
 
-          (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
-                                                             (:redo-changes changes)
-                                                             file))
-          (rx/concat
-           (rx/of (dm/hide-tag :sync-dialog))
-           (when (seq (:redo-changes changes))
-             (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
-                                               :file-id file-id))))
-           (when (not= file-id library-id)
-              ;; When we have just updated the library file, give some time for the
-              ;; update to finish, before marking this file as synced.
-              ;; TODO: look for a more precise way of syncing this.
-              ;; Maybe by using the stream (second argument passed to watch)
-              ;; to wait for the corresponding changes-committed and then proceed
-              ;; with the :update-sync mutation.
-             (rx/concat (rx/timer 3000)
-                        (rp/mutation :update-sync
-                                     {:file-id file-id
-                                      :library-id library-id})))
-           (when (seq (:redo-changes library-changes))
-             (rx/of (sync-file-2nd-stage file-id library-id)))))))))
+               changes         (pcb/concat-changes library-changes file-changes)]
 
-(defn sync-file-2nd-stage
+           (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
+                                                               (:redo-changes changes)
+                                                               file))
+           (rx/concat
+             (rx/of (dm/hide-tag :sync-dialog))
+             (when (seq (:redo-changes changes))
+               (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
+                                                 :file-id file-id))))
+             (when (not= file-id library-id)
+               ;; When we have just updated the library file, give some time for the
+               ;; update to finish, before marking this file as synced.
+               ;; TODO: look for a more precise way of syncing this.
+               ;; Maybe by using the stream (second argument passed to watch)
+               ;; to wait for the corresponding changes-committed and then proceed
+               ;; with the :update-sync mutation.
+               (rx/concat (rx/timer 3000)
+                          (rp/mutation :update-sync
+                                       {:file-id file-id
+                                        :library-id library-id})))
+             (when (and (seq (:redo-changes library-changes))
+                        sync-components?)
+               (rx/of (sync-file-2nd-stage file-id library-id))))))))))
+
+(defn- sync-file-2nd-stage
   "If some components have been modified, we need to launch another synchronization
   to update the instances of the changed components."
   ;; TODO: this does not work if there are multiple nested components. Only the
@@ -667,9 +684,10 @@
   ;;       recursively. But for this not to cause an infinite loop, we need to
   ;;       implement updated-at at component level, to detect what components have
   ;;       not changed, and then not to apply sync and terminate the loop.
-  [file-id library-id]
+  [file-id library-id asset-id]
   (us/assert ::us/uuid file-id)
   (us/assert ::us/uuid library-id)
+  (us/assert (s/nilable ::us/uuid) asset-id)
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
     (watch [it state _]
@@ -680,8 +698,8 @@
             changes (reduce
                      pcb/concat-changes
                      (pcb/empty-changes it)
-                     [(dwlh/generate-sync-file it file-id :components library-id state)
-                      (dwlh/generate-sync-library it file-id :components library-id state)])]
+                     [(dwlh/generate-sync-file it file-id :components asset-id library-id state)
+                      (dwlh/generate-sync-library it file-id :components asset-id library-id state)])]
         (when (seq (:redo-changes changes))
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
                                                                          (:redo-changes changes)

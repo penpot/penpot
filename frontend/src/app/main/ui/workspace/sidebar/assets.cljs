@@ -568,7 +568,7 @@
              (on-assets-delete)
              (st/emit! (dwu/start-undo-transaction)
                        (dwl/delete-component {:id (:component-id @state)})
-                       (dwl/sync-file file-id file-id)
+                       (dwl/sync-file file-id file-id :components (:component-id @state))
                        (dwu/commit-undo-transaction)))))
 
         on-rename
@@ -1120,7 +1120,7 @@
              (on-assets-delete)
              (st/emit! (dwu/start-undo-transaction)
                        (dwl/delete-color color)
-                       (dwl/sync-file file-id file-id)
+                       (dwl/sync-file file-id file-id :color (:id color))
                        (dwu/commit-undo-transaction)))))
 
         rename-color-clicked
@@ -1762,7 +1762,7 @@
              (on-assets-delete)
              (st/emit! (dwu/start-undo-transaction)
                        (dwl/delete-typography (:id @state))
-                       (dwl/sync-file file-id file-id)
+                       (dwl/sync-file file-id file-id :typographies (:id @state))
                        (dwu/commit-undo-transaction)))))
 
         editing-id (or (:rename-typography local-data)

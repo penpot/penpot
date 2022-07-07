@@ -154,14 +154,19 @@
 
 (defn generate-sync-file
   "Generate changes to synchronize all shapes in all pages of the given file,
-  that use assets of the given type in the given library."
-  [it file-id asset-type library-id state]
+  that use assets of the given type in the given library.
+
+  If an asset id is given, only shapes linked to this particular asset will
+  be syncrhonized."
+  [it file-id asset-type asset-id library-id state]
   (s/assert #{:colors :components :typographies} asset-type)
+  (s/assert (s/nilable ::us/uuid) asset-id)
   (s/assert ::us/uuid file-id)
   (s/assert ::us/uuid library-id)
 
   (log/info :msg "Sync file with library"
             :asset-type asset-type
+            :asset-id asset-id
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
@@ -174,6 +179,7 @@
                  changes
                  (generate-sync-container it
                                           asset-type
+                                          asset-id
                                           library-id
                                           state
                                           (cph/make-container page :page))))
@@ -182,11 +188,19 @@
 (defn generate-sync-library
   "Generate changes to synchronize all shapes in all components of the
   local library of the given file, that use assets of the given type in
-  the given library."
-  [it file-id asset-type library-id state]
+  the given library.
+
+  If an asset id is given, only shapes linked to this particular asset will
+  be syncrhonized."
+  [it file-id asset-type asset-id library-id state]
+  (s/assert #{:colors :components :typographies} asset-type)
+  (s/assert (s/nilable ::us/uuid) asset-id)
+  (s/assert ::us/uuid file-id)
+  (s/assert ::us/uuid library-id)
 
   (log/info :msg "Sync local components with library"
             :asset-type asset-type
+            :asset-id asset-id
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
@@ -199,6 +213,7 @@
                  changes
                  (generate-sync-container it
                                           asset-type
+                                          asset-id
                                           library-id
                                           state
                                           (cph/make-container local-component :component))))
@@ -207,14 +222,14 @@
 (defn- generate-sync-container
   "Generate changes to synchronize all shapes in a particular container (a page
   or a component) that use assets of the given type in the given library."
-  [it asset-type library-id state container]
+  [it asset-type asset-id library-id state container]
 
   (if (cph/page? container)
     (log/debug :msg "Sync page in local file" :page-id (:id container))
     (log/debug :msg "Sync component in local library" :component-id (:id container)))
 
-  (let [linked-shapes        (->> (vals (:objects container))
-                                  (filter #(uses-assets? asset-type % library-id (cph/page? container))))]
+  (let [linked-shapes (->> (vals (:objects container))
+                           (filter #(uses-assets? asset-type asset-id % library-id (cph/page? container))))]
     (loop [shapes (seq linked-shapes)
            changes (-> (pcb/empty-changes it)
                        (pcb/with-container container)
@@ -231,21 +246,26 @@
 
 (defmulti uses-assets?
   "Checks if a shape uses some asset of the given type in the given library."
-  (fn [asset-type _ _ _] asset-type))
+  (fn [asset-type _ _ _ _] asset-type))
 
 (defmethod uses-assets? :components
-  [_ shape library-id page?]
-  (and (some? (:component-id shape))
-       (= (:component-file shape) library-id)
+  [_ component-id shape library-id page?]
+  (and (if (nil? component-id)
+         (ctk/uses-library-components? shape library-id)
+         (ctk/instance-of? shape library-id component-id))
        (or (:component-root? shape) (not page?)))) ; avoid nested components inside pages
 
 (defmethod uses-assets? :colors
-  [_ shape library-id _]
-  (ctc/uses-library-colors? shape library-id))
+  [_ color-id shape library-id _]
+  (if (nil? color-id)
+    (ctc/uses-library-colors? shape library-id)
+    (ctc/uses-library-color? shape library-id color-id)))
 
 (defmethod uses-assets? :typographies
-  [_ shape library-id _]
-  (cty/uses-library-typographies? shape library-id))
+  [_ typography-id shape library-id _]
+  (if (nil? typography-id)
+    (cty/uses-library-typographies? shape library-id)
+    (cty/uses-library-typography? shape library-id typography-id)))
 
 (defmulti generate-sync-shape
   "Generate changes to synchronize one shape from all assets of the given type

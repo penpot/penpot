@@ -7,10 +7,10 @@
 (ns app.common.types.component)
  
 (defn instance-of?
-  [shape file-id component]
+  [shape file-id component-id]
   (and (some? (:component-id shape))
        (some? (:component-file shape))
-       (= (:component-id shape) (:id component))
+       (= (:component-id shape) component-id)
        (= (:component-file shape) file-id)))
 
 (defn is-main-of?
@@ -27,4 +27,10 @@
 (defn get-component-root
   [component]
   (get-in component [:objects (:id component)]))
+
+(defn uses-library-components?
+  "Check if the shape uses any component in the given library."
+  [shape library-id]
+  (and (some? (:component-id shape))
+       (= (:component-file shape) library-id)))
 
