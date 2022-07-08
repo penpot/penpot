@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-12 23:56+0000\n"
-"Last-Translator: Rubén <rubenx@mail.com>\n"
-"Language-Team: Catalan "
-"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
+"PO-Revision-Date: 2022-07-09 11:14+0000\n"
+"Last-Translator: Josep Ponsà <jponsac@uoc.edu>\n"
+"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
+"ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.12-dev\n"
+"X-Generator: Weblate 4.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3521,3 +3521,713 @@ msgstr "Actualitza"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Feu clic per a tancar el camí"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Invitació no vàlida"
+
+msgid "errors.invite-invalid.info"
+msgstr "Aquesta invitació pot estar cancel·lada o caducada."
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Dreceres"
+
+msgid "labels.back"
+msgstr "Enrere"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Ha caducat"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Tutorials"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr ""
+"També podràs convidar membres o canviar els rols des de la pàgina de l'equip."
+
+msgid "shortcut-section.dashboard"
+msgstr "Panell de control"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Alineació"
+
+msgid "shortcut-subsection.edit"
+msgstr "Edició"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Genèric"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "Modifica les capes"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navegació"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navegació"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Navegació"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Camins"
+
+msgid "shortcut-subsection.shape"
+msgstr "Formes"
+
+msgid "shortcut-subsection.tools"
+msgstr "Eines"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
+
+msgid "shortcuts.align-top"
+msgstr "Alinea a dalt"
+
+msgid "shortcuts.align-vcenter"
+msgstr "Alinea al centre verticalment"
+
+msgid "shortcuts.artboard-selection"
+msgstr "Crea una taula de treball a partir de selecció"
+
+msgid "shortcuts.bool-difference"
+msgstr "Diferència booleana"
+
+msgid "shortcuts.bool-exclude"
+msgstr "Exclusió booleana"
+
+msgid "shortcuts.bool-intersection"
+msgstr "Intersecció booleana"
+
+msgid "shortcuts.bool-union"
+msgstr "Unió booleana"
+
+msgid "shortcuts.bring-back"
+msgstr "Envia-ho al fons"
+
+msgid "shortcuts.bring-front"
+msgstr "Envia-ho a dalt"
+
+msgid "shortcuts.bring-forward"
+msgstr "Envia-ho cap amunt"
+
+msgid "shortcuts.bring-backward"
+msgstr "Envia-ho cap avall"
+
+msgid "shortcuts.clear-undo"
+msgstr "Esborra desfer"
+
+msgid "shortcuts.copy"
+msgstr "Copia"
+
+msgid "shortcuts.create-component"
+msgstr "Crea component"
+
+msgid "shortcuts.create-new-project"
+msgstr "Crea nou"
+
+msgid "shortcuts.cut"
+msgstr "Retalla"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "Disminueix el zoom"
+
+msgid "shortcuts.delete"
+msgstr "Esborra"
+
+msgid "shortcuts.delete-node"
+msgstr "Esborra el node"
+
+msgid "shortcuts.detach-component"
+msgstr "Separa el component"
+
+msgid "shortcuts.draw-curve"
+msgstr "Corba"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "El·lipse"
+
+msgid "shortcuts.draw-frame"
+msgstr "Taula de treball"
+
+msgid "shortcuts.export-shapes"
+msgstr "Exporta formes"
+
+msgid "shortcuts.fit-all"
+msgstr "Amplia per encabir-ho tot"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Gira horitzontalment"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Ves als esborranys"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Ves a les llibreries compartides"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Mou a la dreta ràpidament"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Mou amunt ràpidament"
+
+msgid "shortcuts.move-nodes"
+msgstr "Mou node"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Mou avall"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Mou a l'esquerra"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Mou a la dreta"
+
+msgid "shortcuts.opacity-0"
+msgstr "Fixa l'opacitat al 100%"
+
+msgid "shortcuts.opacity-1"
+msgstr "Fixa l'opacitat al 10%"
+
+msgid "shortcuts.opacity-2"
+msgstr "Fixa l'opacitat al 20%"
+
+msgid "shortcuts.opacity-3"
+msgstr "Fixa l'opacitat al 30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "Fixa l'opacitat al 40%"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Selector de color"
+
+msgid "shortcuts.prev-frame"
+msgstr "Taula de treball anterior"
+
+msgid "shortcuts.search-placeholder"
+msgstr "Cerca dreceres"
+
+msgid "shortcuts.separate-nodes"
+msgstr "Separa nodes"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "Mostra/Amaga graella de píxels"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "Mostra/Amaga dreceres"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Ajusta a la graella de píxels"
+
+msgid "shortcuts.start-editing"
+msgstr "Comença a editar"
+
+msgid "shortcuts.start-measure"
+msgstr "Comença a mesurar"
+
+msgid "shortcuts.stop-measure"
+msgstr "Deixa de mesurar"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Estableix miniatures"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "Dreceres de teclat"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Commuta l'alineació dinàmica"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Commuta actius"
+
+msgid "shortcuts.toggle-grid"
+msgstr "Mostra/Amaga graella"
+
+msgid "shortcuts.toggle-history"
+msgstr "Commuta l'historial"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Bloqueja proporcions"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Mostra/Amaga regles"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "Commuta l'escala del text"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Ajusta a la graella"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Ajusta a les guies"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Commuta paleta de text"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Commuta visibilitat"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Commuta estil de zoom"
+
+msgid "shortcuts.ungroup"
+msgstr "Desagrupa"
+
+msgid "shortcuts.unmask"
+msgstr "Desemmascara"
+
+msgid "shortcuts.v-distribute"
+msgstr "Distribueix verticalment"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Amplia a la selecció"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Dreceres (%s)"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Bàsics"
+
+msgid "shortcut-section.viewer"
+msgstr "Visualitzador"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Genèric"
+
+msgid "shortcut-subsection.panels"
+msgstr "Panells"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "No hi ha invitacions."
+
+msgid "shortcut-section.workspace"
+msgstr "Espai de treball"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Menú principal"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zoom"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Mou amunt"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Gira verticalment"
+
+msgid "shortcuts.opacity-8"
+msgstr "Fixa l'opacitat al 80%"
+
+msgid "shortcuts.opacity-9"
+msgstr "Fixa l'opacitat al 90%"
+
+msgid "shortcuts.next-frame"
+msgstr "Següent taula de treball"
+
+msgid "shortcuts.opacity-5"
+msgstr "Fixa l'opacitat al 50%"
+
+msgid "shortcuts.opacity-6"
+msgstr "Fixa l'opacitat al 60%"
+
+msgid "shortcuts.opacity-7"
+msgstr "Fixa l'opacitat al 70%"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Commuta paleta de colors"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Exportació inesperadament lenta"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Commuta el mode d'enfocament"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Commuta pantalla completa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-error"
+msgstr "Exportació fallida"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exporta"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr ""
+"Envia'm novetats, actualitzacions de producte i recomanacions de Penpot."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Subscripció al butlletí"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Desa configuració"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "El correu «%s» s'ha marcat com a brossa o rebot permanent."
+
+msgid "labels.and"
+msgstr "i"
+
+msgid "labels.continue-with"
+msgstr "Continua amb"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Esborra invitació"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Invitacions"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"Prem el botó \"Convida a l'equip\" per convidar més membres a aquest equip."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "Pendent"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Estat"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(tu)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"Ets qui té la propietat d'aquest equip. Abans de marxar, cal que escullis "
+"una persona per substituir-te."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Segur que vols deixar l'equip %s?"
+
+msgid "onboarding.newsletter.accept"
+msgstr "Sí, subscriu-m'hi"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"S'ha enviat la teva sol·licitud de subscripció. T'enviarem un e-mail per "
+"confirmar-ho."
+
+msgid "onboarding.newsletter.decline"
+msgstr "No, gràcies"
+
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"Subscriu-te al nostre butlletí per estar al dia de les novetats i del "
+"progrés del desenvolupament de producte."
+
+msgid "onboarding.newsletter.policy"
+msgstr "Política de privacitat."
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "Com que ens preocupa la privacitat, aquí hi ha "
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"Només t'enviarem correus rellevants. Et podràs desapuntar sempre que vulguis "
+"des del teu perfil d'usuari o des de l'enllaç que trobaràs a qualsevol dels "
+"nostres butlletins."
+
+msgid "onboarding.newsletter.title"
+msgstr "Vols rebre novetats de Penpot?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Invitacions - %s - Penpot"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Mode d'enfocament"
+
+msgid "workspace.focus.focus-off"
+msgstr "Enfocament apagat"
+
+msgid "workspace.focus.focus-on"
+msgstr "Enfocament actiu"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Desactiva l'ajustament al píxel"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Activa l'ajustament al píxel"
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Amaga la graella de píxels"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Mostra graella de píxels"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Exporta la selecció"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-complete"
+msgstr "Exportació completa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "Més colors"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Més llibreries de colors"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "Torna-ho a provar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "Colors seleccionats"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Esborra la miniatura"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Estableix com a miniatura"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "Components"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "Grups"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "Imatges"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "Màscares"
+
+msgid "workspace.sidebar.layers.search"
+msgstr "Cerca capes"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Formes"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "Textos"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Exporta a PDF"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s de %s elements seleccionats"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Pots afegir una configuració d'exportació a elements des de les propietats "
+"del disseny (a sota de la barra de la dreta)."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Informació sobre com establir exportacions a Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "No hi ha elements amb configuració d'exportació."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Selecció d'exportació"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Taules de treball"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Repositori Github"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Membre"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Elimina membre"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Reenvia invitació"
+
+msgid "modals.invite-member.emails"
+msgstr "Correus electrònics, separats per una coma"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Com que no hi ha ningú més a aquest equip, s'eliminarà l'equip amb els seus "
+"arxius i projectes."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Si transfereixes la propietat, canviaràs el teu rol a Admin, perdent alguns "
+"permisos sobre l'equip. "
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "Nom del teu equip"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr ""
+"Quan hagis posat un nom al teu equip podràs convidar persones a unir-s'hi."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Introdueix el nom de l'equip"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Convida membres"
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "Crea l'equip ara i convida membres en un altre moment"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "Crea l'equip i envia les invitacions"
+
+msgid "workspace.focus.selection"
+msgstr "Selecció"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "Ajuda & Informació"
+
+msgid "shortcuts.add-comment"
+msgstr "Comentaris"
+
+msgid "shortcuts.add-node"
+msgstr "Afegeix node"
+
+msgid "shortcuts.align-left"
+msgstr "Alinea a l'esquerra"
+
+msgid "shortcuts.align-right"
+msgstr "Alinea a la dreta"
+
+msgid "shortcuts.align-bottom"
+msgstr "Alinea a baix"
+
+msgid "shortcuts.align-hcenter"
+msgstr "Alinea al centre horitzontalment"
+
+msgid "shortcuts.draw-nodes"
+msgstr "Dibuixa el camí"
+
+msgid "shortcuts.draw-path"
+msgstr "Camí"
+
+msgid "shortcuts.draw-rect"
+msgstr "Rectangle"
+
+msgid "shortcuts.draw-text"
+msgstr "Text"
+
+msgid "shortcuts.duplicate"
+msgstr "Duplica"
+
+msgid "shortcuts.escape"
+msgstr "Cancel·la"
+
+msgid "shortcuts.go-to-search"
+msgstr "Cerca"
+
+msgid "shortcuts.group"
+msgstr "Grup"
+
+msgid "shortcuts.h-distribute"
+msgstr "Distribueix horitzontalment"
+
+msgid "shortcuts.hide-ui"
+msgstr "Mostra/Amaga UI"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Amplia"
+
+msgid "shortcuts.insert-image"
+msgstr "Insereix imatge"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Mou avall ràpidament"
+
+msgid "shortcuts.join-nodes"
+msgstr "Uneix nodes"
+
+msgid "shortcuts.make-corner"
+msgstr "Fes cantonada"
+
+msgid "shortcuts.make-curve"
+msgstr "Fes corba"
+
+msgid "shortcuts.mask"
+msgstr "Màscara"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Fusiona nodes"
+
+msgid "shortcuts.move"
+msgstr "Mou"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Mou a l'esquerra ràpidament"
+
+msgid "shortcuts.open-interactions"
+msgstr "Ves a la secció d'interaccions de visitant"
+
+msgid "shortcuts.open-viewer"
+msgstr "Ves a la secció d'interaccions de visitant"
+
+msgid "shortcuts.open-workspace"
+msgstr "Ves a l'espai de treball"
+
+msgid "shortcuts.paste"
+msgstr "Enganxa"
+
+msgid "shortcuts.open-handoff"
+msgstr "Ves a la secció de transferència d'observadors"
+
+msgid "shortcuts.open-comments"
+msgstr "Ves a la visualització de comentaris"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Ves al panell de control"
+
+msgid "shortcuts.select-all"
+msgstr "Selecciona-ho tot"
+
+msgid "shortcuts.snap-nodes"
+msgstr "Ajusta als nodes"
+
+msgid "shortcuts.redo"
+msgstr "Refés"
+
+msgid "shortcuts.reset-zoom"
+msgstr "Desfés zoom"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Commuta capes"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Bloqueja la selecció"
+
+msgid "shortcuts.undo"
+msgstr "Desfés"
