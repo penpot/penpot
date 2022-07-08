@@ -194,10 +194,11 @@
 
                 ; Make a new main instance for the component
                 [main-instance-shape main-instance-shapes]
-                (ctn/instantiate-component page
-                                           component
-                                           (:id file-data)
-                                           position)
+                (ctn/make-component-instance page
+                                             component
+                                             (:id file-data)
+                                             position
+                                             true)
 
                 ; Add all shapes of the main instance to the library page
                 add-main-instance-shapes

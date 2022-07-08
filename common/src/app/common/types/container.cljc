@@ -94,15 +94,16 @@
                                   (nil? (:parent-id new-shape))
                                   (assoc :component-id (:id new-shape)
                                          :component-file file-id
-                                         :component-root? true)
+                                         :component-root? true
+                                         :main-instance? true)
 
                                   (some? (:parent-id new-shape))
                                   (dissoc :component-root?)))]
 
     (ctst/clone-object shape nil objects update-new-shape update-original-shape)))
 
-(defn instantiate-component
-  [container component component-file-id position]
+(defn make-component-instance
+  [container component component-file-id position main-instance?]
   (let [component-shape (get-shape component (:id component))
 
         orig-pos  (gpt/point (:x component-shape) (:y component-shape))
@@ -137,6 +138,9 @@
                      :component-file component-file-id
                      :component-root? true
                      :name new-name)
+
+              (and (nil? (:parent-id original-shape)) main-instance?)
+              (assoc :main-instance? true)
 
               (some? (:parent-id original-shape))
               (dissoc :component-root?))))

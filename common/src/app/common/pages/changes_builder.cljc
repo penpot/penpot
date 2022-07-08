@@ -565,6 +565,9 @@
                                    :attr :component-root?
                                    :val (:component-root? shape)}
                                   {:type :set
+                                   :attr :main-instance?
+                                   :val (:main-instance? shape)}
+                                  {:type :set
                                    :attr :shape-ref
                                    :val (:shape-ref shape)}
                                   {:type :set

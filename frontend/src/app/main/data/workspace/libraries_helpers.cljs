@@ -106,12 +106,13 @@
 
 
         [new-instance-shape new-instance-shapes]
-        (ctn/instantiate-component main-instance-page
-                                   {:id (:id new-component-shape)
-                                    :name (:name new-component-shape)
-                                    :objects (d/index-by :id new-component-shapes)}
-                                   (:component-file main-instance-shape)
-                                   position)]
+        (ctn/make-component-instance main-instance-page
+                                     {:id (:id new-component-shape)
+                                      :name (:name new-component-shape)
+                                      :objects (d/index-by :id new-component-shapes)}
+                                     (:component-file main-instance-shape)
+                                     position
+                                     false)]
 
     [new-component-shape new-component-shapes
      new-instance-shape new-instance-shapes]))
@@ -122,7 +123,7 @@
   (let [component       (cph/get-component libraries file-id component-id)
 
         [new-shape new-shapes]
-        (ctn/instantiate-component page component file-id position)
+        (ctn/make-component-instance page component file-id position false)
 
         changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                         (pcb/empty-changes it (:id page))

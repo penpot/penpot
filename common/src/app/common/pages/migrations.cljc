@@ -455,10 +455,11 @@
               (let [page (ctpl/get-page data page-id)
 
                     [new-shape new-shapes]
-                    (ctn/instantiate-component page
-                                               component
-                                               (:id data)
-                                               position)
+                    (ctn/make-component-instance page
+                                                 component
+                                                 (:id data)
+                                                 position
+                                                 true)
 
                     add-shapes
                     (fn [page]
