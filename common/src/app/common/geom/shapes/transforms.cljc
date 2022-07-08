@@ -278,7 +278,7 @@
      (if transform (gmt/multiply transform matrix) matrix)
      (if transform-inverse (gmt/multiply matrix-inverse transform-inverse) matrix-inverse)]))
 
-(defn- apply-transform
+(defn apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]

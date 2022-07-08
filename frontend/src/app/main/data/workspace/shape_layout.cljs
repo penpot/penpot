@@ -32,8 +32,8 @@
    :layout-wrap-type :wrap
    :layout-padding-type :simple
    :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0}
-   :layout-h-orientation :top
-   :layout-v-orientation :left})
+   :layout-h-orientation :left
+   :layout-v-orientation :top})
 
 (defn update-layout-positions
   [ids]

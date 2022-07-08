@@ -112,7 +112,7 @@
                   child-modifiers (cond-> child-modifiers snap-pixel? (set-pixel-precision child))]
               (cond-> modif-tree
                 (not (gtr/empty-modifiers? child-modifiers))
-                (update-in [(:id child) :modifiers] #(merge % child-modifiers)))))]
+                (update-in [(:id child) :modifiers] #(merge child-modifiers %)))))]
     (let [children (map (d/getf objects) (:shapes shape))
           modifiers (get-in modif-tree [(:id shape) :modifiers])
           transformed-rect (gtr/transform-selrect (:selrect shape) modifiers)
@@ -134,18 +134,26 @@
 (defn set-layout-modifiers
   [modif-tree objects id]
 
-  (letfn [(transform-child [shape]
-            (let [modifiers (get modif-tree (:id shape))]
-              (cond-> shape
-                (not (group? shape))
-                (-> (merge modifiers) gtr/transform-shape)
+  (letfn [(transform-child [parent child]
+            (let [modifiers (get modif-tree (:id child))
 
-                (group? shape)
-                (gtr/apply-group-modifiers objects modif-tree))))
+                  child
+                  (cond-> child
+                    (not (group? child))
+                    (-> (merge modifiers) gtr/transform-shape)
 
-          (set-layout-modifiers [parent [layout-data modif-tree] child]
+                    (group? child)
+                    (gtr/apply-group-modifiers objects modif-tree))
+
+                  child
+                  (-> child
+                      (gtr/apply-transform (gmt/transform-in (gco/center-shape parent) (:transform-inverse parent))))]
+
+              child))
+
+          (set-layout-modifiers [parent transform [layout-data modif-tree] child]
             (let [[modifiers layout-data]
-                  (gcl/calc-layout-modifiers parent child layout-data)
+                  (gcl/calc-layout-modifiers parent transform child layout-data)
 
                   modif-tree
                   (cond-> modif-tree
@@ -157,19 +165,29 @@
 
               [layout-data modif-tree]))]
 
-    (let [shape (get objects id)
-          children (->> (:shapes shape)
-                        (map (d/getf objects))
-                        (map transform-child))
+    (let [modifiers         (get modif-tree id)
 
-          modifiers (get-in modif-tree [id :modifiers])
+          shape             (-> (get objects id) (merge modifiers) gtr/transform-shape)
 
-          transformed-rect (gtr/transform-selrect (:selrect shape) modifiers)
-          layout-data (gcl/calc-layout-data shape children transformed-rect)
-          children (into [] (cond-> children (:reverse? layout-data) reverse))
 
-          max-idx (dec (count children))
-          layout-lines (:layout-lines layout-data)]
+          children          (->> (:shapes shape)
+                                 (map (d/getf objects))
+                                 (map (partial transform-child shape)))
+
+          center (gco/center-shape shape)
+          {:keys [transform transform-inverse]} shape
+
+          shape
+          (-> shape
+              (gtr/apply-transform (gmt/transform-in center transform-inverse)))
+
+          transformed-rect (:selrect shape)
+
+          layout-data       (gcl/calc-layout-data shape children transformed-rect)
+          children          (into [] (cond-> children (:reverse? layout-data) reverse))
+
+          max-idx           (dec (count children))
+          layout-lines      (:layout-lines layout-data)]
 
       (loop [modif-tree modif-tree
              layout-line (first layout-lines)
@@ -180,7 +198,7 @@
                 children (subvec children from-idx to-idx)
 
                 [_ modif-tree]
-                (reduce (partial set-layout-modifiers shape) [layout-line modif-tree] children)]
+                (reduce (partial set-layout-modifiers shape transform) [layout-line modif-tree] children)]
 
             (recur modif-tree (first pending) (rest pending) to-idx))
 
@@ -209,9 +227,7 @@
 
         ;; If group or boolean or other type of group we continue with the last result
         :else
-        (recur (:id parent) result)
-        ))))
-
+        (recur (:id parent) result)))))
 
 (defn resolve-layout-ids
   "Given a list of ids, resolve the parent layouts that will need to update. This will go upwards
@@ -225,11 +241,13 @@
 (defn set-objects-modifiers
   [ids objects get-modifier ignore-constraints snap-pixel?]
 
-  (let [modif-tree (reduce (fn [modif-tree id]
-                             (assoc modif-tree id {:modifiers (get-modifier (get objects id))})) {} ids)
+  (let [set-modifiers
+        (fn [modif-tree id]
+          (assoc modif-tree id {:modifiers (get-modifier (get objects id))}))
+
+        modif-tree (reduce set-modifiers {} ids)
 
         ids (resolve-layout-ids ids objects)
-
 
         ;; First: Calculate children modifiers (constraints, etc)
         [modif-tree touched-layouts]

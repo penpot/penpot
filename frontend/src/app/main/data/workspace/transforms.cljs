@@ -128,7 +128,6 @@
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-
        (let [objects     (wsh/lookup-page-objects state)
              ids         (into #{} (remove #(get-in objects [% :blocked] false)) ids)
 
@@ -138,7 +137,7 @@
              modif-tree
              (gsh/set-objects-modifiers ids objects (constantly modifiers) ignore-constraints snap-pixel?)]
 
-         (assoc state :workspace-modifiers modif-tree))))))
+         (update state :workspace-modifiers merge modif-tree))))))
 
 ;; Rotation use different algorithm to calculate children modifiers (and do not use child constraints).
 (defn- set-rotation-modifiers
@@ -147,19 +146,25 @@
 
   ([angle shapes center]
    (ptk/reify ::set-rotation-modifiers
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [objects (wsh/lookup-page-objects state)
-             shapes
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [objects     (wsh/lookup-page-objects state)
+             ids
              (->> shapes
                   (remove #(get % :blocked false))
                   (mapcat #(cph/get-children objects (:id %)))
                   (concat shapes)
-                  (filter #((cpc/editable-attrs (:type %)) :rotation)))]
-         (->> (rx/from shapes)
-              (rx/map (fn [shape]
-                        (let [rotate-modifiers (gsh/rotation-modifiers shape center angle)]
-                          (set-modifiers [(:id shape)] rotate-modifiers))))))))))
+                  (filter #((cpc/editable-attrs (:type %)) :rotation))
+                  (map :id))
+
+             get-modifier
+             (fn [shape]
+               (gsh/rotation-modifiers shape center angle))
+
+             modif-tree
+             (gsh/set-objects-modifiers ids objects get-modifier false false)]
+
+         (update state :workspace-modifiers merge modif-tree))))))
 
 (defn- update-grow-type
   [shape old-shape]

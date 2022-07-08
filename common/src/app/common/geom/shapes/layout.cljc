@@ -8,7 +8,8 @@
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.rect :as gre]))
+   [app.common.geom.shapes.rect :as gre]
+   [app.common.geom.shapes.common :as gco]))
 
 ;; :layout                 ;; true if active, false if not
 ;; :layout-dir             ;; :right, :left, :top, :bottom
@@ -312,13 +313,16 @@
 
 (defn calc-layout-modifiers
   "Calculates the modifiers for the layout"
-  [parent child layout-data]
+  [parent transform child layout-data]
 
   (let [bounds    (-> child :points gre/points->selrect)
 
         [corner-p layout-data] (next-p parent bounds layout-data)
 
-        delta-p   (-> corner-p (gpt/subtract (gpt/point bounds)))
+        delta-p   (-> corner-p
+                      (gpt/subtract (gpt/point bounds))
+                      (cond-> (some? transform) (gpt/transform transform)))
+
         modifiers {:displacement-after (gmt/translate-matrix delta-p)}]
 
     [modifiers layout-data]))

@@ -172,6 +172,7 @@
 (dm/export gtr/modifiers->transform)
 (dm/export gtr/empty-modifiers?)
 (dm/export gtr/move-position-data)
+(dm/export gtr/apply-transform)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
