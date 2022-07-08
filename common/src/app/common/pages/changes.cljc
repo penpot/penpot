@@ -17,6 +17,7 @@
    [app.common.spec :as us]
    [app.common.pages.changes-spec :as pcs]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.container :as ctn]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
@@ -37,7 +38,7 @@
 ;; Page Transformation Changes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- Changes Processing Impl
+;; === Changes Processing Impl
 
 (defmulti process-change (fn [_ change] (:type change)))
 (defmulti process-operation (fn [_ op] (:type op)))
@@ -387,7 +388,7 @@
   [data {:keys [id]}]
   (update data :typographies dissoc id))
 
-;; -- Operations
+;; === Operations
 
 (defmethod process-operation :set
   [shape op]
@@ -451,3 +452,31 @@
   (ex/raise :type :not-implemented
             :code :operation-not-implemented
             :context {:type (:type op)}))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Component changes detection
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Analyze one change and checks if if modifies the main instance of
+;; any component, so that it needs to be synced immediately to the
+;; main component. Return the ids of the components that need sync.
+
+(defmulti components-changed (fn [_ change] (:type change)))
+
+(defmethod components-changed :mod-obj
+  [file-data {:keys [id page-id component-id operations]}]
+  (when page-id
+    (let [page (ctpl/get-page file-data page-id)
+          shape-and-parents (map #(ctn/get-shape page %)
+                                 (into [id] (cph/get-parent-ids (:objects page) id)))
+          any-set? (some #(= (:type %) :set) operations)]
+      (when any-set?
+        (into #{} (->> shape-and-parents
+                       (filter #(:main-instance? %))
+                       (map :id)))))))
+
+(defmethod components-changed :default
+  [_ _]
+  nil)
+

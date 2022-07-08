@@ -254,6 +254,7 @@
   (and (if (nil? component-id)
          (ctk/uses-library-components? shape library-id)
          (ctk/instance-of? shape library-id component-id))
+       (not (:main-instance? shape)) ; not need to sync the main instance (avoid infinite loop)
        (or (:component-root? shape) (not page?)))) ; avoid nested components inside pages
 
 (defmethod uses-assets? :colors

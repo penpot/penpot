@@ -214,7 +214,8 @@
     (watch [_ state _]
       (if (contains? (get-in state [:workspace-data :pages-index]) page-id)
         (rx/of (dwp/preload-data-uris)
-               (dwth/watch-state-changes))
+               (dwth/watch-state-changes)
+               (dwl/watch-component-changes))
         (let [default-page-id (get-in state [:workspace-data :pages 0])]
           (rx/of (go-to-page default-page-id)))))
 

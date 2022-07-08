@@ -188,7 +188,6 @@
                      (add-group % group-name)))))
   (st/emit! (dwu/commit-undo-transaction)))
 
-
 (defn- on-drop-asset
   [event asset dragging? selected-assets selected-assets-full selected-assets-paths rename]
   (let [create-typed-assets-group (partial create-assets-group rename)]

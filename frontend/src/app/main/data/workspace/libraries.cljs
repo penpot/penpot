@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.common.pages :as cp]
+   [app.common.pages.changes :as ch]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.changes-spec :as pcs]
    [app.common.pages.helpers :as cph]
@@ -29,6 +30,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
@@ -615,7 +617,8 @@
    (ptk/reify ::sync-file
      ptk/UpdateEvent
      (update [_ state]
-       (if (not= library-id (:current-file-id state))
+       (if (and (not= library-id (:current-file-id state))
+                (nil? asset-id))
          (d/assoc-in-when state [:workspace-libraries library-id :synced-at] (dt/now))
          state))
 
@@ -742,6 +745,46 @@
                  {:label (tr "workspace.updates.dismiss")
                   :callback do-dismiss}]
                 :sync-dialog))))))
+
+(defn watch-component-changes
+  "Watch the state for changes that affect to any main instance. If a change is detected will throw
+  an update-component-sync, so changes are immediately propagated to the component and copies."
+  []
+  (ptk/reify ::watch-component-changes
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stopper
+            (->> stream
+                 (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
+                                 (= ::watch-component-changes (ptk/type %)))))
+
+            workspace-data-str
+            (->> (rx/concat
+                  (rx/of nil)
+                  (rx/from-atom refs/workspace-data {:emit-current-value? true})))
+
+            change-str
+            (->> stream
+                 (rx/filter #(or (dch/commit-changes? %)
+                                 (= (ptk/type %) :app.main.data.workspace.notifications/handle-file-change)))
+                 (rx/observe-on :async))
+
+            check-changes
+            (fn [[event data]]
+              (let [changes (-> event deref :changes)
+                    components-changed (reduce #(into %1 (ch/components-changed data %2))
+                                               #{}
+                                               changes)]
+                (js/console.log "components-changed" (clj->js components-changed))
+                (when (d/not-empty? components-changed)
+                  (apply st/emit!
+                         (map #(update-component-sync % (:id data))
+                              components-changed)))))]
+
+        (->> change-str
+             (rx/with-latest-from workspace-data-str)
+             (rx/map check-changes)
+             (rx/take-until stopper))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backend interactions
