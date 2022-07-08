@@ -17,6 +17,7 @@
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.files :as files]
+   [app.rpc.queries.projects :as projects]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
@@ -822,13 +823,14 @@
 
 (s/def ::file ::media/upload)
 (s/def ::import-binfile
-  (s/keys :req-un [::project-id ::file]))
+  (s/keys :req-un [::profile-id ::project-id ::file]))
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."
-  [cfg {:keys [project-id file] :as params}]
-  (import! (assoc cfg
-                  ::input (:path file)
-                  ::project-id project-id
-                  ::ignore-index-errors? true)))
-
+  [{:keys [pool] :as cfg} {:keys [profile-id project-id file] :as params}]
+  (db/with-atomic [conn pool]
+    (projects/check-read-permissions! conn profile-id project-id)
+    (import! (assoc cfg
+                    ::input (:path file)
+                    ::project-id project-id
+                    ::ignore-index-errors? true))))
