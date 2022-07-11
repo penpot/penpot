@@ -25,6 +25,7 @@
    [app.util.theme :as theme]
    [beicon.core :as rx]
    [debug]
+   [features]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
