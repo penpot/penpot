@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.image
   (:require
-   [app.main.constants :refer [has-layout-item]]
+   [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
@@ -21,22 +21,28 @@
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
+
         measure-values (select-keys shape measure-attrs)
         layer-values (select-keys shape layer-attrs)
         constraint-values (select-keys shape constraint-attrs)
         fill-values (select-keys shape fill-attrs)
         stroke-values (select-keys shape stroke-attrs)
-        layout-item-values (select-keys shape layout-item-attrs)]
+        layout-item-values (select-keys shape layout-item-attrs)
+
+        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
+        is-layout-child? (mf/deref is-layout-child-ref)]
     [:*
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values
                         :shape shape}]
-     (when has-layout-item
-       [:& layout-item-menu {:ids ids
-                             :type type
-                             :values layout-item-values
-                             :shape shape}])
+     (when is-layout-child?
+       [:& layout-item-menu
+        {:ids ids
+         :type type
+         :values layout-item-values
+         :is-layout-child? true
+         :shape shape}])
 
      [:& constraints-menu {:ids ids
                            :values constraint-values}]

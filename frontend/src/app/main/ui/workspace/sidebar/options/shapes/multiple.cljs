@@ -11,7 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :as cpc]
    [app.common.text :as txt]
-   [app.main.constants :refer [has-layout-item]]
+   [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -247,6 +247,10 @@
         type :multiple
         all-types (into #{} (map :type shapes))
 
+        ids (->> shapes (map :id))
+        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
+        is-layout-child? (mf/deref is-layout-child-ref)
+
         has-text? (contains? all-types :text)
         
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
@@ -284,10 +288,16 @@
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
-     [:& layout-container-menu {:type type :ids layout-ids :values layout-container-values}]
+     (when (:layout layout-container-values)
+       [:& layout-container-menu {:type type :ids layout-ids :values layout-container-values}])
      
-     (when has-layout-item
-       [:& layout-item-menu {:type type :ids layout-item-ids :values layout-item-values}])
+     (when is-layout-child?
+       [:& layout-item-menu
+        {:type type
+         :ids layout-item-ids
+         :is-layout-child? true
+         :is-layout-container? true
+         :values layout-item-values}])
 
      (when-not (empty? constraint-ids)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])

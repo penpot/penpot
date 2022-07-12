@@ -6,7 +6,8 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
-   [app.main.constants :refer [has-layout-item]]
+   [app.main.refs :as refs]
+   [app.main.ui.features :as features]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
@@ -23,12 +24,18 @@
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
+
+        layout-active? (features/use-feature :auto-layout)
+
         stroke-values (select-keys shape stroke-attrs)
         layer-values (select-keys shape layer-attrs)
         measure-values (select-keys shape measure-attrs)
         constraint-values (select-keys shape constraint-attrs)
         layout-container-values (select-keys shape layout-container-attrs)
-        layout-item-values (select-keys shape layout-item-attrs)]
+        layout-item-values (select-keys shape layout-item-attrs)
+
+        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
+        is-layout-child? (mf/deref is-layout-child-ref)]
     [:*
      [:& measures-menu {:ids [(:id shape)]
                         :values measure-values
@@ -36,13 +43,19 @@
                         :shape shape}]
      [:& constraints-menu {:ids ids
                            :values constraint-values}]
-     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}]
-     
-     (when has-layout-item
-       [:& layout-item-menu {:ids ids
-                             :type type
-                             :values layout-item-values
-                             :shape shape}])
+     (when layout-active?
+       [:*
+        [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}]
+
+        (when (or (:layout shape) is-layout-child?)
+          [:& layout-item-menu
+           {:ids ids
+            :type type
+            :values layout-item-values
+            :is-layout-child? is-layout-child?
+            :is-layout-container? (:layout shape)
+            :shape shape}])])
+
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]

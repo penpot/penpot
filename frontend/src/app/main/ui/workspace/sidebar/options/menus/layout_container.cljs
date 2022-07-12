@@ -293,7 +293,8 @@
          [:div.direction
           [:*
            (for [dir [:left :right :bottom :top]]
-             [:& direction-row {:dir dir
+             [:& direction-row {:key (d/name dir)
+                                :dir dir
                                 :saved-dir (:layout-dir values)
                                 :set-direction set-direction}])]]
          [:div.gap.tooltip.tooltip-bottom-left

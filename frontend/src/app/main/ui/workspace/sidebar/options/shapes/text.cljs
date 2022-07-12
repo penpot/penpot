@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
    [app.common.data :as d]
-   [app.main.constants :refer [has-layout-item]]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
@@ -27,6 +26,8 @@
   (let [ids    [(:id shape)]
         type   (:type shape)
 
+        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
+        is-layout-child? (mf/deref is-layout-child-ref)
         state-map    (mf/deref refs/workspace-editor-state)
         shared-libs  (mf/deref refs/workspace-libraries)
 
@@ -69,11 +70,14 @@
        :type type
        :values (select-keys shape measure-attrs)
        :shape shape}]
-     (when has-layout-item
-       [:& layout-item-menu {:ids ids
-                             :type type
-                             :values layout-item-values
-                             :shape shape}])
+
+     (when is-layout-child?
+       [:& layout-item-menu
+        {:ids ids
+         :type type
+         :values layout-item-values
+         :is-layout-child? true
+         :shape shape}])
      [:& constraints-menu
       {:ids ids
        :values (select-keys shape constraint-attrs)}]

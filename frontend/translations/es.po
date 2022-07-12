@@ -3661,19 +3661,19 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Opciones avanzadas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
+msgid "workspace.options.layout-item.layout-max-h"
 msgstr "AlturaMax."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
+msgid "workspace.options.layout-item.layout-max-w"
 msgstr "AnchoMax."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
+msgid "workspace.options.layout-item.layout-min-h"
 msgstr "AlturaMin."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
+msgid "workspace.options.layout-item.layout-min-w"
 msgstr "AnchoMin."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
@@ -3681,19 +3681,19 @@ msgid "workspace.options.layout-item.title"
 msgstr "Redimensionado de elemento"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
+msgid "workspace.options.layout-item.title.layout-max-h"
 msgstr "Altura máxima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
+msgid "workspace.options.layout-item.title.layout-max-w"
 msgstr "Ancho máximo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
+msgid "workspace.options.layout-item.title.layout-min-h"
 msgstr "Altura mínima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
+msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "Ancho mínimo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs

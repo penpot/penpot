@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.shape-layout
   (:require
    [app.common.data :as d]
+   [app.common.pages.helpers :as cph]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
@@ -72,3 +73,12 @@
       (rx/of (dwc/update-shapes ids #(d/deep-merge % changes))
              (update-layout-positions ids)))))
 
+(defn update-layout-child
+  [ids changes]
+  (ptk/reify ::update-layout-child
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            parent-ids (->> ids (map #(cph/get-parent-id objects %)))]
+        (rx/of (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
+               (update-layout-positions parent-ids))))))

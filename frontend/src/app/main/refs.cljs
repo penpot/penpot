@@ -410,3 +410,11 @@
 
 (defn workspace-text-modifier-by-id [id]
   (l/derived #(get % id) workspace-text-modifier =))
+
+(defn is-layout-child?
+  [ids]
+  (l/derived
+   (fn [objects]
+     (->> ids
+          (some #(-> (cph/get-parent objects %) :layout))))
+   workspace-page-objects))

@@ -23,8 +23,6 @@
    :grid-alignment true
    :background "var(--color-white)"})
 
-(def has-layout-item false)
-
 (def size-presets
   [{:name "APPLE"}
    {:name "iPhone 12/12 Pro"
