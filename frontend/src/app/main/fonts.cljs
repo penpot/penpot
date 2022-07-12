@@ -200,16 +200,19 @@
    (p/create (fn [resolve]
                (ensure-loaded! id resolve))))
   ([id on-loaded]
-   (let [font (get @fontsdb id)]
+   (when-let [font (get @fontsdb id)]
+     (log/debug :action "ensure-loaded!" :font-id id :font font)
      (cond
        ;; Font already loaded, we just continue
        (contains? @loaded id)
-       (on-loaded id)
+       (p/do
+         (on-loaded id)
+         id)
 
        ;; Font is currently downloading. We attach the caller to the promise
        (contains? @loading id)
        (-> (get @loading id)
-           (p/then #(on-loaded id)))
+           (p/then #(do (on-loaded id) id)))
 
        ;; First caller, we create the promise and then wait
        :else
@@ -226,8 +229,7 @@
                            (load-font))))]
 
          (swap! loading assoc id load-p)
-
-         nil)))))
+         load-p)))))
 
 (defn ready
   [cb]
