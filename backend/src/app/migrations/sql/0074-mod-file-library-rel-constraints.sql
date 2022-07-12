@@ -1,0 +1,5 @@
+ALTER TABLE file_library_rel
+ALTER CONSTRAINT file_library_rel_file_id_fkey DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE file_library_rel
+ALTER CONSTRAINT file_library_rel_library_file_id_fkey DEFERRABLE INITIALLY IMMEDIATE;

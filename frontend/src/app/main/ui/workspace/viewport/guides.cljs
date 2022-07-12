@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -286,8 +287,9 @@
         guide-pill-corner-radius (/ guide-pill-corner-radius zoom)]
 
     (when (or (nil? frame)
-              (is-guide-inside-frame? (assoc guide :position pos) frame)
-              (:hover @state true))
+              (and (is-guide-inside-frame? (assoc guide :position pos) frame)
+                   (cph/root-frame? frame)
+                   (not (cph/rotated-frame? frame))))
       [:g.guide-area
        (when-not disabled-guides?
          (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]

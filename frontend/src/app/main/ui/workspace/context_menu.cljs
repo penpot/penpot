@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
-   [app.common.spec.page :as csp]
+   [app.common.types.page :as ctp]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -191,7 +191,6 @@
         has-group? (->> shapes (d/seek #(= :group (:type %))))
         has-bool? (->> shapes (d/seek #(= :bool (:type %))))
         has-mask? (->> shapes (d/seek :masked-group?))
-        has-frame? (->> shapes (d/seek #(= :frame (:type %))))
 
         is-group? (and single? has-group?)
         is-bool? (and single? has-bool?)
@@ -207,10 +206,9 @@
                        :shortcut (sc/get-tooltip :ungroup)
                        :on-click do-remove-group}])
 
-     (when (not has-frame?)
-       [:& menu-entry {:title (tr "workspace.shape.menu.group")
-                       :shortcut (sc/get-tooltip :group)
-                       :on-click do-create-group}])
+     [:& menu-entry {:title (tr "workspace.shape.menu.group")
+                     :shortcut (sc/get-tooltip :group)
+                     :on-click do-create-group}]
 
      (when (or multiple? (and is-group? (not has-mask?)) is-bool?)
        [:& menu-entry {:title (tr "workspace.shape.menu.mask")
@@ -222,12 +220,10 @@
                        :shortcut (sc/get-tooltip :unmask)
                        :on-click do-unmask-group}])
 
-     (when (not has-frame?)
-       [:*
-        [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
-                        :shortcut (sc/get-tooltip :artboard-selection)
-                        :on-click do-create-artboard-from-selection}]
-        [:& menu-separator]])]))
+     [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
+                     :shortcut (sc/get-tooltip :artboard-selection)
+                     :on-click do-create-artboard-from-selection}]
+     [:& menu-separator]]))
 
 (mf/defc context-focus-mode-menu
   [{:keys []}]
@@ -333,7 +329,7 @@
         is-frame?       (and single? has-frame?)]
 
     (when (and prototype? is-frame?)
-      (let [flow (csp/get-frame-flow flows (-> shapes first :id))]
+      (let [flow (ctp/get-frame-flow flows (-> shapes first :id))]
         (if (some? flow)
           [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
                           :on-click (do-remove-flow flow)}]

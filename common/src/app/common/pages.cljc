@@ -26,8 +26,8 @@
 (dm/export focus/is-in-focus?)
 
 ;; Indices
-(dm/export indices/calculate-z-index)
-(dm/export indices/update-z-index)
+#_(dm/export indices/calculate-z-index)
+#_(dm/export indices/update-z-index)
 (dm/export indices/generate-child-all-parents-index)
 (dm/export indices/generate-child-parent-index)
 (dm/export indices/create-clip-index)

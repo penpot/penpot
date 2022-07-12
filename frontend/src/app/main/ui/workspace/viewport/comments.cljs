@@ -20,7 +20,7 @@
         pos-y       (* (- (:y vbox)) zoom)
 
         profile     (mf/deref refs/profile)
-        users       (mf/deref refs/users)
+        users       (mf/deref refs/current-file-comments-users)
         local       (mf/deref refs/comments-local)
         threads-map (mf/deref refs/threads-ref)
 

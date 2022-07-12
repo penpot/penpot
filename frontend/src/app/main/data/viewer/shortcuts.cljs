@@ -42,12 +42,12 @@
                         :fn #(st/emit! dv/toggle-fullscreen)}
 
    :next-frame         {:tooltip ds/left-arrow
-                        :command "left"
+                        :command ["left" "up"]
                         :subsections [:general-viewer]
                         :fn #(st/emit! dv/select-prev-frame)}
 
    :prev-frame         {:tooltip ds/right-arrow
-                        :command "right"
+                        :command ["right" "down"]
                         :subsections [:general-viewer]
                         :fn #(st/emit! dv/select-next-frame)}
 

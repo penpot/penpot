@@ -188,32 +188,14 @@ msgstr "Nuoroda sėkmingai nukopijuota"
 msgid "common.share-link.link-deleted-success"
 msgstr "Nuoroda sėkmingai ištrinta"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "Gali pasiekti"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Galima peržiūrėti"
-
 msgid "common.share-link.permissions-hint"
 msgstr "Kiekvienas, turintis nuorodą, turės prieigą"
 
 msgid "common.share-link.placeholder"
 msgstr "Bendrinama nuoroda bus rodoma čia"
 
-msgid "common.share-link.remove-link"
-msgstr "Pašalinti nuorodą"
-
 msgid "common.share-link.title"
 msgstr "Dalinkitės prototipais"
-
-msgid "common.share-link.view-all-pages"
-msgstr "Visi puslapiai"
-
-msgid "common.share-link.view-current-page"
-msgstr "Tik šis puslapis"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Parinkti puslapiai"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"

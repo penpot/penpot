@@ -6,10 +6,12 @@
 
 (ns app.main.ui.workspace.viewport.widgets
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.refs :as refs]
@@ -92,9 +94,11 @@
 
 (mf/defc frame-title
   {::mf/wrap [mf/memo]}
-  [{:keys [frame modifiers selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
-  (let [{:keys [width x y]} (gsh/transform-shape frame)
+  [{:keys [frame selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
+  (let [{:keys [width x y]} frame
         label-pos (gpt/point x (- y (/ 10 zoom)))
+
+        frame-transform (gsh/transform-str frame)
 
         on-mouse-down
         (mf/use-callback
@@ -136,11 +140,10 @@
         text-pos-x (if (:use-for-thumbnail? frame) 15 0)]
 
     (when (not (:hidden frame))
-      [:*
+      [:g {:id (dm/str "frame-title-" (:id frame))
+           }
        (when (:use-for-thumbnail? frame)
-         [:g {:transform (str (when (and selected? modifiers)
-                                (str (:displacement modifiers) " "))
-                              (text-transform label-pos zoom))}
+         [:g {:transform (dm/str frame-transform " " (text-transform label-pos zoom))}
           [:svg {:x 0
                  :y -9
                  :width 12
@@ -154,9 +157,7 @@
                :width width
                :height 20
                :class "workspace-frame-label"
-               :transform (str (when (and selected? modifiers)
-                                 (str (:displacement modifiers) " "))
-                               (text-transform label-pos zoom))
+               :transform (dm/str frame-transform " " (text-transform label-pos zoom))
                :style {:fill (when selected? "var(--color-primary-dark)")}
                :visibility (if show-artboard-names? "visible" "hidden")
                :on-mouse-down on-mouse-down
@@ -182,15 +183,16 @@
 
     [:g.frame-titles
      (for [frame frames]
-       [:& frame-title {:key (dm/str "frame-title-" (:id frame))
-                        :frame frame
-                        :selected? (contains? selected (:id frame))
-                        :zoom zoom
-                        :show-artboard-names? show-artboard-names?
-                        :modifiers modifiers
-                        :on-frame-enter on-frame-enter
-                        :on-frame-leave on-frame-leave
-                        :on-frame-select on-frame-select}])]))
+       (when (= (:frame-id frame) uuid/zero)
+         [:& frame-title {:key (dm/str "frame-title-" (:id frame))
+                          :frame frame
+                          :selected? (contains? selected (:id frame))
+                          :zoom zoom
+                          :show-artboard-names? show-artboard-names?
+                          :modifiers modifiers
+                          :on-frame-enter on-frame-enter
+                          :on-frame-leave on-frame-leave
+                          :on-frame-select on-frame-select}]))]))
 
 (mf/defc frame-flow
   [{:keys [flow frame modifiers selected? zoom on-frame-enter on-frame-leave on-frame-select]}]
@@ -252,9 +254,10 @@
         on-frame-leave  (unchecked-get props "on-frame-leave")
         on-frame-select (unchecked-get props "on-frame-select")]
     [:g.frame-flows
-     (for [flow flows]
+     (for [[index flow] (d/enumerate flows)]
        (let [frame (get objects (:starting-frame flow))]
-         [:& frame-flow {:flow flow
+         [:& frame-flow {:key (dm/str (:id frame) "-" index)
+                         :flow flow
                          :frame frame
                          :selected? (contains? selected (:id frame))
                          :zoom zoom

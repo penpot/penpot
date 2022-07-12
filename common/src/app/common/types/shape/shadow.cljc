@@ -4,10 +4,10 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.shadow
+(ns app.common.types.shape.shadow
   (:require
    [app.common.spec :as us]
-   [app.common.spec.color :as color]
+   [app.common.types.color :as ctc]
    [clojure.spec.alpha :as s]))
 
 
@@ -24,7 +24,7 @@
 
 (s/def ::color string?)
 (s/def ::opacity ::us/safe-number)
-(s/def ::gradient (s/nilable ::color/gradient))
+(s/def ::gradient (s/nilable ::ctc/gradient))
 (s/def ::file-id (s/nilable uuid?))
 (s/def ::ref-id (s/nilable uuid?))
 

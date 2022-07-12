@@ -10,11 +10,13 @@
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.storage.impl :as impl]
+   [app.util.bytes :as bs]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [integrant.core :as ig]
+   [promesa.core :as p]
    [promesa.exec :as px])
   (:import
    java.io.InputStream
@@ -72,9 +74,10 @@
       (io/input-stream full))))
 
 (defmethod impl/get-object-bytes :fs
-  [{:keys [executor] :as backend} object]
-  (px/with-dispatch executor
-    (fs/slurp-bytes (impl/get-object-data backend object))))
+  [backend object]
+  (p/let [input (impl/get-object-data backend object)]
+    (ex/with-always (bs/close! input)
+      (bs/read-as-bytes input))))
 
 (defmethod impl/get-object-url :fs
   [{:keys [uri executor] :as backend} {:keys [id] :as object} _]

@@ -21,6 +21,7 @@
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
 (defn on-error
@@ -105,7 +106,6 @@
 
     (js/console.groupEnd msg)))
 
-
 ;; Error on parsing an SVG
 ;; TODO: looks unused and deprecated
 (defmethod ptk/handle-error :svg-parser
@@ -187,20 +187,28 @@
 
 (defn on-unhandled-error
   [error]
-  (if (instance? ExceptionInfo error)
-    (-> error ex-data ptk/handle-error)
-    (let [hint (ex-message error)
-          msg  (dm/str "Unhandled Internal Error: " hint)]
-      (ts/schedule #(st/emit! (rt/assign-exception error)))
-      (js/console.group msg)
-      (ex/ignoring (js/console.error error))
-      (js/console.groupEnd msg))))
+  (letfn [(is-ignorable-exception? [cause]
+            (condp = (ex-message cause)
+              "Possible side-effect in debug-evaluate" true
+              false))]
+    (if (instance? ExceptionInfo error)
+      (-> error ex-data ptk/handle-error)
+      (when-not (is-ignorable-exception? error)
+        (let [hint (ex-message error)
+              msg  (dm/str "Unhandled Internal Error: " hint)]
+          (ts/schedule #(st/emit! (rt/assign-exception error)))
+          (js/console.group msg)
+          (ex/ignoring (js/console.error error))
+          (js/console.groupEnd msg))))))
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]
-            (.preventDefault ^js event)
-            (some-> (unchecked-get event "error")
-                    (on-unhandled-error)))]
+            ;; EvalError is a debug error that happens for unknown reason
+            (when-not (str/includes? (.-message event) "EvalError")
+              (.error js/console event)
+              (.preventDefault ^js event)
+              (some-> (unchecked-get event "error")
+                      (on-unhandled-error))))]
     (.addEventListener glob/window "error" on-error)
     (fn []
       (.removeEventListener glob/window "error" on-error))))

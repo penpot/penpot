@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.rpc.mutations.demo
+(ns app.rpc.commands.demo
   "A demo specific mutations."
   (:require
    [app.common.exceptions :as ex]
@@ -12,7 +12,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
-   [app.rpc.mutations.profile :as profile]
+   [app.rpc.commands.auth :as cmd.auth]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
@@ -45,8 +45,8 @@
                 :hint "Demo users are disabled by config."))
 
     (db/with-atomic [conn pool]
-      (->> (#'profile/create-profile conn params)
-           (#'profile/create-profile-relations conn))
+      (->> (cmd.auth/create-profile conn params)
+           (cmd.auth/create-profile-relations conn))
 
       (with-meta {:email email
                   :password password}

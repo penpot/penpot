@@ -30,7 +30,8 @@
   [v]
   (InternetAddress/parse ^String v))
 
-(defn- ^Message$RecipientType resolve-recipient-type
+(defn- resolve-recipient-type
+  ^Message$RecipientType
   [type]
   (case type
     :to  Message$RecipientType/TO
@@ -157,7 +158,8 @@
     (.setDebug session debug)
     session))
 
-(defn ^MimeMessage smtp-message
+(defn smtp-message
+  ^MimeMessage
   [cfg message]
   (let [^Session session (smtp-session cfg)]
     (build-message cfg session message)))

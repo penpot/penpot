@@ -102,6 +102,20 @@
   (when (some? event)
     (.-target event)))
 
+(defn select-target
+  "Extract the target from event instance and select it"
+  [^js event]
+  (when (some? event)
+    (-> event
+        (.-target)
+        (.-select))))
+
+(defn select-node
+  "Select element by node"
+  [^js node]
+  (when (some? node)
+    (.-select node)))
+
 (defn get-current-target
   "Extract the current target from event instance (different from target
    when event triggered in a child of the subscribing element)."

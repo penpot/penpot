@@ -10,8 +10,9 @@
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.changes-spec :as pcs]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -126,9 +127,7 @@
             []))]
     (into #{}
           (comp (mapcat change->ids)
-                (keep #(if (= :frame (get-in objects [% :type]))
-                         %
-                         (get-in objects [% :frame-id])))
+                (keep #(cph/get-shape-id-root-frame objects %))
                 (remove #(= uuid/zero %)))
           changes)))
 
@@ -160,10 +159,13 @@
                                 [:workspace-data]
                                 [:workspace-libraries file-id :data])]
           (try
-            (us/assert ::spec.change/changes redo-changes)
-            (us/assert ::spec.change/changes undo-changes)
+            (us/assert ::pcs/changes redo-changes)
+            (us/assert ::pcs/changes undo-changes)
 
-            (update-in state path cp/process-changes redo-changes false)
+            (update-in state path (fn [file]
+                                    (-> file
+                                        (cp/process-changes redo-changes false)
+                                        (cph/update-object-indices page-id))))
 
             (catch :default err
               (log/error :js/error err)

@@ -8,7 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
@@ -192,7 +192,7 @@
    ::mf/forward-ref true}
   [props ref]
   (let [shape (obj/get props "shape")
-        transform (str (geom/transform-matrix shape))
+        transform (gsh/transform-str shape)
 
         {:keys [id x y width height content]} shape
         grow-type (obj/get props "grow-type") ;; This is only needed in workspace
@@ -212,11 +212,11 @@
       :y y
       :id id
       :data-colors (->> colors (str/join ","))
-      :data-mapping (-> color-mapping-inverse (clj->js) (js/JSON.stringify))
+      :data-mapping (-> color-mapping-inverse clj->js js/JSON.stringify)
       :transform transform
       :width  (if (#{:auto-width} grow-type) 100000 width)
       :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
-      :style (-> (obj/new) (attrs/add-layer-props shape))
+      :style  (-> (obj/create) (attrs/add-layer-props shape))
       :ref ref}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`

@@ -7,18 +7,13 @@
 (ns app.renderer.pdf
   "A pdf renderer."
   (:require
-   ["path" :as path]
    [app.browser :as bw]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex :include-macros true]
    [app.common.logging :as l]
-   [app.common.spec :as us]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
-   [cuerdas.core :as str]
-   [cljs.spec.alpha :as s]
    [promesa.core :as p]))
 
 (defn render
@@ -44,8 +39,7 @@
 
           (render-object [page base-uri {:keys [id] :as object}]
             (p/let [uri  (prepare-uri base-uri id)
-                    tmp  (sh/mktmpdir! "pdf-render")
-                    path (path/join tmp (str/concat id (mime/get-extension type)))]
+                    path (sh/tempfile :prefix "penpot.tmp.render.pdf." :suffix (mime/get-extension type))]
               (l/info :uri uri)
               (bw/nav! page uri)
               (p/let [dom (bw/select page (dm/str "#screenshot-" id))]
@@ -58,8 +52,7 @@
           (render [base-uri page]
             (p/loop [objects (seq objects)]
               (when-let [object (first objects)]
-                (p/let [uri  (prepare-uri base-uri (:id object))
-                        path (render-object page base-uri object)]
+                (p/let [path (render-object page base-uri object)]
                   (on-object (assoc object :path path))
                   (p/recur (rest objects))))))]
 

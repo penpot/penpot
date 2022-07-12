@@ -55,7 +55,7 @@
          (fn [form _]
            (reset! loading true)
            (let [data (:clean-data @form)]
-             (->> (rp/mutation! :send-feedback data)
+             (->> (rp/command! :send-feedback data)
                   (rx/subs on-succes on-error)))))]
 
     [:& fm/form {:class "feedback-form"

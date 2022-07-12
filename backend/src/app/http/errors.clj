@@ -71,7 +71,7 @@
   [error request]
   (let [edata (ex-data error)
         explain (us/pretty-explain edata)]
-    (l/error ::l/raw (ex-message error)
+    (l/error ::l/raw (str (ex-message error) "\n" explain)
              ::l/context (get-context request)
              :cause error)
     (yrs/response :status 500
@@ -143,12 +143,10 @@
 
 (defn handle
   [cause request]
-
   (cond
     (or (instance? java.util.concurrent.CompletionException cause)
         (instance? java.util.concurrent.ExecutionException cause))
     (handle-exception (.getCause ^Throwable cause) request)
-
 
     (ex/wrapped? cause)
     (let [context (meta cause)

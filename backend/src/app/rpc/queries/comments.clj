@@ -25,16 +25,16 @@
 
 (s/def ::team-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
+(s/def ::share-id (s/nilable ::us/uuid))
 
 (s/def ::comment-threads
   (s/and (s/keys :req-un [::profile-id]
-                 :opt-un [::file-id ::team-id])
+                 :opt-un [::file-id ::share-id ::team-id])
          #(or (:file-id %) (:team-id %))))
 
 (sv/defmethod ::comment-threads
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} params]
   (with-open [conn (db/open pool)]
-    (files/check-read-permissions! conn profile-id file-id)
     (retrieve-comment-threads conn params)))
 
 (def sql:comment-threads
@@ -60,8 +60,8 @@
    window w as (partition by c.thread_id order by c.created_at asc)")
 
 (defn- retrieve-comment-threads
-  [conn {:keys [profile-id file-id]}]
-  (files/check-read-permissions! conn profile-id file-id)
+  [conn {:keys [profile-id file-id share-id]}]
+  (files/check-comment-permissions! conn profile-id file-id share-id)
   (->> (db/exec! conn [sql:comment-threads profile-id file-id])
        (into [] (map decode-row))))
 
@@ -116,13 +116,15 @@
 ;; --- Query: Single Comment Thread
 
 (s/def ::id ::us/uuid)
+(s/def ::share-id (s/nilable ::us/uuid))
 (s/def ::comment-thread
-  (s/keys :req-un [::profile-id ::file-id ::id]))
+  (s/keys :req-un [::profile-id ::file-id ::id]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::comment-thread
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id id share-id] :as params}]
   (with-open [conn (db/open pool)]
-    (files/check-read-permissions! conn profile-id file-id)
+    (files/check-comment-permissions! conn profile-id file-id share-id)
     (let [sql (str "with threads as (" sql:comment-threads ")"
                    "select * from threads where id = ?")]
       (-> (db/exec-one! conn [sql profile-id file-id id])
@@ -133,15 +135,17 @@
 (declare retrieve-comments)
 
 (s/def ::file-id ::us/uuid)
+(s/def ::share-id (s/nilable ::us/uuid))
 (s/def ::thread-id ::us/uuid)
 (s/def ::comments
-  (s/keys :req-un [::profile-id ::thread-id]))
+  (s/keys :req-un [::profile-id ::thread-id]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::comments
-  [{:keys [pool] :as cfg} {:keys [profile-id thread-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id thread-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (let [thread (db/get-by-id conn :comment-thread thread-id)]
-      (files/check-read-permissions! conn profile-id (:file-id thread))
+      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
       (retrieve-comments conn thread-id))))
 
 (def sql:comments
@@ -153,3 +157,40 @@
   [conn thread-id]
   (->> (db/exec! conn [sql:comments thread-id])
        (into [] (map decode-row))))
+
+;; file-comments-users
+
+(declare retrieve-file-comments-users)
+
+(s/def ::file-id ::us/uuid)
+(s/def ::share-id (s/nilable ::us/uuid))
+
+(s/def ::file-comments-users
+  (s/keys :req-un [::profile-id ::file-id]
+          :opt-un [::share-id]))
+
+(sv/defmethod ::file-comments-users
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id]}]
+  (with-open [conn (db/open pool)]
+    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (retrieve-file-comments-users conn file-id profile-id)))
+
+(def sql:file-comment-users
+  "select p.id,
+          p.email,
+          p.fullname as name,
+          p.fullname as fullname,
+          p.photo_id,
+          p.is_active
+     from profile p
+     where p.id in
+       (select owner_id from comment
+          where thread_id in
+            (select id from comment_thread
+              where file_id=?))
+     or p.id=?
+   ") ;; all the users that had comment the file, plus the current user
+
+(defn retrieve-file-comments-users
+  [conn file-id profile-id]
+  (db/exec! conn [sql:file-comment-users file-id profile-id]))

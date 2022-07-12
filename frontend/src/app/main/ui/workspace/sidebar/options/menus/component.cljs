@@ -6,11 +6,9 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
-   [app.common.pages.helpers :as cph]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.context :as ctx]
@@ -22,7 +20,7 @@
 (def component-attrs [:component-id :component-file :shape-ref])
 
 (mf/defc component-menu
-  [{:keys [ids values] :as props}]
+  [{:keys [ids values shape-name] :as props}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
 
         id              (first ids)
@@ -30,15 +28,6 @@
 
         component-id    (:component-id values)
         library-id      (:component-file values)
-
-        local-file      (deref refs/workspace-local-library)
-        libraries       (deref refs/workspace-libraries)
-
-        ;; NOTE: this is necessary because the `cph/get-component`
-        ;; expects a map of all libraries, including the local one.
-        libraries       (assoc libraries (:id local-file) {:data local-file})
-
-        component       (cph/get-component libraries library-id component-id)
         show?           (some? component-id)
 
         on-menu-click
@@ -63,14 +52,14 @@
 
         do-update-remote-component
         #(st/emit! (modal/show
-                         {:type :confirm
-                          :message ""
-                          :title (tr "modals.update-remote-component.message")
-                          :hint (tr "modals.update-remote-component.hint")
-                          :cancel-label (tr "modals.update-remote-component.cancel")
-                          :accept-label (tr "modals.update-remote-component.accept")
-                          :accept-style :primary
-                          :on-accept do-update-component}))
+                    {:type :confirm
+                     :message ""
+                     :title (tr "modals.update-remote-component.message")
+                     :hint (tr "modals.update-remote-component.hint")
+                     :cancel-label (tr "modals.update-remote-component.cancel")
+                     :accept-label (tr "modals.update-remote-component.accept")
+                     :accept-style :primary
+                     :on-accept do-update-component}))
 
         do-show-component #(st/emit! (dw/go-to-component component-id))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file library-id))]
@@ -81,7 +70,7 @@
        [:div.element-set-content
         [:div.row-flex.component-row
          i/component
-         (:name component)
+         shape-name
          [:div.row-actions
           {:on-click on-menu-click}
           i/actions

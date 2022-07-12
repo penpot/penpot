@@ -450,6 +450,30 @@ ul.slider-dots {
     }
   }
 
+  &.maxW {
+    &::after {
+      content: attr(alt);
+    }
+  }
+
+  &.minW {
+    &::after {
+      content: attr(alt);
+    }
+  }
+
+  &.maxH {
+    &::after {
+      content: attr(alt);
+    }
+  }
+
+  &.minH {
+    &::after {
+      content: attr(alt);
+    }
+  }
+
   &.large {
     min-width: 7rem;
   }

@@ -32,8 +32,8 @@
 
 (defn strip-modifier
   [modifier]
-  (if (or (some? (get-in modifier [:modifiers :resize-vector]))
-          (some? (get-in modifier [:modifiers :resize-vector-2])))
+  (if (or (some? (dm/get-in modifier [:modifiers :resize-vector]))
+          (some? (dm/get-in modifier [:modifiers :resize-vector-2])))
     modifier
     (d/update-when modifier :modifiers dissoc :displacement :rotation)))
 

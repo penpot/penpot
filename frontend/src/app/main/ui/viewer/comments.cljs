@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
    [app.main.refs :as refs]
@@ -15,6 +16,7 @@
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.comments :as wc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -22,7 +24,7 @@
 
 (mf/defc comments-menu
   []
-  (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
+  (let [{cmode :mode cshow :show clist :list} (mf/deref refs/comments-local)
 
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
@@ -36,7 +38,12 @@
         update-show
         (mf/use-callback
          (fn [mode]
-           (st/emit! (dcm/update-filters {:show mode}))))]
+           (st/emit! (dcm/update-filters {:show mode}))))
+
+        update-list
+        (mf/use-callback
+         (fn [show-list]
+           (st/emit! (dcm/update-filters {:list show-list}))))]
 
     [:div.view-options {:on-click toggle-dropdown}
      [:span.label (tr "labels.comments")]
@@ -59,15 +66,15 @@
        [:li {:class (dom/classnames :selected (= :pending cshow))
              :on-click #(update-show (if (= :pending cshow) :all :pending))}
         [:span.icon i/tick]
-        [:span.label (tr "labels.hide-resolved-comments")]]]]]))
+        [:span.label (tr "labels.hide-resolved-comments")]]
 
+       [:hr]
 
-(defn- frame-contains?
-  [{:keys [x y width height]} {px :x py :y}]
-  (let [x2 (+ x width)
-        y2 (+ y height)]
-    (and (<= x px x2)
-         (<= y py y2))))
+       [:li {:class (dom/classnames :selected (= :show clist))
+             :on-click #(update-list (if (= :show clist) :hide :show))}
+        [:span.icon i/tick]
+        [:span.label (tr "labels.show-comments-list")]]]]]))
+
 
 (def threads-ref
   (l/derived :comment-threads st/state))
@@ -80,11 +87,11 @@
   (let [profile     (mf/deref refs/profile)
         threads-map (mf/deref threads-ref)
 
-        modifier1   (-> (gpt/point (:x frame) (:y frame))
-                        (gpt/negate)
-                        (gmt/translate-matrix))
+        frame-corner (-> frame :points gsh/points->selrect gpt/point)
+        modifier1   (-> (gmt/matrix)
+                        (gmt/translate (gpt/negate frame-corner)))
 
-        modifier2   (-> (gpt/point (:x frame) (:y frame))
+        modifier2   (-> (gpt/point frame-corner)
                         (gmt/translate-matrix))
 
         cstate      (mf/deref refs/comments-local)
@@ -92,7 +99,7 @@
         threads     (->> (vals threads-map)
                          (dcm/apply-filters cstate profile)
                          (filter (fn [{:keys [position]}]
-                                   (frame-contains? frame position))))
+                                   (gsh/has-point? frame position))))
 
         on-bubble-click
         (mf/use-callback
@@ -156,3 +163,16 @@
                                :on-cancel on-draft-cancel
                                :on-submit on-draft-submit
                                :zoom zoom}])]]]))
+
+(mf/defc comments-sidebar
+  [{:keys [users frame page]}]
+  (let [profile     (mf/deref refs/profile)
+        cstate      (mf/deref refs/comments-local)
+        threads-map (mf/deref threads-ref)
+        threads     (->> (vals threads-map)
+                         (dcm/apply-filters cstate profile)
+                         (filter (fn [{:keys [position]}]
+                                   (gsh/has-point? frame position))))]
+    [:aside.settings-bar.settings-bar-right.comments-right-sidebar
+     [:div.settings-bar-inside
+      [:& wc/comments-sidebar {:users users :threads threads :page-id (:id page)}]]]))

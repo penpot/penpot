@@ -22,15 +22,19 @@
 (s/def ::recovery-request-form (s/keys :req-un [::email]))
 
 (mf/defc recovery-form
-  []
+  [{:keys [on-success-callback] :as props}]
   (let [form      (fm/use-form :spec ::recovery-request-form :initial {})
         submitted (mf/use-state false)
 
+        default-success-finish #(st/emit! (dm/info (tr "auth.notifications.recovery-token-sent")))
+
         on-success
         (mf/use-callback
-         (fn [_ _]
+         (fn [cdata _]
            (reset! submitted false)
-           (st/emit! (dm/info (tr "auth.notifications.recovery-token-sent")))))
+           (if (nil? on-success-callback)
+             (default-success-finish)
+             (on-success-callback (:email cdata)))))
 
         on-error
         (mf/use-callback
@@ -74,15 +78,17 @@
 ;; --- Recovery Request Page
 
 (mf/defc recovery-request-page
-  []
-  [:section.generic-form
-   [:div.form-container
-    [:h1 (tr "auth.recovery-request-title")]
-    [:div.subtitle (tr "auth.recovery-request-subtitle")]
-    [:& recovery-form]
+  [{:keys [params on-success-callback go-back-callback] :as props}]
+  (let [default-go-back #(st/emit! (rt/nav :auth-login))
+        go-back (or go-back-callback default-go-back)]
+    [:section.generic-form
+     [:div.form-container
+      [:h1 (tr "auth.recovery-request-title")]
+      [:div.subtitle (tr "auth.recovery-request-subtitle")]
+      [:& recovery-form {:params params :on-success-callback on-success-callback}]
 
-    [:div.links
-     [:div.link-entry
-      [:a {:on-click #(st/emit! (rt/nav :auth-login))
-           :data-test "go-back-link"}
-       (tr "labels.go-back")]]]]])
+      [:div.links
+       [:div.link-entry
+        [:a {:on-click go-back
+             :data-test "go-back-link"}
+         (tr "labels.go-back")]]]]]))

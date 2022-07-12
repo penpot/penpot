@@ -60,7 +60,7 @@
 
         {:keys [x y width height position-data]} shape
 
-        transform (str (gsh/transform-matrix shape {:no-flip true}))
+        transform (gsh/transform-str shape {:no-flip true})
 
         ;; These position attributes are not really necesary but they are convenient for for the export
         group-props (-> #js {:transform transform

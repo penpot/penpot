@@ -11,7 +11,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.collapse :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]

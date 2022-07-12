@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.interactions
+(ns app.common.types.shape.interactions
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]

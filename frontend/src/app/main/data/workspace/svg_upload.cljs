@@ -17,9 +17,11 @@
    [app.common.spec :refer [max-safe-int min-safe-int]]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.util.color :as uc]
+   [app.util.names :as un]
    [app.util.path.parser :as upp]
    [app.util.svg :as usvg]
    [beicon.core :as rx]
@@ -358,7 +360,7 @@
   (let [{:keys [tag attrs hidden]} element-data
         attrs (usvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
-        name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)))
+        name (un/generate-unique-name unames (or (:id attrs) (tag->name tag)))
         att-refs (usvg/find-attr-references attrs)
         references (usvg/find-def-references (:defs svg-data) att-refs)
 
@@ -415,7 +417,7 @@
     (if (some? shape)
       (let [shape-id (:id shape)
 
-            new-shape (dwc/make-new-shape shape objects selected)
+            new-shape (dwsh/make-new-shape shape objects selected)
             changes   (-> changes
                           (pcb/add-object new-shape)
                           (pcb/change-parent parent-id [new-shape] index))
@@ -442,10 +444,10 @@
               x (- x vb-x (/ vb-width 2))
               y (- y vb-y (/ vb-height 2))
 
-              unames (dwc/retrieve-used-names objects)
+              unames (un/retrieve-used-names objects)
 
               svg-name (->> (str/replace (:name svg-data) ".svg" "")
-                            (dwc/generate-unique-name unames))
+                            (un/generate-unique-name unames))
 
               svg-data (-> svg-data
                            (assoc :x x
@@ -482,7 +484,7 @@
                            (assoc :content (into [base-background-shape] (:content svg-data))))
 
               ;; Creates the root shape
-              new-shape (dwc/make-new-shape root-shape objects selected)
+              new-shape (dwsh/make-new-shape root-shape objects selected)
 
               changes   (-> (pcb/empty-changes it page-id)
                             (pcb/with-objects objects)
@@ -506,7 +508,7 @@
                                                vec))]
 
           (rx/of (dch/commit-changes changes)
-                 (dwc/select-shapes (d/ordered-set root-id))))
+                 (dws/select-shapes (d/ordered-set root-id))))
 
         (catch :default e
           (.error js/console "Error SVG" e)

@@ -80,8 +80,11 @@
             :x :y
             :rx :ry
             :r1 :r2 :r3 :r4
+            :rotation
             :selrect
             :points
+            :show-content
+            :hide-in-viewer
 
             :opacity
             :blend-mode

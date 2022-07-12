@@ -183,11 +183,14 @@ msgstr "Link copied successfully"
 msgid "common.share-link.link-deleted-success"
 msgstr "Link deleted successfully"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "Can access"
+msgid "common.share-link.permissions-can-comment"
+msgstr "Can comment"
 
-msgid "common.share-link.permissions-can-view"
-msgstr "Can view"
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Can inspect code"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Pages shared"
 
 msgid "common.share-link.permissions-hint"
 msgstr "Anyone with link will have access"
@@ -195,20 +198,31 @@ msgstr "Anyone with link will have access"
 msgid "common.share-link.placeholder"
 msgstr "Shareable link will appear here"
 
-msgid "common.share-link.remove-link"
-msgstr "Remove link"
+msgid "common.share-link.destroy-link"
+msgstr "Destroy link"
 
 msgid "common.share-link.title"
 msgstr "Share prototypes"
 
-msgid "common.share-link.view-all-pages"
-msgstr "All pages"
+msgid "common.share-link.view-all"
+msgstr "Select All"
 
-msgid "common.share-link.view-current-page"
-msgstr "Only this page"
+msgid "common.share-link.current-tag"
+msgstr "(current)"
 
-msgid "common.share-link.view-selected-pages"
-msgstr "Selected pages"
+msgid "common.share-link.manage-ops"
+msgstr "Manage permissions"
+
+msgid "common.share-link.team-members"
+msgstr "Only team members"
+
+msgid "common.share-link.all-users"
+msgstr "All Penpot users"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 page shared"
+msgstr[1] "%s pages shared"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -257,7 +271,7 @@ msgstr ""
 "[Libraries & templates](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "Export artboards to PDF..."
+msgstr "Export boards to PDF..."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -294,6 +308,18 @@ msgstr "Export selection"
 
 msgid "dashboard.export-single"
 msgstr "Export Penpot file"
+
+msgid "dashboard.download-binary-file"
+msgstr "Download Penpot file (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Download standard file (.svg + .json)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Download %s Penpot files (.penpot)"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Download %s standard files (.svg + .json)"
 
 msgid "dashboard.export.detail"
 msgstr "* Might include components, graphics, colors and/or typographies."
@@ -685,6 +711,10 @@ msgstr "This invite might be canceled or may be expired."
 msgid "errors.ldap-disabled"
 msgstr "LDAP authentication is disabled."
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Authentication provider not configured."
+
 msgid "errors.media-format-unsupported"
 msgstr "The image format is not supported (must be svg, jpg or png)."
 
@@ -988,7 +1018,7 @@ msgid "handoff.tabs.code.selected.curve"
 msgstr "Curve"
 
 msgid "handoff.tabs.code.selected.frame"
-msgstr "Artboard"
+msgstr "Board"
 
 msgid "handoff.tabs.code.selected.group"
 msgstr "Group"
@@ -1086,6 +1116,9 @@ msgstr "Continue"
 
 msgid "labels.continue-with"
 msgstr "Continue with"
+
+msgid "labels.continue-with-penpot"
+msgstr "You can continue with a Penpot account"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1194,6 +1227,12 @@ msgstr "Help Center"
 msgid "labels.hide-resolved-comments"
 msgstr "Hide resolved comments"
 
+msgid "labels.log-or-sign"
+msgstr "Log in or sign up"
+
+msgid "labels.show-comments-list"
+msgstr "Show comments list"
+
 msgid "labels.icons"
 msgstr "Icons"
 
@@ -1286,8 +1325,8 @@ msgstr[1] "%s files"
 
 msgid "labels.num-of-frames"
 msgid_plural "labels.num-of-frames"
-msgstr[0] "1 artboard"
-msgstr[1] "%s artboards"
+msgstr[0] "1 board"
+msgstr[1] "%s boards"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-projects"
@@ -2034,7 +2073,7 @@ msgid "shortcuts.align-vcenter"
 msgstr "Align center vertically"
 
 msgid "shortcuts.artboard-selection"
-msgstr "Create artboard from selection"
+msgstr "Create board from selection"
 
 msgid "shortcuts.bool-difference"
 msgstr "Boolean difference"
@@ -2094,7 +2133,7 @@ msgid "shortcuts.draw-ellipse"
 msgstr "Ellipse"
 
 msgid "shortcuts.draw-frame"
-msgstr "Artboard"
+msgstr "Board"
 
 msgid "shortcuts.draw-nodes"
 msgstr "Draw path"
@@ -2196,7 +2235,7 @@ msgid "shortcuts.move-unit-up"
 msgstr "Move up"
 
 msgid "shortcuts.next-frame"
-msgstr "Next artboard"
+msgstr "Next board"
 
 msgid "shortcuts.opacity-0"
 msgstr "Set opacity to 100%"
@@ -2253,7 +2292,7 @@ msgid "shortcuts.paste"
 msgstr "Paste"
 
 msgid "shortcuts.prev-frame"
-msgstr "Previous artboard"
+msgstr "Previous board"
 
 msgid "shortcuts.redo"
 msgstr "Redo"
@@ -2438,11 +2477,11 @@ msgstr "Sorry!"
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.empty-state"
-msgstr "No artboards found on the page."
+msgstr "No boards found on the page."
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.frame-not-found"
-msgstr "Artboard not found."
+msgstr "Board not found."
 
 msgid "viewer.header.comments-section"
 msgstr "Comments (%s)"
@@ -2714,7 +2753,7 @@ msgstr "Enable snap to pixel"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
-msgstr "Hide artboard names"
+msgstr "Hide board names"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
@@ -2761,7 +2800,7 @@ msgstr "Select all"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
-msgstr "Show artboards names"
+msgstr "Show boards names"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
@@ -3150,8 +3189,8 @@ msgid "workspace.options.grid.square"
 msgstr "Square"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "Grid & Layouts"
+msgid "workspace.options.grid.grid-title"
+msgstr "Grid"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
@@ -3448,6 +3487,154 @@ msgstr "Group layers"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Selected layers"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.title"
+msgstr "Layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "Row"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.right"
+msgstr "Reverse row"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.top"
+msgstr "Reverse column"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "Column"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Gap"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.left"
+msgstr "left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.right"
+msgstr "right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.center"
+msgstr "center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "top"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "bottom"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "center"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "packed"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "space between"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "space around"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.wrap"
+msgstr "wrap"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "no wrap"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "Simple padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "All sides"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Top"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Right"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Bottom"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Left"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "Element resizing"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Simple margin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Margin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "All sides"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "Advanced options"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-h"
+msgstr "Max.Height"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-w"
+msgstr "Max.Width"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-h"
+msgstr "Min.Height"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-w"
+msgstr "Min.Width"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-h"
+msgstr "Maximum height"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-w"
+msgstr "Maximum width"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-h"
+msgstr "Minimum height"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-w"
+msgstr "Minimum width"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
 msgstr "More colors"
@@ -3494,11 +3681,11 @@ msgstr "Search font"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
-msgstr "Select a shape, artboard or group to drag a connection to other artboard."
+msgstr "Select a shape, board or group to drag a connection to other board."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-artboard"
-msgstr "Select artboard"
+msgstr "Select board"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.selection-color"
@@ -3755,6 +3942,12 @@ msgstr "X"
 msgid "workspace.options.y"
 msgstr "Y"
 
+msgid "workspace.options.clip-content"
+msgstr "Clip content"
+
+msgid"workspace.options.show-in-viewer"
+msgstr "Show in view mode"
+
 msgid "workspace.path.actions.add-node"
 msgstr "Add node (%s)"
 
@@ -3799,7 +3992,7 @@ msgstr "Copy"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-artboard-from-selection"
-msgstr "Selection to artboard"
+msgstr "Selection to board"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
@@ -3955,7 +4148,7 @@ msgid "workspace.sidebar.layers.components"
 msgstr "Components"
 
 msgid "workspace.sidebar.layers.frames"
-msgstr "Artboards"
+msgstr "Boards"
 
 msgid "workspace.sidebar.layers.groups"
 msgstr "Groups"
@@ -4009,7 +4202,7 @@ msgstr "Ellipse (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.frame"
-msgstr "Artboard (%s)"
+msgstr "Board (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.image"
@@ -4068,7 +4261,7 @@ msgid "workspace.undo.entry.multiple.curve"
 msgstr "curves"
 
 msgid "workspace.undo.entry.multiple.frame"
-msgstr "artboard"
+msgstr "board"
 
 msgid "workspace.undo.entry.multiple.group"
 msgstr "groups"
@@ -4114,7 +4307,7 @@ msgid "workspace.undo.entry.single.curve"
 msgstr "curve"
 
 msgid "workspace.undo.entry.single.frame"
-msgstr "artboard"
+msgstr "board"
 
 msgid "workspace.undo.entry.single.group"
 msgstr "group"

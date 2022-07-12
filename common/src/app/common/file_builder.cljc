@@ -11,9 +11,9 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes :as ch]
+   [app.common.pages.changes-spec :as pcs]
    [app.common.pages.init :as init]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -44,9 +44,9 @@
                          :frame-id (:current-frame-id file)))]
 
      (when fail-on-spec?
-       (us/verify ::spec.change/change change))
+       (us/verify ::pcs/change change))
 
-     (let [valid? (us/valid? ::spec.change/change change)]
+     (let [valid? (us/valid? ::pcs/change change)]
        #?(:cljs
           (when-not valid? (.warn js/console "Invalid shape" (clj->js change))))
 
@@ -222,9 +222,13 @@
 
 (defn close-artboard [file]
   (assert (nil? (:current-component-id file)))
-  (-> file
-      (assoc :current-frame-id root-frame)
-      (update :parent-stack pop)))
+
+  (let [parent-id (-> file :parent-id peek)
+        parent (lookup-shape file parent-id)
+        current-frame-id (or (:frame-id parent) root-frame)]
+    (-> file
+        (assoc :current-frame-id current-frame-id)
+        (update :parent-stack pop))))
 
 (defn add-group [file data]
   (let [frame-id (:current-frame-id file)

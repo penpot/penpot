@@ -8,24 +8,25 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.interactions :as cti]
-   [app.common.spec.page :as ctp]
+   [app.common.types.page :as ctp]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
+   [app.util.names :as un]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
@@ -40,6 +41,8 @@
 
 (s/def ::set-of-string
   (s/every string? :kind set?))
+
+(defn interrupt? [e] (= e :interrupt))
 
 ;; --- Selection Rect
 
@@ -59,7 +62,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [zoom (get-in state [:workspace-local :zoom] 1)
-            stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
+            stop? (fn [event] (or (interrupt? event) (ms/mouse-up? event)))
             stoper (->> stream (rx/filter stop?))
 
             init-selrect
@@ -264,7 +267,7 @@
             ;; in the later vector position
             selected (->> children
                           reverse
-                          (d/seek #(geom/has-point? % position)))]
+                          (d/seek #(gsh/has-point? % position)))]
         (when selected
           (rx/of (select-shape (:id selected))))))))
 
@@ -281,7 +284,7 @@
   move to the desired position, and recalculate parents and frames as needed."
   [all-objects page ids delta it]
   (let [shapes         (map (d/getf all-objects) ids)
-        unames         (volatile! (dwc/retrieve-used-names (:objects page)))
+        unames         (volatile! (un/retrieve-used-names (:objects page)))
         update-unames! (fn [new-name] (vswap! unames conj new-name))
         all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids all-objects %2))) (d/ordered-set) ids)
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
@@ -316,7 +319,7 @@
 (defn- prepare-duplicate-frame-change
   [changes objects page unames update-unames! ids-map obj delta]
   (let [new-id     (ids-map (:id obj))
-        frame-name (dwc/generate-unique-name @unames (:name obj))
+        frame-name (un/generate-unique-name @unames (:name obj))
         _          (update-unames! frame-name)
 
         new-frame  (-> obj
@@ -325,8 +328,8 @@
                               :frame-id uuid/zero
                               :shapes [])
                        (dissoc :use-for-thumbnail?)
-                       (geom/move delta)
-                       (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
+                       (gsh/move delta)
+                       (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 
         changes (-> (pcb/add-object changes new-frame)
                     (pcb/amend-last-change #(assoc % :old-id (:id obj))))
@@ -351,7 +354,7 @@
   (if (some? obj)
     (let [new-id      (ids-map (:id obj))
           parent-id   (or parent-id frame-id)
-          name        (dwc/generate-unique-name @unames (:name obj))
+          name        (un/generate-unique-name @unames (:name obj))
           _           (update-unames! name)
 
           new-obj     (-> obj
@@ -360,8 +363,8 @@
                                  :parent-id parent-id
                                  :frame-id frame-id)
                           (dissoc :shapes)
-                          (geom/move delta)
-                          (d/update-when :interactions #(cti/remap-interactions % ids-map objects)))
+                          (gsh/move delta)
+                          (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 
           changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
@@ -392,7 +395,7 @@
       (let [update-flows (fn [flows]
                            (reduce
                              (fn [flows frame]
-                               (let [name     (dwc/generate-unique-name @unames "Flow-1")
+                               (let [name     (un/generate-unique-name @unames "Flow-1")
                                      _        (vswap! unames conj name)
                                      new-flow {:id (uuid/next)
                                                :name name
@@ -412,7 +415,7 @@
                     (fn [g frame]
                       (let [new-id     (ids-map (:id frame))
                             new-frame  (-> frame
-                                           (geom/move delta))
+                                           (gsh/move delta))
                             new-guides (->> guides
                                             (vals)
                                             (filter #(= (:frame-id %) (:id frame)))

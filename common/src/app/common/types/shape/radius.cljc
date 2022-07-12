@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec.radius
+(ns app.common.types.shape.radius
   (:require
     [app.common.pages.common :refer [editable-attrs]]
     [app.common.spec :as us]

@@ -85,6 +85,16 @@ header {
 .rpc-row-info > .name {
   width: 280px;
   /* font-weight: bold; */
+  border-right: 1px dotted #777;
+  padding-right: 10px;
+}
+
+.rpc-row-info > .module {
+  width: 120px;
+  font-weight: bold;
+  border-right: 1px dotted #777;
+  text-align: right;
+  padding-right: 10px;
 }
 
 .rpc-row-info > .tags > .tag > span:first-child {

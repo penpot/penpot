@@ -8,9 +8,9 @@
   "The main container for a frame in viewer mode"
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.spec.interactions :as cti]
+   [app.common.types.shape.interactions :as ctsi]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -56,10 +56,10 @@
           background-overlay  (:background-overlay interaction)
 
           dest-frame (get objects dest-frame-id)
-          position   (cti/calc-overlay-position interaction
-                                                base-frame
-                                                dest-frame
-                                                frame-offset)]
+          position   (ctsi/calc-overlay-position interaction
+                                                 base-frame
+                                                 dest-frame
+                                                 frame-offset)]
       (when dest-frame-id
         (st/emit! (dv/open-overlay dest-frame-id
                                    position
@@ -123,10 +123,10 @@
           background-overlay  (:background-overlay interaction)
 
           dest-frame (get objects dest-frame-id)
-          position   (cti/calc-overlay-position interaction
-                                                base-frame
-                                                dest-frame
-                                                frame-offset)]
+          position   (ctsi/calc-overlay-position interaction
+                                                 base-frame
+                                                 dest-frame
+                                                 frame-offset)]
       (when dest-frame-id
         (st/emit! (dv/open-overlay dest-frame-id
                                    position
@@ -204,7 +204,7 @@
               :stroke-width (if interactions-show? 1 0)
               :fill-opacity (if interactions-show? 0.2 0)
               :style {:pointer-events (when frame? "none")}
-              :transform (geom/transform-matrix shape)}])))
+              :transform (gsh/transform-str shape)}])))
 
 (defn generic-wrapper-factory
   "Wrap some svg shape and add interaction controls"
@@ -235,7 +235,7 @@
 
       (if-not svg-element?
         [:> shape-container {:shape shape
-                             :cursor (when (cti/actionable? interactions) "pointer")
+                             :cursor (when (ctsi/actionable? interactions) "pointer")
                              :on-mouse-down #(on-mouse-down % shape base-frame frame-offset objects)
                              :on-mouse-up #(on-mouse-up % shape base-frame frame-offset objects)
                              :on-mouse-enter #(on-mouse-enter % shape base-frame frame-offset objects)
@@ -306,7 +306,7 @@
       [props]
       (let [shape     (obj/get props "shape")
             childs    (mapv #(get objects %) (:shapes shape))
-            shape     (geom/transform-shape shape)
+            shape     (gsh/transform-shape shape)
             props     (obj/merge! #js {} props
                                   #js {:shape shape
                                        :childs childs
@@ -376,6 +376,10 @@
             (mf/use-memo (mf/deps objects)
                          #(group-container-factory objects))
 
+            frame-container
+            (mf/use-memo (mf/deps objects)
+                         #(frame-container-factory objects))
+
             bool-container
             (mf/use-memo (mf/deps objects)
                          #(bool-container-factory objects))
@@ -384,14 +388,14 @@
             (mf/use-memo (mf/deps objects)
                          #(svg-raw-container-factory objects))]
         (when (and shape (not (:hidden shape)))
-          (let [shape (-> (geom/transform-shape shape)
-                          (geom/translate-to-frame frame)
-                          (cond-> fixed? (geom/move delta)))
+          (let [shape (-> (gsh/transform-shape shape)
+                          (gsh/translate-to-frame frame)
+                          (cond-> fixed? (gsh/move delta)))
 
                 opts #js {:shape shape
                           :objects objects}]
             (case (:type shape)
-              :frame   [:g.empty]
+              :frame   [:> frame-container opts]
               :text    [:> text-wrapper opts]
               :rect    [:> rect-wrapper opts]
               :path    [:> path-wrapper opts]

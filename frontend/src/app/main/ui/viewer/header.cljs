@@ -21,6 +21,10 @@
    [app.util.i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
+(defn open-login-dialog
+  []
+  (modal/show! :login-register {}))
+
 (mf/defc zoom-widget
   {::mf/wrap [mf/memo]}
   [{:keys [zoom
@@ -77,7 +81,8 @@
         (mf/use-callback
          (mf/deps page)
          (fn []
-           (modal/show! :share-link {:page page :file file})))]
+           (modal/show! :share-link {:page page :file file})
+           (modal/allow-click-outside!)))]
 
     [:div.options-zone
      (case section
@@ -107,18 +112,20 @@
         i/full-screen)]
 
      (when (:is-admin permissions)
-       [:span.btn-primary {:on-click open-share-dialog} (tr "labels.share-prototype")])
+       [:span.btn-primary {:on-click open-share-dialog} i/export [:span (tr "labels.share-prototype")]])
 
      (when (:can-edit permissions)
-       [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])]))
+       [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])
+
+     (when-not (:is-logged permissions)
+       [:span.btn-text-dark {:on-click open-login-dialog} (tr "labels.log-or-sign")])]))
 
 (mf/defc header-sitemap
-  [{:keys [project file page frame index] :as props}]
+  [{:keys [project file page frame] :as props}]
   (let [project-name   (:name project)
         file-name      (:name file)
         page-name      (:name page)
         frame-name     (:name frame)
-        total          (count (:frames page))
         show-dropdown? (mf/use-state false)
 
         toggle-thumbnails
@@ -151,22 +158,23 @@
       [:span "/"]
 
       [:span.page-name page-name]
-      [:span.icon i/arrow-down]
+
 
       [:& dropdown {:show @show-dropdown?
                     :on-close close-dropdown}
        [:ul.dropdown
         (for [id (get-in file [:data :pages])]
           [:li {:id (str id)
+                :key (str id)
                 :on-click (partial navigate-to id)}
            (get-in file [:data :pages-index id :name])])]]]
 
+     [:span.icon {:on-click open-dropdown} i/arrow-down]
      [:div.current-frame
       {:on-click toggle-thumbnails}
       [:span.label "/"]
-      [:span.label frame-name]
-      [:span.icon i/arrow-down]
-      [:span.counters (str (inc index) " / " total)]]]))
+      [:span.label frame-name]]
+     [:span.icon {:on-click toggle-thumbnails} i/arrow-down]]))
 
 
 (mf/defc header
@@ -175,19 +183,23 @@
         #(st/emit! (dv/go-to-dashboard))
 
         go-to-handoff
-        (fn []
-          (st/emit! dv/close-thumbnails-panel (dv/go-to-section :handoff)))
+        (fn[]
+          (if (:is-logged permissions)
+           (st/emit! dv/close-thumbnails-panel (dv/go-to-section :handoff))
+           (open-login-dialog)))
 
         navigate
         (fn [section]
-          (st/emit! (dv/go-to-section section)))]
+          (if (or (= section :interactions) (:is-logged permissions))
+            (st/emit! (dv/go-to-section section))
+            (open-login-dialog)))]
 
     [:header.viewer-header
      [:div.nav-zone
       [:div.main-icon
        [:a {:on-click go-to-dashboard
             ;; If the user doesn't have permission we disable the link
-            :style {:pointer-events (when-not permissions "none")}} i/logo-icon]]
+            :style {:pointer-events (when-not (:can-edit permissions) "none")}} i/logo-icon]]
 
       [:& header-sitemap {:project project :file file :page page :frame frame :index index}]]
 
@@ -198,7 +210,8 @@
         :alt (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
        i/play]
 
-      (when (:can-edit permissions)
+      (when (or (:can-edit permissions)
+                (= (:who-comment permissions) "all"))
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :comments)
           :class (dom/classnames :active (= section :comments))
@@ -207,7 +220,7 @@
 
       (when (or (= (:type permissions) :membership)
                 (and (= (:type permissions) :share-link)
-                     (contains? (:flags permissions) :section-handoff)))
+                     (= (:who-inspect permissions) "all")))
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click go-to-handoff
           :class (dom/classnames :active (= section :handoff))

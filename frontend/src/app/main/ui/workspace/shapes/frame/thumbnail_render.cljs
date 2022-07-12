@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
@@ -32,7 +33,6 @@
 
         (.clearRect canvas-context 0 0 canvas-width canvas-height)
         (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
-        (.removeAttribute canvas-node "data-empty")
         true))
     (catch :default err
       (.error js/console err)
@@ -54,7 +54,7 @@
 
 (defn use-render-thumbnail
   "Hook that will create the thumbnail thata"
-  [page-id {:keys [id x y width height] :as shape} node-ref rendered? disable? force-render]
+  [page-id {:keys [id] :as shape} node-ref rendered? disable? force-render]
 
   (let [frame-canvas-ref (mf/use-ref nil)
         frame-image-ref (mf/use-ref nil)
@@ -63,13 +63,21 @@
 
         regenerate-thumbnail (mf/use-var false)
 
-        fixed-width (mth/clamp (:width shape) 250 2000)
-        fixed-height (/ (* (:height shape) fixed-width) (:width shape))
+        all-children-ref (mf/use-memo (mf/deps id) #(refs/all-children-objects id))
+        all-children (mf/deref all-children-ref)
+
+        {:keys [x y width height] :as shape-bb}
+        (if (:show-content shape)
+          (gsh/selection-rect (concat [shape] all-children))
+          (-> shape :points gsh/points->selrect))
+
+        fixed-width (mth/clamp width 250 2000)
+        fixed-height (/ (* height fixed-width) width)
 
         image-url    (mf/use-state nil)
         observer-ref (mf/use-var nil)
 
-        shape-ref (hooks/use-update-var shape)
+        shape-bb-ref (hooks/use-update-var shape-bb)
 
         updates-str (mf/use-memo #(rx/subject))
 
@@ -78,7 +86,11 @@
 
         prev-thumbnail-data (hooks/use-previous thumbnail-data)
 
+        ;; State to indicate to the parent that should render the frame
         render-frame? (mf/use-state (not thumbnail-data))
+
+        ;; State variable to select whether we show the image thumbnail or the canvas thumbnail
+        show-frame-thumbnail (mf/use-state (some? thumbnail-data))
 
         on-image-load
         (mf/use-callback
@@ -89,6 +101,8 @@
                (when (draw-thumbnail-canvas! canvas-node img-node)
                  (reset! image-url nil)
 
+                 (when @show-frame-thumbnail
+                   (reset! show-frame-thumbnail false))
                  ;; If we don't have the thumbnail data saved (normaly the first load) we update the data
                  ;; when available
                  (when (not @thumbnail-data-ref)
@@ -101,7 +115,8 @@
          (fn []
            (let [node @node-ref
                  frame-html (dom/node->xml node)
-                 {:keys [x y width height]} @shape-ref
+
+                 {:keys [x y width height]} @shape-bb-ref
 
                  style-node (dom/query (dm/str "#frame-container-" (:id shape) " style"))
                  style-str (or (-> style-node dom/node->xml) "")
@@ -199,18 +214,26 @@
     [on-load-frame-dom
      @render-frame?
      (mf/html
-      [:*
-       [:> frame/frame-thumbnail {:key (dm/str (:id shape))
-                                  :shape (cond-> shape
-                                           (some? thumbnail-data)
-                                           (assoc :thumbnail thumbnail-data))}]
+      [:& frame/frame-container {:bounds shape-bb
+                                 :shape (cond-> shape
+                                          (some? thumbnail-data)
+                                          (assoc :thumbnail thumbnail-data))}
+
+       (when @show-frame-thumbnail
+         [:> frame/frame-thumbnail-image
+          {:key (dm/str (:id shape))
+           :bounds shape-bb
+           :shape (cond-> shape
+                    (some? thumbnail-data)
+                    (assoc :thumbnail thumbnail-data))}])
+
 
        [:foreignObject {:x x :y y :width width :height height}
         [:canvas.thumbnail-canvas
          {:key (dm/str "thumbnail-canvas-" (:id shape))
           :ref frame-canvas-ref
           :data-object-id (dm/str page-id (:id shape))
-          :data-empty true
+          :data-empty @show-frame-thumbnail
           :width fixed-width
           :height fixed-height
           ;; DEBUG
@@ -220,9 +243,9 @@
 
        (when (some? @image-url)
          [:image {:ref frame-image-ref
-                  :x (:x shape)
-                  :y (:y shape)
+                  :x x
+                  :y y
                   :href @image-url
-                  :width (:width shape)
-                  :height (:height shape)
+                  :width width
+                  :height height
                   :on-load on-image-load}])])]))

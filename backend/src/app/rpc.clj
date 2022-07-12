@@ -86,6 +86,30 @@
                      (let [context {:profile-id profile-id}]
                        (raise (ex/wrap-with-context cause context)))))))))
 
+(defn- rpc-command-handler
+  "Ring handler that dispatches cmd requests and convert between
+  internal async flow into ring async flow."
+  [methods {:keys [profile-id session-id params] :as request} respond raise]
+  (letfn [(handle-response [result]
+            (let [mdata (meta result)]
+              (p/-> (yrs/response 200 result)
+                    (handle-response-transformation request mdata)
+                    (handle-before-comple-hook mdata))))]
+
+    (let [cmd    (keyword (:command params))
+          data   (into {::request request} params)
+          data   (if profile-id
+                   (assoc data :profile-id profile-id ::session-id session-id)
+                   (dissoc data :profile-id))
+
+          method (get methods cmd default-handler)]
+      (-> (method data)
+          (p/then handle-response)
+          (p/then respond)
+          (p/catch (fn [cause]
+                     (let [context {:profile-id profile-id}]
+                       (raise (ex/wrap-with-context cause context)))))))))
+
 (defn- wrap-metrics
   "Wrap service method with metrics measurement."
   [{:keys [metrics ::metrics-id]} f mdata]
@@ -180,8 +204,9 @@
 (defn- process-method
   [cfg vfn]
   (let [mdata (meta vfn)]
+    ;; (prn mdata)
     [(keyword (::sv/name mdata))
-     (wrap cfg (deref vfn) mdata)]))
+     (wrap cfg vfn mdata)]))
 
 (defn- resolve-query-methods
   [cfg]
@@ -199,35 +224,81 @@
 (defn- resolve-mutation-methods
   [cfg]
   (let [cfg (assoc cfg ::type "mutation" ::metrics-id :rpc-mutation-timing)]
-    (->> (sv/scan-ns 'app.rpc.mutations.demo
-                     'app.rpc.mutations.media
+    (->> (sv/scan-ns 'app.rpc.mutations.media
                      'app.rpc.mutations.profile
                      'app.rpc.mutations.files
                      'app.rpc.mutations.comments
                      'app.rpc.mutations.projects
                      'app.rpc.mutations.teams
                      'app.rpc.mutations.management
-                     'app.rpc.mutations.ldap
                      'app.rpc.mutations.fonts
                      'app.rpc.mutations.share-link
                      'app.rpc.mutations.verify-token)
          (map (partial process-method cfg))
          (into {}))))
 
-(s/def ::storage some?)
-(s/def ::session map?)
-(s/def ::tokens fn?)
+(defn- resolve-command-methods
+  [cfg]
+  (let [cfg (assoc cfg ::type "command" ::metrics-id :rpc-command-timing)]
+    (->> (sv/scan-ns 'app.rpc.commands.binfile
+                     'app.rpc.commands.auth
+                     'app.rpc.commands.ldap
+                     'app.rpc.commands.demo)
+         (map (partial process-method cfg))
+         (into {}))))
+
 (s/def ::audit (s/nilable fn?))
 (s/def ::executors (s/map-of keyword? ::wrk/executor))
+(s/def ::executors map?)
+(s/def ::http-client fn?)
+(s/def ::ldap (s/nilable map?))
+(s/def ::msgbus fn?)
+(s/def ::public-uri ::us/not-empty-string)
+(s/def ::session map?)
+(s/def ::storage some?)
+(s/def ::tokens fn?)
 
-(defmethod ig/pre-init-spec ::rpc [_]
-  (s/keys :req-un [::storage ::session ::tokens ::audit
-                   ::executors ::mtx/metrics ::db/pool]))
+(defmethod ig/pre-init-spec ::methods [_]
+  (s/keys :req-un [::storage
+                   ::session
+                   ::tokens
+                   ::audit
+                   ::executors
+                   ::public-uri
+                   ::msgbus
+                   ::http-client
+                   ::mtx/metrics
+                   ::db/pool
+                   ::ldap]))
 
-(defmethod ig/init-key ::rpc
+(defmethod ig/init-key ::methods
   [_ cfg]
-  (let [mq (resolve-query-methods cfg)
-        mm (resolve-mutation-methods cfg)]
-    {:methods {:query mq :mutation mm}
-     :query-handler (partial rpc-query-handler mq)
-     :mutation-handler (partial rpc-mutation-handler mm)}))
+  {:mutations (resolve-mutation-methods cfg)
+   :queries   (resolve-query-methods cfg)
+   :commands  (resolve-command-methods cfg)})
+
+(s/def ::mutations
+  (s/map-of keyword? fn?))
+
+(s/def ::queries
+  (s/map-of keyword? fn?))
+
+(s/def ::commands
+  (s/map-of keyword? fn?))
+
+(s/def ::methods
+  (s/keys :req-un [::mutations
+                   ::queries
+                   ::commands]))
+
+(defmethod ig/pre-init-spec ::routes [_]
+  (s/keys :req-un [::methods]))
+
+(defmethod ig/init-key ::routes
+  [_ {:keys [methods] :as cfg}]
+  [["/rpc"
+    ["/command/:command" {:handler (partial rpc-command-handler (:commands methods))}]
+    ["/query/:type" {:handler (partial rpc-query-handler (:queries methods))}]
+    ["/mutation/:type" {:handler (partial rpc-mutation-handler (:mutations methods))
+                        :allowed-methods #{:post}}]]])
+

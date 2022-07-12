@@ -19,7 +19,8 @@
 (s/def ::id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
-(s/def ::flags (s/every ::us/string :kind set?))
+(s/def ::who-comment ::us/string)
+(s/def ::who-inspect ::us/string)
 (s/def ::pages (s/every ::us/uuid :kind set?))
 
 ;; --- Mutation: Create Share Link
@@ -27,14 +28,13 @@
 (declare create-share-link)
 
 (s/def ::create-share-link
-  (s/keys :req-un [::profile-id ::file-id ::flags]
-          :opt-un [::pages]))
+  (s/keys :req-un [::profile-id ::file-id ::who-comment ::who-inspect ::pages]))
 
 (sv/defmethod ::create-share-link
   "Creates a share-link object.
 
-  Share links are resources that allows external users access to
-  specific files with specific permissions (flags)."
+  Share links are resources that allows external users access to specific
+  pages of a file with specific permissions (who-comment and who-inspect)."
 
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
@@ -42,19 +42,17 @@
     (create-share-link conn params)))
 
 (defn create-share-link
-  [conn {:keys [profile-id file-id pages flags]}]
+  [conn {:keys [profile-id file-id pages who-comment who-inspect]}]
   (let [pages (db/create-array conn "uuid" pages)
-        flags (->> (map name flags)
-                   (db/create-array conn "text"))
         slink (db/insert! conn :share-link
                           {:id (uuid/next)
                            :file-id file-id
-                           :flags flags
+                           :who-comment who-comment
+                           :who-inspect who-inspect
                            :pages pages
                            :owner-id profile-id})]
     (-> slink
-        (update :pages db/decode-pgarray #{})
-        (update :flags db/decode-pgarray #{}))))
+        (update :pages db/decode-pgarray #{}))))
 
 ;; --- Mutation: Delete Share Link
 

@@ -145,7 +145,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (= status "ended")
-        (->> (rp/query! :exporter {:cmd :get-resource :blob? true :id resource-id})
+        (->> (rp/command! :export {:cmd :get-resource :blob? true :id resource-id})
              (rx/delay 500)
              (rx/map #(dom/trigger-download filename %)))))))
 
@@ -165,9 +165,9 @@
                         :wait true}]
         (rx/concat
          (rx/of ::dwp/force-persist)
-         (->> (rp/query! :exporter params)
+         (->> (rp/command! :export params)
               (rx/mapcat (fn [{:keys [id filename]}]
-                           (->> (rp/query! :exporter {:cmd :get-resource :blob? true :id id})
+                           (->> (rp/command! :export {:cmd :get-resource :blob? true :id id})
                                 (rx/map (fn [data]
                                           (dom/trigger-download filename data)
                                           (clear-export-state uuid/zero))))))
@@ -213,7 +213,7 @@
 
          ;; Launch the exportation process and stores the resource id
          ;; locally.
-         (->> (rp/query! :exporter params)
+         (->> (rp/command! :export params)
               (rx/map (fn [{:keys [id] :as resource}]
                         (vreset! resource-id id)
                         (initialize-export-status exports cmd resource))))

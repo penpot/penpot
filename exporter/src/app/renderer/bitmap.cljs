@@ -7,19 +7,12 @@
 (ns app.renderer.bitmap
   "A bitmap renderer."
   (:require
-   ["path" :as path]
    [app.browser :as bw]
-   [app.common.data :as d]
-   [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.pages :as cp]
-   [app.common.spec :as us]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.mime :as mime]
    [app.util.shell :as sh]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
@@ -36,9 +29,8 @@
                  :userAgent bw/default-user-agent})
 
           (render-object [page {:keys [id] :as object}]
-            (p/let [tmpdir (sh/mktmpdir! "bitmap-render")
-                    path   (path/join tmpdir (str/concat id (mime/get-extension type)))
-                    node   (bw/select page (str/concat "#screenshot-" id))]
+            (p/let [path (sh/tempfile :prefix "penpot.tmp.render.bitmap." :suffix (mime/get-extension type))
+                    node (bw/select page (str/concat "#screenshot-" id))]
               (bw/wait-for node)
               (case type
                 :png  (bw/screenshot node {:omit-background? true :type type :path path})

@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## :rocket: Next
+
+### :boom: Breaking changes & Deprecations
+
+- The `PENPOT_LOGIN_WITH_LDAP` environment variable is finally removed (after
+  many version with deprecation). It is replaced with the
+  `enable-login-with-ldap` flag.
+- The `PENPOT_LDAP_ATTRS_PHOTO` finally removed, it was unused for many
+  versions.
+- If you are using social login (google, github, gitlab or generic OIDC) you
+  will need to ensure to add the following flags respectivelly to let them
+  enabled: `enable-login-with-google`, `enable-login-with-github`,
+  `enable-login-with-gitlab` and `enable-login-with-oidc`. If not, they will
+  remain disabled after application start independently if you set the client-id
+  and client-sectet options.
+- The `PENPOT_REGISTRATION_ENABLED` is finally removed in favour of
+  `<enable|disable>-registration` flag.
+- The OIDC providers are now initialized synchronously, and if you are using the
+  discovery mechanism of the generic OIDC integration, the start time of the
+  application will depend on how fast the OIDC provider responds to the
+  discovery http request.
+
+### :sparkles: New features
+
+- Allow for nested and rotated boards inside other boards and groups [Taiga #2874](https://tree.taiga.io/project/penpot/us/2874?milestone=319982)
+- View mode improvements to enable access and use in different conditions [Taiga #3023](https://tree.taiga.io/project/penpot/us/3023)
+- Improved share link options. Now you can allow non-team members to comment and/or inspect [Taiga #3056] (https://tree.taiga.io/project/penpot/us/3056)
+- Signin/Signup from shared link [Taiga #3472](https://tree.taiga.io/project/penpot/us/3472)
+- Support for import/export binary format [Taiga #2991](https://tree.taiga.io/project/penpot/us/2991)
+
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :heart: Community contributions by (Thank you!)
+
 ## 1.14.2-beta
 
 ### :bug: Bugs fixed

@@ -121,26 +121,26 @@
         (mf/use-fn
          (mf/deps file)
          #(st/emit! (modal/show
-                      {:type :confirm
-                       :message ""
-                       :title (tr "modals.add-shared-confirm.message" (:name file))
-                       :hint (tr "modals.add-shared-confirm.hint")
-                       :cancel-label :omit
-                       :accept-label (tr "modals.add-shared-confirm.accept")
-                       :accept-style :primary
-                       :on-accept add-shared-fn})))
+                     {:type :confirm
+                      :message ""
+                      :title (tr "modals.add-shared-confirm.message" (:name file))
+                      :hint (tr "modals.add-shared-confirm.hint")
+                      :cancel-label :omit
+                      :accept-label (tr "modals.add-shared-confirm.accept")
+                      :accept-style :primary
+                      :on-accept add-shared-fn})))
 
         on-remove-shared
         (mf/use-fn
          (mf/deps file)
          #(st/emit! (modal/show
-                      {:type :confirm
-                       :message ""
-                       :title (tr "modals.remove-shared-confirm.message" (:name file))
-                       :hint (tr "modals.remove-shared-confirm.hint")
-                       :cancel-label :omit
-                       :accept-label (tr "modals.remove-shared-confirm.accept")
-                       :on-accept del-shared-fn})))
+                     {:type :confirm
+                      :message ""
+                      :title (tr "modals.remove-shared-confirm.message" (:name file))
+                      :hint (tr "modals.remove-shared-confirm.hint")
+                      :cancel-label :omit
+                      :accept-label (tr "modals.remove-shared-confirm.accept")
+                      :on-accept del-shared-fn})))
 
         handle-blur (fn [_]
                       (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
@@ -160,27 +160,38 @@
            (st/emit! (de/show-workspace-export-dialog))))
 
         on-export-file
+        (fn [event-name binary?]
+          (st/emit! (ptk/event ::ev/event {::ev/name event-name
+                                           ::ev/origin "workspace"
+                                           :num-files 1}))
+
+          (->> (rx/of file)
+               (rx/flat-map
+                (fn [file]
+                  (->> (rp/query :file-libraries {:file-id (:id file)})
+                       (rx/map #(assoc file :has-libraries? (d/not-empty? %))))))
+               (rx/reduce conj [])
+               (rx/subs
+                (fn [files]
+                  (st/emit!
+                   (modal/show
+                    {:type :export
+                     :team-id team-id
+                     :has-libraries? (->> files (some :has-libraries?))
+                     :files files
+                     :binary? binary?}))))))
+
+        on-export-binary-file
         (mf/use-callback
          (mf/deps file team-id)
          (fn [_]
-           (st/emit! (ptk/event ::ev/event {::ev/name "export-files"
-                                            ::ev/origin "workspace"
-                                            :num-files 1}))
+           (on-export-file "export-binary-files" true)))
 
-           (->> (rx/of file)
-                (rx/flat-map
-                 (fn [file]
-                   (->> (rp/query :file-libraries {:file-id (:id file)})
-                        (rx/map #(assoc file :has-libraries? (d/not-empty? %))))))
-                (rx/reduce conj [])
-                (rx/subs
-                 (fn [files]
-                   (st/emit!
-                    (modal/show
-                     {:type :export
-                      :team-id team-id
-                      :has-libraries? (->> files (some :has-libraries?))
-                      :files files})))))))
+        on-export-standard-file
+        (mf/use-callback
+         (mf/deps file team-id)
+         (fn [_]
+           (on-export-file "export-standard-files" false)))
 
         on-export-frames
         (mf/use-callback
@@ -274,10 +285,12 @@
        [:li.export-file {:on-click on-export-shapes}
         [:span (tr "dashboard.export-shapes")]
         [:span.shortcut (sc/get-tooltip :export-shapes)]]
-       [:li.export-file {:on-click on-export-file}
-        [:span (tr "dashboard.export-single")]]
+       [:li.separator.export-file {:on-click on-export-binary-file}
+        [:span (tr "dashboard.download-binary-file")]]
+       [:li.export-file {:on-click on-export-standard-file}
+        [:span (tr "dashboard.download-standard-file")]]
        (when (seq frames)
-         [:li.export-file {:on-click on-export-frames}
+         [:li.separator.export-file {:on-click on-export-frames}
           [:span (tr "dashboard.export-frames")]])]]
 
      [:& dropdown {:show (= @show-sub-menu? :edit)

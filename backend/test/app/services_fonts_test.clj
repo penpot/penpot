@@ -11,6 +11,7 @@
    [app.http :as http]
    [app.storage :as sto]
    [app.test-helpers :as th]
+   [app.util.bytes :as bs]
    [clojure.java.io :as io]
    [clojure.test :as t]
    [datoteka.core :as fs]))
@@ -25,7 +26,8 @@
         font-id (uuid/custom 10 1)
 
         ttfdata (-> (io/resource "app/test_files/font-1.ttf")
-                    (fs/slurp-bytes))
+                    io/input-stream
+                    bs/read-as-bytes)
 
         params  {::th/type :create-font-variant
                  :profile-id (:id prof)
@@ -60,7 +62,8 @@
         font-id (uuid/custom 10 1)
 
         data    (-> (io/resource "app/test_files/font-1.woff")
-                    (fs/slurp-bytes))
+                    io/input-stream
+                    bs/read-as-bytes)
 
         params  {::th/type :create-font-variant
                  :profile-id (:id prof)

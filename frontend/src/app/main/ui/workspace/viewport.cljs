@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages.helpers :as cph]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as ui-hooks]
@@ -155,7 +156,13 @@
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
         show-grids?              (contains? layout :display-grid)
-        show-outlines?           (and (nil? transform) (not edition) (not drawing-obj) (not (#{:comments :path :curve} drawing-tool)))
+
+        show-frame-outline?      (= transform :move)
+        show-outlines?           (and (nil? transform)
+                                      (not edition)
+                                      (not drawing-obj)
+                                      (not (#{:comments :path :curve} drawing-tool)))
+
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
@@ -275,16 +282,20 @@
        (when show-text-editor?
          [:& editor/text-editor-svg {:shape editing-shape}])
 
+       (when show-frame-outline?
+         [:& outline/shape-outlines
+          {:objects base-objects
+           :hover #{(->> @hover-ids
+                         (filter #(cph/frame-shape? base-objects %))
+                         (remove selected)
+                         (first))}
+           :zoom zoom}])
+
        (when show-outlines?
          [:& outline/shape-outlines
           {:objects base-objects
            :selected selected
-           :hover (cond
-                    (and @hover (or @mod? (not= :frame (:type @hover))))
-                    #{(:id @hover)}
-
-                    @frame-hover
-                    #{@frame-hover})
+           :hover #{(:id @hover) @frame-hover}
            :edition edition
            :zoom zoom}])
 
@@ -311,10 +322,9 @@
            :zoom zoom}])
 
        [:& widgets/frame-titles
-        {:objects objects-modified
+        {:objects base-objects
          :selected selected
          :zoom zoom
-         :modifiers modifiers
          :show-artboard-names? show-artboard-names?
          :on-frame-enter on-frame-enter
          :on-frame-leave on-frame-leave
@@ -391,14 +401,6 @@
 
        [:& widgets/viewport-actions]
 
-       (when show-prototypes?
-         [:& interactions/interactions
-          {:selected selected
-           :zoom zoom
-           :objects objects-modified
-           :current-transform transform
-           :hover-disabled? hover-disabled?}])
-
        [:& scroll-bars/viewport-scrollbars
         {:objects base-objects
          :zoom zoom
@@ -435,6 +437,12 @@
             :shapes selected-shapes
             :zoom zoom
             :edition edition
-            :disable-handlers (or drawing-tool edition @space?)}]])
+            :disable-handlers (or drawing-tool edition @space?)}]
 
-       ]]]))
+          (when show-prototypes?
+            [:& interactions/interactions
+             {:selected selected
+              :zoom zoom
+              :objects objects-modified
+              :current-transform transform
+              :hover-disabled? hover-disabled?}])])]]]))

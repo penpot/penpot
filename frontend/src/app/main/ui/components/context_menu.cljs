@@ -7,6 +7,7 @@
 (ns app.main.ui.components.context-menu
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown']]
    [app.main.ui.icons :as i]
@@ -110,10 +111,10 @@
            (for [[index [option-name option-handler sub-options data-test]] (d/enumerate (:options level))]
              (when option-name
                (if (= option-name :separator)
-                 [:li.separator]
+                 [:li.separator {:key (dm/str "context-item-" index)}]
                  [:li.context-menu-item
                   {:class (dom/classnames :is-selected (and selected (= option-name selected)))
-                   :key index}
+                   :key (dm/str "context-item-" index)}
                   (if-not sub-options
                     [:a.context-menu-action {:on-click #(do (dom/stop-propagation %)
                                                             (on-close)

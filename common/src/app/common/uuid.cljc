@@ -48,3 +48,6 @@
 
 #?(:clj
    (dm/export impl/get-word-high))
+
+#?(:clj
+   (dm/export impl/get-word-low))

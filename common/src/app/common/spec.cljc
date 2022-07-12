@@ -5,7 +5,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.spec
-  "Data manipulation and query helper functions."
+  "Data validation & assertion helpers."
   (:refer-clojure :exclude [assert bytes?])
   #?(:cljs (:require-macros [app.common.spec :refer [assert]]))
   (:require
@@ -30,8 +30,6 @@
 
 (def max-safe-int (int 1e6))
 (def min-safe-int (int -1e6))
-
-(def valid? s/valid?)
 
 ;; --- Conformers
 
@@ -220,46 +218,102 @@
    (fn [s]
      (str/join "," s))))
 
-;; --- Macros
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MACROS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn spec-assert*
-  [spec val hint ctx]
-  (if (s/valid? spec val)
-    val
-    (let [data (s/explain-data spec val)]
-      (ex/raise :type :assertion
-                :code :spec-validation
-                :hint hint
-                ::ex/data (merge ctx data)))))
+(defn explain-data
+  [spec value]
+  (s/explain-data spec value))
 
-(defmacro assert
-  "Development only assertion macro."
-  [spec x]
-  (when *assert*
-    (let [nsdata  (:ns &env)
-          context (if nsdata
-                    {:ns (str (:name nsdata))
-                     :name (pr-str spec)
-                     :line (:line &env)
-                     :file (:file (:meta nsdata))}
-                    (let [mdata (meta &form)]
-                      {:ns   (str (ns-name *ns*))
-                       :name (pr-str spec)
-                       :line (:line mdata)}))
-          message (str "spec assert: '" (pr-str spec) "'")]
-      `(spec-assert* ~spec ~x ~message ~context))))
+(defn valid?
+  [spec value]
+  (s/valid? spec value))
 
-(defmacro verify
-  "Always active assertion macro (does not obey to :elide-asserts)"
-  [spec x]
-  (let [nsdata  (:ns &env)
-        context (when nsdata
+(defmacro assert-expr*
+  "Auxiliar macro for expression assertion."
+  [expr hint]
+  `(when-not ~expr
+     (ex/raise :type :assertion
+               :code :expr-validation
+               :hint ~hint)))
+
+(defmacro assert-spec*
+  "Auxiliar macro for spec assertion."
+  [spec value hint]
+  (let [context (if-let [nsdata (:ns &env)]
                   {:ns (str (:name nsdata))
                    :name (pr-str spec)
                    :line (:line &env)
-                   :file (:file (:meta nsdata))})
-        message (str "spec verify: '" (pr-str spec) "'")]
-    `(spec-assert* ~spec ~x ~message ~context)))
+                   :file (:file (:meta nsdata))}
+                  {:ns   (str (ns-name *ns*))
+                   :name (pr-str spec)
+                   :line (:line (meta &form))})
+        hint    (or hint (str "spec assert: " (pr-str spec)))]
+
+    `(if (valid? ~spec ~value)
+       ~value
+       (let [data# (explain-data ~spec ~value)]
+         (ex/raise :type :assertion
+                   :code :spec-validation
+                   :hint ~hint
+                   ::ex/data (merge ~context data#))))))
+
+(defmacro assert
+  "Is a spec specific assertion macro that only evaluates if *assert*
+  is true. DEPRECATED: it should be replaced by the new, general
+  purpose assert! macro."
+  [spec value]
+  (when *assert*
+    `(assert-spec* ~spec ~value nil)))
+
+(defmacro verify
+  "Is a spec specific assertion macro that evaluates always,
+  independently of *assert* value. DEPRECATED: should be replaced by
+  the new, general purpose `verify!` macro."
+  [spec value]
+  `(assert-spec* ~spec ~value nil))
+
+(defmacro assert!
+  "General purpose assertion macro."
+  [& params]
+  ;; If we only receive two arguments, this means we use the simplified form
+  (let [pcnt (count params)]
+    (cond
+      ;; When we have a single argument, this means a simplified form
+      ;; of expr assertion
+      (= 1 pcnt)
+      (let [expr (first params)
+            hint (str "expr assert failed:" (pr-str expr))]
+        (when *assert*
+          `(assert-expr* ~expr ~hint)))
+
+      ;; If we have two arguments, this can be spec or expr
+      ;; assertion. The spec assertion is determined if the first
+      ;; argument is a qualified keyword.
+      (= 2 pcnt)
+      (let [[spec-or-expr value-or-msg] params]
+        (if (qualified-keyword? spec-or-expr)
+          `(assert-spec* ~spec-or-expr ~value-or-msg nil)
+          `(assert-expr* ~spec-or-expr ~value-or-msg)))
+
+      (= 3 pcnt)
+      (let [[spec value hint] params]
+        `(assert-spec* ~spec ~value ~hint))
+
+      :else
+      (let [{:keys [spec expr hint always? val]} params]
+        (when (or always? *assert*)
+          (if spec
+            `(assert-spec* ~spec ~val ~hint)
+            `(assert-expr* ~expr ~hint)))))))
+
+(defmacro verify!
+  "A variant of `assert!` macro that evaluates always, independently
+  of the *assert* value."
+  [& params]
+  (binding [*assert* true]
+    `(assert! ~@params)))
 
 ;; --- Public Api
 

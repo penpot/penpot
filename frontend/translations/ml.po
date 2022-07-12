@@ -189,32 +189,14 @@ msgstr "കണ്ണി വിജയകരമായി പകർത്തി"
 msgid "common.share-link.link-deleted-success"
 msgstr "കണ്ണി വിജയകരമായി മായിച്ചു"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "പ്രാപ്യമാണ്"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "കാണാവുന്നതാണ്"
-
 msgid "common.share-link.permissions-hint"
 msgstr "കണ്ണിയുള്ള ആർക്കും പ്രാപ്യമാകും"
 
 msgid "common.share-link.placeholder"
 msgstr "പങ്കുവെക്കാവുന്ന കണ്ണി ഇവിടെ ലഭ്യമാകും"
 
-msgid "common.share-link.remove-link"
-msgstr "കണ്ണി നീക്കുക"
-
 msgid "common.share-link.title"
 msgstr "പ്രോട്ടോടൈപ്പുകൾ പങ്കുവെയ്ക്കുക"
-
-msgid "common.share-link.view-all-pages"
-msgstr "എല്ലാ താളുകളും"
-
-msgid "common.share-link.view-current-page"
-msgstr "ഈ താൾ മാത്രം"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "തിരഞ്ഞെടുത്ത താളുകൾ"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
