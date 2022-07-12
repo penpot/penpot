@@ -23,8 +23,8 @@
   (db/get-by-id pool :project id {:columns [:id :name :team-id]}))
 
 (defn- retrieve-bundle
-  [{:keys [pool] :as cfg} file-id profile-id]
-  (p/let [file    (files/retrieve-file cfg file-id)
+  [{:keys [pool] :as cfg} file-id profile-id components-v2]
+  (p/let [file    (files/retrieve-file cfg file-id components-v2)
           project (retrieve-project pool (:project-id file))
           libs    (files/retrieve-file-libraries cfg false file-id)
           users   (comments/retrieve-file-comments-users pool file-id profile-id)
@@ -47,14 +47,14 @@
 (s/def ::share-id ::us/uuid)
 
 (s/def ::view-only-bundle
-  (s/keys :req-un [::file-id] :opt-un [::profile-id ::share-id]))
+  (s/keys :req-un [::file-id] :opt-un [::profile-id ::share-id ::components-v2]))
 
 (sv/defmethod ::view-only-bundle {:auth false}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id components-v2] :as params}]
   (p/let [slink  (slnk/retrieve-share-link pool file-id share-id)
           perms  (files/get-permissions pool profile-id file-id share-id)
           thumbs (files/retrieve-object-thumbnails cfg file-id)
-          bundle (p/-> (retrieve-bundle cfg file-id profile-id)
+          bundle (p/-> (retrieve-bundle cfg file-id profile-id components-v2)
                        (assoc :permissions perms)
                        (assoc-in [:file :thumbnails] thumbs))]
 

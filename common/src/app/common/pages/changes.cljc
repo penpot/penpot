@@ -465,15 +465,20 @@
 (defmulti components-changed (fn [_ change] (:type change)))
 
 (defmethod components-changed :mod-obj
-  [file-data {:keys [id page-id component-id operations]}]
+  [file-data {:keys [id page-id _component-id operations]}]
   (when page-id
     (let [page (ctpl/get-page file-data page-id)
           shape-and-parents (map #(ctn/get-shape page %)
                                  (into [id] (cph/get-parent-ids (:objects page) id)))
-          any-set? (some #(= (:type %) :set) operations)]
-      (when any-set?
+          need-sync? (fn [operation]
+                       ; We need to trigger a sync if the shape has changed any
+                       ; attribute that participates in components syncronization.
+                       (and (= (:type operation) :set)
+                            (component-sync-attrs (:attr operation))))
+          any-sync? (some need-sync? operations)]
+      (when any-sync?
         (into #{} (->> shape-and-parents
-                       (filter #(:main-instance? %))
+                       (filter #(:main-instance? %)) ; Select shapes that are main component instances
                        (map :id)))))))
 
 (defmethod components-changed :default

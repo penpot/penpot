@@ -11,6 +11,7 @@
    [app.main.data.messages :as msg]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.persistence :as dwp]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -114,13 +115,12 @@
 (mf/defc workspace
   {::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name] :as props}]
-  (let [file          (mf/deref refs/workspace-file)
-        project       (mf/deref refs/workspace-project)
-        layout        (mf/deref refs/workspace-layout)
-        wglobal       (mf/deref refs/workspace-global)
-        wglobal       (mf/deref refs/workspace-global)
-        libraries     (mf/deref refs/workspace-libraries)
-        local-library (mf/deref refs/workspace-local-library)
+  (let [file    (mf/deref refs/workspace-file)
+        project (mf/deref refs/workspace-project)
+        layout  (mf/deref refs/workspace-layout)
+        wglobal (mf/deref refs/workspace-global)
+
+        components-v2 (features/use-feature :components-v2)
 
         background-color (:background-color wglobal)]
 
@@ -148,9 +148,7 @@
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
-        [:& (mf/provider ctx/libraries) {:value (assoc libraries
-                                                       (:id local-library)
-                                                       {:data local-library})}
+        [:& (mf/provider ctx/components-v2) {:value components-v2}
          [:section#workspace {:style {:background-color background-color}}
           (when (not (:hide-ui layout))
             [:& header {:file file
@@ -168,6 +166,4 @@
                                 :wglobal wglobal
                                 :layout layout}]
             [:& workspace-loader])]]]]]]))
-
-
 

@@ -65,7 +65,7 @@
   "Clone the shape and all children. Generate new ids and detach
   from parent and frame. Update the original shapes to have links
   to the new ones."
-  [shape objects file-id]
+  [shape objects file-id components-v2]
   (assert (nil? (:component-id shape)))
   (assert (nil? (:component-file shape)))
   (assert (nil? (:shape-ref shape)))
@@ -94,8 +94,10 @@
                                   (nil? (:parent-id new-shape))
                                   (assoc :component-id (:id new-shape)
                                          :component-file file-id
-                                         :component-root? true
-                                         :main-instance? true)
+                                         :component-root? true)
+
+                                  components-v2
+                                  (assoc :main-instance? true)
 
                                   (some? (:parent-id new-shape))
                                   (dissoc :component-root?)))]
@@ -103,6 +105,9 @@
     (ctst/clone-object shape nil objects update-new-shape update-original-shape)))
 
 (defn make-component-instance
+  "Clone the shapes of the component, generating new names and ids, and linking
+  each new shape to the corresponding one of the component. Place the new instance
+  coordinates in the given position."
   [container component component-file-id position main-instance?]
   (let [component-shape (get-shape component (:id component))
 

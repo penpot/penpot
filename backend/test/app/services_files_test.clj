@@ -32,7 +32,8 @@
                   :project-id proj-id
                   :id file-id
                   :name "foobar"
-                  :is-shared false}
+                  :is-shared false
+                  :components-v2 true}
             out (th/mutation! data)]
 
         ;; (th/print-result! out)
@@ -71,7 +72,8 @@
     (t/testing "query single file without users"
       (let [data {::th/type :file
                   :profile-id (:id prof)
-                  :id file-id}
+                  :id file-id
+                  :components-v2 true}
             out  (th/query! data)]
 
         ;; (th/print-result! out)
@@ -95,7 +97,8 @@
     (t/testing "query single file after delete"
       (let [data {::th/type :file
                   :profile-id (:id prof)
-                  :id file-id}
+                  :id file-id
+                  :components-v2 true}
             out (th/query! data)]
 
         ;; (th/print-result! out)
@@ -143,6 +146,7 @@
                           :session-id (uuid/random)
                           :profile-id profile-id
                           :revn revn
+                          :components-v2 true
                           :changes changes}
                   out    (th/mutation! params)]
               (t/is (nil? (:error out)))
@@ -171,6 +175,7 @@
                       :id shid
                       :parent-id uuid/zero
                       :frame-id uuid/zero
+                      :components-v2 true
                       :obj {:id shid
                             :name "image"
                             :frame-id uuid/zero
@@ -246,7 +251,8 @@
                   :profile-id (:id profile2)
                   :project-id (:default-project-id profile1)
                   :name "foobar"
-                  :is-shared false}
+                  :is-shared false
+                  :components-v2 true}
         out      (th/mutation! data)
         error    (:error out)]
 
@@ -462,6 +468,7 @@
     (th/update-file* {:file-id (:id file)
                       :profile-id (:id prof)
                       :revn 0
+                      :components-v2 true
                       :changes changes})
 
     (t/testing "RPC page query (rendering purposes)"
@@ -469,7 +476,8 @@
       ;; Query :page RPC method without passing page-id
       (let [data {::th/type :page
                   :profile-id (:id prof)
-                  :file-id (:id file)}
+                  :file-id (:id file)
+                  :components-v2 true}
             {:keys [error result] :as out} (th/query! data)]
 
         ;; (th/print-result! out)
@@ -485,7 +493,8 @@
       (let [data {::th/type :page
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :page-id page-id}
+                  :page-id page-id
+                  :components-v2 true}
             {:keys [error result] :as out} (th/query! data)]
         ;; (th/print-result! out)
         (t/is (map? result))
@@ -501,7 +510,8 @@
                   :profile-id (:id prof)
                   :file-id (:id file)
                   :page-id page-id
-                  :object-id frame1-id}
+                  :object-id frame1-id
+                  :components-v2 true}
             {:keys [error result] :as out} (th/query! data)]
         ;; (th/print-result! out)
         (t/is (map? result))
@@ -516,7 +526,8 @@
       (let [data {::th/type :page
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :object-id frame1-id}
+                  :object-id frame1-id
+                  :components-v2 true}
             {:keys [error result] :as out} (th/query! data)]
         ;; (th/print-result! out)
         (t/is (= :validation (th/ex-type error)))
@@ -537,7 +548,8 @@
       ;; Check the result
       (let [data {::th/type :file-data-for-thumbnail
                   :profile-id (:id prof)
-                  :file-id (:id file)}
+                  :file-id (:id file)
+                  :components-v2 true}
             {:keys [error result] :as out} (th/query! data)]
         ;; (th/print-result! out)
         (t/is (map? result))
@@ -562,7 +574,8 @@
       ;; Check the result
       (let [data {::th/type :file-data-for-thumbnail
                   :profile-id (:id prof)
-                  :file-id (:id file)}
+                  :file-id (:id file)
+                  :components-v2 true}
             {:keys [error result] :as out} (th/query! data)]
         ;; (th/print-result! out)
         (t/is (map? result))

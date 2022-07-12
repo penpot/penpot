@@ -13,6 +13,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
    [app.db :as db]
    [app.db.sql :as sql]
@@ -27,7 +28,6 @@
    [cuerdas.core :as str]))
 
 (declare decode-row)
-(declare decode-row-xf)
 
 ;; --- Helpers & Specs
 
@@ -39,6 +39,7 @@
 (s/def ::profile-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::search-term ::us/string)
+(s/def ::components-v2 ::us/boolean)
 
 ;; --- Query: File Permissions
 
@@ -123,8 +124,7 @@
 (defn check-comment-permissions!
   [conn profile-id file-id share-id]
    (let [can-read (has-read-permissions? conn profile-id file-id)
-         can-comment  (has-comment-permissions? conn profile-id file-id share-id)
-         ]
+         can-comment  (has-comment-permissions? conn profile-id file-id share-id)]
      (when-not (or can-read can-comment)
        (ex/raise :type :not-found
                  :code :object-not-found
@@ -227,20 +227,29 @@
             (d/index-by :object-id :data))))))
 
 (defn retrieve-file
-  [{:keys [pool] :as cfg} id]
-  (->> (db/get-by-id pool :file id)
-       (decode-row)
-       (pmg/migrate-file)))
+  [{:keys [pool] :as cfg} id components-v2]
+  (let [file (->> (db/get-by-id pool :file id)
+                  (decode-row)
+                  (pmg/migrate-file))]
+
+    (if components-v2
+      (update file :data ctf/migrate-to-components-v2)
+      (if (get-in file [:data :options :components-v2])
+        (ex/raise :type :restriction
+                  :code :feature-disabled
+                  :hint "tried to open a components-v2 file with feature disabled")
+        file))))
 
 (s/def ::file
-  (s/keys :req-un [::profile-id ::id]))
+  (s/keys :req-un [::profile-id ::id]
+          :opt-un [::components-v2]))
 
 (sv/defmethod ::file
   "Retrieve a file by its ID. Only authenticated users."
-  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id id components-v2] :as params}]
   (let [perms (get-permissions pool profile-id id)]
     (check-read-permissions! perms)
-    (let [file   (retrieve-file cfg id)
+    (let [file   (retrieve-file cfg id components-v2)
           thumbs (retrieve-object-thumbnails cfg id)]
       (-> file
           (assoc :thumbnails thumbs)
@@ -269,7 +278,7 @@
 (s/def ::page
   (s/and
    (s/keys :req-un [::profile-id ::file-id]
-           :opt-un [::page-id ::object-id])
+           :opt-un [::page-id ::object-id ::components-v2])
    (fn [obj]
      (if (contains? obj :object-id)
        (contains? obj :page-id)
@@ -285,9 +294,9 @@
   mandatory.
 
   Mainly used for rendering purposes."
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id page-id object-id] :as props}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id page-id object-id components-v2] :as props}]
   (check-read-permissions! pool profile-id file-id)
-  (let [file    (retrieve-file cfg file-id)
+  (let [file    (retrieve-file cfg file-id components-v2)
         page-id (or page-id (-> file :data :pages first))
         page    (get-in file [:data :pages-index page-id])]
 
@@ -374,14 +383,15 @@
         (update :objects assoc-thumbnails page-id thumbs)))))
 
 (s/def ::file-data-for-thumbnail
-  (s/keys :req-un [::profile-id ::file-id]))
+  (s/keys :req-un [::profile-id ::file-id]
+          :opt-in [::components-v2]))
 
 (sv/defmethod ::file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
   mainly for render thumbnails on dashboard."
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as props}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id components-v2] :as props}]
   (check-read-permissions! pool profile-id file-id)
-  (let [file (retrieve-file cfg file-id)]
+  (let [file (retrieve-file cfg file-id components-v2)]
     {:file-id file-id
      :revn (:revn file)
      :page (get-file-thumbnail-data cfg file)}))
@@ -523,7 +533,3 @@
     (cond-> row
       changes (assoc :changes (blob/decode changes))
       data    (assoc :data (blob/decode data)))))
-
-(def decode-row-xf
-  (comp (map decode-row)
-        (map pmg/migrate-file)))

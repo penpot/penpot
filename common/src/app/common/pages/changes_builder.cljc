@@ -50,7 +50,7 @@
 
 (defn with-objects
   [changes objects]
-  (let [file-data (-> (ctf/make-file-data (uuid/next) uuid/zero)
+  (let [file-data (-> (ctf/make-file-data (uuid/next) uuid/zero true)
                       (assoc-in [:pages-index uuid/zero :objects] objects))]
     (vary-meta changes assoc ::file-data file-data
                              ::applied-changes-count 0)))

@@ -46,7 +46,7 @@
 (s/def ::is-shared ::us/boolean)
 (s/def ::create-file
   (s/keys :req-un [::profile-id ::name ::project-id]
-          :opt-un [::id ::is-shared]))
+          :opt-un [::id ::is-shared ::components-v2]))
 
 (sv/defmethod ::create-file
   [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
@@ -66,11 +66,12 @@
 
 (defn create-file
   [conn {:keys [id name project-id is-shared data revn
-                modified-at deleted-at ignore-sync-until]
+                modified-at deleted-at ignore-sync-until
+                components-v2]
          :or {is-shared false revn 0}
          :as params}]
   (let [id   (or id (:id data) (uuid/next))
-        data (or data (ctf/make-file-data id))
+        data (or data (ctf/make-file-data id components-v2))
         file (db/insert! conn :file
                          (d/without-nils
                           {:id id
@@ -317,10 +318,11 @@
 
 (s/def ::session-id ::us/uuid)
 (s/def ::revn ::us/integer)
+(s/def ::components-v2 ::us/boolean)
 (s/def ::update-file
   (s/and
    (s/keys :req-un [::id ::session-id ::profile-id ::revn]
-           :opt-un [::changes ::changes-with-metadata])
+           :opt-un [::changes ::changes-with-metadata ::components-v2])
    (fn [o]
      (or (contains? o :changes)
          (contains? o :changes-with-metadata)))))
@@ -357,7 +359,8 @@
       (simpl/del-object backend file))))
 
 (defn- update-file
-  [{:keys [conn metrics] :as cfg} {:keys [file changes changes-with-metadata session-id profile-id] :as params}]
+  [{:keys [conn metrics] :as cfg}
+   {:keys [file changes changes-with-metadata session-id profile-id components-v2] :as params}]
   (when (> (:revn params)
            (:revn file))
 
@@ -382,12 +385,18 @@
                     (update :data (fn [data]
                                     ;; Trace the length of bytes of processed data
                                     (mtx/run! metrics {:id :update-file-bytes-processed :inc (alength data)})
-                                    (-> data
-                                        (blob/decode)
-                                        (assoc :id (:id file))
-                                        (pmg/migrate-data)
-                                        (cp/process-changes changes)
-                                        (blob/encode)))))]
+                                    (cond-> data
+                                      :always
+                                      (-> (blob/decode)
+                                          (assoc :id (:id file))
+                                          (pmg/migrate-data))
+
+                                      components-v2
+                                      (ctf/migrate-to-components-v2)
+
+                                      :always
+                                      (-> (cp/process-changes changes)
+                                          (blob/encode))))))]
     ;; Insert change to the xlog
     (db/insert! conn :file-change
                 {:id (uuid/next)

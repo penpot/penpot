@@ -10,6 +10,7 @@
    [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -36,9 +37,11 @@
 (defn ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"
   [file]
-  (wrk/ask! {:cmd :thumbnails/generate
-             :revn (:revn file)
-             :file-id (:id file)}))
+  (let [components-v2 (features/active-feature? :components-v2)]
+    (wrk/ask! {:cmd :thumbnails/generate
+               :revn (:revn file)
+               :file-id (:id file)
+               :components-v2 components-v2})))
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap [mf/memo]}

@@ -7,8 +7,11 @@
 ;; This namespace is only to export the functions for toggle features
 (ns features
   (:require
-   [app.main.ui.features :as features]))
+   [app.main.features :as features]))
 
 (defn ^:export autolayout []
   (features/toggle-feature! :auto-layout))
+
+(defn ^:export components-v2 []
+  (features/toggle-feature! :components-v2))
 

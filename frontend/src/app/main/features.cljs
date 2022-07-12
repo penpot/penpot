@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.features
+(ns app.main.features
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
@@ -15,9 +15,9 @@
 
 (log/set-level! :debug)
 
-(def features-list #{:auto-layout})
+(def features-list #{:auto-layout :components-v2})
 
-(defn toggle-feature
+(defn- toggle-feature
   [feature]
   (ptk/reify ::toggle-feature
     ptk/UpdateEvent
@@ -40,6 +40,13 @@
   [feature]
   (assert (contains? features-list feature) "Not supported feature")
   (st/emit! (toggle-feature feature)))
+
+(defn active-feature?
+  ([feature]
+   (active-feature? @st/state feature))
+  ([state feature]
+   (assert (contains? features-list feature) "Not supported feature")
+   (contains? (get state :features) feature)))
 
 (def features
   (l/derived :features st/state))

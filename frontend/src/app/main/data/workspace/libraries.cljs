@@ -30,6 +30,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -283,7 +284,7 @@
 
 (defn- add-component2
   "This is the second step of the component creation."
-  [selected]
+  [selected components-v2]
   (ptk/reify ::add-component2
     IDeref
     (-deref [_] {:num-shapes (count selected)})
@@ -296,7 +297,7 @@
             shapes   (dwg/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group _ changes]
-                (dwlh/generate-add-component it shapes objects page-id file-id)]
+                (dwlh/generate-add-component it shapes objects page-id file-id components-v2)]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
                      (dws/select-shapes (d/ordered-set (:id group)))))))))))
@@ -310,10 +311,11 @@
   (ptk/reify ::add-component
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects  (wsh/lookup-page-objects state)
-            selected (->> (wsh/lookup-selected state)
-                          (cph/clean-loops objects))]
-        (rx/of (add-component2 selected))))))
+      (let [objects       (wsh/lookup-page-objects state)
+            selected      (->> (wsh/lookup-selected state)
+                               (cph/clean-loops objects))
+            components-v2 (features/active-feature? state :components-v2)]
+        (rx/of (add-component2 selected components-v2))))))
 
 (defn rename-component
   "Rename the component with the given id, in the current file library."
@@ -357,8 +359,12 @@
             unames         (into #{} (map :name) all-components)
             new-name       (ctst/generate-unique-name unames (:name component))
 
-            main-instance-page  (wsh/lookup-page state (:main-instance-page component))
-            main-instance-shape (ctn/get-shape main-instance-page (:main-instance-id component))
+            components-v2  (features/active-feature? state :components-v2)
+
+            main-instance-page  (when components-v2
+                                  (wsh/lookup-page state (:main-instance-page component)))
+            main-instance-shape (when components-v2
+                                  (ctn/get-shape main-instance-page (:main-instance-id component)))
 
             [new-component-shape new-component-shapes
              new-main-instance-shape new-main-instance-shapes]
@@ -606,7 +612,11 @@
   "Synchronize the given file from the given library. Walk through all
   shapes in all pages in the file that use some color, typography or
   component of the library, and copy the new values to the shapes. Do
-  it also for shapes inside components of the local file library."
+  it also for shapes inside components of the local file library.
+
+  If it's known that only one asset has changed, you can give its
+  type and id, and only shapes that use it will be synced, thus avoiding
+  a lot of unneeded checks."
   ([file-id library-id]
    (sync-file file-id library-id nil nil))
   ([file-id library-id asset-type asset-id]
@@ -752,8 +762,10 @@
   []
   (ptk/reify ::watch-component-changes
     ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [stopper
+    (watch [_ state stream]
+      (let [components-v2 (features/active-feature? state :components-v2)
+
+            stopper
             (->> stream
                  (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
                                  (= ::watch-component-changes (ptk/type %)))))
@@ -775,16 +787,16 @@
                     components-changed (reduce #(into %1 (ch/components-changed data %2))
                                                #{}
                                                changes)]
-                (js/console.log "components-changed" (clj->js components-changed))
                 (when (d/not-empty? components-changed)
                   (apply st/emit!
                          (map #(update-component-sync % (:id data))
                               components-changed)))))]
 
-        (->> change-str
-             (rx/with-latest-from workspace-data-str)
-             (rx/map check-changes)
-             (rx/take-until stopper))))))
+        (when components-v2
+          (->> change-str
+               (rx/with-latest-from workspace-data-str)
+               (rx/map check-changes)
+               (rx/take-until stopper)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backend interactions

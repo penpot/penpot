@@ -192,6 +192,7 @@
                 process-page-changes
                 (fn [[page-id _changes]]
                   (update-indices page-id redo-changes))]
+
             (rx/concat
              (rx/from (map process-page-changes changes-by-pages))
 

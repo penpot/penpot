@@ -179,7 +179,8 @@
   }
 }
 
-.confirm-dialog {
+.confirm-dialog,
+.alert-dialog {
   background-color: $color-white;
 
   p {

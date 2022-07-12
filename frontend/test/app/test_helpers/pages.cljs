@@ -105,7 +105,8 @@
                                      shapes
                                      (:objects page)
                                      (:id page)
-                                     current-file-id)]
+                                     current-file-id
+                                     true)]
 
     (swap! idmap assoc instance-label (:id group)
                        component-label (:id component-root))

@@ -15,7 +15,7 @@
 (t/deftest process-change-set-option
   (let [file-id (uuid/custom 2 2)
         page-id (uuid/custom 1 1)
-        data    (ctf/make-file-data file-id page-id)]
+        data    (ctf/make-file-data file-id page-id true)]
     (t/testing "Sets option single"
       (let [chg {:type :set-option
                  :page-id page-id
@@ -81,7 +81,7 @@
 (t/deftest process-change-add-obj
   (let [file-id (uuid/custom 2 2)
         page-id (uuid/custom 1 1)
-        data    (ctf/make-file-data file-id page-id)
+        data    (ctf/make-file-data file-id page-id true)
         id-a    (uuid/custom 2 1)
         id-b    (uuid/custom 2 2)
         id-c    (uuid/custom 2 3)]
@@ -135,7 +135,7 @@
 (t/deftest process-change-mod-obj
   (let [file-id (uuid/custom 2 2)
         page-id (uuid/custom 1 1)
-        data    (ctf/make-file-data file-id page-id)]
+        data    (ctf/make-file-data file-id page-id true)]
     (t/testing "simple mod-obj"
       (let [chg  {:type :mod-obj
                   :page-id page-id
@@ -162,7 +162,7 @@
   (let [file-id (uuid/custom 2 2)
         page-id (uuid/custom 1 1)
         id      (uuid/custom 2 1)
-        data    (ctf/make-file-data file-id page-id)
+        data    (ctf/make-file-data file-id page-id true)
         data    (-> data
                     (assoc-in [:pages-index page-id :objects uuid/zero :shapes] [id])
                     (assoc-in [:pages-index page-id :objects id]
@@ -206,7 +206,7 @@
 
         file-id (uuid/custom 2 2)
         page-id (uuid/custom 1 1)
-        data    (ctf/make-file-data file-id page-id)
+        data    (ctf/make-file-data file-id page-id true)
 
         data    (update-in data [:pages-index page-id :objects]
                            #(-> %
@@ -450,7 +450,7 @@
                   :obj {:type :rect
                         :name "Shape 3"}}
                  ]
-        data (ctf/make-file-data file-id page-id)
+        data (ctf/make-file-data file-id page-id true)
         data (cp/process-changes data changes)]
 
     (t/testing "preserve order on multiple shape mov 1"
@@ -557,7 +557,7 @@
                   :parent-id group-1-id
                   :shapes [shape-1-id shape-2-id]}]
 
-        data (ctf/make-file-data file-id page-id)
+        data (ctf/make-file-data file-id page-id true)
         data (cp/process-changes data changes)]
 
     (t/testing "case 1"

@@ -656,6 +656,14 @@ msgstr "Tu nombre"
 msgid "dashboard.your-penpot"
 msgstr "Tu Penpot"
 
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Atención"
+
 #: src/app/main/ui/confirm.cljs
 msgid "ds.component-subtitle"
 msgstr "Componentes a actualizar:"
@@ -735,6 +743,10 @@ msgstr "La autheticacion via LDAP esta deshabilitada."
 
 msgid "errors.media-format-unsupported"
 msgstr "No se reconoce el formato de imagen (debe ser svg, jpg o png)."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Este fichero ya se ha usado con los Componentes V2 activados."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"

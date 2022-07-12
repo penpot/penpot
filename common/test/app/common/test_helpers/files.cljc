@@ -31,7 +31,7 @@
   ([file-id page-id props]
    (merge {:id file-id
            :name (get props :name "File1")
-           :data (ctf/make-file-data file-id page-id)}
+           :data (ctf/make-file-data file-id page-id true)}
           props)))
 
 (defn sample-shape
@@ -68,9 +68,10 @@
       (let [page (ctpl/get-page file-data page-id)
 
             [component-shape component-shapes updated-shapes]
-            (ctn/make-component-shape (ctn/get-shape page shape-id)
+            (ctn/make-component-shape (ctn/get-shape page shape-id true)
                                       (:objects page)
-                                      (:id file))]
+                                      (:id file)
+                                      true)]
 
         (swap! idmap assoc label (:id component-shape))
         (-> file-data

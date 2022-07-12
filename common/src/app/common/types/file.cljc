@@ -83,14 +83,17 @@
    :pages-index {}})
 
 (defn make-file-data
-  ([file-id]
-   (make-file-data file-id (uuid/next)))
+  ([file-id components-v2]
+   (make-file-data file-id (uuid/next) components-v2))
 
-  ([file-id page-id]
+  ([file-id page-id components-v2]
    (let [page (ctp/make-empty-page page-id "Page-1")]
-     (-> empty-file-data
-         (assoc :id file-id)
-         (ctpl/add-page page)))))
+     (cond-> (-> empty-file-data
+                 (assoc :id file-id)
+                 (ctpl/add-page page))
+
+       components-v2
+       (assoc-in [:options :components-v2] true)))))
 
 ;; Helpers
 
@@ -162,9 +165,9 @@
             assets-seq)))
 
 (defn get-or-add-library-page
-  [file-data grid-gap]
   "If exists a page named 'Library page', get the id and calculate the position to start
   adding new components. If not, create it and start at (0, 0)."
+  [file-data grid-gap]
   (let [library-page (d/seek #(= (:name %) "Library page") (ctpl/pages-seq file-data))]
     (if (some? library-page)
       (let [compare-pos (fn [pos shape]
@@ -179,6 +182,74 @@
         [file-data (:id library-page) position])
       (let [library-page (ctp/make-empty-page (uuid/next) "Library page")]
         [(ctpl/add-page file-data library-page) (:id library-page) (gpt/point 0 0)]))))
+
+(defn migrate-to-components-v2
+  "If there is any component in the file library, add a new 'Library Page' and generate
+  main instances for all components there. Mark the file with the :comonents-v2 option."
+  [file-data]
+  (let [components (ctkl/components-seq file-data)]
+    (if (or (empty? components)
+            (get-in file-data [:options :components-v2]))
+      (assoc-in file-data [:options :components-v2] true)
+      (let [grid-gap 50
+
+            [file-data page-id start-pos]
+            (get-or-add-library-page file-data grid-gap)
+
+            add-main-instance
+            (fn [file-data component position]
+              (let [page (ctpl/get-page file-data page-id)
+
+                    [new-shape new-shapes]
+                    (ctn/make-component-instance page
+                                                 component
+                                                 (:id file-data)
+                                                 position
+                                                 true)
+
+                    add-shapes
+                    (fn [page]
+                      (reduce (fn [page shape]
+                                (ctst/add-shape (:id shape)
+                                                shape
+                                                page
+                                                (:frame-id shape)
+                                                (:parent-id shape)
+                                                nil     ; <- As shapes are ordered, we can safely add each
+                                                true))  ;    one at the end of the parent's children list.
+                              page
+                              new-shapes))
+
+                    update-component
+                    (fn [component]
+                      (assoc component
+                             :main-instance-id (:id new-shape)
+                             :main-instance-page page-id))]
+
+                (-> file-data
+                    (ctpl/update-page page-id add-shapes)
+                    (ctkl/update-component (:id component) update-component))))
+
+            add-instance-grid
+            (fn [file-data components]
+              (let [position-seq (ctst/generate-shape-grid
+                                   (map ctk/get-component-root components)
+                                   start-pos
+                                   grid-gap)]
+                (loop [file-data           file-data
+                       components-seq (seq components)
+                       position-seq   position-seq]
+                  (let [component (first components-seq)
+                        position  (first position-seq)]
+                    (if (nil? component)
+                      file-data
+                      (recur (add-main-instance file-data component position)
+                             (rest components-seq)
+                             (rest position-seq)))))))]
+
+        (-> file-data
+            (add-instance-grid (sort-by :name components))
+            (assoc-in [:options :components-v2] true))))))
 
 (defn- absorb-components
   [file-data library-data used-components]

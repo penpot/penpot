@@ -110,6 +110,7 @@
 
     (t/is (= (:name p-group) "Group1"))
     (t/is (ctk/instance-of? p-group file-id (:id component1)))
+    (t/is (not (:main-instance? p-group)))
     (t/is (not (ctk/is-main-instance? (:id p-group) file-page-id component1)))
     (t/is (ctk/is-main-of? c-group1 p-group))
 

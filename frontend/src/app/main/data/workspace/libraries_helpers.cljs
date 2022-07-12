@@ -62,7 +62,7 @@
   "If there is exactly one id, and it's a group, use it as root. Otherwise,
   create a group that contains all ids. Then, make a component with it,
   and link all shapes to their corresponding one in the component."
-  [it shapes objects page-id file-id]
+  [it shapes objects page-id file-id components-v2]
   (if (and (= (count shapes) 1)
            (:component-id (first shapes)))
     [(first shapes) (pcb/empty-changes it)]
@@ -77,7 +77,7 @@
             (dwg/prepare-create-group it objects page-id shapes name true))
 
           [new-shape new-shapes updated-shapes]
-          (ctn/make-component-shape group objects file-id)
+          (ctn/make-component-shape group objects file-id components-v2)
 
           changes (-> changes
                       (pcb/add-component (:id new-shape)
@@ -106,13 +106,14 @@
 
 
         [new-instance-shape new-instance-shapes]
-        (ctn/make-component-instance main-instance-page
-                                     {:id (:id new-component-shape)
-                                      :name (:name new-component-shape)
-                                      :objects (d/index-by :id new-component-shapes)}
-                                     (:component-file main-instance-shape)
-                                     position
-                                     false)]
+        (when (and (some? main-instance-page) (some? main-instance-shape))
+          (ctn/make-component-instance main-instance-page
+                                       {:id (:id new-component-shape)
+                                        :name (:name new-component-shape)
+                                        :objects (d/index-by :id new-component-shapes)}
+                                       (:component-file main-instance-shape)
+                                       position
+                                       false))]
 
     [new-component-shape new-component-shapes
      new-instance-shape new-instance-shapes]))
@@ -254,7 +255,6 @@
   (and (if (nil? component-id)
          (ctk/uses-library-components? shape library-id)
          (ctk/instance-of? shape library-id component-id))
-       (not (:main-instance? shape)) ; not need to sync the main instance (avoid infinite loop)
        (or (:component-root? shape) (not page?)))) ; avoid nested components inside pages
 
 (defmethod uses-assets? :colors

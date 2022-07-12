@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
-   [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.collapse :as dwc]
@@ -87,7 +86,7 @@
        (when (seq (:touched shape)) " *")])))
 
 (mf/defc layer-item
-  [{:keys [index page item selected objects] :as props}]
+  [{:keys [index item selected objects] :as props}]
   (let [id         (:id item)
         blocked?   (:blocked item)
         hidden?    (:hidden item)
@@ -103,11 +102,10 @@
         container?        (or (cph/frame-shape? item)
                               (cph/group-shape? item))
 
-        libraries      (mf/use-ctx ctx/libraries)
-        component      (when (and (:component-id item) (:component-file item))
-                         (cph/get-component libraries (:component-file item) (:component-id item)))
-        main-instance? (when component
-                         (ctk/is-main-instance? (:id item) (:id page) component))
+        components-v2  (mf/use-ctx ctx/components-v2)
+        main-instance? (if components-v2
+                         (:main-instance? item)
+                         true)
 
         toggle-collapse
         (mf/use-fn
@@ -277,8 +275,7 @@
         (for [[index id] (reverse (d/enumerate (:shapes item)))]
           (when-let [item (get objects id)]
             [:& layer-item
-             {:page page
-              :item item
+             {:item item
               :selected selected
               :index index
               :objects objects
@@ -299,9 +296,8 @@
   {::mf/wrap [#(mf/memo % =)
               #(mf/throttle % 200)]}
   [{:keys [objects] :as props}]
-  (let [page       (mf/deref refs/workspace-page)
-        selected   (mf/deref refs/selected-shapes)
-        selected   (hooks/use-equal-memo selected)
+  (let [selected (mf/deref refs/selected-shapes)
+        selected (hooks/use-equal-memo selected)
         root (get objects uuid/zero)]
     [:ul.element-list
      [:& hooks/sortable-container {}
@@ -315,8 +311,7 @@
               :objects objects
               :key id}]
             [:& layer-item
-             {:page page
-              :item obj
+             {:item obj
               :selected selected
               :index index
               :objects objects
@@ -326,16 +321,14 @@
   {::mf/wrap [#(mf/memo % =)
               #(mf/throttle % 200)]}
   [{:keys [objects] :as props}]
-  (let [page       (mf/deref refs/workspace-page)
-        selected (mf/deref refs/selected-shapes)
+  (let [selected (mf/deref refs/selected-shapes)
         selected (hooks/use-equal-memo selected)
         root (get objects uuid/zero)]
     [:ul.element-list
      (for [[index id] (d/enumerate (:shapes root))]
        (when-let [obj (get objects id)]
          [:& layer-item
-          {:page page
-           :item obj
+          {:item obj
            :selected selected
            :index index
            :objects objects

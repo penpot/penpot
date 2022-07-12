@@ -13,7 +13,6 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.types.component :as ctk]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
@@ -24,6 +23,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.features :as features]
    [app.main.streams :as ms]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -148,7 +148,7 @@
             ids     (cph/clean-loops objects ids)
             lookup  (d/getf objects)
 
-            local-library {file-id {:data file}}
+            components-v2 (features/active-feature? state :components-v2)
 
             groups-to-unmask
             (reduce (fn [group-ids id]
@@ -221,23 +221,16 @@
             (into (d/ordered-set) (find-all-empty-parents #{}))
 
             components-to-delete
-            (reduce (fn [components id]
-                      (let [shape (get objects id)
-
-                            component
-                            (when (and (:component-id shape) (:component-file shape))
-                              ;; Only local components may have main instances
-                              (cph/get-component local-library (:component-file shape) (:component-id shape)))
-
-                            main-instance?
-                            (when component
-                              (ctk/is-main-instance? (:id shape) (:id page) component))]
-
-                        (if main-instance?
-                          (conj components (:component-id shape))
-                          components)))
-                    []
-                    (into ids all-children))
+            (if components-v2
+              (reduce (fn [components id]
+                        (let [shape (get objects id)]
+                          (if (and (= (:component-file shape) file-id) ;; Main instances should exist only in local file
+                                   (:main-instance? shape))            ;; but check anyway
+                            (conj components (:component-id shape))
+                            components)))
+                      []
+                      (into ids all-children))
+              [])
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-page page)

@@ -1,7 +1,6 @@
 (ns app.common.test-helpers.components
   (:require
-   [cljs.test :as t :include-macros true]
-   [cljs.pprint :refer [pprint]]
+   [clojure.test :as t]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]))

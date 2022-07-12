@@ -6,8 +6,8 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
+   [app.main.features :as features]
    [app.main.refs :as refs]
-   [app.main.ui.features :as features]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]

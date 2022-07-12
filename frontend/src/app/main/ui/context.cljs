@@ -25,3 +25,4 @@
 (def scroll-ctx         (mf/create-context nil))
 (def active-frames-ctx  (mf/create-context nil))
 (def render-thumbnails  (mf/create-context nil))
+(def components-v2      (mf/create-context nil))

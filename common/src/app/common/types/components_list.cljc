@@ -14,13 +14,19 @@
 
 (defn add-component
   [file-data id name path main-instance-id main-instance-page shapes]
-  (assoc-in file-data [:components id]
-            {:id id
-             :name name
-             :path path
-             :main-instance-id main-instance-id
-             :main-instance-page main-instance-page
-             :objects (d/index-by :id shapes)}))
+  (let [components-v2 (get-in file-data [:options :components-v2])]
+    (cond-> file-data
+      :always
+      (assoc-in [:components id]
+                {:id id
+                 :name name
+                 :path path
+                 :objects (d/index-by :id shapes)})
+
+      components-v2
+      (update-in [:components id] #(assoc %
+                                          :main-instance-id main-instance-id
+                                          :main-instance-page main-instance-page)))))
 
 (defn get-component
   [file-data component-id]

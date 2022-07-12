@@ -639,6 +639,14 @@ msgstr "Your name"
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Attention"
+
 #: src/app/main/ui/confirm.cljs
 msgid "ds.component-subtitle"
 msgstr "Components to update:"
@@ -717,6 +725,10 @@ msgstr "LDAP authentication is disabled."
 
 msgid "errors.media-format-unsupported"
 msgstr "The image format is not supported (must be svg, jpg or png)."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "This file has already used with Components V2 enabled."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
