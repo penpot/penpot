@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.http.doc :as doc]
    [app.rpc.queries.comments :as comments]
    [app.rpc.queries.files :as files]
    [app.rpc.retry :as retry]
@@ -37,7 +38,9 @@
 
 (sv/defmethod ::create-comment-thread
   {::retry/max-retries 3
-   ::retry/matches retry/conflict-db-insert?}
+   ::retry/matches retry/conflict-db-insert?
+   ::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-comment-permissions! conn profile-id file-id share-id)
@@ -101,6 +104,8 @@
           :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread-status
+  {::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [cthr (db/get-by-id conn :comment-thread id {:for-update true})]
@@ -130,6 +135,8 @@
           :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread
+  {::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id id is-resolved share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
@@ -151,6 +158,8 @@
           :opt-un [::share-id]))
 
 (sv/defmethod ::add-comment
+  {::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id thread-id content share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (-> (db/get-by-id conn :comment-thread thread-id {:for-update true})
@@ -209,6 +218,8 @@
           :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment
+  {::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id id content share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [comment (db/get-by-id conn :comment id {:for-update true})
@@ -242,6 +253,8 @@
   (s/keys :req-un [::profile-id ::id]))
 
 (sv/defmethod ::delete-comment-thread
+  {::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
@@ -258,6 +271,8 @@
   (s/keys :req-un [::profile-id ::id]))
 
 (sv/defmethod ::delete-comment
+  {::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [comment (db/get-by-id conn :comment id {:for-update true})]
