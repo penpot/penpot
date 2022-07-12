@@ -10,6 +10,7 @@
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.data.common :as dc]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
@@ -19,6 +20,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.webapi :as wapi]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 (log/set-level! :warn)
@@ -89,7 +91,11 @@
         (fn [_]
           (let [params (prepare-params @opts)
                 params (assoc params :file-id (:id file))]
-            (st/emit! (dc/create-share-link params))))
+            (st/emit! (dc/create-share-link params)
+                      (ptk/event ::ev/event {::ev/name "create-shared-link"
+                                             ::ev/origin "viewer"
+                                             :can-comment (:who-comment params)
+                                             :can-inspect-code (:who-inspect params)}))))
 
         copy-link
         (fn [_]
