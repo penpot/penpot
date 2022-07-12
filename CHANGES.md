@@ -40,6 +40,9 @@
 - Support for import/export binary format [Taiga #2991](https://tree.taiga.io/project/penpot/us/2991)
 
 ### :bug: Bugs fixed
+
+- Fix font rendering on grid thumbnails [Taiga #3473](https://tree.taiga.io/project/penpot/issue/3473)
+
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
