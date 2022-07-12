@@ -81,9 +81,10 @@
         frame   (some->> page :thumbnail-frame-id (get objects))
         element (if frame
                   (mf/element render/frame-svg #js {:objects objects :frame frame :show-thumbnails? true})
-                  (mf/element render/page-svg #js {:data page :thumbnails? true}))]
-    {:data (rds/renderToStaticMarkup element)
-     :fonts @fonts/loaded
+                  (mf/element render/page-svg #js {:data page :thumbnails? true}))
+        data    (rds/renderToStaticMarkup element)]
+    {:data data
+     :fonts (into @fonts/loaded (map first) @fonts/loading)
      :file-id file-id
      :revn revn}))
 

@@ -106,7 +106,6 @@
 
          [font-family font-style font-weight]
          (when (some? font)
-           (fonts/ensure-loaded! font-id)
            (let [font-variant (d/seek #(= font-variant-id (:id %)) (:variants font))]
              [(str/quote (or (:family font) (:font-family data)))
               (or (:style font-variant) (:font-style data))
