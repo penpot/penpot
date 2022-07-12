@@ -27,7 +27,7 @@
       (throw (IllegalArgumentException. "Missing arguments on `defmethod` macro.")))
 
     (let [mdata (assoc mdata
-                       ::docs (some-> docs str/<<-)
+                       ::docstring (some-> docs str/<<-)
                        ::spec sname
                        ::name (name sname))
 

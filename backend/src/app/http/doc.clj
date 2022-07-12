@@ -35,10 +35,14 @@
                :name (d/name name)
                :module (-> (:ns mdata) (str/split ".") last)
                :auth (:auth mdata true)
-               :docs (::sv/docs mdata)
+               :docs (::sv/docstring mdata)
+               :deprecated (::deprecated mdata)
+               :added (::added mdata)
+               :changes (some->> (::changes mdata) (partition-all 2) (map vec))
                :spec (get-spec-str (::sv/spec mdata))}))]
 
-    {:command-methods
+    {:version (:main cf/version)
+     :command-methods
      (->> (:commands methods)
           (map (partial gen-doc :command))
           (sort-by (juxt :module :name)))

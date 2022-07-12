@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.http.doc :as doc]
    [app.loggers.audit :as audit]
    [app.rpc.commands.auth :as cmd.auth]
    [app.util.services :as sv]
@@ -21,7 +22,13 @@
 
 (s/def ::create-demo-profile any?)
 
-(sv/defmethod ::create-demo-profile {:auth false}
+(sv/defmethod ::create-demo-profile
+  "A command that is responsible of creating a demo purpose
+  profile. It only works if the `demo-users` flag is inabled in the
+  configuration."
+  {:auth false
+   ::doc/added "1.15"
+   ::doc/changes ["1.15" "This methos is migrated from mutations to commands."]}
   [{:keys [pool] :as cfg} _]
   (let [id       (uuid/next)
         sem      (System/currentTimeMillis)

@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
+   [app.http.doc :as-alias doc]
    [app.loggers.audit :as audit]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
@@ -133,7 +134,9 @@
 
 (sv/defmethod ::login-with-password
   "Performs authentication using penpot password."
-  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false
+   ::rlimit/permits (cf/get :rlimit-password)
+   ::doc/added "1.15"}
   [cfg params]
   (login-with-password cfg params))
 
@@ -144,7 +147,8 @@
 
 (sv/defmethod ::logout
   "Clears the authentication cookie and logout the current session."
-  {:auth false}
+  {:auth false
+   ::doc/added "1.15"}
   [{:keys [session] :as cfg} _]
   (with-meta {}
     {:transform-response (:delete session)}))
@@ -171,7 +175,9 @@
   (s/keys :req-un [::token ::password]))
 
 (sv/defmethod ::recover-profile
-  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false
+   ::rlimit/permits (cf/get :rlimit-password)
+   ::doc/added "1.15"}
   [cfg params]
   (recover-profile cfg params))
 
@@ -224,7 +230,9 @@
   (s/keys :req-un [::email ::password]
           :opt-un [::invitation-token]))
 
-(sv/defmethod ::prepare-register-profile {:auth false}
+(sv/defmethod ::prepare-register-profile
+  {:auth false
+   ::doc/added "1.15"}
   [cfg params]
   (prepare-register cfg params))
 
@@ -355,7 +363,9 @@
   (s/keys :req-un [::token ::fullname]))
 
 (sv/defmethod ::register-profile
-  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false
+   ::rlimit/permits (cf/get :rlimit-password)
+   ::doc/added "1.15"}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)
@@ -409,7 +419,9 @@
 (s/def ::request-profile-recovery
   (s/keys :req-un [::email]))
 
-(sv/defmethod ::request-profile-recovery {:auth false}
+(sv/defmethod ::request-profile-recovery
+  {:auth false
+   ::doc/added "1.15"}
   [cfg params]
   (request-profile-recovery cfg params))
 
