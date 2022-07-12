@@ -53,7 +53,7 @@ header {
 
 .rpc-item {
   /* border: 1px solid red; */
-  cursor: pointer;
+  /* cursor: pointer; */
   display: flex;
   flex-direction: column;
 }
@@ -108,4 +108,38 @@ header {
 .rpc-row-detail {
   padding: 5px 10px;
   padding-bottom: 20px;
+}
+
+.rpc-row-detail p {
+  font-weight: 200;
+}
+
+.rpc-row-detail p.small {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+
+.rpc-row-detail p.small {
+  margin-top: 2px;
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+
+.rpc-row-detail strong {
+  font-weight: 500;
+}
+
+.rpc-row-detail .changes {
+  font-weight: 200;
+  list-style: none;
+  padding: 0px;
+}
+
+.rpc-row-detail .padded-section {
+  padding: 0px 10px;
+}
+
+p.small strong {
+  font-size: 10px;
 }

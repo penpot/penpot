@@ -15,6 +15,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.http.doc :as doc]
    [app.media :as media]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as projects]
@@ -808,6 +809,7 @@
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
+  {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id include-libraries? embed-assets?] :as params}]
   (db/with-atomic [conn pool]
     (files/check-read-permissions! conn profile-id file-id)
@@ -827,6 +829,7 @@
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."
+  {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id project-id file] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-read-permissions! conn profile-id project-id)
