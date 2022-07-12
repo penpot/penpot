@@ -73,6 +73,7 @@
         get-gradient-id
         (fn [index]
           (str render-id "_" (:id shape) "_" index))]
+
     [:*
      ;; Definition of gradients for partial elements
      (when (d/seek :fill-color-gradient position-data)
@@ -93,7 +94,7 @@
 
               alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
               dominant-bl (when-not (cfg/check-browser? :safari) "ideographic")
-              rtl? (= "rtl" (:direction data))
+              rtl?  (= "rtl" (:direction data))
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
                              :x (if rtl? (+ (:x data) (:width data)) (:x data))
                              :y y

@@ -65,7 +65,9 @@
          text-transform  (:text-transform data)
          line-height     (:line-height data 1.2)
 
-         font-id         (:font-id data (:font-id txt/default-text-attrs))
+         font-id         (or (:font-id data)
+                             (:font-id txt/default-text-attrs))
+
          font-variant-id (:font-variant-id data)
 
          font-size       (:font-size data)
@@ -92,17 +94,18 @@
            (some? (:fills data))
            (:fills data)
 
+           ;; DEPRECATED: still here for backward compatibility with
+           ;; old penpot files that still has a single color.
            (or (some? (:fill-color data))
                (some? (:fill-opacity data))
                (some? (:fill-color-gradient data)))
-           [(d/without-nils (select-keys data [:fill-color :fill-opacity :fill-color-gradient :fill-color-ref-id :fill-color-ref-file]))]
+           [(d/without-nils (select-keys data [:fill-color :fill-opacity :fill-color-gradient
+                                               :fill-color-ref-id :fill-color-ref-file]))]
 
            (nil? (:fills data))
            [{:fill-color "#000000" :fill-opacity 1}])
 
-
-         font (when (and (string? font-id) (pos? (alength font-id)))
-                (get fontsdb font-id))
+         font (some->> font-id (get fontsdb))
 
          [font-family font-style font-weight]
          (when (some? font)
@@ -111,8 +114,7 @@
               (or (:style font-variant) (:font-style data))
               (or (:weight font-variant) (:font-weight data))]))
 
-         base (-> base
-                  (obj/set! "--font-id" font-id))]
+         base (obj/set! base "--font-id" font-id)]
 
      (cond-> base
        (some? fills)
