@@ -33,33 +33,23 @@
 
 ;; --- Grid Item Thumbnail
 
-(def ^:const CACHE-NAME "penpot")
-(def ^:const CACHE-URL "https://penpot.app/cache/")
-
-(defn use-thumbnail-cache
+(defn ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"
   [file]
-  (mf/use-fn
-   (mf/deps (:id file) (:revn file))
-   (fn []
-     (wrk/ask! {:cmd :thumbnails/generate
-                :revn (:revn file)
-                :file-id (:id file)}))))
+  (wrk/ask! {:cmd :thumbnails/generate
+             :revn (:revn file)
+             :file-id (:id file)}))
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap [mf/memo]}
   [{:keys [file] :as props}]
-  (let [container (mf/use-ref)
-        generate  (use-thumbnail-cache file)]
-
-    (mf/use-effect
-     (mf/deps file)
-     (fn []
-       (->> (generate)
-            (rx/subs (fn [{:keys [data fonts] :as params}]
-                       (run! fonts/ensure-loaded! fonts)
-                       (when-let [node (mf/ref-val container)]
-                         (dom/set-html! node data)))))))
+  (let [container (mf/use-ref)]
+    (mf/with-effect [file]
+      (->> (ask-for-thumbnail file)
+           (rx/subs (fn [{:keys [data fonts] :as params}]
+                      (run! fonts/ensure-loaded! fonts)
+                      (when-let [node (mf/ref-val container)]
+                        (dom/set-html! node data))))))
 
     [:div.grid-item-th {:style {:background-color (get-in file [:data :options :background])}
                         :ref container}
