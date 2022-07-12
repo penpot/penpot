@@ -470,8 +470,11 @@
       (-> state
           (update-in [:workspace-libraries file-id]
                      assoc :modified-at modified-at :revn revn)
+          ;; NOTE: we ignore effects here because effects should only
+          ;; be applied to the current editing file; we can't do
+          ;; safelly side effects for external files.
           (d/update-in-when [:workspace-libraries file-id :data]
-                            cp/process-changes changes)))))
+                            cp/process-changes-ignoring-effects changes)))))
 
 (defn reset-component
   "Cancels all modifications in the shape with the given id, and all its children, in

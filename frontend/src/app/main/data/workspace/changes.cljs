@@ -138,9 +138,13 @@
   (log/debug :msg "commit-changes"
              :js/redo-changes redo-changes
              :js/undo-changes undo-changes)
-  (let [error  (volatile! nil)
-        page-id (:current-page-id @st/state)
-        frames (changed-frames redo-changes (wsh/lookup-page-objects @st/state))]
+
+  (us/assert! ::pcs/changes redo-changes)
+  (us/assert! ::pcs/changes undo-changes)
+
+  (let [page-id (:current-page-id @st/state)
+        effects (volatile! nil)
+        frames  (changed-frames redo-changes (wsh/lookup-page-objects @st/state))]
     (ptk/reify ::commit-changes
       cljs.core/IDeref
       (-deref [_]
@@ -154,47 +158,51 @@
       ptk/UpdateEvent
       (update [_ state]
         (let [current-file-id (get state :current-file-id)
-              file-id         (or file-id current-file-id)
-              path            (if (= file-id current-file-id)
-                                [:workspace-data]
-                                [:workspace-libraries file-id :data])]
-          (try
-            (us/assert ::pcs/changes redo-changes)
-            (us/assert ::pcs/changes undo-changes)
-
-            (update-in state path (fn [file]
-                                    (-> file
-                                        (cp/process-changes redo-changes false)
-                                        (cph/update-object-indices page-id))))
-
-            (catch :default err
-              (log/error :js/error err)
-              (vreset! error err)
-              state))))
+              file-id         (or file-id current-file-id)]
+          (if (= file-id current-file-id)
+            (update state :workspace-data
+                    (fn [data]
+                      (let [[data fxfns] (cp/process-changes data redo-changes false)]
+                        (vreset! effects fxfns)
+                        (cph/update-object-indices data page-id))))
+            (update-in state [:workspace-libraries file-id :data]
+                       (fn [data]
+                         (-> data
+                             (cp/process-changes-ignoring-effects redo-changes false)
+                             (cph/update-object-indices page-id)))))))
 
       ptk/WatchEvent
-      (watch [_ _ _]
-        (when-not @error
-          (let [;; adds page-id to page changes (that have the `id` field instead)
-                add-page-id
-                (fn [{:keys [id type page] :as change}]
-                  (cond-> change
-                    (page-change? type)
-                    (assoc :page-id (or id (:id page)))))
+      (watch [_ state _]
+        (let [;; adds page-id to page changes (that have the `id` field instead)
+              add-page-id
+              (fn [{:keys [id type page] :as change}]
+                (cond-> change
+                  (page-change? type)
+                  (assoc :page-id (or id (:id page)))))
 
-                changes-by-pages
-                (->> redo-changes
-                     (map add-page-id)
-                     (remove #(nil? (:page-id %)))
-                     (group-by :page-id))
+              changes-by-pages
+              (->> redo-changes
+                   (map add-page-id)
+                   (remove #(nil? (:page-id %)))
+                   (group-by :page-id))
 
-                process-page-changes
-                (fn [[page-id _changes]]
-                  (update-indices page-id redo-changes))]
-            (rx/concat
-             (rx/from (map process-page-changes changes-by-pages))
+              process-page-changes
+              (fn [[page-id _changes]]
+                (update-indices page-id redo-changes))]
 
-             (when (and save-undo? (seq undo-changes))
-               (let [entry {:undo-changes undo-changes
-                            :redo-changes redo-changes}]
-                 (rx/of (dwu/append-undo entry)))))))))))
+          (rx/concat
+           (->> (rx/from (some-> @effects seq))
+                (rx/mapcat (fn [o]
+                             (if (fn? o)
+                               (rx/of o)
+                               o))))
+
+           ;; TODO: are we sure about having this here? I think it can
+           ;; be done reactivelly in an other stream processing loop,
+           ;; outside of the commit-changes
+           (rx/from (map process-page-changes changes-by-pages))
+
+           (when (and save-undo? (seq undo-changes))
+             (let [entry {:undo-changes undo-changes
+                          :redo-changes redo-changes}]
+               (rx/of (dwu/append-undo entry))))))))))

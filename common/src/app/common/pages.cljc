@@ -34,6 +34,7 @@
 
 ;; Process changes
 (dm/export changes/process-changes)
+(dm/export changes/process-changes-ignoring-effects)
 
 ;; Initialization
 (dm/export init/default-frame-attrs)

@@ -238,7 +238,7 @@
     (loop [data data]
       (let [changes (mapcat calculate-changes (:pages-index data))]
         (if (seq changes)
-          (recur (cp/process-changes data changes))
+          (recur (cp/process-changes-ignoring-effects data changes))
           data)))))
 
 (defmethod migrate 10

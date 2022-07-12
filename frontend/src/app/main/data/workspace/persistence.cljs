@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.persistence
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-spec :as pcs]
@@ -214,14 +215,28 @@
     ptk/UpdateEvent
     (update [_ state]
       (if (= file-id (:current-file-id state))
-        (-> state
-            (update-in [:workspace-file :revn] max revn)
-            (update :workspace-data cp/process-changes changes))
-        (-> state
-            (update-in [:workspace-libraries file-id :revn] max revn)
-            (update-in [:workspace-libraries file-id :data]
-                       cp/process-changes changes))))))
+        (let [data           (:workspace-data state)
+              [data effects] (cp/process-changes data changes)]
+          (-> state
+              (update-in [:workspace-file :revn] max revn)
+              (assoc :workspace-data data)
+              (assoc ::effects effects)))
+        (let [data           (dm/get-in state [:workspace-libraries file-id :data])
+              [data effects] (cp/process-changes data changes)]
+          (-> state
+              (update-in [:workspace-libraries file-id]
+                         (fn [file]
+                           (-> file
+                               (update :revn max revn)
+                               (assoc :data data))))
+              (assoc ::effects effects)))))
 
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-let [effects (-> state ::effects seq)]
+        (rx/concat
+         (rx/of #(dissoc % ::effects))
+         (rx/from effects))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching & Uploading

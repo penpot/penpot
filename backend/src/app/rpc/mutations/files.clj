@@ -333,17 +333,21 @@
         _       (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
         ts      (dt/now)
+        data    (:data file)
+
+        _       (mtx/run! metrics {:id :update-file-bytes-processed :inc (alength data)})
+
+        data    (-> data
+                    (blob/decode)
+                    (assoc :id (:id file))
+                    (pmg/migrate-data))
+
+        [data fxfns] (cp/process-changes data changes)
+
         file    (-> file
                     (update :revn inc)
-                    (update :data (fn [data]
-                                    ;; Trace the length of bytes of processed data
-                                    (mtx/run! metrics {:id :update-file-bytes-processed :inc (alength data)})
-                                    (-> data
-                                        (blob/decode)
-                                        (assoc :id (:id file))
-                                        (pmg/migrate-data)
-                                        (cp/process-changes changes)
-                                        (blob/encode)))))]
+                    (assoc :data (blob/encode data)))]
+
     ;; Insert change to the xlog
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -364,6 +368,9 @@
                  :modified-at ts
                  :has-media-trimmed false}
                 {:id (:id file)})
+
+    ;; Run all the effects in the same connection/transaction
+    (run! (fn [xfn] (xfn conn)) fxfns)
 
     ;; We need to delete the data from external storage backend
     (when-not (nil? (:data-backend file))

@@ -53,7 +53,7 @@
        (cond-> file
          valid?
          (-> (update :changes conjv change)
-             (update :data ch/process-changes [change] false))
+             (update :data ch/process-changes-ignoring-effects [change] false))
 
          (not valid?)
          (update :errors conjv change))))))

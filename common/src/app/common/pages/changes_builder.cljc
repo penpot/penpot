@@ -113,7 +113,7 @@
                           (->> (subvec (:redo-changes changes) index)
                                (map #(assoc % :page-id uuid/zero)))
                           [])
-          new-file-data (cp/process-changes file-data new-changes)]
+          new-file-data (cp/process-changes-ignoring-effects file-data new-changes)]
       (vary-meta changes assoc ::file-data new-file-data
                                ::applied-changes-count (count redo-changes)))
     changes))
@@ -568,7 +568,7 @@
                              :name name
                              :shapes new-shapes})
                       (into (map mk-change) updated-shapes))))
-        (update :undo-changes 
+        (update :undo-changes
                 (fn [undo-changes]
                   (-> undo-changes
                       (d/preconj {:type :del-component

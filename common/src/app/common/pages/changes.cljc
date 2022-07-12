@@ -17,7 +17,9 @@
    [app.common.pages.init :as init]
    [app.common.spec :as us]
    [app.common.pages.changes-spec :as pcs]
-   [app.common.types.shape :as cts]))
+   [app.common.types.shape :as cts]
+   #?(:cljs [beicon.core :as rx])
+   ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific helpers
@@ -41,6 +43,14 @@
 (defmulti process-change (fn [_ change] (:type change)))
 (defmulti process-operation (fn [_ op] (:type op)))
 
+;; Define a default method for process-change that just works as
+;; identity only for backend.
+
+#?(:clj
+   (defmethod process-change :default
+     [data _]
+     data))
+
 (defn process-changes
   ([data items]
    (process-changes data items true))
@@ -51,17 +61,51 @@
    (when verify?
      (us/assert ::pcs/changes items))
 
-   (let [result (reduce #(or (process-change %1 %2) %1) data items)]
-     ;; Validate result shapes (only on the backend)
-     #?(:clj
-        (doseq [page-id (into #{} (map :page-id) items)]
-          (let [page (get-in result [:pages-index page-id])]
-            (doseq [[id shape] (:objects page)]
-              (when-not (= shape (get-in data [:pages-index page-id :objects id]))
-                ;; If object has change verify is correct
-                (us/verify ::cts/shape shape))))))
+   (loop [items   items
+          effects []
+          data    data]
+     (if-let [change (first items)]
+       (let [result (process-change data change)]
+         (cond
+           (vector? result)
+           (let [[data effect] result]
+             (recur (rest items)
+                    (conj effects effect)
+                    data))
 
-     result)))
+           #?(:clj  (fn? result)
+              :cljs (or (fn? result) (rx/observable? result)))
+           (recur (rest items)
+                  (conj effects result)
+                  data)
+
+           (map? result)
+           (recur (rest items)
+                  effects
+                  result)
+
+           (nil? result)
+           (recur (rest items)
+                  effects
+                  data)))
+       (do
+         #?(:clj
+            (doseq [page-id (into #{} (map :page-id) items)]
+              (let [page (get-in data [:pages-index page-id])]
+                (doseq [[id shape] (:objects page)]
+                  (when-not (= shape (get-in data [:pages-index page-id :objects id]))
+                    ;; If object has change verify is correct
+                    (us/verify! ::cts/shape shape))))))
+         [data (filter fn? effects)])))))
+
+(defn process-changes-ignoring-effects
+  "The same as `process-change` but ignores the effects. Usefull when we
+  know that there are no effects or we know that we don't want them to
+  be executed."
+  ([data items]
+   (process-changes-ignoring-effects data items true))
+  ([data items verify?]
+   (first (process-changes data items verify?))))
 
 (defmethod process-change :set-option
   [data {:keys [page-id option value]}]

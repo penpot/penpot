@@ -43,16 +43,17 @@
   [{:keys [page-id changes] :as message}]
 
   (let [old-page (get-in @state [:pages-index page-id])]
-    (swap! state ch/process-changes changes false)
+    ;; NOTE: we ignore effects here because they are designed to be
+    ;; run on the main context (browser); maybe in a future we can
+    ;; think in effects specifically for worker context.
+    (swap! state ch/process-changes-ignoring-effects changes false)
 
     (let [new-page (get-in @state [:pages-index page-id])
-          message (assoc message
-                         :old-page old-page
-                         :new-page new-page)]
-      (handler (-> message
-                   (assoc :cmd :selection/update-index)))
-      (handler (-> message
-                   (assoc :cmd :snaps/update-index))))))
+          message  (assoc message
+                          :old-page old-page
+                          :new-page new-page)]
+      (handler (assoc message :cmd :selection/update-index))
+      (handler (assoc message :cmd :snaps/update-index)))))
 
 (defmethod handler :configure
   [{:keys [params]}]
