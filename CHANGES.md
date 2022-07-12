@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## :rocket: Next
+## 1.15.0-beta
 
 ### :boom: Breaking changes & Deprecations
 
