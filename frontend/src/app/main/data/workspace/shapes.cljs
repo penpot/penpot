@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.shapes
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.proportions :as gpr]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
@@ -140,14 +141,15 @@
             page    (wsh/lookup-page state page-id)
 
             ids     (cph/clean-loops objects ids)
+            lookup  (d/getf objects)
 
             groups-to-unmask
             (reduce (fn [group-ids id]
                       ;; When the shape to delete is the mask of a masked group,
                       ;; the mask condition must be removed, and it must be
                       ;; converted to a normal group.
-                      (let [obj (get objects id)
-                            parent (get objects (:parent-id obj))]
+                      (let [obj    (lookup id)
+                            parent (lookup (:parent-id obj))]
                         (if (and (:masked-group? parent)
                                  (= id (first (:shapes parent))))
                           (conj group-ids (:id parent))
@@ -166,9 +168,11 @@
                     (vals objects))
 
             ;; If any of the deleted shapes is a frame with guides
-            guides (into {} (map (juxt :id identity) (->> (get-in page [:options :guides])
-                                                          (vals)
-                                                          (filter #(not (contains? ids (:frame-id %)))))))
+            guides (into {}
+                         (comp (map second)
+                               (remove #(contains? ids (:frame-id %)))
+                               (map (juxt :id identity)))
+                         (dm/get-in page [:options :guides]))
 
             starting-flows
             (filter (fn [flow]
@@ -192,22 +196,18 @@
                  (reverse)
                  (into (d/ordered-set)))
 
-            find-all-empty-parents (fn recursive-find-empty-parents [empty-parents]
-                                     (let [all-ids (into empty-parents ids)
-                                           empty-parents-xform
-                                           (comp
-                                            (map (fn [id] (get objects id)))
-                                            (map (fn [{:keys [shapes type] :as obj}]
-                                                   (when (and (= :group type)
-                                                              (zero? (count (remove #(contains? all-ids %) shapes))))
-                                                     obj)))
-                                            (take-while some?)
-                                            (map :id))
-                                           calculated-empty-parents (into #{} empty-parents-xform all-parents)]
-
-                                       (if (= empty-parents calculated-empty-parents)
-                                         empty-parents
-                                         (recursive-find-empty-parents calculated-empty-parents))))
+            find-all-empty-parents
+            (fn recursive-find-empty-parents [empty-parents]
+              (let [all-ids   (into empty-parents ids)
+                    contains? (partial contains? all-ids)
+                    xform     (comp (map lookup)
+                                    (filter cph/group-shape?)
+                                    (remove #(->> (:shapes %) (remove contains?) seq))
+                                    (map :id))
+                    parents   (into #{} xform all-parents)]
+                (if (= empty-parents parents)
+                  empty-parents
+                  (recursive-find-empty-parents parents))))
 
             empty-parents
             ;; Any parent whose children are all deleted, must be deleted too.
@@ -226,18 +226,16 @@
                                              (assoc shape :masked-group? false)))
                         (pcb/update-shapes (map :id interacting-shapes)
                                            (fn [shape]
-                                             (update shape :interactions
-                                                     (fn [interactions]
-                                                       (when interactions
-                                                         (d/removev #(and (csi/has-destination %)
-                                                                          (contains? ids (:destination %)))
-                                                                    interactions))))))
-                        (cond->
-                         (seq starting-flows)
+                                             (d/update-when shape :interactions
+                                                            (fn [interactions]
+                                                              (into []
+                                                                    (remove #(and (csi/has-destination %)
+                                                                                  (contains? ids (:destination %))))
+                                                                    interactions)))))
+                        (cond-> (seq starting-flows)
                           (pcb/update-page-option :flows (fn [flows]
-                                                           (reduce #(csp/remove-flow %1 (:id %2))
-                                                                   flows
-                                                                   starting-flows)))))]
+                                                           (->> (map :id starting-flows)
+                                                                (reduce csp/remove-flow flows))))))]
 
         (rx/of (dch/commit-changes changes))))))
 
