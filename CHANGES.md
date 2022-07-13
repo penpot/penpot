@@ -31,6 +31,8 @@
 - Support for import/export binary format [Taiga #2991](https://tree.taiga.io/project/penpot/us/2991)
 
 ### :bug: Bugs fixed
+
+- Fix problem with group coordinates [#2008](https://github.com/penpot/penpot/issues/2008)
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
