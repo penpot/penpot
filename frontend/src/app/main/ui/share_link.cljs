@@ -137,7 +137,7 @@
                         (assoc cf/public-uri :fragment href)))]
          (reset! link (some-> href str)))))
 
-    [:div.modal-overlay.share-modal
+    [:div.modal-overlay.transparent.share-modal
      [:div.modal-container.share-link-dialog
       [:div.modal-content.initial
        [:div.title
