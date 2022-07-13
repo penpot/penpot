@@ -288,7 +288,7 @@
                :height (or height (:height shape))
                :fill "red"}]]]
 
-     [:foreignObject {:x (:x shape) :y (:y shape) :width "100%" :height "100%"}
+     [:foreignObject {:x (:x shape) :y (:y shape) :width width :height height}
       [:div {:style {:position "absolute"
                      :left 0
                      :top  0

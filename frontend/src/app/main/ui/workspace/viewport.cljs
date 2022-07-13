@@ -20,7 +20,6 @@
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
-   [app.main.ui.workspace.shapes.text.viewport-texts :as stv]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]

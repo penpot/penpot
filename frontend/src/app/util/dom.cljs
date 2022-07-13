@@ -91,6 +91,11 @@
   (when event
     (.stopPropagation event)))
 
+(defn stop-immediate-propagation
+  [^js event]
+  (when event
+    (.stopImmediatePropagation event)))
+
 (defn prevent-default
   [^js event]
   (when event
@@ -596,3 +601,12 @@
 (defn load-font [font]
   (let [fonts (.-fonts globals/document)]
     (.load fonts font)))
+
+(defn text-measure [font]
+  (let [element (.createElement globals/document "canvas")
+        context (.getContext element "2d")
+        _ (set! (.-font context) font)
+        measure ^js (.measureText context "Ag")]
+
+    {:ascent (.-fontBoundingBoxAscent measure)
+     :descent (.-fontBoundingBoxDescent measure)}))

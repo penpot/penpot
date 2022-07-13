@@ -33,6 +33,9 @@
 ### :bug: Bugs fixed
 
 - Fix problem with group coordinates [#2008](https://github.com/penpot/penpot/issues/2008)
+- Fix problem with line-height and texts [Taiga #3578](https://tree.taiga.io/project/penpot/issue/3578)
+
+
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 

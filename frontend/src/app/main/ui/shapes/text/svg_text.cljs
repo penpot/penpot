@@ -87,15 +87,12 @@
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
         (let [y (- (:y data) (:height data))
-              dominant-bl (when-not (cfg/check-browser? :safari) "text-before-edge")
-              alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
-
+              dominant-bl "text-before-edge"
               rtl? (= "rtl" (:direction data))
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
                              :x (if rtl? (+ (:x data) (:width data)) (:x data))
                              :y y
                              :transform (position-data-transform shape data)
-                             :alignmentBaseline alignment-bl
                              :dominantBaseline dominant-bl
                              :style (-> #js {:fontFamily (:font-family data)
                                              :fontSize (:font-size data)

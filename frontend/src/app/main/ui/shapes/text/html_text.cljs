@@ -59,7 +59,7 @@
 (mf/defc render-node
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [type text children]} (obj/get props "node")]
+  (let [{:keys [type text children] :as parent} (obj/get props "node")]
     (if (string? text)
       [:> render-text props]
       (let [component (case type
@@ -72,6 +72,7 @@
            (for [[index node] (d/enumerate children)]
              (let [props (-> (obj/clone props)
                              (obj/set! "node" node)
+                             (obj/set! "parent" parent)
                              (obj/set! "index" index)
                              (obj/set! "key" index))]
                [:> render-node props]))])))))
@@ -92,6 +93,7 @@
       :style {:position "fixed"
               :left 0
               :top 0
+              :background "white"
               :width  (if (#{:auto-width} grow-type) 100000 width)
               :height (if (#{:auto-height :auto-width} grow-type) 100000 height)}}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
