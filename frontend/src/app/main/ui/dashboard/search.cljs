@@ -39,7 +39,7 @@
       [:div.dashboard-title
        [:h1 (tr "dashboard.title-search")]]]
 
-     [:section.dashboard-container.search
+     [:section.dashboard-container.search.no-bg
       (cond
         (empty? search-term)
         [:div.grid-empty-placeholder.search

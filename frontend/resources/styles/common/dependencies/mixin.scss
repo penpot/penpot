@@ -8,21 +8,23 @@
 /// This mixin allows you  to add styles to a specific Media query inside the style selector specifying which Breaking Point you want to choose.
 /// @group Mixins
 /// @parameter $point - This parameter decide which one of Breaking Point you want to use: "bp-desktop" (Desktop), "bp-tablet" (Tablet) and "bp-mobile" (Mobile).
-@mixin bp($point) {
-  $bp-mobile: "(min-width: 720px)";
-  $bp-tablet: "(min-width: 1020px)";
-  $bp-desktop: "(min-width: 1366px)";
+$bp-min-720: "(min-width: 720px)";
+$bp-min-1020: "(min-width: 1020px)";
+$bp-min-1366: "(min-width: 1366px)";
+$bp-max-1366: "(max-width: 1366px)";
+$bp-min-2556: "(min-width: 2556px)";
 
+@mixin bp($point) {
   @if $point == mobile {
-    @media #{$bp-desktop} {
+    @media #{$bp-min-720} {
       @content;
     }
   } @else if $point == tablet {
-    @media #{$bp-tablet} {
+    @media #{$bp-min-1020} {
       @content;
     }
   } @else if $point == desktop {
-    @media #{$bp-mobile} {
+    @media #{$bp-min-1366} {
       @content;
     }
   }

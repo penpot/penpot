@@ -7,39 +7,37 @@
 .dashboard-grid {
   font-size: $fs14;
   height: 100%;
+  overflow: hidden;
 
   .grid-row {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     width: 100%;
-    align-content: flex-start;
-
-    &.no-wrap {
-      flex-wrap: nowrap;
-    }
   }
 
   .grid-item {
     align-items: center;
-    border: 2px solid lighten($color-gray-20, 13%);
-    border-radius: $br-small;
     cursor: pointer;
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
-    height: 200px;
-    margin: $size-4;
-    max-width: 260px;
-    min-width: 260px;
+    flex: 1 0 260px;
+    height: 230px;
+    margin: $size-3 $size-4 $size-4 $size-2;
     position: relative;
     text-align: center;
-    width: 18%;
+    @media #{$bp-max-1366} {
+      height: 200px;
+      flex: 1 0 230px;
+    }
 
     &:hover {
-      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+      .grid-item-th {
+        border: 2px solid $color-primary;
+      }
     }
 
     .grid-item-th {
+      border-radius: $br-small;
+      border: 2px solid lighten($color-gray-20, 15%);
       text-align: initial;
     }
 
@@ -94,6 +92,7 @@
     }
 
     .item-info {
+      color: $color-gray-30;
       display: flex;
       flex-direction: column;
       padding: $size-2;
@@ -103,7 +102,7 @@
       h3 {
         border: 1px solid transparent;
         color: $color-gray-60;
-        font-size: $fs14;
+        font-size: $fs16;
         font-weight: 400;
         overflow: hidden;
         padding: 0;
@@ -116,8 +115,8 @@
       }
 
       span.date {
-        color: $color-gray-20;
-        font-size: $fs12;
+        color: $color-gray-30;
+        font-size: $fs14;
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
@@ -181,7 +180,9 @@
       }
 
       &.selected {
-        border: 2px solid $color-primary;
+        .grid-item-th {
+          border: 2px solid $color-primary;
+        }
       }
 
       .project-th-actions {
@@ -295,6 +296,7 @@
     border-top-left-radius: $br-small;
     border-top-right-radius: $br-small;
     height: 70%;
+    max-height: 160px;
     overflow: hidden;
     position: relative;
     width: 100%;
