@@ -8,6 +8,7 @@
 - Fix fill information not complete when paste plain text [Taiga #3680](https://tree.taiga.io/project/penpot/issue/3680)
 - Fix problem when resizing groups [Taiga #3702](https://tree.taiga.io/project/penpot/issue/3702)
 - Fix issues on typographies assets grouping [#2073](https://github.com/penpot/penpot/issues/2073)
+- Fix text positioning inconsistencies between browsers
 
 ## 1.14.1-beta
 
