@@ -128,6 +128,14 @@
   (when (some? node)
     (.-parentElement ^js node)))
 
+(defn get-parent-with-selector
+  [^js node selector]
+
+  (loop [current node]
+    (if (or (nil? current) (.matches current selector) )
+      current
+      (recur (.-parentElement current)))))
+
 (defn get-value
   "Extract the value from dom node."
   [^js node]
