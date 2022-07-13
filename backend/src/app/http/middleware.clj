@@ -37,14 +37,14 @@
             (let [header (yrq/get-header request "content-type")]
               (cond
                 (str/starts-with? header "application/transit+json")
-                (with-open [is (-> request yrq/body yrq/body-stream)]
+                (with-open [is (yrq/body request)]
                   (let [params (t/read! (t/reader is))]
                     (-> request
                         (assoc :body-params params)
                         (update :params merge params))))
 
                 (str/starts-with? header "application/json")
-                (with-open [is (-> request yrq/body yrq/body-stream)]
+                (with-open [is (yrq/body request)]
                   (let [params (json/read is)]
                     (-> request
                         (assoc :body-params params)
