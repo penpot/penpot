@@ -91,9 +91,6 @@
    :app.http/session
    {:store (ig/ref :app.http.session/store)}
 
-   :app.http.doc/routes
-   {:methods (ig/ref :app.rpc/methods)}
-
    :app.http.session/store
    {:pool     (ig/ref :app.db/pool)
     :tokens   (ig/ref :app.tokens/tokens)
@@ -201,7 +198,7 @@
     :tokens        (ig/ref :app.tokens/tokens)
     :audit-handler (ig/ref :app.loggers.audit/http-handler)
     :rpc-routes    (ig/ref :app.rpc/routes)
-    :doc-routes    (ig/ref :app.http.doc/routes)
+    :doc-routes    (ig/ref :app.rpc.doc/routes)
     :executor      (ig/ref [::default :app.worker/executor])}
 
    :app.http.debug/routes
@@ -239,6 +236,9 @@
     :ldap        (ig/ref :app.auth.ldap/provider)
     :http-client (ig/ref :app.http/client)
     :executors   (ig/ref :app.worker/executors)}
+
+   :app.rpc.doc/routes
+   {:methods (ig/ref :app.rpc/methods)}
 
    :app.rpc/routes
    {:methods (ig/ref :app.rpc/methods)}

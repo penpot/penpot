@@ -10,9 +10,9 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.http.doc :as doc]
    [app.loggers.audit :as-alias audit]
    [app.rpc.commands.auth :as cmd.auth]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.queries.profile :as profile]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))

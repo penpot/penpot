@@ -10,7 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.http.doc :as doc]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.queries.comments :as comments]
    [app.rpc.queries.files :as files]
    [app.rpc.retry :as retry]

@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.queries.teams :as teams]
    [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
@@ -151,6 +152,7 @@
   (s/keys :req-un [::profile-id ::team-id ::id]))
 
 (sv/defmethod ::delete-font-variant
+  {::doc/added "1.3"}
   [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)

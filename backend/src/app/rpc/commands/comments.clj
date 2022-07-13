@@ -7,9 +7,8 @@
 (ns app.rpc.commands.comments
   (:require
    [app.common.spec :as us]
-   [app.common.pages.changes :as changes]
    [app.db :as db]
-   [app.http.doc :as doc]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
