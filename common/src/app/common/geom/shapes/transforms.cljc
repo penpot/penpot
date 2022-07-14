@@ -251,11 +251,6 @@
                        (gmt/rotate-matrix (- rotation-angle)))]
      [stretch-matrix stretch-matrix-inverse rotation-angle])))
 
-(defn is-rotated?
-  [[a b _c _d]]
-  ;; true if either a-b or c-d are parallel to the axis
-  (not (mth/close? (:y a) (:y b))))
-
 (defn- adjust-rotated-transform
   [{:keys [transform transform-inverse flip-x flip-y]} points]
   (let [center          (gco/center-points points)
@@ -287,12 +282,9 @@
         points   (gco/transform-points points' transform-mtx)
         bool?    (= (:type shape) :bool)
         path?    (= (:type shape) :path)
-        rotated? (is-rotated? points)
 
         [selrect transform transform-inverse]
-        (if (not rotated?)
-          [(gpr/points->selrect points) nil nil]
-          (adjust-rotated-transform shape points))
+        (adjust-rotated-transform shape points)
 
         base-rotation  (or (:rotation shape) 0)
         modif-rotation (or (get-in shape [:modifiers :rotation]) 0)

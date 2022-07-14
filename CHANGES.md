@@ -35,6 +35,7 @@
 - Fix problem with group coordinates [#2008](https://github.com/penpot/penpot/issues/2008)
 - Fix problem with line-height and texts [Taiga #3578](https://tree.taiga.io/project/penpot/issue/3578)
 - Fix moving frame-guides outside frames [Taiga #3839](https://tree.taiga.io/project/penpot/issue/3839)
+- Fix problem with 180 degree rotations [#2082](https://github.com/penpot/penpot/issues/2082)
 
 
 ### :arrow_up: Deps updates
