@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-01-20 20:55+0000\n"
-"Last-Translator: Voxybuns <fossati.val@gmail.com>\n"
+"PO-Revision-Date: 2022-07-02 09:14+0000\n"
+"Last-Translator: Lucie Lesage <lucie@jeci.fr>\n"
 "Language-Team: French "
 "<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.11-dev\n"
+"X-Generator: Weblate 4.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -236,8 +236,16 @@ msgstr "Dupliquer %s fichiers"
 msgid "dashboard.empty-files"
 msgstr "Vous n’avez encore aucun fichier ici"
 
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Oh non ! Vous n'avez pas encore de fichiers ! Si vous voulez essayer avec "
+"des modèles, allez sur [Bibliothèques et modèles] "
+"(https://penpot.app/libraries-templates.html)"
+
 msgid "dashboard.export-frames"
-msgstr "Exporter les plans de travail comme PDF..."
+msgstr "Exporter les plans de travail au format PDF…"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -246,9 +254,31 @@ msgstr "Exporter en PDF"
 msgid "dashboard.export-multi"
 msgstr "Exporter %s fichiers"
 
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s de %s éléments sélectionnés"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
 msgstr "Exporter"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Vous pouvez ajouter des paramètres d'exportation aux éléments depuis les "
+"propriétés de design (en bas de la barre latérale de droite)."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Information sur comment configurer l'export dans Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Il n'y a pas d'éléments avec des paramètres d'exportation."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Exporter la sélection"
 
 msgid "dashboard.export-single"
 msgstr "Exporter le fichier"
@@ -263,11 +293,52 @@ msgstr ""
 "Un ou plusieurs fichiers que vous souhaitez exporter utilisent des "
 "bibliothèques partagées. Que voulez-vous faire avec leurs ressources ?"
 
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"Les fichiers avec des bibliothèques partagées seront inclus dans "
+"l'exportation, en maintenant leur liaison."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Exporter les bibliothèques partagées"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Les bibliothèques partagées ne seront pas incluses dans l'exportation et "
+"aucune ressource ne sera ajoutée à la librairie. "
+
+msgid "dashboard.export.options.detach.title"
+msgstr ""
+"Considérer les ressources des bibliothèques partagées comme des objets "
+"basiques"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Votre fichier sera exporté avec toutes les ressources externes fusionnées "
+"dans la bibliothèque de fichiers."
+
+msgid "dashboard.export.options.merge.title"
+msgstr ""
+"Inclure les ressources des bibliothèques partagées dans les bibliothèques "
+"de fichiers"
+
+msgid "dashboard.export.title"
+msgstr "Exporter les fichiers"
+
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Police supprimée"
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Rejeter tout"
+
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Vous n'avez installé aucune police personnalisée."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 police ajoutée"
+msgstr[1] "%s polices ajoutées"
 
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
@@ -285,8 +356,47 @@ msgstr ""
 "de Penpot](https://penpot.app/terms.html). Vous pouvez également vous "
 "renseigner sur les [licenses de polices](https://www.typography.com/faq)."
 
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Uploader tout"
+
 msgid "dashboard.import"
 msgstr "Importer fichiers"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Oups ! Nous n'avons pas pu importer ce fichier"
+
+msgid "dashboard.import.import-error"
+msgstr ""
+"Un problème est survenu lors de l'importation du fichier. Le fichier n'a "
+"pas été importé."
+
+msgid "dashboard.import.import-message"
+msgstr "%s fichiers ont été importés avec succès."
+
+msgid "dashboard.import.import-warning"
+msgstr "Certains fichiers contenaient des objets invalides qui ont été supprimés."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Traitement des couleurs"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Traitement des composants"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Médias en cours de traitement"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Traitement de la page : %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Traitement des typographies"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Envoi des données au serveur (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Envoi du fichier : %s"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -337,6 +447,16 @@ msgstr "+ Nouveau projet"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "Nouveau projet"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr ""
+"Envoyez-moi des actualités, des mises à jour du produit, et des "
+"recommandations à propos de Penpot."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Abonnement à la newsletter"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -393,6 +513,10 @@ msgstr "Vous souhaitez supprimer votre compte ?"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Retirer en tant que Bibliothèque Partagée"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Enregistrer les paramètres"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.search-placeholder"
@@ -498,6 +622,10 @@ msgid "dashboard.your-penpot"
 msgstr "Votre Penpot"
 
 #: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Composants à mettre à jour :"
+
+#: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-cancel"
 msgstr "Annuler"
 
@@ -513,6 +641,9 @@ msgstr "Êtes‑vous sûr ?"
 msgid "ds.updated-at"
 msgstr "Mise à jour : %s"
 
+msgid "errors.auth.unable-to-login"
+msgstr "Il semblerait que vous n'êtes pas authentifié ou que votre session a expiré."
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Votre navigateur ne peut pas effectuer cette opération"
@@ -526,6 +657,9 @@ msgstr "Adresse e‑mail déjà utilisée"
 msgid "errors.email-already-validated"
 msgstr "Adresse e‑mail déjà validée."
 
+msgid "errors.email-as-password"
+msgstr "Vous ne pouvez pas utiliser votre adresse e-mail comme mot de passe"
+
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs,
 #: src/app/main/ui/settings/change_email.cljs,
@@ -536,6 +670,9 @@ msgstr "L'adresse e-mail « %s » a un taux de rebond trop élevé."
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "L’adresse e‑mail de confirmation doit correspondre"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "L'e-mail \"%s\" a été signalé comme spam ou a été rejeté."
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
@@ -549,6 +686,13 @@ msgstr "Authentification via Google désactivée dans le backend"
 #: src/app/main/ui/components/color_input.cljs
 msgid "errors.invalid-color"
 msgstr "Couleur invalide"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Invitation invalide"
+
+msgid "errors.invite-invalid.info"
+msgstr "Cette invitation est peut-être été annulée ou a expiré."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
@@ -599,6 +743,19 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "L’enregistrement est actuellement désactivé."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr ""
+"Il n'y a pas assez de membres pour quitter l'équipe, vous voulez "
+"probablement la supprimer."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "Le membre que vous essayez d'assigner n'existe pas."
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr ""
+"Le propriétaire ne peut pas quitter l'équipe, vous devez réassigner le rôle "
+"de propriétaire."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr ""
@@ -832,6 +989,9 @@ msgstr "Code"
 msgid "handoff.tabs.code.selected.circle"
 msgstr "Cercle"
 
+msgid "handoff.tabs.code.selected.component"
+msgstr "Composant"
+
 msgid "handoff.tabs.code.selected.curve"
 msgstr "Courbe"
 
@@ -843,6 +1003,9 @@ msgstr "Groupe"
 
 msgid "handoff.tabs.code.selected.image"
 msgstr "Image"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Masque"
 
 #: src/app/main/ui/handoff/right_sidebar.cljs
 msgid "handoff.tabs.code.selected.multiple"
@@ -867,6 +1030,14 @@ msgstr "Information"
 msgid "history.alert-message"
 msgstr "Vous voyez la version %s"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Raccourcis"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "À propos de Penpot"
+
 msgid "labels.accept"
 msgstr "Accepter"
 
@@ -880,6 +1051,12 @@ msgstr "Administration"
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.all"
 msgstr "Tous"
+
+msgid "labels.and"
+msgstr "et"
+
+msgid "labels.back"
+msgstr "Retour"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
@@ -898,6 +1075,9 @@ msgstr "Annuler"
 msgid "labels.centered"
 msgstr "Centré"
 
+msgid "labels.close"
+msgstr "Fermer"
+
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.comments"
 msgstr "Commentaires"
@@ -908,6 +1088,12 @@ msgstr "Confirmer le mot de passe"
 
 msgid "labels.content"
 msgstr "Contenu"
+
+msgid "labels.continue"
+msgstr "Continuer"
+
+msgid "labels.continue-with"
+msgstr "Continuer avec"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -929,6 +1115,9 @@ msgstr "Polices personnalisées"
 msgid "labels.dashboard"
 msgstr "Tableau de bord"
 
+msgid "labels.default"
+msgstr "par défaut"
+
 #: src/app/main/ui/dashboard/project_menu.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
@@ -941,6 +1130,10 @@ msgstr "Supprimer le commentaire"
 #: src/app/main/ui/comments.cljs
 msgid "labels.delete-comment-thread"
 msgstr "Supprimer le fil"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Supprimer l'invitation"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete-multi-files"
@@ -957,6 +1150,9 @@ msgstr "Brouillons"
 msgid "labels.edit"
 msgstr "Modifier"
 
+msgid "labels.edit-file"
+msgstr "Modifier le fichier"
+
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "Éditeur"
@@ -964,6 +1160,13 @@ msgstr "Éditeur"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.email"
 msgstr "Adresse e‑mail"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Expirée"
+
+msgid "labels.export"
+msgstr "Exporter"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
@@ -985,6 +1188,10 @@ msgstr "Styles"
 msgid "labels.fonts"
 msgstr "Polices"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Dépôt GitHub"
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/settings/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -993,6 +1200,10 @@ msgstr "Donnez votre avis"
 
 msgid "labels.go-back"
 msgstr "Retour"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Centre d'aide"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
@@ -1017,9 +1228,20 @@ msgstr ""
 msgid "labels.internal-error.main-message"
 msgstr "Erreur interne"
 
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Invitations"
+
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "Langue"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Bibliothèques et modèles"
+
+msgid "labels.link"
+msgstr "Lien"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -1027,6 +1249,10 @@ msgstr "Se déconnecter"
 
 msgid "labels.manage-fonts"
 msgstr "Gérer les polices"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Membre"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
@@ -1040,10 +1266,23 @@ msgstr "Nom"
 msgid "labels.new-password"
 msgstr "Nouveau mot de passe"
 
+msgid "labels.next"
+msgstr "Suivant"
+
 #: src/app/main/ui/workspace/comments.cljs,
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
 msgstr "Vous n’avez aucune notification de commentaire en attente"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "Il n'y a pas d'invitations."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"Appuyez sur le bouton \"Inviter à l'équipe\" pour inviter d'autres membres "
+"à cette équipe."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.auth-info"
@@ -1097,6 +1336,10 @@ msgid "labels.password"
 msgstr "Mot de passe"
 
 #: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "En attente"
+
+#: src/app/main/ui/dashboard/team.cljs
 msgid "labels.permissions"
 msgstr "Permissions"
 
@@ -1121,6 +1364,10 @@ msgstr "Notes de version"
 msgid "labels.remove"
 msgstr "Retirer"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Retirer le membre"
+
 #: src/app/main/ui/dashboard/sidebar.cljs,
 #: src/app/main/ui/dashboard/project_menu.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1130,6 +1377,10 @@ msgstr "Renommer"
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.rename-team"
 msgstr "Renommer l'équipe"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Renvoyer l'invitation"
 
 #: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
@@ -1186,6 +1437,20 @@ msgstr "Afficher uniquement vos commentaires"
 msgid "labels.sign-out"
 msgstr "Se déconnecter"
 
+msgid "labels.skip"
+msgstr "Passer"
+
+msgid "labels.start"
+msgstr "Démarrer"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Statut"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Tutoriels"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
 msgstr "Actualiser"
@@ -1207,9 +1472,20 @@ msgstr "Téléchargement…"
 msgid "labels.viewer"
 msgstr "Spectateur"
 
+msgid "labels.workspace"
+msgstr "Espace de travail"
+
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
 msgstr "Écrire un nouveau commentaire"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(vous)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Votre compte"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
@@ -1233,6 +1509,10 @@ msgstr ""
 msgid "modals.add-shared-confirm.message"
 msgstr "Ajouter « %s » comme Bibliothèque Partagée"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "Grand nudge"
+
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.confirm-email"
 msgstr "Vérifier la nouvelle adresse e‑mail"
@@ -1254,6 +1534,12 @@ msgstr "Changer adresse e‑mail"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
 msgstr "Changez votre adresse e‑mail"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"Vous êtes le propriétaire de cette équipe. Avant de la quitter, veuillez "
+"sélectionner un autre membre pour le promouvoir en propriétaire."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1377,9 +1663,22 @@ msgstr "Supprimer un membre d’équipe"
 msgid "modals.invite-member-confirm.accept"
 msgstr "Envoyer l'invitation"
 
+msgid "modals.invite-member.emails"
+msgstr "Adresse e-mail, séparées par des virgules"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member.title"
 msgstr "Inviter à rejoindre l’équipe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Comme vous êtes le seul membre de l'équipe, celle-ci sera supprimée avec "
+"ses projets et fichiers."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Êtes-vous sûr de vouloir quitter l'équipe %s ?"
 
 msgid "modals.leave-and-reassign.forbiden"
 msgstr ""
@@ -1418,9 +1717,20 @@ msgstr "Êtes‑vous sûr de vouloir quitter cette équipe ?"
 msgid "modals.leave-confirm.title"
 msgstr "Quitter l’équipe"
 
+#: src/app/main/ui/workspace/nudge.cljs
+#, fuzzy
+msgid "modals.nudge-title"
+msgstr "Taille du nudge"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
 msgstr "Promouvoir"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Si vous transférez la propriété, vous changerez votre rôle en Admin, "
+"perdant ainsi certaines permissions sur cette équipe. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
@@ -1446,6 +1756,20 @@ msgstr ""
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr "Retirer « %s » en tant que Bibliothèque Partagée"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Petit nudge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"Vous êtes sur le point de mettre à jour les composants d'une bibliothèque "
+"partagée. Cela peut affecter d'autres fichiers qui l'utilisent."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Mise à jour des composants dans une bibliothèque partagée"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -1486,6 +1810,96 @@ msgstr "Profil enregistré avec succès !"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "notifications.validation-email-sent"
 msgstr "E‑mail de vérification envoyé à %s. Vérifiez votre e‑mail !"
+
+msgid "onboarding.choice.desc"
+msgstr "Comment voulez-vous commencer ?"
+
+#, fuzzy
+msgid "onboarding.choice.fly-solo"
+msgstr "C'est parti !"
+
+#, fuzzy
+msgid "onboarding.choice.fly-solo-desc"
+msgstr "Essayez Penpot et commencez à concevoir par vous-même."
+
+#, fuzzy
+msgid "onboarding.choice.team-up"
+msgstr "Faites équipe"
+
+#, fuzzy
+msgid "onboarding.choice.team-up-desc"
+msgstr ""
+"Vous travaillez avec quelqu'un ? Créez une équipe et invitez des personnes "
+"à travailler ensemble sur des projets et à partager des composants de "
+"design."
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "Le nom de votre équipe"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr ""
+"Après avoir nommé votre équipe, vous pourrez inviter des personnes à la "
+"rejoindre."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Entrez le nom de l'équipe"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Inviter des membres"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr ""
+"Vous pourrez également inviter des membres et changer les rôles plus tard "
+"dans la section équipe."
+
+#, fuzzy
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "Créer une équipe et inviter plus tard"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "Créer une équipe et envoyer des invitations"
+
+msgid "onboarding.choice.title"
+msgstr "Bienvenue dans Penpot"
+
+#, fuzzy
+msgid "onboarding.contrib.alt"
+msgstr "Source ouverte"
+
+#, fuzzy
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot est à Source Ouverte, fabriqué par et pour la communauté. Si vous "
+"vous voulez collaborer, vous êtes les bienvenues !"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "Vous pouvez accéder au"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "et suivre les instructions pour contribuer :)"
+
+msgid "onboarding.contrib.link"
+msgstr "projet sur github"
+
+#, fuzzy
+msgid "onboarding.contrib.title"
+msgstr "Contributeur Open Source ?"
+
+#, fuzzy
+msgid "onboarding.newsletter.accept"
+msgstr "Oui, je veux être abonné"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr "Demande d'abonnement envoyé, vous allez recevoir un e-mail de confirmation."
+
+msgid "onboarding.newsletter.decline"
+msgstr "Non, merci"
+
+#, fuzzy
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"Abonnez-vous à la newsletter pour être tenu informé des développements, du "
+"progrès et des nouveautés du produit."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"

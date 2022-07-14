@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-05-25 15:16+0000\n"
-"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
+"PO-Revision-Date: 2022-06-23 12:19+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
 "Language-Team: Spanish "
 "<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -174,10 +174,19 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Hemos enviado un email de verificación a"
 
+msgid "common.share-link.all-users"
+msgstr "Todo usario de Penpot"
+
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "¿Estas seguro que quieres eliminar el enlace? Si lo haces, el enlace dejara "
 "de funcionar para cualquiera"
+
+msgid "common.share-link.current-tag"
+msgstr "(actual)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Eliminar enlace"
 
 msgid "common.share-link.get-link"
 msgstr "Obtener enlace"
@@ -188,46 +197,37 @@ msgstr "Enlace copiado satisfactoriamente"
 msgid "common.share-link.link-deleted-success"
 msgstr "Enlace eliminado correctamente"
 
+msgid "common.share-link.manage-ops"
+msgstr "Gestionar permisos"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 página compartida"
+msgstr[1] "%s páginas compartidas"
+
 msgid "common.share-link.permissions-can-comment"
 msgstr "Pueden comentar"
 
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Pueden ver código"
 
-msgid "common.share-link.permissions-pages"
-msgstr "Páginas compartidas"
-
 msgid "common.share-link.permissions-hint"
 msgstr "Cualquiera con el enlace puede acceder"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Páginas compartidas"
 
 msgid "common.share-link.placeholder"
 msgstr "El enlace para compartir aparecerá aquí"
 
-msgid "common.share-link.destroy-link"
-msgstr "Eliminar enlace"
+msgid "common.share-link.team-members"
+msgstr "Sólo integrantes del equipo"
 
 msgid "common.share-link.title"
 msgstr "Compartir prototipos"
 
 msgid "common.share-link.view-all"
 msgstr "Selecctionar todas"
-
-msgid "common.share-link.current-tag"
-msgstr "(actual)"
-
-msgid "common.share-link.manage-ops"
-msgstr "Gestionar permisos"
-
-msgid "common.share-link.team-members"
-msgstr "Sólo integrantes del equipo"
-
-msgid "common.share-link.all-users"
-msgstr "Todo usario de Penpot"
-
-msgid "common.share-link.page-shared"
-msgid_plural "common.share-link.page-shared"
-msgstr[0] "1 página compartida"
-msgstr[1] "%s páginas compartidas"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -254,6 +254,12 @@ msgstr "Tu Penpot"
 msgid "dashboard.delete-team"
 msgstr "Eliminar equipo"
 
+msgid "dashboard.download-binary-file"
+msgstr "Descargar archivo Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Descargar archivo estándar (.svg + .json)"
+
 msgid "dashboard.draft-title"
 msgstr "Borrador"
 
@@ -275,6 +281,9 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "¡Oh, no! ¡Aún no tienes archivos! Si quieres probar con alguna plantilla ve "
 "a [Bibliotecas y plantillas](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Descargar %s archivos Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros a PDF..."
@@ -314,15 +323,6 @@ msgstr "Exportar selección"
 
 msgid "dashboard.export-single"
 msgstr "Exportar archivo Penpot"
-
-msgid "dashboard.download-binary-file"
-msgstr "Descargar archivo Penpot (.penpot)"
-
-msgid "dashboard.download-standard-file"
-msgstr "Descargar archivo estándar (.svg + .json)"
-
-msgid "dashboard.export-binary-multi"
-msgstr "Descargar %s archivos Penpot (.penpot)"
 
 msgid "dashboard.export-standard-multi"
 msgstr "Descargar %s archivos estándar (.svg + .json)"
@@ -830,6 +830,20 @@ msgid "feedback.description"
 msgstr "Descripción"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Ir al foro de Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Estamos encantados de tenerte por aquí. Si necesitas ayuda, busca, escribe "
+"o pregunta lo que necesites."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Comunidad de Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-go-to"
 msgstr "Ir a las discusiones"
 
@@ -861,18 +875,6 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "Correo electrónico"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-go-to"
-msgstr "Ir al foro de Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-subtitle1"
-msgstr "Estamos encantados de tenerte por aquí. Si necesitas ayuda, busca, escribe o pregunta lo que necesites."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-title"
-msgstr "Comunidad de Penpot"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
@@ -1157,6 +1159,10 @@ msgstr "Cerrar"
 msgid "labels.comments"
 msgstr "Comentarios"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Comunidad"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Confirmar contraseña"
@@ -1287,12 +1293,6 @@ msgstr "Centro de ayuda"
 msgid "labels.hide-resolved-comments"
 msgstr "Ocultar comentarios resueltos"
 
-msgid "labels.log-or-sign"
-msgstr "Entra o regístrate"
-
-msgid "labels.show-comments-list"
-msgstr "Mostrar lista de comentarios"
-
 msgid "labels.icons"
 msgstr "Iconos"
 
@@ -1327,6 +1327,9 @@ msgstr "Bibliotecas y Plantillas"
 
 msgid "labels.link"
 msgstr "Enlace"
+
+msgid "labels.log-or-sign"
+msgstr "Entra o regístrate"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -1377,7 +1380,7 @@ msgstr "Esta página no existe o no tienes permisos para verla."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
-msgstr "¡Huy!"
+msgstr "¡Uy!"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-files"
@@ -1509,6 +1512,9 @@ msgstr "Bibliotecas Compartidas"
 msgid "labels.show-all-comments"
 msgstr "Mostrar todos los comentarios"
 
+msgid "labels.show-comments-list"
+msgstr "Mostrar lista de comentarios"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Mostrar sólo tus comentarios"
@@ -1526,10 +1532,6 @@ msgstr "Comenzar"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
 msgstr "Status"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.community"
-msgstr "Comunidad"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.tutorials"
@@ -2357,6 +2359,9 @@ msgstr "Mover hacia arriba"
 msgid "shortcuts.next-frame"
 msgstr "Siguiente tablero"
 
+msgid "shortcuts.not-found"
+msgstr "No hay resultados"
+
 msgid "shortcuts.opacity-0"
 msgstr "Opacidad 100%"
 
@@ -2407,6 +2412,9 @@ msgstr "Ir al modo de visualización"
 
 msgid "shortcuts.open-workspace"
 msgstr "Ir al área de trabajo"
+
+msgid "shortcuts.or"
+msgstr " o "
 
 msgid "shortcuts.paste"
 msgstr "Pegar"
@@ -3161,6 +3169,9 @@ msgstr "Desenfoque de la selección"
 msgid "workspace.options.canvas-background"
 msgstr "Color de fondo"
 
+msgid "workspace.options.clip-content"
+msgstr "Truncar contenido"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "Componente"
@@ -3271,6 +3282,10 @@ msgstr "Automático"
 msgid "workspace.options.grid.column"
 msgstr "Columnas"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "Rejilla"
+
 msgid "workspace.options.grid.params.color"
 msgstr "Color"
 
@@ -3345,10 +3360,6 @@ msgstr "Filas"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.square"
 msgstr "Cuadros"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.grid-title"
-msgstr "Rejilla"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"
@@ -3645,118 +3656,6 @@ msgstr "Capas de grupo"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Capas seleccionadas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "Layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "Fila"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
-msgstr "Fila invertida"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Columna invertida"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
-msgstr "Columna"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.gap"
-msgstr "Espacio"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "izquierda"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.right"
-msgstr "derecha"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.center"
-msgstr "centro"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "arriba"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "abajo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "centro"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.packed"
-msgstr "juntar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.space-between"
-msgstr "espaciar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.space-around"
-msgstr "separar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "agrupar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "no agrupar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding-simple"
-msgstr "Padding sencillo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding"
-msgstr "Padding"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding-all"
-msgstr "Todos"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.top"
-msgstr "Arriba"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.right"
-msgstr "Derecha"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.bottom"
-msgstr "Abajo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.left"
-msgstr "Izquierda"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title"
-msgstr "Redimensionado de elemento"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-simple"
-msgstr "Margen sencillo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin"
-msgstr "Margen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-all"
-msgstr "Todos"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Opciones avanzadas"
@@ -3778,6 +3677,10 @@ msgid "workspace.options.layout-item.min-w"
 msgstr "AnchoMin."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "Redimensionado de elemento"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.max-h"
 msgstr "Altura máxima"
 
@@ -3792,6 +3695,114 @@ msgstr "Altura mínima"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.min-w"
 msgstr "Ancho mínimo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Abajo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "Columna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "Fila"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.right"
+msgstr "Fila invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.top"
+msgstr "Columna invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Espacio"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.center"
+msgstr "centro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.left"
+msgstr "izquierda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.right"
+msgstr "derecha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Izquierda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Margen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "Todos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Margen sencillo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "no agrupar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "juntar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "Todos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "Padding sencillo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Derecha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "separar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "espaciar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.title"
+msgstr "Layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Arriba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "abajo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "centro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "arriba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.wrap"
+msgstr "agrupar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
@@ -3903,6 +3914,9 @@ msgstr "Sombras de la seleccíón"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.show-fill-on-export"
 msgstr "Mostrar al exportar"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "Mostrar en modo visualización"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
@@ -4105,12 +4119,6 @@ msgstr "X"
 
 msgid "workspace.options.y"
 msgstr "Y"
-
-msgid "workspace.options.clip-content"
-msgstr "Truncar contenido"
-
-msgid"workspace.options.show-in-viewer"
-msgstr "Mostrar en modo visualización"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Añadir nodo (%s)"
@@ -4540,12 +4548,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-msgid "shortcut-subsection.zoom-viewer"
-msgstr "Zoom"
-
-msgid "shortcuts.or"
-msgstr " o "
-
-msgid "shortcuts.not-found"
-msgstr "No hay resultados"

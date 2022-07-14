@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-05-10 12:15+0000\n"
+"PO-Revision-Date: 2022-05-28 21:16+0000\n"
 "Last-Translator: Radek Sawicki <radek@sqrc.pl>\n"
 "Language-Team: Polish "
 "<https://hosted.weblate.org/projects/penpot/frontend/pl/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.12.1\n"
+"X-Generator: Weblate 4.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -243,7 +243,7 @@ msgstr ""
 "szablony](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "Eksportuj obszary kompozycji do PDF..."
+msgstr "Eksportuj obszary kompozycji do PDF…"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -664,6 +664,13 @@ msgstr "Uwierzytelnianie z Google wyłączone po stronie zaplecza"
 msgid "errors.invalid-color"
 msgstr "Nieprawidłowy kolor"
 
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Nieprawidłowe zaproszenie"
+
+msgid "errors.invite-invalid.info"
+msgstr "To zaproszenie może być anulowane lub wygasło."
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "Uwierzytelnianie LDAP jest wyłączone."
@@ -1013,6 +1020,10 @@ msgstr "Informacje"
 msgid "history.alert-message"
 msgstr "Widzisz wersję %s"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Skróty"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.about-penpot"
 msgstr "O Penpot"
@@ -1033,6 +1044,9 @@ msgstr "Wszystko"
 
 msgid "labels.and"
 msgstr "i"
+
+msgid "labels.back"
+msgstr "Cofnij"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
@@ -1158,6 +1172,10 @@ msgstr "Style"
 
 msgid "labels.fonts"
 msgstr "Fonty"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Repozytorium Github"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
@@ -1404,6 +1422,10 @@ msgstr "Start"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
 msgstr "Status"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Samouczki"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
@@ -1768,6 +1790,29 @@ msgstr ""
 "Pracujesz z kimś? Utwórz zespół i zaproś ludzi do wspólnej pracy nad "
 "projektami i udostępniania zasobów projektowych."
 
+msgid "onboarding.choice.team-up.create-team"
+msgstr "Nazwa twojego zespołu"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "Po nazwaniu swojego zespołu będziesz mógł zapraszać osoby do dołączenia."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Wprowadź nazwę zespołu"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Zaproś członków"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr ""
+"Będziesz także mógł zapraszać członków i zmieniać później role w sekcji "
+"zespołu."
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "Utwórz zespół i zaproś później"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "Utwórz zespół i wyślij zaproszenia"
+
 msgid "onboarding.choice.title"
 msgstr "Witamy w Penpot"
 
@@ -1920,6 +1965,420 @@ msgstr "Przejdź do logowania"
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Mieszane"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Podstawy"
+
+msgid "shortcut-section.dashboard"
+msgstr "Kokpit"
+
+msgid "shortcut-section.viewer"
+msgstr "Widz"
+
+msgid "shortcut-section.workspace"
+msgstr "Obszar roboczy"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Wyrównanie"
+
+msgid "shortcut-subsection.edit"
+msgstr "Edytuj"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Ogólny"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Ogólny"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Menu główne"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "Modyfikuj warstwy"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Nawigacja"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Nawigacja"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Nawigacja"
+
+msgid "shortcut-subsection.panels"
+msgstr "Panele"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Ścieżki"
+
+msgid "shortcut-subsection.shape"
+msgstr "Kształty"
+
+msgid "shortcut-subsection.tools"
+msgstr "Narzędzia"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Przybliżenie"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Przybliżenie"
+
+msgid "shortcuts.add-comment"
+msgstr "Komentarze"
+
+msgid "shortcuts.add-node"
+msgstr "Dodaj węzeł"
+
+msgid "shortcuts.align-bottom"
+msgstr "Wyrównaj do dołu"
+
+msgid "shortcuts.align-hcenter"
+msgstr "Wyrównaj do środka w poziomie"
+
+msgid "shortcuts.align-left"
+msgstr "Wyrównaj do lewej"
+
+msgid "shortcuts.align-right"
+msgstr "Wyrównaj do prawej"
+
+msgid "shortcuts.align-top"
+msgstr "Wyrównaj do góry"
+
+msgid "shortcuts.align-vcenter"
+msgstr "Wyrównaj do środka w pionie"
+
+msgid "shortcuts.artboard-selection"
+msgstr "Utwórz obszar kompozycji z wybranych"
+
+msgid "shortcuts.bool-difference"
+msgstr "Różnica logiczna"
+
+msgid "shortcuts.bool-exclude"
+msgstr "Wykluczenie logiczne"
+
+msgid "shortcuts.bool-intersection"
+msgstr "Logiczny punkt przecięcia"
+
+msgid "shortcuts.bool-union"
+msgstr "Związek logiczny"
+
+msgid "shortcuts.bring-back"
+msgstr "Przesuń na spód"
+
+msgid "shortcuts.bring-backward"
+msgstr "Przesuń niżej"
+
+msgid "shortcuts.bring-forward"
+msgstr "Przesuń wyżej"
+
+msgid "shortcuts.bring-front"
+msgstr "Przesuń na wierzch"
+
+msgid "shortcuts.clear-undo"
+msgstr "Wyczyść cofnięcia"
+
+msgid "shortcuts.copy"
+msgstr "Kopiuj"
+
+msgid "shortcuts.create-component"
+msgstr "Utwórz komponent"
+
+msgid "shortcuts.create-new-project"
+msgstr "Stwórz nowy"
+
+msgid "shortcuts.cut"
+msgstr "WYtnij"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "Oddal"
+
+msgid "shortcuts.delete"
+msgstr "Usuń"
+
+msgid "shortcuts.delete-node"
+msgstr "Usuń węzeł"
+
+msgid "shortcuts.detach-component"
+msgstr "Odłącz komponent"
+
+msgid "shortcuts.draw-curve"
+msgstr "Krzywa"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "Elipsa"
+
+msgid "shortcuts.draw-frame"
+msgstr "Obszar kompozycji"
+
+msgid "shortcuts.draw-nodes"
+msgstr "Rysuj ścieżkę"
+
+msgid "shortcuts.draw-path"
+msgstr "Ścieżka"
+
+msgid "shortcuts.draw-rect"
+msgstr "Prostokąt"
+
+msgid "shortcuts.draw-text"
+msgstr "Tekst"
+
+msgid "shortcuts.duplicate"
+msgstr "Duplikuj"
+
+msgid "shortcuts.escape"
+msgstr "Anuluj"
+
+msgid "shortcuts.export-shapes"
+msgstr "Eksportuj kształty"
+
+msgid "shortcuts.fit-all"
+msgstr "Powiększ, aby dopasować wszystko"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Obróć poziomo"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Obróć pionowo"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Idź do szkiców"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Idź do bibliotek współdzielonych"
+
+msgid "shortcuts.go-to-search"
+msgstr "Szukaj"
+
+msgid "shortcuts.group"
+msgstr "Grupa"
+
+msgid "shortcuts.h-distribute"
+msgstr "Rozłóż w poziomie"
+
+msgid "shortcuts.hide-ui"
+msgstr "Pokaż/ukryj UI"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Przybliż"
+
+msgid "shortcuts.insert-image"
+msgstr "Wstaw obraz"
+
+msgid "shortcuts.join-nodes"
+msgstr "Połącz węzły"
+
+msgid "shortcuts.make-corner"
+msgstr "Zrób róg"
+
+msgid "shortcuts.make-curve"
+msgstr "Zrób krzywą"
+
+msgid "shortcuts.mask"
+msgstr "Maska"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Scal węzły"
+
+msgid "shortcuts.move"
+msgstr "Przesuń"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Szybko w dół"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Szybko w lewo"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Szybko w prawo"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Szybko w górę"
+
+msgid "shortcuts.move-nodes"
+msgstr "Przesuń węzeł"
+
+msgid "shortcuts.move-unit-down"
+msgstr "W dół"
+
+msgid "shortcuts.move-unit-left"
+msgstr "W lewo"
+
+msgid "shortcuts.move-unit-right"
+msgstr "W prawo"
+
+msgid "shortcuts.move-unit-up"
+msgstr "W górę"
+
+msgid "shortcuts.next-frame"
+msgstr "Następny obszar kompozycji"
+
+msgid "shortcuts.opacity-0"
+msgstr "Ustaw krycie na 100%"
+
+msgid "shortcuts.opacity-1"
+msgstr "Ustaw krycie na 10%"
+
+msgid "shortcuts.opacity-2"
+msgstr "Ustaw krycie na 20%"
+
+msgid "shortcuts.opacity-3"
+msgstr "Ustaw krycie na 30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "Ustaw krycie na 40%"
+
+msgid "shortcuts.opacity-5"
+msgstr "Ustaw krycie na 50%"
+
+msgid "shortcuts.opacity-6"
+msgstr "Ustaw krycie na 60%"
+
+msgid "shortcuts.opacity-7"
+msgstr "Ustaw krycie na 70%"
+
+msgid "shortcuts.opacity-8"
+msgstr "Ustaw krycie na 80%"
+
+msgid "shortcuts.opacity-9"
+msgstr "Ustaw krycie na 90%"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Próbnik kolorów"
+
+msgid "shortcuts.open-comments"
+msgstr "Przejdź do sekcji komentarzy widzów"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Idź do kokpitu"
+
+msgid "shortcuts.open-handoff"
+msgstr "Przejdź do sekcji przekazania widza"
+
+msgid "shortcuts.open-interactions"
+msgstr "Idź do sekcji interakcji widza"
+
+msgid "shortcuts.open-viewer"
+msgstr "Idż do sekcji interakcji widza"
+
+msgid "shortcuts.open-workspace"
+msgstr "Idż do obszaru roboczego"
+
+msgid "shortcuts.paste"
+msgstr "Wklej"
+
+msgid "shortcuts.prev-frame"
+msgstr "Poprzedni artboard"
+
+msgid "shortcuts.redo"
+msgstr "Ponów"
+
+msgid "shortcuts.reset-zoom"
+msgstr "Resetuj powiększenie"
+
+msgid "shortcuts.search-placeholder"
+msgstr "Szukaj skrótów"
+
+msgid "shortcuts.select-all"
+msgstr "Wybierz wszystko"
+
+msgid "shortcuts.separate-nodes"
+msgstr "Oddziel węzły"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "Pokaż/ukryj siatkę pikseli"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "Pokaż/ukryj skróty"
+
+msgid "shortcuts.snap-nodes"
+msgstr "Przyciągaj do węzłów"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Przyciągaj do siatki pikseli"
+
+msgid "shortcuts.start-editing"
+msgstr "Rozpocznij edycję"
+
+msgid "shortcuts.start-measure"
+msgstr "Rozpocznij pomiary"
+
+msgid "shortcuts.stop-measure"
+msgstr "Zakończ pomiary"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Ustaw miniaturki"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "Skróty klawiaturowe"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Przełącz dynamiczne wyrównanie"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Przełącz zasoby"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Przełącz paletę kolorów"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Przełącz tryb skupienia"
+
+msgid "shortcuts.toggle-grid"
+msgstr "Pokaż/ukryj siatkę"
+
+msgid "shortcuts.toggle-history"
+msgstr "Przełącz historię"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Przełącz warstwy"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Zablokuj wybrane"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Zablokuj proporcje"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Pokaż/ukryj linijki"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "Przełącz skalowanie tekstu"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Przyciągaj do siatki"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Przyciągaj do prowadnic"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Przełącz paletę tekstu"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Przełącz widoczność"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Przełącz sposób powiększania"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Przełącz tryb pełnoekranowy"
+
+msgid "shortcuts.undo"
+msgstr "Cofnij"
+
+msgid "shortcuts.ungroup"
+msgstr "Rozgrupuj"
+
+msgid "shortcuts.unmask"
+msgstr "Usuń maskę"
+
+msgid "shortcuts.v-distribute"
+msgstr "Rozłóż w pionie"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Przybliż wybrane"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -2310,6 +2769,10 @@ msgstr "Edytuj"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.file"
 msgstr "Plik"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "Pomoc i info"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.preferences"
@@ -2931,7 +3394,7 @@ msgstr "URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-while-hovering"
-msgstr "Przy hoverze"
+msgstr "Przy najechaniu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-while-pressing"
@@ -3446,7 +3909,7 @@ msgid "workspace.shape.menu.hide"
 msgstr "Ukryj"
 
 msgid "workspace.shape.menu.hide-ui"
-msgstr "Pokaż/Ukrzj UI"
+msgstr "Pokaż/Ukryj UI"
 
 msgid "workspace.shape.menu.intersection"
 msgstr "Przecięcie"
@@ -3599,12 +4062,16 @@ msgid "workspace.toolbar.rect"
 msgstr "Prostokąt (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Skróty (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
 msgstr "Tekst (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text-palette"
-msgstr "Typografie *%s)"
+msgstr "Typografie (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-04-04 11:11+0000\n"
+"PO-Revision-Date: 2022-06-05 13:15+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish "
 "<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.12-dev\n"
+"X-Generator: Weblate 4.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -244,7 +244,7 @@ msgstr ""
 "sayfasına gidin"
 
 msgid "dashboard.export-frames"
-msgstr "Çalışma yüzeylerini PDF olarak dışarı aktar..."
+msgstr "Çalışma yüzeylerini PDF'ye aktar…"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -676,6 +676,13 @@ msgstr "Google ile oturum açma devre dışı bırakıldı"
 msgid "errors.invalid-color"
 msgstr "Geçersiz renk"
 
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Geçersiz davet"
+
+msgid "errors.invite-invalid.info"
+msgstr "Bu davet iptal edilmiş veya süresi dolmuş olabilir."
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "LDAP ile oturum açma devre dışı bırakıldı."
@@ -1003,6 +1010,10 @@ msgstr "Bilgi"
 msgid "history.alert-message"
 msgstr "%s sürümünü görüyorsun"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Kısayollar"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.about-penpot"
 msgstr "Penpot Hakkında"
@@ -1023,6 +1034,9 @@ msgstr "Hepsi"
 
 msgid "labels.and"
 msgstr "ve"
+
+msgid "labels.back"
+msgstr "Geri"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
@@ -1156,6 +1170,10 @@ msgstr "Biçimler"
 
 msgid "labels.fonts"
 msgstr "Yazı tipleri"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Github deposu"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/settings/sidebar.cljs,
@@ -1407,6 +1425,10 @@ msgstr "Başla"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
 msgstr "Durum"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Öğreticiler"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
@@ -1785,6 +1807,29 @@ msgstr ""
 "Biriyle mi çalışıyorsunuz? Bir takım oluşturun ve insanları projeler "
 "üzerinde birlikte çalışmaya ve tasarım varlıklarını paylaşmaya davet edin."
 
+msgid "onboarding.choice.team-up.create-team"
+msgstr "Takımınızın adı"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "Takımınızı adlandırdıktan sonra, insanları katılmaya davet edebileceksiniz."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Takımın adını girin"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Üyeleri davet edin"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr ""
+"Ayrıca daha sonra takım bölümünden üyeleri davet edebilecek ve rolleri "
+"değiştirebileceksiniz."
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "Takım oluştur ve daha sonra davet et"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "Takım oluştur ve davet gönder"
+
 msgid "onboarding.choice.title"
 msgstr "Penpot'a Hoş Geldiniz"
 
@@ -1961,6 +2006,420 @@ msgstr "Oturum açmaya git"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Karışık"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Temel bilgiler"
+
+msgid "shortcut-section.dashboard"
+msgstr "Denetim paneli"
+
+msgid "shortcut-section.viewer"
+msgstr "Görüntüleyici"
+
+msgid "shortcut-section.workspace"
+msgstr "Çalışma alanı"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Hizalama"
+
+msgid "shortcut-subsection.edit"
+msgstr "Düzenle"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Genel"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Genel"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Ana menü"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "Katmanları değiştir"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Gezinme"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Gezinme"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Gezinme"
+
+msgid "shortcut-subsection.panels"
+msgstr "Paneller"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Yollar"
+
+msgid "shortcut-subsection.shape"
+msgstr "Şekiller"
+
+msgid "shortcut-subsection.tools"
+msgstr "Araçlar"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Yakınlaştır"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Yakınlaştır"
+
+msgid "shortcuts.add-comment"
+msgstr "Yorumlar"
+
+msgid "shortcuts.add-node"
+msgstr "Düğüm ekle"
+
+msgid "shortcuts.align-bottom"
+msgstr "Alta hizala"
+
+msgid "shortcuts.align-hcenter"
+msgstr "Ortayı yatay olarak hizala"
+
+msgid "shortcuts.align-left"
+msgstr "Sola hizala"
+
+msgid "shortcuts.align-right"
+msgstr "Sağa hizala"
+
+msgid "shortcuts.align-top"
+msgstr "Üste hizala"
+
+msgid "shortcuts.align-vcenter"
+msgstr "Ortayı dikey olarak hizala"
+
+msgid "shortcuts.artboard-selection"
+msgstr "Seçimden çalışma yüzeyi oluştur"
+
+msgid "shortcuts.bool-difference"
+msgstr "Boole fark"
+
+msgid "shortcuts.bool-exclude"
+msgstr "Boole hariç tut"
+
+msgid "shortcuts.bool-intersection"
+msgstr "Boole kesişim"
+
+msgid "shortcuts.bool-union"
+msgstr "Boole birleşim"
+
+msgid "shortcuts.bring-back"
+msgstr "En arkaya gönder"
+
+msgid "shortcuts.bring-backward"
+msgstr "Arkaya gönder"
+
+msgid "shortcuts.bring-forward"
+msgstr "Öne getir"
+
+msgid "shortcuts.bring-front"
+msgstr "En öne getir"
+
+msgid "shortcuts.clear-undo"
+msgstr "Geri almayı temizle"
+
+msgid "shortcuts.copy"
+msgstr "Kopyala"
+
+msgid "shortcuts.create-component"
+msgstr "Bileşen oluştur"
+
+msgid "shortcuts.create-new-project"
+msgstr "Yeni oluştur"
+
+msgid "shortcuts.cut"
+msgstr "Kes"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "Uzaklaştır"
+
+msgid "shortcuts.delete"
+msgstr "Sil"
+
+msgid "shortcuts.delete-node"
+msgstr "Düğümü sil"
+
+msgid "shortcuts.detach-component"
+msgstr "Bileşeni ayır"
+
+msgid "shortcuts.draw-curve"
+msgstr "Eğri"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "Elips"
+
+msgid "shortcuts.draw-frame"
+msgstr "Çalışma yüzeyi"
+
+msgid "shortcuts.draw-nodes"
+msgstr "Yol çiz"
+
+msgid "shortcuts.draw-path"
+msgstr "Yol"
+
+msgid "shortcuts.draw-rect"
+msgstr "Dikdörtgen"
+
+msgid "shortcuts.draw-text"
+msgstr "Metin"
+
+msgid "shortcuts.duplicate"
+msgstr "Çoğalt"
+
+msgid "shortcuts.escape"
+msgstr "İptal"
+
+msgid "shortcuts.export-shapes"
+msgstr "Şekilleri dışa aktar"
+
+msgid "shortcuts.fit-all"
+msgstr "Tümüne uydurmak için yakınlaştır"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Yatay olarak çevir"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Dikey olarak çevir"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Taslaklara git"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Paylaşılan kütüphanelere git"
+
+msgid "shortcuts.go-to-search"
+msgstr "Ara"
+
+msgid "shortcuts.group"
+msgstr "Grup"
+
+msgid "shortcuts.h-distribute"
+msgstr "Yatay olarak dağıt"
+
+msgid "shortcuts.hide-ui"
+msgstr "Kullanıcı arayüzünü göster/gizle"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Yakınlaştır"
+
+msgid "shortcuts.insert-image"
+msgstr "Görsel ekle"
+
+msgid "shortcuts.join-nodes"
+msgstr "Düğümlere katıl"
+
+msgid "shortcuts.make-corner"
+msgstr "Köşe yap"
+
+msgid "shortcuts.make-curve"
+msgstr "Eğri yap"
+
+msgid "shortcuts.mask"
+msgstr "Maskele"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Düğümleri birleştir"
+
+msgid "shortcuts.move"
+msgstr "Taşı"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Hızlı aşağı taşı"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Hızlı sola taşı"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Hızlı sağa taşı"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Hızlı yukarı taşı"
+
+msgid "shortcuts.move-nodes"
+msgstr "Düğümü taşı"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Aşağı taşı"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Sola taşı"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Sağa taşı"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Yukarı taşı"
+
+msgid "shortcuts.next-frame"
+msgstr "Sonraki çalışma yüzeyi"
+
+msgid "shortcuts.opacity-0"
+msgstr "Opaklığı %100 olarak ayarla"
+
+msgid "shortcuts.opacity-1"
+msgstr "Opaklığı %10 olarak ayarla"
+
+msgid "shortcuts.opacity-2"
+msgstr "Opaklığı %20 olarak ayarla"
+
+msgid "shortcuts.opacity-3"
+msgstr "Opaklığı %30 olarak ayarla"
+
+msgid "shortcuts.opacity-4"
+msgstr "Opaklığı %40 olarak ayarla"
+
+msgid "shortcuts.opacity-5"
+msgstr "Opaklığı %50 olarak ayarla"
+
+msgid "shortcuts.opacity-6"
+msgstr "Opaklığı %60 olarak ayarla"
+
+msgid "shortcuts.opacity-7"
+msgstr "Opaklığı %70 olarak ayarla"
+
+msgid "shortcuts.opacity-8"
+msgstr "Opaklığı %80 olarak ayarla"
+
+msgid "shortcuts.opacity-9"
+msgstr "Opaklığı %90 olarak ayarla"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Renk seçici"
+
+msgid "shortcuts.open-comments"
+msgstr "Görüntüleyici yorum bölümüne git"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Denetim paneline git"
+
+msgid "shortcuts.open-handoff"
+msgstr "Görüntüleyici teslim bölümüne git"
+
+msgid "shortcuts.open-interactions"
+msgstr "Görüntüleyici etkileşimleri bölümüne git"
+
+msgid "shortcuts.open-viewer"
+msgstr "Görüntüleyici etkileşimleri bölümüne git"
+
+msgid "shortcuts.open-workspace"
+msgstr "Çalışma alanına git"
+
+msgid "shortcuts.paste"
+msgstr "Yapıştır"
+
+msgid "shortcuts.prev-frame"
+msgstr "Önceki çalışma yüzeyi"
+
+msgid "shortcuts.redo"
+msgstr "Yeniden yap"
+
+msgid "shortcuts.reset-zoom"
+msgstr "Yakınlaştırmayı sıfırla"
+
+msgid "shortcuts.search-placeholder"
+msgstr "Kısayolları ara"
+
+msgid "shortcuts.select-all"
+msgstr "Tümünü seç"
+
+msgid "shortcuts.separate-nodes"
+msgstr "Düğümleri ayır"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "Piksel ızgarasını göster/gizle"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "Kısayolları göster/gizle"
+
+msgid "shortcuts.snap-nodes"
+msgstr "Düğümlere tuttur"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Piksel ızgarasına tuttur"
+
+msgid "shortcuts.start-editing"
+msgstr "Düzenlemeye başla"
+
+msgid "shortcuts.start-measure"
+msgstr "Ölçüme başla"
+
+msgid "shortcuts.stop-measure"
+msgstr "Ölçümü durdur"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Küçük resimleri ayarla"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "Klavye kısayolları"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Dinamik hizalamayı aç/kapat"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Varlıkları değiştir"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Renk paletini değiştir"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Odak modunu değiştir"
+
+msgid "shortcuts.toggle-grid"
+msgstr "Izgarayı göster/gizle"
+
+msgid "shortcuts.toggle-history"
+msgstr "Geçmişi değiştir"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Katmanları değiştir"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Seçileni kilitle"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Oranları kilitle"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Kuralları göster/gizle"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "Ölçek metnini değiştir"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Izgaraya tuttur"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Kılavuzlara tuttur"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Metin paletini değiştir"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Görünürlüğü değiştir"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Yakınlaştırma şeklini değiştir"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Tam ekranı değiştir"
+
+msgid "shortcuts.undo"
+msgstr "Geri al"
+
+msgid "shortcuts.ungroup"
+msgstr "Grubu dağıt"
+
+msgid "shortcuts.unmask"
+msgstr "Maskelemeyi kaldır"
+
+msgid "shortcuts.v-distribute"
+msgstr "Dikey olarak dağıt"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Seçilene yakınlaştır"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -2371,6 +2830,10 @@ msgid "workspace.header.menu.option.file"
 msgstr "Dosya"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "Yardım ve bilgi"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.preferences"
 msgstr "Tercihler"
 
@@ -2654,15 +3117,6 @@ msgstr "Tasarım"
 msgid "workspace.options.export"
 msgstr "Dışa aktar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
-msgid "workspace.options.export-multiple"
-msgstr "Seçimi dışa aktar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
-#, fuzzy
-msgid "workspace.options.export-object"
-msgstr "Dışa aktar"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-multiple"
@@ -2670,7 +3124,6 @@ msgstr "Seçimi dışa aktar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
-#, fuzzy
 msgid "workspace.options.export-object"
 msgstr "1 ögeyi dışa aktar"
 
@@ -3695,6 +4148,10 @@ msgstr "Yol (%s)"
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.rect"
 msgstr "Dikdörtgen (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Kısayollar (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"

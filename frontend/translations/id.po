@@ -189,10 +189,8 @@ msgstr "Tautan berhasil disalin"
 msgid "common.share-link.link-deleted-success"
 msgstr "Tautan berhasil dihapus"
 
-
 msgid "common.share-link.permissions-hint"
 msgstr "Siapapun yang memiliki tautan dapat mengakses"
-
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"

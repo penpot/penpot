@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-05-25 09:24+0000\n"
+"PO-Revision-Date: 2022-05-28 21:16+0000\n"
 "Last-Translator: Vincas Dundzys <dundzys.vincas@gmail.com>\n"
 "Language-Team: Lithuanian "
 "<https://hosted.weblate.org/projects/penpot/frontend/lt/>\n"
@@ -328,3 +328,68 @@ msgstr "Atmesti visus"
 
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Vis dar neįdiegėte tinkintų šriftų."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "Pridėtas 1 šriftas"
+msgstr[1] "Pridėti %s šriftai"
+msgstr[2] "Šriftas(-ai) pridėti"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Bet kuris čia įkeltas žiniatinklio šriftas bus įtrauktas į šriftų šeimų "
+"sąrašą. Jis bus prieinamas šios komandos failų teksto savybėse. Šriftai, "
+"turintys tą patį šrifto šeimos pavadinimą, bus sugrupuoti kaip **viena "
+"šriftų šeima**. Galite įkelti šių formatų šriftus: **TTF, OTF ir WOFF** "
+"(reikės tik vieno)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Turėtumėte įkelti tik tuos šriftus, kurie jums priklauso arba kuriuos "
+"turite licenciją naudoti \"Penpot\". Daugiau informacijos rasite "
+"[Penpot'paslaugų teikimo sąlygų](https://penpot.app/terms.html) skyriuje "
+"\"Turinio teisės\". Taip pat galite paskaityti apie [šriftų "
+"licencijavimą](https://www.typography.com/faq)."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Įkelti viską"
+
+msgid "dashboard.import"
+msgstr "Importuokite Penpot failus"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Oi! Nepavyko importuoti šio failo"
+
+msgid "dashboard.import.import-error"
+msgstr "Iškilo problema importuojant failą. Failas nebuvo importuotas."
+
+msgid "dashboard.import.import-message"
+msgstr "%s failai sėkmingai importuoti."
+
+msgid "dashboard.import.import-warning"
+msgstr "Kai kuriuose failuose buvo netinkamų objektų, kurie buvo pašalinti."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Apdorojimo spalvos"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Komponentų apdorojimas"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Apdorojamos laikmenos"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Apdorojamas puslapis: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Tipografijų apdorojimas"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Įkeliami duomenys į serverį (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Įkeliamas failas: %s"

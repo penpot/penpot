@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-02-22 11:57+0000\n"
-"Last-Translator: John Terroa <joaoterroa2@gmail.com>\n"
+"PO-Revision-Date: 2022-07-01 01:20+0000\n"
+"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
 "Language-Team: Portuguese (Brazil) "
 "<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.11-dev\n"
+"X-Generator: Weblate 4.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -158,6 +158,9 @@ msgstr "Criar uma conta"
 msgid "auth.sidebar-tagline"
 msgstr "A solução de código aberto para design e prototipagem."
 
+msgid "auth.terms-of-service"
+msgstr "Termos de serviço"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr ""
@@ -167,6 +170,47 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Enviamos um e-mail de verificação para"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Tem certeza de que deseja remover este link? Se você fizer isso, ele não "
+"estará mais disponível para ninguém"
+
+msgid "common.share-link.get-link"
+msgstr "Obter link"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Link copiado com sucesso"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Link excluído com sucesso"
+
+msgid "common.share-link.permissions-can-access"
+msgstr "Pode acessar"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "Pode visualizar"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Qualquer pessoa com o link terá acesso"
+
+msgid "common.share-link.placeholder"
+msgstr "O link compartilhável aparecerá aqui"
+
+msgid "common.share-link.remove-link"
+msgstr "Remover link"
+
+msgid "common.share-link.title"
+msgstr "Compartilhar protótipos"
+
+msgid "common.share-link.view-all-pages"
+msgstr "Todas as páginas"
+
+msgid "common.share-link.view-current-page"
+msgstr "Somente esta página"
+
+msgid "common.share-link.view-selected-pages"
+msgstr "Páginas selecionadas"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -207,11 +251,68 @@ msgstr "Duplicar %s arquivos"
 msgid "dashboard.empty-files"
 msgstr "Você ainda não tem arquivos aqui"
 
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Ah não! Você ainda não tem arquivos! Se você quiser experimentar alguns "
+"modelos, vá para [Bibliotecas & "
+"modelos](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-frames"
+msgstr "Exportar pranchetas para PDF…"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Exportar para PDF"
+
 msgid "dashboard.export-multi"
 msgstr "Exportar %s arquivos"
 
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s de %s elementos selecionados"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exportar"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Você pode adicionar configurações de exportação em elementos nas "
+"propriedades de design (na parte inferior da barra lateral direita)."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Informações sobre como configurar exportações na Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Não há elementos com configurações de exportação."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Exportar seleção"
+
 msgid "dashboard.export-single"
 msgstr "Exportar arquivo"
+
+msgid "dashboard.export.detail"
+msgstr "* Pode incluir componentes, gráficos, cores e/ou tipografias."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Um ou mais arquivos que você deseja exportar estão usando bibliotecas "
+"compartilhadas. O que você quer fazer com seus recursos*?"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"arquivos com bibliotecas compartilhadas serão incluídos na exportação, "
+"mantendo sua vinculação."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Exportar bibliotecas compartilhadas"
 
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Fonte deletada"
