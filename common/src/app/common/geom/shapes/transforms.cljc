@@ -278,7 +278,7 @@
      (if transform (gmt/multiply transform matrix) matrix)
      (if transform-inverse (gmt/multiply matrix-inverse transform-inverse) matrix-inverse)]))
 
-(defn- apply-transform
+(defn apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform-mtx]
@@ -491,6 +491,7 @@
 
   ([center modifiers]
    (let [displacement (:displacement modifiers)
+         displacement-after (:displacement-after modifiers)
          resize-v1 (:resize-vector modifiers)
          resize-v2 (:resize-vector-2 modifiers)
          origin-1 (:resize-origin modifiers (gpt/point))
@@ -512,6 +513,9 @@
          rt-modif (:rotation modifiers)]
 
      (cond-> (gmt/matrix)
+       (some? displacement-after)
+       (gmt/multiply displacement-after)
+
        (some? resize-1)
        (-> (gmt/translate origin-1)
            (cond-> (some? resize-transform)
@@ -610,7 +614,7 @@
           (dissoc :modifiers))))))
 
 (defn transform-bounds
-  [points center {:keys [displacement resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
+  [points center {:keys [displacement displacement-after resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
   ;; FIXME: Improve Performance
   (let [resize-transform-inverse (or resize-transform-inverse (gmt/matrix))
 
@@ -624,9 +628,10 @@
 
         resize-origin-2
         (when (some? resize-origin-2)
-          (transform-point-center resize-origin-2 center resize-transform-inverse))]
+          (transform-point-center resize-origin-2 center resize-transform-inverse))
+        ]
 
-    (if (and (nil? displacement) (nil? resize-origin) (nil? resize-origin-2))
+    (if (and (nil? displacement) (nil? resize-origin) (nil? resize-origin-2) (nil? displacement-after))
       points
 
       (cond-> points
@@ -637,7 +642,10 @@
         (gco/transform-points resize-origin (gmt/scale-matrix resize-vector))
 
         (some? resize-origin-2)
-        (gco/transform-points resize-origin-2 (gmt/scale-matrix resize-vector-2))))))
+        (gco/transform-points resize-origin-2 (gmt/scale-matrix resize-vector-2))
+
+        (some? displacement-after)
+        (gco/transform-points displacement-after)))))
 
 (defn transform-selrect
   [selrect modifiers]
@@ -662,3 +670,17 @@
        (map (comp gpr/points->selrect :points transform-shape))
        (gpr/join-selrects)))
 
+(defn apply-group-modifiers
+  "Apply the modifiers to the group children to calculate its selection rect"
+  [group objects modif-tree]
+
+  (let [children
+        (->> (:shapes group)
+             (map (d/getf objects))
+             (map (fn [shape]
+                    (let [modifiers (get modif-tree (:id shape))
+                          shape (-> shape (merge modifiers) transform-shape)]
+                      (if (= :group (:type shape))
+                        (apply-group-modifiers shape objects modif-tree)
+                        shape)))))]
+    (update-group-selrect group children)))

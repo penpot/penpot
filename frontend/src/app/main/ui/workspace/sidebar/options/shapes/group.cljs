@@ -7,14 +7,13 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.group
   (:require
    [app.common.data :as d]
-   [app.main.constants :refer [has-layout-item]]
+   [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-attrs component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout :refer [layout-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
@@ -34,6 +33,10 @@
         objects (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
         file-id (unchecked-get props "file-id")
 
+        ids [(:id shape)]
+        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
+        is-layout-child? (mf/deref is-layout-child-ref)
+
         type :group
         [measure-ids    measure-values]      (get-attrs [shape] objects :measure)
         [layer-ids      layer-values]        (get-attrs [shape] objects :layer)
@@ -45,17 +48,20 @@
         [text-ids       text-values]         (get-attrs [shape] objects :text)
         [svg-ids        svg-values]          [[(:id shape)] (select-keys shape [:svg-attrs])]
         [comp-ids       comp-values]         [[(:id shape)] (select-keys shape component-attrs)]
-        [layout-ids     layout-values]       (get-attrs [shape] objects :layout)
-        [layout-item-ids layout-item-values] (get-attrs [shape] objects :layout-item)
-        ]
+        [layout-item-ids layout-item-values] (get-attrs [shape] objects :layout-item)]
 
     [:div.options
      [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
      [:& component-menu {:ids comp-ids :values comp-values :shape-name (:name shape)}]
-     (when-not (empty? layout-ids)
-       [:& layout-menu {:type type :ids layout-ids :values layout-values}])
-     (when has-layout-item
-       [:& layout-item-menu {:type type :ids layout-item-ids :values layout-item-values}])
+
+     (when is-layout-child?
+       [:& layout-item-menu
+        {:type type
+         :ids layout-item-ids
+         :is-layout-child? true
+         :is-layout-container? false
+         :values layout-item-values}])
+
      [:& constraints-menu {:ids constraint-ids :values constraint-values}]
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]
 

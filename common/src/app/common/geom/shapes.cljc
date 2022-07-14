@@ -14,6 +14,8 @@
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.corners :as gsc]
    [app.common.geom.shapes.intersect :as gin]
+   [app.common.geom.shapes.layout :as gcl]
+   [app.common.geom.shapes.modifiers :as gsm]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.transforms :as gtr]
@@ -170,9 +172,14 @@
 (dm/export gtr/modifiers->transform)
 (dm/export gtr/empty-modifiers?)
 (dm/export gtr/move-position-data)
+(dm/export gtr/apply-transform)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
+
+;; Layout
+(dm/export gcl/calc-layout-data)
+(dm/export gcl/calc-layout-modifiers)
 
 ;; PATHS
 (dm/export gsp/content->selrect)
@@ -196,3 +203,6 @@
 ;; Corners
 (dm/export gsc/shape-corners-1)
 (dm/export gsc/shape-corners-4)
+
+;; Modifiers
+(dm/export gsm/set-objects-modifiers)

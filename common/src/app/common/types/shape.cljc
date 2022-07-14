@@ -13,6 +13,7 @@
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
    [clojure.set :as set]
@@ -156,68 +157,71 @@
     :luminosity})
 
 (s/def ::shape-attrs
-  (s/keys :opt-un [::id
-                   ::type
-                   ::name
-                   ::component-id
-                   ::component-file
-                   ::component-root?
-                   ::shape-ref
-                   ::selrect
-                   ::points
-                   ::blocked
-                   ::collapsed
-                   ::fills
-                   ::fill-color            ;; TODO: remove these attributes
-                   ::fill-opacity          ;;       when backward compatibility
-                   ::fill-color-gradient   ;;       is no longer needed
-                   ::fill-color-ref-file   ;;
-                   ::fill-color-ref-id     ;;
-                   ::hide-fill-on-export
-                   ::font-family
-                   ::font-size
-                   ::font-style
-                   ::font-weight
-                   ::hidden
-                   ::letter-spacing
-                   ::line-height
-                   ::locked
-                   ::proportion
-                   ::proportion-lock
-                   ::constraints-h
-                   ::constraints-v
-                   ::fixed-scroll
-                   ::ctsr/rx
-                   ::ctsr/ry
-                   ::ctsr/r1
-                   ::ctsr/r2
-                   ::ctsr/r3
-                   ::ctsr/r4
-                   ::x
-                   ::y
-                   ::exports
-                   ::shapes
-                   ::strokes
-                   ::stroke-color           ;; TODO: same thing
-                   ::stroke-color-ref-file  ;;
-                   ::stroke-color-ref-i     ;;
-                   ::stroke-opacity         ;;
-                   ::stroke-style
-                   ::stroke-width
-                   ::stroke-alignment
-                   ::stroke-cap-start
-                   ::stroke-cap-end
-                   ::text-align
-                   ::transform
-                   ::transform-inverse
-                   ::width
-                   ::height
-                   ::masked-group?
-                   ::ctsi/interactions
-                   ::ctss/shadow
-                   ::ctsb/blur
-                   ::opacity
-                   ::blend-mode]))
+  (s/and
+   ::ctsl/layout-container-props
+   ::ctsl/layout-child-props
+   (s/keys :opt-un [::id
+                    ::type
+                    ::name
+                    ::component-id
+                    ::component-file
+                    ::component-root?
+                    ::shape-ref
+                    ::selrect
+                    ::points
+                    ::blocked
+                    ::collapsed
+                    ::fills
+                    ::fill-color         ;; TODO: remove these attributes
+                    ::fill-opacity       ;;       when backward compatibility
+                    ::fill-color-gradient ;;       is no longer needed
+                    ::fill-color-ref-file ;;
+                    ::fill-color-ref-id   ;;
+                    ::hide-fill-on-export
+                    ::font-family
+                    ::font-size
+                    ::font-style
+                    ::font-weight
+                    ::hidden
+                    ::letter-spacing
+                    ::line-height
+                    ::locked
+                    ::proportion
+                    ::proportion-lock
+                    ::constraints-h
+                    ::constraints-v
+                    ::fixed-scroll
+                    ::ctsr/rx
+                    ::ctsr/ry
+                    ::ctsr/r1
+                    ::ctsr/r2
+                    ::ctsr/r3
+                    ::ctsr/r4
+                    ::x
+                    ::y
+                    ::exports
+                    ::shapes
+                    ::strokes
+                    ::stroke-color         ;; TODO: same thing
+                    ::stroke-color-ref-file ;;
+                    ::stroke-color-ref-i    ;;
+                    ::stroke-opacity        ;;
+                    ::stroke-style
+                    ::stroke-width
+                    ::stroke-alignment
+                    ::stroke-cap-start
+                    ::stroke-cap-end
+                    ::text-align
+                    ::transform
+                    ::transform-inverse
+                    ::width
+                    ::height
+                    ::masked-group?
+                    ::ctsi/interactions
+                    ::ctss/shadow
+                    ::ctsb/blur
+                    ::opacity
+                    ::blend-mode])))
 
 (s/def :internal.shape.text/type #{"root" "paragraph-set" "paragraph"})
 (s/def :internal.shape.text/children

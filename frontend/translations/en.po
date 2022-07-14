@@ -3503,19 +3503,19 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Advanced options"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
+msgid "workspace.options.layout-item.layout-max-h"
 msgstr "Max.Height"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
+msgid "workspace.options.layout-item.layout-max-w"
 msgstr "Max.Width"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
+msgid "workspace.options.layout-item.layout-min-h"
 msgstr "Min.Height"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
+msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Min.Width"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
@@ -3523,19 +3523,19 @@ msgid "workspace.options.layout-item.title"
 msgstr "Element resizing"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
+msgid "workspace.options.layout-item.title.layout-max-h"
 msgstr "Maximum height"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
+msgid "workspace.options.layout-item.title.layout-max-w"
 msgstr "Maximum width"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
+msgid "workspace.options.layout-item.title.layout-min-h"
 msgstr "Minimum height"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
+msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "Minimum width"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs

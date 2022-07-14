@@ -353,3 +353,10 @@
   (let [root-node (dom/query ".viewport .render-shapes")
         num-nodes (->> (dom/seq-nodes root-node) count)]
     #js {:number num-nodes}))
+
+#_(defn modif->js
+  [modif-tree objects]
+  (clj->js (into {}
+                 (map (fn [[k v]]
+                        [(get-in objects [k :name]) v]))
+                 modif-tree)))

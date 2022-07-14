@@ -218,7 +218,7 @@
   (->> (get-root-shapes objects)
        (mapv :id)))
 
-(defn- get-base
+(defn get-base
   [objects id-a id-b]
 
   (let [parents-a (reverse (get-parents-seq objects id-a))
