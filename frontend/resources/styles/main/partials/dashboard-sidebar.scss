@@ -177,7 +177,7 @@
       span.element-title {
         color: $color-gray-60;
         font-size: $fs14;
-        overflow-x: hidden;
+        overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         user-select: none;
