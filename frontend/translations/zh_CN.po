@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-04-01 07:10+0000\n"
-"Last-Translator: bingling_sama <bingling_sama@qq.com>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"PO-Revision-Date: 2022-06-19 04:19+0000\n"
+"Last-Translator: Wang Jiaxiang <jasonisjasoon@outlook.com>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.12-dev\n"
+"X-Generator: Weblate 4.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -177,7 +177,12 @@ msgstr "链接已复制"
 msgid "common.share-link.link-deleted-success"
 msgstr "链接已移除"
 
-#, fuzzy
+msgid "common.share-link.permissions-can-access"
+msgstr "可访问"
+
+msgid "common.share-link.permissions-can-view"
+msgstr "可浏览"
+
 msgid "common.share-link.permissions-hint"
 msgstr "任何人通过此链接都可访问"
 
@@ -232,7 +237,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr "现在尚无文件。如果你想尝试一些模板，请点击[库和模板](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "导出画板到PDF..."
+msgstr "导出画板到PDF…"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -326,7 +331,7 @@ msgid "dashboard.import.analyze-error"
 msgstr "文件无法导入"
 
 msgid "dashboard.import.import-error"
-msgstr "文件导入过程中出现未知问题，导入失败"
+msgstr "文件导入过程中出现未知问题，导入失败。"
 
 msgid "dashboard.import.import-message"
 msgstr "文件导入成功"
@@ -1699,9 +1704,9 @@ msgstr "Penpot"
 msgid "onboarding.welcome.desc1"
 msgstr "Hooray!你已经是Penpot的用户了 :)"
 
-#, fuzzy
 msgid "onboarding.welcome.desc2"
-msgstr "Penpot处于第一个测试版，这要归功于核心功能，成熟度，稳定性和整个社区的惊人验证的组合，我们非常欢迎您。"
+msgstr "Penpot处于第一个测试版，这要归功于核心功能，成熟度，稳定性和整个社区的惊人验"
+"证的组合，我们非常欢迎您。"
 
 msgid "onboarding.welcome.desc3"
 msgstr "当你享受Penpot的时候，我们将不断改进它，发布我们希望的计划的迭代。"
@@ -2373,7 +2378,9 @@ msgstr "导出已选择"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "导出形状"
+msgid_plural ""
+msgstr[0] "导出 %s 个元素"
+msgstr[1] "导出 %s 个元素"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3030,7 +3037,6 @@ msgstr "删除节点（%s）"
 msgid "workspace.path.actions.draw-nodes"
 msgstr "绘制节点（%s）"
 
-#, fuzzy
 msgid "workspace.path.actions.join-nodes"
 msgstr "连接节点（%s）"
 
@@ -3340,3 +3346,211 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+msgid "labels.back"
+msgstr "后退"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Github仓库"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "教程"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "小幅微调"
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "团队名称"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "命名团队后，您将能够邀请他人加入。"
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "输入团队名称"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "邀请成员"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr "您还可以稍后在团队页面邀请成员和更改角色。"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "创建团队并发送邀请"
+
+msgid "onboarding.contrib.title"
+msgstr "开源贡献者？"
+
+msgid "onboarding.newsletter.accept"
+msgstr "是的，订阅"
+
+msgid "onboarding.newsletter.decline"
+msgstr "不，谢谢"
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "我们关注个人隐私，这里是我们的 "
+
+msgid "onboarding.newsletter.title"
+msgstr "想要接收 Penpot 新闻？"
+
+msgid "onboarding.slide.2.desc1"
+msgstr "所有团队成员使用实时设计多人协同以及设计上的集中评论，想法和反馈。"
+
+msgid "shortcut-section.viewer"
+msgstr "观察者"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "对准"
+
+msgid "shortcut-subsection.edit"
+msgstr "编辑"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "通用"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "通用"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "主菜单"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "修改图层"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "导航"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "导航"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "导航"
+
+msgid "shortcut-subsection.panels"
+msgstr "面板"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "路径"
+
+msgid "shortcuts.hide-ui"
+msgstr "显示/隐藏UI"
+
+msgid "shortcuts.increase-zoom"
+msgstr "放大"
+
+msgid "shortcuts.insert-image"
+msgstr "插入图片"
+
+msgid "shortcuts.join-nodes"
+msgstr "链接节点"
+
+msgid "shortcuts.make-corner"
+msgstr "制作圆角"
+
+msgid "shortcuts.make-curve"
+msgstr "制作曲线"
+
+msgid "shortcuts.mask"
+msgstr "遮罩"
+
+msgid "shortcuts.move"
+msgstr "移动"
+
+msgid "shortcuts.move-fast-down"
+msgstr "快速下移"
+
+msgid "shortcuts.move-fast-left"
+msgstr "快速向左移动"
+
+msgid "shortcuts.move-fast-right"
+msgstr "快速向右移动"
+
+msgid "shortcuts.move-fast-up"
+msgstr "快速上移"
+
+msgid "shortcuts.move-unit-down"
+msgstr "向下移动"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "排字式样 (%s)"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr "向我发送有关 Penpot 的新闻、更新和推广。"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "订阅通知"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "保存设置"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "微调量"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "已选择 %s / %s 元素"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "导出"
+
+msgid "errors.invite-invalid.info"
+msgstr "此邀请可能已取消或已过期。"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "小幅微调"
+
+msgid "onboarding.contrib.link"
+msgstr "Github的项目"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "快捷方式"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "基础"
+
+msgid "shortcut-section.dashboard"
+msgstr "仪表盘"
+
+msgid "shortcut-section.workspace"
+msgstr "工作区"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "邀请无效"
+
+msgid "labels.and"
+msgstr "和"
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "创建团队并稍后邀请"
+
+msgid "onboarding.newsletter.privacy2"
+msgstr "我们只会向您发送相关电子邮件。您可以随时在您的用户个人资料中取消订阅，也可以"
+"通过我们任何新闻通讯中的取消订阅链接取消订阅。"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr "您的订阅请求已发送，我们将向您发送一封电子邮件进行确认。"
+
+msgid "onboarding.newsletter.desc"
+msgstr "订阅我们的时事通讯，随时了解产品开发进度和新闻。"
+
+msgid "shortcuts.move-nodes"
+msgstr "移动节点"
+
+msgid "onboarding.newsletter.policy"
+msgstr "隐私策略。"
+
+msgid "shortcuts.merge-nodes"
+msgstr "合并节点"

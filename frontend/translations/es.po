@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-05-25 15:16+0000\n"
-"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
-"Language-Team: Spanish "
-"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
+"PO-Revision-Date: 2022-06-23 12:19+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
+"es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -345,8 +345,8 @@ msgstr "Exportar librerias compartidas"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"Las librerias compartidas no se incluirán en la exportación y ningún "
-"recurso será incluido en la librería. "
+"Las librerias compartidas no se incluirán en la exportación y ningún recurso "
+"será incluido en la librería. "
 
 msgid "dashboard.export.options.detach.title"
 msgstr "Usar los recursos como objetos básicos"
@@ -390,10 +390,9 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sólo deberías cargar fuentes que te pertenecen o de las que tienes una "
 "licencia que te permita usarlas en Penpot. Encuentra más información en la "
-"sección de Derechos de Contenido: [Penpot's Terms of "
-"Service](https://penpot.app/terms.html). También te puede interesar leer "
-"más sobre licencias tipográficas: [font "
-"licensing](https://www.typography.com/faq)."
+"sección de Derechos de Contenido: [Penpot's Terms of Service](https://penpot."
+"app/terms.html). También te puede interesar leer más sobre licencias "
+"tipográficas: [font licensing](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -412,7 +411,8 @@ msgid "dashboard.import.import-message"
 msgstr "%s files have been imported succesfully."
 
 msgid "dashboard.import.import-warning"
-msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
+msgstr ""
+"Algunos ficheros contenían objetos erroneos que no han sido importados."
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "Procesando colores"
@@ -488,8 +488,7 @@ msgstr "Nuevo Proyecto"
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-msg"
 msgstr ""
-"Envíame noticias, actualizaciones de producto y recomendaciones sobre "
-"Penpot."
+"Envíame noticias, actualizaciones de producto y recomendaciones sobre Penpot."
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"
@@ -854,9 +853,9 @@ msgstr "Asunto"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Por favor describe el motivo de tu mensaje, especificando si es un "
-"problema, una idea o una duda. Alguien de nuestro equipo responderá tan "
-"pronto como sea posible."
+"Por favor describe el motivo de tu mensaje, especificando si es un problema, "
+"una idea o una duda. Alguien de nuestro equipo responderá tan pronto como "
+"sea posible."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -1365,7 +1364,8 @@ msgstr "No hay invitaciones."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
-msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
+msgstr ""
+"Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.auth-info"
@@ -1377,7 +1377,7 @@ msgstr "Esta página no existe o no tienes permisos para verla."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
-msgstr "¡Huy!"
+msgstr "¡Uy!"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-files"
@@ -1486,7 +1486,8 @@ msgstr "Enviando…"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.desc-message"
-msgstr "Estamos en una operación de mantenimiento programado de nuestros sistemas."
+msgstr ""
+"Estamos en una operación de mantenimiento programado de nuestros sistemas."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.main-message"
@@ -1602,7 +1603,8 @@ msgstr "Verificar el nuevo correo"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
-msgstr "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
+msgstr ""
+"Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1903,8 +1905,8 @@ msgstr "Forma equipo"
 
 msgid "onboarding.choice.team-up-desc"
 msgstr ""
-"¿Estás trabajando con alguien? Crea un equipo e invita a la gente a "
-"trabajar juntos en proyectos y a compartir recursos de diseño."
+"¿Estás trabajando con alguien? Crea un equipo e invita a la gente a trabajar "
+"juntos en proyectos y a compartir recursos de diseño."
 
 msgid "onboarding.choice.team-up.create-team"
 msgstr "El nombre de tu equipo"
@@ -1987,7 +1989,8 @@ msgid "onboarding.slide.0.alt"
 msgstr "Crea diseños"
 
 msgid "onboarding.slide.0.desc1"
-msgstr "Crea bellos interfaces en colaboración con todas las personas del equipo."
+msgstr ""
+"Crea bellos interfaces en colaboración con todas las personas del equipo."
 
 msgid "onboarding.slide.0.desc2"
 msgstr ""
@@ -2001,7 +2004,8 @@ msgid "onboarding.slide.1.alt"
 msgstr "Prototipos interactivos"
 
 msgid "onboarding.slide.1.desc1"
-msgstr "Crea interacciones completas para imitar el comportamiento del producto."
+msgstr ""
+"Crea interacciones completas para imitar el comportamiento del producto."
 
 msgid "onboarding.slide.1.desc2"
 msgstr ""
@@ -2028,8 +2032,8 @@ msgstr "Especificaciones de código"
 
 msgid "onboarding.slide.3.desc1"
 msgstr ""
-"Sincroniza diseño y código de todos tus estilos y componentes con a "
-"snippets de código."
+"Sincroniza diseño y código de todos tus estilos y componentes con a snippets "
+"de código."
 
 msgid "onboarding.slide.3.desc2"
 msgstr ""
@@ -4095,7 +4099,8 @@ msgstr "Alineación vertical"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
-msgstr "Usa el botón de play de la cabecera para arrancar la vista de prototipo."
+msgstr ""
+"Usa el botón de play de la cabecera para arrancar la vista de prototipo."
 
 msgid "workspace.options.width"
 msgstr "Ancho"
@@ -4540,9 +4545,6 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-msgid "shortcut-subsection.zoom-viewer"
-msgstr "Zoom"
 
 msgid "shortcuts.or"
 msgstr " o "
