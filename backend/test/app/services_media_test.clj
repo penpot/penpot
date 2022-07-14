@@ -46,7 +46,8 @@
         (t/is (sto/storage-object? mobj1))
         (t/is (sto/storage-object? mobj2))
         (t/is (= 122785 (:size mobj1)))
-        (t/is (= 3303   (:size mobj2)))))
+        (t/is (or (= 3302 (:size mobj2))
+                  (= 3303 (:size mobj2))))))
     ))
 
 (t/deftest media-object-upload

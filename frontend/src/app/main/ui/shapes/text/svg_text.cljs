@@ -11,7 +11,6 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.config :as cfg]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
@@ -87,18 +86,13 @@
 
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
-        (let [y (if (cfg/check-browser? :safari)
-                  (- (:y data) (:height data))
-                  (:y data))
-
-              alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
-              dominant-bl (when-not (cfg/check-browser? :safari) "ideographic")
+        (let [y (- (:y data) (:height data))
+              dominant-bl "text-before-edge"
               rtl? (= "rtl" (:direction data))
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
                              :x (if rtl? (+ (:x data) (:width data)) (:x data))
                              :y y
                              :transform (position-data-transform shape data)
-                             :alignmentBaseline alignment-bl
                              :dominantBaseline dominant-bl
                              :style (-> #js {:fontFamily (:font-family data)
                                              :fontSize (:font-size data)
