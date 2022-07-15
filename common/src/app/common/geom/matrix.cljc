@@ -74,6 +74,15 @@
        (mth/close? (.-e m1) (.-e m2))
        (mth/close? (.-f m1) (.-f m2))))
 
+(defn unit? [m1]
+  (and (some? m1)
+       (mth/close? (.-a m1) 1)
+       (mth/close? (.-b m1) 0)
+       (mth/close? (.-c m1) 0)
+       (mth/close? (.-d m1) 1)
+       (mth/close? (.-e m1) 0)
+       (mth/close? (.-f m1) 0)))
+
 (defn multiply
   ([^Matrix m1 ^Matrix m2]
    (let [m1a (.-a m1)

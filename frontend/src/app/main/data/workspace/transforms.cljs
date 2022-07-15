@@ -282,9 +282,9 @@
 
 (defn set-pixel-precision
   "Adjust modifiers so they adjust to the pixel grid"
-  [modifiers shape]
+  [{:keys [resize-transform] :as modifiers} shape]
 
-  (if (some? (:resize-transform modifiers))
+  (if (and (some? resize-transform) (not (gmt/unit? resize-transform)))
     ;; If we're working with a rotation we don't handle pixel precision because
     ;; the transformation won't have the precision anyway
     modifiers
