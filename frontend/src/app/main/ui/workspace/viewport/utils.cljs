@@ -10,13 +10,14 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.main.ui.cursors :as cur]
+   [app.main.ui.formats :refer [format-number]]
    [app.util.dom :as dom]))
 
 (defn format-viewbox [vbox]
-  (dm/str (:x vbox 0) " "
-          (:y vbox 0) " "
-          (:width vbox 0) " "
-          (:height vbox 0)))
+  (dm/str (format-number(:x vbox 0)) " "
+          (format-number (:y vbox 0)) " "
+          (format-number (:width vbox 0)) " "
+          (format-number (:height vbox 0))))
 
 (defn translate-point-to-viewport [viewport zoom pt]
   (let [vbox     (.. ^js viewport -viewBox -baseVal)

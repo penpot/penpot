@@ -14,6 +14,8 @@
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
+(def precision 3)
+
 ;; --- Matrix Impl
 
 (defrecord Matrix [^double a
@@ -24,7 +26,13 @@
                    ^double f]
   Object
   (toString [_]
-    (str "matrix(" a "," b "," c "," d "," e "," f ")")))
+    (str "matrix("
+         (mth/precision a precision) ","
+         (mth/precision b precision) ","
+         (mth/precision c precision) ","
+         (mth/precision d precision) ","
+         (mth/precision e precision) ","
+         (mth/precision f precision) ")")))
 
 (defn matrix?
   "Return true if `v` is Matrix instance."
