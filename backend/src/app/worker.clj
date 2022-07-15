@@ -501,9 +501,9 @@
     (db/exec-one! conn [sql:upsert-cron-task id cron cron])))
 
 (defn- synchronize-cron-entries
-  [{:keys [pool schedule]}]
+  [{:keys [pool entries]}]
   (db/with-atomic [conn pool]
-    (run! (partial synchronize-cron-item conn) schedule)))
+    (run! (partial synchronize-cron-item conn) entries)))
 
 (def sql:lock-cron-task
   "select id from scheduled_task where id=? for update skip locked")
