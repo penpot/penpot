@@ -78,8 +78,9 @@
 (mf/defc shape-outlines
   {::mf/wrap-props false}
   [props]
-  (let [selected  (or (obj/get props "selected") #{})
-        hover     (or (obj/get props "hover") #{})
+  (let [selected        (or (obj/get props "selected") #{})
+        hover           (or (obj/get props "hover") #{})
+        highlighted     (or (obj/get props "highlighted") #{})
 
         objects   (obj/get props "objects")
         edition   (obj/get props "edition")
@@ -89,12 +90,18 @@
         show-outline? (fn [shape] (and (not (:hidden shape))
                                        (not (:blocked shape))))
 
-        shapes (->> outlines-ids
-                    (filter #(not= edition %))
-                    (map #(get objects %))
-                    (filterv show-outline?)
-                    (filter some?))]
-
+        shapes (set
+                (into
+                 (->> outlines-ids
+                      (filter #(not= edition %))
+                      (map #(get objects %))
+                      (filterv show-outline?)
+                      (filter some?))
+                 ;; outline highlighted shapes even if they are hidden or blocked
+                 (->> highlighted
+                      (filter #(not= edition %))
+                      (map #(get objects %))
+                      (filter some?))))]
     [:g.outlines
      [:& shape-outlines-render {:shapes shapes
                                 :zoom zoom}]]))

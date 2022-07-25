@@ -70,6 +70,7 @@
         drawing           (mf/deref refs/workspace-drawing)
         options           (mf/deref refs/workspace-page-options)
         focus             (mf/deref refs/workspace-focus-selected)
+        highlighted       (mf/deref refs/highlighted-shapes)
 
         objects-ref       (mf/use-memo #(refs/workspace-page-objects-by-id page-id))
         objects           (mf/deref objects-ref)
@@ -296,6 +297,7 @@
           {:objects base-objects
            :selected selected
            :hover #{(:id @hover) @frame-hover}
+           :highlighted highlighted
            :edition edition
            :zoom zoom}])
 

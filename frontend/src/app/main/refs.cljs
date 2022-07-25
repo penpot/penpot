@@ -117,6 +117,9 @@
      (wsh/process-selected-shapes objects selected))
    selected-shapes-data))
 
+(def highlighted-shapes
+  (l/derived :highlighted workspace-local))
+
 (defn make-selected-ref
   [id]
   (l/derived #(contains? % id) selected-shapes))
