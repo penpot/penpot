@@ -38,7 +38,7 @@
   (dom/stop-propagation event))
 
 (mf/defc menu-entry
-  [{:keys [title shortcut on-click children selected? icon] :as props}]
+  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave on-unmount children selected? icon] :as props}]
   (let [submenu-ref (mf/use-ref nil)
         hovering? (mf/use-ref false)
 
@@ -48,7 +48,8 @@
            (mf/set-ref-val! hovering? true)
            (let [submenu-node (mf/ref-val submenu-ref)]
              (when (some? submenu-node)
-               (dom/set-css-property! submenu-node "display" "block")))))
+               (dom/set-css-property! submenu-node "display" "block")))
+           (when on-pointer-enter (on-pointer-enter))))
 
         on-pointer-leave
         (mf/use-callback
@@ -59,7 +60,8 @@
                (timers/schedule
                 200
                 #(when-not (mf/ref-val hovering?)
-                   (dom/set-css-property! submenu-node "display" "none")))))))
+                   (dom/set-css-property! submenu-node "display" "none")))))
+           (when on-pointer-leave (on-pointer-leave))))
 
         set-dom-node
         (mf/use-callback
@@ -67,6 +69,10 @@
            (let [submenu-node (mf/ref-val submenu-ref)]
              (when (and (some? dom) (some? submenu-node))
                (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
+
+    (when on-unmount
+      (mf/use-effect
+       (fn [] on-unmount)))
 
     (if icon
       [:li.icon-menu-item {:ref set-dom-node
@@ -128,7 +134,10 @@
         do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
         do-send-backward  #(st/emit! (dw/vertical-order-selected :down))
         do-send-to-back   #(st/emit! (dw/vertical-order-selected :bottom))
-        select-shapes     (fn [id] #(st/emit! (dws/select-shape id)))]
+        select-shapes     (fn [id] #(st/emit! (dws/select-shape id)))
+        on-pointer-enter  (fn [id] #(st/emit! (dw/highlight-shape id)))
+        on-pointer-leave  (fn [id] #(st/emit! (dw/dehighlight-shape id)))
+        on-unmount        (fn [id] #(st/emit! (dw/dehighlight-shape id)))]
     [:*
      (when (> (count hover-objs) 1)
        [:& menu-entry {:title (tr "workspace.shape.menu.select-layer")}
@@ -136,6 +145,9 @@
           [:& menu-entry {:title (:name object)
                           :selected? (some #(= object %) shapes)
                           :on-click (select-shapes (:id object))
+                          :on-pointer-enter (on-pointer-enter (:id object))
+                          :on-pointer-leave (on-pointer-leave (:id object))
+                          :on-unmount (on-unmount (:id object))
                           :icon (si/element-icon {:shape object})}])])
      [:& menu-entry {:title (tr "workspace.shape.menu.forward")
                      :shortcut (sc/get-tooltip :bring-forward)
