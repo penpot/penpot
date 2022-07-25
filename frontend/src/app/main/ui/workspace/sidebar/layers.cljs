@@ -144,6 +144,16 @@
               :else
               (st/emit! (dw/select-shape id)))))
 
+        on-pointer-enter
+        (fn [event]
+          (let [id (:id item)]
+            (st/emit! (dw/highlight-shape id))))
+
+        on-pointer-leave
+        (fn [event]
+          (let [id (:id item)]
+            (st/emit! (dw/dehighlight-shape id))))
+
         on-context-menu
         (fn [event]
           (dom/prevent-default event)
@@ -217,6 +227,8 @@
      [:div.element-list-body {:class (dom/classnames :selected selected?
                                                      :icon-layer (= (:type item) :icon))
                               :on-click select-shape
+                              :on-pointer-enter on-pointer-enter
+                              :on-pointer-leave on-pointer-leave
                               :on-double-click #(dom/stop-propagation %)}
       [:& si/element-icon {:shape item}]
       [:& layer-name {:shape item

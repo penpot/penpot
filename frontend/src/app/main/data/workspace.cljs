@@ -45,6 +45,7 @@
    [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.highlight :as dwh]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -1731,6 +1732,10 @@
 (dm/export dws/select-inside-group)
 (dm/export dws/select-shape)
 (dm/export dws/shift-select-shapes)
+
+;; Highlight
+(dm/export dwh/highlight-shape)
+(dm/export dwh/dehighlight-shape)
 
 ;; Groups
 (dm/export dwg/mask-group)
