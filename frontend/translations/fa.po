@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-28 13:16+0000\n"
+"PO-Revision-Date: 2022-07-27 08:17+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
-"Language-Team: Persian "
-"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
+"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
+"fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.13.1-dev\n"
+"X-Generator: Weblate 4.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2414,3 +2414,99 @@ msgstr "به‌روزرسانی"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "برای بستن مسیر کلیک کنید"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "بزرگنمایی"
+
+msgid "common.share-link.all-users"
+msgstr "همه کاربران Penpot"
+
+msgid "common.share-link.manage-ops"
+msgstr "مدیریت مجوزها"
+
+#, fuzzy
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "۱ صفحه به اشتراک گذاشته شد"
+msgstr[1] "%s صفحه به اشتراک گذاشته شدند"
+
+#, fuzzy
+msgid "common.share-link.permissions-can-comment"
+msgstr "می‌تواند نظر دهد"
+
+#, fuzzy
+msgid "common.share-link.permissions-can-inspect"
+msgstr "می‌تواند کد را بررسی کند"
+
+msgid "common.share-link.team-members"
+msgstr "فقط اعضای تیم"
+
+msgid "common.share-link.view-all"
+msgstr "انتخاب همه"
+
+#, fuzzy
+msgid "dashboard.download-binary-file"
+msgstr "دانلود فایل پنپات (.penpot)"
+
+#, fuzzy
+msgid "dashboard.download-standard-file"
+msgstr "دانلود فایل استاندارد (.svg + .json)"
+
+#, fuzzy
+msgid "dashboard.export-binary-multi"
+msgstr "دانلود %s فایل پنپات (.penpot)"
+
+#, fuzzy
+msgid "dashboard.export-standard-multi"
+msgstr "دانلود %s فایل استاندارد (.svg + .json)"
+
+#, fuzzy
+msgid "dashboard.import.import-warning"
+msgstr "برخی از فایل‌ها حاوی آبجکت‌های نامعتبر بودند که حذف شده‌اند."
+
+#, fuzzy
+msgid "shortcut-subsection.panels"
+msgstr "پنل‌ها"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "مسیرها"
+
+#, fuzzy
+msgid "onboarding.welcome.desc3"
+msgstr ""
+"در حالی که از Penpot برای آنچه هست لذت می‌برید، ما به بهبود آن ادامه می‌دهیم "
+"و برنامه‌های امیدوارکننده خود را تکرار می‌کنیم."
+
+#, fuzzy
+msgid "onboarding.welcome.desc1"
+msgstr "هورا! شما یک کاربر Penpot هستید :)"
+
+msgid "shortcut-subsection.shape"
+msgstr "شکل‌ها"
+
+msgid "shortcut-subsection.tools"
+msgstr "ابزار"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "بزرگنمایی"
+
+#: src/app/main/ui/dashboard/search.cljs
+#, fuzzy
+msgid "dashboard.no-matches-for"
+msgstr "هیچ منطبقی برای «%s» یافت نشد"
+
+#, fuzzy
+msgid "onboarding.welcome.title"
+msgstr "به Penpot خوش آمدید"
+
+msgid "shortcuts.add-node"
+msgstr "افزودن گره"
+
+msgid "shortcuts.align-bottom"
+msgstr "تراز به پایین"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "منوی اصلی"
+
+msgid "shortcut-subsection.edit"
+msgstr "ویرایش"
