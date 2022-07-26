@@ -13,6 +13,7 @@
    ["date-fns/locale/el" :default dateFnsLocalesEl]
    ["date-fns/locale/en-US" :default dateFnsLocalesEnUs]
    ["date-fns/locale/es" :default dateFnsLocalesEs]
+   ["date-fns/locale/fa-IR" :default dateFnsLocalesFa]
    ["date-fns/locale/fr" :default dateFnsLocalesFr]
    ["date-fns/locale/he" :default dateFnsLocalesHe]
    ["date-fns/locale/pt-BR" :default dateFnsLocalesPtBr]
@@ -218,6 +219,7 @@
        :ru dateFnsLocalesRu
        :ro dateFnsLocalesRo
        :de dateFnsLocalesDe
+       :fa dateFnsLocalesFa
        :pt_br dateFnsLocalesPtBr
        :zh_cn dateFnsLocalesZhCn})
 

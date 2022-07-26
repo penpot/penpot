@@ -111,27 +111,11 @@
   text-shadow: none;
 }
 
-/// Shortcut mixin to add new font-face compatible with all browser. To work you need to add the follow formats of font:".eot", ".woff", ".ttf" and "svg".
-/// @group Mixins
-/// @parameter $style-name - Name of the font style
-/// @parameter $file  - Name of the font file.
-/// @parameter $weight [normal] - With this variable you can add how much weight you want to add to this specific font. EX: Bold
-/// @parameter $style [normal] - With this variable you can add a font style to this specific font. EX: Italic
-
-@mixin font-face(
-  $style-name,
-  $file,
-  $weight: unquote("normal"),
-  $style: unquote("normal")
-) {
+@mixin font-face($style-name, $file, $weight: unquote("normal"), $style: unquote("normal")) {
   $filepath: "/fonts/" + $file;
   @font-face {
     font-family: "#{$style-name}";
-    src: url($filepath + ".eot");
-    src: url($filepath + ".eot?#iefix") format("embedded-opentype"),
-      url($filepath + ".woff") format("woff"),
-      url($filepath + ".ttf") format("truetype"),
-      url($filepath + ".svg#" + $style-name + "") format("svg");
+    src: url($filepath + ".woff2") format("woff2"), url($filepath + ".ttf") format("truetype");
     font-weight: unquote($weight);
     font-style: unquote($style);
   }

@@ -385,6 +385,11 @@
     (.setProperty (.-style ^js node) property value))
   node)
 
+(defn unset-css-property! [^js node property]
+  (when (some? node)
+    (.removeProperty (.-style ^js node) property))
+  node)
+
 (defn capture-pointer [^js event]
   (when (some? event)
     (-> event get-target (.setPointerCapture (.-pointerId event)))))
@@ -392,6 +397,9 @@
 (defn release-pointer [^js event]
   (when (and (some? event) (.-pointerId event))
     (-> event get-target (.releasePointerCapture (.-pointerId event)))))
+
+(defn get-body []
+  (.-body globals/document))
 
 (defn get-root []
   (query globals/document "#app"))

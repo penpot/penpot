@@ -243,10 +243,7 @@
     }
   }
 
-  .af-field-previous_design_tool
-    .af-choice-option:nth-child(7)
-    input:checked
-    + label,
+  .af-field-previous_design_tool .af-choice-option:nth-child(7) input:checked + label,
   .af-field-use_of_penpot .af-choice-option:nth-child(5) input:checked + label {
     &::before {
       background-color: $color-primary;
