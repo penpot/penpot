@@ -90,9 +90,9 @@
 
       (swap! storage assoc ::locale lname)
       (reset! locale lname))
-    (let [locale (autodetect)]
+    (let [lname (autodetect)]
       (swap! storage dissoc ::locale)
-      (reset! locale locale))))
+      (reset! locale lname))))
 
 (defn reset-locale
   "Set the current locale to the browser detected one if it is
