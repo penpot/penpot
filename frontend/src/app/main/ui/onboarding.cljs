@@ -7,147 +7,102 @@
 (ns app.main.ui.onboarding
   (:require
    [app.config :as cf]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
+   [app.main.data.users :as du]   
    [app.main.store :as st]
    [app.main.ui.onboarding.newsletter]
    [app.main.ui.onboarding.questions]
    [app.main.ui.onboarding.team-choice]
    [app.main.ui.onboarding.templates]
-   [app.main.ui.releases.common :as rc]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as tm]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 ;; --- ONBOARDING LIGHTBOX
 
-(mf/defc onboarding-start
+(defn send-event 
+  [event-name]
+  (st/emit! (ptk/event ::ev/event {::ev/name event-name
+                                   ::ev/origin "dashboard"})))
+
+
+(mf/defc onboarding-welcome
   [{:keys [next] :as props}]
-  [:div.modal-container.onboarding
-   [:div.modal-left.welcome
-    [:img {:src "images/login-on.jpg" :border "0" :alt (tr "onboarding.welcome.alt")}]]
-   [:div.modal-right
-    [:div.modal-title
-     [:h2 {:data-test "onboarding-welcome"} (tr "onboarding.welcome.title")]]
-    [:span.release "Beta version " (:main @cf/version)]
-    [:div.modal-content
-     [:p (tr "onboarding.welcome.desc1")]
-     [:p (tr "onboarding.welcome.desc2")]
-     [:p (tr "onboarding.welcome.desc3")]]
-    [:div.modal-navigation
-     [:button.btn-secondary {:on-click next :data-test "onboarding-next-btn"} (tr "labels.continue")]]]
-   [:img.deco {:src "images/deco-left.png" :border "0"}]
-   [:img.deco.right {:src "images/deco-right.png" :border "0"}]])
+  (let [go-next
+        (fn []
+          (send-event "onboarding-step1-continue")
+          (next))]
+    [:div.modal-container.onboarding.onboarding-v2
+     [:div.modal-left.welcome
+      [:img {:src "images/onboarding-people.svg" :border "0" :alt (tr "onboarding.welcome.alt")}]]
+     [:div.modal-right
+      [:div.release-container [:span.release "Beta " (:main @cf/version)]]
+      [:div.right-content
+       [:div.modal-title
+        [:h2 {:data-test "onboarding-welcome"} (tr "onboarding-v2.welcome.title")]]
 
-(mf/defc onboarding-opensource
+       [:div.modal-content
+        [:p (tr "onboarding-v2.welcome.desc1")]
+        [:div.welcome-card
+         [:img {:src "images/community.svg" :border "0"}]
+         [:div
+          [:div.title [:a {:href "https://community.penpot.app/" :target "_blank" :on-click #(send-event "onboarding-community-link")} (tr "onboarding-v2.welcome.desc2.title")]]
+          [:div.description (tr "onboarding-v2.welcome.desc2")]]]
+
+        [:div.welcome-card
+         [:img {:src "images/contributing.svg" :border "0"}]
+         [:div
+          [:div.title [:a {:href "https://help.penpot.app/contributing-guide/" :target "_blank" :on-click #(send-event "onboarding-contributing-link")} (tr "onboarding-v2.welcome.desc3.title")]]
+          [:div.description (tr "onboarding-v2.welcome.desc3")]]]]]
+      [:div.modal-navigation
+       [:button.btn-secondary {:on-click go-next :data-test "onboarding-next-btn"} (tr "labels.continue")]]
+      [:img.deco.square {:src "images/deco-square.svg" :border "0"}]
+      [:img.deco.circle {:src "images/deco-circle.svg" :border "0"}]
+      [:img.deco.line1 {:src "images/deco-line1.svg" :border "0"}]
+      [:img.deco.line2 {:src "images/deco-line2.svg" :border "0"}]]]))
+
+(mf/defc onboarding-before-start
   [{:keys [next] :as props}]
-  [:div.modal-container.onboarding.black
-   [:div.modal-left
-    [:img {:src "images/open-source.svg" :border "0" :alt (tr "onboarding.contrib.alt")}]]
-   [:div.modal-right
-    [:div.modal-title
-     [:h2 (tr "onboarding.contrib.title")]]
-    [:div.modal-content
-     [:p (tr "onboarding.contrib.desc1")]
-     [:p
-      (tr "onboarding.contrib.desc2.1")
-      "\u00A0"
-      [:a {:href "https://github.com/penpot" :target "_blank"} (tr "onboarding.contrib.link")]
-      "\u00A0"
-      (tr "onboarding.contrib.desc2.2")]]
-    [:div.modal-navigation
-     [:button.btn-secondary {:on-click next  :data-test "opsource-next-btn"} (tr "labels.continue")]]]])
+  (let [go-next
+        (fn []
+          (send-event "onboarding-step2-continue")
+          (next))]
+    [:div.modal-container.onboarding.onboarding-v2
+     [:div.modal-left.welcome
+      [:img {:src "images/onboarding-people.svg" :border "0" :alt (tr "onboarding.welcome.alt")}]]
+     [:div.modal-right
+      [:div.release-container [:span.release "Beta " (:main @cf/version)]]
+      [:div.right-content
+       [:div.modal-title
+        [:h2 {:data-test "onboarding-welcome"} (tr "onboarding-v2.before-start.title")]]
 
-(defmulti render-slide :slide)
+       [:div.modal-content
+        [:p (tr "onboarding-v2.before-start.desc1")]
+        [:div.welcome-card
+         [:img {:src "images/user-guide.svg" :border "0"}]
+         [:div
+          [:div.title [:a {:href "https://help.penpot.app/user-guide/" :target "_blank" :on-click #(send-event "onboarding-user-guide-link")} (tr "onboarding-v2.before-start.desc2.title")]]
+          [:div.description (tr "onboarding-v2.before-start.desc2")]]]
 
-(defmethod render-slide 0
-  [{:keys [navigate skip slide] :as props}]
-  (mf/html
-   [:div.modal-container.onboarding.feature
-    [:div.modal-left
-     [:img {:src "images/on-design.gif" :border "0" :alt (tr "onboarding.slide.0.alt")}]]
-    [:div.modal-right
-     [:div.modal-title
-      [:h2 {:data-test "slide-0-title"} (tr "onboarding.slide.0.title")]]
-     [:div.modal-content
-      [:p (tr "onboarding.slide.0.desc1")]
-      [:p (tr "onboarding.slide.0.desc2")]]
-     [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate 1)
-                              :data-test "slide-0-btn"} (tr "labels.continue")]
-      [:span.skip {:on-click skip :data-test "skip-btn"} (tr "labels.skip")]
-      [:& rc/navigation-bullets
-       {:slide slide
-        :navigate navigate
-        :total 4}]]]]))
+        [:div.welcome-card
+         [:img {:src "images/video-tutorials.svg" :border "0"}]
+         [:div
+          [:div.title [:a {:href "https://www.youtube.com/c/Penpot" :target "_blank" :on-click #(send-event "onboarding-video-tutorials-link")} (tr "onboarding-v2.before-start.desc3.title")]]
+          [:div.description (tr "onboarding-v2.before-start.desc3")]]]]]
+      [:div.modal-navigation
+       [:button.btn-secondary {:on-click go-next :data-test "onboarding-next-btn"} (tr "labels.continue")]]
+      [:img.deco.square {:src "images/deco-square.svg" :border "0"}]
+      [:img.deco.circle {:src "images/deco-circle.svg" :border "0"}]
+      [:img.deco.line1 {:src "images/deco-line1.svg" :border "0"}]
+      [:img.deco.line2 {:src "images/deco-line2.svg" :border "0"}]]]))
 
-(defmethod render-slide 1
-  [{:keys [navigate slide skip] :as props}]
-  (mf/html
-   [:div.modal-container.onboarding.feature
-    [:div.modal-left
-     [:img {:src "images/on-proto.gif" :border "0" :alt (tr "onboarding.slide.1.alt")}]]
-    [:div.modal-right
-     [:div.modal-title
-      [:h2 {:data-test "slide-1-title"} (tr "onboarding.slide.1.title")]]
-     [:div.modal-content
-      [:p (tr "onboarding.slide.1.desc1")]
-      [:p (tr "onboarding.slide.1.desc2")]]
-     [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate 2)
-                              :data-test "slide-1-btn"} (tr "labels.continue")]
-      [:span.skip {:on-click skip :data-test "skip-btn"} (tr "labels.skip")]
-      [:& rc/navigation-bullets
-       {:slide slide
-        :navigate navigate
-        :total 4}]]]]))
-
-(defmethod render-slide 2
-  [{:keys [navigate slide skip] :as props}]
-  (mf/html
-   [:div.modal-container.onboarding.feature
-    [:div.modal-left
-     [:img {:src "images/on-feed.gif" :border "0" :alt (tr "onboarding.slide.2.alt")}]]
-    [:div.modal-right
-     [:div.modal-title
-      [:h2 {:data-test "slide-2-title"} (tr "onboarding.slide.2.title")]]
-     [:div.modal-content
-      [:p (tr "onboarding.slide.2.desc1")]]
-     [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate 3)
-                              :data-test "slide-2-btn"} (tr "labels.continue")]
-      [:span.skip {:on-click skip :data-test "skip-btn"} (tr "labels.skip")]
-      [:& rc/navigation-bullets
-       {:slide slide
-        :navigate navigate
-        :total 4}]]]]))
-
-(defmethod render-slide 3
-  [{:keys [navigate slide skip] :as props}]
-  (mf/html
-   [:div.modal-container.onboarding.feature
-    [:div.modal-left
-     [:img {:src "images/on-handoff.gif" :border "0" :alt (tr "onboarding.slide.3.alt")}]]
-    [:div.modal-right
-     [:div.modal-title
-      [:h2 {:data-test "slide-3-title"} (tr "onboarding.slide.3.title")]]
-     [:div.modal-content
-      [:p (tr "onboarding.slide.3.desc1")]
-      [:p (tr "onboarding.slide.3.desc2")]]
-     [:div.modal-navigation
-      [:button.btn-secondary
-       {:on-click skip
-        :data-test "slide-3-btn"}
-       (tr "labels.start")]
-      [:& rc/navigation-bullets
-       {:slide slide
-        :navigate navigate
-        :total 4}]]]]))
 
 (mf/defc onboarding-modal
   {::mf/register modal/components
    ::mf/register-as :onboarding}
-  [props]
+  [_]
   (let [slide (mf/use-state :start)
         klass (mf/use-state "fadeInDown")
 
@@ -173,10 +128,5 @@
     [:div.modal-overlay
      [:div.animated {:class @klass}
       (case @slide
-        :start      [:& onboarding-start {:next #(navigate :opensource)}]
-        :opensource [:& onboarding-opensource {:next #(navigate 0)}]
-        (render-slide
-         (assoc props
-                :slide @slide
-                :navigate navigate
-                :skip skip)))]]))
+        :start      [:& onboarding-welcome {:next #(navigate :opensource)}]
+        :opensource [:& onboarding-before-start {:next skip}])]]))

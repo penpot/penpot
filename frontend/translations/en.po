@@ -1966,19 +1966,41 @@ msgstr "Start designing"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "Hooray! You are already a Penpot user :)"
+msgid "onboarding-v2.welcome.title"
+msgstr "Welcome to Penpot!"
 
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot is in its first beta version thanks to the combination of core "
-"features, maturity, stability and the amazing validation from the community "
-"as a whole, to which you are more than welcome."
+msgid "onboarding-v2.welcome.desc1"
+msgstr "Penpot is Open Source and it is made by Kaleidos as well as the community, where lots of people already help each other out. Everyone can collaborate by:"
 
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"While you enjoy Penpot for what it is we will keep improving it, releasing "
-"iterations of our hopeful plans."
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Participating in the Community"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr "A public space to learn, share and discuss about Penpot, its present and future with the entire Community and the Penpot core team."
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Contributing guide"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr "Where you’ll find how to collaborate with translations, feature requests, core contributions, bug hunting…"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Before you start"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr "You should know that there are lots of resources available to help you get started with Penpot, like the User Guide and our Youtube channel."
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "User guide"
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr "Detailed info about how to use Penpot. From prototyping to organizing or sharing designs."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Video tutorials"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "You can watch our tutorials and the tutorials made by our community."
 
 msgid "onboarding.welcome.title"
 msgstr "Welcome to Penpot"

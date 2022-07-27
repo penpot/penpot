@@ -868,6 +868,92 @@
     }
   }
 
+  &.onboarding-v2 {
+    min-height: 464px;
+    min-width: 752px;
+    .modal-left {
+      background-color: $color-gray-50;
+      width: 297px;
+    }
+
+    .welcome img {
+      width: 260.9px;
+      height: 402.96px;
+      position: absolute;
+      bottom: -10px;
+    }
+
+    .modal-right {
+      padding: 0;
+    }
+
+    .release-container {
+      width: 100%;
+      text-align: right;
+      position: relative;
+      height: 2rem;
+    }
+
+    .release {
+      background-color: $color-primary;
+      border-radius: 4px;
+      color: #1f1f1f;
+      padding: 4px $size-1;
+      display: inline-block;
+      margin-top: 1rem;
+      margin-right: 1rem;
+    }
+
+    .right-content {
+      padding: $size-6;
+
+      .modal-content {
+        padding: $size-1 0;
+        p {
+          margin-top: 0.4rem;
+        }
+      }
+
+      .welcome-card {
+        display: flex;
+        color: $color-black;
+        margin-top: $size-5;
+        width: 90%;
+
+        .title a {
+          font-weight: bold;
+          color: $color-black;
+          text-decoration: none;
+          &:hover {
+            color: $color-primary-dark;
+          }
+        }
+
+        .description {
+          font-size: 12px;
+          text-decoration: none;
+          text-transform: none;
+        }
+
+        img {
+          width: 48px;
+          height: 48px;
+          margin-right: 6px;
+        }
+      }
+    }
+
+    .modal-navigation {
+      width: 100%;
+      padding: 0 2rem 2rem 0;
+
+      button {
+        margin-left: auto;
+        padding: 0 0.5rem;
+      }
+    }
+  }
+
   &.black {
     .modal-left {
       background-color: $color-black;
@@ -1055,6 +1141,38 @@
   position: absolute;
   top: -18px;
   width: 60px;
+
+  &.square {
+    top: -18px;
+    left: 631px;
+    width: 24px;
+    height: 24px;
+    color: $color-primary;
+  }
+
+  &.circle {
+    top: -16px;
+    left: 21px;
+    width: 24px;
+    height: 24px;
+    color: $color-primary;
+  }
+
+  &.line1 {
+    top: 110px;
+    left: -12px;
+    width: 16px;
+    height: 49px;
+    color: $color-primary;
+  }
+
+  &.line2 {
+    top: 440px;
+    left: 733px;
+    width: 46px;
+    height: 43px;
+    color: $color-primary;
+  }
 
   &.top {
     width: 183px;

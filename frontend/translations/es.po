@@ -2095,6 +2095,42 @@ msgstr ""
 "Mientras disfrutas de Penpot seguiremos haciendo mejoras, lanzando "
 "iteraciones de nuestros esperanzadores planes."
 
+msgid "onboarding-v2.welcome.title"
+msgstr "¡Te damos la bienvenida a Penpot!"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr "Penpot es Código Abierto y está hecho por Kaleidos y la comunidad, donde ya hay mucha gente ayudándose unos a otros. Formas de colaborar:"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Participantdo en la Comunidad"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr "Un espacio público donde aprender, compatir y discutir sobre el presente y futuro de Penpot con toda la Comunidad y el el equipo de Penpot."
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Guía de contribución"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr "Aquí encontrarás cómo colaborar con traducciones, solicitar funcionalidades, contribuir en el código, cazar errores…"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Antes de comenzar"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr "Hay multitud de recursos disponibles para ayudarte a comenzar con Penpot, como son la Guía de usuario y nuestro canal de Youtube."
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Guía de usuario"
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr "Información detallada sobre cómo usar Penpot. Desde prototipar a organizar y compartir diseños."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Tutoriales de video"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "Puedes ver nuestros tutoriales y los hechos por la comunidad."
+
 msgid "onboarding.welcome.title"
 msgstr "Te damos la bienvenida a Penpot"
 
