@@ -3,7 +3,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v16.15.1 \
+ENV NODE_VERSION=v16.16.0 \
     CLOJURE_VERSION=1.11.1.1149 \
     CLJKONDO_VERSION=2022.06.22 \
     BABASHKA_VERSION=0.8.156 \
@@ -57,6 +57,7 @@ RUN set -ex; \
         woff-tools \
         woff2 \
         fontforge \
+        openssh-client \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
