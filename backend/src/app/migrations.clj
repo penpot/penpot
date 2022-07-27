@@ -235,6 +235,9 @@
 
    {:name "0075-mod-share-link-table"
     :fn (mg/resource "app/migrations/sql/0075-mod-share-link-table.sql")}
+
+   {:name "0076-mod-storage-object-table"
+    :fn (mg/resource "app/migrations/sql/0076-mod-storage-object-table.sql")}
    ])
 
 
