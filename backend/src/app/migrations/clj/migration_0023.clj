@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.migrations.migration-0023
+(ns app.migrations.clj.migration-0023
   (:require
    [app.db :as db]
    [app.util.blob :as blob]))
