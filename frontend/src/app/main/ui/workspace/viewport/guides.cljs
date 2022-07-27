@@ -284,13 +284,16 @@
 
         pos (+ (or (:new-position @state) (:position guide)) (get move-vec axis))
         guide-width (/ guide-width zoom)
-        guide-pill-corner-radius (/ guide-pill-corner-radius zoom)]
+        guide-pill-corner-radius (/ guide-pill-corner-radius zoom)
+
+        frame-guide-outside?
+        (and (some? frame)
+             (not (is-guide-inside-frame? (assoc guide :position pos) frame)))]
 
     (when (or (nil? frame)
-              (and (is-guide-inside-frame? (assoc guide :position pos) frame)
-                   (cph/root-frame? frame)
+              (and (cph/root-frame? frame)
                    (not (cph/rotated-frame? frame))))
-      [:g.guide-area
+      [:g.guide-area {:opacity (when frame-guide-outside? 0)}
        (when-not disabled-guides?
          (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
            [:rect {:x x
@@ -298,7 +301,7 @@
                    :width width
                    :height height
                    :style {:fill "none"
-                           :pointer-events "fill"
+                           :pointer-events (if frame-guide-outside? "none" "fill")
                            :cursor (if (= axis :x) (cur/resize-ew 0) (cur/resize-ns 0))}
                    :on-pointer-enter on-pointer-enter
                    :on-pointer-leave on-pointer-leave

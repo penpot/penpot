@@ -354,7 +354,7 @@
                  (assoc :fills []))
 
 
-        bounds (gsb/get-object-bounds objects object)
+        {:keys [width height] :as bounds} (gsb/get-object-bounds objects object)
         vbox (format-viewbox bounds)
         fonts (ff/shape->fonts object objects)
 
@@ -366,8 +366,8 @@
      [:& (mf/provider embed/context) {:value render-embed?}
       [:svg {:id (dm/str "screenshot-" object-id)
              :view-box vbox
-             :width (:width bounds)
-             :height (:height bounds)
+             :width (ust/format-precision width viewbox-decimal-precision)
+             :height (ust/format-precision height viewbox-decimal-precision)
              :version "1.1"
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"

@@ -78,8 +78,10 @@
                    ;; In case of multiple selection, the origin point has been already
                    ;; calculated and given in the fake :ox and :oy attributes. See
                    ;; common/src/app/common/attrs.cljc
-                   (some? (:ox values)) (assoc :x (:ox values))
-                   (some? (:oy values)) (assoc :y (:oy values))))
+                   (and (= (:x values) :multiple)
+                        (some? (:ox values))) (assoc :x (:ox values))
+                   (and (= (:y values) :multiple)
+                        (some? (:oy values))) (assoc :y (:oy values))))
 
         ;; For :height and :width we take those in the :selrect attribute, because
         ;; not all shapes have an own :width and :height (e. g. paths). Here the

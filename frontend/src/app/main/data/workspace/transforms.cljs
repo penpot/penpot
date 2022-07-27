@@ -282,9 +282,9 @@
 
 (defn set-pixel-precision
   "Adjust modifiers so they adjust to the pixel grid"
-  [modifiers shape]
+  [{:keys [resize-transform] :as modifiers} shape]
 
-  (if (some? (:resize-transform modifiers))
+  (if (and (some? resize-transform) (not (gmt/unit? resize-transform)))
     ;; If we're working with a rotation we don't handle pixel precision because
     ;; the transformation won't have the precision anyway
     modifiers
@@ -870,13 +870,19 @@
             objects (wsh/lookup-page-objects state page-id)
             frame-id (cph/frame-id-by-position objects position)
 
-            moving-shapes (->> ids
-                               (cph/clean-loops objects)
-                               (keep #(get objects %))
-                               (remove (partial check-frame-move? frame-id objects position)))
+            moving-shapes
+            (->> ids
+                 (cph/clean-loops objects)
+                 (keep #(get objects %))
+                 (remove (partial check-frame-move? frame-id objects position)))
+
+            moving-frames
+            (->> ids
+                 (filter #(cph/frame-shape? objects %)))
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)
+                        (pcb/update-shapes moving-frames (fn [shape] (assoc shape :hide-in-viewer true)))
                         (pcb/change-parent frame-id moving-shapes))]
 
         (when-not (empty? changes)

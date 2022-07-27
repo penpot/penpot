@@ -8,10 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.point :as gpt]
    [app.common.transit :as transit]
    [app.main.fonts :as fonts]
-   [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.text-position-data :as tpd]
    [promesa.core :as p]))
@@ -59,78 +57,54 @@
         (p/then #(when (not (dom/check-font? font))
                    (load-font font))))))
 
-(defn calc-text-node-positions
-  [base-node viewport zoom]
+(defn- calc-text-node-positions
+  [shape-id]
 
-  (when (and (some? base-node)(some? viewport))
-    (let [translate-point
-          (fn [pt]
-            (let [vbox     (.. ^js viewport -viewBox -baseVal)
-                  brect    (dom/get-bounding-rect viewport)
-                  brect    (gpt/point (d/parse-integer (:left brect))
-                                      (d/parse-integer (:top brect)))
-                  box      (gpt/point (.-x vbox) (.-y vbox))
-                  zoom     (gpt/point zoom)]
-              
-              (-> (gpt/subtract pt brect)
-                  (gpt/divide zoom)
-                  (gpt/add box))))
+  (when (some? shape-id)
+    (let [text-nodes (dom/query-all (dm/str "#html-text-node-" shape-id " .text-node"))
+          load-fonts (->> text-nodes (map resolve-font))
 
-          translate-rect
-          (fn [{:keys [x y width height] :as rect}]
-            (let [p1 (-> (gpt/point x y)
-                         (translate-point))
-
-                  p2 (-> (gpt/point (+ x width) (+ y height))
-                         (translate-point))]
-              (assoc rect
-                     :x (:x p1)
-                     :y (:y p1)
-                     :width (- (:x p2) (:x p1))
-                     :height (- (:y p2) (:y p1)))))
-
-          text-nodes (dom/query-all base-node ".text-node, span[data-text]")
-          load-fonts (->> text-nodes (map resolve-font))]
+          process-text-node
+          (fn [parent-node]
+            (let [root (dom/get-parent-with-selector parent-node ".text-node-html")
+                  shape-x (-> (dom/get-attribute root "data-x") d/parse-double)
+                  shape-y (-> (dom/get-attribute root "data-y") d/parse-double)
+                  direction (.-direction (js/getComputedStyle parent-node))]
+              (->> (.-childNodes parent-node)
+                   (mapcat #(parse-text-nodes parent-node direction %))
+                   (mapv #(-> %
+                              (update-in [:position :x] + shape-x)
+                              (update-in [:position :y] + shape-y))))))]
       (-> (p/all load-fonts)
           (p/then
            (fn []
-             (->> text-nodes
-                  (mapcat
-                   (fn [parent-node]
-                     (let [direction (.-direction (js/getComputedStyle parent-node))]
-                       (->> (.-childNodes parent-node)
-                            (mapcat #(parse-text-nodes parent-node direction %))))))
-                  (mapv #(update % :position translate-rect)))))))))
+             (->> text-nodes (mapcat process-text-node))))))))
 
 (defn calc-position-data
-  [base-node]
-  (let [viewport      (dom/get-element "render")
-        zoom          (or (get-in @st/state [:workspace-local :zoom]) 1)]
-    (when (and (some? base-node) (some? viewport))
-      (p/let [text-data (calc-text-node-positions base-node viewport zoom)]
-        (when (d/not-empty? text-data)
-          (->> text-data
-               (mapv (fn [{:keys [node position text direction]}]
-                       (let [{:keys [x y width height]} position
-                             styles (js/getComputedStyle ^js node)
-                             get    (fn [prop]
-                                      (let [value (.getPropertyValue styles prop)]
-                                        (when (and value (not= value ""))
-                                          value)))]
-                         (d/without-nils
-                          {:x                   x
-                           :y                   (+ y height)
-                           :width               width
-                           :height              height
-                           :direction           direction
-                           :font-family         (str (get "font-family"))
-                           :font-size           (str (get "font-size"))
-                           :font-weight         (str (get "font-weight"))
-                           :text-transform      (str (get "text-transform"))
-                           :text-decoration     (str (get "text-decoration"))
-                           :letter-spacing      (str (get "letter-spacing"))
-                           :font-style          (str (get "font-style"))
-                           :fills               (transit/decode-str (get "--fills"))
-                           :text                text}))))))))))
-
-
+  [shape-id]
+  (when (some? shape-id)
+    (p/let [text-data (calc-text-node-positions shape-id)]
+      (when (d/not-empty? text-data)
+        (->> text-data
+             (mapv (fn [{:keys [node position text direction]}]
+                     (let [{:keys [x y width height]} position
+                           styles (js/getComputedStyle ^js node)
+                           get    (fn [prop]
+                                    (let [value (.getPropertyValue styles prop)]
+                                      (when (and value (not= value ""))
+                                        value)))]
+                       (d/without-nils
+                        {:x                   x
+                         :y                   (+ y height)
+                         :width               width
+                         :height              height
+                         :direction           direction
+                         :font-family         (str (get "font-family"))
+                         :font-size           (str (get "font-size"))
+                         :font-weight         (str (get "font-weight"))
+                         :text-transform      (str (get "text-transform"))
+                         :text-decoration     (str (get "text-decoration"))
+                         :letter-spacing      (str (get "letter-spacing"))
+                         :font-style          (str (get "font-style"))
+                         :fills               (transit/decode-str (get "--fills"))
+                         :text                text})))))))))
