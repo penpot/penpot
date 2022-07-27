@@ -6,7 +6,7 @@
 
 (ns app.migrations
   (:require
-   [app.migrations.migration-0023 :as mg0023]
+   [app.migrations.clj.migration-0023 :as mg0023]
    [app.util.migrations :as mg]
    [integrant.core :as ig]))
 
@@ -228,13 +228,16 @@
     :fn (mg/resource "app/migrations/sql/0072-mod-file-object-thumbnail-table.sql")}
 
    {:name "0073-mod-file-media-object-constraints"
-    :fn (mg/resource "app/migrations/sql/0073-mod-file-media-object-constraints.sql")}   
+    :fn (mg/resource "app/migrations/sql/0073-mod-file-media-object-constraints.sql")}
 
    {:name "0074-mod-file-library-rel-constraints"
     :fn (mg/resource "app/migrations/sql/0074-mod-file-library-rel-constraints.sql")}
-   
+
    {:name "0075-mod-share-link-table"
     :fn (mg/resource "app/migrations/sql/0075-mod-share-link-table.sql")}
+
+   {:name "0076-mod-storage-object-table"
+    :fn (mg/resource "app/migrations/sql/0076-mod-storage-object-table.sql")}
    ])
 
 
