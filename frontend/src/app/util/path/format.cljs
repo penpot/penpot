@@ -6,25 +6,58 @@
 
 (ns app.util.path.format
   (:require
+   [app.common.math :as mth]
    [app.common.path.commands :as upc]
    [app.common.path.subpaths :refer [pt=]]
    [app.util.array :as arr]))
 
+(def path-precision 3)
+
 (defn- join-params
   ([a]
-   (js* "\"\"+~{}" a))
+   (js* "\"\"+~{}"
+        (mth/precision a path-precision)))
   ([a b]
-   (js* "\"\"+~{}+\",\"+~{}" a b))
+   (js* "\"\"+~{}+\",\"+~{}"
+        (mth/precision a path-precision)
+        (mth/precision b path-precision)))
   ([a b c]
-   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}" a b c))
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}"
+        (mth/precision a path-precision)
+        (mth/precision b path-precision)
+        (mth/precision c path-precision)))
   ([a b c d]
-   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}" a b c d))
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
+        (mth/precision a path-precision)
+        (mth/precision b path-precision)
+        (mth/precision c path-precision)
+        (mth/precision d path-precision)
+        ))
   ([a b c d e]
-   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}" a b c d e))
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
+        (mth/precision a path-precision)
+        (mth/precision b path-precision)
+        (mth/precision c path-precision)
+        (mth/precision d path-precision)
+        (mth/precision e path-precision)))
   ([a b c d e f]
-   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}" a b c d e f))
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
+        (mth/precision a path-precision)
+        (mth/precision b path-precision)
+        (mth/precision c path-precision)
+        (mth/precision d path-precision)
+        (mth/precision e path-precision)
+        (mth/precision f path-precision)
+        ))
   ([a b c d e f g]
-   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}" a b c d e f g)))
+   (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
+        (mth/precision a path-precision)
+        (mth/precision b path-precision)
+        (mth/precision c path-precision)
+        (mth/precision d path-precision)
+        (mth/precision e path-precision)
+        (mth/precision f path-precision)
+        (mth/precision g path-precision))))
 
 (defn- translate-params
   [command {:keys [x y] :as params}]

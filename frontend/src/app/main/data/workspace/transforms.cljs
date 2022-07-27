@@ -282,10 +282,6 @@
 
     [root transformed-root ignore-geometry?]))
 
-
-
-
-
 (defn- get-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
   ([modif-tree objects shape]
@@ -758,13 +754,19 @@
             objects (wsh/lookup-page-objects state page-id)
             frame-id (cph/frame-id-by-position objects position)
 
-            moving-shapes (->> ids
-                               (cph/clean-loops objects)
-                               (keep #(get objects %))
-                               (remove (partial check-frame-move? frame-id objects position)))
+            moving-shapes
+            (->> ids
+                 (cph/clean-loops objects)
+                 (keep #(get objects %))
+                 (remove (partial check-frame-move? frame-id objects position)))
+
+            moving-frames
+            (->> ids
+                 (filter #(cph/frame-shape? objects %)))
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)
+                        (pcb/update-shapes moving-frames (fn [shape] (assoc shape :hide-in-viewer true)))
                         (pcb/change-parent frame-id moving-shapes))]
 
         (when-not (empty? changes)

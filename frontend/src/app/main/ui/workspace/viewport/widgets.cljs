@@ -140,8 +140,7 @@
         text-pos-x (if (:use-for-thumbnail? frame) 15 0)]
 
     (when (not (:hidden frame))
-      [:g {:id (dm/str "frame-title-" (:id frame))
-           }
+      [:g {:id (dm/str "frame-title-" (:id frame))}
        (when (:use-for-thumbnail? frame)
          [:g {:transform (dm/str frame-transform " " (text-transform label-pos zoom))}
           [:svg {:x 0

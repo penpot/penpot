@@ -11,7 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
@@ -88,16 +88,14 @@
 
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
-        (let [y (if (cfg/check-browser? :safari)
-                  (- (:y data) (:height data))
-                  (:y data))
-
-              alignment-bl (when (cfg/check-browser? :safari) "text-before-edge")
-              dominant-bl (when-not (cfg/check-browser? :safari) "ideographic")
-              rtl?  (= "rtl" (:direction data))
+        (let [alignment-bl (when (cf/check-browser? :safari) "text-before-edge")
+              dominant-bl  (when-not (cf/check-browser? :safari) "text-before-edge")
+              rtl? (= "rtl" (:direction data))
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
                              :x (if rtl? (+ (:x data) (:width data)) (:x data))
-                             :y y
+                             :y (if (cf/check-browser? :safari)
+                                  (- (:y data) (:height data))
+                                  (:y data))
                              :transform (position-data-transform shape data)
                              :alignmentBaseline alignment-bl
                              :dominantBaseline dominant-bl
@@ -116,4 +114,3 @@
           [:& (mf/provider muc/render-ctx) {:key index :value (str render-id "_" (:id shape) "_" index)}
            [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
             [:> :text props (:text data)]]]))]]))
-

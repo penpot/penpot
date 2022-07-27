@@ -63,7 +63,6 @@
    (let [letter-spacing  (:letter-spacing data 0)
          text-decoration (:text-decoration data)
          text-transform  (:text-transform data)
-         line-height     (:line-height data 1.2)
 
          font-id         (or (:font-id data)
                              (:font-id txt/default-text-attrs))
@@ -82,7 +81,6 @@
 
          base            #js {:textDecoration text-decoration
                               :textTransform text-transform
-                              :lineHeight (or line-height "1.2")
                               :color (if show-text? text-color "transparent")
                               :caretColor (or text-color "black")
                               :overflowWrap "initial"

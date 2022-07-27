@@ -91,6 +91,11 @@
   (when event
     (.stopPropagation event)))
 
+(defn stop-immediate-propagation
+  [^js event]
+  (when event
+    (.stopImmediatePropagation event)))
+
 (defn prevent-default
   [^js event]
   (when event
@@ -125,6 +130,14 @@
   [^js node]
   (when (some? node)
     (.-parentElement ^js node)))
+
+(defn get-parent-with-selector
+  [^js node selector]
+
+  (loop [current node]
+    (if (or (nil? current) (.matches current selector) )
+      current
+      (recur (.-parentElement current)))))
 
 (defn get-value
   "Extract the value from dom node."
@@ -586,3 +599,12 @@
 (defn load-font [font]
   (let [fonts (.-fonts globals/document)]
     (.load fonts font)))
+
+(defn text-measure [font]
+  (let [element (.createElement globals/document "canvas")
+        context (.getContext element "2d")
+        _ (set! (.-font context) font)
+        measure ^js (.measureText context "Ag")]
+
+    {:ascent (.-fontBoundingBoxAscent measure)
+     :descent (.-fontBoundingBoxDescent measure)}))

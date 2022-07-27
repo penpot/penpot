@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.workspace.shapes.text.viewport-texts
+(ns app.main.ui.workspace.shapes.text.viewport-texts-html
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -18,7 +18,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.shapes.text.fo-text :as fo]
+   [app.main.ui.shapes.text.html-text :as html]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
@@ -114,10 +114,10 @@
            (when (some? node)
              (on-update shape node))))]
 
-    [:& fo/text-shape {:key (str "shape-" (:id shape))
-                       :ref handle-update
-                       :shape shape
-                       :grow-type (:grow-type shape)}]))
+    [:& html/text-shape {:key (str "shape-" (:id shape))
+                         :ref handle-update
+                         :shape shape
+                         :grow-type (:grow-type shape)}]))
 
 (mf/defc viewport-texts-wrapper
   {::mf/wrap-props false

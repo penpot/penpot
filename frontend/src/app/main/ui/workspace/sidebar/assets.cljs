@@ -1621,6 +1621,17 @@
 
         local-data (mf/deref typography-data)
         menu-state (mf/use-state auto-pos-menu-state)
+
+        extract-path-if-missing
+        (fn [typography]
+          (let [[path name] (cph/parse-path-name (:name typography))]
+            (if (= (:name typography) name)
+              typography
+              (assoc  typography :path path :name name))))
+
+        typographies (->> typographies
+                          (map extract-path-if-missing))
+
         groups     (group-assets typographies reverse-sort?)
 
         selected-typographies (:typographies selected-assets)

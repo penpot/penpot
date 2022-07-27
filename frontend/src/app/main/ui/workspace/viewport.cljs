@@ -20,7 +20,7 @@
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
-   [app.main.ui.workspace.shapes.text.viewport-texts :as stv]
+   [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.drawarea :as drawarea]
@@ -194,6 +194,13 @@
 
     [:div.viewport
      [:div.viewport-overlays {:ref overlays-ref}
+      [:div {:style {:pointer-events "none" :opacity 0}}
+       [:& stvh/viewport-texts
+        {:key (dm/str "texts-" page-id)
+         :page-id page-id
+         :objects objects
+         :modifiers modifiers
+         :edition edition}]]
 
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
@@ -235,23 +242,6 @@
         [:& shapes/root-shape {:key page-id
                                :objects base-objects
                                :active-frames @active-frames}]]]]
-
-     [:svg.render-shapes
-      {:id "text-position-layer"
-       :xmlns "http://www.w3.org/2000/svg"
-       :xmlnsXlink "http://www.w3.org/1999/xlink"
-       :preserveAspectRatio "xMidYMid meet"
-       :key (str "text-position-layer" page-id)
-       :width (:width vport 0)
-       :height (:height vport 0)
-       :view-box (utils/format-viewbox vbox)}
-
-      [:g {:pointer-events "none" :opacity 0}
-       [:& stv/viewport-texts {:key (dm/str "texts-" page-id)
-                               :page-id page-id
-                               :objects objects
-                               :modifiers modifiers
-                               :edition edition}]]]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
