@@ -11,20 +11,16 @@
    [rumext.alpha :as mf]))
 
 (mf/defc empty-placeholder
-  [{:keys [dragging? default?] :as props}]
+  [{:keys [dragging? on-create-clicked project] :as props}]
   (cond
     (true? dragging?)
     [:div.grid-row.no-wrap
      [:div.grid-item]]
 
-    (true? default?)
-    [:div.grid-empty-placeholder.drafts {:data-test "empty-placeholder"}
-     [:div.text
-      [:& i18n/tr-html {:label "dashboard.empty-placeholder-drafts"}]]]
-
     :else
     [:div.grid-empty-placeholder
-     [:img.ph-files {:src "images/ph-file.svg"}]]))
+     [:button.create-new {:on-click (partial on-create-clicked project "dashboard:empty-folder-placeholder")}
+      (tr "dashboard.new-file")]]))
 
 (mf/defc loading-placeholder
   []

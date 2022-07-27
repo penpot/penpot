@@ -20,7 +20,7 @@
    [rumext.alpha :as mf]))
 
 (mf/defc header
-  [{:keys [project] :as props}]
+  [{:keys [project on-create-clicked] :as props}]
   (let [local      (mf/use-state {:menu-open false
                                   :edition false})
         on-menu-click
@@ -40,13 +40,6 @@
         (mf/use-callback
          (mf/deps project)
          #(st/emit! (dd/toggle-project-pin project)))
-
-        on-create-clicked
-        (mf/use-callback
-         (mf/deps project)
-         (fn [event]
-           (dom/prevent-default event)
-           (st/emit! (dd/create-file {:project-id (:id project)}))))
 
         on-import
         (mf/use-callback
@@ -82,7 +75,7 @@
                        :on-import on-import}]
 
      [:div.dashboard-header-actions
-      [:a.btn-secondary.btn-small {:on-click on-create-clicked :data-test "new-file"}
+      [:a.btn-secondary.btn-small {:on-click (partial on-create-clicked project "dashboard:header") :data-test "new-file"}
        (tr "dashboard.new-file")]
 
       (when-not (:is-default project)
@@ -103,7 +96,14 @@
         files     (->> (vals files-map)
                        (filter #(= (:id project) (:project-id %)))
                        (sort-by :modified-at)
-                       (reverse))]
+                       (reverse))
+
+        on-create-clicked
+        (mf/use-callback
+         (fn [project origin event]
+           (dom/prevent-default event)
+           (st/emit! (with-meta (dd/create-file {:project-id (:id project)})
+                       {::ev/origin origin}))))]
 
     (mf/use-effect
      (mf/deps project)
@@ -121,8 +121,11 @@
                  (dd/clear-selected-files))))
 
     [:*
-     [:& header {:team team :project project}]
+     [:& header {:team team 
+                 :project project
+                 :on-create-clicked on-create-clicked}]
      [:section.dashboard-container
       [:& grid {:project project
-                :files files}]]]))
+                :files files
+                :on-create-clicked on-create-clicked}]]]))
 

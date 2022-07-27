@@ -321,27 +321,32 @@
 }
 
 .grid-empty-placeholder {
-  align-items: center;
-  border: 1px dashed $color-gray-20;
   border-radius: $br-small;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   height: 200px;
   margin: $size-4;
-  padding: 3rem;
-  justify-content: center;
+  padding: 24px;
+  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23E3E3E3FF' stroke-width='3' stroke-dasharray='8%2c 16' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
 
-  &.drafts {
-    background-image: url("/images/ph-left.svg"), url("/images/ph-right.svg");
-    background-position: 15% bottom, 85% top;
-    background-repeat: no-repeat;
-    .text {
-      p {
-        max-width: 360px;
-        text-align: center;
-        font-size: $fs16;
-      }
+  .create-new {
+    background-color: transparent;
+    border: 2px solid $color-gray-10;
+    width: 200px;
+    height: 100%;
+    cursor: pointer;
+    color: $color-gray-30;
+    border-radius: 3px;
+    &:hover {
+      color: $color-primary-dark;
+      border: 2px solid $color-primary;
     }
+  }
+
+  &.search {
+    align-items: center;
   }
 
   svg {
@@ -354,10 +359,5 @@
     margin-top: 10px;
     color: $color-gray-30;
     font-size: $fs16;
-  }
-
-  img.ph-files {
-    height: 150px;
-    margin-right: calc(100% - 148px);
   }
 }

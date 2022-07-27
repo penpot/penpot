@@ -713,18 +713,21 @@
   [{:keys [project-id] :as params}]
   (us/assert ::us/uuid project-id)
   (ptk/reify ::create-file
+
+    IDeref
+    (-deref [_] {:project-id project-id})
+
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [it _ _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-
             name   (name (gensym (str (tr "dashboard.new-file-prefix") " ")))
             params (assoc params :name name)]
 
         (->> (rp/mutation! :create-file params)
              (rx/tap on-success)
-             (rx/map file-created)
+             (rx/map #(with-meta (file-created %) (meta it)))
              (rx/catch on-error))))))
 
 ;; --- EVENT: duplicate-file

@@ -42,17 +42,17 @@
      [:section.dashboard-container.search
       (cond
         (empty? search-term)
-        [:div.grid-empty-placeholder
+        [:div.grid-empty-placeholder.search
          [:div.icon i/search]
          [:div.text (tr "dashboard.type-something")]]
 
         (nil? result)
-        [:div.grid-empty-placeholder
+        [:div.grid-empty-placeholder.search
          [:div.icon i/search]
          [:div.text (tr "dashboard.searching-for" search-term)]]
 
         (empty? result)
-        [:div.grid-empty-placeholder
+        [:div.grid-empty-placeholder.search
          [:div.icon i/search]
          [:div.text (tr "dashboard.no-matches-for" search-term)]]
 

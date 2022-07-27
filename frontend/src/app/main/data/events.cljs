@@ -84,6 +84,7 @@
 (derive :app.main.data.comments/update-comment-thread-status ::generic-action)
 (derive :app.main.data.dashboard/delete-team-member ::generic-action)
 (derive :app.main.data.dashboard/duplicate-project ::generic-action)
+(derive :app.main.data.dashboard/create-file ::generic-action)
 (derive :app.main.data.dashboard/file-created ::generic-action)
 (derive :app.main.data.dashboard/invite-team-members ::generic-action)
 (derive :app.main.data.dashboard/leave-team ::generic-action)
