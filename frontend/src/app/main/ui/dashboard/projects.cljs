@@ -93,10 +93,11 @@
         create-file
         (mf/use-callback
          (mf/deps project)
-         (fn []
+         (fn [origin]
            (let [mdata  {:on-success on-file-created}
                  params {:project-id (:id project)}]
-             (st/emit! (dd/create-file (with-meta params mdata))))))
+             (st/emit! (with-meta (dd/create-file (with-meta params mdata))
+                         {::ev/origin origin})))))
 
         on-import
         (mf/use-callback
@@ -140,7 +141,7 @@
            i/pin)])
 
       [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
-       {:on-click create-file :alt (tr "dashboard.new-file") :data-test "project-new-file"}
+       {:on-click (partial create-file "dashboard:folder") :alt (tr "dashboard.new-file") :data-test "project-new-file"}
        i/close]
 
       [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
@@ -152,8 +153,7 @@
        :team team
        :on-load-more on-nav
        :files files
-       :on-create-clicked create-file}]]))
-
+       :on-create-clicked (partial create-file "dashboard:empty-folder-placeholder")}]]))
 
 (def recent-files-ref
   (l/derived :dashboard-recent-files st/state))

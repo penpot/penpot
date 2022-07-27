@@ -75,7 +75,7 @@
                        :on-import on-import}]
 
      [:div.dashboard-header-actions
-      [:a.btn-secondary.btn-small {:on-click (partial on-create-clicked project) :data-test "new-file"}
+      [:a.btn-secondary.btn-small {:on-click (partial on-create-clicked project "dashboard:header") :data-test "new-file"}
        (tr "dashboard.new-file")]
 
       (when-not (:is-default project)
@@ -97,12 +97,13 @@
                        (filter #(= (:id project) (:project-id %)))
                        (sort-by :modified-at)
                        (reverse))
-        
+
         on-create-clicked
-        (mf/use-callback 
-         (fn [project event]
+        (mf/use-callback
+         (fn [project origin event]
            (dom/prevent-default event)
-           (st/emit! (dd/create-file {:project-id (:id project)}))))]
+           (st/emit! (with-meta (dd/create-file {:project-id (:id project)})
+                       {::ev/origin origin}))))]
 
     (mf/use-effect
      (mf/deps project)

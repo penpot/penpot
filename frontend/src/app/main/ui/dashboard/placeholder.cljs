@@ -19,7 +19,7 @@
 
     :else
     [:div.grid-empty-placeholder
-     [:button.create-new {:on-click (partial on-create-clicked project)}
+     [:button.create-new {:on-click (partial on-create-clicked project "dashboard:empty-folder-placeholder")}
       (tr "dashboard.new-file")]]))
 
 (mf/defc loading-placeholder
