@@ -205,7 +205,7 @@
                         :on-menu-close on-menu-close}])]]]))
 
 (mf/defc grid
-  [{:keys [files project] :as props}]
+  [{:keys [files project on-create-clicked] :as props}]
   (let [dragging?  (mf/use-state false)
         project-id (:id project)
 
@@ -268,7 +268,9 @@
             :navigate? true}])]
 
        :else
-       [:& empty-placeholder {:default? (:is-default project)}])]))
+       [:& empty-placeholder {:default? (:is-default project)
+                              :on-create-clicked on-create-clicked
+                              :project project}])]))
 
 (mf/defc line-grid-row
   [{:keys [files selected-files on-load-more dragging?] :as props}]
@@ -326,7 +328,7 @@
          (tr "dashboard.show-all-files")]])]))
 
 (mf/defc line-grid
-  [{:keys [project team files on-load-more] :as props}]
+  [{:keys [project team files on-load-more on-create-clicked] :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
@@ -414,5 +416,6 @@
 
        :else
        [:& empty-placeholder {:dragging? @dragging?
-                              :default? (:is-default project)}])]))
+                              :default? (:is-default project)
+                              :on-create-clicked on-create-clicked}])]))
 

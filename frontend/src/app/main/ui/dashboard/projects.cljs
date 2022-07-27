@@ -151,7 +151,8 @@
       {:project project
        :team team
        :on-load-more on-nav
-       :files files}]]))
+       :files files
+       :on-create-clicked create-file}]]))
 
 
 (def recent-files-ref
