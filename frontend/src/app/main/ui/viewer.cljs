@@ -230,6 +230,19 @@
         interactions-mode
         (:interactions-mode local)
 
+        click-on-screen
+        (mf/use-callback
+         (fn [event]
+           (let [origin (dom/get-target event)
+                 over-section? (dom/class? origin "viewer-section")
+                 layout (dom/get-element "viewer-layout")
+                 has-force? (dom/class? layout "force-visible")]
+
+             (when over-section?
+               (if has-force?
+                 (dom/remove-class! layout "force-visible")
+                 (dom/add-class! layout "force-visible"))))))
+
         on-click
         (mf/use-callback
          (mf/deps section)
@@ -368,16 +381,15 @@
                                  :handoff-layout (= section :handoff)
                                  :fullscreen fullscreen?)}
 
-     [:& header {:project project
-                 :index index
-                 :file file
-                 :page page
-                 :frame frame
-                 :permissions permissions
-                 :zoom zoom
-                 :section section}]
-
      [:div.viewer-content
+      [:& header {:project project
+                  :index index
+                  :file file
+                  :page page
+                  :frame frame
+                  :permissions permissions
+                  :zoom zoom
+                  :section section}]
       [:div.thumbnail-close {:on-click #(st/emit! dv/close-thumbnails-panel)
                              :class (dom/classnames :invisible (not (:show-thumbnails local false)))}]
       [:& thumbnails-panel {:frames frames
@@ -387,7 +399,8 @@
                             :thumbnail-data (:thumbnails file)}]
       [:section.viewer-section {:id "viewer-section"
                                 :ref viewer-section-ref
-                                :class (if fullscreen? "fullscreen" "")}
+                                :class (if fullscreen? "fullscreen" "")
+                                :on-click click-on-screen}
        (cond
          (empty? frames)
          [:section.empty-state
