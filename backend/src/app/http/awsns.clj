@@ -16,6 +16,7 @@
    [integrant.core :as ig]
    [jsonista.core :as j]
    [promesa.exec :as px]
+   [yetti.request :as yrq]
    [yetti.response :as yrs]))
 
 (declare parse-json)
@@ -31,9 +32,9 @@
 (defmethod ig/init-key ::handler
   [_ {:keys [executor] :as cfg}]
   (fn [request respond _]
-    (let [data (slurp (:body request))]
-      (px/run! executor #(handle-request cfg data))
-      (respond (yrs/response 200)))))
+    (let [data (-> request yrq/body slurp)]
+      (px/run! executor #(handle-request cfg data)))
+    (respond (yrs/response 200))))
 
 (defn handle-request
   [{:keys [http-client] :as cfg} data]

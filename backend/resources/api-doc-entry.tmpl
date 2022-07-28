@@ -1,0 +1,54 @@
+<li class="rpc-item">
+  <div class="rpc-row-info">
+    {# <div class="type">{{item.type}}</div> #}
+    <div class="module">{{item.module}}:</div>
+    <div class="name">{{item.name}}</div>
+    <div class="tags">
+      {% if item.deprecated %}
+        <span class="tag">
+          <span>Deprecated:</span>
+          <span>since v{{item.deprecated}}</span>,
+        </span>
+      {% endif %}
+      <span class="tag">
+        <span>Auth:</span>
+        <span>{% if item.auth %}YES{% else %}NO{% endif %}</span>
+      </span>
+    </div>
+  </div>
+  <div class="rpc-row-detail hidden">
+    <h3>DOCSTRING:</h3>
+
+    <section class="padded-section">
+
+      {% if item.added %}
+        <p class="small"><strong>Added:</strong> on v{{item.added}}</p>
+      {% endif %}
+
+      {% if item.deprecated %}
+        <p class="small"><strong>Deprecated:</strong> since v{{item.deprecated}}</p>
+      {% endif %}
+
+      {% if item.docs %}
+        <p class="docstring"> {{item.docs}}</p>
+      {% endif %}
+    </section>
+
+    {% if item.changes %}
+      <h3>CHANGES:</h3>
+      <section class="padded-section">
+
+        <ul class="changes">
+          {% for change in item.changes %}
+            <li><strong>{{change.0}}</strong> - {{change.1}}</li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    <h3>SPEC EXPLAIN:</h3>
+    <section class="padded-section">
+      <pre class="spec-explain">{{item.spec}}</pre>
+    </section>
+  </div>
+</li>

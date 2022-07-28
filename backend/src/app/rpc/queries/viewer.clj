@@ -9,9 +9,9 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.rpc.queries.comments :as comments]
+   [app.rpc.commands.comments :as comments]
    [app.rpc.queries.files :as files]
-   [app.rpc.queries.share-link :as slnk]   
+   [app.rpc.queries.share-link :as slnk]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [promesa.core :as p]))

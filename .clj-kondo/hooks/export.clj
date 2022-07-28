@@ -53,24 +53,37 @@
   [{:keys [:node]}]
   (let [[rnode rtype ?meta & other] (:children node)
         rsym    (gensym (name (:k rtype)))
-        result  (api/list-node
-                 [(api/token-node (symbol "do"))
-                  (api/list-node
-                   [(api/token-node (symbol "declare"))
-                    (api/token-node rsym)])
-                  (if (= :map (:tag ?meta))
-                    (api/list-node
-                     [(api/token-node (symbol "reset-meta!"))
-                      (api/token-node rsym)
-                      ?meta])
-                    (api/list-node
-                     [(api/token-node (symbol "comment"))
-                      (api/token-node rsym)]))
-                  (api/list-node
-                   (into [(api/token-node (symbol "defmethod"))
-                          (api/token-node rsym)
-                          rtype]
-                         (cons ?meta other)))])]
-    ;; (prn "==============" rtype (into {} ?meta))
+
+        [?docs other] (if (api/string-node? ?meta)
+                        [?meta other]
+                        [nil (cons ?meta other)])
+
+        [?meta other] (let [?meta (first other)]
+                        (if (api/map-node? ?meta)
+                          [?meta (rest other)]
+                          [nil   other]))
+
+        nodes         [(api/token-node (symbol "do"))
+                       (api/list-node
+                        [(api/token-node (symbol "declare"))
+                         (api/token-node rsym)])
+
+                       (when ?docs
+                         (api/list-node
+                          [(api/token-node (symbol "comment")) ?docs]))
+
+                       (when ?meta
+                         (api/list-node
+                          [(api/token-node (symbol "reset-meta!"))
+                           (api/token-node rsym)
+                           ?meta]))
+                       (api/list-node
+                        (into [(api/token-node (symbol "defmethod"))
+                               (api/token-node rsym)
+                               rtype]
+                              other))]
+        result  (api/list-node (filterv some? nodes))]
+
+    ;; (prn "=====>" rtype)
     ;; (prn (api/sexpr result))
     {:node result}))
