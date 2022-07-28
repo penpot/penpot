@@ -20,7 +20,7 @@
   io.lettuce/lettuce-core {:mvn/version "6.1.8.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
-  funcool/yetti {:git/tag "v9.2" :git/sha "4ddcc03"
+  funcool/yetti {:git/tag "v9.3" :git/sha "c6e2d0d"
                  :git/url "https://github.com/funcool/yetti.git"
                  :exclusions [org.slf4j/slf4j-api]}
 

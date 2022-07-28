@@ -241,6 +241,7 @@
   [cfg]
   (let [cfg (assoc cfg ::type "command" ::metrics-id :rpc-command-timing)]
     (->> (sv/scan-ns 'app.rpc.commands.binfile
+                     'app.rpc.commands.comments
                      'app.rpc.commands.auth
                      'app.rpc.commands.ldap
                      'app.rpc.commands.demo)

@@ -323,9 +323,9 @@
   (and (pgarray? v) (= "uuid" (.getBaseTypeName ^PgArray v))))
 
 (defn decode-pgarray
-  ([v] (into [] (.getArray ^PgArray v)))
-  ([v in] (into in (.getArray ^PgArray v)))
-  ([v in xf] (into in xf (.getArray ^PgArray v))))
+  ([v] (some->> ^PgArray v .getArray vec))
+  ([v in] (some->> ^PgArray v .getArray (into in)))
+  ([v in xf]  (some->> ^PgArray v .getArray (into in xf))))
 
 (defn pgarray->set
   [v]

@@ -12,6 +12,7 @@
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.rpc.commands.auth :as cmd.auth]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.queries.profile :as profile]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -28,7 +29,11 @@
   (s/keys :req-un [::email ::password]
           :opt-un [::invitation-token]))
 
-(sv/defmethod ::login-with-ldap {:auth false}
+(sv/defmethod ::login-with-ldap
+  "Performs the authentication using LDAP backend. Only works if LDAP
+  is properly configured and enabled with `login-with-ldap` flag."
+  {:auth false
+   ::doc/added "1.15"}
   [{:keys [session tokens ldap] :as cfg} params]
   (when-not ldap
     (ex/raise :type :restriction

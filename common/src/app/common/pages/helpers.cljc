@@ -161,14 +161,13 @@
 (defn get-frames
   "Retrieves all frame objects as vector"
   [objects]
-  (if (contains? (meta objects) ::index-frames)
-    (::index-frames (meta objects))
-    (let [lookup (d/getf objects)
-          xform  (comp (remove #(= uuid/zero %))
-                       (keep lookup)
-                       (filter frame-shape?))]
-      (->> (keys objects)
-           (into [] xform)))))
+  (or (-> objects meta ::index-frames)
+      (let [lookup (d/getf objects)
+            xform  (comp (remove #(= uuid/zero %))
+                         (keep lookup)
+                         (filter frame-shape?))]
+        (->> (keys objects)
+             (into [] xform)))))
 
 (defn get-frames-ids
   "Retrieves all frame ids as vector"
@@ -704,10 +703,9 @@
    (into []
          (comp (map (d/getf objects))
                (if all-frames?
-                 identity
+                 (map identity)
                  (remove :hide-in-viewer)))
          (sort-z-index objects (get-frames-ids objects) {:top-frames? true}))))
-
 
 (defn start-page-index
   [objects]

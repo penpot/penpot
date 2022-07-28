@@ -18,7 +18,10 @@
 
 (defn- generate
   [cfg claims]
-  (let [payload (-> claims d/without-nils t/encode)]
+  (let [payload (-> claims
+                    (assoc :iat (dt/now))
+                    (d/without-nils)
+                    (t/encode))]
     (jwe/encrypt payload (::secret cfg) {:alg :a256kw :enc :a256gcm})))
 
 (defn- verify
