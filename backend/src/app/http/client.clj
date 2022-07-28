@@ -12,6 +12,8 @@
    [integrant.core :as ig]
    [java-http-clj.core :as http]))
 
+(s/def ::client fn?)
+
 (defmethod ig/pre-init-spec :app.http/client [_]
   (s/keys :req-un [::wrk/executor]))
 
@@ -28,3 +30,12 @@
            (http/send req {:client client :as response-type})
            (http/send-async req {:client client :as response-type}))))
       {::client client})))
+
+
+(defn req!
+  "A convencience toplevel function for gradual migration to a new API
+  convention."
+  ([client request]
+   (client request))
+  ([client request options]
+   (client request options)))
