@@ -24,9 +24,8 @@
                  :objects (d/index-by :id shapes)})
 
       components-v2
-      (update-in [:components id] #(assoc %
-                                          :main-instance-id main-instance-id
-                                          :main-instance-page main-instance-page)))))
+      (update-in [:components id] assoc :main-instance-id main-instance-id
+                                        :main-instance-page main-instance-page))))
 
 (defn get-component
   [file-data component-id]

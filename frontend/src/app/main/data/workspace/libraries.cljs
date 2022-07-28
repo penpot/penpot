@@ -770,12 +770,12 @@
                  (rx/filter #(or (= :app.main.data.workspace/finalize-page (ptk/type %))
                                  (= ::watch-component-changes (ptk/type %)))))
 
-            workspace-data-str
+            workspace-data-s
             (->> (rx/concat
                   (rx/of nil)
                   (rx/from-atom refs/workspace-data {:emit-current-value? true})))
 
-            change-str
+            change-s
             (->> stream
                  (rx/filter #(or (dch/commit-changes? %)
                                  (= (ptk/type %) :app.main.data.workspace.notifications/handle-file-change)))
@@ -788,13 +788,13 @@
                                                #{}
                                                changes)]
                 (when (d/not-empty? components-changed)
-                  (apply st/emit!
+                  (run! st/emit!
                          (map #(update-component-sync % (:id data))
                               components-changed)))))]
 
         (when components-v2
-          (->> change-str
-               (rx/with-latest-from workspace-data-str)
+          (->> change-s
+               (rx/with-latest-from workspace-data-s)
                (rx/map check-changes)
                (rx/take-until stopper)))))))
 
@@ -844,12 +844,13 @@
   [file-id library-id]
   (ptk/reify ::attach-library
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [fetched #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
-            params  {:file-id file-id
-                     :library-id library-id}]
+    (watch [_ state _]
+      (let [components-v2 (features/active-feature? state :components-v2)
+            fetched       #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
+            params        {:file-id file-id
+                           :library-id library-id}]
         (->> (rp/mutation :link-file-to-library params)
-             (rx/mapcat #(rp/query :file {:id library-id}))
+             (rx/mapcat #(rp/query :file {:id library-id :components-v2 components-v2}))
              (rx/map #(partial fetched %)))))))
 
 (defn unlink-file-from-library

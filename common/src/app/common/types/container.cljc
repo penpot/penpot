@@ -96,7 +96,7 @@
                                          :component-file file-id
                                          :component-root? true)
 
-                                  components-v2
+                                  (and (nil? (:parent-id new-shape)) components-v2)
                                   (assoc :main-instance? true)
 
                                   (some? (:parent-id new-shape))

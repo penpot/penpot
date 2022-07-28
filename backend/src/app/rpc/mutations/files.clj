@@ -123,17 +123,13 @@
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (when-not is-shared
-        (absorb-library conn params)
-        (unlink-files conn params))
+      (absorb-library conn params)
+      (unlink-files conn params))
     (set-file-shared conn params)))
-
-(def sql:unlink-files
-  "delete from file_library_rel
-    where library_file_id = ?")
 
 (defn- unlink-files
   [conn {:keys [id] :as params}]
-  (db/exec-one! conn [sql:unlink-files id]))
+  (db/delete! conn :file-library-rel {:library-file-id id}))
 
 (defn- set-file-shared
   [conn {:keys [id is-shared] :as params}]
@@ -162,11 +158,6 @@
               {:id id})
   nil)
 
-(def sql:find-files
-  "select file_id 
-    from file_library_rel
-   where library_file_id=?")
-
 (defn absorb-library
   "Find all files using a shared library, and absorb all library assets
   into the file local libraries"
@@ -189,8 +180,7 @@
                              :modified-at ts}
                             {:id (:id file)})))]
 
-        (dorun (->> (db/exec! conn [sql:find-files id])
-                    (map process-file)))))))
+        (run! process-file (db/query conn :file-library-rel {:library-file-id id}))))))
 
 ;; --- Mutation: Link file to library
 

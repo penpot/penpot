@@ -52,12 +52,12 @@
   ; TODO: perhaps some day we want after transformations, but for the
   ;       moment it's enough as is now.
   [shape]
-  (get shape :x (:x (:selrect shape)))) ; Paths don't have :x attribute
+  (or (:x shape) (:x (:selrect shape)))) ; Paths don't have :x attribute
 
 (defn top-bound
   "Returns the lowest y coord of the shape BEFORE applying transformations."
   [shape]
-  (get shape :y (:y (:selrect shape)))) ; Paths don't have :y attribute
+  (or (:y shape) (:y (:selrect shape)))) ; Paths don't have :y attribute
 
 (defn fully-contained?
   "Checks if one rect is fully inside the other"

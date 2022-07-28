@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.main.data.modal :as modal]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.worker :as uw]
@@ -56,6 +57,8 @@
                              :files  (->> files (mapv #(assoc % :loading? true)))})
         selected-option (mf/use-state :all)
 
+        components-v2 (features/use-feature :components-v2)
+
         start-export
         (fn []
           (swap! state assoc :status :exporting)
@@ -64,7 +67,7 @@
                  :team-id team-id
                  :export-type @selected-option
                  :files files
-                 })
+                 :components-v2 components-v2})
                (rx/delay-emit 1000)
                (rx/subs
                 (fn [msg]

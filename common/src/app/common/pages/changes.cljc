@@ -477,9 +477,9 @@
                             (component-sync-attrs (:attr operation))))
           any-sync? (some need-sync? operations)]
       (when any-sync?
-        (into #{} (->> shape-and-parents
-                       (filter #(:main-instance? %)) ; Select shapes that are main component instances
-                       (map :id)))))))
+        (let [xform (comp (filter :main-instance?) ; Select shapes that are main component instances
+                          (map :id))]
+          (into #{} xform shape-and-parents))))))
 
 (defmethod components-changed :default
   [_ _]
