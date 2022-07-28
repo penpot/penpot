@@ -8,6 +8,7 @@
   "A workspace specific context menu (mouse right click)."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.types.page :as ctp]
    [app.main.data.events :as ev]
@@ -130,20 +131,29 @@
      [:& menu-separator]]))
 
 (mf/defc context-menu-layer-position
-  [{:keys [hover-objs shapes]}]
-  (let [do-bring-forward  #(st/emit! (dw/vertical-order-selected :up))
-        do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
-        do-send-backward  #(st/emit! (dw/vertical-order-selected :down))
-        do-send-to-back   #(st/emit! (dw/vertical-order-selected :bottom))
+  [{:keys [shapes]}]
+  (let [do-bring-forward  (mf/use-fn #(st/emit! (dw/vertical-order-selected :up)))
+        do-bring-to-front (mf/use-fn #(st/emit! (dw/vertical-order-selected :top)))
+        do-send-backward  (mf/use-fn #(st/emit! (dw/vertical-order-selected :down)))
+        do-send-to-back   (mf/use-fn #(st/emit! (dw/vertical-order-selected :bottom)))
+
         select-shapes     (fn [id] #(st/emit! (dws/select-shape id)))
         on-pointer-enter  (fn [id] #(st/emit! (dw/highlight-shape id)))
         on-pointer-leave  (fn [id] #(st/emit! (dw/dehighlight-shape id)))
-        on-unmount        (fn [id] #(st/emit! (dw/dehighlight-shape id)))]
+        on-unmount        (fn [id] #(st/emit! (dw/dehighlight-shape id)))
+
+        ;; NOTE: we use deref instead of mf/deref on objects because
+        ;; we really don't want rerender on object changes
+        hover-ids         (deref refs/current-hover-ids)
+        objects           (deref refs/workspace-page-objects)
+        hover-objs        (into [] (keep (d/getf objects)) hover-ids)]
+
     [:*
      (when (> (count hover-objs) 1)
        [:& menu-entry {:title (tr "workspace.shape.menu.select-layer")}
         (for [object hover-objs]
           [:& menu-entry {:title (:name object)
+                          :key (dm/str (:id object))
                           :selected? (some #(= object %) shapes)
                           :on-click (select-shapes (:id object))
                           :on-pointer-enter (on-pointer-enter (:id object))
@@ -448,14 +458,11 @@
                     :on-click do-delete}]))
 
 (mf/defc shape-context-menu
+  {::mf/wrap [mf/memo]}
   [{:keys [mdata] :as props}]
   (let [{:keys [disable-booleans? disable-flatten?]} mdata
         shapes (mf/deref refs/selected-objects)
-        hover-ids (mf/deref refs/current-hover-ids)
-        hover-objs (mf/deref (refs/objects-by-id hover-ids))
-
         props #js {:shapes shapes
-                   :hover-objs hover-objs
                    :disable-booleans? disable-booleans?
                    :disable-flatten? disable-flatten?}]
     (when-not (empty? shapes)
