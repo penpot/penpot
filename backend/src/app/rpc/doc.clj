@@ -61,7 +61,7 @@
   (if (contains? cf/flags :backend-api-doc)
     (let [context (prepare-context methods)]
       (fn [_ respond _]
-        (respond (yrs/response 200 (-> (io/resource "api-doc.tmpl")
+        (respond (yrs/response 200 (-> (io/resource "app/templates/api-doc.tmpl")
                                        (tmpl/render context))))))
     (fn [_ respond _]
       (respond (yrs/response 404)))))

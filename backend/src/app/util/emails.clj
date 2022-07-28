@@ -178,7 +178,7 @@
 ;; Template Email Building
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private email-path "emails/%(id)s/%(lang)s.%(type)s")
+(def ^:private email-path "app/emails/%(id)s/%(lang)s.%(type)s")
 
 (defn- render-email-template-part
   [type id context]
