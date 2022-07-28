@@ -1,0 +1,8 @@
+[{:id "penpot-design-system"
+  :name "Penpot Design System"
+  :thumbnail-uri "https://penpot.app/images/libraries/cover-ds-penpot.jpg"
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/Penpot-Design-system.penpot"}
+ {:id "wireframing-kit"
+  :name "Wireframing Kit"
+  :thumbnail-uri "https://penpot.app/images/libraries/cover-wireframes.jpg"
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/wireframing-kit.penpot"}]
