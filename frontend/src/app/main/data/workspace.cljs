@@ -35,6 +35,7 @@
    [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]
+   [app.main.data.workspace.highlight :as dwh]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.layout :as layout]
@@ -1731,6 +1732,10 @@
 (dm/export dws/select-inside-group)
 (dm/export dws/select-shape)
 (dm/export dws/shift-select-shapes)
+
+;; Highlight
+(dm/export dwh/highlight-shape)
+(dm/export dwh/dehighlight-shape)
 
 ;; Groups
 (dm/export dwg/mask-group)

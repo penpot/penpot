@@ -5,11 +5,14 @@
 ### :boom: Breaking changes & Deprecations
 ### :sparkles: New features
 
-- Add some cosmetic changes in viewer mode [Taiga #3688](https://tree.taiga.io/project/penpot/us/3688)
+- Add cosmetic changes in viewer mode [Taiga #3688](https://tree.taiga.io/project/penpot/us/3688)
+- Outline highlights on layer hovering [Taiga #2645](https://tree.taiga.io/project/penpot/us/2645) by @andrewzhurov
 
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
+
+- To @andrewzhurov for many code contributions on this release.
 
 
 ## 1.15.0-beta

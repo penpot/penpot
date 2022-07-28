@@ -53,6 +53,7 @@
                 panning
                 selrect
                 transform
+                highlighted
                 vbox
                 vport
                 zoom
@@ -286,6 +287,7 @@
           {:objects base-objects
            :selected selected
            :hover #{(:id @hover) @frame-hover}
+           :highlighted highlighted
            :edition edition
            :zoom zoom}])
 
