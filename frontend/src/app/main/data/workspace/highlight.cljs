@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.highlight
   (:require
    [app.common.spec :as us]
+   [clojure.set :as set]
    [potok.core :as ptk]))
 
 ;; --- Manage shape's highlight status
@@ -17,7 +18,7 @@
   (ptk/reify ::highlight-shape
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-local :highlighted] clojure.set/union #{id}))))
+      (update-in state [:workspace-local :highlighted] set/union #{id}))))
 
 (defn dehighlight-shape
   [id]

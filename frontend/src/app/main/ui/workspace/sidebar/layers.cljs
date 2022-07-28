@@ -151,13 +151,13 @@
         on-pointer-enter
         (mf/use-fn
          (mf/deps id)
-         (fn [event]
+         (fn [_event]
            (st/emit! (dw/highlight-shape id))))
 
         on-pointer-leave
         (mf/use-fn
          (mf/deps id)
-         (fn [event]
+         (fn [_event]
            (st/emit! (dw/dehighlight-shape id))))
 
         on-context-menu

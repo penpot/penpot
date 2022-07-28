@@ -6,9 +6,9 @@
 
 (ns app.main.ui.workspace.viewport.outline
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
-   [app.common.data :as d]
    [app.util.object :as obj]
    [app.util.path.format :as upf]
    [clojure.set :as set]
