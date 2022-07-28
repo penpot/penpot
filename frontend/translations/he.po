@@ -1755,23 +1755,6 @@ msgstr "הפרופיל נשמר בהצלחה!"
 msgid "notifications.validation-email-sent"
 msgstr "הודעת האימות נשלחה בדוא״ל אל %s. נא לבדוק את הדוא״ל שלך!"
 
-msgid "onboarding.choice.desc"
-msgstr "איך מתחשק לך להתחיל?"
-
-msgid "onboarding.choice.fly-solo"
-msgstr "לעוף עצמאית"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "לקפוץ ישירות לתוך Penpot ולהתחיל לעצב בעצמך."
-
-msgid "onboarding.choice.team-up"
-msgstr "להצטוות"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"עובדים בשותף? אפשר ליצור צוות ולהזמין אנשים לעבוד יחד על מיזמים ולשתף משאבי "
-"עיצוב."
-
 msgid "onboarding.choice.team-up.create-team"
 msgstr "שם הצוות שלך"
 
@@ -1783,9 +1766,6 @@ msgstr "נא למלא את שם הצוות"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "הזמנת חברים"
-
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr "תהיה לך אפשרות להזמין חברים ולהחליף את תפקידיהם בהמשך בסעיף הצוות."
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "יצירת צוות והזמנה בהמשך"

@@ -1811,28 +1811,6 @@ msgstr "Profil enregistré avec succès !"
 msgid "notifications.validation-email-sent"
 msgstr "E‑mail de vérification envoyé à %s. Vérifiez votre e‑mail !"
 
-msgid "onboarding.choice.desc"
-msgstr "Comment voulez-vous commencer ?"
-
-#, fuzzy
-msgid "onboarding.choice.fly-solo"
-msgstr "C'est parti !"
-
-#, fuzzy
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Essayez Penpot et commencez à concevoir par vous-même."
-
-#, fuzzy
-msgid "onboarding.choice.team-up"
-msgstr "Faites équipe"
-
-#, fuzzy
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"Vous travaillez avec quelqu'un ? Créez une équipe et invitez des personnes "
-"à travailler ensemble sur des projets et à partager des composants de "
-"design."
-
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Le nom de votre équipe"
 
@@ -1846,11 +1824,6 @@ msgstr "Entrez le nom de l'équipe"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Inviter des membres"
-
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"Vous pourrez également inviter des membres et changer les rôles plus tard "
-"dans la section équipe."
 
 #, fuzzy
 msgid "onboarding.choice.team-up.invite-members-skip"

@@ -1790,23 +1790,6 @@ msgstr "Profil başarıyla kaydedildi!"
 msgid "notifications.validation-email-sent"
 msgstr "%s adresine doğrulama e-postası gönderildi. E-posta kutunuza bakın!"
 
-msgid "onboarding.choice.desc"
-msgstr "Nasıl başlamak istersiniz?"
-
-msgid "onboarding.choice.fly-solo"
-msgstr "Tek başına devam et"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Penpot dünyasına atlayın ve kendi başınıza tasarlamaya başlayın."
-
-msgid "onboarding.choice.team-up"
-msgstr "Takım oluştur"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"Biriyle mi çalışıyorsunuz? Bir takım oluşturun ve insanları projeler "
-"üzerinde birlikte çalışmaya ve tasarım varlıklarını paylaşmaya davet edin."
-
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Takımınızın adı"
 
@@ -1818,11 +1801,6 @@ msgstr "Takımın adını girin"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Üyeleri davet edin"
-
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"Ayrıca daha sonra takım bölümünden üyeleri davet edebilecek ve rolleri "
-"değiştirebileceksiniz."
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Takım oluştur ve daha sonra davet et"

@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as tm]
@@ -24,42 +25,27 @@
 (s/def ::team-form
   (s/keys :req-un [::name]))
 
-(mf/defc onboarding-choice-modal
-  {::mf/register modal/components
-   ::mf/register-as :onboarding-choice}
+(mf/defc team-modal-right
   []
-  (let [;; When user choices the option of `fly solo`, we proceed to show
-        ;; the onboarding templates modal.
-        on-fly-solo
-        (fn []
-          (tm/schedule 400  #(st/emit! (modal/hide))))
-
-        ;; When user choices the option of `team up`, we proceed to show
-        ;; the team creation modal.
-        on-team-up
-        (fn []
-          (st/emit! (modal/show {:type :onboarding-team})))
-        teams (mf/deref refs/teams)]
-
-    (if (< (count teams) 2)
-      [:div.modal-overlay
-       [:div.modal-container.onboarding.final.animated.fadeInUp
-        [:div.modal-top
-         [:h1 {:data-test "onboarding-welcome-title"} (tr "onboarding.welcome.title")]
-         [:p (tr "onboarding.welcome.desc3")]]
-        [:div.modal-columns
-         [:div.modal-left
-          [:div.content-button {:on-click on-fly-solo
-                                :data-test "fly-solo-op"}
-           [:h2 (tr "onboarding.choice.fly-solo")]
-           [:p (tr "onboarding.choice.fly-solo-desc")]]]
-         [:div.modal-right
-          [:div.content-button {:on-click on-team-up :data-test "team-up-button"}
-           [:h2 (tr "onboarding.choice.team-up")]
-           [:p (tr "onboarding.choice.team-up-desc")]]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]
-      [:div {:on-load on-fly-solo}])))
+  [:div.team-right
+   [:h2.subtitle (tr "onboarding.team-modal.create-team")]
+   [:p.info (tr "onboarding.team-modal.create-team-desc")]
+   [:ul.team-features
+    [:li.feature
+     [:span.icon i/file-html]
+     [:p.feature-txt (tr "onboarding.team-modal.create-team-feature-1")]]
+    [:li.feature
+     [:span.icon i/pointer-inner]
+     [:p.feature-txt (tr "onboarding.team-modal.create-team-feature-2")]]
+    [:li.feature
+     [:span.icon i/tree]
+     [:p.feature-txt (tr "onboarding.team-modal.create-team-feature-3")]]
+    [:li.feature
+     [:span.icon i/user]
+     [:p.feature-txt (tr "onboarding.team-modal.create-team-feature-4")]]
+    [:li.feature
+     [:span.icon i/tick]
+     [:p.feature-txt (tr "onboarding.team-modal.create-team-feature-5")]]]])
 
 (mf/defc onboarding-team-modal
   {::mf/register modal/components
@@ -71,31 +57,39 @@
         (mf/use-callback
          (fn [form _]
            (let [tname (get-in @form [:clean-data :name])]
-             (st/emit! (modal/show {:type :onboarding-team-invitations :name tname})))))]
+             (st/emit! (modal/show {:type :onboarding-team-invitations :name tname})))))
+        on-skip
+        (fn []
+          (tm/schedule 400  #(st/emit! (modal/hide))))
 
-    [:div.modal-overlay
-     [:div.modal-container.onboarding-team
-      [:div.title
-       [:h2 {:data-test "onboarding-choice-team-up"} (tr "onboarding.choice.team-up.create-team")]
-       [:p (tr "onboarding.choice.team-up.create-team-desc")]]
+        teams (mf/deref refs/teams)]
+    (if (< (count teams) 2)
 
-      [:& fm/form {:form form
-                   :on-submit on-submit}
+      [:div.modal-overlay
+       [:div.modal-container.onboarding-team
+        [:div.team-left
+         [:h2.title (tr "onboarding.choice.team-up.create-team")]
+         [:p.info (tr "onboarding.choice.team-up.create-team-desc")]
+         [:& fm/form {:form form
+                      :on-submit on-submit}
+          [:div.input-wrapper
+           [:label (tr "onboarding.choice.team-up.create-team-placeholder")]
+           [:& fm/input {:type "text"
+                         :name :name}]]
 
-       [:div.team-row
-        [:& fm/input {:type "text"
-                      :name :name
-                      :label (tr "onboarding.choice.team-up.create-team-placeholder")}]]
+          [:& fm/submit-button
+           {:label (tr "labels.continue")}]]
 
-       [:div.buttons
-        [:button.btn-secondary.btn-large
-         {:on-click #(st/emit! (modal/show {:type :onboarding-choice}))}
-         (tr "labels.back")]
-        [:& fm/submit-button
-         {:label (tr "labels.continue")}]]]
+         [:button.skip-action {:on-click on-skip} (tr "onboarding.choice.team-up.create-later")]]
+        [:& team-modal-right]
+        [:div.paginator "1/2"]
 
-      [:img.deco {:src "images/deco-left.png" :border "0"}]
-      [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]))
+        [:img.deco.square {:src "images/deco-square.svg" :border "0"}]
+        [:img.deco.circle {:src "images/deco-circle.svg" :border "0"}]
+        [:img.deco.line1 {:src "images/deco-line1.svg" :border "0"}]
+        [:img.deco.line2 {:src "images/deco-line2.svg" :border "0"}]]]
+
+      (st/emit! (modal/hide)))))
 
 (defn get-available-roles
   []
@@ -156,33 +150,40 @@
              (st/emit! (dd/create-team-with-invitations (with-meta params mdata))))))]
 
     [:div.modal-overlay
-     [:div.modal-container.onboarding-team
-      [:div.title
-       [:h2 (tr "onboarding.choice.team-up.invite-members")]
-       [:p (tr "onboarding.choice.team-up.invite-members-desc")]]
+     [:div.modal-container.onboarding-team-members
+      [:div.team-left
+       [:h2.title (tr "onboarding.choice.team-up.invite-members")]
+       [:p.info (tr "onboarding.choice.team-up.invite-members-info")]
 
-      [:& fm/form {:form form
-                   :on-submit on-submit}
-      
-       
-       [:div.invite-row
-          [:& fm/multi-input {:type "email"
-                              :name :emails
-                              :auto-focus? true
-                              :trim true
-                              :valid-item-fn us/parse-email
-                              :label (tr "modals.invite-member.emails")}]
+       [:& fm/form {:form form
+                    :on-submit on-submit}
+        [:div.invite-row
+         [:div.role-wrapper
+          [:span.label (tr "onboarding.choice.team-up.roles")]
           [:& fm/select {:name :role :options roles}]]
 
-       [:div.buttons
-        [:button.btn-secondary.btn-large
-         {:on-click #(st/emit! (modal/show {:type :onboarding-choice}))}
-         (tr "labels.back")]
-        [:& fm/submit-button
-         {:label (tr "onboarding.choice.team-up.invite-members-submit")}]]
-       [:div.skip-action
-        {:on-click on-skip}
-        [:div.action (tr "onboarding.choice.team-up.invite-members-skip")]]]
-      [:img.deco {:src "images/deco-left.png" :border "0"}]
-      [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]))
+         [:& fm/multi-input {:type "email"
+                             :name :emails
+                             :auto-focus? true
+                             :trim true
+                             :valid-item-fn us/parse-email
+                             :label (tr "modals.invite-member.emails")}]]
+
+        [:div.buttons
+         [:button.btn-secondary.btn-large
+          {:on-click #(st/emit! (modal/show {:type :onboarding-team}))}
+          (tr "labels.back")]
+         [:& fm/submit-button
+          {:label (tr "onboarding.choice.team-up.invite-members-submit")}]]
+        [:div.skip-action
+         {:on-click on-skip}
+         [:div.action (tr "onboarding.choice.team-up.invite-members-skip")]]]]
+      [:& team-modal-right]
+      [:div.paginator "2/2"]
+      
+      [:img.deco.square {:src "images/deco-square.svg" :border "0"}]
+      [:img.deco.circle {:src "images/deco-circle.svg" :border "0"}]
+      [:img.deco.line1 {:src "images/deco-line1.svg" :border "0"}]
+      [:img.deco.line2 {:src "images/deco-line2.svg" :border "0"}]]]))
+      
 

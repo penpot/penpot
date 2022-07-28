@@ -1301,102 +1301,191 @@
   }
 }
 
-.onboarding-team {
+.onboarding-team,
+.onboarding-team-members {
   display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
   min-width: 620px;
   min-height: 420px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  width: 816px;
+  height: 488px;
   position: relative;
-
-  .title {
+  .team-right {
+    width: 361px;
+    height: 100%;
+    background-color: $color-gray-50;
+    padding: 64px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    width: 408px;
+    justify-content: space-between;
 
-    color: $color-gray-60;
-    h2 {
-      font-weight: 700;
-      padding-bottom: 10px;
+    .subtitle {
+      font-weight: bold;
+      font-size: 20px;
+      color: $color-gray-10;
+      text-transform: uppercase;
+      margin-bottom: 8px;
     }
+    .info {
+      font-size: $fs14;
+      color: $color-gray-20;
+      margin-bottom: 32px;
+    }
+    .team-features {
+      flex-grow: 1;
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+      margin-bottom: 0;
+      .feature {
+        display: flex;
+        align-items: center;
+        .icon {
+          display: flex;
+          align-items: center;
+          svg {
+            height: 16px;
+            width: 16px;
+            fill: $color-white;
+          }
+        }
+        .feature-txt {
+          margin: 0;
+          margin-left: 16px;
+          color: $color-white;
+          font-size: $fs14;
+          display: flex;
+          align-items: center;
+        }
+      }
+    }
+  }
+  .team-left {
+    width: 455px;
+    height: 100%;
+    padding: 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    .title {
+      font-size: 27px;
+      font-weight: bold;
+      color: $color-gray-60;
+      margin-bottom: 6px;
+    }
+    .info {
+      font-size: $fs14;
+      color: $color-black;
+    }
+    form {
+      margin-top: 60px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-start;
+      .input-wrapper {
+        width: 100%;
+        label {
+          display: block;
+          font-size: $fs14;
+          color: $color-black;
+          font-weight: bold;
+          margin-bottom: 6px;
+        }
+        .custom-input input {
+          width: 100%;
+          padding-top: 0;
+        }
+      }
+      .btn-disabled {
+        color: $color-gray-40;
+        opacity: 100%;
+      }
+      .invite-row {
+        width: 100%;
+        .role-wrapper {
+          display: flex;
+          justify-content: space-between;
+          width: 100%;
+          margin-bottom: 8px;
+          .label {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: $fs12;
+            color: $color-gray-60;
+          }
+        }
+        .custom-input {
+          height: 96px;
+        }
+        .custom-select {
+          width: 180px;
+          overflow: hidden;
+          justify-content: normal;
+          select {
+            height: auto;
+          }
+        }
 
-    p {
-      text-align: center;
-      font-size: $fs18;
+        svg {
+          width: 12px;
+          height: 12px;
+          fill: $color-gray-20;
+        }
+      }
+      .buttons {
+        margin-top: 32px;
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+      }
+    }
+    .skip-action {
+      background-color: transparent;
+      border: none;
+      text-align: left;
+      font-size: $fs12;
+      color: $color-gray-30;
+      cursor: pointer;
     }
   }
 
-  form {
+  .paginator {
+    width: 32px;
+    height: 24px;
+    background-color: $color-gray-60;
+    position: absolute;
+    top: 16px;
+    right: 16px;
     display: flex;
-    flex-direction: column;
-    margin-top: $size-6;
-
-    .buttons {
-      margin-top: 30px;
-      display: flex;
-      justify-content: flex-end;
-
-      > *:not(:last-child) {
-        margin-right: 13px;
-      }
-
-      input {
-        margin-bottom: unset;
-      }
-      input[type="submit"] {
-      }
-
-      .btn-primary {
-        min-width: 117px;
-      }
+    justify-content: center;
+    align-items: center;
+    font-size: $fs12;
+  }
+  .deco {
+    &.line2 {
+      top: 422px;
+      left: 798px;
     }
-
-    .team-row {
-      .custom-input {
-        width: 459px;
-      }
+    &.square {
+      top: -14px;
+      left: 483px;
     }
-
-    .invite-row {
-      display: flex;
-      justify-content: space-between;
-
-      > *:not(:last-child) {
-        margin-right: 13px;
-      }
-
-      .custom-input {
-        width: 321px;
-      }
-
-      .custom-select {
-        width: 180px;
-        overflow: hidden;
-        justify-content: normal;
-        select {
-          height: auto;
-        }
-      }
-
-      svg {
-        width: 12px;
-        height: 12px;
-        fill: $color-gray-20;
-      }
+    &.line1 {
+      top: 357px;
     }
+  }
+}
 
-    .skip-action {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 15px;
-      .action {
-        color: $color-primary-dark;
-        font-weight: 500;
-        font-size: $fs16;
-        cursor: pointer;
-      }
+.onboarding-team-members {
+  .team-left {
+    form {
+      margin-top: 32px;
     }
   }
 }

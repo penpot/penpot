@@ -22,13 +22,13 @@
         (mf/use-callback
          (fn []
            (st/emit! (dm/success message)
-                     (modal/show {:type :onboarding-choice})
+                     (modal/show {:type :onboarding-team})
                      (du/update-profile-props {:newsletter-subscribed true}))))
         
         decline
         (mf/use-callback
          (fn []
-           (st/emit! (modal/show {:type :onboarding-choice})
+           (st/emit! (modal/show {:type :onboarding-team})
                      (du/update-profile-props {:newsletter-subscribed false}))))]
 
     [:div.modal-overlay
