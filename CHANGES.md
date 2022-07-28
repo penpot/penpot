@@ -4,6 +4,9 @@
 
 ### :boom: Breaking changes & Deprecations
 ### :sparkles: New features
+
+- Add some cosmetic changes in viewer mode [Taiga #3688](https://tree.taiga.io/project/penpot/us/3688)
+
 ### :bug: Bugs fixed
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
