@@ -84,101 +84,114 @@
        (:name shape "")
        (when (seq (:touched shape)) " *")])))
 
-(defn- make-collapsed-iref
-  [id]
-  #(-> (l/in [:expanded id])
-       (l/derived refs/workspace-local)))
-
 (mf/defc layer-item
   [{:keys [index item selected objects] :as props}]
   (let [id         (:id item)
-        selected?  (contains? selected id)
-        container? (or (cph/frame-shape? item)
-                       (cph/group-shape? item))
+        blocked?   (:blocked item)
+        hidden?    (:hidden item)
 
         disable-drag      (mf/use-state false)
         scroll-to-middle? (mf/use-var true)
+        expanded-iref     (mf/with-memo [id]
+                            (-> (l/in [:expanded id])
+                                (l/derived refs/workspace-local)))
 
-        expanded-iref (mf/use-memo
-                       (mf/deps id)
-                       (make-collapsed-iref id))
-
-        expanded? (mf/deref expanded-iref)
+        expanded?         (mf/deref expanded-iref)
+        selected?         (contains? selected id)
+        container?        (or (cph/frame-shape? item)
+                              (cph/group-shape? item))
 
         toggle-collapse
-        (fn [event]
-          (dom/stop-propagation event)
-          (if (and expanded? (kbd/shift? event))
-            (st/emit! (dwc/collapse-all))
-            (st/emit! (dwc/toggle-collapse id))))
+        (mf/use-fn
+         (mf/deps expanded?)
+         (fn [event]
+           (dom/stop-propagation event)
+           (if (and expanded? (kbd/shift? event))
+             (st/emit! (dwc/collapse-all))
+             (st/emit! (dwc/toggle-collapse id)))))
 
         toggle-blocking
-        (fn [event]
-          (dom/stop-propagation event)
-          (if (:blocked item)
-            (st/emit! (dw/update-shape-flags [id] {:blocked false}))
-            (st/emit! (dw/update-shape-flags [id] {:blocked true})
-                      (dw/deselect-shape id))))
+        (mf/use-fn
+         (mf/deps id blocked?)
+         (fn [event]
+           (dom/stop-propagation event)
+           (if blocked?
+             (st/emit! (dw/update-shape-flags [id] {:blocked false}))
+             (st/emit! (dw/update-shape-flags [id] {:blocked true})
+                       (dw/deselect-shape id)))))
 
         toggle-visibility
-        (fn [event]
-          (dom/stop-propagation event)
-          (if (:hidden item)
-            (st/emit! (dw/update-shape-flags [id] {:hidden false}))
-            (st/emit! (dw/update-shape-flags [id] {:hidden true}))))
+        (mf/use-fn
+         (mf/deps hidden?)
+         (fn [event]
+           (dom/stop-propagation event)
+           (if hidden?
+             (st/emit! (dw/update-shape-flags [id] {:hidden false}))
+             (st/emit! (dw/update-shape-flags [id] {:hidden true})))))
 
         select-shape
-        (fn [event]
-          (dom/prevent-default event)
-          (reset! scroll-to-middle? false)
-          (let [id (:id item)]
-            (cond
-              (kbd/shift? event)
-              (st/emit! (dw/shift-select-shapes id))
+        (mf/use-fn
+         (mf/deps id)
+         (fn [event]
+           (dom/prevent-default event)
+           (reset! scroll-to-middle? false)
+           (cond
+             (kbd/shift? event)
+             (st/emit! (dw/shift-select-shapes id))
 
-              (kbd/mod? event)
-              (st/emit! (dw/select-shape id true))
+             (kbd/mod? event)
+             (st/emit! (dw/select-shape id true))
 
-              (> (count selected) 1)
-              (st/emit! (dw/select-shape id))
-              :else
-              (st/emit! (dw/select-shape id)))))
+             (> (count selected) 1)
+             (st/emit! (dw/select-shape id))
+
+             :else
+             (st/emit! (dw/select-shape id)))))
 
         on-pointer-enter
-        (fn [event]
-          (let [id (:id item)]
-            (st/emit! (dw/highlight-shape id))))
+        (mf/use-fn
+         (mf/deps id)
+         (fn [event]
+           (st/emit! (dw/highlight-shape id))))
 
         on-pointer-leave
-        (fn [event]
-          (let [id (:id item)]
-            (st/emit! (dw/dehighlight-shape id))))
+        (mf/use-fn
+         (mf/deps id)
+         (fn [event]
+           (st/emit! (dw/dehighlight-shape id))))
 
         on-context-menu
-        (fn [event]
-          (dom/prevent-default event)
-          (dom/stop-propagation event)
-          (let [pos (dom/get-client-position event)]
-            (st/emit! (dw/show-shape-context-menu {:position pos
-                                                   :shape item}))))
+        (mf/use-fn
+         (mf/deps item)
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (let [pos (dom/get-client-position event)]
+             (st/emit! (dw/show-shape-context-menu {:position pos :shape item})))))
 
         on-drag
-        (fn [{:keys [id]}]
-          (when (not (contains? selected id))
-            (st/emit! (dw/select-shape id))))
+        (mf/use-fn
+         (mf/deps id selected)
+         (fn [{:keys [id]}]
+           (when (not (contains? selected id))
+             (st/emit! (dw/select-shape id)))))
 
         on-drop
-        (fn [side _data]
-          (if (= side :center)
-            (st/emit! (dw/relocate-selected-shapes (:id item) 0))
-            (let [to-index  (if (= side :top) (inc index) index)
-                  parent-id (cph/get-parent-id objects (:id item))]
-              (st/emit! (dw/relocate-selected-shapes parent-id to-index)))))
+        (mf/use-fn
+         (mf/deps id)
+         (fn [side _data]
+           (if (= side :center)
+             (st/emit! (dw/relocate-selected-shapes id 0))
+             (let [to-index  (if (= side :top) (inc index) index)
+                   parent-id (cph/get-parent-id objects id)]
+              (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))
 
         on-hold
-        (fn []
-          (when-not expanded?
-            (st/emit! (dwc/toggle-collapse (:id item)))))
+        (mf/use-fn
+         (mf/deps id expanded?)
+         (fn []
+           (when-not expanded?
+             (st/emit! (dwc/toggle-collapse id)))))
 
         [dprops dref] (hooks/use-sortable
                        :data-type "penpot/layer"
@@ -193,25 +206,23 @@
 
         ref         (mf/use-ref)]
 
-    (mf/use-effect
-     (mf/deps selected? selected)
-     (fn []
-       (let [single? (= (count selected) 1)
-             node (mf/ref-val ref)
+    (mf/with-effect [selected? selected]
+      (let [single? (= (count selected) 1)
+            node (mf/ref-val ref)
 
-             subid
-             (when (and single? selected?)
-               (let [scroll-to @scroll-to-middle?]
-                 (ts/schedule
-                  100
-                  #(if scroll-to
-                     (dom/scroll-into-view! node #js {:block "center", :behavior "smooth"})
-                     (do
-                       (dom/scroll-into-view-if-needed! node #js {:block "center", :behavior "smooth"})
-                       (reset! scroll-to-middle? true))))))]
+            subid
+            (when (and single? selected?)
+              (let [scroll-to @scroll-to-middle?]
+                (ts/schedule
+                 100
+                 #(if scroll-to
+                    (dom/scroll-into-view! node #js {:block "center", :behavior "smooth"})
+                    (do
+                      (dom/scroll-into-view-if-needed! node #js {:block "center", :behavior "smooth"})
+                      (reset! scroll-to-middle? true))))))]
 
-         #(when (some? subid)
-            (rx/dispose! subid)))))
+        #(when (some? subid)
+           (rx/dispose! subid))))
 
     [:li {:on-context-menu on-context-menu
           :ref dref
@@ -385,7 +396,7 @@
         (and
          (:show-search-box @filter-state)
          (or (d/not-empty? (:search-text @filter-state))
-             (d/not-empty? (:active-filters @filter-state))))        
+             (d/not-empty? (:active-filters @filter-state))))
 
         search-and-filters
         (fn [[id shape]]
@@ -438,7 +449,7 @@
 
     [filtered-objects
      handle-show-more
-     
+
      (mf/html
       (if (:show-search-box @filter-state)
         [:*
@@ -499,7 +510,7 @@
         (fn [entries]
           (when (and (.-isIntersecting (first entries)) (some? show-more))
             (show-more)))
-        
+
         on-render-container
         (fn [element]
           (let [options #js {:root element}
