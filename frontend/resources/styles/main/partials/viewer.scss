@@ -1,6 +1,5 @@
 .viewer-content {
   background-color: black;
-
   display: grid;
   grid-template-rows: 232px auto;
   grid-template-columns: 1fr;
@@ -8,18 +7,18 @@
 
 .viewer-section {
   height: calc(100vh - 48px);
-  &.fullscreen {
-    height: 100vh;
-  }
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
-
   display: flex;
   justify-content: center;
   align-items: center;
   flex-flow: wrap;
-
   overflow: auto;
+
+  &.fullscreen {
+    height: 100vh;
+    margin-top: 0px;
+  }
 
   & .viewer-go-prev,
   & .viewer-go-next {
@@ -28,7 +27,7 @@
     display: flex;
     align-items: center;
     width: 53px;
-
+    z-index: 2;
     .arrow {
       display: none;
       align-items: center;
@@ -87,6 +86,7 @@
     width: 100%;
     display: flex;
     justify-content: space-between;
+    align-items: center;
 
     &.left-bar {
       width: calc(100% - 512px);
