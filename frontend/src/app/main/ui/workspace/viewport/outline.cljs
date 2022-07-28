@@ -92,18 +92,17 @@
         edition     (obj/get props "edition")
         zoom        (obj/get props "zoom")
 
-        outlines    (set/union selected hover)
+        lookup      (d/getf objects)
+        edition?    (fn [o] (= edition o))
 
-        shapes      (d/concat-set
-                     (->> outlines
-                          (filter #(not= edition %))
-                          (map #(get objects %))
-                          (filterv show-outline?)
-                          (filter some?))
-                     ;; outline highlighted shapes even if they are hidden or blocked
-                     (->> highlighted
-                          (filter #(not= edition %))
-                          (map #(get objects %))
-                          (filter some?)))]
+        shapes      (-> #{}
+                        (into (comp (remove edition?)
+                                    (keep lookup)
+                                    (filter show-outline?))
+                              (set/union selected hover))
+                        (into (comp (remove edition?)
+                                    (keep lookup))
+                              highlighted))]
+
     [:g.outlines
      [:& shape-outlines-render {:shapes shapes :zoom zoom}]]))
