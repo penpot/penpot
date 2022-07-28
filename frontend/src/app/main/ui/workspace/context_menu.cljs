@@ -70,9 +70,10 @@
              (when (and (some? dom) (some? submenu-node))
                (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
 
-    (when on-unmount
-      (mf/use-effect
-       (fn [] on-unmount)))
+
+    (mf/use-effect
+     (mf/deps on-unmount)
+     (constantly on-unmount))
 
     (if icon
       [:li.icon-menu-item {:ref set-dom-node
