@@ -76,32 +76,34 @@
                    :zoom zoom
                    :color color}])))
 
+(defn- show-outline?
+  [shape]
+  (and (not (:hidden shape))
+       (not (:blocked shape))))
+
 (mf/defc shape-outlines
   {::mf/wrap-props false}
   [props]
-  (let [selected        (or (obj/get props "selected") #{})
-        hover           (or (obj/get props "hover") #{})
-        highlighted     (or (obj/get props "highlighted") #{})
+  (let [selected    (or (obj/get props "selected") #{})
+        hover       (or (obj/get props "hover") #{})
+        highlighted (or (obj/get props "highlighted") #{})
 
-        objects   (obj/get props "objects")
-        edition   (obj/get props "edition")
-        zoom      (obj/get props "zoom")
+        objects     (obj/get props "objects")
+        edition     (obj/get props "edition")
+        zoom        (obj/get props "zoom")
 
-        outlines-ids  (set/union selected hover)
-        show-outline? (fn [shape] (and (not (:hidden shape))
-                                       (not (:blocked shape))))
+        outlines    (set/union selected hover)
 
-        shapes (d/concat-set
-                (->> outlines-ids
-                     (filter #(not= edition %))
-                     (map #(get objects %))
-                     (filterv show-outline?)
-                     (filter some?))
-                ;; outline highlighted shapes even if they are hidden or blocked
-                (->> highlighted
-                     (filter #(not= edition %))
-                     (map #(get objects %))
-                     (filter some?)))]
+        shapes      (d/concat-set
+                     (->> outlines
+                          (filter #(not= edition %))
+                          (map #(get objects %))
+                          (filterv show-outline?)
+                          (filter some?))
+                     ;; outline highlighted shapes even if they are hidden or blocked
+                     (->> highlighted
+                          (filter #(not= edition %))
+                          (map #(get objects %))
+                          (filter some?)))]
     [:g.outlines
-     [:& shape-outlines-render {:shapes shapes
-                                :zoom zoom}]]))
+     [:& shape-outlines-render {:shapes shapes :zoom zoom}]]))
