@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
+   [app.common.data :as d]
    [app.util.object :as obj]
    [app.util.path.format :as upf]
    [clojure.set :as set]
@@ -90,18 +91,17 @@
         show-outline? (fn [shape] (and (not (:hidden shape))
                                        (not (:blocked shape))))
 
-        shapes (set
-                (into
-                 (->> outlines-ids
-                      (filter #(not= edition %))
-                      (map #(get objects %))
-                      (filterv show-outline?)
-                      (filter some?))
-                 ;; outline highlighted shapes even if they are hidden or blocked
-                 (->> highlighted
-                      (filter #(not= edition %))
-                      (map #(get objects %))
-                      (filter some?))))]
+        shapes (d/concat-set
+                (->> outlines-ids
+                     (filter #(not= edition %))
+                     (map #(get objects %))
+                     (filterv show-outline?)
+                     (filter some?))
+                ;; outline highlighted shapes even if they are hidden or blocked
+                (->> highlighted
+                     (filter #(not= edition %))
+                     (map #(get objects %))
+                     (filter some?)))]
     [:g.outlines
      [:& shape-outlines-render {:shapes shapes
                                 :zoom zoom}]]))
