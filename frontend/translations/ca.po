@@ -1750,23 +1750,6 @@ msgstr "El perfil s'ha desat correctament!"
 msgid "notifications.validation-email-sent"
 msgstr "S'ha enviat un correu electrònic de verificació a %s. Reviseu el correu!"
 
-msgid "onboarding.choice.desc"
-msgstr "Com voleu començar?"
-
-msgid "onboarding.choice.fly-solo"
-msgstr "Aneu per lliure"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Salteu al Penpot i comenceu a dissenyar pel vostre compte."
-
-msgid "onboarding.choice.team-up"
-msgstr "Feu equip"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"Esteu treballant amb algú? Creeu un equip i convideu persones a treballar "
-"juntes en projectes i compartiu recursos de disseny."
-
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Nom del teu equip"
 
@@ -1778,11 +1761,6 @@ msgstr "Introdueix el nom de l'equip"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Convida membres"
-
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"També podràs convidar membres o canviar els rols des de la pàgina de "
-"l'equip."
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Crea l'equip ara i convida membres en un altre moment"

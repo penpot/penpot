@@ -1779,23 +1779,6 @@ msgstr "Profil erfolgreich gespeichert!"
 msgid "notifications.validation-email-sent"
 msgstr "Verifizierungs-E-Mail an %s gesendet. Prüfen Sie Ihren Posteingang!"
 
-msgid "onboarding.choice.desc"
-msgstr "Wie wollen Sie beginnen?"
-
-msgid "onboarding.choice.fly-solo"
-msgstr "Allein starten"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Steigen Sie in Penpot ein und beginnen Sie, selbst zu gestalten."
-
-msgid "onboarding.choice.team-up"
-msgstr "Team bilden"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"Arbeiten Sie mit jemandem zusammen? Bilden Sie ein Team und laden Sie Leute "
-"ein, gemeinsam an Projekten zu arbeiten und Gestaltungselemente zu teilen."
-
 msgid "onboarding.choice.title"
 msgstr "Willkommen bei Penpot"
 

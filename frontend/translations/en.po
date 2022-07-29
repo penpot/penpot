@@ -1811,23 +1811,6 @@ msgstr "Profile saved successfully!"
 msgid "notifications.validation-email-sent"
 msgstr "Verification email sent to %s. Check your email!"
 
-msgid "onboarding.choice.desc"
-msgstr "How do you want to start?"
-
-msgid "onboarding.choice.fly-solo"
-msgstr "Fly solo"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Jump away into Penpot and start designing by your own."
-
-msgid "onboarding.choice.team-up"
-msgstr "Team up"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"Are you working with someone? Create a team and invite people to work "
-"together on projects and share design assets."
-
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Your team name"
 
@@ -1840,10 +1823,35 @@ msgstr "Enter the name of the team"
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Invite members"
 
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"You will be also able to invite members and change roles later at the team "
-"section."
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr "Remember to include everyone. Developers, designers, managers... diversity adds up :)"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Invite members with the role:"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Create a team later"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Create a team"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr "A team allows you to collaborate with other Penpot users working in the same files and projects."
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Unlimited files and projects"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Multiplayer edition"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Roles management"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Unlimited members"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100% free!"
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Create team and invite later"

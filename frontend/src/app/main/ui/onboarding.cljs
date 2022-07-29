@@ -114,7 +114,7 @@
          #(st/emit! (modal/hide)
                     (if (contains? @cf/flags :newsletter-subscription)
                       (modal/show {:type :onboarding-newsletter-modal})
-                      (modal/show {:type :onboarding-choice}))
+                      (modal/show {:type :onboarding-team}))
                     (du/mark-onboarding-as-viewed)))]
 
     (mf/with-effect [@slide]

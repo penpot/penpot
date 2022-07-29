@@ -1773,23 +1773,6 @@ msgstr "Profil został pomyślnie zapisany!"
 msgid "notifications.validation-email-sent"
 msgstr "Email weryfikacyjny został wysłany do %s. Sprawdź swój email!"
 
-msgid "onboarding.choice.desc"
-msgstr "Jak chcesz zacząć?"
-
-msgid "onboarding.choice.fly-solo"
-msgstr "Startuj sam"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Wskocz do Penpot i zacznij projektować samodzielnie."
-
-msgid "onboarding.choice.team-up"
-msgstr "Tworzenie zespołu"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"Pracujesz z kimś? Utwórz zespół i zaproś ludzi do wspólnej pracy nad "
-"projektami i udostępniania zasobów projektowych."
-
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Nazwa twojego zespołu"
 
@@ -1801,11 +1784,6 @@ msgstr "Wprowadź nazwę zespołu"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Zaproś członków"
-
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"Będziesz także mógł zapraszać członków i zmieniać później role w sekcji "
-"zespołu."
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Utwórz zespół i zaproś później"

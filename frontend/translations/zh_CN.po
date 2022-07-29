@@ -1677,21 +1677,6 @@ msgstr "个人资料保存成功！"
 msgid "notifications.validation-email-sent"
 msgstr "验证邮件已发至%s。请检查电子邮箱！"
 
-msgid "onboarding.choice.desc"
-msgstr "想要如何开始？"
-
-msgid "onboarding.choice.fly-solo"
-msgstr "单飞"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "跳转到Penpot并开始进行您自己的设计。"
-
-msgid "onboarding.choice.team-up"
-msgstr "组建团队"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr "你在和别人合作吗？创建一个团队，邀请成员参与合作，共享设计素材。"
-
 msgid "onboarding.choice.team-up.create-team"
 msgstr "团队名称"
 
@@ -1703,9 +1688,6 @@ msgstr "输入团队名称"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "邀请成员"
-
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr "您还可以稍后在团队页面邀请成员和更改角色。"
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "创建团队并稍后邀请"
