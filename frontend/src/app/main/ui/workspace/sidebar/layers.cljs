@@ -241,7 +241,10 @@
                               :on-pointer-enter on-pointer-enter
                               :on-pointer-leave on-pointer-leave
                               :on-double-click #(dom/stop-propagation %)}
-      [:& si/element-icon {:shape item}]
+      [:div {:on-double-click #(do (dom/stop-propagation %)
+                                   (dom/prevent-default %)
+                                   (st/emit! dw/zoom-to-selected-shape))}
+       [:& si/element-icon {:shape item}]]
       [:& layer-name {:shape item
                       :name-ref ref
                       :on-start-edit #(reset! disable-drag true)
