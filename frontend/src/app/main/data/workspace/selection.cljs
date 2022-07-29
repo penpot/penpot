@@ -425,11 +425,9 @@
                                                       (assoc :position (if (= (:axis %) :x)
                                                                          (+ (:position %) (- (:x new-frame) (:x frame)))
                                                                          (+ (:position %) (- (:y new-frame) (:y frame))))))))]
-
-                        (if-not (empty? new-guides)
-                          (conj g
-                                (into {} (map (juxt :id identity) new-guides)))
-                          {})))
+                        (cond-> g
+                          (not-empty new-guides)
+                          (conj (into {} (map (juxt :id identity) new-guides))))))
                     guides
                     frames)]
     (-> (pcb/with-page changes page)
