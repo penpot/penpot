@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
+   [app.config :as cfg]
    [app.main.store :as st]
    [okulary.core :as l]
    [potok.core :as ptk]
@@ -27,7 +28,6 @@
                  :result (if (not (contains? (:features state) feature))
                            "enabled"
                            "disabled"))
-
       (-> state
           (update :features
                   (fn [features]
@@ -62,8 +62,14 @@
         active-feature? (mf/deref active-feature-ref)]
     active-feature?))
 
-;; By default the features are active in local environments
-(when *assert*
-  ;; Activate all features in local environment
-  (doseq [f features-list]
-    (toggle-feature! f)))
+;; Read initial enabled features from config, if set
+(if-let [enabled-features @cfg/features]
+  (doseq [f enabled-features]
+    (toggle-feature! f))
+  (when *assert*
+    ;; By default, all features disabled, except in development
+    ;; environment, that are enabled except components-v2
+    (doseq [f features-list]
+      (when (not= f :components-v2)
+        (toggle-feature! f)))))
+
