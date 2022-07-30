@@ -739,14 +739,6 @@
         (rx/of (set-modifiers [id] {:displacement displ} false true)
                (apply-modifiers))))))
 
-(defn check-frame-move?
-  [target-frame-id objects position shape]
-
-  (let [current-frame (get objects (:frame-id shape))]
-    ;; If the current frame contains the point and it's a child of the target
-    (and (gsh/has-point? current-frame position)
-         (cph/is-child? objects target-frame-id (:id current-frame)))))
-
 (defn- calculate-frame-for-move
   [ids]
   (ptk/reify ::calculate-frame-for-move
@@ -761,7 +753,7 @@
             (->> ids
                  (cph/clean-loops objects)
                  (keep #(get objects %))
-                 (remove (partial check-frame-move? frame-id objects position)))
+                 (remove #(= (:frame-id %) frame-id)))
 
             moving-frames
             (->> ids
