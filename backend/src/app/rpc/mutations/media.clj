@@ -134,7 +134,7 @@
                                   :bucket "file-media-object"}))))
 
           (create-image [info]
-            (p/let [data    (cond-> (:path info) (= (:mtype info) "image/svg+xml") slurp)
+            (p/let [data    (:path info)
                     hash    (calculate-hash data)
                     content (-> (sto/content data)
                                 (sto/wrap-with-hash hash))]
