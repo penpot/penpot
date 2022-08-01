@@ -10,6 +10,7 @@
   com.github.luben/zstd-jni {:mvn/version "1.5.2-3"}
   org.clojure/data.fressian {:mvn/version "1.0.0"}
 
+
   io.prometheus/simpleclient {:mvn/version "0.15.0"}
   io.prometheus/simpleclient_hotspot {:mvn/version "0.15.0"}
   io.prometheus/simpleclient_jetty {:mvn/version "0.15.0"

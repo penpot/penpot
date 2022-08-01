@@ -92,104 +92,82 @@ goog.scope(function() {
              hexMap[buf[i++]]);
   }
 
-  const buff = new Uint8Array(16);
+  self.v4 = (function () {
+    const buff8 = new Uint8Array(16);
 
-  function v4() {
-    fill(buff);
-    buff[6] = (buff[6] & 0x0f) | 0x40;
-    buff[8] = (buff[8] & 0x3f) | 0x80;
-    return core.uuid(toHexString(buff));
-  }
+    return function v4() {
+      fill(buff8);
+      buff8[6] = (buff8[6] & 0x0f) | 0x40;
+      buff8[8] = (buff8[8] & 0x3f) | 0x80;
+      return core.uuid(toHexString(buff8));
+    };
+  })();
 
-  let initialized = false;
-  let node;
-  let clockseq;
-  let lastms = 0;
-  let lastns = 0;
+  self.v8 = (function () {
+    const buff  = new ArrayBuffer(16);
+    const buff8 = new Uint8Array(buff);
+    const view  = new DataView(buff);
 
-  function v1() {
-    let cs = clockseq;
+    const timeRef = 1640991600 * 1000; // ms since 2022-01-01T00:00:00
+    const maxClockSeq = 16384n; // 14 bits space
 
-    if (!initialized) {
-      const seed = new Uint8Array(8)
-      fill(seed);
+    let clockSeq = 0n;
+    let lastTs = 0n;
+    let baseMsb;
+    let baseLsb;
 
-      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
-      node = [
-        seed[0] | 0x01,
-        seed[1],
-        seed[2],
-        seed[3],
-        seed[4],
-        seed[5]
-      ];
-
-      // Per 4.2.2, randomize (14 bit) clockseq
-      cs = clockseq = (seed[6] << 8 | seed[7]) & 0x3fff;
-      initialized = true;
+    function initializeSeed() {
+      fill(buff8);
+      baseMsb = 0x0000_0000_0000_8000n; // Version 8;
+      baseLsb = view.getBigUint64(8, false) & 0x0fff_ffff_ffff_ffffn | 0x8000_0000_0000_0000n; // Variant 2;
     }
 
-    let ms = Date.now();
-    let ns = lastns + 1;
-    let dt = (ms - lastms) + (ns - lastns) / 10000;
-
-    // Per 4.2.1.2, Bump clockseq on clock regression
-    if (dt < 0) {
-      cs = cs + 1 & 0x3fff;
+    function currentTimestamp() {
+      return BigInt.asUintN(64, "" + (Date.now() - timeRef));
     }
 
-    // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
-    // time interval
-    if (dt < 0 || ms > lastms) {
-      ns = 0;
+    initializeSeed();
+
+    const create = function create(ts, clockSeq) {
+      let msb = (baseMsb
+                 | ((ts << 16n) & 0xffff_ffff_ffff_0000n)
+                 | ((clockSeq >> 2n) & 0x0000_0000_0000_0fffn));
+      let lsb = baseLsb | ((clockSeq << 60n) & 0x3000_0000_0000_0000n);
+      view.setBigUint64(0, msb, false);
+      view.setBigUint64(8, lsb, false);
+      return core.uuid(toHexString(buff8));
     }
 
-    // Per 4.2.1.2 Throw error if too many uuids are requested
-    if (ns >= 10000) {
-      throw new Error("uuid v1 can't create more than 10M uuids/s")
-    }
+    const factory = function v8() {
+      while (true) {
+        let ts = currentTimestamp();
 
-    lastms = ms;
-    lastns = ns;
-    clockseq = cs;
+        // Protect from clock regression
+        if ((ts-lastTs) < 0) {
+          initializeSeed();
+          clockSeq = 0;
+          continue;
+        }
 
-    // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
-    ms += 12219292800000;
+        if (lastTs === ts) {
+          if (clockSeq < maxClockSeq) {
+            clockSeq++;
+          } else {
+            continue;
+          }
+        } else {
+          clockSeq = 0n;
+          lastTs = ts;
+        }
 
-    let i = 0;
+        return create(ts, clockSeq);
+      }
+    };
 
-    // `time_low`
-    var tl = ((ms & 0xfffffff) * 10000 + ns) % 0x100000000;
-    buff[i++] = tl >>> 24 & 0xff;
-    buff[i++] = tl >>> 16 & 0xff;
-    buff[i++] = tl >>> 8 & 0xff;
-    buff[i++] = tl & 0xff;
-
-    // `time_mid`
-    var tmh = (ms / 0x100000000 * 10000) & 0xfffffff;
-    buff[i++] = tmh >>> 8 & 0xff;
-    buff[i++] = tmh & 0xff;
-
-    // `time_high_and_version`
-    buff[i++] = tmh >>> 24 & 0xf | 0x10; // include version
-    buff[i++] = tmh >>> 16 & 0xff;
-
-    // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
-    buff[i++] = cs >>> 8 | 0x80;
-
-    // `clock_seq_low`
-    buff[i++] = cs & 0xff;
-
-    // `node`
-    for (var n = 0; n < 6; ++n) {
-      buff[i + n] = node[n];
-    }
-
-    return core.uuid(toHexString(buff));
-  }
-
-  self.v1 = v1;
-  self.v4 = v4;
+    factory.create = create
+    factory.initialize = initializeSeed;
+    return factory;
+  })();
 
   self.custom = function formatAsUUID(mostSigBits, leastSigBits) {
     const most = mostSigBits.toString("16").padStart(16, "0");

@@ -28,7 +28,6 @@
                     :exclusions [org.clojure/data.json]}
 
   frankiesardo/linked {:mvn/version "1.3.0"}
-  danlentz/clj-uuid {:mvn/version "0.1.9"}
   commons-io/commons-io {:mvn/version "2.11.0"}
   com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
 
@@ -36,7 +35,7 @@
   fipp/fipp {:mvn/version "0.6.26"}
   io.aviso/pretty {:mvn/version "1.1.1"}
   environ/environ {:mvn/version "1.2.0"}}
- :paths ["src"]
+ :paths ["src" "target/classes"]
  :aliases
  {:dev
   {:extra-deps
@@ -47,6 +46,10 @@
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}
    :extra-paths ["test" "dev"]}
+
+  :build
+  {:extra-deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+   :ns-default build}
 
   :test
   {:extra-paths ["test"]
