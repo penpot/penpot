@@ -1781,11 +1781,15 @@ msgstr "Remove “%s” as Shared Library"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
-msgstr "Unpublish library"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Unpublish library"
+msgstr[1] "Unpublish libraries"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
-msgstr "Are you sure you want to unpublish this library?"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "Are you sure you want to unpublish this library?"
+msgstr[1] "Are you sure you want to unpublish these libraries?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
@@ -1805,11 +1809,15 @@ msgstr "Unpublish"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
-msgstr "Deleting file"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Deleting file"
+msgstr[1] "Deleting files"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
-msgstr "Are you sure you want to delete this file?"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Are you sure you want to delete this file?"
+msgstr[1] "Are you sure you want to delete these files?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
@@ -1818,9 +1826,16 @@ msgstr[0] "This file has libraries that are being used in this file:"
 msgstr[1] "This file has libraries that are being used in these files:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.accept"
-msgstr "Delete file"
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "These files have libraries that are being used in this file:"
+msgstr[1] "These files have libraries that are being used in these files:"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Delete file"
+msgstr[1] "Delete files"
 
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"

@@ -264,14 +264,15 @@
       (let [files (d/index-by :id files)]
         (assoc-in state [:dashboard-local :files-with-shared] files)))))
 
-(defn fetch-library-using-files
-  [file]
+(defn fetch-libraries-using-files
+  [files]
   (ptk/reify ::fetch-library-using-files
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [file-id (:id file)]
-        (->> (rp/query :library-using-files {:file-id file-id})
-             (rx/map library-using-files-fetched))))))
+      (->> (rx/from files)
+           (rx/mapcat (fn [file]  (rp/query :library-using-files {:file-id (:id file)})))
+           (rx/reduce into [])
+           (rx/map library-using-files-fetched)))))
 
 ;; --- EVENT: recent-files
 
