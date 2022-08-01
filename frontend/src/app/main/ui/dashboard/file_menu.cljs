@@ -92,26 +92,30 @@
         on-delete
         (fn [event]
           (dom/stop-propagation event)
-          (if (:is-shared file)
-            (do (st/emit! (dd/fetch-library-using-files file))
-                (st/emit! (modal/show
-                           {:type :delete-shared
-                            :origin :delete
-                            :on-accept delete-fn})))
 
-            (if multi?
-              (st/emit! (modal/show
-                         {:type :confirm
-                          :title (tr "modals.delete-file-multi-confirm.title" file-count)
-                          :message (tr "modals.delete-file-multi-confirm.message" file-count)
-                          :accept-label (tr "modals.delete-file-multi-confirm.accept" file-count)
-                          :on-accept delete-fn}))
-              (st/emit! (modal/show
-                         {:type :confirm
-                          :title (tr "modals.delete-file-confirm.title")
-                          :message (tr "modals.delete-file-confirm.message")
-                          :accept-label (tr "modals.delete-file-confirm.accept")
-                          :on-accept delete-fn})))))
+          (let [has-shared? (filter #(:is-shared %) files)]
+
+            (if has-shared?
+              (do (st/emit! (dd/fetch-libraries-using-files files))
+                  (st/emit! (modal/show
+                             {:type :delete-shared
+                              :origin :delete
+                              :on-accept delete-fn
+                              :count-libraries (count has-shared?)})))
+
+              (if multi?
+                (st/emit! (modal/show
+                           {:type :confirm
+                            :title (tr "modals.delete-file-multi-confirm.title" file-count)
+                            :message (tr "modals.delete-file-multi-confirm.message" file-count)
+                            :accept-label (tr "modals.delete-file-multi-confirm.accept" file-count)
+                            :on-accept delete-fn}))
+                (st/emit! (modal/show
+                           {:type :confirm
+                            :title (tr "modals.delete-file-confirm.title")
+                            :message (tr "modals.delete-file-confirm.message")
+                            :accept-label (tr "modals.delete-file-confirm.accept")
+                            :on-accept delete-fn}))))))
 
         on-move-success
         (fn [team-id project-id]
@@ -155,11 +159,12 @@
         (fn [event]
           (dom/prevent-default event)
           (dom/stop-propagation event)
-          (st/emit! (dd/fetch-library-using-files file))
+          (st/emit! (dd/fetch-libraries-using-files [file]))
           (st/emit! (modal/show
                      {:type :delete-shared
                       :origin :unpublish
-                      :on-accept del-shared})))
+                      :on-accept del-shared
+                      :count-libraries 1})))
 
         on-export-files
         (fn [event-name binary?]

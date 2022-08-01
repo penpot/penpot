@@ -24,7 +24,8 @@
   [{:keys [on-accept
            on-cancel
            accept-style
-           origin] :as props}]
+           origin
+           count-libraries] :as props}]
   (let [on-accept    (or on-accept identity)
         on-cancel    (or on-cancel identity)
         cancel-label (tr "labels.cancel")
@@ -34,18 +35,22 @@
         files->shared (:files-with-shared dashboard-local)
         count-files (count (keys files->shared))
         title (if is-delete?
-                (tr "modals.delete-shared-confirm.title")
-                (tr "modals.unpublish-shared-confirm.title"))
+                (tr "modals.delete-shared-confirm.title" (i18n/c count-libraries))
+                (tr "modals.unpublish-shared-confirm.title" (i18n/c count-libraries)))
         message (if is-delete?
-                  (tr "modals.delete-shared-confirm.message")
-                  (tr "modals.unpublish-shared-confirm.message"))
-
+                  (tr "modals.delete-shared-confirm.message" (i18n/c count-libraries))
+                  (tr "modals.unpublish-shared-confirm.message" (i18n/c count-libraries)))
         accept-label (if is-delete?
-                  (tr "modals.delete-shared-confirm.accept")
-                  (tr "modals.unpublish-shared-confirm.accept"))
-        scd-message (if is-delete?
-                      (tr "modals.delete-shared-confirm.scd-message" (i18n/c count-files))
-                      (tr "modals.unpublish-shared-confirm.scd-message" (i18n/c count-files)))
+                       (tr "modals.delete-shared-confirm.accept" (i18n/c count-libraries))
+                       (tr "modals.unpublish-shared-confirm.accept"))
+        scd-message (if is-delete? 
+                      (if (> count-libraries 1)
+                        (tr "modals.delete-shared-confirm.scd-message-plural" (i18n/c count-files))
+                        (tr "modals.delete-shared-confirm.scd-message" (i18n/c count-files)))
+                      (if (> count-libraries 1)
+                        (tr "modals.unpublish-shared-confirm.scd-message-plural" (i18n/c count-files))
+                        (tr "modals.unpublish-shared-confirm.scd-message" (i18n/c count-files)))
+                      )
         hint  (if is-delete?
                 ""
                 (tr "modals.unpublish-shared-confirm.hint" (i18n/c count-files)))
