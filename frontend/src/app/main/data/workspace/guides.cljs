@@ -14,7 +14,6 @@
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 (defn make-update-guide [guide]

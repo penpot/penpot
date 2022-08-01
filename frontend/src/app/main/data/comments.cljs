@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.types.shape-tree :as ctst]
    [app.common.spec :as us]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.repo :as rp]
