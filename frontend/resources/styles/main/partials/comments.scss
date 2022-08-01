@@ -29,6 +29,9 @@
     &.unread {
       background-color: $color-primary;
     }
+    span {
+      user-select: none;
+    }
   }
 
   .thread-content {
@@ -77,7 +80,7 @@
       resize: none;
       width: 100%;
       border-radius: 2px;
-      border: 1px solid $color-gray-10;
+      border: 1px solid $color-gray-20;
       max-height: 4rem;
     }
 
@@ -188,6 +191,7 @@
         margin: 0 $size-2 0 26px;
         white-space: pre-wrap;
         display: inline-block;
+        word-break: break-all;
       }
     }
   }

@@ -6,15 +6,23 @@
 
 (ns app.main.store
   (:require
+   [app.common.logging :as log]
    [app.util.object :as obj]
    [beicon.core :as rx]
    [okulary.core :as l]
    [potok.core :as ptk]))
 
+(log/set-level! :info)
+
 (enable-console-print!)
 
 (defonce loader (l/atom false))
 (defonce on-error (l/atom identity))
+
+(defmethod ptk/resolve :default
+  [type data]
+  (log/warn :hint "no implementation found for event" :event type)
+  (ptk/data-event type data))
 
 (defonce state
   (ptk/store {:resolve ptk/resolve

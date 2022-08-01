@@ -238,6 +238,9 @@
 
    {:name "0076-mod-storage-object-table"
     :fn (mg/resource "app/migrations/sql/0076-mod-storage-object-table.sql")}
+    
+   {:name "0077-mod-comment-thread-table"
+    :fn (mg/resource "app/migrations/sql/0077-mod-comment-thread-table.sql")}
    ])
 
 

@@ -47,11 +47,11 @@
       (px/with-dispatch executor
         (let [profile-id (:profile-id data)
               user-agent (:user-agent data)
-              token      (tokens :generate {:iss "authentication"
-                                            :iat (dt/now)
-                                            :uid profile-id})
-
               now        (dt/now)
+
+              token      (tokens :generate {:iss "authentication"
+                                            :iat now
+                                            :uid profile-id})
               params     {:user-agent user-agent
                           :profile-id profile-id
                           :created-at now

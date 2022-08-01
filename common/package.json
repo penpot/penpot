@@ -13,7 +13,7 @@
     "test": "yarn run compile-test && yarn run run-test"
   },
   "devDependencies": {
-    "shadow-cljs": "2.19.5",
+    "shadow-cljs": "2.19.8",
     "source-map-support": "^0.5.19",
     "ws": "^7.4.6"
   }

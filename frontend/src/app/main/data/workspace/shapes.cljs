@@ -17,6 +17,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
+   [app.main.data.comments :as dc]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
@@ -261,8 +262,9 @@
                             changes
                             components-to-delete)]
 
-        (rx/of (dch/commit-changes changes)
-               (dwsl/update-layout-positions all-parents))))))
+        (rx/of (dc/detach-comment-thread ids)
+               (dwsl/update-layout-positions all-parents)
+               (dch/commit-changes changes))))))
 
 (defn- viewport-center
   [state]

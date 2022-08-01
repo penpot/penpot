@@ -63,11 +63,10 @@
             guides (-> (select-keys guides ids) (vals))]
         (rx/from (->> guides (mapv #(remove-guide %))))))))
 
-(defn move-frame-guides
-  "Move guides that are inside a frame when that frame is moved"
-  [ids]
-  (us/verify (s/coll-of uuid?) ids)
 
+(defmethod ptk/resolve ::move-frame-guides
+  [_ ids]
+  (us/assert! ::us/coll-of-uuid ids)
   (ptk/reify ::move-frame-guides
     ptk/WatchEvent
     (watch [_ state _]
@@ -88,11 +87,11 @@
                                       (gpt/point (:x frame') (:y frame')))
 
                     guide (update guide :position + (get moved (:axis guide)))]
-                (update-guides guide)))]
+                (update-guides guide)))
 
-        (->> (wsh/lookup-page-options state)
-             :guides
-             (vals)
+            guides (-> state wsh/lookup-page-options :guides vals)]
+
+        (->> guides
              (filter (comp frame-ids? :frame-id))
              (map build-move-event)
              (rx/from))))))

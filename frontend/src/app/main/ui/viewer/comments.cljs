@@ -85,6 +85,8 @@
 (mf/defc comments-layer
   [{:keys [zoom file users frame page] :as props}]
   (let [profile     (mf/deref refs/profile)
+        threads-position-ref  (l/derived (l/in [:viewer :pages (:id page) :options :comment-threads-position]) st/state)
+        threads-position-map  (mf/deref threads-position-ref)
         threads-map (mf/deref threads-ref)
 
         frame-corner (-> frame :points gsh/points->selrect gpt/point)
@@ -96,7 +98,16 @@
 
         cstate      (mf/deref refs/comments-local)
 
+        update-thread-position (fn update-thread-position [thread]
+                                 (if (contains? threads-position-map (:id thread))
+                                   (-> thread
+                                       (assoc :position (get-in threads-position-map [(:id thread) :position]))
+                                       (assoc :frame-id (get-in threads-position-map [(:id thread) :frame-id])))
+                                   thread))
+
         threads     (->> (vals threads-map)
+                         (map update-thread-position)
+                         (filter #(= (:frame-id %) (:id frame)))
                          (dcm/apply-filters cstate profile)
                          (filter (fn [{:keys [position]}]
                                    (gsh/has-point? frame position))))
@@ -135,8 +146,10 @@
         (mf/use-callback
          (mf/deps frame)
          (fn [draft]
-           (let [params (update draft :position gpt/transform modifier2)]
-             (st/emit! (dcm/create-thread params)
+           (let [params (-> draft
+                            (update  :position gpt/transform modifier2)
+                            (assoc :frame-id (:id frame)))]
+             (st/emit! (dcm/create-thread-on-viewer params)
                        (dcm/close-thread)))))]
 
     [:div.comments-section {:on-click on-click}
@@ -148,7 +161,8 @@
                                   :zoom zoom
                                   :on-click on-bubble-click
                                   :open? (= (:id item) (:open cstate))
-                                  :key (:seqn item)}]))
+                                  :key (:seqn item)
+                                  :origin :viewer}]))
 
        (when-let [id (:open cstate)]
          (when-let [thread (as-> (get threads-map id) $
