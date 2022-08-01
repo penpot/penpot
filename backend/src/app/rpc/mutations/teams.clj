@@ -353,7 +353,7 @@
 (declare create-team-invitation)
 
 (s/def ::email ::us/email)
-(s/def ::emails ::us/set-of-emails)
+(s/def ::emails ::us/set-of-valid-emails)
 (s/def ::invite-team-member
   (s/keys :req-un [::profile-id ::team-id ::role]
           :opt-un [::email ::emails]))
@@ -443,7 +443,7 @@
 
 ;; --- Mutation: Create Team & Invite Members
 
-(s/def ::emails ::us/set-of-emails)
+(s/def ::emails ::us/set-of-valid-emails)
 (s/def ::create-team-and-invite-members
   (s/and ::create-team (s/keys :req-un [::emails ::role])))
 

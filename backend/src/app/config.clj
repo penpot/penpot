@@ -84,7 +84,7 @@
    ;; a server prop key where initial project is stored.
    :initial-project-skey "initial-project"})
 
-(s/def ::flags ::us/vec-of-keywords)
+(s/def ::flags ::us/vec-of-valid-keywords)
 
 ;; DEPRECATED PROPERTIES
 (s/def ::telemetry-enabled ::us/boolean)
@@ -93,7 +93,7 @@
 (s/def ::audit-log-archive-uri ::us/string)
 (s/def ::audit-log-gc-max-age ::dt/duration)
 
-(s/def ::admins ::us/set-of-str)
+(s/def ::admins ::us/set-of-non-empty-strings)
 (s/def ::file-change-snapshot-every ::us/integer)
 (s/def ::file-change-snapshot-timeout ::dt/duration)
 
@@ -128,8 +128,8 @@
 (s/def ::oidc-token-uri ::us/string)
 (s/def ::oidc-auth-uri ::us/string)
 (s/def ::oidc-user-uri ::us/string)
-(s/def ::oidc-scopes ::us/set-of-str)
-(s/def ::oidc-roles ::us/set-of-str)
+(s/def ::oidc-scopes ::us/set-of-non-empty-strings)
+(s/def ::oidc-roles ::us/set-of-non-empty-strings)
 (s/def ::oidc-roles-attr ::us/keyword)
 (s/def ::oidc-email-attr ::us/keyword)
 (s/def ::oidc-name-attr ::us/keyword)
@@ -165,7 +165,7 @@
 (s/def ::profile-complaint-threshold ::us/integer)
 (s/def ::public-uri ::us/string)
 (s/def ::redis-uri ::us/string)
-(s/def ::registration-domain-whitelist ::us/set-of-str)
+(s/def ::registration-domain-whitelist ::us/set-of-non-empty-strings)
 (s/def ::rlimit-font ::us/integer)
 (s/def ::rlimit-file-update ::us/integer)
 (s/def ::rlimit-image ::us/integer)
