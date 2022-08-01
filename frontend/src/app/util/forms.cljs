@@ -162,4 +162,4 @@
 
 (s/def ::email ::us/email)
 (s/def ::not-empty-string ::us/not-empty-string)
-(s/def ::color ::us/color)
+(s/def ::color ::us/rgb-color-str)

@@ -433,7 +433,7 @@
 (defn detach-comment-thread
   "Detach comment threads that are inside a frame when that frame is deleted"
   [ids]
-  (us/verify (s/coll-of uuid?) ids)
+  (us/assert! ::us/coll-of-uuid ids)
 
   (ptk/reify ::detach-comment-thread
     ptk/WatchEvent

@@ -21,7 +21,6 @@
    [app.main.streams :as ms]
    [app.util.router :as rt]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 (declare handle-interrupt)
@@ -144,8 +143,7 @@
 (defn move-frame-comment-threads
   "Move comment threads that are inside a frame when that frame is moved"
   [ids]
-  (us/verify (s/coll-of uuid?) ids)
-
+  (us/assert! ::us/coll-of-uuid ids)
   (ptk/reify ::move-frame-comment-threads
     ptk/WatchEvent
     (watch [_ state _]
