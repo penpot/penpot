@@ -452,9 +452,9 @@
 
 (defn invite-team-members
   [{:keys [emails role team-id resend?] :as params}]
-  (us/assert ::us/set-of-emails emails)
-  (us/assert ::us/keyword role)
-  (us/assert ::us/uuid team-id)
+  (us/assert! ::us/set-of-valid-emails emails)
+  (us/assert! ::us/keyword role)
+  (us/assert! ::us/uuid team-id)
   (ptk/reify ::invite-team-members
     IDeref
     (-deref [_] {:role role :team-id team-id :resend? resend?})

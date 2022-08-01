@@ -96,7 +96,7 @@
   [{:value "editor" :label (tr "labels.editor")}
    {:value "admin" :label (tr "labels.admin")}])
 
-(s/def ::emails (s/and ::us/set-of-emails d/not-empty?))
+(s/def ::emails (s/and ::us/set-of-valid-emails d/not-empty?))
 (s/def ::role  ::us/keyword)
 (s/def ::invite-form
   (s/keys :req-un [::role ::emails]))
@@ -180,10 +180,10 @@
          [:div.action (tr "onboarding.choice.team-up.invite-members-skip")]]]]
       [:& team-modal-right]
       [:div.paginator "2/2"]
-      
+
       [:img.deco.square {:src "images/deco-square.svg" :border "0"}]
       [:img.deco.circle {:src "images/deco-circle.svg" :border "0"}]
       [:img.deco.line1 {:src "images/deco-line1.svg" :border "0"}]
       [:img.deco.line2 {:src "images/deco-line2.svg" :border "0"}]]]))
-      
+
 

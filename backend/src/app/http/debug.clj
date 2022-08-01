@@ -9,7 +9,6 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -205,7 +204,7 @@
   [{:keys [pool]} request]
   (letfn [(parse-id [request]
             (let [id (get-in request [:path-params :id])
-                  id (us/uuid-conformer id)]
+                  id (parse-uuid id)]
               (when (uuid? id)
                 id)))
 

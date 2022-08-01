@@ -77,7 +77,7 @@
         ]
        (filterv identity)))
 
-(s/def ::emails (s/and ::us/set-of-emails d/not-empty?))
+(s/def ::emails (s/and ::us/set-of-valid-emails d/not-empty?))
 (s/def ::role  ::us/keyword)
 (s/def ::team-id ::us/uuid)
 

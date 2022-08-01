@@ -133,7 +133,7 @@
           (dm/str v))]
   (s/def ::rgb-color-str (s/conformer conformer unformer)))
 
-;; --- SPEC: set of Keywords
+;; --- SPEC: set/vec of valid Keywords
 
 (letfn [(conform-fn [dest s]
           (let [xform (keep (fn [s]
@@ -146,17 +146,17 @@
               (string? s) (into dest xform (str/words s))
               :else       ::s/invalid)))]
 
-  (s/def ::set-of-keywords
+  (s/def ::set-of-valid-keywords
     (s/conformer
      (fn [s] (conform-fn #{} s))
      (fn [s] (str/join " " (map name s)))))
 
-  (s/def ::vec-of-keywords
+  (s/def ::vec-of-valid-keywords
     (s/conformer
      (fn [s] (conform-fn [] s))
      (fn [s] (str/join " " (map name s))))))
 
-;; --- SPEC: set-of-emails
+;; --- SPEC: set-of-valid-emails
 
 (letfn [(conformer [v]
           (cond
@@ -171,9 +171,9 @@
             :else ::s/invalid))
         (unformer [v]
           (str/join " " v))]
-  (s/def ::set-of-emails (s/conformer conformer unformer)))
+  (s/def ::set-of-valid-emails (s/conformer conformer unformer)))
 
-;; --- SPEC: set-of-str
+;; --- SPEC: set-of-non-empty-strings
 
 (def non-empty-strings-xf
   (comp
@@ -189,7 +189,7 @@
             :else       ::s/invalid))
         (unformer [s]
           (str/join "," s))]
-  (s/def ::set-of-str (s/conformer conformer unformer)))
+  (s/def ::set-of-non-empty-strings (s/conformer conformer unformer)))
 
 ;; --- SPECS WITHOUT CONFORMER
 
@@ -200,7 +200,6 @@
 (s/def ::fn fn?)
 (s/def ::id ::uuid)
 
-;; NOTE: this is a coercerless version of `::set-of-str` spec
 (s/def ::set-of-string (s/every ::string :kind set?))
 (s/def ::coll-of-uuid (s/every ::uuid))
 (s/def ::set-of-uuid (s/every ::uuid :kind set?))
