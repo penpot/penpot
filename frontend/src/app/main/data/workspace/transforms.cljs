@@ -18,6 +18,7 @@
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
+   [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.guides :as dwg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -201,6 +202,7 @@
             (rx/of (dwu/start-undo-transaction))
             (rx/empty))
           (rx/of (dwg/move-frame-guides ids-with-children)
+                 (dwcm/move-frame-comment-threads ids-with-children)
                  (dch/update-shapes
                   ids-with-children
                   (fn [shape]

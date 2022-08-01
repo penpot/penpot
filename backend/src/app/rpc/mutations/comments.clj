@@ -31,9 +31,10 @@
 (s/def ::profile-id ::us/uuid)
 (s/def ::position ::gpt/point)
 (s/def ::content ::us/string)
+(s/def ::frame-id ::us/uuid)
 
 (s/def ::create-comment-thread
-  (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id]
+  (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id ::frame-id]
           :opt-un [::share-id]))
 
 (sv/defmethod ::create-comment-thread
@@ -53,7 +54,7 @@
     (:next-seqn res)))
 
 (defn- create-comment-thread
-  [conn {:keys [profile-id file-id page-id position content] :as params}]
+  [conn {:keys [profile-id file-id page-id position content frame-id] :as params}]
   (let [seqn    (retrieve-next-seqn conn file-id)
         now     (dt/now)
         pname   (retrieve-page-name conn params)
@@ -66,7 +67,8 @@
                             :created-at now
                             :modified-at now
                             :seqn seqn
-                            :position (db/pgpoint position)})]
+                            :position (db/pgpoint position)
+                            :frame-id frame-id})]
 
 
     ;; Create a comment entry
@@ -281,3 +283,40 @@
                   :code :not-allowed))
 
       (db/delete! conn :comment {:id id}))))
+
+;; --- Mutation: Update comment thread position
+
+(s/def ::update-comment-thread-position
+  (s/keys :req-un [::profile-id ::id ::position ::frame-id]))
+
+(sv/defmethod ::update-comment-thread-position
+  [{:keys [pool] :as cfg} {:keys [profile-id id position frame-id] :as params}]
+  (db/with-atomic [conn pool]
+    (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
+      (when-not (= (:owner-id thread) profile-id)
+        (ex/raise :type :validation
+                  :code :not-allowed))
+      (db/update! conn :comment-thread
+                  {:modified-at (dt/now)
+                   :position (db/pgpoint position)
+                   :frame-id frame-id}
+                  {:id (:id thread)})
+      nil)))
+
+;; --- Mutation: Update comment frame
+
+(s/def ::update-comment-thread-frame
+  (s/keys :req-un [::profile-id ::id ::frame-id]))
+
+(sv/defmethod ::update-comment-thread-frame
+  [{:keys [pool] :as cfg} {:keys [profile-id id frame-id] :as params}]
+  (db/with-atomic [conn pool]
+    (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
+      (when-not (= (:owner-id thread) profile-id)
+        (ex/raise :type :validation
+                  :code :not-allowed))
+      (db/update! conn :comment-thread
+                  {:modified-at (dt/now)
+                   :frame-id frame-id}
+                  {:id (:id thread)})
+      nil)))
