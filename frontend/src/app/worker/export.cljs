@@ -149,8 +149,8 @@
   (->> (r/render-components (:data file))
        (rx/map #(vector (str (:id file) "/components.svg") %))))
 
-(defn fetch-file-with-libraries [file-id]
-  (->> (rx/zip (rp/query :file {:id file-id})
+(defn fetch-file-with-libraries [file-id components-v2]
+  (->> (rx/zip (rp/query :file {:id file-id :components-v2 components-v2})
                (rp/query :file-libraries {:file-id file-id}))
        (rx/map
         (fn [[file file-libraries]]
@@ -351,7 +351,7 @@
                 (update file-id dissoc :libraries))))
 
 (defn collect-files
-  [file-id export-type]
+  [file-id export-type components-v2]
 
   (letfn [(fetch-dependencies [[files pending]]
             (if (empty? pending)
@@ -365,7 +365,7 @@
                   ;; The file is already in the result
                   (rx/of [files pending])
 
-                  (->> (fetch-file-with-libraries next)
+                  (->> (fetch-file-with-libraries next components-v2)
                        (rx/map
                         (fn [file]
                           [(-> files
@@ -381,9 +381,9 @@
            (rx/map #(process-export file-id export-type %))))))
 
 (defn export-file
-  [team-id file-id export-type]
+  [team-id file-id export-type components-v2]
 
-  (let [files-stream (->> (collect-files file-id export-type)
+  (let [files-stream (->> (collect-files file-id export-type components-v2)
                           (rx/share))
 
         manifest-stream
@@ -471,12 +471,12 @@
                           :file-id (:id file)}))))))))
 
 (defmethod impl/handler :export-standard-file
-  [{:keys [team-id files export-type] :as message}]
+  [{:keys [team-id files export-type components-v2] :as message}]
 
   (->> (rx/from files)
        (rx/mapcat
         (fn [file]
-          (->> (export-file team-id (:id file) export-type)
+          (->> (export-file team-id (:id file) export-type components-v2)
                (rx/map
                 (fn [value]
                   (if (contains? value :type)

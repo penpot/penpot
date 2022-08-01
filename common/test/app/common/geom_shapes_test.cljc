@@ -10,7 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth :refer [close?]]
-   [app.common.pages :refer [make-minimal-shape]]
+   [app.common.types.shape :as cts]
    [clojure.test :as t]))
 
 (def default-path
@@ -41,7 +41,7 @@
 (defn create-test-shape
   ([type] (create-test-shape type {}))
   ([type params]
-   (-> (make-minimal-shape type)
+   (-> (cts/make-minimal-shape type)
        (merge params)
        (cond->
            (= type :path)    (add-path-data)

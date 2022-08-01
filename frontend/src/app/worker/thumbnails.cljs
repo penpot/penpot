@@ -48,11 +48,12 @@
        (= :request-body-too-large code)))
 
 (defn- request-data-for-thumbnail
-  [file-id revn]
+  [file-id revn components-v2]
   (let [path    "api/rpc/query/file-data-for-thumbnail"
         params  {:file-id file-id
                  :revn revn
-                 :strip-frames-with-thumbnails true}
+                 :strip-frames-with-thumbnails true
+                 :components-v2 components-v2}
         request {:method :get
                  :uri (u/join (cfg/get-public-uri) path)
                  :credentials "include"
@@ -107,18 +108,18 @@
          (rx/map (constantly params)))))
 
 (defmethod impl/handler :thumbnails/generate
-  [{:keys [file-id revn] :as message}]
+  [{:keys [file-id revn components-v2] :as message}]
   (letfn [(on-result [{:keys [data props]}]
             {:data data
              :fonts (:fonts props)})
 
           (on-cache-miss [_]
-            (->> (request-data-for-thumbnail file-id revn)
+            (->> (request-data-for-thumbnail file-id revn components-v2)
                  (rx/map render-thumbnail)
                  (rx/mapcat persist-thumbnail)))]
 
     (if (debug? :disable-thumbnail-cache)
-      (->> (request-data-for-thumbnail file-id revn)
+      (->> (request-data-for-thumbnail file-id revn components-v2)
            (rx/map render-thumbnail))
       (->> (request-thumbnail file-id revn)
            (rx/catch not-found? on-cache-miss)

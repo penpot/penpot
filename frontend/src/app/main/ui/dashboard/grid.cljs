@@ -10,6 +10,7 @@
    [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -36,9 +37,11 @@
 (defn ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"
   [file]
-  (wrk/ask! {:cmd :thumbnails/generate
-             :revn (:revn file)
-             :file-id (:id file)}))
+  (let [components-v2 (features/active-feature? :components-v2)]
+    (wrk/ask! {:cmd :thumbnails/generate
+               :revn (:revn file)
+               :file-id (:id file)
+               :components-v2 components-v2})))
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap [mf/memo]}
@@ -72,12 +75,13 @@
 
 (mf/defc grid-item
   {:wrap [mf/memo]}
-  [{:keys [file navigate?] :as props}]
+  [{:keys [file navigate? origin] :as props}]
   (let [file-id        (:id file)
         local          (mf/use-state {:menu-open false
                                       :menu-pos nil
                                       :edition false})
         selected-files (mf/deref refs/dashboard-selected-files)
+        dashboard-local  (mf/deref refs/dashboard-local)
         item-ref       (mf/use-ref)
         menu-ref       (mf/use-ref)
         selected?      (contains? selected-files file-id)
@@ -202,10 +206,12 @@
                         :top (:y (:menu-pos @local))
                         :navigate? navigate?
                         :on-edit on-edit
-                        :on-menu-close on-menu-close}])]]]))
+                        :on-menu-close on-menu-close
+                        :origin origin
+                        :dashboard-local dashboard-local}])]]]))
 
 (mf/defc grid
-  [{:keys [files project on-create-clicked] :as props}]
+  [{:keys [files project on-create-clicked origin] :as props}]
   (let [dragging?  (mf/use-state false)
         project-id (:id project)
 
@@ -265,7 +271,8 @@
           [:& grid-item
            {:file item
             :key (:id item)
-            :navigate? true}])]
+            :navigate? true
+            :origin origin}])]
 
        :else
        [:& empty-placeholder {:default? (:is-default project)
@@ -273,7 +280,7 @@
                               :project project}])]))
 
 (mf/defc line-grid-row
-  [{:keys [files selected-files on-load-more dragging?] :as props}]
+  [{:keys [files selected-files on-load-more dragging? origin] :as props}]
   (let [rowref           (mf/use-ref)
 
         width            (mf/use-state nil)
@@ -319,7 +326,8 @@
          :file item
          :selected-files selected-files
          :key (:id item)
-         :navigate? false}])
+         :navigate? false
+         :origin origin}])
      (when (and (> limit 0)
                 (> (count files) limit))
        [:div.grid-item.placeholder {:on-click on-load-more}
@@ -328,7 +336,7 @@
          (tr "dashboard.show-all-files")]])]))
 
 (mf/defc line-grid
-  [{:keys [project team files on-load-more on-create-clicked] :as props}]
+  [{:keys [project team files on-load-more on-create-clicked origin] :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
@@ -412,7 +420,8 @@
                           :team-id team-id
                           :selected-files selected-files
                           :on-load-more on-load-more
-                          :dragging? @dragging?}]
+                          :dragging? @dragging?
+                          :origin origin}]
 
        :else
        [:& empty-placeholder {:dragging? @dragging?

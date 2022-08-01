@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.drawing
   "Drawing interactions."
   (:require
-   [app.common.pages :as cp]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.box :as box]
@@ -91,7 +91,7 @@
   (ptk/reify ::handle-drawing
     ptk/UpdateEvent
     (update [_ state]
-      (let [data (cp/make-minimal-shape type)]
+      (let [data (cts/make-minimal-shape type)]
         (update-in state [:workspace-drawing :object] merge data)))
 
     ptk/WatchEvent

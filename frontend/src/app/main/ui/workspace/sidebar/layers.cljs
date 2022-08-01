@@ -15,6 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -100,6 +101,11 @@
         selected?         (contains? selected id)
         container?        (or (cph/frame-shape? item)
                               (cph/group-shape? item))
+
+        components-v2  (mf/use-ctx ctx/components-v2)
+        main-instance? (if components-v2
+                         (:main-instance? item)
+                         true)
 
         toggle-collapse
         (mf/use-fn
@@ -244,7 +250,8 @@
       [:div {:on-double-click #(do (dom/stop-propagation %)
                                    (dom/prevent-default %)
                                    (st/emit! dw/zoom-to-selected-shape))}
-       [:& si/element-icon {:shape item}]]
+       [:& si/element-icon {:shape item
+                            :main-instance? main-instance?}]]
       [:& layer-name {:shape item
                       :name-ref ref
                       :on-start-edit #(reset! disable-drag true)
@@ -444,7 +451,6 @@
                    (take (:num-items @filter-state))
                    filtered-objects-total))))
 
-
         handle-show-more
         (fn []
           (when (<= (:num-items @filter-state) (count filtered-objects-total))
@@ -541,7 +547,6 @@
 
             (when last-hidden-frame
               (dom/add-class! last-hidden-frame "sticky"))))]
-
 
     [:div#layers.tool-window
      (if (d/not-empty? focus)

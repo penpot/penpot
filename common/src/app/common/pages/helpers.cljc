@@ -8,10 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.common.spec :as us]
-   [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -61,14 +58,6 @@
   [shape]
   (and (not (frame-shape? shape))
        (= (:frame-id shape) uuid/zero)))
-
-(defn get-shape
-  [container shape-id]
-  (us/assert ::ctp/container container)
-  (us/assert ::us/uuid shape-id)
-  (-> container
-      (get :objects)
-      (get shape-id)))
 
 (defn get-children-ids
   [objects id]
@@ -158,146 +147,6 @@
           (:shapes)
           (keep lookup)))))
 
-(defn get-frames
-  "Retrieves all frame objects as vector"
-  [objects]
-  (or (-> objects meta ::index-frames)
-      (let [lookup (d/getf objects)
-            xform  (comp (remove #(= uuid/zero %))
-                         (keep lookup)
-                         (filter frame-shape?))]
-        (->> (keys objects)
-             (into [] xform)))))
-
-(defn get-frames-ids
-  "Retrieves all frame ids as vector"
-  [objects]
-  (->> (get-frames objects)
-       (mapv :id)))
-
-(defn get-nested-frames
-  [objects frame-id]
-  (into #{}
-        (comp (filter frame-shape?)
-              (map :id))
-        (get-children objects frame-id)))
-
-(defn get-root-frames-ids
-  "Retrieves all frame objects as vector. It is not implemented in
-  function of `get-immediate-children` for performance reasons. This
-  function is executed in the render hot path."
-  [objects]
-  (let [add-frame
-        (fn [result shape]
-          (cond-> result
-            (frame-shape? shape)
-            (conj (:id shape))))]
-    (reduce-objects objects (complement frame-shape?) add-frame [])))
-
-(defn get-root-objects
-  "Get all the objects under the root object"
-  [objects]
-  (let [add-shape
-        (fn [result shape]
-          (conj result shape))]
-    (reduce-objects objects (complement frame-shape?) add-shape [])))
-
-(defn get-root-shapes
-  "Get all shapes that are not frames"
-  [objects]
-  (let [add-shape
-        (fn [result shape]
-          (cond-> result
-            (not (frame-shape? shape))
-            (conj shape)))]
-    (reduce-objects objects (complement frame-shape?) add-shape [])))
-
-(defn get-root-shapes-ids
-  [objects]
-  (->> (get-root-shapes objects)
-       (mapv :id)))
-
-(defn get-base
-  [objects id-a id-b]
-
-  (let [parents-a (reverse (get-parents-seq objects id-a))
-        parents-b (reverse (get-parents-seq objects id-b))
-
-        [base base-child-a base-child-b]
-        (loop [parents-a (rest parents-a)
-               parents-b (rest parents-b)
-               base uuid/zero]
-          (cond
-            (not= (first parents-a) (first parents-b))
-            [base (first parents-a) (first parents-b)]
-
-            (or (empty? parents-a) (empty? parents-b))
-            [uuid/zero (first parents-a) (first parents-b)]
-
-            :else
-            (recur (rest parents-a) (rest parents-b) (first parents-a))))
-
-        index-base-a (when base-child-a (get-position-on-parent objects base-child-a))
-        index-base-b (when base-child-b (get-position-on-parent objects base-child-b))]
-
-    [base index-base-a index-base-b]))
-
-(defn is-shape-over-shape?
-  [objects base-shape-id over-shape-id {:keys [top-frames?]}]
-
-  (let [[base index-a index-b] (get-base objects base-shape-id over-shape-id)]
-    (cond
-      (= base base-shape-id)
-      (and (not top-frames?)
-           (frame-shape? objects base-shape-id)
-           (root-frame? objects base-shape-id))
-
-      (= base over-shape-id)
-      (or top-frames?
-          (not (frame-shape? objects over-shape-id))
-          (not (root-frame? objects over-shape-id)))
-
-      :else
-      (< index-a index-b))))
-
-(defn sort-z-index
-  ([objects ids]
-   (sort-z-index objects ids nil))
-
-  ([objects ids {:keys [bottom-frames?] :as options}]
-   (letfn [(comp [id-a id-b]
-             (let [type-a (dm/get-in objects [id-a :type])
-                   type-b (dm/get-in objects [id-b :type])]
-               (cond
-                 (and bottom-frames? (= :frame type-a) (not= :frame type-b))
-                 1
-
-                 (and bottom-frames? (not= :frame type-a) (= :frame type-b))
-                 -1
-
-                 (= id-a id-b)
-                 0
-
-                 (is-shape-over-shape? objects id-a id-b options)
-                 1
-
-                 :else
-                 -1)))]
-     (sort comp ids))))
-
-(defn frame-id-by-position
-  [objects position]
-  (let [top-frame
-        (->> (get-frames-ids objects)
-             (sort-z-index objects)
-             (d/seek #(and position (gsh/has-point? (get objects %) position))))]
-    (or top-frame uuid/zero)))
-
-(defn frame-by-position
-  [objects position]
-  (let [frame-id (frame-id-by-position objects position)]
-    (get objects frame-id)))
-
 (declare indexed-shapes)
 
 (defn get-base-shape
@@ -355,16 +204,6 @@
    (some #(-> % :data :components (get component-id)) (vals libraries)))
   ([libraries library-id component-id]
    (get-in libraries [library-id :data :components component-id])))
-
-(defn is-main-of?
-  [shape-main shape-inst]
-  (and (:shape-ref shape-inst)
-       (or (= (:shape-ref shape-inst) (:id shape-main))
-           (= (:shape-ref shape-inst) (:shape-ref shape-main)))))
-
-(defn get-component-root
-  [component]
-  (get-in component [:objects (:id component)]))
 
 (defn get-component-shape
   "Get the parent shape linked to a component for this shape, if any"
@@ -461,57 +300,6 @@
             (conj id)))]
 
     (reduce add-element (d/ordered-set) ids)))
-
-(defn clone-object
-  "Gets a copy of the object and all its children, with new ids
-  and with the parent-children links correctly set. Admits functions
-  to make more transformations to the cloned objects and the
-  original ones.
-
-  Returns the cloned object, the list of all new objects (including
-  the cloned one), and possibly a list of original objects modified."
-
-  ([object parent-id objects update-new-object]
-   (clone-object object parent-id objects update-new-object identity))
-
-  ([object parent-id objects update-new-object update-original-object]
-   (let [new-id (uuid/next)]
-     (loop [child-ids (seq (:shapes object))
-            new-direct-children []
-            new-children []
-            updated-children []]
-
-       (if (empty? child-ids)
-         (let [new-object (cond-> object
-                            true
-                            (assoc :id new-id
-                                   :parent-id parent-id)
-
-                            (some? (:shapes object))
-                            (assoc :shapes (mapv :id new-direct-children)))
-
-               new-object  (update-new-object new-object object)
-               new-objects (into [new-object] new-children)
-
-               updated-object  (update-original-object object new-object)
-               updated-objects (if (identical? object updated-object)
-                                 updated-children
-                                 (into [updated-object] updated-children))]
-
-           [new-object new-objects updated-objects])
-
-         (let [child-id (first child-ids)
-               child (get objects child-id)
-               _ (us/assert some? child)
-
-               [new-child new-child-objects updated-child-objects]
-               (clone-object child new-id objects update-new-object update-original-object)]
-
-           (recur
-            (next child-ids)
-            (into new-direct-children [new-child])
-            (into new-children new-child-objects)
-            (into updated-children updated-child-objects))))))))
 
 (defn indexed-shapes
   "Retrieves a list with the indexes for each element in the layer tree.
@@ -695,36 +483,3 @@
 
        :id))
 
-(defn get-viewer-frames
-  ([objects]
-   (get-viewer-frames objects nil))
-
-  ([objects {:keys [all-frames?]}]
-   (into []
-         (comp (map (d/getf objects))
-               (if all-frames?
-                 (map identity)
-                 (remove :hide-in-viewer)))
-         (sort-z-index objects (get-frames-ids objects) {:top-frames? true}))))
-
-(defn start-page-index
-  [objects]
-  (with-meta objects {::index-frames (get-frames (with-meta objects nil))}))
-
-(defn update-page-index
-  [objects]
-  (with-meta objects {::index-frames (get-frames (with-meta objects nil))}))
-
-(defn start-object-indices
-  [file]
-  (letfn [(process-index [page-index page-id]
-            (update-in page-index [page-id :objects] start-page-index))]
-    (update file :pages-index #(reduce process-index % (keys %)))))
-
-(defn update-object-indices
-  [file page-id]
-  (update-in file [:pages-index page-id :objects] update-page-index))
-
-(defn rotated-frame?
-  [frame]
-  (not (mth/almost-zero? (:rotation frame 0))))

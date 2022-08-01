@@ -11,6 +11,7 @@
    [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -45,7 +46,7 @@
 (s/def ::is-shared ::us/boolean)
 (s/def ::create-file
   (s/keys :req-un [::profile-id ::name ::project-id]
-          :opt-un [::id ::is-shared]))
+          :opt-un [::id ::is-shared ::components-v2]))
 
 (sv/defmethod ::create-file
   [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
@@ -65,11 +66,12 @@
 
 (defn create-file
   [conn {:keys [id name project-id is-shared data revn
-                modified-at deleted-at ignore-sync-until]
+                modified-at deleted-at ignore-sync-until
+                components-v2]
          :or {is-shared false revn 0}
          :as params}]
   (let [id   (or id (:id data) (uuid/next))
-        data (or data (cp/make-file-data id))
+        data (or data (ctf/make-file-data id components-v2))
         file (db/insert! conn :file
                          (d/without-nils
                           {:id id
@@ -110,15 +112,24 @@
 ;; --- Mutation: Set File shared
 
 (declare set-file-shared)
+(declare unlink-files)
+(declare absorb-library)
 
 (s/def ::set-file-shared
   (s/keys :req-un [::profile-id ::id ::is-shared]))
 
 (sv/defmethod ::set-file-shared
-  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [id profile-id is-shared] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
+    (when-not is-shared
+      (absorb-library conn params)
+      (unlink-files conn params))
     (set-file-shared conn params)))
+
+(defn- unlink-files
+  [conn {:keys [id] :as params}]
+  (db/delete! conn :file-library-rel {:library-file-id id}))
 
 (defn- set-file-shared
   [conn {:keys [id is-shared] :as params}]
@@ -137,6 +148,7 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
+    (absorb-library conn params)
     (mark-file-deleted conn params)))
 
 (defn mark-file-deleted
@@ -146,6 +158,29 @@
               {:id id})
   nil)
 
+(defn absorb-library
+  "Find all files using a shared library, and absorb all library assets
+  into the file local libraries"
+  [conn {:keys [id] :as params}]
+  (let [library (->> (db/get-by-id conn :file id)
+                     (files/decode-row)
+                     (pmg/migrate-file))]
+    (when (:is-shared library)
+      (let [process-file
+            (fn [row]
+              (let [ts (dt/now)
+                    file (->> (db/get-by-id conn :file (:file-id row))
+                              (files/decode-row)
+                              (pmg/migrate-file))
+                    updated-data (ctf/absorb-assets (:data file) (:data library))]
+
+                (db/update! conn :file
+                            {:revn (inc (:revn file))
+                             :data (blob/encode updated-data)
+                             :modified-at ts}
+                            {:id (:id file)})))]
+
+        (run! process-file (db/query conn :file-library-rel {:library-file-id id}))))))
 
 ;; --- Mutation: Link file to library
 
@@ -273,10 +308,11 @@
 
 (s/def ::session-id ::us/uuid)
 (s/def ::revn ::us/integer)
+(s/def ::components-v2 ::us/boolean)
 (s/def ::update-file
   (s/and
    (s/keys :req-un [::id ::session-id ::profile-id ::revn]
-           :opt-un [::changes ::changes-with-metadata])
+           :opt-un [::changes ::changes-with-metadata ::components-v2])
    (fn [o]
      (or (contains? o :changes)
          (contains? o :changes-with-metadata)))))
@@ -313,7 +349,8 @@
       (simpl/del-object backend file))))
 
 (defn- update-file
-  [{:keys [conn metrics] :as cfg} {:keys [file changes changes-with-metadata session-id profile-id] :as params}]
+  [{:keys [conn metrics] :as cfg}
+   {:keys [file changes changes-with-metadata session-id profile-id components-v2] :as params}]
   (when (> (:revn params)
            (:revn file))
 
@@ -338,12 +375,18 @@
                     (update :data (fn [data]
                                     ;; Trace the length of bytes of processed data
                                     (mtx/run! metrics {:id :update-file-bytes-processed :inc (alength data)})
-                                    (-> data
-                                        (blob/decode)
-                                        (assoc :id (:id file))
-                                        (pmg/migrate-data)
-                                        (cp/process-changes changes)
-                                        (blob/encode)))))]
+                                    (cond-> data
+                                      :always
+                                      (-> (blob/decode)
+                                          (assoc :id (:id file))
+                                          (pmg/migrate-data))
+
+                                      components-v2
+                                      (ctf/migrate-to-components-v2)
+
+                                      :always
+                                      (-> (cp/process-changes changes)
+                                          (blob/encode))))))]
     ;; Insert change to the xlog
     (db/insert! conn :file-change
                 {:id (uuid/next)

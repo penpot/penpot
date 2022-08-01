@@ -9,7 +9,6 @@
    [app.common.uuid :as uuid]
    [cljs.test :as t :include-macros true]
    [cljs.pprint :refer [pprint]]
-   [app.common.pages.init :as init]
    [app.common.file-builder :as fb]
    [app.util.snap-data :as sd]))
 

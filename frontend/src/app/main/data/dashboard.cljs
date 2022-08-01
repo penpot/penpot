@@ -13,6 +13,7 @@
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
    [app.main.data.users :as du]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -245,6 +246,32 @@
       (let [team-id (:current-team-id state)]
         (->> (rp/query :team-shared-files {:team-id team-id})
              (rx/map shared-files-fetched))))))
+
+;; --- EVENT: Get files that use this shared-file
+
+(defn clean-temp-shared
+  []
+  (ptk/reify ::clean-temp-shared
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:dashboard-local :files-with-shared] nil))))
+
+(defn library-using-files-fetched
+  [files]
+  (ptk/reify ::library-using-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [files (d/index-by :id files)]
+        (assoc-in state [:dashboard-local :files-with-shared] files)))))
+
+(defn fetch-library-using-files
+  [file]
+  (ptk/reify ::fetch-library-using-files
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [file-id (:id file)]
+        (->> (rp/query :library-using-files {:file-id file-id})
+             (rx/map library-using-files-fetched))))))
 
 ;; --- EVENT: recent-files
 
@@ -718,12 +745,13 @@
     (-deref [_] {:project-id project-id})
 
     ptk/WatchEvent
-    (watch [it _ _]
+    (watch [it state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
             name   (name (gensym (str (tr "dashboard.new-file-prefix") " ")))
-            params (assoc params :name name)]
+            components-v2 (features/active-feature? state :components-v2)
+            params (assoc params :name name :components-v2 components-v2)]
 
         (->> (rp/mutation! :create-file params)
              (rx/tap on-success)

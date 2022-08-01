@@ -16,6 +16,7 @@
    [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.shape-tree :as ctt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.guides :as dwg]
@@ -752,7 +753,7 @@
       (let [position @ms/mouse-position
             page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            frame-id (cph/frame-id-by-position objects position)
+            frame-id (ctt/frame-id-by-position objects position)
 
             moving-shapes
             (->> ids

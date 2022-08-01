@@ -164,7 +164,8 @@
    (us/assert uuid? project-id)
    (#'files/create-file conn
                         (merge {:id (mk-uuid "file" i)
-                                :name (str "file" i)}
+                                :name (str "file" i)
+                                :components-v2 true}
                                params))))
 
 (defn mark-file-deleted*
@@ -249,6 +250,7 @@
                            :metrics metrics}
                           {:file file
                            :revn revn
+                           :components-v2 true
                            :changes changes
                            :session-id session-id
                            :profile-id profile-id}))))

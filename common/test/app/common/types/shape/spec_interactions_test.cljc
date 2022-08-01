@@ -4,20 +4,20 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.common.spec-interactions-test
+(ns app.common.types.shape.spec-interactions-test
   (:require
    [clojure.test :as t]
    [clojure.pprint :refer [pprint]]
    [app.common.exceptions :as ex]
-   [app.common.pages.init :as cpi]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.common.geom.point :as gpt]))
 
 (t/deftest set-event-type
   (let [interaction ctsi/default-interaction
-        shape       (cpi/make-minimal-shape :rect)
-        frame       (cpi/make-minimal-shape :frame)]
+        shape       (cts/make-minimal-shape :rect)
+        frame       (cts/make-minimal-shape :frame)]
 
     (t/testing "Set event type unchanged"
       (let [new-interaction
@@ -148,7 +148,7 @@
 
 
 (t/deftest option-delay
-  (let [frame (cpi/make-minimal-shape :frame)
+  (let [frame (cts/make-minimal-shape :frame)
         i1    ctsi/default-interaction
         i2    (ctsi/set-event-type i1 :after-delay frame)]
 
@@ -211,10 +211,10 @@
 
 
 (t/deftest option-overlay-opts
-  (let [base-frame    (-> (cpi/make-minimal-shape :frame)
+  (let [base-frame    (-> (cts/make-minimal-shape :frame)
                           (assoc-in [:selrect :width] 100)
                           (assoc-in [:selrect :height] 100))
-        overlay-frame (-> (cpi/make-minimal-shape :frame)
+        overlay-frame (-> (cts/make-minimal-shape :frame)
                           (assoc-in [:selrect :width] 30)
                           (assoc-in [:selrect :height] 20))
         objects       {(:id base-frame) base-frame
@@ -542,12 +542,12 @@
 
 
 (t/deftest remap-interactions
-  (let [frame1 (cpi/make-minimal-shape :frame)
-        frame2 (cpi/make-minimal-shape :frame)
-        frame3 (cpi/make-minimal-shape :frame)
-        frame4 (cpi/make-minimal-shape :frame)
-        frame5 (cpi/make-minimal-shape :frame)
-        frame6 (cpi/make-minimal-shape :frame)
+  (let [frame1 (cts/make-minimal-shape :frame)
+        frame2 (cts/make-minimal-shape :frame)
+        frame3 (cts/make-minimal-shape :frame)
+        frame4 (cts/make-minimal-shape :frame)
+        frame5 (cts/make-minimal-shape :frame)
+        frame6 (cts/make-minimal-shape :frame)
 
         objects {(:id frame3) frame3
                  (:id frame4) frame4

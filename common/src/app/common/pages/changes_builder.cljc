@@ -16,6 +16,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
@@ -49,7 +50,7 @@
 
 (defn with-objects
   [changes objects]
-  (let [file-data (-> (cp/make-file-data (uuid/next) uuid/zero)
+  (let [file-data (-> (ctf/make-file-data (uuid/next) uuid/zero true)
                       (assoc-in [:pages-index uuid/zero :objects] objects))]
     (vary-meta changes assoc ::file-data file-data
                              ::applied-changes-count 0)))
@@ -111,7 +112,9 @@
           redo-changes  (:redo-changes changes)
           new-changes   (if (< index (count redo-changes))
                           (->> (subvec (:redo-changes changes) index)
-                               (map #(assoc % :page-id uuid/zero)))
+                               (map #(-> %
+                                       (assoc :page-id uuid/zero)
+                                       (dissoc :component-id))))
                           [])
           new-file-data (cp/process-changes file-data new-changes)]
       (vary-meta changes assoc ::file-data new-file-data
@@ -222,6 +225,15 @@
          (update :redo-changes conj add-change)
          (update :undo-changes d/preconj del-change)
          (apply-changes-local)))))
+
+(defn add-objects
+  ([changes objects]
+   (add-objects changes objects nil))
+
+  ([changes objects params]
+   (reduce #(add-object %1 %2 params)
+           changes
+           objects)))
 
 (defn change-parent
   ([changes parent-id shapes]
@@ -532,7 +544,7 @@
         (apply-changes-local))))
 
 (defn add-component
-  [changes id path name new-shapes updated-shapes]
+  [changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
   (assert-page-id changes)
   (assert-objects changes)
   (let [page-id (::page-id (meta changes))
@@ -553,6 +565,9 @@
                                    :attr :component-root?
                                    :val (:component-root? shape)}
                                   {:type :set
+                                   :attr :main-instance?
+                                   :val (:main-instance? shape)}
+                                  {:type :set
                                    :attr :shape-ref
                                    :val (:shape-ref shape)}
                                   {:type :set
@@ -566,6 +581,8 @@
                              :id id
                              :path path
                              :name name
+                             :main-instance-id main-instance-id
+                             :main-instance-page main-instance-page
                              :shapes new-shapes})
                       (into (map mk-change) updated-shapes))))
         (update :undo-changes 
@@ -611,5 +628,7 @@
                                          :id id
                                          :name (:name prev-component)
                                          :path (:path prev-component)
+                                         :main-instance-id (:main-instance-id prev-component)
+                                         :main-instance-page (:main-instance-page prev-component)
                                          :shapes (vals (:objects prev-component))}))))
 

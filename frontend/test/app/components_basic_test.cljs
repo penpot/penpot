@@ -3,6 +3,7 @@
     [app.common.data :as d]
     [app.common.geom.point :as gpt]
     [app.common.pages.helpers :as cph]
+    [app.common.types.container :as ctn]
     [app.main.data.workspace :as dw]
     [app.main.data.workspace.groups :as dwg]
     [app.main.data.workspace.libraries :as dwl]
@@ -340,7 +341,7 @@
      (ptk/emit!
        store
        (dwl/delete-component {:id component-id})
-       (dwl/sync-file (:id file) (:id file))
+       (dwl/sync-file (:id file) (:id file) :components component-id)
        :the/end))))
 
 (t/deftest test-instantiate-component
@@ -520,7 +521,7 @@
                     ;
                     (let [page    (thp/current-page new-state)
                           shape1  (thp/get-shape new-state :shape1)
-                          parent1 (cph/get-shape page (:parent-id shape1))
+                          parent1 (ctn/get-shape page (:parent-id shape1))
 
                           [[group shape1 shape2]
                            [c-group c-shape1 c-shape2]

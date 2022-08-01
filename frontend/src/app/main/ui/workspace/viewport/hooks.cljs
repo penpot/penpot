@@ -10,6 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctt]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
@@ -183,7 +184,7 @@
 
              ids (into
                   (d/ordered-set)
-                  (cph/sort-z-index objects ids {:bottom-frames? mod?}))
+                  (ctt/sort-z-index objects ids {:bottom-frames? mod?}))
 
              grouped? (fn [id] (contains? #{:group :bool} (get-in objects [id :type])))
 
@@ -218,7 +219,7 @@
   (let [root-frame-ids
         (mf/use-memo
          (mf/deps objects)
-         #(cph/get-root-shapes-ids objects))
+         #(ctt/get-root-shapes-ids objects))
         modifiers (select-keys modifiers root-frame-ids)]
     (sfd/use-dynamic-modifiers objects globals/document modifiers)))
 
@@ -229,7 +230,7 @@
 (defn setup-active-frames
   [objects hover-ids selected active-frames zoom transform vbox]
 
-  (let [all-frames             (mf/use-memo (mf/deps objects) #(cph/get-root-frames-ids objects))
+  (let [all-frames             (mf/use-memo (mf/deps objects) #(ctt/get-root-frames-ids objects))
         selected-frames        (mf/use-memo (mf/deps selected) #(->> all-frames (filter selected)))
 
         xf-selected-frame      (comp (remove cph/root-frame?)

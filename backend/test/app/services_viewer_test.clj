@@ -30,7 +30,8 @@
       (let [data {::th/type :view-only-bundle
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :page-id (get-in file [:data :pages 0])}
+                  :page-id (get-in file [:data :pages 0])
+                  :components-v2 true}
 
             out  (th/query! data)]
 
@@ -63,7 +64,8 @@
       (let [data {::th/type :view-only-bundle
                   :profile-id (:id prof2)
                   :file-id (:id file)
-                  :page-id (get-in file [:data :pages 0])}
+                  :page-id (get-in file [:data :pages 0])
+                  :components-v2 true}
             out  (th/query! data)]
 
         ;; (th/print-result! out)
@@ -78,7 +80,8 @@
                   :profile-id (:id prof2)
                   :share-id @share-id
                   :file-id (:id file)
-                  :page-id (get-in file [:data :pages 0])}
+                  :page-id (get-in file [:data :pages 0])
+                  :components-v2 true}
             out  (th/query! data)]
 
         ;; (th/print-result! out)
@@ -93,7 +96,8 @@
       (let [data {::th/type :view-only-bundle
                   :share-id @share-id
                   :file-id (:id file)
-                  :page-id (get-in file [:data :pages 0])}
+                  :page-id (get-in file [:data :pages 0])
+                  :components-v2 true}
             out  (th/query! data)]
 
         ;; (th/print-result! out)

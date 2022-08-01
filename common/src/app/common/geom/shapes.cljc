@@ -41,13 +41,23 @@
 
 ;; --- Helpers
 
-(defn left-bound
+(defn bounding-box
+  "Returns a rect that wraps the shape after all transformations applied."
   [shape]
-  (get shape :x (:x (:selrect shape)))) ; Paths don't have :x attribute
+  ; TODO: perhaps we need to store this calculation in a shape attribute
+  (gpr/points->rect (:points shape)))
+
+(defn left-bound
+  "Returns the lowest x coord of the shape BEFORE applying transformations."
+  ; TODO: perhaps some day we want after transformations, but for the
+  ;       moment it's enough as is now.
+  [shape]
+  (or (:x shape) (:x (:selrect shape)))) ; Paths don't have :x attribute
 
 (defn top-bound
+  "Returns the lowest y coord of the shape BEFORE applying transformations."
   [shape]
-  (get shape :y (:y (:selrect shape)))) ; Paths don't have :y attribute
+  (or (:y shape) (:y (:selrect shape)))) ; Paths don't have :y attribute
 
 (defn fully-contained?
   "Checks if one rect is fully inside the other"

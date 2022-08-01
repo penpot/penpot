@@ -12,6 +12,7 @@
    [app.common.data :as d]
    [app.common.pages.diff :as diff]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.util.geom.grid :as gg]
    [app.util.geom.snap-points :as snap]
@@ -55,7 +56,7 @@
 
 (defn get-grids-snap-points
   [frame coord]
-  (if (not (cph/rotated-frame? frame))
+  (if (not (ctst/rotated-frame? frame))
     []
     (let [grid->snap (fn [[grid-type position]]
                        {:type :layout
@@ -196,7 +197,7 @@
 (defn add-page
   "Adds page information"
   [snap-data {:keys [objects options] :as page}]
-  (let [frames     (cph/get-frames objects)
+  (let [frames     (ctst/get-frames objects)
         shapes     (->> (vals (:objects page))
                         (remove cph/frame-shape?))
         guides     (vals (:guides options))

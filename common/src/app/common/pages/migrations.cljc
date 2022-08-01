@@ -15,6 +15,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -84,7 +85,7 @@
 
           (fix-empty-points [shape]
             (let [shape (cond-> shape
-                          (empty? (:selrect shape)) (cp/setup-rect-selrect))]
+                          (empty? (:selrect shape)) (cts/setup-rect-selrect))]
               (cond-> shape
                 (empty? (:points shape))
                 (assoc :points (gsh/rect->points (:selrect shape))))))

@@ -10,9 +10,11 @@
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.globals :as ug]
    [app.util.router :as rt]
@@ -99,9 +101,15 @@
   (us/assert ::fetch-bundle-params params)
   (ptk/reify ::fetch-file
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [params' (cond-> {:file-id file-id}
-                      (uuid? share-id) (assoc :share-id share-id))]
+    (watch [_ state _]
+      (let [components-v2 (features/active-feature? state :components-v2)
+            params' (cond-> {:file-id file-id}
+                      (uuid? share-id)
+                      (assoc :share-id share-id)
+
+                      :always
+                      (assoc :components-v2 components-v2))]
+
         (->> (rp/query :view-only-bundle params')
              (rx/mapcat
               (fn [{:keys [fonts] :as bundle}]
@@ -116,8 +124,8 @@
                    (map (fn [page-id]
                           (let [data (get-in file [:data :pages-index page-id])]
                             [page-id (assoc data
-                                            :frames (cph/get-viewer-frames (:objects data))
-                                            :all-frames (cph/get-viewer-frames (:objects data) {:all-frames? true}))])))
+                                            :frames (ctt/get-viewer-frames (:objects data))
+                                            :all-frames (ctt/get-viewer-frames (:objects data) {:all-frames? true}))])))
                    (into {}))]
 
     (ptk/reify ::bundle-fetched

@@ -14,13 +14,13 @@
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.events :as ev]
@@ -59,7 +59,6 @@
    [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n]
-   [app.util.names :as un]
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
@@ -157,7 +156,7 @@
              :workspace-project project
              :workspace-file (assoc file :initialized true)
              :workspace-data (-> (:data file)
-                                 (cph/start-object-indices)
+                                 (ctst/start-object-indices)
                                  ;; DEBUG: Uncomment this to try out migrations in local without changing
                                  ;; the version number
                                  #_(assoc :version 17)
@@ -215,7 +214,8 @@
     (watch [_ state _]
       (if (contains? (get-in state [:workspace-data :pages-index]) page-id)
         (rx/of (dwp/preload-data-uris)
-               (dwth/watch-state-changes))
+               (dwth/watch-state-changes)
+               (dwl/watch-component-changes))
         (let [default-page-id (get-in state [:workspace-data :pages 0])]
           (rx/of (go-to-page default-page-id)))))
 
@@ -270,8 +270,8 @@
       ptk/WatchEvent
       (watch [it state _]
         (let [pages   (get-in state [:workspace-data :pages-index])
-              unames  (un/retrieve-used-names pages)
-              name    (un/generate-unique-name unames "Page-1")
+              unames  (ctst/retrieve-used-names pages)
+              name    (ctst/generate-unique-name unames "Page-1")
 
               changes (-> (pcb/empty-changes it)
                           (pcb/add-empty-page id name))]
@@ -285,9 +285,9 @@
     (watch [it state _]
       (let [id      (uuid/next)
             pages   (get-in state [:workspace-data :pages-index])
-            unames  (un/retrieve-used-names pages)
+            unames  (ctst/retrieve-used-names pages)
             page    (get-in state [:workspace-data :pages-index page-id])
-            name    (un/generate-unique-name unames (:name page))
+            name    (ctst/generate-unique-name unames (:name page))
 
             no_thumbnails_objects (->> (:objects page)
                                       (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
@@ -991,7 +991,7 @@
       (let [selected   (wsh/lookup-selected state)
             pages      (-> state :workspace-data :pages-index vals)
             get-frames (fn [{:keys [objects id] :as page}]
-                         (->> (cph/get-frames objects)
+                         (->> (ctst/get-frames objects)
                               (sequence
                                (comp (filter :use-for-thumbnail?)
                                      (map :id)
@@ -1223,7 +1223,7 @@
                   ;; selected and its parents
                   objects (cph/selected-subtree objects selected)
 
-                  selected (->> (cph/sort-z-index objects selected)
+                  selected (->> (ctst/sort-z-index objects selected)
                                 (into (d/ordered-set)))]
 
               (assoc data :selected selected)))
@@ -1478,7 +1478,7 @@
                   [frame-id frame-id delta])
 
                 (empty? page-selected)
-                (let [frame-id (cph/frame-id-by-position page-objects mouse-pos)
+                (let [frame-id (ctst/frame-id-by-position page-objects mouse-pos)
                       delta    (gpt/subtract mouse-pos orig-pos)]
                   [frame-id frame-id delta])
 
@@ -1590,8 +1590,8 @@
             height 16
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
-                         (cph/frame-id-by-position @ms/mouse-position))
-            shape (cp/setup-rect-selrect
+                         (ctst/frame-id-by-position @ms/mouse-position))
+            shape (cts/setup-rect-selrect
                    {:id id
                     :type :text
                     :name "Text"
@@ -1681,12 +1681,12 @@
           (let [srect    (gsh/selection-rect selected-objs)
                 frame-id (get-in objects [(first selected) :frame-id])
                 parent-id (get-in objects [(first selected) :parent-id])
-                shape    (-> (cp/make-minimal-shape :frame)
+                shape    (-> (cts/make-minimal-shape :frame)
                              (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
                              (assoc :frame-id frame-id :parent-id parent-id)
                              (cond-> (not= frame-id uuid/zero)
                                (assoc :fills [] :hide-in-viewer true))
-                             (cp/setup-rect-selrect))]
+                             (cts/setup-rect-selrect))]
             (rx/of
              (dwu/start-undo-transaction)
              (dwsh/add-shape shape)

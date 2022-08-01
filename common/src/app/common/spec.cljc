@@ -107,6 +107,7 @@
 (s/def ::number (s/conformer number-conformer str))
 (s/def ::integer (s/conformer integer-conformer str))
 (s/def ::not-empty-string (s/and string? #(not (str/empty? %))))
+(s/def ::set-of-string (s/every string? :kind set?))
 (s/def ::url string?)
 (s/def ::fn fn?)
 (s/def ::id ::uuid)

@@ -42,5 +42,6 @@
        [:h1 (tr "dashboard.libraries-title")]]]
      [:section.dashboard-container
       [:& grid {:files files
-                :project default-project}]]]))
+                :project default-project
+                :origin :libraries}]]]))
 

@@ -14,8 +14,8 @@
    [app.common.geom.shapes.path :as gpa]
    [app.common.logging :as log]
    [app.common.media :as cm]
-   [app.common.pages :as cp]
    [app.common.text :as ct]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.util.http :as http]
@@ -133,7 +133,7 @@
                   :name (:name context)
                   :is-shared (:shared context)
                   :project-id (:project-id context)
-                  :data (-> cp/empty-file-data (assoc :id file-id))})))
+                  :data (-> ctf/empty-file-data (assoc :id file-id))})))
 
 (defn link-file-libraries
   "Create a new file on the back-end"

@@ -11,7 +11,7 @@
 
 
 (mf/defc element-icon
-  [{:keys [shape] :as props}]
+  [{:keys [shape main-instance?] :as props}]
   (case (:type shape)
     :frame i/artboard
     :image i/image
@@ -21,7 +21,9 @@
     :rect i/box
     :text i/text
     :group (if (some? (:component-id shape))
-             i/component
+             (if main-instance?
+               i/component
+               i/component-copy)
              (if (:masked-group? shape)
                i/mask
                i/folder))

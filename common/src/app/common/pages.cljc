@@ -12,7 +12,7 @@
    [app.common.pages.common :as common]
    [app.common.pages.focus :as focus]
    [app.common.pages.indices :as indices]
-   [app.common.pages.init :as init]))
+   [app.common.types.file :as ctf]))
 
 ;; Common
 (dm/export common/root)
@@ -36,11 +36,5 @@
 (dm/export changes/process-changes)
 
 ;; Initialization
-(dm/export init/default-frame-attrs)
-(dm/export init/default-shape-attrs)
-(dm/export init/make-file-data)
-(dm/export init/make-minimal-shape)
-(dm/export init/make-minimal-group)
-(dm/export init/empty-file-data)
-(dm/export init/setup-shape)
-(dm/export init/setup-rect-selrect)
+(dm/export ctf/make-file-data)
+(dm/export ctf/empty-file-data)

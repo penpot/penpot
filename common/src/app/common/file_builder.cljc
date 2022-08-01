@@ -12,8 +12,10 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes :as ch]
    [app.common.pages.changes-spec :as pcs]
-   [app.common.pages.init :as init]
    [app.common.spec :as us]
+   [app.common.types.file :as ctf]
+   [app.common.types.page :as ctp]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -167,7 +169,7 @@
   ([id name]
    {:id id
     :name name
-    :data (-> init/empty-file-data
+    :data (-> ctf/empty-file-data
               (assoc :id id))
 
     ;; We keep the changes so we can send them to the backend
@@ -178,8 +180,7 @@
 
   (assert (nil? (:current-component-id file)))
   (let [page-id (or (:id data) (uuid/next))
-        page (-> init/empty-page-data
-                 (assoc :id page-id)
+        page (-> (ctp/make-empty-page page-id "Page-1")
                  (d/deep-merge data))]
     (-> file
         (commit-change
@@ -208,7 +209,7 @@
 
 (defn add-artboard [file data]
   (assert (nil? (:current-component-id file)))
-  (let [obj (-> (init/make-minimal-shape :frame)
+  (let [obj (-> (cts/make-minimal-shape :frame)
                 (merge data)
                 (check-name file :frame)
                 (setup-selrect)
@@ -232,9 +233,9 @@
 
 (defn add-group [file data]
   (let [frame-id (:current-frame-id file)
-        selrect init/empty-selrect
+        selrect cts/empty-selrect
         name (:name data)
-        obj (-> (init/make-minimal-group frame-id selrect name)
+        obj (-> (cts/make-minimal-group frame-id selrect name)
                 (merge data)
                 (check-name file :group)
                 (d/without-nils))]
@@ -346,7 +347,7 @@
         (update :parent-stack pop))))
 
 (defn create-shape [file type data]
-  (let [obj (-> (init/make-minimal-shape type)
+  (let [obj (-> (cts/make-minimal-shape type)
                 (merge data)
                 (check-name file :type)
                 (setup-selrect)
@@ -514,10 +515,10 @@
 (defn start-component
   [file data]
 
-  (let [selrect init/empty-selrect
+  (let [selrect cts/empty-selrect
         name (:name data)
         path (:path data)
-        obj (-> (init/make-minimal-group nil selrect name)
+        obj (-> (cts/make-minimal-group nil selrect name)
                 (merge data)
                 (check-name file :group)
                 (d/without-nils))]

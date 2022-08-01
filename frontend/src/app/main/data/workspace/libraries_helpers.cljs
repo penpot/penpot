@@ -16,9 +16,12 @@
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
+   [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
+   [app.common.types.shape-tree :as ctst]
+   [app.common.types.typography :as cty]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.util.names :as un]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]))
 
@@ -55,51 +58,11 @@
 
 ;; ---- Components and instances creation ----
 
-(defn make-component-shape
-  "Clone the shape and all children. Generate new ids and detach
-  from parent and frame. Update the original shapes to have links
-  to the new ones."
-  [shape objects file-id]
-  (assert (nil? (:component-id shape)))
-  (assert (nil? (:component-file shape)))
-  (assert (nil? (:shape-ref shape)))
-  (let [;; Ensure that the component root is not an instance and
-        ;; it's no longer tied to a frame.
-        update-new-shape (fn [new-shape _original-shape]
-                           (cond-> new-shape
-                             true
-                             (-> (assoc :frame-id nil)
-                                 (dissoc :component-root?))
-
-                             (nil? (:parent-id new-shape))
-                             (dissoc :component-id
-                                     :component-file
-                                     :shape-ref)))
-
-        ;; Make the original shape an instance of the new component.
-        ;; If one of the original shape children already was a component
-        ;; instance, maintain this instanceness untouched.
-        update-original-shape (fn [original-shape new-shape]
-                                (cond-> original-shape
-                                  (nil? (:shape-ref original-shape))
-                                  (-> (assoc :shape-ref (:id new-shape))
-                                      (dissoc :touched))
-
-                                  (nil? (:parent-id new-shape))
-                                  (assoc :component-id (:id new-shape)
-                                         :component-file file-id
-                                         :component-root? true)
-
-                                  (some? (:parent-id new-shape))
-                                  (dissoc :component-root?)))]
-
-    (cph/clone-object shape nil objects update-new-shape update-original-shape)))
-
 (defn generate-add-component
   "If there is exactly one id, and it's a group, use it as root. Otherwise,
   create a group that contains all ids. Then, make a component with it,
   and link all shapes to their corresponding one in the component."
-  [it shapes objects page-id file-id]
+  [it shapes objects page-id file-id components-v2]
   (if (and (= (count shapes) 1)
            (:component-id (first shapes)))
     [(first shapes) (pcb/empty-changes it)]
@@ -114,73 +77,54 @@
             (dwg/prepare-create-group it objects page-id shapes name true))
 
           [new-shape new-shapes updated-shapes]
-          (make-component-shape group objects file-id)
+          (ctn/make-component-shape group objects file-id components-v2)
 
           changes (-> changes
                       (pcb/add-component (:id new-shape)
                                          path
                                          name
                                          new-shapes
-                                         updated-shapes))]
+                                         updated-shapes
+                                         (:id group)
+                                         page-id))]
       [group new-shape changes])))
 
 (defn duplicate-component
   "Clone the root shape of the component and all children. Generate new
   ids from all of them."
-  [component]
-  (let [component-root (cph/get-component-root component)]
-    (cph/clone-object component-root
-                      nil
-                      (get component :objects)
-                      identity)))
+  [component main-instance-page main-instance-shape]
+  (let [position (gpt/add (gpt/point (:x main-instance-shape) (:y main-instance-shape))
+                          (gpt/point (+ (:width main-instance-shape) 50) 0))
+
+        component-root (ctk/get-component-root component)
+
+        [new-component-shape new-component-shapes _]
+        (ctst/clone-object component-root
+                           nil
+                           (get component :objects)
+                           identity)
+
+
+        [new-instance-shape new-instance-shapes]
+        (when (and (some? main-instance-page) (some? main-instance-shape))
+          (ctn/make-component-instance main-instance-page
+                                       {:id (:id new-component-shape)
+                                        :name (:name new-component-shape)
+                                        :objects (d/index-by :id new-component-shapes)}
+                                       (:component-file main-instance-shape)
+                                       position
+                                       false))]
+
+    [new-component-shape new-component-shapes
+     new-instance-shape new-instance-shapes]))
 
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."
   [it file-id component-id position page libraries]
   (let [component       (cph/get-component libraries file-id component-id)
-        component-shape (cph/get-shape component component-id)
 
-        orig-pos  (gpt/point (:x component-shape) (:y component-shape))
-        delta     (gpt/subtract position orig-pos)
-
-        objects   (:objects page)
-        unames    (volatile! (un/retrieve-used-names objects))
-
-        frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
-
-        update-new-shape
-        (fn [new-shape original-shape]
-          (let [new-name (un/generate-unique-name @unames (:name new-shape))]
-
-            (when (nil? (:parent-id original-shape))
-              (vswap! unames conj new-name))
-
-            (cond-> new-shape
-              true
-              (as-> $
-                (gsh/move $ delta)
-                (assoc $ :frame-id frame-id)
-                (assoc $ :parent-id
-                       (or (:parent-id $) (:frame-id $)))
-                (dissoc $ :touched))
-
-              (nil? (:shape-ref original-shape))
-              (assoc :shape-ref (:id original-shape))
-
-              (nil? (:parent-id original-shape))
-              (assoc :component-id (:id original-shape)
-                     :component-file file-id
-                     :component-root? true
-                     :name new-name)
-
-              (some? (:parent-id original-shape))
-              (dissoc :component-root?))))
-
-        [new-shape new-shapes _]
-        (cph/clone-object component-shape
-                          nil
-                          (get component :objects)
-                          update-new-shape)
+        [new-shape new-shapes]
+        (ctn/make-component-instance page component file-id position false)
 
         changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                         (pcb/empty-changes it (:id page))
@@ -212,14 +156,19 @@
 
 (defn generate-sync-file
   "Generate changes to synchronize all shapes in all pages of the given file,
-  that use assets of the given type in the given library."
-  [it file-id asset-type library-id state]
+  that use assets of the given type in the given library.
+
+  If an asset id is given, only shapes linked to this particular asset will
+  be syncrhonized."
+  [it file-id asset-type asset-id library-id state]
   (s/assert #{:colors :components :typographies} asset-type)
+  (s/assert (s/nilable ::us/uuid) asset-id)
   (s/assert ::us/uuid file-id)
   (s/assert ::us/uuid library-id)
 
   (log/info :msg "Sync file with library"
             :asset-type asset-type
+            :asset-id asset-id
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
@@ -232,6 +181,7 @@
                  changes
                  (generate-sync-container it
                                           asset-type
+                                          asset-id
                                           library-id
                                           state
                                           (cph/make-container page :page))))
@@ -240,11 +190,19 @@
 (defn generate-sync-library
   "Generate changes to synchronize all shapes in all components of the
   local library of the given file, that use assets of the given type in
-  the given library."
-  [it file-id asset-type library-id state]
+  the given library.
+
+  If an asset id is given, only shapes linked to this particular asset will
+  be syncrhonized."
+  [it file-id asset-type asset-id library-id state]
+  (s/assert #{:colors :components :typographies} asset-type)
+  (s/assert (s/nilable ::us/uuid) asset-id)
+  (s/assert ::us/uuid file-id)
+  (s/assert ::us/uuid library-id)
 
   (log/info :msg "Sync local components with library"
             :asset-type asset-type
+            :asset-id asset-id
             :file (pretty-file file-id state)
             :library (pretty-file library-id state))
 
@@ -257,6 +215,7 @@
                  changes
                  (generate-sync-container it
                                           asset-type
+                                          asset-id
                                           library-id
                                           state
                                           (cph/make-container local-component :component))))
@@ -265,14 +224,14 @@
 (defn- generate-sync-container
   "Generate changes to synchronize all shapes in a particular container (a page
   or a component) that use assets of the given type in the given library."
-  [it asset-type library-id state container]
+  [it asset-type asset-id library-id state container]
 
   (if (cph/page? container)
     (log/debug :msg "Sync page in local file" :page-id (:id container))
     (log/debug :msg "Sync component in local library" :component-id (:id container)))
 
-  (let [linked-shapes        (->> (vals (:objects container))
-                                  (filter #(uses-assets? asset-type % library-id (cph/page? container))))]
+  (let [linked-shapes (->> (vals (:objects container))
+                           (filter #(uses-assets? asset-type asset-id % library-id (cph/page? container))))]
     (loop [shapes (seq linked-shapes)
            changes (-> (pcb/empty-changes it)
                        (pcb/with-container container)
@@ -289,27 +248,26 @@
 
 (defmulti uses-assets?
   "Checks if a shape uses some asset of the given type in the given library."
-  (fn [asset-type _ _ _] asset-type))
+  (fn [asset-type _ _ _ _] asset-type))
 
 (defmethod uses-assets? :components
-  [_ shape library-id page?]
-  (and (some? (:component-id shape))
-       (= (:component-file shape) library-id)
+  [_ component-id shape library-id page?]
+  (and (if (nil? component-id)
+         (ctk/uses-library-components? shape library-id)
+         (ctk/instance-of? shape library-id component-id))
        (or (:component-root? shape) (not page?)))) ; avoid nested components inside pages
 
 (defmethod uses-assets? :colors
-  [_ shape library-id _]
-  (ctc/uses-library-colors? shape library-id))
+  [_ color-id shape library-id _]
+  (if (nil? color-id)
+    (ctc/uses-library-colors? shape library-id)
+    (ctc/uses-library-color? shape library-id color-id)))
 
 (defmethod uses-assets? :typographies
-  [_ shape library-id _]
-  (and (= (:type shape) :text)
-       (->> shape
-            :content
-            ;; Check if any node in the content has a reference for the library
-            (txt/node-seq
-              #(and (some? (:typography-ref-id %))
-                    (= (:typography-ref-file %) library-id))))))
+  [_ typography-id shape library-id _]
+  (if (nil? typography-id)
+    (cty/uses-library-typographies? shape library-id)
+    (cty/uses-library-typography? shape library-id typography-id)))
 
 (defmulti generate-sync-shape
   "Generate changes to synchronize one shape from all assets of the given type
@@ -482,18 +440,18 @@
   instance, and all its children, from the given component."
   [changes libraries container shape-id reset?]
   (log/debug :msg "Sync shape direct" :shape (str shape-id) :reset? reset?)
-  (let [shape-inst    (cph/get-shape container shape-id)
+  (let [shape-inst    (ctn/get-shape container shape-id)
         component     (cph/get-component libraries
                                          (:component-file shape-inst)
                                          (:component-id shape-inst))
         shape-main    (when component
-                        (cph/get-shape component (:shape-ref shape-inst)))
+                        (ctn/get-shape component (:shape-ref shape-inst)))
 
         initial-root? (:component-root? shape-inst)
 
         root-inst     shape-inst
         root-main     (when component
-                        (cph/get-component-root component))]
+                        (ctk/get-component-root component))]
 
     (if component
       (generate-sync-shape-direct-recursive changes
@@ -543,9 +501,9 @@
                     set-remote-synced?
                     (change-remote-synced shape-inst container true))
 
-          children-inst   (mapv #(cph/get-shape container %)
+          children-inst   (mapv #(ctn/get-shape container %)
                                 (:shapes shape-inst))
-          children-main   (mapv #(cph/get-shape component %)
+          children-main   (mapv #(ctn/get-shape component %)
                                 (:shapes shape-main))
 
           only-inst (fn [changes child-inst]
@@ -608,16 +566,16 @@
   the values in the shape and all its children."
   [changes libraries container shape-id]
   (log/debug :msg "Sync shape inverse" :shape (str shape-id))
-  (let [shape-inst    (cph/get-shape container shape-id)
+  (let [shape-inst    (ctn/get-shape container shape-id)
         component     (cph/get-component libraries
                                          (:component-file shape-inst)
                                          (:component-id shape-inst))
-        shape-main    (cph/get-shape component (:shape-ref shape-inst))
+        shape-main    (ctn/get-shape component (:shape-ref shape-inst))
 
         initial-root? (:component-root? shape-inst)
 
         root-inst     shape-inst
-        root-main     (cph/get-component-root component)]
+        root-main     (ctk/get-component-root component)]
 
     (if component
       (generate-sync-shape-inverse-recursive changes
@@ -668,9 +626,9 @@
                     set-remote-synced?
                     (change-remote-synced shape-inst container true))
 
-          children-inst   (mapv #(cph/get-shape container %)
+          children-inst   (mapv #(ctn/get-shape container %)
                                 (:shapes shape-inst))
-          children-main   (mapv #(cph/get-shape component %)
+          children-main   (mapv #(ctn/get-shape component %)
                                 (:shapes shape-main))
 
           only-inst (fn [changes child-inst]
@@ -751,13 +709,13 @@
         (reduce only-inst-cb changes children-inst)
 
         :else
-        (if (cph/is-main-of? child-main child-inst)
+        (if (ctk/is-main-of? child-main child-inst)
           (recur (next children-inst)
                  (next children-main)
                  (both-cb changes child-inst child-main))
 
-          (let [child-inst' (d/seek #(cph/is-main-of? child-main %) children-inst)
-                child-main' (d/seek #(cph/is-main-of? % child-inst) children-main)]
+          (let [child-inst' (d/seek #(ctk/is-main-of? child-main %) children-inst)
+                child-main' (d/seek #(ctk/is-main-of? % child-inst) children-main)]
             (cond
               (nil? child-inst')
               (recur children-inst
@@ -785,8 +743,8 @@
 (defn- add-shape-to-instance
   [changes component-shape index component container root-instance root-main omit-touched? set-remote-synced?]
   (log/info :msg (str "ADD [P] " (:name component-shape)))
-  (let [component-parent-shape (cph/get-shape component (:parent-id component-shape))
-        parent-shape           (d/seek #(cph/is-main-of? component-parent-shape %)
+  (let [component-parent-shape (ctn/get-shape component (:parent-id component-shape))
+        parent-shape           (d/seek #(ctk/is-main-of? component-parent-shape %)
                                        (cph/get-children-with-self (:objects container)
                                                                    (:id root-instance)))
         all-parents            (into [(:id parent-shape)]
@@ -811,7 +769,7 @@
                                 original-shape)
 
         [_ new-shapes _]
-        (cph/clone-object component-shape
+        (ctst/clone-object component-shape
                           (:id parent-shape)
                           (get component :objects)
                           update-new-shape
@@ -853,8 +811,8 @@
 (defn- add-shape-to-main
   [changes shape index component page root-instance root-main]
   (log/info :msg (str "ADD [C] " (:name shape)))
-  (let [parent-shape           (cph/get-shape page (:parent-id shape))
-        component-parent-shape (d/seek #(cph/is-main-of? % parent-shape)
+  (let [parent-shape           (ctn/get-shape page (:parent-id shape))
+        component-parent-shape (d/seek #(ctk/is-main-of? % parent-shape)
                                        (cph/get-children-with-self (:objects component)
                                                                    (:id root-main)))
         all-parents  (into [(:id component-parent-shape)]
@@ -873,7 +831,7 @@
                                   original-shape))
 
         [_new-shape new-shapes updated-shapes]
-        (cph/clone-object shape
+        (ctst/clone-object shape
                           (:id component-parent-shape)
                           (get page :objects)
                           update-new-shape
@@ -980,7 +938,7 @@
                       index-before
                       " -> "
                       index-after))
-  (let [parent (cph/get-shape container (:parent-id shape))
+  (let [parent (ctn/get-shape container (:parent-id shape))
 
         changes' (-> changes
                      (update :redo-changes conj (make-change

@@ -53,6 +53,7 @@
 (def close (icon-xref :close))
 (def code (icon-xref :code))
 (def component (icon-xref :component))
+(def component-copy (icon-xref :component-copy))
 (def copy (icon-xref :copy))
 (def curve (icon-xref :curve))
 (def cross (icon-xref :cross))

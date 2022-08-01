@@ -127,5 +127,6 @@
      [:section.dashboard-container
       [:& grid {:project project
                 :files files
-                :on-create-clicked on-create-clicked}]]]))
+                :on-create-clicked on-create-clicked
+                :origin :files}]]]))
 

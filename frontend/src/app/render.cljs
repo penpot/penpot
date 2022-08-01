@@ -13,6 +13,7 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.fonts :as df]
+   [app.main.features :as features]
    [app.main.render :as render]
    [app.main.repo :as repo]
    [app.main.store :as st]
@@ -99,22 +100,24 @@
 
 (mf/defc object-svg
   [{:keys [page-id file-id object-id render-embed?]}]
-  (let [fetch-state (mf/use-fn
-                     (mf/deps file-id page-id object-id)
-                     (fn []
-                       (->> (rx/zip
-                             (repo/query! :font-variants {:file-id file-id})
-                             (repo/query! :page {:file-id file-id
-                                                 :page-id page-id
-                                                 :object-id object-id}))
-                            (rx/tap (fn [[fonts]]
-                                      (when (seq fonts)
-                                        (st/emit! (df/fonts-fetched fonts)))))
-                            (rx/map (comp :objects second))
-                            (rx/map (fn [objects]
-                                      (let [objects (render/adapt-objects-for-shape objects object-id)]
-                                        {:objects objects
-                                         :object (get objects object-id)}))))))
+  (let [components-v2 (features/use-feature :components-v2)
+        fetch-state   (mf/use-fn
+                        (mf/deps file-id page-id object-id)
+                        (fn []
+                          (->> (rx/zip
+                                 (repo/query! :font-variants {:file-id file-id})
+                                 (repo/query! :page {:file-id file-id
+                                                     :page-id page-id
+                                                     :object-id object-id
+                                                     :components-v2 components-v2}))
+                               (rx/tap (fn [[fonts]]
+                                         (when (seq fonts)
+                                           (st/emit! (df/fonts-fetched fonts)))))
+                               (rx/map (comp :objects second))
+                               (rx/map (fn [objects]
+                                         (let [objects (render/adapt-objects-for-shape objects object-id)]
+                                           {:objects objects
+                                            :object (get objects object-id)}))))))
 
         {:keys [objects object]} (use-resource fetch-state)]
 
@@ -124,8 +127,8 @@
       (when object
         (dom/set-page-style!
           {:size (str/concat
-                  (mth/ceil (:width object)) "px "
-                  (mth/ceil (:height object)) "px")})))
+                   (mth/ceil (:width object)) "px "
+                   (mth/ceil (:height object)) "px")})))
 
     (when objects
       [:& render/object-svg
@@ -135,17 +138,19 @@
 
 (mf/defc objects-svg
   [{:keys [page-id file-id object-ids render-embed?]}]
-  (let [fetch-state (mf/use-fn
-                     (mf/deps file-id page-id)
-                     (fn []
-                       (->> (rx/zip
-                             (repo/query! :font-variants {:file-id file-id})
-                             (repo/query! :page {:file-id file-id
-                                                 :page-id page-id}))
-                            (rx/tap (fn [[fonts]]
-                                      (when (seq fonts)
-                                        (st/emit! (df/fonts-fetched fonts)))))
-                            (rx/map (comp :objects second)))))
+  (let [components-v2 (features/use-feature :components-v2)
+        fetch-state   (mf/use-fn
+                       (mf/deps file-id page-id)
+                       (fn []
+                         (->> (rx/zip
+                               (repo/query! :font-variants {:file-id file-id})
+                               (repo/query! :page {:file-id file-id
+                                                   :page-id page-id
+                                                   :components-v2 components-v2}))
+                              (rx/tap (fn [[fonts]]
+                                        (when (seq fonts)
+                                          (st/emit! (df/fonts-fetched fonts)))))
+                              (rx/map (comp :objects second)))))
 
         objects (use-resource fetch-state)]
 

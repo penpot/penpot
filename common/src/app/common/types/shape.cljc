@@ -6,8 +6,13 @@
 
 (ns app.common.types.shape
   (:require
+   [app.common.colors :as clr]
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.pages.common :refer [default-color]]
    [app.common.spec :as us]
    [app.common.types.color :as ctc]
    [app.common.types.shape.blur :as ctsb]
@@ -16,6 +21,7 @@
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]))
 
@@ -316,3 +322,155 @@
   (s/and (s/multi-spec shape-spec :type)
          #(contains? % :type)
          #(contains? % :name)))
+
+
+;; --- Initialization
+
+(def default-shape-attrs
+  {})
+
+(def default-frame-attrs
+  {:frame-id uuid/zero
+   :fills [{:fill-color clr/white
+            :fill-opacity 1}]
+   :strokes []
+   :shapes []
+   :hide-fill-on-export false})
+
+(def ^:private minimal-shapes
+  [{:type :rect
+    :name "Rect-1"
+    :fills [{:fill-color default-color
+             :fill-opacity 1}]
+    :strokes []
+    :rx 0
+    :ry 0}
+
+   {:type :image
+    :rx 0
+    :ry 0
+    :fills []
+    :strokes []}
+
+   {:type :circle
+    :name "Circle-1"
+    :fills [{:fill-color default-color
+             :fill-opacity 1}]
+    :strokes []}
+
+   {:type :path
+    :name "Path-1"
+    :fills []
+    :strokes [{:stroke-style :solid
+               :stroke-alignment :center
+               :stroke-width 2
+               :stroke-color clr/black
+               :stroke-opacity 1}]}
+
+   {:type :frame
+    :name "Board-1"
+    :fills [{:fill-color clr/white
+             :fill-opacity 1}]
+    :strokes []
+    :stroke-style :none
+    :stroke-alignment :center
+    :stroke-width 0
+    :stroke-color clr/black
+    :stroke-opacity 0
+    :rx 0
+    :ry 0}
+
+   {:type :text
+    :name "Text-1"
+    :content nil}
+
+   {:type :svg-raw}])
+
+(def empty-selrect
+  {:x  0    :y  0
+   :x1 0    :y1 0
+   :x2 0.01    :y2 0.01
+   :width 0.01 :height 0.01})
+
+(defn make-minimal-shape
+  [type]
+  (let [type (cond (= type :curve) :path
+                   :else type)
+        shape (d/seek #(= type (:type %)) minimal-shapes)]
+    (when-not shape
+      (ex/raise :type :assertion
+                :code :shape-type-not-implemented
+                :context {:type type}))
+
+    (cond-> shape
+      :always
+      (assoc :id (uuid/next))
+
+      (not= :path (:type shape))
+      (assoc :x 0
+             :y 0
+             :width 0.01
+             :height 0.01
+             :selrect {:x 0
+                       :y 0
+                       :x1 0
+                       :y1 0
+                       :x2 0.01
+                       :y2 0.01
+                       :width 0.01
+                       :height 0.01}))))
+
+(defn make-minimal-group
+  [frame-id rect group-name]
+  {:id (uuid/next)
+   :type :group
+   :name group-name
+   :shapes []
+   :frame-id frame-id
+   :x (:x rect)
+   :y (:y rect)
+   :width (:width rect)
+   :height (:height rect)})
+
+(defn setup-rect-selrect
+  "Initializes the selrect and points for a shape."
+  [shape]
+  (let [selrect (gsh/rect->selrect shape)
+        points  (gsh/rect->points shape)]
+    (-> shape
+        (assoc :selrect selrect
+               :points points))))
+
+(defn- setup-rect
+  "A specialized function for setup rect-like shapes."
+  [shape {:keys [x y width height]}]
+  (-> shape
+      (assoc :x x :y y :width width :height height)
+      (setup-rect-selrect)))
+
+(defn- setup-image
+  [{:keys [metadata] :as shape} props]
+  (-> (setup-rect shape props)
+      (assoc
+       :proportion (/ (:width metadata)
+                      (:height metadata))
+       :proportion-lock true)))
+
+(defn setup-shape
+  "A function that initializes the geometric data of
+  the shape. The props must have :x :y :width :height."
+  ([props]
+   (setup-shape {:type :rect} props))
+
+  ([shape props]
+   (case (:type shape)
+     :image (setup-image shape props)
+     (setup-rect shape props))))
+
+(defn make-shape
+  "Make a non group shape, ready to use."
+  [type geom-props attrs]
+  (-> (make-minimal-shape type)
+      (setup-shape geom-props)
+      (merge attrs)))
+

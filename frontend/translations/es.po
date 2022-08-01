@@ -551,6 +551,10 @@ msgstr "¿Quieres borrar tu cuenta?"
 msgid "dashboard.remove-shared"
 msgstr "Eliminar como Biblioteca Compartida"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Despublicar Biblioteca"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.save-settings"
 msgstr "Guardar opciones"
@@ -656,6 +660,14 @@ msgstr "Tu nombre"
 msgid "dashboard.your-penpot"
 msgstr "Tu Penpot"
 
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Atención"
+
 #: src/app/main/ui/confirm.cljs
 msgid "ds.component-subtitle"
 msgstr "Componentes a actualizar:"
@@ -735,6 +747,10 @@ msgstr "La autheticacion via LDAP esta deshabilitada."
 
 msgid "errors.media-format-unsupported"
 msgstr "No se reconoce el formato de imagen (debe ser svg, jpg o png)."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Este fichero ya se ha usado con los Componentes V2 activados."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -1837,6 +1853,48 @@ msgstr ""
 msgid "modals.remove-shared-confirm.message"
 msgstr "Añadir “%s” como Biblioteca Compartida"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgstr "Despublicar biblioteca"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgstr "¿Seguro que quieres despublicar esta biblioteca?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Está siendo usada en este archivo:"
+msgstr[1] "Está siendo usada en estos archivos:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] "Si la despublicas, los elementos pasarán a formar parte de la biblioteca del archivo."
+msgstr[1] "Si la despublicas, los elementos pasarán a formar parte de la biblioteca de los archivos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Despublicar"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgstr "Borrar archivo"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgstr "¿Seguro que quieres borrar este archivo?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "El archivo que quieres borrar tiene una librería que se está usando en este archivo:"
+msgstr[1] "El archivo que quieres borrar tiene una librería que se está usando en estos archivos:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgstr "Borrar archivo"
+
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
 msgstr "Mínimo"
@@ -1874,6 +1932,10 @@ msgstr ""
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Actualizar un componente en librería"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "Borrar archivo"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"

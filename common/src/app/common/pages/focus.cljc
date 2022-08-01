@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]))
 
 (defn focus-objects
@@ -21,7 +22,7 @@
     (cond-> objects
       (some? ids-with-children)
       (-> (select-keys ids-with-children)
-          (assoc-in [uuid/zero :shapes] (cph/sort-z-index objects focus))))))
+          (assoc-in [uuid/zero :shapes] (ctt/sort-z-index objects focus))))))
 
 (defn filter-not-focus
   [objects focus ids]

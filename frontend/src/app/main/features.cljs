@@ -4,10 +4,11 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.features
+(ns app.main.features
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
+   [app.config :as cfg]
    [app.main.store :as st]
    [okulary.core :as l]
    [potok.core :as ptk]
@@ -15,9 +16,9 @@
 
 (log/set-level! :debug)
 
-(def features-list #{:auto-layout})
+(def features-list #{:auto-layout :components-v2})
 
-(defn toggle-feature
+(defn- toggle-feature
   [feature]
   (ptk/reify ::toggle-feature
     ptk/UpdateEvent
@@ -27,7 +28,6 @@
                  :result (if (not (contains? (:features state) feature))
                            "enabled"
                            "disabled"))
-
       (-> state
           (update :features
                   (fn [features]
@@ -40,6 +40,13 @@
   [feature]
   (assert (contains? features-list feature) "Not supported feature")
   (st/emit! (toggle-feature feature)))
+
+(defn active-feature?
+  ([feature]
+   (active-feature? @st/state feature))
+  ([state feature]
+   (assert (contains? features-list feature) "Not supported feature")
+   (contains? (get state :features) feature)))
 
 (def features
   (l/derived :features st/state))
@@ -55,8 +62,14 @@
         active-feature? (mf/deref active-feature-ref)]
     active-feature?))
 
-;; By default the features are active in local environments
-(when *assert*
-  ;; Activate all features in local environment
-  (doseq [f features-list]
-    (toggle-feature! f)))
+;; Read initial enabled features from config, if set
+(if-let [enabled-features @cfg/features]
+  (doseq [f enabled-features]
+    (toggle-feature! f))
+  (when *assert*
+    ;; By default, all features disabled, except in development
+    ;; environment, that are enabled except components-v2
+    (doseq [f features-list]
+      (when (not= f :components-v2)
+        (toggle-feature! f)))))
+

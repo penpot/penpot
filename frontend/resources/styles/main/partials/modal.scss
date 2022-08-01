@@ -134,6 +134,12 @@
       font-size: $fs16;
       font-weight: 400;
     }
+    &.delete-shared {
+      padding: 15px 32px;
+      .modal-item-element {
+        font-size: $fs16;
+      }
+    }
   }
 
   .modal-footer {
@@ -179,7 +185,8 @@
   }
 }
 
-.confirm-dialog {
+.confirm-dialog,
+.alert-dialog {
   background-color: $color-white;
 
   p {

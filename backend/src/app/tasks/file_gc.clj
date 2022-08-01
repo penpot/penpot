@@ -12,8 +12,8 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
+   [app.common.types.shape-tree :as ctt]
    [app.db :as db]
    [app.util.blob :as blob]
    [app.util.time :as dt]
@@ -128,7 +128,7 @@
 
         get-objects-ids
         (fn [{:keys [id objects]}]
-          (->> (cph/get-frames objects)
+          (->> (ctt/get-frames objects)
                (map #(str id (:id %)))))
 
         using (into #{}

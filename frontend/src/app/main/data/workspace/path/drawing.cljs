@@ -8,10 +8,10 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
-   [app.common.pages.helpers :as cph]
    [app.common.path.commands :as upc]
    [app.common.path.shapes-to-path :as upsp]
    [app.common.spec :as us]
+   [app.common.types.shape-tree :as ctt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
@@ -258,7 +258,7 @@
       (let [objects  (wsh/lookup-page-objects state)
             content  (get-in state [:workspace-drawing :object :content] [])
             position (get-in content [0 :params] nil)
-            frame-id (cph/frame-id-by-position objects position)]
+            frame-id (ctt/frame-id-by-position objects position)]
         (-> state
             (assoc-in [:workspace-drawing :object :frame-id] frame-id))))))
 
