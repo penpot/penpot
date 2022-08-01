@@ -21,7 +21,6 @@
    [app.main.streams :as ms]
    [app.util.router :as rt]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
 (declare handle-interrupt)
@@ -141,11 +140,10 @@
               (rx/catch #(rx/throw {:type :update-comment-thread-position}))
               (rx/ignore))))))))
 
-
 ;; Move comment threads that are inside a frame when that frame is moved"
 (defmethod ptk/resolve ::move-frame-comment-threads
   [_ ids]
-  (us/assert! :spec (s/coll-of uuid?) :val  ids)
+  (us/assert! ::us/coll-of-uuid ids)
   (ptk/reify ::move-frame-comment-threads
     ptk/WatchEvent
     (watch [_ state _]

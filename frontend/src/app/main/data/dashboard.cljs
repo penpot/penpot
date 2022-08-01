@@ -54,9 +54,6 @@
           :opt-un [::created-at
                    ::modified-at]))
 
-(s/def ::set-of-uuid
-  (s/every ::us/uuid :kind set?))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -783,7 +780,7 @@
 
 (defn move-files
   [{:keys [ids project-id] :as params}]
-  (us/assert ::set-of-uuid ids)
+  (us/assert ::us/set-of-uuid ids)
   (us/assert ::us/uuid project-id)
   (ptk/reify ::move-files
     IDeref

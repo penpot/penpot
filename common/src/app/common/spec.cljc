@@ -11,7 +11,7 @@
   (:require
    #?(:clj  [clojure.spec.alpha :as s]
       :cljs [cljs.spec.alpha :as s])
-
+   [app.common.data.macros :as dm]
    ;; NOTE: don't remove this, causes exception on advanced build
    ;; because of some strange interaction with cljs.spec.alpha and
    ;; modules splitting.
@@ -31,88 +31,179 @@
 (def max-safe-int (int 1e6))
 (def min-safe-int (int -1e6))
 
-;; --- Conformers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; DEFAULT SPECS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn uuid-conformer
-  [v]
-  (if (uuid? v)
-    v
-    (if (string? v)
-      (if (re-matches uuid-rx v)
-        (uuid/uuid v)
-        ::s/invalid)
-      ::s/invalid)))
+;; --- SPEC: uuid
 
-(defn boolean-conformer
-  [v]
-  (if (boolean? v)
-    v
-    (if (string? v)
-      (if (re-matches #"^(?:t|true|false|f|0|1)$" v)
-        (contains? #{"t" "true" "1"} v)
-        ::s/invalid)
-      ::s/invalid)))
+(letfn [(conformer [v]
+          (if (uuid? v)
+            v
+            (if (string? v)
+              (if (re-matches uuid-rx v)
+                (uuid/uuid v)
+                ::s/invalid)
+              ::s/invalid)))
+        (unformer [v]
+          (dm/str v))]
+  (s/def ::uuid (s/conformer conformer unformer)))
 
-(defn boolean-unformer
-  [v]
-  (if v "true" "false"))
+;; --- SPEC: boolean
 
-(defn- number-conformer
-  [v]
-  (cond
-    (number? v) v
-    (str/numeric? v)
-    #?(:clj (Double/parseDouble v)
-       :cljs (js/parseFloat v))
-    :else ::s/invalid))
+(letfn [(conformer [v]
+          (if (boolean? v)
+            v
+            (if (string? v)
+              (if (re-matches #"^(?:t|true|false|f|0|1)$" v)
+                (contains? #{"t" "true" "1"} v)
+                ::s/invalid)
+              ::s/invalid)))
+        (unformer [v]
+          (if v "true" "false"))]
+  (s/def ::boolean (s/conformer conformer unformer)))
 
-(defn- integer-conformer
-  [v]
-  (cond
-    (integer? v) v
-    (string? v)
-    (if (re-matches #"^[-+]?\d+$" v)
-      #?(:clj (Long/parseLong v)
-         :cljs (js/parseInt v 10))
-      ::s/invalid)
-    :else ::s/invalid))
+;; --- SPEC: number
 
-(defn- color-conformer
-  [v]
-  (if (and (string? v) (re-matches #"^#(?:[0-9a-fA-F]{3}){1,2}$" v))
-    v
-    ::s/invalid))
+(letfn [(conformer [v]
+          (cond
+            (number? v)      v
+            (str/numeric? v) #?(:cljs (js/parseFloat v)
+                                :clj  (Double/parseDouble v))
+            :else            ::s/invalid))]
+  (s/def ::number (s/conformer conformer str)))
 
-(defn keyword-conformer
-  [v]
-  (cond
-    (keyword? v)
-    v
+;; --- SPEC: integer
 
-    (string? v)
-    (keyword v)
+(letfn [(conformer [v]
+          (cond
+            (integer? v) v
+            (string? v)
+            (if (re-matches #"^[-+]?\d+$" v)
+              #?(:clj (Long/parseLong v)
+                 :cljs (js/parseInt v 10))
+              ::s/invalid)
+            :else ::s/invalid))]
+  (s/def ::integer (s/conformer conformer str)))
 
-    :else
-    ::s/invalid))
+;; --- SPEC: keyword
 
+(letfn [(conformer [v]
+          (cond
+            (keyword? v) v
+            (string? v)  (keyword v)
+            :else        ::s/invalid))
 
-;; --- Default Specs
+        (unformer [v]
+          (name v))]
+  (s/def ::keyword (s/conformer conformer unformer)))
 
-(s/def ::keyword (s/conformer keyword-conformer name))
+;; --- SPEC: email
+
+(def email-re #"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
+
+(defn parse-email
+  [s]
+  (some->> s (re-seq email-re) first))
+
+(letfn [(conformer [v]
+          (or (parse-email v) ::s/invalid))
+        (unformer [v]
+          (dm/str v))]
+  (s/def ::email (s/conformer conformer unformer)))
+
+;; -- SPEC: uri
+
+(letfn [(conformer [s]
+          (cond
+            (u/uri? s) s
+            (string? s) (u/uri s)
+            :else ::s/invalid))
+        (unformer [v]
+          (dm/str v))]
+  (s/def ::uri (s/conformer conformer unformer)))
+
+;; --- SPEC: color string
+
+(letfn [(conformer [v]
+          (if (and (string? v) (re-matches #"^#(?:[0-9a-fA-F]{3}){1,2}$" v))
+            v
+            ::s/invalid))
+        (unformer [v]
+          (dm/str v))]
+  (s/def ::rgb-color-str (s/conformer conformer unformer)))
+
+;; --- SPEC: set of Keywords
+
+(letfn [(conform-fn [dest s]
+          (let [xform (keep (fn [s]
+                              (cond
+                                (string? s) (keyword s)
+                                (keyword? s) s
+                                :else nil)))]
+            (cond
+              (set? s)    (into dest xform s)
+              (string? s) (into dest xform (str/words s))
+              :else       ::s/invalid)))]
+
+  (s/def ::set-of-keywords
+    (s/conformer
+     (fn [s] (conform-fn #{} s))
+     (fn [s] (str/join " " (map name s)))))
+
+  (s/def ::vec-of-keywords
+    (s/conformer
+     (fn [s] (conform-fn [] s))
+     (fn [s] (str/join " " (map name s))))))
+
+;; --- SPEC: set-of-emails
+
+(letfn [(conformer [v]
+          (cond
+            (string? v)
+            (into #{} (re-seq email-re v))
+
+            (or (set? v) (sequential? v))
+            (->> (str/join " " v)
+                 (re-seq email-re)
+                 (into #{}))
+
+            :else ::s/invalid))
+        (unformer [v]
+          (str/join " " v))]
+  (s/def ::set-of-emails (s/conformer conformer unformer)))
+
+;; --- SPEC: set-of-str
+
+(def non-empty-strings-xf
+  (comp
+   (filter string?)
+   (remove str/empty?)
+   (remove str/blank?)))
+
+(letfn [(conformer [s]
+          (cond
+            (string? s) (->> (str/split s #"\s*,\s*")
+                             (into #{} non-empty-strings-xf))
+            (set? s)    (into #{} non-empty-strings-xf s)
+            :else       ::s/invalid))
+        (unformer [s]
+          (str/join "," s))]
+  (s/def ::set-of-str (s/conformer conformer unformer)))
+
+;; --- SPECS WITHOUT CONFORMER
+
 (s/def ::inst inst?)
 (s/def ::string string?)
-(s/def ::color (s/conformer color-conformer str))
-(s/def ::uuid (s/conformer uuid-conformer str))
-(s/def ::boolean (s/conformer boolean-conformer boolean-unformer))
-(s/def ::number (s/conformer number-conformer str))
-(s/def ::integer (s/conformer integer-conformer str))
 (s/def ::not-empty-string (s/and string? #(not (str/empty? %))))
 (s/def ::url string?)
 (s/def ::fn fn?)
 (s/def ::id ::uuid)
 
-(s/def ::set-of-string (s/every string? :kind set?))
-(s/def ::coll-of-uuid (s/every uuid?))
+;; NOTE: this is a coercerless version of `::set-of-str` spec
+(s/def ::set-of-string (s/every ::string :kind set?))
+(s/def ::coll-of-uuid (s/every ::uuid))
+(s/def ::set-of-uuid (s/every ::uuid :kind set?))
 
 (defn bytes?
   "Test if a first parameter is a byte
@@ -139,87 +230,6 @@
         (float? %))
     (>= % min-safe-int)
     (<= % max-safe-int)))
-
-
-;; --- SPEC: set of Keywords
-
-(letfn [(conform-fn [dest s]
-          (let [xform (keep (fn [s]
-                              (cond
-                                (string? s) (keyword s)
-                                (keyword? s) s
-                                :else nil)))]
-            (cond
-              (set? s)    (into dest xform s)
-              (string? s) (into dest xform (str/words s))
-              :else       ::s/invalid)))]
-
-  (s/def ::set-of-keywords
-    (s/conformer
-     (fn [s] (conform-fn #{} s))
-     (fn [s] (str/join " " (map name s)))))
-
-  (s/def ::vec-of-keywords
-    (s/conformer
-     (fn [s] (conform-fn [] s))
-     (fn [s] (str/join " " (map name s))))))
-
-;; --- SPEC: email
-
-(def email-re #"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
-
-(defn parse-email
-  [s]
-  (some->> s (re-seq email-re) first))
-
-(s/def ::email
-  (s/conformer
-   (fn [v]
-     (or (parse-email v) ::s/invalid))
-   str))
-
-(s/def ::set-of-emails
-  (s/conformer
-   (fn [v]
-     (cond
-       (string? v)
-       (into #{} (re-seq email-re v))
-
-       (or (set? v) (sequential? v))
-       (->> (str/join " " v)
-            (re-seq email-re)
-            (into #{}))
-
-       :else ::s/invalid))
-
-   (fn [v]
-     (str/join " " v))))
-
-(s/def ::uri
-  (s/conformer
-   (fn [s]
-     (cond
-       (u/uri? s) s
-       (string? s) (u/uri s)
-       :else ::s/invalid))
-   str))
-
-;; --- SPEC: set-of-str
-
-(s/def ::set-of-str
-  (s/conformer
-   (fn [s]
-     (let [xform (comp
-                  (filter string?)
-                  (remove str/empty?)
-                  (remove str/blank?))]
-       (cond
-         (string? s) (->> (str/split s #"\s*,\s*")
-                          (into #{} xform))
-         (set? s)    (into #{} xform s)
-         :else       ::s/invalid)))
-   (fn [s]
-     (str/join "," s))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MACROS

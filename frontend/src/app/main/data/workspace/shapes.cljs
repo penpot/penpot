@@ -130,12 +130,9 @@
           (rx/of (dch/commit-changes changes))
           (rx/empty))))))
 
-(s/def ::set-of-uuid
-  (s/every ::us/uuid :kind set?))
-
 (defn delete-shapes
   [ids]
-  (us/assert ::set-of-uuid ids)
+  (us/assert ::us/set-of-uuid ids)
   (ptk/reify ::delete-shapes
     ptk/WatchEvent
     (watch [it state _]

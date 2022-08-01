@@ -33,14 +33,8 @@
    [linked.set :as lks]
    [potok.core :as ptk]))
 
-(s/def ::set-of-uuid
-  (s/every uuid? :kind set?))
-
 (s/def ::ordered-set-of-uuid
   (s/every uuid? :kind d/ordered-set?))
-
-(s/def ::set-of-string
-  (s/every string? :kind set?))
 
 (defn interrupt? [e] (= e :interrupt))
 
