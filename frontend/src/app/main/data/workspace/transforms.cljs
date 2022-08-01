@@ -745,24 +745,25 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [position @ms/mouse-position
-            page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
+            page-id  (:current-page-id state)
+            objects  (wsh/lookup-page-objects state page-id)
             frame-id (ctt/frame-id-by-position objects position)
+            lookup   (d/getf objects)
 
             moving-shapes
             (->> ids
                  (cph/clean-loops objects)
-                 (keep #(get objects %))
+                 (keep (d/getf objects))
                  (remove #(= (:frame-id %) frame-id)))
 
             moving-frames
-            (->> ids
-                 (filter #(cph/frame-shape? objects %)))
+            (filter #(cph/frame-shape? (lookup %)) ids)
 
-            changes (-> (pcb/empty-changes it page-id)
-                        (pcb/with-objects objects)
-                        (pcb/update-shapes moving-frames (fn [shape] (assoc shape :hide-in-viewer true)))
-                        (pcb/change-parent frame-id moving-shapes))]
+            changes
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (pcb/update-shapes moving-frames (fn [shape] (assoc shape :hide-in-viewer true)))
+                (pcb/change-parent frame-id moving-shapes))]
 
         (when-not (empty? changes)
           (rx/of (dch/commit-changes changes)
