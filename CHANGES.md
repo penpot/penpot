@@ -29,7 +29,8 @@
 - Improved share link options. Now you can allow non-team members to comment and/or inspect [Taiga #3056] (https://tree.taiga.io/project/penpot/us/3056)
 - Signin/Signup from shared link [Taiga #3472](https://tree.taiga.io/project/penpot/us/3472)
 - Support for import/export binary format [Taiga #2991](https://tree.taiga.io/project/penpot/us/2991)
-- Comments positioning [Taiga #https://2007](tree.taiga.io/project/penpot/us/2007)
+- Comments positioning [Taiga #2007](https://tree.taiga.io/project/penpot/us/2007)
+- Select all inside a group select only the objects at this group level [Taiga #2382](https://tree.taiga.io/project/penpot/issue/2382)
 
 ### :bug: Bugs fixed
 
