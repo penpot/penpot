@@ -605,7 +605,7 @@
          [:div.label (tr "dashboard.team-info")]
          [:div.name (:name team)]
          [:div.icon
-          [:span.update-overlay {:on-click on-image-click} i/exit]
+          [:span.update-overlay {:on-click on-image-click} i/image]
           [:img {:src (cfg/resolve-team-photo-url team)}]
           [:& file-uploader {:accept "image/jpeg,image/png"
                              :multi false
