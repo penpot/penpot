@@ -1087,6 +1087,7 @@
                   objects (cph/selected-subtree objects selected)
 
                   selected (->> (cph/sort-z-index objects selected)
+                                (reverse)
                                 (into (d/ordered-set)))]
 
               (assoc data :selected selected)))
