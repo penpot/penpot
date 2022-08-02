@@ -1393,19 +1393,8 @@
       flex-direction: column;
       justify-content: space-between;
       align-items: flex-start;
-      .input-wrapper {
+      .custom-input {
         width: 100%;
-        label {
-          display: block;
-          font-size: $fs14;
-          color: $color-black;
-          font-weight: bold;
-          margin-bottom: 6px;
-        }
-        .custom-input input {
-          width: 100%;
-          padding-top: 0;
-        }
       }
       .btn-disabled {
         color: $color-gray-40;
@@ -1418,7 +1407,7 @@
           justify-content: space-between;
           width: 100%;
           margin-bottom: 8px;
-          .label {
+          .rol {
             display: flex;
             justify-content: center;
             align-items: center;
