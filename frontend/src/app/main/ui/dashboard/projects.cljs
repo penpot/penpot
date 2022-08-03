@@ -65,6 +65,7 @@
         nitems         (mth/floor ratio)
         limit          (min 10 nitems)
         limit          (max 1 limit)
+
         toggle-pin
         (mf/use-callback
          (mf/deps project)

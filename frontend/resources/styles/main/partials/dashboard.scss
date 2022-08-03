@@ -6,13 +6,11 @@
 
 .dashboard-container {
   background-color: $color-dashboard;
-  border-top-right-radius: $br-huge;
-  border-top-left-radius: $br-huge;
   flex: 1 0 0;
   margin-right: $size-4;
   overflow-y: auto;
   user-select: none;
-
+  width: 100%;
   &.no-bg {
     background-color: transparent;
   }
@@ -35,13 +33,14 @@
     align-items: center;
     margin-top: $size-4;
     padding: $size-1 $size-1 $size-1 $size-2;
-    width: 100%;
+    width: 99%;
     height: 40px;
     .project-name-wrapper {
       display: flex;
       align-items: center;
       justify-content: flex-start;
       min-height: 32px;
+      margin-left: 13px;
     }
     .show-more {
       align-items: center;

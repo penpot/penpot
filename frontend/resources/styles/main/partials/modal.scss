@@ -1352,15 +1352,21 @@
         .icon {
           display: flex;
           align-items: center;
+          justify-content: center;
+          background: #31efb8;
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+
           svg {
             height: 16px;
             width: 16px;
-            fill: $color-white;
+            fill: $color-black;
           }
         }
         .feature-txt {
           margin: 0;
-          margin-left: 16px;
+          margin-left: 13px;
           color: $color-white;
           font-size: $fs14;
           display: flex;
