@@ -26,10 +26,9 @@
     [app.common.test-helpers.files :as thf]
     [app.common.test-helpers.components :as thk]))
 
-(t/use-fixtures :each
-  {:before thf/reset-idmap!})
+(t/use-fixtures :each thf/reset-idmap!)
 
-(t/deftest test-absorb-components
+#_(t/deftest test-absorb-components
   (let [library-id      (uuid/custom 1 1)
         library-page-id (uuid/custom 2 2)
         file-id         (uuid/custom 3 3)
