@@ -31,7 +31,7 @@
 (sv/defmethod ::duplicate-project
   {::doc/added "1.2"
    ::doc/deprecated "1.16"}
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
+  [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (cmd.mgm/duplicate-project conn params)))
 

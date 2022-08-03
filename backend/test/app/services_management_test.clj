@@ -604,3 +604,19 @@
         (t/is (= (:library-file-id item1) (:id file2))))
 
       )))
+
+(t/deftest clone-template
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        data    {::th/type :clone-template
+                 :profile-id (:id prof)
+                 :project-id (:default-project-id prof)
+                 :template-id "test"}
+
+        out     (th/command! data)]
+    ;; (th/print-result! out)
+
+    (t/is (nil? (:error out)))
+    (let [result (:result out)]
+      (t/is (set? result))
+      (t/is (uuid? (first result)))
+      (t/is (= 1 (count result))))))

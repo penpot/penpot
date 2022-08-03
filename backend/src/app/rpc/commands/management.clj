@@ -13,6 +13,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.rpc.commands.binfile :as binfile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.mutations.projects :refer [create-project-role create-project]]
    [app.rpc.queries.projects :as proj]
@@ -204,7 +205,9 @@
           :opt-un [::name]))
 
 (sv/defmethod ::duplicate-project
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
+  "Duplicate an entire project with all the files"
+  {::doc/added "1.16"}
+  [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (duplicate-project conn params)))
 
@@ -310,6 +313,8 @@
   (s/keys :req-un [::profile-id ::ids ::project-id]))
 
 (sv/defmethod ::move-files
+  "Move a set of files from one project to other."
+  {::doc/added "1.16"}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (move-files conn params)))
@@ -347,6 +352,43 @@
   (s/keys :req-un [::profile-id ::team-id ::project-id]))
 
 (sv/defmethod ::move-project
+  "Move projects between teams."
+  {::doc/added "1.16"}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (move-project conn params)))
+
+;; --- COMMAND: Clone Template
+
+(declare clone-template)
+
+(s/def ::template-id ::us/not-empty-string)
+(s/def ::clone-template
+  (s/keys :req-un [::profile-id ::project-id ::template-id]))
+
+(sv/defmethod ::clone-template
+  "Clone into the specified project the template by its id."
+  {::doc/added "1.16"}
+  [{:keys [pool] :as cfg} params]
+  (db/with-atomic [conn pool]
+    (-> (assoc cfg :conn conn)
+        (clone-template params))))
+
+(defn- clone-template
+  [{:keys [conn templates] :as cfg} {:keys [profile-id template-id project-id]}]
+  (let [template (d/seek #(= (:id %) template-id) templates)
+        project  (db/get-by-id conn :project project-id {:columns [:id :team-id]})]
+
+    (teams/check-edition-permissions! conn profile-id (:team-id project))
+
+    (when-not template
+      (ex/raise :type :not-found
+                :code :template-not-found
+                :hint "template not found"))
+
+    (-> cfg
+        (assoc ::binfile/input (:path template))
+        (assoc ::binfile/project-id (:id project))
+        (assoc ::binfile/ignore-index-errors? true)
+        (assoc ::binfile/migrate? true)
+        (binfile/import!))))

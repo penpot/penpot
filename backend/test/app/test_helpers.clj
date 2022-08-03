@@ -50,11 +50,18 @@
 
 (defn state-init
   [next]
-  (let [config (-> main/system-config
+  (let [templates [{:id "test"
+                    :name "test"
+                    :file-uri "test"
+                    :thumbnail-uri "test"
+                    :path (-> "app/test_files/template.penpot" io/resource fs/path)}]
+
+        config (-> main/system-config
                    (assoc-in [:app.msgbus/msgbus :redis-uri] (:redis-uri config))
                    (assoc-in [:app.db/pool :uri] (:database-uri config))
                    (assoc-in [:app.db/pool :username] (:database-username config))
                    (assoc-in [:app.db/pool :password] (:database-password config))
+                   (assoc-in [:app.rpc/methods :templates] templates)
                    (dissoc :app.srepl/server
                            :app.http/server
                            :app.http/router
@@ -64,6 +71,7 @@
                            :app.auth.oidc/gitlab-provider
                            :app.auth.oidc/github-provider
                            :app.auth.oidc/generic-provider
+                           :app.setup/builtin-templates
                            :app.auth.oidc/routes
                            ;; :app.auth.ldap/provider
                            :app.worker/executors-monitor
