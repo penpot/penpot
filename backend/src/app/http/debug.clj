@@ -66,7 +66,7 @@
               :code :only-admins-allowed))
   (yrs/response :status  200
                 :headers {"content-type" "text/html"}
-                :body    (-> (io/resource "templates/debug.tmpl")
+                :body    (-> (io/resource "app/templates/debug.tmpl")
                              (tmpl/render {}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -225,7 +225,7 @@
                            :trace         (or (:trace report)
                                               (some-> report :error :trace))
                            :params        (:params report)}]
-              (-> (io/resource "templates/error-report.tmpl")
+              (-> (io/resource "app/templates/error-report.tmpl")
                   (tmpl/render params))))]
 
     (when-not (authorized? pool request)
@@ -253,7 +253,7 @@
   (let [items (db/exec! pool [sql:error-reports])
         items (map #(update % :created-at dt/format-instant :rfc1123) items)]
     (yrs/response :status 200
-                  :body (-> (io/resource "templates/error-list.tmpl")
+                  :body (-> (io/resource "app/templates/error-list.tmpl")
                             (tmpl/render {:items items}))
                   :headers {"content-type" "text/html; charset=utf-8"
                             "x-robots-tag" "noindex"})))

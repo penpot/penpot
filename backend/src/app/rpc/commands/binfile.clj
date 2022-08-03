@@ -536,7 +536,7 @@
     :or {overwrite? false migrate? false timestamp (dt/now)}
     :as options}]
 
-  (us/assert! ::read-import-options options)
+  (us/verify! ::read-import-options options)
 
   (letfn [(lookup-index [id]
             (if ignore-index-errors?
@@ -752,7 +752,11 @@
                 (case section
                   :v1/rels (read-rels-section! input)
                   :v1/files (read-files-section! input files)
-                  :v1/sobjects (read-sobjects-section! input))))))))))
+                  :v1/sobjects (read-sobjects-section! input)))
+
+              ;; Knowing that the ids of the created files are in
+              ;; index, just lookup them and return it as a set
+              (into #{} (keep #(get @*index* %)) files))))))))
 
 (defn export!
   [cfg]

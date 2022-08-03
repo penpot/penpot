@@ -17,5 +17,6 @@ cp scripts/manage.template.sh target/dist/manage.sh;
 chmod +x target/dist/run.sh;
 chmod +x target/dist/manage.sh;
 
-
-
+# Prefetch
+bb ./scripts/prefetch-templates.clj resources/app/onboarding.edn builtin-templates/
+cp -r builtin-templates target/dist/

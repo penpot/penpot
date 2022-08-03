@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.setup.builtin-templates]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
    [clojure.spec.alpha :as s]

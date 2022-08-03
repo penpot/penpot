@@ -235,7 +235,8 @@
     :audit       (ig/ref :app.loggers.audit/collector)
     :ldap        (ig/ref :app.auth.ldap/provider)
     :http-client (ig/ref :app.http/client)
-    :executors   (ig/ref :app.worker/executors)}
+    :executors   (ig/ref :app.worker/executors)
+    :templates   (ig/ref :app.setup/builtin-templates)}
 
    :app.rpc.doc/routes
    {:methods (ig/ref :app.rpc/methods)}
@@ -351,6 +352,9 @@
    :app.srepl/server
    {:port (cf/get :srepl-port)
     :host (cf/get :srepl-host)}
+
+   :app.setup/builtin-templates
+   {:http-client (ig/ref :app.http/client)}
 
    :app.setup/props
    {:pool (ig/ref :app.db/pool)
