@@ -403,9 +403,8 @@
     @include animation(0, 0.2s, fadeInUp);
 
     li {
-      height: 32px;
       font-size: $fs14;
-      padding: 5px 10px;
+      padding: $size-2 $size-4;
 
       svg {
         fill: $color-gray-20;

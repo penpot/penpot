@@ -40,7 +40,7 @@
      [:header.dashboard-header
       [:div.dashboard-title
        [:h1 (tr "dashboard.libraries-title")]]]
-     [:section.dashboard-container
+     [:section.dashboard-container.no-bg
       [:& grid {:files files
                 :project default-project
                 :origin :libraries}]]]))

@@ -121,10 +121,9 @@
                  (dd/clear-selected-files))))
 
     [:*
-     [:& header {:team team 
-                 :project project
+     [:& header {:team team :project project 
                  :on-create-clicked on-create-clicked}]
-     [:section.dashboard-container
+     [:section.dashboard-container.no-bg
       [:& grid {:project project
                 :files files
                 :on-create-clicked on-create-clicked

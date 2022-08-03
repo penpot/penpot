@@ -13,13 +13,17 @@
   overflow-y: auto;
   user-select: none;
 
+  &.no-bg {
+    background-color: transparent;
+  }
+
   &.search {
     margin-top: 10px;
   }
 }
 
 .dashboard-project-row {
-  margin-bottom: $size-4;
+  margin-bottom: $size-5;
 
   .project {
     align-items: center;
@@ -27,11 +31,41 @@
     border-radius: $br-small;
     display: flex;
     flex-direction: row;
-    margin-left: $size-4;
+    justify-content: space-between;
+    align-items: center;
     margin-top: $size-4;
     padding: $size-1 $size-1 $size-1 $size-2;
-    width: fit-content;
+    width: 100%;
     height: 40px;
+    .project-name-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 32px;
+    }
+    .show-more {
+      align-items: center;
+      color: $color-gray-30;
+      display: flex;
+      font-size: $fs14;
+      justify-content: space-between;
+      cursor: pointer;
+      .placeholder-icon {
+        transform: rotate(-90deg);
+        margin-left: 10px;
+        svg {
+          height: 14px;
+          width: 14px;
+          fill: $color-gray-30;
+        }
+      }
+      &:hover {
+        color: $color-primary-dark;
+        svg {
+          fill: $color-primary-dark;
+        }
+      }
+    }
 
     .btn-secondary {
       border: none;
@@ -40,9 +74,9 @@
 
     h2 {
       cursor: pointer;
-      font-size: $fs14;
+      font-size: $fs18;
       line-height: 1rem;
-      font-weight: 500;
+      font-weight: 600;
       color: $color-black;
       margin-right: $size-4;
     }
@@ -52,18 +86,27 @@
     }
 
     .info {
-      font-size: $fs14;
+      font-size: $fs16;
       line-height: 1rem;
       font-weight: unset;
       color: $color-gray-30;
+    }
+
+    .project-actions {
+      display: none;
+      margin-left: $size-6;
+
+      .btn-small {
+        padding: $size-2;
+        margin: 0 $size-2;
+      }
     }
 
     .pin-icon {
       cursor: pointer;
       display: flex;
       align-items: center;
-      margin-left: 40px;
-      margin-right: 10px;
+      margin-right: 14px;
       svg {
         width: 15px;
         height: 15px;
@@ -77,10 +120,17 @@
       }
     }
   }
+  &:hover {
+    .project-actions {
+      display: flex;
+    }
+  }
 }
 
 .recent-files-row-title-info {
-  font-size: $fs14;
+  color: $color-gray-30;
+  line-height: 1rem;
+  font-size: $fs16;
 }
 
 .dashboard-table {

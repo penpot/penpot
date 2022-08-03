@@ -7,7 +7,6 @@
 (ns app.main.ui.dashboard.grid
   (:require
    [app.common.logging :as log]
-   [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
    [app.main.features :as features]
@@ -26,7 +25,6 @@
    [app.util.keyboard :as kbd]
    [app.util.time :as dt]
    [app.util.timers :as ts]
-   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
@@ -280,44 +278,13 @@
                               :project project}])]))
 
 (mf/defc line-grid-row
-  [{:keys [files selected-files on-load-more dragging? origin] :as props}]
-  (let [rowref           (mf/use-ref)
-
-        width            (mf/use-state nil)
-
-        itemsize       290
-        ratio          (if (some? @width) (/ @width itemsize) 0)
-        nitems         (mth/floor ratio)
-        limit          (min 10 ;; Configuration in backend to return recent files
-                            (if (and (some? @width)
-                                     (> (* itemsize (count files)) @width)
-                                     (< (- ratio nitems) 0.51))
-                              (dec nitems) ;; Leave space for the "show all" block
-                              nitems))
-
-        limit          (if dragging?
+  [{:keys [files selected-files dragging? limit] :as props}]
+  (let [limit          (if dragging?
                          (dec limit)
-                         limit)
+                         limit)]
 
-        limit          (max 1 limit)]
-
-    (mf/use-effect
-      (fn []
-        (let [node (mf/ref-val rowref)
-              mnt? (volatile! true)
-              sub  (->> (wapi/observe-resize node)
-                        (rx/observe-on :af)
-                        (rx/subs (fn [entries]
-                                   (let [row (first entries)
-                                         row-rect (.-contentRect ^js row)
-                                         row-width (.-width ^js row-rect)]
-                                     (when @mnt?
-                                       (reset! width row-width))))))]
-          (fn []
-            (vreset! mnt? false)
-            (rx/dispose! sub)))))
-
-    [:div.grid-row.no-wrap {:ref rowref}
+    [:div.grid-row.no-wrap
+     {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
      (when dragging?
        [:div.grid-item])
      (for [item (take limit files)]
@@ -326,17 +293,10 @@
          :file item
          :selected-files selected-files
          :key (:id item)
-         :navigate? false
-         :origin origin}])
-     (when (and (> limit 0)
-                (> (count files) limit))
-       [:div.grid-item.placeholder {:on-click on-load-more}
-        [:div.placeholder-icon i/arrow-down]
-        [:div.placeholder-label
-         (tr "dashboard.show-all-files")]])]))
+         :navigate? false}])]))
 
 (mf/defc line-grid
-  [{:keys [project team files on-load-more on-create-clicked origin] :as props}]
+  [{:keys [project team files limit on-create-clicked] :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
@@ -419,9 +379,8 @@
        [:& line-grid-row {:files files
                           :team-id team-id
                           :selected-files selected-files
-                          :on-load-more on-load-more
                           :dragging? @dragging?
-                          :origin origin}]
+                          :limit limit}]
 
        :else
        [:& empty-placeholder {:dragging? @dragging?

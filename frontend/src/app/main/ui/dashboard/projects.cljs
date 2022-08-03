@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard.projects
   (:require
+   [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.refs :as refs]
@@ -18,6 +19,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
+   [app.util.webapi :as wapi]
+   [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -52,6 +55,16 @@
          #(st/emit! (rt/nav :dashboard-files {:team-id (:team-id project)
                                               :project-id (:id project)})))
 
+        width            (mf/use-state nil)
+        rowref           (mf/use-ref)
+        itemsize       (if (>= @width 1030)
+                         280
+                         230)
+
+        ratio          (if (some? @width) (/ @width itemsize) 0)
+        nitems         (mth/floor ratio)
+        limit          (min 10 nitems)
+        limit          (max 1 limit)
         toggle-pin
         (mf/use-callback
          (mf/deps project)
@@ -107,54 +120,76 @@
                      (dd/fetch-recent-files (:id team))
                      (dd/clear-selected-files))))]
 
+    (mf/use-effect
+     (fn []
+       (let [node (mf/ref-val rowref)
+             mnt? (volatile! true)
+             sub  (->> (wapi/observe-resize node)
+                       (rx/observe-on :af)
+                       (rx/subs (fn [entries]
+                                  (let [row (first entries)
+                                        row-rect (.-contentRect ^js row)
+                                        row-width (.-width ^js row-rect)]
+                                    (when @mnt?
+                                      (reset! width row-width))))))]
+         (fn []
+           (vreset! mnt? false)
+           (rx/dispose! sub)))))
     [:div.dashboard-project-row {:class (when first? "first")}
-     [:div.project
-      (if (:edition? @local)
-        [:& inline-edition {:content (:name project)
-                            :on-end on-edit}]
-        [:h2 {:on-click on-nav
-              :on-context-menu on-menu-click}
-         (if (:is-default project)
-           (tr "labels.drafts")
-           (:name project))])
+     [:div.project {:ref rowref}
+      [:div.project-name-wrapper
+       (if (:edition? @local)
+         [:& inline-edition {:content (:name project)
+                             :on-end on-edit}]
+         [:h2 {:on-click on-nav
+               :on-context-menu on-menu-click}
+          (if (:is-default project)
+            (tr "labels.drafts")
+            (:name project))])
 
-      [:& project-menu {:project project
-                        :show? (:menu-open @local)
-                        :left (:x (:menu-pos @local))
-                        :top (:y (:menu-pos @local))
-                        :on-edit on-edit-open
-                        :on-menu-close on-menu-close
-                        :on-import on-import}]
+       [:& project-menu {:project project
+                         :show? (:menu-open @local)
+                         :left (:x (:menu-pos @local))
+                         :top (:y (:menu-pos @local))
+                         :on-edit on-edit-open
+                         :on-menu-close on-menu-close
+                         :on-import on-import}]
 
-      [:span.info (str file-count " files")]
-      (when (> file-count 0)
-        (let [time (-> (:modified-at project)
-                       (dt/timeago {:locale locale}))]
-          [:span.recent-files-row-title-info (str ", " time)]))
+       [:span.info (str file-count " files")]
+       (when (> file-count 0)
+         (let [time (-> (:modified-at project)
+                        (dt/timeago {:locale locale}))]
+           [:span.recent-files-row-title-info (str ", " time)]))
+       [:div.project-actions
+        (when-not (:is-default project)
+          [:span.pin-icon.tooltip.tooltip-bottom
+           {:class (when (:is-pinned project) "active")
+            :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
+           (if (:is-pinned project)
+             i/pin-fill
+             i/pin)])
 
-      (when-not (:is-default project)
-        [:span.pin-icon.tooltip.tooltip-bottom
-         {:class (when (:is-pinned project) "active")
-          :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
-         (if (:is-pinned project)
-           i/pin-fill
-           i/pin)])
+        [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
+         {:on-click create-file :alt (tr "dashboard.new-file") :data-test "project-new-file"}
+         i/close]
 
-      [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
-       {:on-click (partial create-file "dashboard:folder") :alt (tr "dashboard.new-file") :data-test "project-new-file"}
-       i/close]
-
-      [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
-       {:on-click on-menu-click :alt (tr "dashboard.options") :data-test "project-options"}
-       i/actions]]
+        [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
+         {:on-click on-menu-click :alt (tr "dashboard.options") :data-test "project-options"}
+         i/actions]]]
+      (when (and (> limit 0)
+                 (> file-count limit))
+        [:div.show-more {:on-click on-nav}
+         [:div.placeholder-label
+          (tr "dashboard.show-all-files")]
+         [:div.placeholder-icon i/arrow-down]])]
 
      [:& line-grid
       {:project project
        :team team
-       :on-load-more on-nav
        :files files
        :on-create-clicked (partial create-file "dashboard:empty-folder-placeholder")
-       :origin :project}]]))
+       :limit limit}]]))
+
 
 (def recent-files-ref
   (l/derived :dashboard-recent-files st/state))
@@ -183,7 +218,7 @@
     (when (seq projects)
       [:*
        [:& header]
-       [:section.dashboard-container
+       [:section.dashboard-container.no-bg
         (for [{:keys [id] :as project} projects]
           (let [files (when recent-map
                         (->> (vals recent-map)
