@@ -19,6 +19,8 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
+;; TODO: migrate to commands
+
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))

@@ -568,8 +568,7 @@
 
             new-name (str name " " (tr "dashboard.copy-suffix"))]
 
-        (->> (rp/mutation! :duplicate-project {:project-id id
-                                               :name new-name})
+        (->> (rp/command! :duplicate-project {:project-id id :name new-name})
              (rx/tap on-success)
              (rx/map project-duplicated)
              (rx/catch on-error))))))
@@ -589,8 +588,7 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
 
-        (->> (rp/mutation! :move-project {:project-id id
-                                          :team-id team-id})
+        (->> (rp/command! :move-project {:project-id id :team-id team-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -771,8 +769,7 @@
 
             new-name (str name " " (tr "dashboard.copy-suffix"))]
 
-        (->> (rp/mutation! :duplicate-file {:file-id id
-                                            :name new-name})
+        (->> (rp/command! :duplicate-file {:file-id id :name new-name})
              (rx/tap on-success)
              (rx/map file-created)
              (rx/catch on-error))))))
@@ -794,7 +791,7 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/mutation! :move-files {:ids ids :project-id project-id})
+        (->> (rp/command! :move-files {:ids ids :project-id project-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 
