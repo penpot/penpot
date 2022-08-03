@@ -34,7 +34,9 @@
    [mockery.core :as mk]
    [promesa.core :as p]
    [yetti.request :as yrq])
-  (:import org.postgresql.ds.PGSimpleDataSource))
+  (:import
+   java.util.UUID
+   org.postgresql.ds.PGSimpleDataSource))
 
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
@@ -128,8 +130,8 @@
 
 (defn mk-uuid
   [prefix & args]
-  (uuid/namespaced uuid/zero (apply str prefix args)))
-
+  (UUID/nameUUIDFromBytes (-> (apply str prefix args)
+                              (.getBytes "UTF-8"))))
 ;; --- FACTORIES
 
 (defn create-profile*

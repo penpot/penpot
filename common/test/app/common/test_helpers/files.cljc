@@ -19,8 +19,10 @@
 
 (def ^:private idmap (atom {}))
 
-(defn reset-idmap! []
-  (reset! idmap {}))
+(defn reset-idmap!
+  [next]
+  (reset! idmap {})
+  (next))
 
 (defn id
   [label]
@@ -68,7 +70,7 @@
       (let [page (ctpl/get-page file-data page-id)
 
             [component-shape component-shapes updated-shapes]
-            (ctn/make-component-shape (ctn/get-shape page shape-id true)
+            (ctn/make-component-shape (ctn/get-shape page shape-id)
                                       (:objects page)
                                       (:id file)
                                       true)]

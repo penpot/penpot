@@ -33,4 +33,4 @@
    {:src-dirs ["dev/java"]
     :class-dir class-dir
     :basis basis
-    :javac-opts ["-source" "11" "-target" "11"]}))
+    :javac-opts ["-source" "17" "-target" "17"]}))
