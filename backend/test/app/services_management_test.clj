@@ -620,3 +620,15 @@
       (t/is (set? result))
       (t/is (uuid? (first result)))
       (t/is (= 1 (count result))))))
+
+(t/deftest retrieve-list-of-buitin-templates
+  (let [prof (th/create-profile* 1 {:is-active true})
+        data {::th/type :retrieve-list-of-builtin-templates
+              :profile-id (:id prof)}
+        out  (th/command! data)]
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (let [result (:result out)]
+      (t/is (vector? result))
+      (t/is (= 1 (count result)))
+      (t/is (= "test" (:id (first result)))))))

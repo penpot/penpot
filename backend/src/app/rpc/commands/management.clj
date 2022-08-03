@@ -392,3 +392,12 @@
         (assoc ::binfile/ignore-index-errors? true)
         (assoc ::binfile/migrate? true)
         (binfile/import!))))
+
+
+;; --- COMMAND: Retrieve list of builtin templates
+
+(s/def ::retrieve-list-of-builtin-templates any?)
+
+(sv/defmethod ::retrieve-list-of-builtin-templates
+  [cfg _params]
+  (mapv #(select-keys % [:id :name]) (:templates cfg)))
