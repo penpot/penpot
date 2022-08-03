@@ -142,7 +142,8 @@
                            :auto-focus? true
                            :trim true
                            :valid-item-fn us/parse-email
-                           :label (tr "modals.invite-member.emails")}]
+                           :label (tr "modals.invite-member.emails")
+                           :on-submit  on-submit}]
        [:& fm/select {:name :role :options roles}]]
 
       [:div.action-buttons
