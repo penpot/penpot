@@ -1083,13 +1083,13 @@
   []
   (letfn [(sort-selected [state data]
             (let [selected (wsh/lookup-selected state)
-                  objects (wsh/lookup-page-objects state)
+                  objects  (wsh/lookup-page-objects state)
 
                   ;; Narrow the objects map so it contains only relevant data for
                   ;; selected and its parents
-                  objects (cph/selected-subtree objects selected)
-
+                  objects  (cph/selected-subtree objects selected)
                   selected (->> (ctst/sort-z-index objects selected)
+                                (reverse)
                                 (into (d/ordered-set)))]
 
               (assoc data :selected selected)))

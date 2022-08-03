@@ -59,7 +59,11 @@
 - Fix moving frame-guides outside frames [Taiga #3839](https://tree.taiga.io/project/penpot/issue/3839)
 - Fix problem with 180 degree rotations [#2082](https://github.com/penpot/penpot/issues/2082)
 - Fix font rendering on grid thumbnails [Taiga #3473](https://tree.taiga.io/project/penpot/issue/3473)
-- Fix Drag and drop font assets in groups
+- Fix Drag and drop font assets in groups [Taiga #3763](https://tree.taiga.io/project/penpot/issue/3763)
+- Fix copy and paste layers order [Taiga #1617](https://tree.taiga.io/project/penpot/issue/1617)
+- Fix unexpected removal of guides on copy&paste frames [Taiga #3887](https://tree.taiga.io/project/penpot/issue/3887) by @andrewzhurov
+- Fix props preserving on copy&paste texts [Taiga #3629](https://tree.taiga.io/project/penpot/issue/3629) by @andrewzhurov
+
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
