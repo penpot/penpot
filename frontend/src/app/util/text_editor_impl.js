@@ -378,10 +378,7 @@ export function insertText(state, text, attrs, inlineStyles) {
   );
 
   blockArray = blockArray.map((b) => {
-    if (b.getText() === "") {
-      return mergeBlockData(b, attrs)
-    }
-    return b;
+      return mergeBlockData(b, attrs);
   });
 
   const fragment = BlockMapBuilder.createFromArray(blockArray);
