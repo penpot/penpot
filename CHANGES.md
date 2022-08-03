@@ -12,6 +12,7 @@
 ### :bug: Bugs fixed
 
 - Fix unexpected removal of guides on copy&paste frames [Taiga #3887](https://tree.taiga.io/project/penpot/issue/3887) by @andrewzhurov
+- Fix props preserving on copy&paste texts [Taiga #3629](https://tree.taiga.io/project/penpot/issue/3629) by @andrewzhurov
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
