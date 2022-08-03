@@ -81,10 +81,9 @@
          [:p.info (tr "onboarding.choice.team-up.create-team-desc")]
          [:& fm/form {:form form
                       :on-submit on-submit}
-          [:div.input-wrapper
-           [:label (tr "onboarding.choice.team-up.create-team-placeholder")]
-           [:& fm/input {:type "text"
-                         :name :name}]]
+          [:& fm/input {:type "text"
+                        :name :name
+                        :label (tr "onboarding.choice.team-up.create-team-placeholder")}]
 
           [:& fm/submit-button
            {:label (tr "labels.continue")}]]
@@ -178,7 +177,7 @@
                     :on-submit on-submit}
         [:div.invite-row
          [:div.role-wrapper
-          [:span.label (tr "onboarding.choice.team-up.roles")]
+          [:span.rol (tr "onboarding.choice.team-up.roles")]
           [:& fm/select {:name :role :options roles}]]
 
          [:& fm/multi-input {:type "email"
