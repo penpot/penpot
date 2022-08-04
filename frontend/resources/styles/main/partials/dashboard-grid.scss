@@ -94,9 +94,7 @@
     }
 
     .item-info {
-      color: $color-gray-20;
-      display: flex;
-      flex-direction: column;
+      display: grid;
       padding: $size-2;
       text-align: left;
       width: 100%;
@@ -120,13 +118,18 @@
           max-width: 230px;
         }
       }
-
+      
       span.date {
-        color: $color-gray-30;
+        color: $color-gray-20;
         font-size: $fs14;
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
+        white-space: nowrap;
+        max-width: 260px;
+        @media #{$bp-max-1366} {
+          max-width: 230px;
+        }
       }
 
       .edit-wrapper {

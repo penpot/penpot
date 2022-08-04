@@ -62,7 +62,8 @@
   [{:keys [modified-at]}]
   (let [locale (mf/deref i18n/locale)
         time   (dt/timeago modified-at {:locale locale})]
-    (str (tr "ds.updated-at" time))))
+    [:span.date
+     (str (tr "ds.updated-at" time))]))
 
 (defn create-counter-element
   [_element file-count]
