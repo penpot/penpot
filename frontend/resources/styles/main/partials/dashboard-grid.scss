@@ -8,10 +8,12 @@
   font-size: $fs14;
   height: 100%;
   overflow: hidden;
+  overflow-y: auto;
 
   .grid-row {
     display: grid;
-    width: 100%;
+    width: 99%;
+    margin-left: 13px;
   }
 
   .grid-item {
@@ -92,12 +94,13 @@
     }
 
     .item-info {
-      color: $color-gray-30;
+      color: $color-gray-20;
       display: flex;
       flex-direction: column;
       padding: $size-2;
       text-align: left;
       width: 100%;
+      font-size: $fs12;
 
       h3 {
         border: 1px solid transparent;
@@ -112,6 +115,10 @@
         width: 100%;
         white-space: nowrap;
         line-height: 27px;
+        max-width: 260px;
+        @media #{$bp-max-1366} {
+          max-width: 230px;
+        }
       }
 
       span.date {
@@ -323,32 +330,34 @@
 }
 
 .grid-empty-placeholder {
-  border-radius: $br-small;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  height: 200px;
-  margin: $size-4;
-  padding: 24px;
-  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' stroke='%23E3E3E3FF' stroke-width='3' stroke-dasharray='8%2c 16' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+  border-radius: $br-huge;
+  display: grid;
+  background-color: rgba(227, 227, 227, 0.3);
+  padding: 13px;
+  margin-right: 13px;
 
   .create-new {
-    background-color: transparent;
+    background-color: white;
     border: 2px solid $color-gray-10;
-    width: 200px;
-    height: 100%;
+    height: 158px;
     cursor: pointer;
-    color: $color-gray-30;
+    color: $color-black;
     border-radius: 3px;
+    margin: 0.5rem;
     &:hover {
-      color: $color-primary-dark;
       border: 2px solid $color-primary;
     }
   }
 
   &.search {
     align-items: center;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 200px;
+    background: $color-white;
+    border: 1px dashed #e3e3e3;
+    border-radius: 0;
   }
 
   svg {

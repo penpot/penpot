@@ -31,7 +31,8 @@
        [:label {:for input-id :class-name label-class} label-text])
 
      [:input
-      {:style {:display "none"}
+      {:style {:display "none"
+               :width 0}
        :id input-id
        :multiple multi
        :accept accept

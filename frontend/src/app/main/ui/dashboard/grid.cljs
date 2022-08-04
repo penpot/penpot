@@ -209,7 +209,7 @@
                         :dashboard-local dashboard-local}])]]]))
 
 (mf/defc grid
-  [{:keys [files project on-create-clicked origin] :as props}]
+  [{:keys [files project on-create-clicked origin limit] :as props}]
   (let [dragging?  (mf/use-state false)
         project-id (:id project)
 
@@ -263,6 +263,7 @@
 
        (seq files)
        [:div.grid-row
+        {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
         (when @dragging?
           [:div.grid-item])
         (for [item files]
@@ -275,7 +276,8 @@
        :else
        [:& empty-placeholder {:default? (:is-default project)
                               :on-create-clicked on-create-clicked
-                              :project project}])]))
+                              :project project
+                              :limit limit}])]))
 
 (mf/defc line-grid-row
   [{:keys [files selected-files dragging? limit] :as props}]
@@ -385,5 +387,6 @@
        :else
        [:& empty-placeholder {:dragging? @dragging?
                               :default? (:is-default project)
-                              :on-create-clicked on-create-clicked}])]))
+                              :on-create-clicked on-create-clicked
+                              :limit limit}])]))
 

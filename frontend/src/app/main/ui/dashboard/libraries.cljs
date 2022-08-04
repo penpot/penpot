@@ -7,12 +7,15 @@
 (ns app.main.ui.dashboard.libraries
   (:require
    [app.common.data :as d]
+   [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.webapi :as wapi]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (mf/defc libraries-page
@@ -22,7 +25,18 @@
         default-project (->> projects vals (d/seek :is-default))
         files     (->> (vals files-map)
                        (sort-by :modified-at)
-                       (reverse))]
+                       (reverse))
+
+        width            (mf/use-state nil)
+        rowref           (mf/use-ref)
+        itemsize       (if (>= @width 1030)
+                         280
+                         230)
+
+        ratio          (if (some? @width) (/ @width itemsize) 0)
+        nitems         (mth/floor ratio)
+        limit          (min 10 nitems)
+        limit          (max 1 limit)]
     (mf/use-effect
      (mf/deps team)
      (fn []
@@ -35,13 +49,30 @@
     (mf/use-effect
      #(st/emit! (dd/fetch-shared-files)
                 (dd/clear-selected-files)))
+    
+    (mf/use-effect
+     (fn []
+       (let [node (mf/ref-val rowref)
+             mnt? (volatile! true)
+             sub  (->> (wapi/observe-resize node)
+                       (rx/observe-on :af)
+                       (rx/subs (fn [entries]
+                                  (let [row (first entries)
+                                        row-rect (.-contentRect ^js row)
+                                        row-width (.-width ^js row-rect)]
+                                    (when @mnt?
+                                      (reset! width row-width))))))]
+         (fn []
+           (vreset! mnt? false)
+           (rx/dispose! sub)))))
 
     [:*
      [:header.dashboard-header
       [:div.dashboard-title
        [:h1 (tr "dashboard.libraries-title")]]]
-     [:section.dashboard-container.no-bg
+     [:section.dashboard-container.no-bg {:ref rowref}
       [:& grid {:files files
                 :project default-project
-                :origin :libraries}]]]))
+                :origin :libraries
+                :limit limit}]]]))
 

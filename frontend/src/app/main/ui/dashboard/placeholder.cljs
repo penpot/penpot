@@ -11,14 +11,16 @@
    [rumext.alpha :as mf]))
 
 (mf/defc empty-placeholder
-  [{:keys [dragging? on-create-clicked project] :as props}]
+  [{:keys [dragging? on-create-clicked project limit] :as props}]
   (cond
     (true? dragging?)
     [:div.grid-row.no-wrap
+     {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
      [:div.grid-item]]
 
     :else
     [:div.grid-empty-placeholder
+     {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
      [:button.create-new {:on-click (partial on-create-clicked project "dashboard:empty-folder-placeholder")}
       (tr "dashboard.new-file")]]))
 
