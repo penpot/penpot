@@ -98,15 +98,7 @@
 
    :app.http.session/gc-task
    {:pool        (ig/ref :app.db/pool)
-    :max-age     (cf/get :http-session-idle-max-age)}
-
-   :app.http.session/updater
-   {:pool           (ig/ref :app.db/pool)
-    :metrics        (ig/ref :app.metrics/metrics)
-    :executor       (ig/ref [::worker :app.worker/executor])
-    :session        (ig/ref :app.http/session)
-    :max-batch-age  (cf/get :http-session-updater-batch-max-age)
-    :max-batch-size (cf/get :http-session-updater-batch-max-size)}
+    :max-age     (cf/get :auth-token-cookie-max-age)}
 
    :app.http.awsns/handler
    {:tokens      (ig/ref :app.tokens/tokens)
