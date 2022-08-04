@@ -1,28 +1,28 @@
 [{:id "penpot-design-system"
   :name "Penpot Design System"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-ds-penpot.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Penpot-Design-system.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Penpot-Design-system.penpot"}
  {:id "wireframing-kit"
   :name "Wireframing Kit"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-wireframes.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/wireframing-kit.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/wireframing-kit.penpot"}
  {:id "ant-design"
   :name "Ant Design UI Kit (lite)"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-ant-design.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Ant-Design-UI-Kit-Lite.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Ant-Design-UI-Kit-Lite.penpot"}
  {:id "cocomaterial"
   :name "Cocomaterial"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-cocomaterial.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Cocomaterial.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Cocomaterial.penpot"}
  {:id "circum-icons"
   :name "Circum Icons pack"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-circum.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/CircumIcons.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/CircumIcons.penpot"}
  {:id "whiteboarding-kit"
   :name "Whiteboarding Kit"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-whiteboards.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Whiteboarding-mapping-kit.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Whiteboarding-mapping-kit.penpot"}
  {:id "material-design-baseline"
   :name "Material Design (baseline)"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-material.jpg"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Material-Design-Kit.penpot"}]
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Material-Design-Kit.penpot"}]
