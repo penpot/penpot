@@ -161,13 +161,15 @@
     (cond
       (= base base-shape-id)
       (and (not top-frames?)
-           (cph/frame-shape? objects base-shape-id)
-           (cph/root-frame? objects base-shape-id))
+           (let [object (get objects base-shape-id)]
+             (or (cph/frame-shape? object)
+                 (cph/root-frame? object))))
 
       (= base over-shape-id)
       (or top-frames?
-          (not (cph/frame-shape? objects over-shape-id))
-          (not (cph/root-frame? objects over-shape-id)))
+          (let [object (get objects over-shape-id)]
+            (or (not (cph/frame-shape? object))
+                (not (cph/root-frame? object)))))
 
       :else
       (< index-a index-b))))

@@ -739,38 +739,31 @@
         (rx/of (set-modifiers [id] {:displacement displ} false true)
                (apply-modifiers))))))
 
-(defn check-frame-move?
-  [target-frame-id objects position shape]
-
-  (let [current-frame (get objects (:frame-id shape))]
-    ;; If the current frame contains the point and it's a child of the target
-    (and (gsh/has-point? current-frame position)
-         (cph/is-child? objects target-frame-id (:id current-frame)))))
-
 (defn- calculate-frame-for-move
   [ids]
   (ptk/reify ::calculate-frame-for-move
     ptk/WatchEvent
     (watch [it state _]
       (let [position @ms/mouse-position
-            page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
+            page-id  (:current-page-id state)
+            objects  (wsh/lookup-page-objects state page-id)
             frame-id (ctt/frame-id-by-position objects position)
+            lookup   (d/getf objects)
 
             moving-shapes
             (->> ids
                  (cph/clean-loops objects)
-                 (keep #(get objects %))
-                 (remove (partial check-frame-move? frame-id objects position)))
+                 (keep (d/getf objects))
+                 (remove #(= (:frame-id %) frame-id)))
 
             moving-frames
-            (->> ids
-                 (filter #(cph/frame-shape? objects %)))
+            (filter #(cph/frame-shape? (lookup %)) ids)
 
-            changes (-> (pcb/empty-changes it page-id)
-                        (pcb/with-objects objects)
-                        (pcb/update-shapes moving-frames (fn [shape] (assoc shape :hide-in-viewer true)))
-                        (pcb/change-parent frame-id moving-shapes))]
+            changes
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (pcb/update-shapes moving-frames (fn [shape] (assoc shape :hide-in-viewer true)))
+                (pcb/change-parent frame-id moving-shapes))]
 
         (when-not (empty? changes)
           (rx/of (dch/commit-changes changes)

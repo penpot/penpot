@@ -188,11 +188,12 @@
 
              grouped? (fn [id] (contains? #{:group :bool} (get-in objects [id :type])))
 
-
              selected-with-parents
              (into #{} (mapcat #(cph/get-parent-ids objects %)) selected)
 
-             root-frame-with-data? #(and (cph/root-frame? objects %) (d/not-empty? (get-in objects [% :shapes])))
+             root-frame-with-data?
+             #(as-> (get objects %) obj
+                (and (cph/root-frame? obj) (d/not-empty? (:shapes obj))))
 
              ;; Set with the elements to remove from the hover list
              remove-id?

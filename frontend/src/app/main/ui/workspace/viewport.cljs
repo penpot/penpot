@@ -145,7 +145,7 @@
         on-pointer-move   (actions/on-pointer-move viewport-ref zoom move-stream)
         on-pointer-up     (actions/on-pointer-up)
         on-move-selected  (actions/on-move-selected hover hover-ids selected space?)
-        on-menu-selected  (actions/on-menu-selected hover hover-ids selected) 
+        on-menu-selected  (actions/on-menu-selected hover hover-ids selected)
 
         on-frame-enter    (actions/on-frame-enter frame-hover)
         on-frame-leave    (actions/on-frame-leave frame-hover)
@@ -277,7 +277,7 @@
          [:& outline/shape-outlines
           {:objects base-objects
            :hover #{(->> @hover-ids
-                         (filter #(cph/frame-shape? base-objects %))
+                         (filter #(cph/frame-shape? (get base-objects %)))
                          (remove selected)
                          (first))}
            :zoom zoom}])

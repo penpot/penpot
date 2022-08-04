@@ -23,19 +23,13 @@
   (and (= type :frame) (= id uuid/zero)))
 
 (defn root-frame?
-  ([objects id]
-   (root-frame? (get objects id)))
-
-  ([{:keys [frame-id type]}]
-   (and (= type :frame)
-        (= frame-id uuid/zero))))
+  [{:keys [frame-id type]}]
+  (and (= type :frame)
+       (= frame-id uuid/zero)))
 
 (defn frame-shape?
-  ([objects id]
-   (frame-shape? (get objects id)))
-
-  ([{:keys [type]}]
-   (= type :frame)))
+  [{:keys [type]}]
+  (= type :frame))
 
 (defn group-shape?
   [{:keys [type]}]
