@@ -50,11 +50,14 @@
 - Improved share link options. Now you can allow non-team members to comment and/or inspect [Taiga #3056] (https://tree.taiga.io/project/penpot/us/3056)
 - Signin/Signup from shared link [Taiga #3472](https://tree.taiga.io/project/penpot/us/3472)
 - Support for import/export binary format [Taiga #2991](https://tree.taiga.io/project/penpot/us/2991)
-- Comments positioning [Taiga #https://2007](tree.taiga.io/project/penpot/us/2007)
+- Comments positioning [Taiga #2007](https://tree.taiga.io/project/penpot/us/2007)
+- Select all inside a group select only the objects at this group level [Taiga #2382](https://tree.taiga.io/project/penpot/issue/2382)
 
 ### :bug: Bugs fixed
 
 - Fix font rendering on grid thumbnails [Taiga #3473](https://tree.taiga.io/project/penpot/issue/3473)
+- Fix intro action in multi input [Taiga #3541](https://tree.taiga.io/project/penpot/issue/3541)
+- Fix team default image [Taiga #3919](https://tree.taiga.io/project/penpot/issue/3919)
 - Fix problem with group coordinates [#2008](https://github.com/penpot/penpot/issues/2008)
 - Fix problem with line-height and texts [Taiga #3578](https://tree.taiga.io/project/penpot/issue/3578)
 - Fix moving frame-guides outside frames [Taiga #3839](https://tree.taiga.io/project/penpot/issue/3839)
@@ -64,7 +67,7 @@
 - Fix copy and paste layers order [Taiga #1617](https://tree.taiga.io/project/penpot/issue/1617)
 - Fix unexpected removal of guides on copy&paste frames [Taiga #3887](https://tree.taiga.io/project/penpot/issue/3887) by @andrewzhurov
 - Fix props preserving on copy&paste texts [Taiga #3629](https://tree.taiga.io/project/penpot/issue/3629) by @andrewzhurov
-
+- Fix unexpected layers ungrouping on moving it [Taiga #3932](https://tree.taiga.io/project/penpot/issue/3932) by @andrewzhurov
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

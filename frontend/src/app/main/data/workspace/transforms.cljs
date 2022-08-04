@@ -737,7 +737,7 @@
             displ   (gmt/translate-matrix delta)]
 
         (rx/of (set-modifiers [id] {:displacement displ} false true)
-               (apply-modifiers))))))
+               (apply-modifiers [id]))))))
 
 (defn- calculate-frame-for-move
   [ids]

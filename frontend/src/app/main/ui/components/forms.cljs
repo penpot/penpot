@@ -243,7 +243,7 @@
   (into [] (distinct) (conj coll item)))
 
 (mf/defc multi-input
-  [{:keys [form label class name trim valid-item-fn] :as props}]
+  [{:keys [form label class name trim valid-item-fn on-submit] :as props}]
   (let [form       (or form (mf/use-ctx form-ctx))
         input-name (get props :name)
         touched?   (get-in @form [:touched input-name])
@@ -297,8 +297,11 @@
                (dom/prevent-default event)
                (dom/stop-propagation event)
                (let [val (cond-> @value trim str/trim)]
-                 (reset! value "")
-                 (swap! items conj-dedup {:text val :valid (valid-item-fn val)})))
+                 (when (and (kbd/enter? event) (str/empty? @value) (not-empty @items))
+                   (on-submit form))
+                 (when (not (str/empty? @value))
+                   (reset! value "")
+                   (swap! items conj-dedup {:text val :valid (valid-item-fn val)}))))
 
              (and (kbd/backspace? event)
                   (str/empty? @value))

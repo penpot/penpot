@@ -185,6 +185,7 @@
                              :auto-focus? true
                              :trim true
                              :valid-item-fn us/parse-email
+                             :on-submit  on-submit
                              :label (tr "modals.invite-member.emails")}]]
 
         [:div.buttons
