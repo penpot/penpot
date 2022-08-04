@@ -34,6 +34,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix intro action in multi input [Taiga #3541](https://tree.taiga.io/project/penpot/issue/3541)
+- Fix team default image [Taiga #3919](https://tree.taiga.io/project/penpot/issue/3919)
 - Fix problem with group coordinates [#2008](https://github.com/penpot/penpot/issues/2008)
 - Fix problem with line-height and texts [Taiga #3578](https://tree.taiga.io/project/penpot/issue/3578)
 - Fix moving frame-guides outside frames [Taiga #3839](https://tree.taiga.io/project/penpot/issue/3839)
