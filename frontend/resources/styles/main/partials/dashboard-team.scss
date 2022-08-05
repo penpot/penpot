@@ -289,8 +289,8 @@
           display: flex;
           justify-content: center;
           align-items: center;
-          width: 70px;
-          height: 70px;
+          width: 71px;
+          height: 71px;
           border-radius: 50%;
           color: $color-white;
           background: $color-primary-dark;
@@ -304,6 +304,10 @@
         &:hover {
           .update-overlay {
             opacity: 1;
+            width: 72px;
+            height: 72px;
+            top: 14px;
+            left: 14px;
           }
         }
       }
