@@ -129,26 +129,27 @@
           (-> (get-shape-filter-bounds shape)
               (add-padding (calculate-padding shape true))))
 
-        bounds
-        (cph/reduce-objects
-         objects
-         (fn [shape]
-           (and (d/not-empty? (:shapes shape))
-                (or (not (cph/frame-shape? shape))
-                    (:show-content shape))
+        bounds (if (cph/frame-shape? shape)
+                 [(calculate-base-bounds shape)]
+                 (cph/reduce-objects
+                  objects
+                  (fn [shape]
+                    (and (d/not-empty? (:shapes shape))
+                         (or (not (cph/frame-shape? shape))
+                             (:show-content shape))
 
-                (or (not (cph/group-shape? shape))
-                    (not (:masked-group? shape)))))
+                         (or (not (cph/group-shape? shape))
+                             (not (:masked-group? shape)))))
 
-         (:id shape)
+                  (:id shape)
 
-         (fn [result shape]
-           (conj result (get-object-bounds objects shape)))
+                  (fn [result shape]
+                    (conj result (get-object-bounds objects shape)))
 
-         [(calculate-base-bounds shape)])
+                  [(calculate-base-bounds shape)]))
 
-
-        children-bounds (or (:children-bounds shape) (gsr/join-selrects bounds))
+        children-bounds (cond->> (gsr/join-selrects bounds)
+                          (not (cph/frame-shape? shape)) (or (:children-bounds shape)))
 
         filters (shape->filters shape)
         blur-value (or (-> shape :blur :value) 0)]
