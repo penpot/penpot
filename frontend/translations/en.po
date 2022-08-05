@@ -643,6 +643,15 @@ msgstr "Your name"
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
+msgid "dashboard.libraries-and-templates"
+msgstr "Libraries & Templates"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explore more of them and know how to contribute"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "There was a problem importing the template. The template wasn't imported."
+
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"
 msgstr "Ok"

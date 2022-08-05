@@ -24,6 +24,7 @@
 (def arrow-down (icon-xref :arrow-down))
 (def arrow-end (icon-xref :arrow-end))
 (def arrow-slide (icon-xref :arrow-slide))
+(def arrow-up (icon-xref :arrow-up))
 (def artboard (icon-xref :artboard))
 (def at (icon-xref :at))
 (def auto-direction (icon-xref :auto-direction))

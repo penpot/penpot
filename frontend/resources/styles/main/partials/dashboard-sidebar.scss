@@ -6,6 +6,7 @@
 
 .dashboard-sidebar {
   background-color: $color-white;
+  z-index: 1;
 
   .sidebar-inside {
     display: flex;

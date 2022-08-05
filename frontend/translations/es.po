@@ -663,6 +663,15 @@ msgstr "Tu nombre"
 msgid "dashboard.your-penpot"
 msgstr "Tu Penpot"
 
+msgid "dashboard.libraries-and-templates"
+msgstr "Bibliotecas y plantillas"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explora más y descubre cómo contribuir"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Hubo un problema importando la plantilla. No ha podido ser importada."
+
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"
 msgstr "Ok"

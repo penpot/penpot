@@ -118,7 +118,7 @@
            (dom/prevent-default event)
            (st/emit! (with-meta (dd/create-file {:project-id (:id project)})
                        {::ev/origin origin}))))]
-    
+
     (mf/use-effect
      (fn []
        (let [node (mf/ref-val rowref)
@@ -134,7 +134,7 @@
          (fn []
            (vreset! mnt? false)
            (rx/dispose! sub)))))
-    
+
 
     (mf/use-effect
      (mf/deps project)
@@ -152,7 +152,7 @@
                  (dd/clear-selected-files))))
 
     [:*
-     [:& header {:team team :project project 
+     [:& header {:team team :project project
                  :on-create-clicked on-create-clicked}]
      [:section.dashboard-container.no-bg {:ref rowref}
       [:& grid {:project project

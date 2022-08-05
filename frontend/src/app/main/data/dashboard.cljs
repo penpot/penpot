@@ -60,6 +60,7 @@
 
 (declare fetch-projects)
 (declare fetch-team-members)
+(declare fetch-builtin-templates)
 
 (defn initialize
   [{:keys [id] :as params}]
@@ -87,7 +88,8 @@
        (ptk/watch (fetch-projects) state stream)
        (ptk/watch (fetch-team-members) state stream)
        (ptk/watch (du/fetch-teams) state stream)
-       (ptk/watch (du/fetch-users {:team-id id}) state stream)))))
+       (ptk/watch (du/fetch-users {:team-id id}) state stream)
+       (ptk/watch (fetch-builtin-templates) state stream)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching (context aware: current team)
@@ -292,6 +294,24 @@
        (let [team-id (or team-id (:current-team-id state))]
          (->> (rp/query :team-recent-files {:team-id team-id})
               (rx/map recent-files-fetched)))))))
+
+
+;; --- EVENT: fetch-team-invitations
+
+(defn builtin-templates-fetched
+  [libraries]
+  (ptk/reify ::libraries-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :builtin-templates libraries))))
+
+(defn fetch-builtin-templates
+  []
+  (ptk/reify ::fetch-builtin-templates
+    ptk/WatchEvent
+    (watch [_ _ _]
+        (->> (rp/command :retrieve-list-of-builtin-templates)
+             (rx/map builtin-templates-fetched)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Selection
@@ -792,6 +812,27 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
         (->> (rp/command! :move-files {:ids ids :project-id project-id})
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+
+;; --- EVENT: clone-template
+(defn clone-template
+  [{:keys [template-id project-id] :as params}]
+  (us/assert ::us/uuid project-id)
+  (ptk/reify ::clone-template
+    IDeref
+    (-deref [_]
+      {:template-id template-id
+       :project-id project-id})
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+
+        (->> (rp/command! :clone-template {:project-id project-id :template-id template-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 

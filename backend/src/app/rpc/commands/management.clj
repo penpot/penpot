@@ -400,4 +400,4 @@
 
 (sv/defmethod ::retrieve-list-of-builtin-templates
   [cfg _params]
-  (mapv #(select-keys % [:id :name]) (:templates cfg)))
+  (mapv #(select-keys % [:id :name :thumbnail-uri]) (:templates cfg)))
