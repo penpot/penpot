@@ -262,11 +262,11 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
-        (->> (rx/zip (rp/query :file-raw {:id file-id})
-                     (rp/query :team-users {:file-id file-id})
-                     (rp/query :project {:id project-id})
-                     (rp/query :file-libraries {:file-id file-id})
-                     (rp/query :file-comments-users {:file-id file-id :share-id share-id}))
+        (->> (rx/zip (rp/query! :file-raw {:id file-id})
+                     (rp/query! :team-users {:file-id file-id})
+                     (rp/query! :project {:id project-id})
+                     (rp/query! :file-libraries {:file-id file-id})
+                     (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
              (rx/take 1)
              (rx/map (fn [[file-raw users project libraries file-comments-users]]
                        {:file-raw file-raw
