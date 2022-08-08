@@ -545,16 +545,13 @@
   (us/assert! ::read-import-options options)
 
   (letfn [(lookup-index [id]
-            (if ignore-index-errors?
-              (or (get @*index* id) id)
-              (let [val (get @*index* id)]
-                (l/trace :fn "lookup-index" :id id :val val ::l/async false)
-                (when-not val
-                  (ex/raise :type :validation
-                            :code :incomplete-index
-                            :hint "looks like index has missing data"))
-                val)))
-
+            (let [val (get @*index* id)]
+              (l/trace :fn "lookup-index" :id id :val val ::l/async false)
+              (when (and (not ignore-index-errors?) (not val))
+                (ex/raise :type :validation
+                          :code :incomplete-index
+                          :hint "looks like index has missing data"))
+              (or val id)))
           (update-index [index coll]
             (loop [items (seq coll)
                    index index]
@@ -707,7 +704,6 @@
             (let [storage (media/configure-assets-storage storage)
                   ids     (read-obj! input)]
 
-              ;; Step 1: process all storage objects
               (doseq [expected-storage-id ids]
                 (let [id    (read-uuid! input)
                       mdata (read-obj! input)]
@@ -729,18 +725,28 @@
                                             (assoc ::sto/touched-at (dt/now)))
                         sobject         @(sto/put-object! storage params)]
                     (l/trace :hint "persisted storage object" :id id :new-id (:id sobject) ::l/async false)
-                    (vswap! *index* assoc id (:id sobject)))))
+                    (vswap! *index* assoc id (:id sobject)))))))
 
-              ;; Step 2: insert all file-media-object rows with correct
-              ;; storage-id reference.
-              (doseq [item @*media*]
-                (l/trace :hint "inserting file media objects" :id (:id item) ::l/async false)
-                (db/insert! *conn* :file-media-object
-                            (-> item
-                                (update :file-id lookup-index)
-                                (d/update-when :media-id lookup-index)
-                                (d/update-when :thumbnail-id lookup-index))
-                            {:on-conflict-do-nothing overwrite?}))))]
+          (persist-file-media-objects! []
+            (l/debug :hint "processing file media objects" :section :v1/sobjects ::l/async false)
+
+            ;; Step 2: insert all file-media-object rows with correct
+            ;; storage-id reference.
+            (doseq [item @*media*]
+              (l/trace :hint "inserting file media object"
+                       :id (:id item)
+                       :file-id (:file-id item)
+                       ::l/async false)
+
+              (let [file-id (lookup-index (:file-id item))]
+                (if (= file-id (:file-id item))
+                  (l/warn :hint "ignoring file media object" :file-id (:file-id item) ::l/async false)
+                  (db/insert! *conn* :file-media-object
+                              (-> item
+                                  (assoc :file-id file-id)
+                                  (d/update-when :media-id lookup-index)
+                                  (d/update-when :thumbnail-id lookup-index))
+                              {:on-conflict-do-nothing overwrite?})))))]
 
     (with-open [input (bs/zstd-input-stream input)]
       (with-open [input (bs/data-input-stream input)]
@@ -756,9 +762,11 @@
 
               (doseq [section sections]
                 (case section
-                  :v1/rels (read-rels-section! input)
-                  :v1/files (read-files-section! input files)
-                  :v1/sobjects (read-sobjects-section! input))))))))))
+                  :v1/rels     (read-rels-section! input)
+                  :v1/files    (read-files-section! input files)
+                  :v1/sobjects (do
+                                 (read-sobjects-section! input)
+                                 (persist-file-media-objects!)))))))))))
 
 (defn export!
   [cfg]
