@@ -6,7 +6,6 @@
 
 (ns app.rpc.queries.comments
   (:require
-   [app.common.spec :as us]
    [app.db :as db]
    [app.rpc.commands.comments :as cmd.comments]
    [app.rpc.doc :as-alias doc]
@@ -51,7 +50,7 @@
 (sv/defmethod ::comment-thread
   {::doc/added "1.0"
    ::doc/deprecated "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (cmd.comments/get-comment-thread conn params)))
