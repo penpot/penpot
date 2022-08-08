@@ -301,11 +301,17 @@
   "SELECT * FROM file_media_object WHERE id = ANY(?)")
 
 (defn- retrieve-file-media
-  [pool {:keys [data] :as file}]
+  [pool {:keys [data id] :as file}]
   (with-open [^AutoCloseable conn (db/open pool)]
     (let [ids (app.tasks.file-gc/collect-used-media data)
           ids (db/create-array conn "uuid" ids)]
-      (db/exec! conn [sql:file-media-objects ids]))))
+
+      ;; We assoc the file-id again to the file-media-object row
+      ;; because there are cases that used objects refer to other
+      ;; files and we need to ensure in the exportation process that
+      ;; all ids matches
+      (->> (db/exec! conn [sql:file-media-objects ids])
+           (mapv #(assoc % :file-id id))))))
 
 (def ^:private storage-object-id-xf
   (comp
