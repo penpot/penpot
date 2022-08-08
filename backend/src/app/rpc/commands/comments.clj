@@ -130,9 +130,16 @@
       (-> (db/exec-one! conn [sql profile-id file-id id])
           (decode-row)))))
 
-;; --- COMMAND: Comments
+(defn get-comment-thread
+  [conn {:keys [profile-id file-id id share-id] :as params}]
+  (let [sql (str "with threads as (" sql:comment-threads ")"
+                 "select * from threads where id = ?")]
+    (-> (db/exec-one! conn [sql profile-id file-id id])
+        (decode-row))))
 
-(declare retrieve-comments)
+;; --- COMMAND: Retrieve Comments
+
+(declare get-comments)
 
 (s/def ::file-id ::us/uuid)
 (s/def ::share-id (s/nilable ::us/uuid))
@@ -145,22 +152,24 @@
   [{:keys [pool] :as cfg} {:keys [profile-id thread-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (let [thread (db/get-by-id conn :comment-thread thread-id)]
-      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
-      (retrieve-comments conn thread-id))))
+      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id))
+    (get-comments conn thread-id)))
 
 (def sql:comments
   "select c.* from comment as c
     where c.thread_id = ?
     order by c.created_at asc")
 
-(defn retrieve-comments
+(defn get-comments
   [conn thread-id]
-  (->> (db/exec! conn [sql:comments thread-id])
+  (->> (db/query conn :comment
+                 {:thread-id thread-id}
+                 {:order-by [[:created-at :asc]]})
        (into [] (map decode-row))))
 
 ;; --- COMMAND: Get file comments users
 
-(declare retrieve-file-comments-users)
+(declare get-file-comments-users)
 
 (s/def ::file-id ::us/uuid)
 (s/def ::share-id (s/nilable ::us/uuid))
@@ -177,7 +186,7 @@
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id]}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
-    (retrieve-file-comments-users conn file-id profile-id)))
+    (get-file-comments-users conn file-id profile-id)))
 
 ;; All the profiles that had comment the file, plus the current
 ;; profile.
@@ -197,6 +206,6 @@
     FROM profile AS p
    WHERE p.id IN (SELECT id FROM available_profiles) OR p.id=?")
 
-(defn retrieve-file-comments-users
+(defn get-file-comments-users
   [conn file-id profile-id]
   (db/exec! conn [sql:file-comment-users file-id profile-id]))
