@@ -21,7 +21,6 @@
    [app.util.object :as obj]
    [cuerdas.core :as str]
    [goog.events :as events]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 ;; --- Components
@@ -178,7 +177,7 @@
   (let [recent-colors (mf/deref refs/workspace-recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)
         shared-libs   (mf/deref refs/workspace-libraries)
-        selected      (h/use-persistent-state ::selected :recent)
+        selected      (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
 
         colors        (mf/use-state [])
         on-select     (mf/use-fn #(reset! selected %))]

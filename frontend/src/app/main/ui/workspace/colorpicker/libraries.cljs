@@ -19,7 +19,7 @@
 
 (mf/defc libraries
   [{:keys [on-select-color on-add-library-color disable-gradient disable-opacity]}]
-  (let [selected         (h/use-persistent-state ::selected :recent)
+  (let [selected         (h/use-shared-state dc/colorpicker-selected-broadcast-key :recent)
         current-colors   (mf/use-state [])
 
         shared-libs      (mf/deref refs/workspace-libraries)

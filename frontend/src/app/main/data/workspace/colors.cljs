@@ -9,6 +9,7 @@
    [app.common.colors :as colors]
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
+   [app.main.broadcast :as mbc]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.layout :as layout]
@@ -19,30 +20,18 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(defn change-palette-selected
-  "Change the library used by the general palette tool"
-  [selected]
-  (ptk/reify ::change-palette-selected
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-global :selected-palette] selected))
-
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [wglobal (:workspace-global state)]
-        (layout/persist-layout-state! wglobal)))))
+;; A set of keys that are used for shared state identifiers
+(def ^:const colorpicker-selected-broadcast-key ::colorpicker-selected)
+(def ^:const colorpalette-selected-broadcast-key ::colorpalette-selected)
 
 (defn show-palette
   "Show the palette tool and change the library it uses"
   [selected]
   (ptk/reify ::show-palette
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-global :selected-palette] selected))
-
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (layout/toggle-layout-flag :colorpalette :force? true)))
+      (rx/of (layout/toggle-layout-flag :colorpalette :force? true)
+             (mbc/event colorpalette-selected-broadcast-key selected)))
 
     ptk/EffectEvent
     (effect [_ state _]

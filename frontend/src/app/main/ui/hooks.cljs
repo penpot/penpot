@@ -7,9 +7,10 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [app.common.uuid :as uuid]
    [app.common.data.macros :as dm]
    [app.common.pages :as cp]
+   [app.common.uuid :as uuid]
+   [app.main.broadcast :as mbc]
    [app.main.data.shortcuts :as dsc]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -289,9 +290,26 @@
       (update-fn value))
     state))
 
-(defn use-persistent-state
+(defn use-shared-state
+  "A specialized hook that adds persistence and inter-context reactivity
+  to the default mf/use-state hook.
+
+  The state is automatically persisted under the provided key on
+  localStorage. And it will keep watching events with type equals to
+  `key` for new values."
   [key default]
-  (let [state (mf/use-state (get @storage key default))]
+  (let [id     (use-id)
+        state  (mf/use-state (get @storage key default))
+        stream (mf/with-memo []
+                 (->> mbc/stream
+                      (rx/filter #(= (:type %) key))
+                      (rx/filter #(not= (:id %) id))
+                      (rx/map deref)))]
+
     (mf/with-effect [@state key]
+      (mbc/emit! id key @state)
       (swap! storage assoc key @state))
+
+    (use-stream stream (partial reset! state))
+
     state))
