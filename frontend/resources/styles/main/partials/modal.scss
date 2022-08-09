@@ -1149,6 +1149,18 @@
   top: -18px;
   width: 60px;
 
+  &.left {
+    left: -50px;
+    top: 100px;
+    color: $color-primary;
+  }
+
+  &.right {
+    left: 731px;
+    top: 100px;
+    color: $color-primary;
+  }
+
   &.square {
     top: -18px;
     left: 631px;
@@ -1196,11 +1208,6 @@
     width: 26px;
     left: -15px;
     top: -15px;
-  }
-
-  &.right {
-    left: 590px;
-    top: 0;
   }
 }
 
@@ -1498,15 +1505,9 @@
   }
 
   .modal-container {
-    background-image: url("../images/deco-left.png"), url("../images/deco-right.png");
-    background-repeat: no-repeat;
-    background-position: 10% 50px, 90% 50px;
-    background-size: 65px;
     display: flex;
     flex-direction: row;
-    height: 100vh;
     justify-content: center;
-    width: 100vw;
 
     .af-form {
       --primary-color: #00c38b;
@@ -1529,10 +1530,6 @@
       --message-fail-background-color: rgba(238.51780000000002, 205.7178, 204.11780000000002, 1);
       --message-success-background-color: rgba(171, 232, 197, 1);
     }
-  }
-
-  .modal-overlay {
-    background-color: rgba(0, 0, 0, 0.9);
   }
 }
 

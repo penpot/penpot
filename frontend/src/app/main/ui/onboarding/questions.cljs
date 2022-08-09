@@ -23,8 +23,7 @@
                             (.setHiddenField ^js form "email" email))))))
 
           (on-submit-success [_event]
-            (st/emit! (du/mark-questions-as-answered)))
-          ]
+            (st/emit! (du/mark-questions-as-answered)))]
 
     (let [script (dom/create-element "script")
           head   (unchecked-get js/document "head")
@@ -43,6 +42,8 @@
     (mf/use-effect (partial load-arengu-sdk container (:email profile) form-id))
     [:div.modal-wrapper.questions-form
      [:div.modal-overlay
-      [:div.modal-container {:ref container}]]]))
+      [:div.modal-container.onboarding.onboarding-v2 {:ref container}
+       [:img.deco.left {:src "images/deco-left.png" :border 0}]
+       [:img.deco.right {:src "images/deco-right.png" :border 0}]]]]))
 
 
