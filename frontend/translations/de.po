@@ -1637,10 +1637,6 @@ msgstr "Einladung senden"
 msgid "modals.invite-member.emails"
 msgstr "E-Mails, durch Komma getrennt"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "Einladen, dem Team beizutreten"
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""

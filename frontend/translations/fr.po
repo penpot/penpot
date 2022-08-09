@@ -1666,10 +1666,6 @@ msgstr "Envoyer l'invitation"
 msgid "modals.invite-member.emails"
 msgstr "Adresse e-mail, séparées par des virgules"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "Inviter à rejoindre l’équipe"
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""

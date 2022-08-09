@@ -1612,10 +1612,6 @@ msgstr "שליחת הזמנה"
 msgid "modals.invite-member.emails"
 msgstr "כתובות דוא״ל, מופרדות בפסיקים"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "הזמנה להצטרף לצוות"
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
 msgstr "כיוון שאין עוד חברים בצוות הזה מלבדך, הצוות יימחק על כל המיזמים והקבצים שלו."

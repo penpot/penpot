@@ -1230,10 +1230,6 @@ msgstr "Elimină un membru al echipei"
 msgid "modals.invite-member-confirm.accept"
 msgstr "Trimite invitație"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "Invită o persoană în echipă"
-
 msgid "modals.leave-and-reassign.forbiden"
 msgstr ""
 "Nu puteţi părăsi echipa dacă nu există un alt membru care să devină "

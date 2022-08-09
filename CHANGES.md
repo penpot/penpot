@@ -5,6 +5,12 @@
 ### :boom: Breaking changes & Deprecations
 ### :sparkles: New features
 
+- Add team hero in projects dashboard [Taiga #3863](https://tree.taiga.io/project/penpot/us/3863)
+- Add zoom style to shared link [Taiga #3874](https://tree.taiga.io/project/penpot/us/3874)
+- Add dashboard creation button as placeholder [Taiga #3861](https://tree.taiga.io/project/penpot/us/3861)
+- Improve invitation flow on onboarding [Taiga #3241](https://tree.taiga.io/project/penpot/us/3241)
+- Add new text to initial modals [Taiga #3458](https://tree.taiga.io/project/penpot/us/3458)
+- Add new questions to onboarding [Taiga #3462](https://tree.taiga.io/project/penpot/us/3462)
 - Add cosmetic changes in viewer mode [Taiga #3688](https://tree.taiga.io/project/penpot/us/3688)
 - Outline highlights on layer hovering [Taiga #2645](https://tree.taiga.io/project/penpot/us/2645) by @andrewzhurov
 - Add zoom to shape on double click up on its icon [Taiga #3929](https://tree.taiga.io/project/penpot/us/3929) by @andrewzhurov

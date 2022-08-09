@@ -192,7 +192,7 @@
      (case section
        :dashboard-projects
        [:*
-        [:& projects-section {:team team :projects projects}]
+        [:& projects-section {:team team :projects projects :profile profile}]
         [:& templates-section {:profile profile
                                :project project
                                :default-project-id default-project-id

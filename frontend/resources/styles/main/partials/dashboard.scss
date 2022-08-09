@@ -4,6 +4,63 @@
 //
 // Copyright (c) UXBOX Labs SL
 
+.team-hero {
+  display: flex;
+  position: relative;
+  border: 2px solid $color-gray-10;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 0 1rem 0 21px;
+  height: 154px;
+
+  .text {
+    flex-grow: 1;
+    padding-left: 20px;
+    .title {
+      font-size: $fs24;
+      font-weight: bold;
+      color: $color-black;
+    }
+    .info {
+      span {
+        color: $color-gray-30;
+        display: block;
+      }
+      padding-top: 10px;
+    }
+  }
+  .close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    svg {
+      transform: rotate(45deg);
+      width: 16px;
+      height: 16px;
+    }
+  }
+  .invite {
+    background-color: $color-primary;
+    color: $color-black;
+    width: 180px;
+    height: 40px;
+    border: none;
+    align-self: flex-end;
+    cursor: pointer;
+  }
+  img {
+    width: 274px;
+    margin-bottom: -41px;
+    @media (max-width: 1200px) {
+      display: none;
+      width: 0;
+    }
+  }
+}
+
 .dashboard-container {
   background-color: $color-dashboard;
   flex: 1 0 0;

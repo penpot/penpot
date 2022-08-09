@@ -1,11 +1,16 @@
 .dashboard-invite-modal {
-  top: 65px;
+  top: 72px;
   right: 13px;
-  padding: 14px;
+  padding: 32px;
   box-shadow: 0px 4px 8px rgba($color-black, 0.25);
   border-radius: 8px;
-  width: 500px;
+  width: 400px;
   position: fixed;
+  z-index: 16;
+  &.hero {
+    top: 218px;
+    right: 35px;
+  }
 
   form {
     width: 100%;
@@ -13,13 +18,18 @@
 
   .form-row {
     display: flex;
-    flex-direction: row;
-    margin: 15px 0px;
+    justify-content: space-between;
+    margin: 4px 0px;
+    .label {
+      margin-bottom: 0;
+      display: flex;
+      align-items: center;
+    }
   }
 
   .custom-input {
-    width: 314px;
-    margin-right: 10px;
+    width: 100%;
+    height: 115px;
   }
 
   .custom-select {
@@ -33,7 +43,7 @@
 
   .action-buttons {
     display: flex;
-    justify-content: center;
+    margin-top: 16px;
     input[type="submit"] {
       margin-bottom: 0px;
     }
@@ -41,6 +51,8 @@
 
   .title {
     color: $color-black;
+    font-weight: bold;
+    margin-bottom: 16px;
   }
 
   .hint {
