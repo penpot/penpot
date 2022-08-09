@@ -410,3 +410,7 @@
 
 (defn workspace-text-modifier-by-id [id]
   (l/derived #(get % id) workspace-text-modifier =))
+
+(def colorpicker
+  (l/derived :colorpicker st/state))
+

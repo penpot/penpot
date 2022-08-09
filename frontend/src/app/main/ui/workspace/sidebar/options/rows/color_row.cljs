@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages :as cp]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
@@ -22,34 +23,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.alpha :as mf]))
 
-(defn color-picker-callback
-  [color disable-gradient disable-opacity handle-change-color handle-open handle-close]
-  (fn [event]
-    (let [color
-          (cond
-            (uc/multiple? color)
-            {:color cp/default-color
-             :opacity 1}
-
-            (= :multiple (:opacity color))
-            (assoc color :opacity 1)
-
-            :else
-            color)
-
-          x (.-clientX event)
-          y (.-clientY event)
-          props {:x x
-                 :y y
-                 :disable-gradient disable-gradient
-                 :disable-opacity disable-opacity
-                 :on-change handle-change-color
-                 :on-close handle-close
-                 :data color}]
-      (handle-open color)
-      (modal/show! :colorpicker props))))
-
-(defn opacity->string [opacity]
+(defn opacity->string
+  [opacity]
   (if (= opacity :multiple)
     ""
     (str (-> opacity
@@ -57,7 +32,8 @@
              (* 100)
              (fmt/format-number)))))
 
-(defn remove-multiple [v]
+(defn remove-multiple
+  [v]
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
@@ -68,64 +44,88 @@
         file-colors     (mf/deref refs/workspace-file-colors)
         shared-libs     (mf/deref refs/workspace-libraries)
         hover-detach    (mf/use-state false)
+        on-change       (h/use-ref-callback on-change)
+        src-colors      (if (= (:file-id color) current-file-id)
+                          file-colors
+                          (dm/get-in shared-libs [(:file-id color) :data :colors]))
 
-        on-change-var (h/use-update-var {:fn on-change})
+        color-name       (dm/get-in src-colors [(:id color) :name])
 
-        src-colors (if (= (:file-id color) current-file-id)
-                     file-colors
-                     (get-in shared-libs [(:file-id color) :data :colors]))
+        parse-color
+        (mf/use-fn
+         (fn [color]
+           (update color :color #(or % (:value color)))))
 
-        color-name (get-in src-colors [(:id color) :name])
+        detach-value
+        (mf/use-fn
+         (mf/deps on-detach color)
+         (fn []
+           (when on-detach
+             (on-detach color))))
 
-        parse-color (fn [color]
-                      (-> color
-                          (update :color #(or % (:value color)))))
+        handle-select
+        (mf/use-fn
+         (mf/deps select-only color)
+         (fn []
+           (select-only color)))
 
-        detach-value (fn []
-                       (when on-detach (on-detach color)))
+        handle-value-change
+        (mf/use-fn
+         (mf/deps color on-change)
+         (fn [new-value]
+           (on-change (-> color
+                          (assoc :color new-value)
+                          (dissoc :gradient)))))
 
-        change-value (fn [new-value]
-                       (when (:fn @on-change-var) ((:fn @on-change-var) (-> color
-                                                          (assoc :color new-value)
-                                                          (dissoc :gradient)))))
+        handle-opacity-change
+        (mf/use-fn
+         (mf/deps color on-change)
+         (fn [value]
+           (on-change (assoc color
+                             :opacity (/ value 100)
+                             :id nil
+                             :file-id nil))))
 
-        change-opacity (fn [new-opacity]
-                         (when (:fn @on-change-var) ((:fn @on-change-var) (assoc color
-                                                           :opacity new-opacity
-                                                           :id nil
-                                                           :file-id nil))))
+        handle-click-color
+        (mf/use-fn
+         (mf/deps disable-gradient disable-opacity on-change on-close on-open)
+         (fn [color event]
+           (let [color (cond
+                         (uc/multiple? color)
+                         {:color cp/default-color
+                          :opacity 1}
 
-        handle-pick-color (fn [color]
-                            (when (:fn @on-change-var) ((:fn @on-change-var) (merge uc/empty-color color))))
+                         (= :multiple (:opacity color))
+                         (assoc color :opacity 1)
 
-        handle-select (fn []
-                        (select-only color))
+                         :else
+                         color)
 
-        handle-open (fn [color]
-                      (when on-open (on-open (merge uc/empty-color color))))
+                 {:keys [x y]} (dom/get-client-position event)
 
-        handle-close (fn [value opacity id file-id]
-                       (when on-close (on-close value opacity id file-id)))
+                 props {:x x
+                        :y y
+                        :disable-gradient disable-gradient
+                        :disable-opacity disable-opacity
+                        :on-change #(on-change (merge uc/empty-color %))
+                        :on-close (fn [value opacity id file-id]
+                                    (when on-close
+                                      (on-close value opacity id file-id)))
+                        :data color}]
 
-        handle-value-change (fn [new-value]
-                              (-> new-value
-                                  change-value))
+             (when on-open
+               (on-open (merge uc/empty-color color)))
 
-        handle-opacity-change (fn [value]
-                                (change-opacity (/ value 100)))
+             (modal/show! :colorpicker props))))
 
-        handle-click-color (color-picker-callback color
-                                                  disable-gradient
-                                                  disable-opacity
-                                                  handle-pick-color
-                                                  handle-open
-                                                  handle-close)
 
         prev-color (h/use-previous color)
 
         on-drop
-        (fn [_ data]
-          (on-reorder (:index data)))
+        (mf/use-fn
+         (mf/deps on-reorder)
+         (fn [_ data]
+           (on-reorder (:index data))))
 
         [dprops dref] (if (some? on-reorder)
                         (h/use-sortable
@@ -138,11 +138,9 @@
                                 :name (str "Color row" index)})
                         [nil nil])]
 
-    (mf/use-effect
-     (mf/deps color prev-color)
-     (fn []
-       (when (not= prev-color color)
-         (modal/update-props! :colorpicker {:data (parse-color color)}))))
+    (mf/with-effect [color prev-color]
+      (when (not= prev-color color)
+        (modal/update-props! :colorpicker {:data (parse-color color)})))
 
     [:div.row-flex.color-data {:title title
                                :class (dom/classnames
@@ -182,7 +180,7 @@
         (when select-only
           [:div.element-set-actions-button {:on-click handle-select}
            i/pointer-inner])]
-  
+
 
        ;; Rendering a plain color/opacity
        :else

@@ -123,7 +123,7 @@
 
 (defn get-current-target
   "Extract the current target from event instance (different from target
-   when event triggered in a child of the subscribing element)."
+  when event triggered in a child of the subscribing element)."
   [^js event]
   (when (some? event)
     (.-currentTarget event)))

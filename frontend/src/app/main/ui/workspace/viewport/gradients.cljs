@@ -19,7 +19,6 @@
    [app.util.dom :as dom]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (def gradient-line-stroke-width 2)
@@ -31,12 +30,6 @@
 (def gradient-width-handler-color "var(--color-white)")
 (def gradient-square-stroke-color "var(--color-white)")
 (def gradient-square-stroke-color-selected "var(--color-select)")
-
-(def editing-spot-ref
-  (l/derived (l/in [:workspace-global :editing-stop]) st/state))
-
-(def current-gradient-ref
-  (l/derived (l/in [:workspace-global :current-gradient]) st/state =))
 
 (mf/defc shadow [{:keys [id x y width height offset]}]
   [:filter {:id id
@@ -130,27 +123,32 @@
   (let [moving-point (mf/use-var nil)
         angle (+ 90 (gpt/angle from-p to-p))
 
-        on-click (fn [position event]
-                   (dom/stop-propagation event)
-                   (dom/prevent-default event)
-                   (when (#{:from-p :to-p} position)
-                     (st/emit! (dc/select-gradient-stop (case position
-                                                          :from-p 0
-                                                          :to-p 1)))))
+        on-click
+        (fn [position event]
+          (dom/stop-propagation event)
+          (dom/prevent-default event)
+          (when (#{:from-p :to-p} position)
+            (st/emit! (dc/select-colorpicker-gradient-stop
+                       (case position
+                         :from-p 0
+                         :to-p 1)))))
 
-        on-mouse-down (fn [position event]
-                        (dom/stop-propagation event)
-                        (dom/prevent-default event)
-                        (reset! moving-point position)
-                        (when (#{:from-p :to-p} position)
-                          (st/emit! (dc/select-gradient-stop (case position
-                                                               :from-p 0
-                                                               :to-p 1)))))
+        on-mouse-down
+        (fn [position event]
+          (dom/stop-propagation event)
+          (dom/prevent-default event)
+          (reset! moving-point position)
+          (when (#{:from-p :to-p} position)
+            (st/emit! (dc/select-colorpicker-gradient-stop
+                       (case position
+                         :from-p 0
+                         :to-p 1)))))
 
-        on-mouse-up (fn [_position event]
-                      (dom/stop-propagation event)
-                      (dom/prevent-default event)
-                      (reset! moving-point nil))]
+        on-mouse-up
+        (fn [_position event]
+          (dom/stop-propagation event)
+          (dom/prevent-default event)
+          (reset! moving-point nil))]
 
     (mf/use-effect
      (mf/deps @moving-point from-p to-p width-p)
@@ -230,37 +228,24 @@
        :on-mouse-down (partial on-mouse-down :to-p)
        :on-mouse-up (partial on-mouse-up :to-p)}]]))
 
-
-(mf/defc gradient-handlers
-  {::mf/wrap [mf/memo]}
-  [{:keys [id zoom]}]
-  (let [current-change (mf/use-state {})
-        shape-ref (mf/use-memo (mf/deps id) #(refs/object-by-id id))
-        shape (mf/deref shape-ref)
-
-        gradient (mf/deref current-gradient-ref)
-        gradient (merge gradient @current-change)
-
-        editing-spot (mf/deref editing-spot-ref)
-
-        transform (gsh/transform-matrix shape)
+(mf/defc gradient-handlers*
+  [{:keys [zoom stops gradient editing-stop shape]}]
+  (let [transform         (gsh/transform-matrix shape)
         transform-inverse (gsh/inverse-transform-matrix shape)
 
         {:keys [x y width height] :as sr} (:selrect shape)
 
         [{start-color :color start-opacity :opacity}
-         {end-color :color end-opacity :opacity}] (:stops gradient)
+         {end-color :color end-opacity :opacity}] stops
 
         from-p (-> (gpt/point (+ x (* width (:start-x gradient)))
                               (+ y (* height (:start-y gradient))))
-
                    (gpt/transform transform))
-
         to-p   (-> (gpt/point (+ x (* width (:end-x gradient)))
                               (+ y (* height (:end-y gradient))))
                    (gpt/transform transform))
 
-        gradient-vec (gpt/to-vec from-p to-p)
+        gradient-vec    (gpt/to-vec from-p to-p)
         gradient-length (gpt/length gradient-vec)
 
         width-v (-> gradient-vec
@@ -271,13 +256,12 @@
         width-p (gpt/add from-p width-v)
 
         change!
-        (mf/use-callback
+        (mf/use-fn
          (fn [changes]
-           (swap! current-change merge changes)
-           (st/emit! (dc/update-gradient changes))))
+           (st/emit! (dc/update-colorpicker-gradient changes))))
 
         on-change-start
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps transform-inverse width height)
          (fn [point]
            (let [point (gpt/transform point transform-inverse)
@@ -286,7 +270,7 @@
              (change! {:start-x start-x :start-y start-y}))))
 
         on-change-finish
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps transform-inverse width height)
          (fn [point]
            (let [point (gpt/transform point transform-inverse)
@@ -295,7 +279,7 @@
              (change! {:end-x end-x :end-y end-y}))))
 
         on-change-width
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps gradient-length width height)
          (fn [point]
            (let [scale-factor-y (/ gradient-length (/ height 2))
@@ -304,17 +288,35 @@
              (when (and norm-dist (d/num? norm-dist))
                (change! {:width norm-dist})))))]
 
-    (when (and gradient
+    [:& gradient-handler-transformed
+     {:editing editing-stop
+      :from-p from-p
+      :to-p to-p
+      :width-p (when (= :radial (:type gradient)) width-p)
+      :from-color {:value start-color :opacity start-opacity}
+      :to-color {:value end-color :opacity end-opacity}
+      :zoom zoom
+      :on-change-start on-change-start
+      :on-change-finish on-change-finish
+      :on-change-width on-change-width}]))
+
+(mf/defc gradient-handlers
+  {::mf/wrap [mf/memo]}
+  [{:keys [id zoom]}]
+  (let [shape-ref    (mf/use-memo (mf/deps id) #(refs/object-by-id id))
+        shape        (mf/deref shape-ref)
+
+        state        (mf/deref refs/colorpicker)
+        gradient     (:gradient state)
+        stops        (:stops state)
+        editing-stop (:editing-stop state)]
+
+    (when (and (some? gradient)
                (= id (:shape-id gradient))
                (not= (:type shape) :text))
-      [:& gradient-handler-transformed
-       {:editing editing-spot
-        :from-p from-p
-        :to-p to-p
-        :width-p (when (= :radial (:type gradient)) width-p)
-        :from-color {:value start-color :opacity start-opacity}
-        :to-color {:value end-color :opacity end-opacity}
-        :zoom zoom
-        :on-change-start on-change-start
-        :on-change-finish on-change-finish
-        :on-change-width on-change-width}])))
+      [:& gradient-handlers*
+       {:zoom zoom
+        :gradient gradient
+        :stops stops
+        :editing-stop editing-stop
+        :shape shape}])))

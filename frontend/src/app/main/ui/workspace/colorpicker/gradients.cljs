@@ -6,32 +6,31 @@
 
 (ns app.main.ui.workspace.colorpicker.gradients
   (:require
+   [app.common.data.macros :as dm]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
-(defn gradient->string [stops]
-  (let [format-stop
-        (fn [[offset {:keys [r g b alpha]}]]
-          (str/fmt "rgba(%s, %s, %s, %s) %s"
-                   r g b alpha (str (* offset 100) "%")))
+(defn- format-rgba
+  [{:keys [r g b alpha offset]}]
+  (str/ffmt "rgba(%1, %2, %3, %4) %5%%" r g b alpha (* offset 100)))
 
-        gradient-css (str/join "," (map format-stop stops))]
-    (str/fmt "linear-gradient(90deg, %s)" gradient-css)))
+(defn- gradient->string [stops]
+  (let [gradient-css (str/join ", " (map format-rgba stops))]
+    (str/ffmt "linear-gradient(90deg, %1)" gradient-css)))
 
-(mf/defc gradients [{:keys [type stops editing-stop on-select-stop]}]
-  (when (#{:linear-gradient :radial-gradient} type)
-    [:div.gradient-stops
-     [:div.gradient-background-wrapper
-      [:div.gradient-background {:style {:background (gradient->string stops)}}]]
+(mf/defc gradients
+  [{:keys [stops editing-stop on-select-stop]}]
+  [:div.gradient-stops
+   [:div.gradient-background-wrapper
+    [:div.gradient-background {:style {:background (gradient->string stops)}}]]
 
-     [:div.gradient-stop-wrapper
-      (for [[offset value] stops]
-        [:div.gradient-stop
-         {:class (when (= editing-stop offset) "active")
-          :on-click (partial on-select-stop offset)
-          :style {:left (str (* offset 100) "%")}}
+   [:div.gradient-stop-wrapper
+    (for [{:keys [offset hex r g b alpha] :as value} stops]
+      [:div.gradient-stop
+       {:class (when (= editing-stop offset) "active")
+        :on-click (partial on-select-stop offset)
+        :style {:left (dm/str (* offset 100) "%")}
+        :key (dm/str offset)}
 
-         (let [{:keys [hex r g b alpha]} value]
-           [:*
-            [:div.gradient-stop-color {:style {:background-color hex}}]
-            [:div.gradient-stop-alpha {:style {:background-color (str/format "rgba(%s, %s, %s, %s)" r g b alpha)}}]])])]]))
+       [:div.gradient-stop-color {:style {:background-color hex}}]
+       [:div.gradient-stop-alpha {:style {:background-color (str/ffmt "rgba(%1, %2, %3, %4)" r g b alpha)}}]])]])
