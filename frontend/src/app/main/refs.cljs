@@ -209,7 +209,7 @@
 
 (def workspace-recent-fonts
   (l/derived (fn [data]
-               (get data :workspace-data []))
+               (get data :recent-fonts []))
              workspace-data))
 
 (def workspace-file-typography
