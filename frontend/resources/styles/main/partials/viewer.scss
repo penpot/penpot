@@ -4,6 +4,26 @@
   grid-template-rows: 232px auto;
   grid-template-columns: 1fr;
 }
+.fullscreen.viewer-layout {
+  .viewer-section {
+    & .viewer-go-prev,
+    & .viewer-go-next {
+      .arrow {
+        display: none;
+      }
+    }
+  }
+}
+.fullscreen.viewer-layout.force-visible {
+  .viewer-section {
+    & .viewer-go-prev,
+    & .viewer-go-next {
+      .arrow {
+        display: flex;
+      }
+    }
+  }
+}
 
 .viewer-section {
   height: calc(100vh - 48px);
@@ -29,7 +49,7 @@
     width: 53px;
     z-index: 2;
     .arrow {
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 12px;
@@ -48,10 +68,6 @@
         background: $color-primary;
         fill: $color-black;
       }
-    }
-
-    &:hover .arrow {
-      display: flex;
     }
   }
 
