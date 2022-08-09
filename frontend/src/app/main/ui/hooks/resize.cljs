@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
+   [app.common.spec :as us]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
@@ -73,43 +74,38 @@
 
 (defn use-resize-observer
   [callback]
-  (assert (some? callback))
+  (us/assert! (some? callback) "the `callback` is mandatory")
 
   (let [prev-val-ref (mf/use-ref nil)
-        current-observer-ref (mf/use-ref nil)
-
-        callback-ref (hooks/use-update-var {:callback callback})
+        observer-ref (mf/use-ref nil)
+        callback     (hooks/use-ref-callback callback)
 
         ;; We use the ref as a callback when the dom node is ready (or change)
-        node-ref
-        (mf/use-callback
-         (fn [^js node]
-           (when (some? node)
-             (let [^js current-observer (mf/ref-val current-observer-ref)
-                   ^js prev-val         (mf/ref-val prev-val-ref)]
+        node-ref     (mf/use-fn
+                      (fn [^js node]
+                        (when (some? node)
+                          (let [^js observer (mf/ref-val observer-ref)
+                                ^js prev-val (mf/ref-val prev-val-ref)]
 
-               (when (and (not= prev-val node) (some? current-observer))
-                 (log/debug :action "disconnect" :js/prev-val prev-val :js/node node)
-                 (.disconnect current-observer)
-                 (mf/set-ref-val! current-observer-ref nil))
+                            (when (and (not= prev-val node) (some? observer))
+                              (log/debug :action "disconnect" :js/prev-val prev-val :js/node node)
+                              (.disconnect observer)
+                              (mf/set-ref-val! observer-ref nil))
 
-               (when (and (not= prev-val node) (some? node))
-                 (let [^js observer
-                       (js/ResizeObserver.
-                        #(let [callback (get @callback-ref :callback)]
-                           (callback last-resize-type (dom/get-client-size node))))]
-                   (mf/set-ref-val! current-observer-ref observer)
-                   (log/debug :action "observe"  :js/node node :js/observer observer)
-                   (.observe observer node))))
+                            (when (and (not= prev-val node) (some? node))
+                              (let [^js observer (js/ResizeObserver.
+                                                  #(callback last-resize-type (dom/get-client-size node)))]
+                                (mf/set-ref-val! observer-ref observer)
+                                (log/debug :action "observe"  :js/node node :js/observer observer)
+                                (.observe observer node))))
 
-             (mf/set-ref-val! prev-val-ref node))))]
+                          (mf/set-ref-val! prev-val-ref node))))]
 
-    (mf/use-effect
-     (fn []
-       ;; On dismount we need to disconnect the current observer
-       (fn []
-         (let [current-observer (mf/ref-val current-observer-ref)]
-           (when (some? current-observer)
-             (log/debug :action "disconnect")
-             (.disconnect current-observer))))))
+    (mf/with-effect []
+      ;; On dismount we need to disconnect the current observer
+      (fn []
+        (when-let [observer (mf/ref-val observer-ref)]
+          (log/debug :action "disconnect")
+          (.disconnect ^js observer))))
+
     node-ref))
