@@ -42,6 +42,8 @@
 (declare fetch-comment-threads)
 (declare fetch-bundle)
 (declare bundle-fetched)
+(declare zoom-to-fill)
+(declare zoom-to-fit)
 
 (s/def ::file-id ::us/uuid)
 (s/def ::index ::us/integer)
@@ -145,8 +147,13 @@
         (let [route   (:route state)
               qparams (:query-params route)
               index   (:index qparams)]
-          (when (nil? index)
-            (rx/of (go-to-frame-auto))))))))
+          (rx/merge
+           (rx/of (case (:zoom qparams)
+                    "fit" zoom-to-fit
+                    "fill" zoom-to-fill
+                    nil))
+           (when (nil? index)
+             (rx/of (go-to-frame-auto)))))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id share-id] :as params}]
@@ -196,32 +203,39 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [increase #(min (* % 1.3) 200)]
-        (update-in state [:viewer-local :zoom] (fnil increase 1))))))
+        (-> state
+            (update-in  [:viewer-local :zoom] (fnil increase 1))
+            (d/dissoc-in  [:viewer-local :zoom-type]))))))
 
 (def decrease-zoom
   (ptk/reify ::decrease-zoom
     ptk/UpdateEvent
     (update [_ state]
       (let [decrease #(max (/ % 1.3) 0.01)]
-        (update-in state [:viewer-local :zoom] (fnil decrease 1))))))
+        (-> state
+            (update-in [:viewer-local :zoom] (fnil decrease 1))
+            (d/dissoc-in  [:viewer-local :zoom-type]))))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:viewer-local :zoom] 1))))
+      (-> state
+          (assoc-in  [:viewer-local :zoom] 1)
+          (d/dissoc-in  [:viewer-local :zoom-type])))))
 
 (def zoom-to-fit
   (ptk/reify ::zoom-to-fit
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (get-in state [:route :query-params :page-id])
-            frame-idx (get-in state [:route :query-params :index])
-            srect   (get (nth (get-in state [:viewer :pages page-id :frames]) frame-idx) :selrect)
-            original-size (get-in state [:viewer-local :viewport-size])
-            wdiff (/ (:width original-size) (:width srect))
-            hdiff (/ (:height original-size) (:height srect))
-            minzoom (min wdiff hdiff)]
+      (let [srect     (as-> (get-in state [:route :query-params :page-id]) %
+                        (get-in state [:viewer :pages % :frames])
+                        (nth % (get-in state [:route :query-params :index]))
+                        (get % :selrect))
+            orig-size (get-in state [:viewer-local :viewport-size])
+            wdiff     (/ (:width orig-size) (:width srect))
+            hdiff     (/ (:height orig-size) (:height srect))
+            minzoom   (min wdiff hdiff)]
         (-> state
             (assoc-in  [:viewer-local :zoom] minzoom)
             (assoc-in  [:viewer-local :zoom-type] :fit))))))
@@ -230,13 +244,14 @@
   (ptk/reify ::zoom-to-fill
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (get-in state [:route :query-params :page-id])
-            frame-idx (get-in state [:route :query-params :index])
-            srect   (get (nth (get-in state [:viewer :pages page-id :frames]) frame-idx) :selrect)
-            original-size (get-in state [:viewer-local :viewport-size])
-            wdiff (/ (:width original-size) (:width srect))
-            hdiff (/ (:height original-size) (:height srect))
-            maxzoom (max wdiff hdiff)]
+      (let [srect     (as-> (get-in state [:route :query-params :page-id]) %
+                            (get-in state [:viewer :pages % :frames])
+                            (nth % (get-in state [:route :query-params :index]))
+                            (get % :selrect))
+            orig-size (get-in state [:viewer-local :viewport-size])
+            wdiff     (/ (:width orig-size) (:width srect))
+            hdiff     (/ (:height orig-size) (:height srect))
+            maxzoom   (max wdiff hdiff)]
         (-> state
             (assoc-in  [:viewer-local :zoom] maxzoom)
             (assoc-in  [:viewer-local :zoom-type] :fill))))))
