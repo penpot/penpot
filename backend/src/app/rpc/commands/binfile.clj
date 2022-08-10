@@ -42,29 +42,13 @@
 (set! *warn-on-reflection* true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; VARS & DEFAULTS
+;; DEFAULTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Threshold in MiB when we pass from using
 ;; in-memory byte-array's to use temporal files.
 (def temp-file-threshold
   (* 1024 1024 2))
-
-;; Represents the current processing file-id on
-;; export process.
-(def ^:dynamic *file-id*)
-
-;; Stores all media file object references of
-;; processed files on import process.
-(def ^:dynamic *media*)
-
-;; Stores the objects index on reamping subprocess
-;; part of the import process.
-(def ^:dynamic *index*)
-
-;; Has the current connection used on the import
-;; process.
-(def ^:dynamic *conn*)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; LOW LEVEL STREAM IO API
@@ -211,33 +195,33 @@
     (read-obj! input)))
 
 (defn write-header!
-  [^DataOutputStream output & {:keys [version metadata]}]
+  [^OutputStream output version]
   (l/trace :fn "write-header!"
            :version version
-           :metadata metadata
            :position @*position*
            ::l/async false)
-
-  (doto output
-    (write-byte! (get-mark :header))
-    (write-long! penpot-magic-number)
-    (write-long! version)
-    (write-obj! metadata)))
+  (let [vers   (-> version name (subs 1) parse-long)
+        output (bs/data-output-stream output)]
+    (doto output
+      (write-byte! (get-mark :header))
+      (write-long! penpot-magic-number)
+      (write-long! vers))))
 
 (defn read-header!
-  [^DataInputStream input]
+  [^InputStream input]
   (l/trace :fn "read-header!" :position @*position* ::l/async false)
-  (let [mark  (read-byte! input)
+  (let [input (bs/data-input-stream input)
+        mark  (read-byte! input)
         mnum  (read-long! input)
         vers  (read-long! input)]
 
     (when (or (not= mark (get-mark :header))
               (not= mnum penpot-magic-number))
       (ex/raise :type :validation
-                :code :invalid-penpot-file))
+                :code :invalid-penpot-file
+                :hint "invalid penpot file"))
 
-    (-> (read-obj! input)
-        (assoc ::version vers))))
+    (keyword (str "v" vers))))
 
 (defn copy-stream!
   [^OutputStream output ^InputStream input ^long size]
@@ -349,7 +333,83 @@
   (with-open [^AutoCloseable conn (db/open pool)]
     (db/exec! conn [sql:file-library-rels (db/create-array conn "uuid" ids)])))
 
+
+(defn- create-or-update-file
+  [conn params]
+  (let [sql (str "INSERT INTO file (id, project_id, name, revn, is_shared, data, created_at, modified_at) "
+                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
+                 "ON CONFLICT (id) DO UPDATE SET data=?")]
+    (db/exec-one! conn [sql
+                        (:id params)
+                        (:project-id params)
+                        (:name params)
+                        (:revn params)
+                        (:is-shared params)
+                        (:data params)
+                        (:created-at params)
+                        (:modified-at params)
+                        (:data params)])))
+
+;; --- GENERAL PURPOSE DYNAMIC VARS
+
+(def ^:dynamic *state*)
+(def ^:dynamic *options*)
+
 ;; --- EXPORT WRITTER
+
+(defn- embed-file-assets
+  [data conn file-id]
+  (letfn [(walk-map-form [form state]
+            (cond
+              (uuid? (:fill-color-ref-file form))
+              (do
+                (vswap! state conj [(:fill-color-ref-file form) :colors (:fill-color-ref-id form)])
+                (assoc form :fill-color-ref-file file-id))
+
+              (uuid? (:stroke-color-ref-file form))
+              (do
+                (vswap! state conj [(:stroke-color-ref-file form) :colors (:stroke-color-ref-id form)])
+                (assoc form :stroke-color-ref-file file-id))
+
+              (uuid? (:typography-ref-file form))
+              (do
+                (vswap! state conj [(:typography-ref-file form) :typographies (:typography-ref-id form)])
+                (assoc form :typography-ref-file file-id))
+
+              (uuid? (:component-file form))
+              (do
+                (vswap! state conj [(:component-file form) :components (:component-id form)])
+                (assoc form :component-file file-id))
+
+              :else
+              form))
+
+          (process-group-of-assets [data [lib-id items]]
+            ;; NOTE: there are a posibility that shape refers to a not
+            ;; existing file because the file was removed. In this
+            ;; case we just ignore the asset.
+            (if-let [lib (retrieve-file conn lib-id)]
+              (reduce (partial process-asset lib) data items)
+              data))
+
+          (process-asset [lib data [bucket asset-id]]
+            (let [asset (get-in lib [:data bucket asset-id])
+                  ;; Add a special case for colors that need to have
+                  ;; correctly set the :file-id prop (pending of the
+                  ;; refactor that will remove it).
+                  asset (cond-> asset
+                          (= bucket :colors) (assoc :file-id file-id))]
+              (update data bucket assoc asset-id asset)))]
+
+    (let [assets (volatile! [])]
+      (walk/postwalk #(cond-> % (map? %) (walk-map-form assets)) data)
+      (->> (deref assets)
+           (filter #(as-> (first %) $ (and (uuid? $) (not= $ file-id))))
+           (d/group-by first rest)
+           (reduce (partial process-group-of-assets) data)))))
+
+(defmulti write-export ::version)
+(defmulti write-section ::section)
 
 (s/def ::output bs/output-stream?)
 (s/def ::file-ids (s/every ::us/uuid :kind vector? :min-count 1))
@@ -370,147 +430,104 @@
   dependencies).
 
   `::embed-assets?`: instead of including the libraryes, embedd in the
-  same file library all assets used from external libraries.
-  "
-
-  [{:keys [pool storage ::output ::file-ids ::include-libraries? ::embed-assets?] :as options}]
-
+  same file library all assets used from external libraries."
+  [{:keys [::include-libraries? ::embed-assets?] :as options}]
   (us/assert! ::write-export-options options)
-
   (us/verify!
    :expr (not (and include-libraries? embed-assets?))
    :hint "the `include-libraries?` and `embed-assets?` are mutally excluding options")
+  (write-export options))
 
-  (letfn [(write-header [output files]
-            (let [sections [:v1/files :v1/rels :v1/sobjects]
-                  mdata    {:penpot-version (:full cf/version)
-                            :sections sections
-                            :files files}]
-              (write-header! output :version 1 :metadata mdata)))
+(defmethod write-export :default
+  [{:keys [::output] :as options}]
+  (write-header! output :v1)
+  (with-open [output (bs/zstd-output-stream output :level 12)]
+    (with-open [output (bs/data-output-stream output)]
+      (binding [*state* (volatile! {})]
+        (run! (fn [section]
+                (l/debug :hint "write section" :section section ::l/async false)
+                (write-label! output section)
+                (let [options (-> options
+                                  (assoc ::output output)
+                                  (assoc ::section section))]
+                  (binding [*options* options]
+                    (write-section options))))
 
-          (write-files [output files sids]
-            (l/debug :hint "write section" :section :v1/files :total (count files) ::l/async false)
-            (write-label! output :v1/files)
-            (doseq [file-id files]
-              (let [file  (cond-> (retrieve-file pool file-id)
-                            embed-assets? (update :data embed-file-assets file-id))
-                    media (retrieve-file-media pool file)]
+              [:v1/metadata :v1/files :v1/rels :v1/sobjects])))))
 
-                ;; Collect all storage ids for later write them all under
-                ;; specific storage objects section.
-                (vswap! sids into (sequence storage-object-id-xf media))
+(defmethod write-section :v1/metadata
+  [{:keys [pool ::output ::file-ids ::include-libraries?]}]
+  (let [libs  (when include-libraries?
+                (retrieve-libraries pool file-ids))
+        files (into file-ids libs)]
+    (write-obj! output {:version cf/version :files files})
+    (vswap! *state* assoc :files files)))
 
-                (l/trace :hint "write penpot file"
-                         :id file-id
-                         :media (count media)
-                         ::l/async false)
+(defmethod write-section :v1/files
+  [{:keys [pool ::output ::embed-assets?]}]
 
-                (doto output
-                  (write-obj! file)
-                  (write-obj! media)))))
+  ;; Initialize SIDS with empty vector
+  (vswap! *state* assoc :sids [])
 
-          (write-rels [output files]
-            (let [rels (when include-libraries? (retrieve-library-relations pool files))]
-              (l/debug :hint "write section" :section :v1/rels :total (count rels) ::l/async false)
-              (doto output
-                (write-label! :v1/rels)
-                (write-obj! rels))))
+  (doseq [file-id (-> *state* deref :files)]
+    (let [file  (cond-> (retrieve-file pool file-id)
+                  embed-assets?
+                  (update :data embed-file-assets pool file-id))
 
-          (write-sobjects [output sids]
-            (l/debug :hint "write section"
-                     :section :v1/sobjects
-                     :items (count sids)
-                     ::l/async false)
+          media (retrieve-file-media pool file)]
 
-            ;; Write all collected storage objects
-            (doto output
-              (write-label! :v1/sobjects)
-              (write-obj! sids))
+      (l/debug :hint "write penpot file"
+               :id file-id
+               :media (count media)
+               ::l/async false)
 
-            (let [storage (media/configure-assets-storage storage)]
-              (doseq [id sids]
-                (let [{:keys [size] :as obj} @(sto/get-object storage id)]
-                  (l/trace :hint "write sobject" :id id ::l/async false)
+      (doto output
+        (write-obj! file)
+        (write-obj! media))
 
-                  (doto output
-                    (write-uuid! id)
-                    (write-obj! (meta obj)))
+      (vswap! *state* update :sids into storage-object-id-xf media))))
 
-                  (with-open [^InputStream stream @(sto/get-object-data storage obj)]
-                    (let [written (write-stream! output stream size)]
-                      (when (not= written size)
-                        (ex/raise :type :validation
-                                  :code :mismatch-readed-size
-                                  :hint (str/ffmt "found unexpected object size; size=% written=%" size written)))))))))
+(defmethod write-section :v1/rels
+  [{:keys [pool  ::output ::include-libraries?]}]
+  (let [rels  (when include-libraries?
+                (retrieve-library-relations pool (-> *state* deref :files)))]
+    (l/debug :hint "found rels" :total (count rels) ::l/async false)
+    (write-obj! output rels)))
 
-          (embed-file-assets [data file-id]
-            (binding [*file-id* file-id]
-              (let [assets (volatile! [])]
-                (walk/postwalk #(cond-> % (map? %) (walk-map-form assets)) data)
-                (->> (deref assets)
-                     (filter #(as-> (first %) $ (and (uuid? $) (not= $ file-id))))
-                     (d/group-by first rest)
-                     (reduce process-group-of-assets data)))))
+(defmethod write-section :v1/sobjects
+  [{:keys [storage ::output]}]
+  (let [sids    (-> *state* deref :sids)
+        storage (media/configure-assets-storage storage)]
+    (l/debug :hint "found sobjects"
+             :items (count sids)
+             ::l/async false)
 
-          (walk-map-form [form state]
-            (cond
-              (uuid? (:fill-color-ref-file form))
-              (do
-                (vswap! state conj [(:fill-color-ref-file form) :colors (:fill-color-ref-id form)])
-                (assoc form :fill-color-ref-file *file-id*))
+    ;; Write all collected storage objects
+    (write-obj! output sids)
 
-              (uuid? (:stroke-color-ref-file form))
-              (do
-                (vswap! state conj [(:stroke-color-ref-file form) :colors (:stroke-color-ref-id form)])
-                (assoc form :stroke-color-ref-file *file-id*))
+    (doseq [id sids]
+      (let [{:keys [size] :as obj} @(sto/get-object storage id)]
+        (l/debug :hint "write sobject" :id id ::l/async false)
+        (doto output
+          (write-uuid! id)
+          (write-obj! (meta obj)))
 
-              (uuid? (:typography-ref-file form))
-              (do
-                (vswap! state conj [(:typography-ref-file form) :typographies (:typography-ref-id form)])
-                (assoc form :typography-ref-file *file-id*))
+        (with-open [^InputStream stream @(sto/get-object-data storage obj)]
+          (let [written (write-stream! output stream size)]
+            (when (not= written size)
+              (ex/raise :type :validation
+                        :code :mismatch-readed-size
+                        :hint (str/ffmt "found unexpected object size; size=% written=%" size written)))))))))
 
-              (uuid? (:component-file form))
-              (do
-                (vswap! state conj [(:component-file form) :components (:component-id form)])
-                (assoc form :component-file *file-id*))
+;; --- EXPORT READER
 
-              :else
-              form))
+(declare lookup-index)
+(declare update-index)
+(declare relink-media)
+(declare relink-shapes)
 
-          (process-group-of-assets [data [lib-id items]]
-            ;; NOTE: there are a posibility that shape refers to a not
-            ;; existing file because the file was removed. In this
-            ;; case we just ignore the asset.
-            (if-let [lib (retrieve-file pool lib-id)]
-              (reduce #(process-asset %1 lib %2) data items)
-              data))
-
-          (process-asset [data lib [bucket asset-id]]
-            (let [asset (get-in lib [:data bucket asset-id])
-                  ;; Add a special case for colors that need to have
-                  ;; correctly set the :file-id prop (pending of the
-                  ;; refactor that will remove it).
-                  asset (cond-> asset
-                          (= bucket :colors) (assoc :file-id *file-id*))]
-              (update data bucket assoc asset-id asset)))]
-
-    (with-open [output (bs/zstd-output-stream output :level 12)]
-      (with-open [output (bs/data-output-stream output)]
-        (let [libs  (when include-libraries? (retrieve-libraries pool file-ids))
-              files (into file-ids libs)
-              sids  (volatile! #{})]
-
-          ;; Write header with metadata
-          (l/debug :hint "exportation summary"
-                   :files (count files)
-                   :embed-assets? embed-assets?
-                   :include-libs? include-libraries?
-                   ::l/async false)
-
-          (write-header output files)
-          (write-files output files sids)
-          (write-rels output files)
-          (write-sobjects output (vec @sids)))))))
+(defmulti read-import ::version)
+(defmulti read-section ::section)
 
 (s/def ::project-id ::us/uuid)
 (s/def ::input bs/input-stream?)
@@ -538,31 +555,178 @@
   happen with broken files; defaults to: `false`.
   "
 
-  [{:keys [pool storage ::project-id ::timestamp ::input ::overwrite? ::migrate? ::ignore-index-errors?]
-    :or {overwrite? false migrate? false timestamp (dt/now)}
-    :as options}]
-
+  [{:keys [::input ::timestamp] :or {timestamp (dt/now)} :as options}]
   (us/verify! ::read-import-options options)
+  (let [version (read-header! input)]
+    (read-import (assoc options ::version version ::timestamp timestamp))))
 
-  (letfn [(lookup-index [id]
-            (let [val (get @*index* id)]
-              (l/trace :fn "lookup-index" :id id :val val ::l/async false)
-              (when (and (not ignore-index-errors?) (not val))
-                (ex/raise :type :validation
-                          :code :incomplete-index
-                          :hint "looks like index has missing data"))
-              (or val id)))
-          (update-index [index coll]
-            (loop [items (seq coll)
-                   index index]
-              (if-let [id (first items)]
-                (let [new-id (if overwrite? id (uuid/next))]
-                  (l/trace :fn "update-index" :id id :new-id new-id ::l/async false)
-                  (recur (rest items)
-                         (assoc index id new-id)))
-                index)))
+(defmethod read-import :v1
+  [{:keys [pool ::input] :as options}]
+  (with-open [input (bs/zstd-input-stream input)]
+    (with-open [input (bs/data-input-stream input)]
+      (db/with-atomic [conn pool]
+        (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED;"])
+        (binding [*state* (volatile! {:media [] :index {}})]
+          (run! (fn [section]
+                  (l/debug :hint "reading section" :section section ::l/async false)
+                  (assert-read-label! input section)
+                  (let [options (-> options
+                                    (assoc ::section section)
+                                    (assoc ::input input)
+                                    (assoc :conn conn))]
+                    (binding [*options* options]
+                      (read-section options))))
+                [:v1/metadata :v1/files :v1/rels :v1/sobjects])
 
-          (process-map-form [form]
+          ;; Knowing that the ids of the created files are in
+          ;; index, just lookup them and return it as a set
+          (let [files (-> *state* deref :files)]
+            (into #{} (keep #(get-in @*state* [:index %])) files)))))))
+
+(defmethod read-section :v1/metadata
+  [{:keys [::input]}]
+  (let [{:keys [version files]} (read-obj! input)]
+    (l/debug :hint "metadata readed" :version (:full version) :files files ::l/async false)
+    (vswap! *state* update :index update-index files)
+    (vswap! *state* assoc :version version :files files)))
+
+(defmethod read-section :v1/files
+  [{:keys [conn ::input ::migrate? ::project-id ::timestamp ::overwrite?]}]
+  (doseq [expected-file-id (-> *state* deref :files)]
+    (let [file    (read-obj! input)
+          media'  (read-obj! input)
+          file-id (:id file)]
+
+      (when (not= file-id expected-file-id)
+        (ex/raise :type :validation
+                  :code :inconsistent-penpot-file
+                  :hint "the penpot file seems corrupt, found unexpected uuid (file-id)"))
+
+      ;; Update index using with media
+      (l/debug :hint "update index with media" ::l/async false)
+      (vswap! *state* update :index update-index (map :id media'))
+
+      ;; Store file media for later insertion
+      (l/debug :hint "update media references" ::l/async false)
+      (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
+
+      (l/debug :hint "procesing file" :file-id file-id ::l/async false)
+
+      (let [file-id' (lookup-index file-id)
+            data     (-> (:data file)
+                         (assoc :id file-id')
+                         (cond-> migrate? (pmg/migrate-data))
+                         (update :pages-index relink-shapes)
+                         (update :components relink-shapes)
+                         (update :media relink-media))
+
+            params  {:id file-id'
+                     :project-id project-id
+                     :name (str "Imported: " (:name file))
+                     :revn (:revn file)
+                     :is-shared (:is-shared file)
+                     :data (blob/encode data)
+                     :created-at timestamp
+                     :modified-at timestamp}]
+
+        (l/debug :hint "create file" :id file-id' ::l/async false)
+
+        (if overwrite?
+          (create-or-update-file conn params)
+          (db/insert! conn :file params))
+
+        (when overwrite?
+          (db/delete! conn :file-thumbnail {:file-id file-id'}))))))
+
+(defmethod read-section :v1/rels
+  [{:keys [conn ::input ::timestamp]}]
+  (let [rels (read-obj! input)]
+    ;; Insert all file relations
+    (doseq [rel rels]
+      (let [rel (-> rel
+                    (assoc :synced-at timestamp)
+                    (update :file-id lookup-index)
+                    (update :library-file-id lookup-index))]
+        (l/debug :hint "create file library link"
+                 :file-id (:file-id rel)
+                 :lib-id (:library-file-id rel)
+                 ::l/async false)
+        (db/insert! conn :file-library-rel rel)))))
+
+(defmethod read-section :v1/sobjects
+  [{:keys [storage conn ::input ::overwrite?]}]
+  (let [storage (media/configure-assets-storage storage)
+        ids     (read-obj! input)]
+
+    (doseq [expected-storage-id ids]
+      (let [id    (read-uuid! input)
+            mdata (read-obj! input)]
+
+        (when (not= id expected-storage-id)
+          (ex/raise :type :validation
+                    :code :inconsistent-penpot-file
+                    :hint "the penpot file seems corrupt, found unexpected uuid (storage-object-id)"))
+
+        (l/debug :hint "readed storage object" :id id ::l/async false)
+
+        (let [[size resource] (read-stream! input)
+              hash            (sto/calculate-hash resource)
+              content         (-> (sto/content resource size)
+                                  (sto/wrap-with-hash hash))
+              params          (-> mdata
+                                  (assoc ::sto/deduplicate? true)
+                                  (assoc ::sto/content content)
+                                  (assoc ::sto/touched-at (dt/now))
+                                  (assoc :bucket "file-media-object"))
+
+              sobject         @(sto/put-object! storage params)]
+
+          (l/debug :hint "persisted storage object" :id id :new-id (:id sobject) ::l/async false)
+          (vswap! *state* update :index assoc id (:id sobject)))))
+
+    (doseq [item (:media @*state*)]
+      (l/debug :hint "inserting file media object"
+               :id (:id item)
+               :file-id (:file-id item)
+               ::l/async false)
+
+      (let [file-id (lookup-index (:file-id item))]
+        (if (= file-id (:file-id item))
+          (l/warn :hint "ignoring file media object" :file-id (:file-id item) ::l/async false)
+          (db/insert! conn :file-media-object
+                      (-> item
+                          (assoc :file-id file-id)
+                          (d/update-when :media-id lookup-index)
+                          (d/update-when :thumbnail-id lookup-index))
+                      {:on-conflict-do-nothing overwrite?}))))))
+
+(defn- lookup-index
+  [id]
+  (let [val (get-in @*state* [:index id])]
+    (l/trace :fn "lookup-index" :id id :val val ::l/async false)
+    (when (and (not (::ignore-index-errors? *options*)) (not val))
+      (ex/raise :type :validation
+                :code :incomplete-index
+                :hint "looks like index has missing data"))
+    (or val id)))
+
+(defn- update-index
+  [index coll]
+  (loop [items (seq coll)
+         index index]
+    (if-let [id (first items)]
+      (let [new-id (if (::overwrite? *options*) id (uuid/next))]
+        (l/trace :fn "update-index" :id id :new-id new-id ::l/async false)
+        (recur (rest items)
+               (assoc index id new-id)))
+      index)))
+
+(defn- relink-shapes
+  "A function responsible to analyze all file data and
+  replace the old :component-file reference with the new
+  ones, using the provided file-index."
+  [data]
+  (letfn [(process-map-form [form]
             (cond-> form
               ;; Relink Image Shapes
               (and (map? (:metadata form))
@@ -584,193 +748,35 @@
               ;; This covers the shadows and grids (they have directly
               ;; the :file-id prop)
               (uuid? (:file-id form))
-              (update :file-id lookup-index)))
+              (update :file-id lookup-index)))]
 
-          ;; a function responsible to analyze all file data and
-          ;; replace the old :component-file reference with the new
-          ;; ones, using the provided file-index
-          (relink-shapes [data]
-            (walk/postwalk (fn [form]
-                             (if (map? form)
-                               (try
-                                 (process-map-form form)
-                                 (catch Throwable cause
-                                   (l/trace :hint "failed form" :form (pr-str form) ::l/async false)
-                                   (throw cause)))
-                               form))
-                           data))
+    (walk/postwalk (fn [form]
+                     (if (map? form)
+                       (try
+                         (process-map-form form)
+                         (catch Throwable cause
+                           (l/warn :hint "failed form" :form (pr-str form) ::l/async false)
+                           (throw cause)))
+                       form))
+                   data)))
 
-          ;; A function responsible of process the :media attr of file
-          ;; data and remap the old ids with the new ones.
-          (relink-media [media]
-            (reduce-kv (fn [res k v]
-                         (let [id (lookup-index k)]
-                           (if (uuid? id)
-                             (-> res
-                                 (assoc id (assoc v :id id))
-                                 (dissoc k))
-                             res)))
-                       media
-                       media))
+(defn- relink-media
+  "A function responsible of process the :media attr of file data and
+  remap the old ids with the new ones."
+  [media]
+  (reduce-kv (fn [res k v]
+               (let [id (lookup-index k)]
+                 (if (uuid? id)
+                   (-> res
+                       (assoc id (assoc v :id id))
+                       (dissoc k))
+                   res)))
+             media
+             media))
 
-          (create-or-update-file [params]
-            (let [sql (str "INSERT INTO file (id, project_id, name, revn, is_shared, data, created_at, modified_at) "
-                           "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
-                           "ON CONFLICT (id) DO UPDATE SET data=?")]
-              (db/exec-one! *conn* [sql
-                                    (:id params)
-                                    (:project-id params)
-                                    (:name params)
-                                    (:revn params)
-                                    (:is-shared params)
-                                    (:data params)
-                                    (:created-at params)
-                                    (:modified-at params)
-                                    (:data params)])))
-
-          (read-files-section! [input expected-files]
-            (l/debug :hint "reading section" :section :v1/files ::l/async false)
-            (assert-read-label! input :v1/files)
-
-            ;; Process/Read all file
-            (doseq [expected-file-id expected-files]
-              (let [file    (read-obj! input)
-                    media'  (read-obj! input)
-                    file-id (:id file)]
-
-                (when (not= file-id expected-file-id)
-                  (ex/raise :type :validation
-                            :code :inconsistent-penpot-file
-                            :hint "the penpot file seems corrupt, found unexpected uuid (file-id)"))
-
-
-                ;; Update index using with media
-                (l/trace :hint "update index with media" ::l/async false)
-                (vswap! *index* update-index (map :id media'))
-
-                ;; Store file media for later insertion
-                (l/trace :hint "update media references" ::l/async false)
-                (vswap! *media* into (map #(update % :id lookup-index)) media')
-
-                (l/trace :hint "procesing file" :file-id file-id ::l/async false)
-
-                (let [file-id' (lookup-index file-id)
-                      data     (-> (:data file)
-                                   (assoc :id file-id')
-                                   (cond-> migrate? (pmg/migrate-data))
-                                   (update :pages-index relink-shapes)
-                                   (update :components relink-shapes)
-                                   (update :media relink-media))
-
-                      params  {:id file-id'
-                               :project-id project-id
-                               :name (str "Imported: " (:name file))
-                               :revn (:revn file)
-                               :is-shared (:is-shared file)
-                               :data (blob/encode data)
-                               :created-at timestamp
-                               :modified-at timestamp}]
-
-                  (l/trace :hint "create file" :id file-id' ::l/async false)
-
-                  (if overwrite?
-                    (create-or-update-file params)
-                    (db/insert! *conn* :file params))
-
-                  (when overwrite?
-                    (db/delete! *conn* :file-thumbnail {:file-id file-id'}))))))
-
-          (read-rels-section! [input]
-            (l/debug :hint "reading section" :section :v1/rels ::l/async false)
-            (assert-read-label! input :v1/rels)
-
-            (let [rels (read-obj! input)]
-              ;; Insert all file relations
-              (doseq [rel rels]
-                (let [rel (-> rel
-                              (assoc :synced-at timestamp)
-                              (update :file-id lookup-index)
-                              (update :library-file-id lookup-index))]
-                  (l/trace :hint "create file library link"
-                           :file-id (:file-id rel)
-                           :lib-id (:library-file-id rel)
-                           ::l/async false)
-                  (db/insert! *conn* :file-library-rel rel)))))
-
-          (read-sobjects-section! [input]
-            (l/debug :hint "reading section" :section :v1/sobjects ::l/async false)
-            (assert-read-label! input :v1/sobjects)
-
-            (let [storage (media/configure-assets-storage storage)
-                  ids     (read-obj! input)]
-
-              (doseq [expected-storage-id ids]
-                (let [id    (read-uuid! input)
-                      mdata (read-obj! input)]
-
-                  (when (not= id expected-storage-id)
-                    (ex/raise :type :validation
-                              :code :inconsistent-penpot-file
-                              :hint "the penpot file seems corrupt, found unexpected uuid (storage-object-id)"))
-
-                  (l/trace :hint "readed storage object" :id id ::l/async false)
-
-                  (let [[size resource] (read-stream! input)
-                        hash            (sto/calculate-hash resource)
-                        content         (-> (sto/content resource size)
-                                            (sto/wrap-with-hash hash))
-                        params          (-> mdata
-                                            (assoc ::sto/deduplicate? true)
-                                            (assoc ::sto/content content)
-                                            (assoc ::sto/touched-at (dt/now)))
-                        sobject         @(sto/put-object! storage params)]
-                    (l/trace :hint "persisted storage object" :id id :new-id (:id sobject) ::l/async false)
-                    (vswap! *index* assoc id (:id sobject)))))))
-
-          (persist-file-media-objects! []
-            (l/debug :hint "processing file media objects" :section :v1/sobjects ::l/async false)
-
-            ;; Step 2: insert all file-media-object rows with correct
-            ;; storage-id reference.
-            (doseq [item @*media*]
-              (l/trace :hint "inserting file media object"
-                       :id (:id item)
-                       :file-id (:file-id item)
-                       ::l/async false)
-
-              (let [file-id (lookup-index (:file-id item))]
-                (if (= file-id (:file-id item))
-                  (l/warn :hint "ignoring file media object" :file-id (:file-id item) ::l/async false)
-                  (db/insert! *conn* :file-media-object
-                              (-> item
-                                  (assoc :file-id file-id)
-                                  (d/update-when :media-id lookup-index)
-                                  (d/update-when :thumbnail-id lookup-index))
-                              {:on-conflict-do-nothing overwrite?})))))]
-
-    (with-open [input (bs/zstd-input-stream input)]
-      (with-open [input (bs/data-input-stream input)]
-        (db/with-atomic [conn pool]
-          (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED;"])
-
-          ;; Verify that we received a proper .penpot file
-          (let [{:keys [sections files]} (read-header! input)]
-            (l/debug :hint "import verified" :files files :overwrite? overwrite?)
-            (binding [*index* (volatile! (update-index {} files))
-                      *media* (volatile! [])
-                      *conn*  conn]
-
-              (doseq [section sections]
-                (case section
-                  :v1/rels     (read-rels-section! input)
-                  :v1/files    (read-files-section! input files)
-                  :v1/sobjects (do
-                                 (read-sobjects-section! input)
-                                 (persist-file-media-objects!))))
-
-              ;; Knowing that the ids of the created files are in
-              ;; index, just lookup them and return it as a set
-              (into #{} (keep #(get @*index* %)) files))))))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HIGH LEVEL API
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn export!
   [cfg]
