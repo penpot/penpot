@@ -172,7 +172,7 @@
              (dom/clean-value! search-input)
              (dom/focus! search-input)
              (emit! (dd/go-to-search)))))
-        
+
         on-key-press
         (mf/use-callback
          (fn [e]

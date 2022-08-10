@@ -95,6 +95,7 @@
 (derive :app.main.data.dashboard/set-file-shared ::generic-action)
 (derive :app.main.data.dashboard/update-team-member-role ::generic-action)
 (derive :app.main.data.dashboard/update-team-photo ::generic-action)
+(derive :app.main.data.dashboard/clone-template ::generic-action)
 (derive :app.main.data.fonts/add-font ::generic-action)
 (derive :app.main.data.fonts/delete-font ::generic-action)
 (derive :app.main.data.fonts/delete-font-variant ::generic-action)

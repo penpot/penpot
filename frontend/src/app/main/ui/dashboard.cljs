@@ -7,9 +7,13 @@
 (ns app.main.ui.dashboard
   (:require
    [app.common.colors :as clr]
+   [app.common.data :as d]
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
    [app.main.data.dashboard.shortcuts :as sc]
+   [app.main.data.events :as ev]
+   [app.main.data.modal :as modal]
+   [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -23,9 +27,16 @@
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
    [app.main.ui.dashboard.team :refer [team-settings-page team-members-page team-invitations-page]]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
+   [app.util.router :as rt]
+   [cuerdas.core :as str]
    [goog.events :as events]
+   [okulary.core :as l]
+   [potok.core :as ptk]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
@@ -48,40 +59,180 @@
       (uuid-str? project-id)
       (assoc :project-id (uuid project-id)))))
 
+(def builtin-templates
+  (l/derived :builtin-templates st/state))
+
+(mf/defc templates-section
+  [{:keys [default-project-id profile project team content-width] :as props}]
+  (let [templates   (mf/deref builtin-templates)
+        route       (mf/deref refs/route)
+        route-name  (get-in route [:data :name])
+        section     (if (= route-name :dashboard-files)
+                      (if (= (:id project) default-project-id)
+                        "dashboard-drafts"
+                        "dashboard-project")
+                      (name route-name))
+        props       (some-> profile (get :props {}))
+        collapsed   (:builtin-templates-collapsed-status props false)
+        card-offset (mf/use-state 0)
+
+        card-width  275
+        num-cards   (count templates)
+        ;; We need space for num-cards plus the libraries&templates link
+        more-cards  (> (+ @card-offset (* (+ 1 num-cards) card-width)) content-width)
+        content-ref (mf/use-ref)
+
+        toggle-collapse
+        (fn []
+          (st/emit!
+           (du/update-profile-props {:builtin-templates-collapsed-status (not collapsed)})))
+
+        move-left
+        (fn []
+          (when-not (zero? @card-offset)
+            (dom/animate! (mf/ref-val content-ref)
+                          [#js {:left (str @card-offset "px")}
+                           #js {:left (str (+ @card-offset card-width) "px")}]
+                          #js {:duration 200
+                               :easing "linear"})
+            (reset! card-offset (+ @card-offset card-width))))
+
+        move-right
+        (fn []
+          (when more-cards (swap! card-offset inc)
+                (dom/animate! (mf/ref-val content-ref)
+                              [#js {:left (str @card-offset "px")}
+                               #js {:left (str (- @card-offset card-width) "px")}]
+                              #js {:duration 200
+                                   :easing "linear"})
+                (reset! card-offset (- @card-offset card-width))))
+
+        on-finish-import
+        (fn [template]
+          (st/emit!
+           (ptk/event ::ev/event {::ev/name "import-template-finish"
+                                  ::ev/origin "dashboard"
+                                  :template (:name template)
+                                  :section section})
+           (when (not (some? project)) (rt/nav :dashboard-files
+                                               {:team-id (:id team)
+                                                :project-id default-project-id}))))
+
+        import-template
+        (fn [template]
+          (let [templates-project-id (if project (:id project) default-project-id)]
+            (st/emit!
+             (ptk/event ::ev/event {::ev/name "import-template-launch"
+                                    ::ev/origin "dashboard"
+                                    :template (:name template)
+                                    :section section})
+
+             (modal/show
+              {:type :import
+               :project-id templates-project-id
+               :files []
+               :template template
+               :on-finish-import (partial on-finish-import template)}))))
+
+        handle-template-link
+        (fn []
+          (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
+                                           ::ev/origin "dashboard"
+                                           :section section})))]
+
+    [:div.dashboard-templates-section {:class (when collapsed "collapsed")}
+     [:div.title {:on-click toggle-collapse}
+      [:div
+       [:span (tr "dashboard.libraries-and-templates")]
+       [:span.icon (if collapsed i/arrow-up i/arrow-down)]]]
+     [:div.content {:ref content-ref
+                    :style {:left @card-offset}}
+      (for [num-item (range (count templates)) :let [item (nth templates num-item)]]
+        [:div.card-container {:id (str/concat "card-container-" num-item)
+                              :key (:id item)
+                              :on-click #(import-template item)}
+         [:div.template-card
+          [:div.img-container
+           [:img {:src (:thumbnail-uri item)}]]
+          [:div.card-name [:span (:name item)] [:span.icon i/download]]]])
+
+      [:div.card-container
+       [:div.template-card
+        [:div.img-container
+         [:a {:href "https://penpot.app/libraries-templates.html" :target "_blank" :on-click handle-template-link}
+          [:div.template-link
+           [:div.template-link-title (tr "dashboard.libraries-and-templates")]
+           [:div.template-link-text (tr "dashboard.libraries-and-templates.explore")]]]]]]]
+     (when (< @card-offset 0)
+       [:div.button.left {:on-click move-left} i/go-prev])
+     (when more-cards
+       [:div.button.right {:on-click move-right} i/go-next])]))
+
 (mf/defc dashboard-content
   [{:keys [team projects project section search-term profile] :as props}]
-  [:div.dashboard-content {:on-click #(st/emit! (dd/clear-selected-files))}
-   (case section
-     :dashboard-projects
-     [:& projects-section {:team team :projects projects}]
+  (let [container          (mf/use-ref)
+        content-width      (mf/use-state 0)
+        default-project-id
+        (->> (vals projects)
+             (d/seek :is-default)
+             (:id))
+        on-resize
+        (fn [_]
+          (let [dom   (mf/ref-val container)
+                width (obj/get dom "clientWidth")]
+            (reset! content-width width)))]
 
-     :dashboard-fonts
-     [:& fonts-page {:team team}]
+    (mf/use-effect
+     #(let [key1 (events/listen js/window "resize" on-resize)]
+        (fn []
+          (events/unlistenByKey key1))))
 
-     :dashboard-font-providers
-     [:& font-providers-page {:team team}]
+    (mf/use-effect on-resize)
+    [:div.dashboard-content {:on-click #(st/emit! (dd/clear-selected-files)) :ref container}
+     (case section
+       :dashboard-projects
+       [:*
+        [:& projects-section {:team team :projects projects}]
+        [:& templates-section {:profile profile
+                               :project project
+                               :default-project-id default-project-id
+                               :team team
+                               :content-width @content-width}]]
 
-     :dashboard-files
-     (when project
-       [:& files-section {:team team :project project}])
+       :dashboard-fonts
+       [:& fonts-page {:team team}]
 
-     :dashboard-search
-     [:& search-page {:team team
-                      :search-term search-term}]
+       :dashboard-font-providers
+       [:& font-providers-page {:team team}]
 
-     :dashboard-libraries
-     [:& libraries-page {:team team}]
+       :dashboard-files
+       (when project
+         [:*
+          [:& files-section {:team team :project project}]
+          [:& templates-section {:profile profile
+                                 :project project
+                                 :default-project-id default-project-id
+                                 :team team
+                                 :content-width @content-width}]])
 
-     :dashboard-team-members
-     [:& team-members-page {:team team :profile profile}]
+       :dashboard-search
+       [:& search-page {:team team
+                        :search-term search-term}]
 
-     :dashboard-team-invitations
-     [:& team-invitations-page {:team team}]
+       :dashboard-libraries
+       [*
+        [:& libraries-page {:team team}]]
 
-     :dashboard-team-settings
-     [:& team-settings-page {:team team :profile profile}]
+       :dashboard-team-members
+       [:& team-members-page {:team team :profile profile}]
 
-     nil)])
+       :dashboard-team-invitations
+       [:& team-invitations-page {:team team}]
+
+       :dashboard-team-settings
+       [:& team-settings-page {:team team :profile profile}]
+
+       nil)]))
 
 (mf/defc dashboard
   [{:keys [route profile] :as props}]

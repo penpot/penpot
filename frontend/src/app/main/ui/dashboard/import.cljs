@@ -8,7 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
+   [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
+   [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
@@ -236,10 +238,11 @@
 (mf/defc import-dialog
   {::mf/register modal/components
    ::mf/register-as :import}
-  [{:keys [project-id files on-finish-import]}]
+  [{:keys [project-id files template on-finish-import]}]
   (let [state (mf/use-state
                {:status :analyzing
                 :editing nil
+                :importing-templates 0
                 :files (->> files
                             (mapv #(assoc % :status :analyzing)))})
 
@@ -278,19 +281,50 @@
              (dom/prevent-default event)
              (st/emit! (modal/hide)))))
 
+        on-template-cloned-success
+        (fn []
+          (swap! state
+                 (fn [state]
+                   (-> state
+                       (assoc :status :importing :importing-templates 0))))
+          (st/emit! (dd/fetch-recent-files)))
+
+        on-template-cloned-error
+        (fn []
+          (st/emit!
+           (modal/hide)
+           (dm/error (tr "dashboard.libraries-and-templates.import-error"))))
+
+        continue-files
+        (fn []
+          (let [files (->> @state :files (filterv #(and (= :ready (:status %)) (not (:deleted? %)))))]
+            (import-files project-id files))
+
+          (swap! state
+                 (fn [state]
+                   (-> state
+                       (assoc :status :importing)
+                       (update :files mark-files-importing)))))
+
+        continue-template
+        (fn []
+          (let [mdata  {:on-success on-template-cloned-success :on-error on-template-cloned-error}
+                params {:project-id project-id :template-id (:id template)}]
+            (swap! state
+                   (fn [state]
+                     (-> state
+                         (assoc :status :importing :importing-templates 1))))
+            (st/emit! (dd/clone-template (with-meta params mdata)))))
+
+
         handle-continue
         (mf/use-callback
          (mf/deps project-id (:files @state))
          (fn [event]
            (dom/prevent-default event)
-           (let [files (->> @state :files (filterv #(and (= :ready (:status %)) (not (:deleted? %)))))]
-             (import-files project-id files))
-
-           (swap! state
-                  (fn [state]
-                    (-> state
-                        (assoc :status :importing)
-                        (update :files mark-files-importing))))))
+           (if (some? template)
+             (continue-template)
+             (continue-files))))
 
         handle-accept
         (mf/use-callback
@@ -299,10 +333,15 @@
            (st/emit! (modal/hide))
            (when on-finish-import (on-finish-import))))
 
+        num-importing (+
+                       (->> @state :files (filter #(= (:status %) :importing)) count)
+                       (:importing-templates @state))
+
+
         warning-files (->> @state :files (filter #(and (= (:status %) :import-finish) (d/not-empty? (:errors %)))) count)
         success-files (->> @state :files (filter #(and (= (:status %) :import-finish) (empty? (:errors %)))) count)
         pending-analysis? (> (->> @state :files (filter #(= (:status %) :analyzing)) count) 0)
-        pending-import? (> (->> @state :files (filter #(= (:status %) :importing)) count) 0)
+        pending-import? (> num-importing 0)
         files (->> (:files @state) (filterv (comp not :deleted?)))]
 
     (mf/use-effect
@@ -334,7 +373,7 @@
 
            [:div.feedback-banner
             [:div.icon i/checkbox-checked]
-            [:div.message (tr "dashboard.import.import-message" success-files)]]))
+            [:div.message (tr "dashboard.import.import-message" (if (some? template) 1 success-files))]]))
 
        (for [file files]
          (let [editing? (and (some? (:file-id file))
@@ -342,7 +381,13 @@
            [:& import-entry {:state state
                              :file file
                              :editing? editing?
-                             :can-be-deleted? (> (count files) 1)}]))]
+                             :can-be-deleted? (> (count files) 1)}]))
+
+       (when (some? template)
+         [:& import-entry {:state state
+                           :file (assoc template :status (if (= 1 (:importing-templates @state)) :importing :ready))
+                           :editing? false
+                           :can-be-deleted? false}])]
 
       [:div.modal-footer
        [:div.action-buttons

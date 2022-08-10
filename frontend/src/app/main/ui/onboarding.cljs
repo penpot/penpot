@@ -9,7 +9,7 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]   
+   [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.onboarding.newsletter]
    [app.main.ui.onboarding.questions]
@@ -22,7 +22,7 @@
 
 ;; --- ONBOARDING LIGHTBOX
 
-(defn send-event 
+(defn send-event
   [event-name]
   (st/emit! (ptk/event ::ev/event {::ev/name event-name
                                    ::ev/origin "dashboard"})))

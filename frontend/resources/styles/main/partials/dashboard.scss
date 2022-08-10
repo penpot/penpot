@@ -254,3 +254,155 @@
     height: 16px;
   }
 }
+
+.dashboard-templates-section {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 285px;
+  transition: bottom 300ms;
+
+  &.collapsed {
+    bottom: -228px;
+    transition: bottom 300ms;
+  }
+
+  .title {
+    width: 100%;
+    text-align: right;
+    height: 56px;
+    cursor: pointer;
+    div {
+      height: 58px;
+      display: inline-block;
+      line-height: 58px;
+      text-align: center;
+      border-top: 2px solid #e4e4e4;
+      border-left: 2px solid #e4e4e4;
+      border-right: 2px solid #e4e4e4;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+      margin-right: 30px;
+      background-color: $color-white;
+      position: relative;
+      z-index: 1;
+      span {
+        display: inline-block;
+        vertical-align: middle;
+        line-height: normal;
+        font-size: 18px;
+        font-weight: 600;
+        color: $color-black;
+        margin-left: 20px;
+        margin-right: 10px;
+      }
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
+  }
+
+  .button {
+    position: absolute;
+    top: 133px;
+    border: 2px solid #e0e4e9;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 35px;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+    background-color: $color-white;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    &.left {
+      left: 0;
+      margin-left: 43px;
+    }
+
+    &.right {
+      right: 0;
+      margin-right: 43px;
+    }
+
+    &:hover {
+      border: 2px solid $color-primary;
+    }
+  }
+
+  .content {
+    background-color: $color-white;
+    width: 200%;
+    height: 229px;
+    border-top: 2px solid #e4e4e4;
+    border-left: 2px solid #e4e4e4;
+    margin-left: 5px;
+    position: absolute;
+
+    .card-container {
+      width: 275px;
+      height: 100%;
+      margin-top: 20px;
+      display: inline-block;
+      text-align: center;
+      vertical-align: top;
+    }
+
+    .template-card {
+      display: inline-block;
+      width: 255px;
+      font-size: 16px;
+      color: #181a22;
+      cursor: pointer;
+      .img-container {
+        width: 100%;
+        height: 135px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 2px solid #e0e4e9;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      .card-name {
+        padding: 0 5px;
+        display: flex;
+        justify-content: space-between;
+        height: 23px;
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .template-link {
+        border: 2px solid transparent;
+        margin: 30px;
+        padding: 32px 0;
+      }
+
+      .template-link-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: $color-gray-60;
+      }
+
+      .template-link-text {
+        font-size: 12px;
+        color: $color-gray-30;
+      }
+
+      &:hover {
+        .img-container {
+          border: 2px solid $color-primary;
+        }
+      }
+    }
+  }
+}
