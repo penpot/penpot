@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) UXBOX Labs SL
 
-(ns app.main.ui.share-link
+(ns app.main.ui.viewer.share-link
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
@@ -37,20 +37,21 @@
    ::mf/register-as :share-link}
   [{:keys [file page]}]
   (let [current-page page
-        slinks   (mf/deref refs/share-links)
-        router   (mf/deref refs/router)
-        route    (mf/deref refs/route)
+        slinks    (mf/deref refs/share-links)
+        router    (mf/deref refs/router)
+        route     (mf/deref refs/route)
+        zoom-type (mf/deref refs/viewer-zoom-type)
 
-        link     (mf/use-state nil)
-        confirm  (mf/use-state false)
-        open-ops (mf/use-state false)
+        link      (mf/use-state nil)
+        confirm   (mf/use-state false)
+        open-ops  (mf/use-state false)
 
-        opts     (mf/use-state
-                  {:pages-mode "current"
-                   :all-pages false
-                   :pages #{(:id page)}
-                   :who-comment "team"
-                   :who-inspect "team"})
+        opts      (mf/use-state
+                   {:pages-mode "current"
+                    :all-pages false
+                    :pages #{(:id page)}
+                    :who-comment "team"
+                    :who-inspect "team"})
 
 
         close
@@ -137,8 +138,12 @@
              href   (when slink
                       (let [pparams (:path-params route)
                             qparams (-> (:query-params route)
-                                        (assoc :share-id (:id slink))
-                                        (assoc :index "0"))
+                                        (assoc  :share-id (:id slink))
+                                        (assoc  :index "0"))
+                            qparams (if (nil? zoom-type)
+                                      (dissoc qparams :zoom)
+                                      (assoc qparams :zoom zoom-type))
+
                             href    (rt/resolve router :viewer pparams qparams)]
                         (assoc cf/public-uri :fragment href)))]
          (reset! link (some-> href str)))))

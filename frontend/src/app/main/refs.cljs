@@ -398,6 +398,11 @@
                (dm/get-in state [:viewer-local :fullscreen?]))
              st/state))
 
+(def viewer-zoom-type
+  (l/derived (fn [state]
+               (dm/get-in state [:viewer-local :zoom-type]))
+             st/state))
+
 (def thumbnail-data
   (l/derived #(dm/get-in % [:workspace-file :thumbnails] {}) st/state))
 
