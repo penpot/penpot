@@ -83,11 +83,11 @@
    ;; a server prop key where initial project is stored.
    :initial-project-skey "initial-project"})
 
-(s/def ::flags ::us/vec-of-valid-keywords)
 
-;; DEPRECATED PROPERTIES
+(s/def ::media-max-file-size ::us/integer)
+
+(s/def ::flags ::us/vec-of-valid-keywords)
 (s/def ::telemetry-enabled ::us/boolean)
-;; END DEPRECATED
 
 (s/def ::audit-log-archive-uri ::us/string)
 (s/def ::audit-log-gc-max-age ::dt/duration)
@@ -143,8 +143,6 @@
 (s/def ::http-server-max-multipart-body-size ::us/integer)
 (s/def ::http-server-io-threads ::us/integer)
 (s/def ::http-server-worker-threads ::us/integer)
-(s/def ::http-session-updater-batch-max-age ::dt/duration)
-(s/def ::http-session-updater-batch-max-size ::us/integer)
 (s/def ::initial-project-skey ::us/string)
 (s/def ::ldap-attrs-email ::us/string)
 (s/def ::ldap-attrs-fullname ::us/string)
@@ -251,8 +249,6 @@
                    ::http-server-max-multipart-body-size
                    ::http-server-io-threads
                    ::http-server-worker-threads
-                   ::http-session-updater-batch-max-age
-                   ::http-session-updater-batch-max-size
                    ::initial-project-skey
                    ::ldap-attrs-email
                    ::ldap-attrs-fullname
@@ -268,6 +264,7 @@
                    ::local-assets-uri
                    ::loggers-loki-uri
                    ::loggers-zmq-uri
+                   ::media-max-file-size
                    ::profile-bounce-max-age
                    ::profile-bounce-threshold
                    ::profile-complaint-max-age

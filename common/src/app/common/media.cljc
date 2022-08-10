@@ -59,8 +59,6 @@
     "application/pdf"    ".pdf"
     nil))
 
-(def max-file-size (* 5 1024 1024))
-
 (s/def ::id uuid?)
 (s/def ::name string?)
 (s/def ::width number?)

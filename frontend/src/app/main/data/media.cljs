@@ -35,12 +35,9 @@
 
 ;; --- Utility functions
 
-(defn validate-file  ;; Check that a file obtained with the file javascript API is valid.
+(defn validate-file
+  "Check that a file obtained with the file javascript API is valid."
   [file]
-  (when (> (.-size file) cm/max-file-size)
-    (ex/raise :type :validation
-              :code :media-too-large
-              :hint (str/fmt "media size is large than 5mb (size: %s)" (.-size file))))
   (when-not (contains? cm/valid-image-types (.-type file))
     (ex/raise :type :validation
               :code :media-type-not-allowed

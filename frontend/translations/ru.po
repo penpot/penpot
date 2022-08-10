@@ -632,7 +632,7 @@ msgstr "Формат изображения не поддерживается (�
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "Изображение слишком большое для вставки (должно быть меньше 5mb)."
+msgstr "Изображение слишком большое для вставки."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"

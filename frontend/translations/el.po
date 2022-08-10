@@ -414,7 +414,7 @@ msgstr "Η μορφή εικόνας δεν αναγνωρίζεται (πρέπ
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "Η εικόνα είναι πολύ μεγάλη (πρέπει να είναι μικρότερη από 5mb)."
+msgstr "Η εικόνα είναι πολύ μεγάλη."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"

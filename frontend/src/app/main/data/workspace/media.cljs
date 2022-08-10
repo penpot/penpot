@@ -200,7 +200,7 @@
                 (= (:code error) :invalid-image)
                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
-                (= (:code error) :media-too-large)
+                (= (:code error) :media-max-file-size-reached)
                 (rx/of (dm/error (tr "errors.media-too-large")))
 
                 (= (:code error) :media-type-mismatch)

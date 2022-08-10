@@ -541,7 +541,7 @@ msgstr "不支援此影像格式（必須是 svg，jpg 或者 png）"
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "影像檔案過大，無法插入（須小於 5MB）"
+msgstr "影像檔案過大，無法插入"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"

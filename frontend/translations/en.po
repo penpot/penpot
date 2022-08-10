@@ -720,7 +720,7 @@ msgstr "The image format is not supported (must be svg, jpg or png)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "The image is too large to be inserted (must be under 5mb)."
+msgstr "The image is too large to be inserted."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
