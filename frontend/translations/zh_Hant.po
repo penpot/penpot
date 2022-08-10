@@ -227,18 +227,16 @@ msgid "dashboard.duplicate-multi"
 msgstr "複製 %s 個檔案"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, fuzzy
 msgid "dashboard.empty-files"
 msgstr "你在這裡還沒有文件"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, fuzzy, markdown
+#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "這裡還沒有文件，如果你想嘗試一些模板，你可以前往 [資料庫 & "
 "模板區段](https://penpot.app/libraries-templates.html)"
 
-#, fuzzy
 msgid "dashboard.export-frames"
 msgstr "將 artboards 匯出為 PDF..."
 
@@ -251,7 +249,6 @@ msgstr "匯出檔案"
 msgid "dashboard.export.detail"
 msgstr "* 可能會包含元件、圖像、顏色及／或文字編排。"
 
-#, fuzzy
 msgid "dashboard.export.explain"
 msgstr "你想匯出的單個或多個檔案中使用了共用資料庫，你想要如何處理它們的素材*？"
 

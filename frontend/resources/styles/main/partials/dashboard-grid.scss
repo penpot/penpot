@@ -338,7 +338,27 @@
   background-color: rgba(227, 227, 227, 0.3);
   padding: 13px;
   margin-right: 13px;
-
+  &.libs {
+    background-image: url(/images/ph-left.svg), url(/images/ph-right.svg);
+    background-position: 15% bottom, 85% top;
+    background-repeat: no-repeat;
+    align-items: center;
+    border: 1px dashed #b1b2b5;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    height: 200px;
+    margin: 1rem;
+    padding: 3rem;
+    justify-content: center;
+    .text {
+      p {
+        max-width: 360px;
+        text-align: center;
+        font-size: $fs16;
+      }
+    }
+  }
   .create-new {
     background-color: white;
     border: 2px solid $color-gray-10;

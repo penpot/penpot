@@ -237,6 +237,7 @@ msgid "dashboard.empty-files"
 msgstr "Burada hiç dosyan yok"
 
 #: src/app/main/ui/dashboard/grid.cljs
+#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Olamaz! Henüz dosyanız yok! Bazı şablonları denemek isterseniz "

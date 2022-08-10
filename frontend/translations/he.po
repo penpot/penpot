@@ -230,6 +230,7 @@ msgid "dashboard.empty-files"
 msgstr "עדיין אין לך כאן קבצים"
 
 #: src/app/main/ui/dashboard/grid.cljs
+#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "אבוי! עדיין אין לך קבצים! כדי להתנסות עם כמה מהתבניות ניתן לגשת אל [הספריות "

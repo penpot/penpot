@@ -11,13 +11,16 @@
    [rumext.alpha :as mf]))
 
 (mf/defc empty-placeholder
-  [{:keys [dragging? on-create-clicked project limit] :as props}]
+  [{:keys [dragging? on-create-clicked project limit origin] :as props}]
   (cond
     (true? dragging?)
     [:div.grid-row.no-wrap
      {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
      [:div.grid-item]]
-
+    (= :libraries origin) 
+    [:div.grid-empty-placeholder.libs {:data-test "empty-placeholder"}
+     [:div.text
+      [:& i18n/tr-html {:label "dashboard.empty-placeholder-drafts"}]]]
     :else
     [:div.grid-empty-placeholder
      {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
