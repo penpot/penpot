@@ -127,6 +127,10 @@
   ([id] (command id {}))
   ([id params] (command id params)))
 
+(defn cmd!
+  ([id] (command id {}))
+  ([id params] (command id params)))
+
 (defmethod command :login-with-oidc
   [_ {:keys [provider] :as params}]
   (let [uri    (u/join base-uri "api/auth/oauth/" (d/name provider))

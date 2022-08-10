@@ -136,7 +136,7 @@
 
         (rx/merge
          (rx/of (dwc/commit-changes changes))
-         (->> (rp/mutation :update-comment-thread-position thread)
+         (->> (rp/cmd! :update-comment-thread-position thread)
               (rx/catch #(rx/throw {:type :update-comment-thread-position}))
               (rx/ignore))))))))
 

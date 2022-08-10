@@ -56,6 +56,8 @@
 ### :bug: Bugs fixed
 
 - Fix font rendering on grid thumbnails [Taiga #3473](https://tree.taiga.io/project/penpot/issue/3473)
+- Fix recent fonts info [Taiga #3953](https://tree.taiga.io/project/penpot/issue/3953)
+- Fix clipped elements affect boards and centering [Taiga #3666](https://tree.taiga.io/project/penpot/issue/3666)
 - Fix intro action in multi input [Taiga #3541](https://tree.taiga.io/project/penpot/issue/3541)
 - Fix team default image [Taiga #3919](https://tree.taiga.io/project/penpot/issue/3919)
 - Fix problem with group coordinates [#2008](https://github.com/penpot/penpot/issues/2008)

@@ -27,7 +27,7 @@
   (p/let [file    (files/retrieve-file cfg file-id components-v2)
           project (retrieve-project pool (:project-id file))
           libs    (files/retrieve-file-libraries cfg false file-id)
-          users   (comments/retrieve-file-comments-users pool file-id profile-id)
+          users   (comments/get-file-comments-users pool file-id profile-id)
 
           links   (->> (db/query pool :share-link {:file-id file-id})
                        (mapv slnk/decode-share-link-row))

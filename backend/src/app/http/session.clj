@@ -7,33 +7,35 @@
 (ns app.http.session
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.metrics :as mtx]
-   [app.util.async :as aa]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
    [promesa.exec :as px]
    [yetti.request :as yrq]))
 
-;; A default cookie name for storing the session. We don't allow to configure it.
-(def token-cookie-name "auth-token")
+;; A default cookie name for storing the session.
+(def default-auth-token-cookie-name "auth-token")
 
-;; A cookie that we can use to check from other sites of the same domain if a user
-;; is registered. Is not intended for on premise installations, although nothing
-;; prevents using it if some one wants to.
-(def authenticated-cookie-name "authenticated")
+;; A cookie that we can use to check from other sites of the same
+;; domain if a user is authenticated.
+(def default-authenticated-cookie-name "authenticated")
+
+;; Default value for cookie max-age
+(def default-cookie-max-age (dt/duration {:days 7}))
+
+;; Default age for automatic session renewal
+(def default-renewal-max-age (dt/duration {:hours 6}))
 
 (defprotocol ISessionStore
   (read-session [store key])
   (write-session [store key data])
+  (update-session [store data])
   (delete-session [store key]))
 
 (defn- make-database-store
@@ -47,18 +49,25 @@
       (px/with-dispatch executor
         (let [profile-id (:profile-id data)
               user-agent (:user-agent data)
-              now        (dt/now)
-
+              created-at (or (:created-at data) (dt/now))
               token      (tokens :generate {:iss "authentication"
-                                            :iat now
+                                            :iat created-at
                                             :uid profile-id})
               params     {:user-agent user-agent
                           :profile-id profile-id
-                          :created-at now
-                          :updated-at now
+                          :created-at created-at
+                          :updated-at created-at
                           :id token}]
-          (db/insert! pool :http-session params)
-          token)))
+          (db/insert! pool :http-session params))))
+
+    (update-session [_ data]
+      (let [updated-at (dt/now)]
+        (px/with-dispatch executor
+          (db/update! pool :http-session
+                      {:updated-at updated-at}
+                      {:id (:id data)})
+          (assoc data :updated-at updated-at))))
+
 
     (delete-session [_ token]
       (px/with-dispatch executor
@@ -76,15 +85,23 @@
         (p/do
           (let [profile-id (:profile-id data)
                 user-agent (:user-agent data)
+                created-at (or (:created-at data) (dt/now))
                 token      (tokens :generate {:iss "authentication"
-                                              :iat (dt/now)
+                                              :iat created-at
                                               :uid profile-id})
                 params     {:user-agent user-agent
+                            :created-at created-at
+                            :updated-at created-at
                             :profile-id profile-id
                             :id token}]
 
             (swap! cache assoc token params)
-            token)))
+            params)))
+
+      (update-session [_ data]
+        (let [updated-at (dt/now)]
+          (swap! cache update (:id data) assoc :updated-at updated-at)
+          (assoc data :updated-at updated-at)))
 
       (delete-session [_ token]
         (p/do
@@ -107,77 +124,123 @@
 ;; --- IMPL
 
 (defn- create-session!
-  [store request profile-id]
-  (let [params {:user-agent (yrq/get-header request "user-agent")
+  [store profile-id user-agent]
+  (let [params {:user-agent user-agent
                 :profile-id profile-id}]
     (write-session store nil params)))
 
+(defn- update-session!
+  [store session]
+  (update-session store session))
+
 (defn- delete-session!
   [store {:keys [cookies] :as request}]
-  (when-let [token (get-in cookies [token-cookie-name :value])]
-    (delete-session store token)))
+  (let [name (cf/get :auth-token-cookie-name default-auth-token-cookie-name)]
+    (when-let [token (get-in cookies [name :value])]
+      (delete-session store token))))
 
 (defn- retrieve-session
   [store request]
-  (when-let [cookie (yrq/get-cookie request token-cookie-name)]
-    (-> (read-session store (:value cookie))
-        (p/then (fn [session]
-                  (when session
-                    {:session-id (:id session)
-                     :profile-id (:profile-id session)}))))))
+  (let [cookie-name (cf/get :auth-token-cookie-name default-auth-token-cookie-name)]
+    (when-let [cookie (yrq/get-cookie request cookie-name)]
+      (read-session store (:value cookie)))))
 
-(defn- add-cookies
-  [response token]
-  (let [cors?   (contains? cfg/flags :cors)
-        secure? (contains? cfg/flags :secure-session-cookies)
-        authenticated-cookie-domain (cfg/get :authenticated-cookie-domain)]
-    (update response :cookies
-            (fn [cookies]
-              (cond-> cookies
-                :always
-                (assoc token-cookie-name {:path "/"
-                                          :http-only true
-                                          :value token
-                                          :same-site (if cors? :none :lax)
-                                          :secure secure?})
+(defn assign-auth-token-cookie
+  [response {token :id updated-at :updated-at}]
+  (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
+        created-at (or updated-at (dt/now))
+        renewal    (dt/plus created-at default-renewal-max-age)
+        expires    (dt/plus created-at max-age)
+        secure?    (contains? cf/flags :secure-session-cookies)
+        cors?      (contains? cf/flags :cors)
+        name       (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
+        comment    (str "Renewal at: " (dt/format-instant renewal :rfc1123))
+        cookie     {:path "/"
+                    :http-only true
+                    :expires expires
+                    :value token
+                    :comment comment
+                    :same-site (if cors? :none :lax)
+                    :secure secure?}]
+    (update response :cookies assoc name cookie)))
 
-                (some? authenticated-cookie-domain)
-                (assoc authenticated-cookie-name {:domain authenticated-cookie-domain
-                                                  :path "/"
-                                                  :value true
-                                                  :same-site :strict
-                                                  :secure secure?}))))))
+(defn assign-authenticated-cookie
+  [response {updated-at :updated-at}]
+  (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
+        created-at (or updated-at (dt/now))
+        renewal    (dt/plus created-at default-renewal-max-age)
+        expires    (dt/plus created-at max-age)
+        comment    (str "Renewal at: " (dt/format-instant renewal :rfc1123))
+        secure?    (contains? cf/flags :secure-session-cookies)
+        domain     (cf/get :authenticated-cookie-domain)
+        name       (cf/get :authenticated-cookie-name "authenticated")
+        cookie     {:domain domain
+                    :expires expires
+                    :path "/"
+                    :comment comment
+                    :value true
+                    :same-site :strict
+                    :secure secure?}]
+    (cond-> response
+      (string? domain)
+      (update :cookies assoc name cookie))))
 
-(defn- clear-cookies
+(defn clear-auth-token-cookie
   [response]
-  (let [authenticated-cookie-domain (cfg/get :authenticated-cookie-domain)]
-    (assoc response :cookies
-           {token-cookie-name {:path "/"
-                               :value ""
-                               :max-age -1}
-            authenticated-cookie-name {:domain authenticated-cookie-domain
-                                       :path "/"
-                                       :value ""
-                                       :max-age -1}})))
+  (let [name (cf/get :auth-token-cookie-name default-auth-token-cookie-name)]
+    (update response :cookies assoc name {:path "/" :value "" :max-age -1})))
+
+(defn- clear-authenticated-cookie
+  [response]
+  (let [name   (cf/get :authenticated-cookie-name default-authenticated-cookie-name)
+        domain (cf/get :authenticated-cookie-domain)]
+    (cond-> response
+      (string? domain)
+      (update :cookies assoc name {:domain domain :path "/" :value "" :max-age -1}))))
 
 (defn- make-middleware
-  [{:keys [::events-ch store] :as cfg}]
-  {:name :session
-   :compile (fn [& _]
-              (fn [handler]
-                (fn [request respond raise]
-                  (try
-                    (-> (retrieve-session store request)
-                        (p/then' #(merge request %))
-                        (p/finally (fn [request cause]
-                                     (if cause
-                                       (raise cause)
-                                       (do
-                                    (when-let [session-id (:session-id request)]
-                                      (a/offer! events-ch session-id))
-                                    (handler request respond raise))))))
-                    (catch Throwable cause
-                      (raise cause))))))})
+  [{:keys [store] :as cfg}]
+  (letfn [;; Check if time reached for automatic session renewal
+          (renew-session? [{:keys [updated-at] :as session}]
+            (and (dt/instant? updated-at)
+                 (let [elapsed (dt/diff updated-at (dt/now))]
+                   (neg? (compare default-renewal-max-age elapsed)))))
+
+          ;; Wrap respond with session renewal code
+          (wrap-respond [respond session]
+            (fn [response]
+              (p/let [session (update-session! store session)]
+                (-> response
+                    (assign-auth-token-cookie session)
+                    (assign-authenticated-cookie session)
+                    (respond)))))]
+
+    {:name :session
+     :compile (fn [& _]
+                (fn [handler]
+                  (fn [request respond raise]
+                    (try
+                      (-> (retrieve-session store request)
+                          (p/finally (fn [session cause]
+                                       (cond
+                                         (some? cause)
+                                         (raise cause)
+
+                                         (nil? session)
+                                         (handler request respond raise)
+
+                                         :else
+                                         (let [request    (-> request
+                                                              (assoc :profile-id (:profile-id session))
+                                                              (assoc :session-id (:id session)))
+                                               respond    (cond-> respond
+                                                            (renew-session? session)
+                                                            (wrap-respond session))]
+
+                                           (handler request respond raise))))))
+
+                      (catch Throwable cause
+                        (raise cause))))))}))
 
 
 ;; --- STATE INIT: SESSION
@@ -194,77 +257,23 @@
 
 (defmethod ig/init-key :app.http/session
   [_ {:keys [store] :as cfg}]
-  (let [events-ch (a/chan (a/dropping-buffer (:buffer-size cfg)))
-        cfg       (assoc cfg ::events-ch events-ch)]
-
-    (-> cfg
-        (assoc :middleware (make-middleware cfg))
-        (assoc :create (fn [profile-id]
-                         (fn [request response]
-                           (p/let [token (create-session! store request profile-id)]
-                             (add-cookies response token)))))
-        (assoc :delete (fn [request response]
-                         (p/do
-                           (delete-session! store request)
+  (-> cfg
+      (assoc :middleware (make-middleware cfg))
+      (assoc :create (fn [profile-id]
+                       (fn [request response]
+                         (p/let [uagent  (yrq/get-header request "user-agent")
+                                 session (create-session! store profile-id uagent)]
                            (-> response
-                               (assoc :status 204)
-                               (assoc :body nil)
-                               (clear-cookies))))))))
-
-(defmethod ig/halt-key! :app.http/session
-  [_ data]
-  (a/close! (::events-ch data)))
-
-;; --- STATE INIT: SESSION UPDATER
-
-(declare update-sessions)
-
-(s/def ::session map?)
-(s/def ::max-batch-age ::cfg/http-session-updater-batch-max-age)
-(s/def ::max-batch-size ::cfg/http-session-updater-batch-max-size)
-
-(defmethod ig/pre-init-spec ::updater [_]
-  (s/keys :req-un [::db/pool ::wrk/executor ::mtx/metrics ::session]
-          :opt-un [::max-batch-age ::max-batch-size]))
-
-(defmethod ig/prep-key ::updater
-  [_ cfg]
-  (merge {:max-batch-age (dt/duration {:minutes 5})
-          :max-batch-size 200}
-         (d/without-nils cfg)))
-
-(defmethod ig/init-key ::updater
-  [_ {:keys [session metrics] :as cfg}]
-  (l/info :action "initialize session updater"
-          :max-batch-age (str (:max-batch-age cfg))
-          :max-batch-size (str (:max-batch-size cfg)))
-  (let [input (aa/batch (::events-ch session)
-                        {:max-batch-size (:max-batch-size cfg)
-                         :max-batch-age (inst-ms (:max-batch-age cfg))})]
-    (a/go-loop []
-      (when-let [[reason batch] (a/<! input)]
-        (let [result (a/<! (update-sessions cfg batch))]
-          (mtx/run! metrics {:id :session-update-total :inc 1})
-          (cond
-            (ex/exception? result)
-            (l/error :task "updater"
-                     :hint "unexpected error on update sessions"
-                     :cause result)
-
-            (= :size reason)
-            (l/debug :task "updater"
-                     :hint "update sessions"
-                     :reason (name reason)
-                     :count result))
-
-          (recur))))))
-
-(defn- update-sessions
-  [{:keys [pool executor]} ids]
-  (aa/with-thread executor
-    (db/exec-one! pool ["update http_session set updated_at=now() where id = ANY(?)"
-                        (into-array String ids)])
-    (count ids)))
+                               (assign-auth-token-cookie session)
+                               (assign-authenticated-cookie session))))))
+      (assoc :delete (fn [request response]
+                       (p/do
+                         (delete-session! store request)
+                         (-> response
+                             (assoc :status 204)
+                             (assoc :body nil)
+                             (clear-auth-token-cookie)
+                             (clear-authenticated-cookie)))))))
 
 ;; --- STATE INIT: SESSION GC
 
@@ -278,7 +287,7 @@
 
 (defmethod ig/prep-key ::gc-task
   [_ cfg]
-  (merge {:max-age (dt/duration {:days 15})}
+  (merge {:max-age default-cookie-max-age}
          (d/without-nils cfg)))
 
 (defmethod ig/init-key ::gc-task

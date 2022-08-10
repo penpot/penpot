@@ -7,35 +7,18 @@
 (ns app.rpc.mutations.comments
   (:require
    [app.common.exceptions :as ex]
-   [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.rpc.commands.comments :as cmd.comments]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.comments :as comments]
    [app.rpc.queries.files :as files]
    [app.rpc.retry :as retry]
-   [app.util.blob :as blob]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
 
 ;; --- Mutation: Create Comment Thread
 
-(declare upsert-comment-thread-status!)
-(declare create-comment-thread)
-(declare retrieve-page-name)
-
-(s/def ::page-id ::us/uuid)
-(s/def ::file-id ::us/uuid)
-(s/def ::share-id (s/nilable ::us/uuid))
-(s/def ::profile-id ::us/uuid)
-(s/def ::position ::gpt/point)
-(s/def ::content ::us/string)
-(s/def ::frame-id ::us/uuid)
-
-(s/def ::create-comment-thread
-  (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id ::frame-id]
-          :opt-un [::share-id]))
+(s/def ::create-comment-thread ::cmd.comments/create-comment-thread)
 
 (sv/defmethod ::create-comment-thread
   {::retry/max-retries 3
@@ -45,65 +28,14 @@
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-comment-permissions! conn profile-id file-id share-id)
-    (create-comment-thread conn params)))
-
-(defn- retrieve-next-seqn
-  [conn file-id]
-  (let [sql "select (f.comment_thread_seqn + 1) as next_seqn from file as f where f.id = ?"
-        res (db/exec-one! conn [sql file-id])]
-    (:next-seqn res)))
-
-(defn- create-comment-thread
-  [conn {:keys [profile-id file-id page-id position content frame-id] :as params}]
-  (let [seqn    (retrieve-next-seqn conn file-id)
-        now     (dt/now)
-        pname   (retrieve-page-name conn params)
-        thread  (db/insert! conn :comment-thread
-                           {:file-id file-id
-                            :owner-id profile-id
-                            :participants (db/tjson #{profile-id})
-                            :page-name pname
-                            :page-id page-id
-                            :created-at now
-                            :modified-at now
-                            :seqn seqn
-                            :position (db/pgpoint position)
-                            :frame-id frame-id})]
-
-
-    ;; Create a comment entry
-    (db/insert! conn :comment
-                {:thread-id (:id thread)
-                 :owner-id profile-id
-                 :created-at now
-                 :modified-at now
-                 :content content})
-
-    ;; Make the current thread as read.
-    (upsert-comment-thread-status! conn profile-id (:id thread))
-
-    ;; Optimistic update of current seq number on file.
-    (db/update! conn :file
-                {:comment-thread-seqn seqn}
-                {:id file-id})
-
-    (select-keys thread [:id :file-id :page-id])))
-
-(defn- retrieve-page-name
-  [conn {:keys [file-id page-id]}]
-  (let [{:keys [data]} (db/get-by-id conn :file file-id)
-        data           (blob/decode data)]
-    (get-in data [:pages-index page-id :name])))
-
+    (cmd.comments/create-comment-thread conn params)))
 
 ;; --- Mutation: Update Comment Thread Status
 
 (s/def ::id ::us/uuid)
 (s/def ::share-id (s/nilable ::us/uuid))
 
-(s/def ::update-comment-thread-status
-  (s/keys :req-un [::profile-id ::id]
-          :opt-un [::share-id]))
+(s/def ::update-comment-thread-status ::cmd.comments/update-comment-thread-status)
 
 (sv/defmethod ::update-comment-thread-status
   {::doc/added "1.0"
@@ -111,30 +43,14 @@
   [{:keys [pool] :as cfg} {:keys [profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [cthr (db/get-by-id conn :comment-thread id {:for-update true})]
-      (when-not cthr
-        (ex/raise :type :not-found))
-
+      (when-not cthr (ex/raise :type :not-found))
       (files/check-comment-permissions! conn profile-id (:file-id cthr) share-id)
-      (upsert-comment-thread-status! conn profile-id (:id cthr)))))
-
-(def sql:upsert-comment-thread-status
-  "insert into comment_thread_status (thread_id, profile_id)
-   values (?, ?)
-       on conflict (thread_id, profile_id)
-       do update set modified_at = clock_timestamp()
-   returning modified_at;")
-
-(defn- upsert-comment-thread-status!
-  [conn profile-id thread-id]
-  (db/exec-one! conn [sql:upsert-comment-thread-status thread-id profile-id]))
+      (cmd.comments/upsert-comment-thread-status! conn profile-id (:id cthr)))))
 
 
 ;; --- Mutation: Update Comment Thread
 
-(s/def ::is-resolved ::us/boolean)
-(s/def ::update-comment-thread
-  (s/keys :req-un [::profile-id ::id ::is-resolved]
-          :opt-un [::share-id]))
+(s/def ::update-comment-thread ::cmd.comments/update-comment-thread)
 
 (sv/defmethod ::update-comment-thread
   {::doc/added "1.0"
@@ -146,7 +62,6 @@
         (ex/raise :type :not-found))
 
       (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
-
       (db/update! conn :comment-thread
                   {:is-resolved is-resolved}
                   {:id id})
@@ -155,104 +70,31 @@
 
 ;; --- Mutation: Add Comment
 
-(s/def ::add-comment
-  (s/keys :req-un [::profile-id ::thread-id ::content]
-          :opt-un [::share-id]))
+(s/def ::add-comment ::cmd.comments/create-comment)
 
 (sv/defmethod ::add-comment
   {::doc/added "1.0"
    ::doc/deprecated "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id thread-id content share-id] :as params}]
+  [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (let [thread (-> (db/get-by-id conn :comment-thread thread-id {:for-update true})
-                     (comments/decode-row))
-          pname  (retrieve-page-name conn thread)]
-
-      ;; Standard Checks
-      (when-not thread (ex/raise :type :not-found))
-
-      ;; Permission Checks
-      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
-
-      ;; Update the page-name cachedattribute on comment thread table.
-      (when (not= pname (:page-name thread))
-        (db/update! conn :comment-thread
-                    {:page-name pname}
-                    {:id thread-id}))
-
-      ;; NOTE: is important that all timestamptz related fields are
-      ;; created or updated on the database level for avoid clock
-      ;; inconsistencies (some user sees something read that is not
-      ;; read, etc...)
-      (let [ppants  (:participants thread #{})
-            comment (db/insert! conn :comment
-                                {:thread-id thread-id
-                                 :owner-id profile-id
-                                 :content content})]
-
-        ;; NOTE: this is done in SQL instead of using db/update!
-        ;; helper because currently the helper does not allow pass raw
-        ;; function call parameters to the underlying prepared
-        ;; statement; in a future when we fix/improve it, this can be
-        ;; changed to use the helper.
-
-        ;; Update thread modified-at attribute and assoc the current
-        ;; profile to the participant set.
-        (let [ppants (conj ppants profile-id)
-              sql    "update comment_thread
-                         set modified_at = clock_timestamp(),
-                             participants = ?
-                       where id = ?"]
-          (db/exec-one! conn [sql (db/tjson ppants) thread-id]))
-
-        ;; Update the current profile status in relation to the
-        ;; current thread.
-        (upsert-comment-thread-status! conn profile-id thread-id)
-
-        ;; Return the created comment object.
-        comment))))
+    (cmd.comments/create-comment conn params)))
 
 
 ;; --- Mutation: Update Comment
 
-(s/def ::update-comment
-  (s/keys :req-un [::profile-id ::id ::content]
-          :opt-un [::share-id]))
+(s/def ::update-comment ::cmd.comments/update-comment)
 
 (sv/defmethod ::update-comment
   {::doc/added "1.0"
    ::doc/deprecated "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id id content share-id] :as params}]
+  [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (let [comment (db/get-by-id conn :comment id {:for-update true})
-          _       (when-not comment (ex/raise :type :not-found))
-          thread  (db/get-by-id conn :comment-thread (:thread-id comment) {:for-update true})
-          _       (when-not thread (ex/raise :type :not-found))
-          pname   (retrieve-page-name conn thread)]
-
-      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
-
-      ;; Don't allow edit comments to not owners
-      (when-not (= (:owner-id thread) profile-id)
-        (ex/raise :type :validation
-                  :code :not-allowed))
-
-      (db/update! conn :comment
-                  {:content content
-                   :modified-at (dt/now)}
-                  {:id (:id comment)})
-
-      (db/update! conn :comment-thread
-                  {:modified-at (dt/now)
-                   :page-name pname}
-                  {:id (:id thread)})
-      nil)))
+    (cmd.comments/update-comment conn params)))
 
 
 ;; --- Mutation: Delete Comment Thread
 
-(s/def ::delete-comment-thread
-  (s/keys :req-un [::profile-id ::id]))
+(s/def ::delete-comment-thread ::cmd.comments/delete-comment-thread)
 
 (sv/defmethod ::delete-comment-thread
   {::doc/added "1.0"
@@ -261,16 +103,14 @@
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not (= (:owner-id thread) profile-id)
-        (ex/raise :type :validation
-                  :code :not-allowed))
+        (ex/raise :type :validation :code :not-allowed))
       (db/delete! conn :comment-thread {:id id})
       nil)))
 
 
 ;; --- Mutation: Delete comment
 
-(s/def ::delete-comment
-  (s/keys :req-un [::profile-id ::id]))
+(s/def ::delete-comment ::cmd.comments/delete-comment)
 
 (sv/defmethod ::delete-comment
   {::doc/added "1.0"
@@ -279,44 +119,5 @@
   (db/with-atomic [conn pool]
     (let [comment (db/get-by-id conn :comment id {:for-update true})]
       (when-not (= (:owner-id comment) profile-id)
-        (ex/raise :type :validation
-                  :code :not-allowed))
-
+        (ex/raise :type :validation :code :not-allowed))
       (db/delete! conn :comment {:id id}))))
-
-;; --- Mutation: Update comment thread position
-
-(s/def ::update-comment-thread-position
-  (s/keys :req-un [::profile-id ::id ::position ::frame-id]))
-
-(sv/defmethod ::update-comment-thread-position
-  [{:keys [pool] :as cfg} {:keys [profile-id id position frame-id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
-      (when-not (= (:owner-id thread) profile-id)
-        (ex/raise :type :validation
-                  :code :not-allowed))
-      (db/update! conn :comment-thread
-                  {:modified-at (dt/now)
-                   :position (db/pgpoint position)
-                   :frame-id frame-id}
-                  {:id (:id thread)})
-      nil)))
-
-;; --- Mutation: Update comment frame
-
-(s/def ::update-comment-thread-frame
-  (s/keys :req-un [::profile-id ::id ::frame-id]))
-
-(sv/defmethod ::update-comment-thread-frame
-  [{:keys [pool] :as cfg} {:keys [profile-id id frame-id] :as params}]
-  (db/with-atomic [conn pool]
-    (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
-      (when-not (= (:owner-id thread) profile-id)
-        (ex/raise :type :validation
-                  :code :not-allowed))
-      (db/update! conn :comment-thread
-                  {:modified-at (dt/now)
-                   :frame-id frame-id}
-                  {:id (:id thread)})
-      nil)))

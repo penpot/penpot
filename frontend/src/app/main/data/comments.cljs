@@ -93,8 +93,8 @@
             objects (wsh/lookup-page-objects state page-id)
             frame-id (ctst/frame-id-by-position objects (:position params))
             params (assoc params :frame-id frame-id)]
-        (->> (rp/mutation :create-comment-thread params)
-             (rx/mapcat #(rp/query :comment-thread {:file-id (:file-id %) :id (:id %)}))
+        (->> (rp/cmd! :create-comment-thread params)
+             (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %) :id (:id %)}))
              (rx/map created-thread-on-workspace)
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
@@ -122,8 +122,8 @@
       (let [share-id (-> state :viewer-local :share-id)
             frame-id (:frame-id params)
             params (assoc params :share-id share-id :frame-id frame-id)]
-        (->> (rp/mutation :create-comment-thread params)
-             (rx/mapcat #(rp/query :comment-thread {:file-id (:file-id %) :id (:id %) :share-id share-id}))
+        (->> (rp/cmd! :create-comment-thread params)
+             (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %) :id (:id %) :share-id share-id}))
              (rx/map created-thread-on-viewer)
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
@@ -135,7 +135,7 @@
     (watch [_ state _]
       (let [done #(d/update-in-when % [:comment-threads id] assoc :count-unread-comments 0)
             share-id (-> state :viewer-local :share-id)]
-        (->> (rp/mutation :update-comment-thread-status {:id id :share-id share-id})
+        (->> (rp/cmd! :update-comment-thread-status {:id id :share-id share-id})
              (rx/map (constantly done))
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
@@ -153,7 +153,7 @@
     ptk/WatchEvent
     (watch [_ state _]
        (let [share-id (-> state :viewer-local :share-id)]
-         (->> (rp/mutation :update-comment-thread {:id id :is-resolved is-resolved :share-id share-id})
+         (->> (rp/cmd! :update-comment-thread {:id id :is-resolved is-resolved :share-id share-id})
               (rx/catch #(rx/throw {:type :comment-error}))
               (rx/ignore))))))
 
@@ -168,7 +168,7 @@
       (watch [_ state _]
          (let [share-id (-> state :viewer-local :share-id)]
            (rx/concat
-            (->> (rp/mutation :add-comment {:thread-id (:id thread) :content content :share-id share-id})
+            (->> (rp/cmd! :create-comment {:thread-id (:id thread) :content content :share-id share-id})
                  (rx/map #(partial created %))
                  (rx/catch #(rx/throw {:type :comment-error})))
             (rx/of (refresh-comment-thread thread))))))))
@@ -184,7 +184,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
-        (->> (rp/mutation :update-comment {:id id :content content :share-id share-id})
+        (->> (rp/cmd! :update-comment {:id id :content content :share-id share-id})
              (rx/catch #(rx/throw {:type :comment-error}))
              (rx/ignore))))))
 
@@ -202,7 +202,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/mutation :delete-comment-thread {:id id})
+      (->> (rp/cmd! :delete-comment-thread {:id id})
            (rx/catch #(rx/throw {:type :comment-error}))
            (rx/ignore)))))
 
@@ -221,7 +221,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
-        (->> (rp/mutation :delete-comment-thread {:id id :share-id share-id})
+        (->> (rp/cmd! :delete-comment-thread {:id id :share-id share-id})
              (rx/catch #(rx/throw {:type :comment-error}))
              (rx/ignore))))))
 
@@ -236,7 +236,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
-        (->> (rp/mutation :delete-comment {:id id :share-id share-id})
+        (->> (rp/cmd! :delete-comment {:id id :share-id share-id})
              (rx/catch #(rx/throw {:type :comment-error}))
              (rx/ignore))))))
 
@@ -249,7 +249,7 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/query :comment-thread {:file-id file-id :id id :share-id share-id})
+          (->> (rp/cmd! :get-comment-thread {:file-id file-id :id id :share-id share-id})
                (rx/map #(partial fetched %))
                (rx/catch #(rx/throw {:type :comment-error}))))))))
 
@@ -272,7 +272,7 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/query :comment-threads {:file-id file-id :share-id share-id})
+          (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
                (rx/map #(partial fetched %))
                (rx/catch #(rx/throw {:type :comment-error}))))))))
 
@@ -285,7 +285,7 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/query :comments {:thread-id thread-id :share-id share-id})
+          (->> (rp/cmd! :get-comments {:thread-id thread-id :share-id share-id})
                (rx/map #(partial fetched %))
                (rx/catch #(rx/throw {:type :comment-error}))))))))
 
@@ -297,7 +297,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [fetched #(assoc %2 :comment-threads (d/index-by :id %1))]
-        (->> (rp/query :unread-comment-threads {:team-id team-id})
+        (->> (rp/cmd! :get-unread-comment-threads {:team-id team-id})
              (rx/map #(partial fetched %))
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
@@ -426,7 +426,7 @@
       ptk/WatchEvent
       (watch [_ _ _]
         (let [thread-id (:id thread)]
-          (->> (rp/mutation :update-comment-thread-frame {:id thread-id  :frame-id frame-id})
+          (->> (rp/cmd! :update-comment-thread-frame {:id thread-id  :frame-id frame-id})
                (rx/catch #(rx/throw {:type :comment-error :code :update-comment-thread-frame}))
                (rx/ignore)))))))
 

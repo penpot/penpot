@@ -103,14 +103,14 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [components-v2 (features/active-feature? state :components-v2)
-            params' (cond-> {:file-id file-id}
-                      (uuid? share-id)
-                      (assoc :share-id share-id)
+            params'       (cond-> {:file-id file-id}
+                            (uuid? share-id)
+                            (assoc :share-id share-id)
 
-                      :always
-                      (assoc :components-v2 components-v2))]
+                            :always
+                            (assoc :components-v2 components-v2))]
 
-        (->> (rp/query :view-only-bundle params')
+        (->> (rp/query! :view-only-bundle params')
              (rx/mapcat
               (fn [{:keys [fonts] :as bundle}]
                 (rx/of (df/fonts-fetched fonts)
@@ -164,7 +164,7 @@
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent
       (watch [_ _ _]
-        (->> (rp/query :comment-threads {:file-id file-id :share-id share-id})
+        (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
              (rx/map #(partial fetched %))
              (rx/catch on-error))))))
 
@@ -175,7 +175,7 @@
     (ptk/reify ::refresh-comment-thread
       ptk/WatchEvent
       (watch [_ _ _]
-        (->> (rp/query :comment-thread {:file-id file-id :id id})
+        (->> (rp/cmd! :get-comment-thread {:file-id file-id :id id})
              (rx/map #(partial fetched %)))))))
 
 (defn fetch-comments
@@ -186,7 +186,7 @@
     (ptk/reify ::retrieve-comments
       ptk/WatchEvent
       (watch [_ _ _]
-        (->> (rp/query :comments {:thread-id thread-id})
+        (->> (rp/cmd! :get-comments {:thread-id thread-id})
              (rx/map #(partial fetched %)))))))
 
 ;; --- Zoom Management

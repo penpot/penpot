@@ -172,56 +172,33 @@
       (let [objects (wsh/lookup-page-objects state)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
-
-
-(defn- select-siblings
-  [state parent]
-  (let [children (wsh/lookup-shapes state (:shapes parent))
-        selected (into (d/ordered-set)
-                       (comp (remove :blocked) (map :id))
-                       children)]
-    (rx/of (select-shapes selected))))
-
-(defn- select-all-frame
-  [state]
-  (let [focus (:workspace-focus-selected state)
-        objects  (-> (wsh/lookup-page-objects state)
-                     (cp/focus-objects focus))
-
-        selected (let [frame-ids (into #{} (comp
-                                            (map (d/getf objects))
-                                            (map :frame-id))
-                                       (wsh/lookup-selected state))
-                       frame-id  (if (= 1 (count frame-ids))
-                                   (first frame-ids)
-                                   uuid/zero)]
-                   (cph/get-immediate-children objects frame-id))
-
-        selected (into (d/ordered-set)
-                       (comp (remove :blocked) (map :id))
-                       selected)]
-
-    (rx/of (select-shapes selected))))
-
-
 (defn select-all
   []
   (ptk/reify ::select-all
     ptk/WatchEvent
     (watch [_ state _]
-           (let [current-selection-parents (->> (wsh/lookup-selected state)
-                                                (wsh/lookup-shapes state)
-                                                (into #{} (map :parent-id)))
-                 num-parents (count current-selection-parents)
-                 parent (when (= num-parents 1)
-                          (wsh/lookup-shape state (first current-selection-parents)))]
+      (let [;; Make the select-all aware of the focus mode; in this
+            ;; case delimit the objects to the focused shapes if focus
+            ;; mode is active
+            focus    (:workspace-focus-selected state)
+            objects  (-> (wsh/lookup-page-objects state)
+                         (cp/focus-objects focus))
 
-             (case num-parents
-               0 (select-all-frame state)
-               1 (if (cph/frame-shape? parent)
-                   (select-all-frame state)
-                   (select-siblings state parent))
-               nil)))))
+            lookup   (d/getf objects)
+            parents  (->> (wsh/lookup-selected state)
+                          (into #{} (comp (keep lookup) (map :parent-id))))
+
+            ;; If we have a only unique parent, then use it as main
+            ;; anchor for the selection; if not, use the root frame as
+            ;; parent
+            parent   (if (= 1 (count parents))
+                       (-> parents first lookup)
+                       (lookup uuid/zero))
+
+            toselect (->> (cph/get-immediate-children objects (:id parent))
+                          (into (d/ordered-set) (comp (remove :blocked) (map :id))))]
+
+        (rx/of (select-shapes toselect))))))
 
 (defn deselect-all
   "Clear all possible state of drawing, edition
