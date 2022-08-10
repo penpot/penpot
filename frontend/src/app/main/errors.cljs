@@ -46,6 +46,14 @@
 ;; Set the main potok error handler
 (reset! st/on-error on-error)
 
+(defmethod ptk/handle-error :default
+  [error]
+  (let [hint (str/concat "Unexpected error: " (:hint error))]
+    (ts/schedule #(st/emit! (rt/assign-exception error)))
+    (js/console.group hint)
+    (ex/ignoring (js/console.error (pr-str error)))
+    (js/console.groupEnd hint)))
+
 ;; We receive a explicit authentication error; this explicitly clears
 ;; all profile data and redirect the user to the login page. This is
 ;; here and not in app.main.errors because of circular dependency.
@@ -188,9 +196,10 @@
 (defn on-unhandled-error
   [error]
   (letfn [(is-ignorable-exception? [cause]
-            (condp = (ex-message cause)
-              "Possible side-effect in debug-evaluate" true
-              false))]
+            (let [message (ex-message cause)]
+              (or (= message "Possible side-effect in debug-evaluate")
+                  (= message "Unexpected end of input") true
+                  (str/starts-with? message "Unexpected token "))))]
     (if (instance? ExceptionInfo error)
       (-> error ex-data ptk/handle-error)
       (when-not (is-ignorable-exception? error)
@@ -203,12 +212,9 @@
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]
-            ;; EvalError is a debug error that happens for unknown reason
-            (when-not (str/includes? (.-message event) "EvalError")
-              (.error js/console event)
-              (.preventDefault ^js event)
-              (some-> (unchecked-get event "error")
-                      (on-unhandled-error))))]
+            (.preventDefault ^js event)
+            (some-> (unchecked-get event "error")
+                    (on-unhandled-error)))]
     (.addEventListener glob/window "error" on-error)
     (fn []
       (.removeEventListener glob/window "error" on-error))))

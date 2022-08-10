@@ -693,7 +693,7 @@ msgstr "Das Bildformat wird nicht unterstützt (es muss ein SVG, JPG oder PNG se
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "Das Bild ist zu groß, um eingefügt zu werden (es muss unter 5MB sein)."
+msgstr "Das Bild ist zu groß, um eingefügt zu werden."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"

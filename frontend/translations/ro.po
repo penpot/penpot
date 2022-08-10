@@ -469,7 +469,7 @@ msgstr "Formatul imaginii nu este acceptat (poate fi svg, jpg sau png)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "Imaginea este prea mare pentru a fi inserată (trebuie să fie sub 5mb)."
+msgstr "Imaginea este prea mare pentru a fi inserată."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"

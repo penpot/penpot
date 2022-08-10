@@ -499,7 +499,7 @@ msgstr "تنسيق الصورة غير مدعوم (يجب أن يكون svg أو
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "الصورة كبيرة جدا بحيث لا يمكن إدراجها (يجب أن تكون أقل من 5mb)."
+msgstr "الصورة كبيرة جدا بحيث لا يمكن إدراجها."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
