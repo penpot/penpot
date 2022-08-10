@@ -6,7 +6,6 @@
 
 (ns app.rpc.queries.comments
   (:require
-   [app.common.spec :as us]
    [app.db :as db]
    [app.rpc.commands.comments :as cmd.comments]
    [app.rpc.doc :as-alias doc]
@@ -23,27 +22,18 @@
 
 ;; --- QUERY: Comment Threads
 
-(s/def ::team-id ::us/uuid)
-(s/def ::file-id ::us/uuid)
-(s/def ::share-id (s/nilable ::us/uuid))
-
-(s/def ::comment-threads
-  (s/and (s/keys :req-un [::profile-id]
-                 :opt-un [::file-id ::share-id ::team-id])
-         #(or (:file-id %) (:team-id %))))
+(s/def ::comment-threads ::cmd.comments/get-comment-threads)
 
 (sv/defmethod ::comment-threads
-  {::doc/deprecated "1.15"}
+  {::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} params]
   (with-open [conn (db/open pool)]
     (cmd.comments/retrieve-comment-threads conn params)))
 
-
 ;; --- QUERY: Unread Comment Threads
 
-(s/def ::team-id ::us/uuid)
-(s/def ::unread-comment-threads
-  (s/keys :req-un [::profile-id ::team-id]))
+(s/def ::unread-comment-threads ::cmd.comments/get-unread-comment-threads)
 
 (sv/defmethod ::unread-comment-threads
   {::doc/added "1.0"
@@ -55,31 +45,19 @@
 
 ;; --- QUERY: Single Comment Thread
 
-(s/def ::id ::us/uuid)
-(s/def ::share-id (s/nilable ::us/uuid))
-(s/def ::comment-thread
-  (s/keys :req-un [::profile-id ::file-id ::id]
-          :opt-un [::share-id]))
+(s/def ::comment-thread ::cmd.comments/get-comment-thread)
 
 (sv/defmethod ::comment-thread
   {::doc/added "1.0"
    ::doc/deprecated "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
-    (let [sql (str "with threads as (" cmd.comments/sql:comment-threads ")"
-                   "select * from threads where id = ?")]
-      (-> (db/exec-one! conn [sql profile-id file-id id])
-          (decode-row)))))
+    (cmd.comments/get-comment-thread conn params)))
 
 ;; --- QUERY: Comments
 
-(s/def ::file-id ::us/uuid)
-(s/def ::share-id (s/nilable ::us/uuid))
-(s/def ::thread-id ::us/uuid)
-(s/def ::comments
-  (s/keys :req-un [::profile-id ::thread-id]
-          :opt-un [::share-id]))
+(s/def ::comments ::cmd.comments/get-comments)
 
 (sv/defmethod ::comments
   {::doc/added "1.0"
@@ -87,17 +65,13 @@
   [{:keys [pool] :as cfg} {:keys [profile-id thread-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (let [thread (db/get-by-id conn :comment-thread thread-id)]
-      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
-      (cmd.comments/retrieve-comments conn thread-id))))
+      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id))
+    (cmd.comments/get-comments conn thread-id)))
+
 
 ;; --- QUERY: Get file comments users
 
-(s/def ::file-id ::us/uuid)
-(s/def ::share-id (s/nilable ::us/uuid))
-
-(s/def ::file-comments-users
-  (s/keys :req-un [::profile-id ::file-id]
-          :opt-un [::share-id]))
+(s/def ::file-comments-users ::cmd.comments/get-profiles-for-file-comments)
 
 (sv/defmethod ::file-comments-users
   {::doc/deprecated "1.15"
@@ -105,4 +79,4 @@
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id]}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
-    (cmd.comments/retrieve-file-comments-users conn file-id profile-id)))
+    (cmd.comments/get-file-comments-users conn file-id profile-id)))
