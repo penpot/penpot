@@ -22,8 +22,11 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [promesa.core :as p]
    [promesa.exec :as px]))
+
+(def default-max-file-size (* 1024 1024 10)) ; 10 MiB
 
 (def thumbnail-options
   {:width 100
@@ -51,10 +54,20 @@
 
 (sv/defmethod ::upload-file-media-object
   {::rlimit/permits (cf/get :rlimit-image)}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id content] :as params}]
   (let [file (select-file pool file-id)
         cfg  (update cfg :storage media/configure-assets-storage)]
+
     (teams/check-edition-permissions! pool profile-id (:team-id file))
+    (media/validate-media-type! content)
+
+    (when (> (:size content) (cf/get :media-max-file-size default-max-file-size))
+      (ex/raise :type :restriction
+                :code :media-max-file-size-reached
+                :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
+                                (:size content)
+                                default-max-file-size)))
+
     (create-file-media-object cfg params)))
 
 (defn- big-enough-for-thumbnail?
@@ -94,8 +107,6 @@
 
 (defn create-file-media-object
   [{:keys [storage pool executors] :as cfg} {:keys [id file-id is-local name content] :as params}]
-  (media/validate-media-type! content)
-
   (letfn [;; Function responsible to retrieve the file information, as
           ;; it is synchronous operation it should be wrapped into
           ;; with-dispatch macro.
@@ -177,30 +188,30 @@
     (teams/check-edition-permissions! pool profile-id (:team-id file))
     (create-file-media-object-from-url cfg params)))
 
-(def max-download-file-size
-  (* 1024 1024 100)) ; 100MiB
-
 (defn- create-file-media-object-from-url
   [{:keys [http-client] :as cfg} {:keys [url name] :as params}]
   (letfn [(parse-and-validate-size [headers]
-            (let [size   (some-> (get headers "content-length") d/parse-integer)
-                  mtype  (get headers "content-type")
-                  format (cm/mtype->format mtype)]
+            (let [size     (some-> (get headers "content-length") d/parse-integer)
+                  mtype    (get headers "content-type")
+                  format   (cm/mtype->format mtype)
+                  max-size (cf/get :media-max-file-size default-max-file-size)]
 
               (when-not size
                 (ex/raise :type :validation
                           :code :unknown-size
-                          :hint "Seems like the url points to resource with unknown size"))
+                          :hint "seems like the url points to resource with unknown size"))
 
-              (when (> size max-download-file-size)
+              (when (> size max-size)
                 (ex/raise :type :validation
                           :code :file-too-large
-                          :hint "Seems like the url points to resource with size greater than 100MiB"))
+                          :hint (str/ffmt "the file size % is greater than the maximum %"
+                                          size
+                                          default-max-file-size)))
 
               (when (nil? format)
                 (ex/raise :type :validation
                           :code :media-type-not-allowed
-                          :hint "Seems like the url points to an invalid media object"))
+                          :hint "seems like the url points to an invalid media object"))
 
               {:size size
                :mtype mtype

@@ -766,7 +766,7 @@ msgstr "Este fichero ya se ha usado con los Componentes V2 activados."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "La imagen es demasiado grande (debe tener menos de 5mb)."
+msgstr "La imagen es demasiado grande."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"

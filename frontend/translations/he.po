@@ -676,7 +676,7 @@ msgstr "סוג התמונה אינו נתמך (חייב להיות svg,‏ jpg �
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "התמונה גדולה מכדי להוסיף אותה (חייבת להיות פחות מ־5 מ״ב)."
+msgstr "התמונה גדולה מכדי להוסיף אותה."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"

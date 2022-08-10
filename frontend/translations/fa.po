@@ -670,7 +670,7 @@ msgstr "فرمت تصویر پشتیبانی نمی‌شود (باید svg، jpg
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "تصویر برای درج خیلی بزرگ است (باید کمتر از 5 مگابایت باشد)."
+msgstr "تصویر برای درج خیلی بزرگ است."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"

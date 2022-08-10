@@ -693,7 +693,7 @@ msgstr "Görsel biçimi desteklenmiyor (svg, jpg veya png olmalı)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "Bu görsel eklemek için çok büyük (5MB altında olmalı)."
+msgstr "Bu görsel eklemek için çok büyük."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"

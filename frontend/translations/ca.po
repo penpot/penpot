@@ -678,7 +678,7 @@ msgstr "El format d'imatge no està suportat (ha de ser SVG, JPG o PNG)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "La imatge és massa gran (ha de ser inferior a 5 MB)."
+msgstr "La imatge és massa gran."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"

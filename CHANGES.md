@@ -53,6 +53,7 @@
 - Support for import/export binary format [Taiga #2991](https://tree.taiga.io/project/penpot/us/2991)
 - Comments positioning [Taiga #2007](https://tree.taiga.io/project/penpot/us/2007)
 - Select all inside a group select only the objects at this group level [Taiga #2382](https://tree.taiga.io/project/penpot/issue/2382)
+- Make the media maximum upload size configurable
 
 ### :bug: Bugs fixed
 

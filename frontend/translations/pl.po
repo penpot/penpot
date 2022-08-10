@@ -680,7 +680,7 @@ msgstr "Format obrazu nie jest obsługiwany (musi to być svg, jpg lub png)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "Obraz jest zbyt duży (musi mieć mniej niż 5 MB)."
+msgstr "Obraz jest zbyt duży."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
