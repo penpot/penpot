@@ -273,12 +273,12 @@
             :key (:id item)
             :navigate? true
             :origin origin}])]
-
        :else
        [:& empty-placeholder {:default? (:is-default project)
                               :on-create-clicked on-create-clicked
                               :project project
-                              :limit limit}])]))
+                              :limit limit
+                              :origin origin}])]))
 
 (mf/defc line-grid-row
   [{:keys [files selected-files dragging? limit] :as props}]

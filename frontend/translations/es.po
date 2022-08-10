@@ -277,6 +277,7 @@ msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
 
 #: src/app/main/ui/dashboard/grid.cljs
+#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "¡Oh, no! ¡Aún no tienes archivos! Si quieres probar con alguna plantilla ve "
@@ -378,6 +379,7 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 fuente añadida"
 msgstr[1] "%s fuentes añadidas"
 
+#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Cualquier fuente personalizada añadida aquí aparecerá en la lista de "
@@ -386,6 +388,7 @@ msgstr ""
 "como una **única familia de fuentes**. Se pueden cargar fuentes con los "
 "siguientes formatos: **TTF, OTF and WOFF** (con uno es suficiente)."
 
+#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sólo deberías cargar fuentes que te pertenecen o de las que tienes una "
