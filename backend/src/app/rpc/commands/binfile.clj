@@ -766,11 +766,11 @@
                   :v1/files    (read-files-section! input files)
                   :v1/sobjects (do
                                  (read-sobjects-section! input)
-                                 (persist-file-media-objects!)))))
+                                 (persist-file-media-objects!))))
 
               ;; Knowing that the ids of the created files are in
               ;; index, just lookup them and return it as a set
-              (into #{} (keep #(get @*index* %)) files)))))))
+              (into #{} (keep #(get @*index* %)) files))))))))
 
 (defn export!
   [cfg]
