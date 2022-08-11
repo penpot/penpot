@@ -54,7 +54,7 @@
                 (recur (inc total)
                        (rest files)))
               (do
-                (l/info :hint "files processed" :processed total)
+                (l/info :hint "task finished" :total total)
 
                 ;; Allow optional rollback passed by params
                 (when (:rollback? params)
