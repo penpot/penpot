@@ -888,6 +888,7 @@
       height: 464px;
       position: absolute;
       bottom: 0;
+      border-radius: 5px;
     }
 
     .modal-right {
@@ -1334,7 +1335,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-
+    border-radius: 0 5px 5px 0;
     .subtitle {
       font-weight: bold;
       font-size: 20px;
