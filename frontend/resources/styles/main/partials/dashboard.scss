@@ -43,13 +43,9 @@
     }
   }
   .invite {
-    background-color: $color-primary;
-    color: $color-black;
     width: 180px;
     height: 40px;
-    border: none;
     align-self: flex-end;
-    cursor: pointer;
   }
   img {
     width: 274px;
@@ -57,6 +53,112 @@
     @media (max-width: 1200px) {
       display: none;
       width: 0;
+    }
+  }
+}
+
+.hero-projects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 30px;
+  margin: 0 1rem 1rem 1.2rem;
+  .tutorial,
+  .walkthrough {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: relative;
+    border: 2px solid $color-gray-10;
+    border-radius: 8px;
+    min-height: 211px;
+
+    .img {
+      border-top-left-radius: 6px;
+      border-bottom-left-radius: 6px;
+      padding: 30px;
+      display: block;
+      background-color: #e0e4e9;
+    }
+
+    .text {
+      padding: 30px;
+      .title {
+        color: $color-black;
+        font-size: $fs24;
+        font-weight: bold;
+        margin-bottom: 8px;
+      }
+      .info {
+        color: $color-gray-30;
+        margin-bottom: 20px;
+        font-size: $fs16;
+      }
+    }
+    .action {
+      font-family: "worksans", sans-serif;
+      width: 180px;
+      height: 40px;
+    }
+    .close {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: $size-5;
+      cursor: pointer;
+      display: flex;
+      margin: 20px;
+      justify-content: center;
+      align-items: center;
+      background-color: transparent;
+      border: none;
+      .icon {
+        svg {
+          fill: $color-gray-30;
+          height: 16px;
+          width: 16px;
+          transform: rotate(45deg);
+          &:hover {
+            fill: $color-primary;
+          }
+        }
+      }
+    }
+
+    @media (max-width: 1846px) {
+      grid-template-columns: 190px 1fr;
+    }
+    @media (max-width: 1526px) {
+      grid-template-columns: 1fr;
+      .img {
+        display: none;
+        width: 0;
+      }
+      .text {
+        .info {
+          // font-size: $fs12;
+        }
+      }
+    }
+  }
+  .walkthrough {
+    .img {
+      background-image: url("/images/walkthrough-cover.png");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+  }
+  .tutorial {
+    .img {
+      background-image: url("/images/hands-on-tutorial.png");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+    .loader {
+      display: flex;
+      svg#loader-pencil {
+        width: 31px;
+      }
     }
   }
 }
@@ -328,8 +430,8 @@
     width: 100%;
     text-align: right;
     height: 56px;
-    cursor: pointer;
     div {
+      cursor: pointer;
       height: 58px;
       display: inline-block;
       line-height: 58px;

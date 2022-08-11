@@ -9,6 +9,7 @@
    [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
+   [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
@@ -51,9 +52,77 @@
       [:div.info
        [:span (tr "dasboard.team-hero.text")]
        [:a {:on-click  go-members} (tr "dasboard.team-hero.management")]]]
-     [:button.invite {:on-click invite-member} (tr "onboarding.choice.team-up.invite-members")]
+     [:button.btn-primary.invite {:on-click invite-member} (tr "onboarding.choice.team-up.invite-members")]
      [:button.close {:on-click close-banner}
       [:span i/close]]]))
+
+(def builtin-templates
+  (l/derived :builtin-templates st/state))
+
+(mf/defc tutorial-project
+  [{:keys [close-tutorial default-project-id] :as props}]
+  (let [state (mf/use-state
+               {:status :waiting
+                :file nil})
+
+        template (->>  (mf/deref builtin-templates)
+                       (filter #(= (:id %) "tutorial-for-beginners"))
+                       first)
+
+        on-template-cloned-success
+        (mf/use-callback
+         (fn [response]
+           (swap! state #(assoc % :status :success :file (:first response)))
+           (st/emit! (dd/go-to-workspace {:id (first response) :project-id default-project-id :name "tutorial"})
+                     (du/update-profile-props {:viewed-tutorial? true}))))
+
+        on-template-cloned-error
+        (fn []
+          (swap! state #(assoc % :status :waiting))
+          (st/emit!
+           (dm/error (tr "dashboard.libraries-and-templates.import-error"))))
+
+        download-tutorial
+        (fn []
+          (let [mdata  {:on-success on-template-cloned-success :on-error on-template-cloned-error}
+                params {:project-id default-project-id :template-id (:id template)}]
+            (swap! state #(assoc % :status :importing))
+            (st/emit! (with-meta (dd/clone-template (with-meta params mdata))
+                        {::ev/origin "get-started-hero-block"}))))]
+    [:div.tutorial
+     [:div.img]
+     [:div.text
+      [:div.title (tr "dasboard.tutorial-hero.title")]
+      [:div.info (tr "dasboard.tutorial-hero.info")]
+      [:button.btn-primary.action {:on-click download-tutorial} 
+       (case (:status @state)
+         :waiting (tr "dasboard.tutorial-hero.start")
+         :importing [:span.loader i/loader-pencil]
+         :success ""
+         )
+       ]]
+     [:button.close
+      {:on-click close-tutorial}
+      [:span.icon i/close]]]))
+
+(mf/defc interface-walkthrough
+  {::mf/wrap [mf/memo]}
+  [{:keys [close-walkthrough] :as props}]
+  (let [handle-walkthrough-link
+        (fn []
+          (st/emit! (ptk/event ::ev/event {::ev/name "show-walkthrough"
+                                           ::ev/origin "get-started-hero-block"
+                                           :section "dashboard"})))]
+    [:div.walkthrough
+     [:div.img]
+     [:div.text
+      [:div.title (tr "dasboard.walkthrough-hero.title")]
+      [:div.info (tr "dasboard.walkthrough-hero.info")]
+      [:a.btn-primary.action {:href " https://design.penpot.app/walkthrough" :target "_blank" :on-click handle-walkthrough-link}
+       (tr "dasboard.walkthrough-hero.start")]]
+     [:button.close
+      {:on-click close-walkthrough}
+      [:span.icon i/close]]]))
 
 (mf/defc project-item
   [{:keys [project first? team files] :as props}]
@@ -215,19 +284,37 @@
   (l/derived :dashboard-recent-files st/state))
 
 (mf/defc projects-section
-  [{:keys [team projects profile] :as props}]
-  (let [projects    (->> (vals projects)
-                         (sort-by :modified-at)
-                         (reverse))
-        recent-map  (mf/deref recent-files-ref)
-        props       (some-> profile (get :props {}))
-        team-hero?  (:team-hero? props true)
+  [{:keys [team projects profile default-project-id] :as props}]
+  (let [projects            (->> (vals projects)
+                                 (sort-by :modified-at)
+                                 (reverse))
+        recent-map          (mf/deref recent-files-ref)
+        props               (some-> profile (get :props {}))
+        team-hero?          (:team-hero? props true)
+        tutorial-viewed?    (:viewed-tutorial? props true)
+        walkthrough-viewed? (:viewed-walkthrough? props true)
 
-        close-banner (fn []
-                       (st/emit!
-                        (du/update-profile-props {:team-hero? false})
-                        (ptk/event ::ev/event {::ev/name "dont-show-team-up-hero"
-                                               ::ev/origin "dashboard"})))]
+        close-banner        (fn []
+                              (st/emit!
+                               (du/update-profile-props {:team-hero? false})
+                               (ptk/event ::ev/event {::ev/name "dont-show-team-up-hero"
+                                                      ::ev/origin "dashboard"})))
+
+        close-tutorial      (fn []
+                              (st/emit!
+                               (du/update-profile-props {:viewed-tutorial? true})
+                               (ptk/event ::ev/event {::ev/name "dont-show"
+                                                      ::ev/origin "get-started-hero-block"
+                                                      :type "tutorial"
+                                                      :section "dashboard"})))
+
+        close-walkthrough   (fn []
+                              (st/emit!
+                               (du/update-profile-props {:viewed-walkthrough? true})
+                               (ptk/event ::ev/event {::ev/name "dont-show"
+                                                      ::ev/origin "get-started-hero-block"
+                                                      :type "walkthrough"
+                                                      :section "dashboard"})))]
 
     (mf/use-effect
      (mf/deps team)
@@ -247,9 +334,19 @@
       [:*
        [:& header]
        (when (and team-hero? (not (:is-default team)))
-         [:& team-hero 
+         [:& team-hero
           {:team team
            :close-banner close-banner}])
+       (when (or (not tutorial-viewed?) (not walkthrough-viewed?))
+         [:div.hero-projects
+          (when (and (not tutorial-viewed?) (:is-default team))
+            [:& tutorial-project
+             {:close-tutorial close-tutorial
+              :default-project-id default-project-id}])
+
+          (when (and (not walkthrough-viewed?) (:is-default team))
+            [:& interface-walkthrough
+             {:close-walkthrough close-walkthrough}])])
 
        [:section.dashboard-container.no-bg
         (for [{:keys [id] :as project} projects]
