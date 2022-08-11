@@ -310,8 +310,7 @@
 
    :app.tasks.objects-gc/handler
    {:pool    (ig/ref :app.db/pool)
-    :storage (ig/ref :app.storage/storage)
-    :max-age cf/deletion-delay}
+    :storage (ig/ref :app.storage/storage)}
 
    :app.tasks.file-gc/handler
    {:pool (ig/ref :app.db/pool)}
