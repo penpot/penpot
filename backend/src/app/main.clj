@@ -79,8 +79,7 @@
    :app.storage/gc-deleted-task
    {:pool     (ig/ref :app.db/pool)
     :storage  (ig/ref :app.storage/storage)
-    :executor (ig/ref [::worker :app.worker/executor])
-    :min-age  (dt/duration {:hours 2})}
+    :executor (ig/ref [::worker :app.worker/executor])}
 
    :app.storage/gc-touched-task
    {:pool (ig/ref :app.db/pool)}

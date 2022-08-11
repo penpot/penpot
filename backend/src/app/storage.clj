@@ -270,39 +270,48 @@
 (defmethod ig/pre-init-spec ::gc-deleted-task [_]
   (s/keys :req-un [::storage ::db/pool ::min-age ::wrk/executor]))
 
+(defmethod ig/prep-key ::gc-deleted-task
+  [_ cfg]
+  (merge {:min-age (dt/duration {:hours 2})}
+         (d/without-nils cfg)))
+
 (defmethod ig/init-key ::gc-deleted-task
-  [_ {:keys [pool storage min-age] :as cfg}]
-  (letfn [(retrieve-deleted-objects-chunk [conn cursor]
+  [_ {:keys [pool storage] :as cfg}]
+  (letfn [(retrieve-deleted-objects-chunk [conn min-age cursor]
             (let [min-age (db/interval min-age)
                   rows    (db/exec! conn [sql:retrieve-deleted-objects-chunk min-age cursor])]
               [(some-> rows peek :created-at)
                (some->> (seq rows) (d/group-by #(-> % :backend keyword) :id #{}) seq)]))
 
-          (retrieve-deleted-objects [conn]
-            (->> (d/iteration (fn [cursor]
-                                (retrieve-deleted-objects-chunk conn cursor))
+          (retrieve-deleted-objects [conn min-age]
+            (->> (d/iteration (partial retrieve-deleted-objects-chunk conn min-age)
                               :initk (dt/now)
                               :vf second
                               :kf first)
                  (sequence cat)))
 
-          (delete-in-bulk [conn backend ids]
-            (let [backend (impl/resolve-backend storage backend)
+          (delete-in-bulk [conn backend-name ids]
+            (let [backend (impl/resolve-backend storage backend-name)
                   backend (assoc backend :conn conn)]
+
+              (doseq [id ids]
+                (l/debug :hint "permanently delete storage object" :task "gc-deleted" :backend backend-name :id id))
+
               @(impl/del-objects-in-bulk backend ids)))]
 
-    (fn [_]
-      (db/with-atomic [conn pool]
-        (loop [total  0
-               groups (retrieve-deleted-objects conn)]
-          (if-let [[backend ids] (first groups)]
-            (do
-              (delete-in-bulk conn backend ids)
-              (recur (+ total (count ids))
-                     (rest groups)))
-            (do
-              (l/info :hint "gc-deleted task finished" :total total)
-              {:deleted total})))))))
+    (fn [params]
+      (let [min-age (or (:min-age params) (:min-age cfg))]
+        (db/with-atomic [conn pool]
+          (loop [total  0
+                 groups (retrieve-deleted-objects conn min-age)]
+            (if-let [[backend ids] (first groups)]
+              (do
+                (delete-in-bulk conn backend ids)
+                (recur (+ total (count ids))
+                       (rest groups)))
+              (do
+                (l/info :hint "task finished" :min-age (dt/format-duration min-age) :task "gc-deleted" :total total)
+                {:deleted total}))))))))
 
 (def sql:retrieve-deleted-objects-chunk
   "with items_part as (
