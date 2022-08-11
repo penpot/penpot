@@ -25,6 +25,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
+   [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
 (mf/defc header
@@ -224,7 +225,9 @@
 
         close-banner (fn []
                        (st/emit!
-                        (du/update-profile-props {:team-hero? false})))]
+                        (du/update-profile-props {:team-hero? false})
+                        (ptk/event ::ev/event {::ev/name "dont-show-team-up-hero"
+                                               ::ev/origin "dashboard"})))]
 
     (mf/use-effect
      (mf/deps team)
