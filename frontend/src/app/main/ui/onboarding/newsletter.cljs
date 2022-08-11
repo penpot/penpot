@@ -32,7 +32,7 @@
                      (du/update-profile-props {:newsletter-subscribed false}))))]
 
     [:div.modal-overlay
-     [:div.modal-container.onboarding.newsletter.animated.fadeInUp
+     [:div.modal-container.onboarding.newsletter.animated.fadeInDown
       [:div.modal-top
        [:h1.newsletter-title {:data-test "onboarding-newsletter-title"} (tr "onboarding.newsletter.title")]
        [:p (tr "onboarding.newsletter.desc")]]

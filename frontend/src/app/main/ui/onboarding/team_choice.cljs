@@ -75,7 +75,7 @@
     (if (< (count teams) 2)
 
       [:div.modal-overlay
-       [:div.modal-container.onboarding-team
+       [:div.modal-container.onboarding-team.animated.fadeIn
         [:div.team-left
          [:h2.title (tr "onboarding.choice.team-up.create-team")]
          [:p.info (tr "onboarding.choice.team-up.create-team-desc")]
@@ -168,7 +168,7 @@
                                               :step 2})))))]
 
     [:div.modal-overlay
-     [:div.modal-container.onboarding-team-members
+     [:div.modal-container.onboarding-team-members.animated.fadeIn
       [:div.team-left
        [:h2.title (tr "onboarding.choice.team-up.invite-members")]
        [:p.info (tr "onboarding.choice.team-up.invite-members-info")]
