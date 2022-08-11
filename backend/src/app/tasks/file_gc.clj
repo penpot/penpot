@@ -47,7 +47,7 @@
               (recur (inc total)
                      (rest files)))
             (do
-              (l/debug :msg "finished processing files" :processed total)
+              (l/info :hint "files processed" :processed total)
               {:processed total})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -142,14 +142,14 @@
                  "delete from file_object_thumbnail "
                  " where file_id=? and object_id=ANY(?)")
             res (db/exec-one! conn [sql file-id (db/create-array conn "text" unused)])]
-        (l/debug :hint "delete object thumbnails" :total (:next.jdbc/update-count res))))))
+        (l/debug :hint "delete file object thumbnails" :file-id file-id :total (:next.jdbc/update-count res))))))
 
 (defn- clean-file-thumbnails!
   [conn file-id revn]
   (let [sql (str "delete from file_thumbnail "
                  " where file_id=? and revn < ?")
         res (db/exec-one! conn [sql file-id revn])]
-    (l/debug :hint "delete file thumbnails" :total (:next.jdbc/update-count res))))
+    (l/debug :hint "delete file thumbnails" :file-id file-id :total (:next.jdbc/update-count res))))
 
 (defn- process-file
   [{:keys [conn] :as cfg} {:keys [id data revn modified-at] :as file}]

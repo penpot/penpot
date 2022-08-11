@@ -301,7 +301,7 @@
               (recur (+ total (count ids))
                      (rest groups)))
             (do
-              (l/info :task "gc-deleted" :count total)
+              (l/info :hint "gc-deleted task finished" :total total)
               {:deleted total})))))))
 
 (def sql:retrieve-deleted-objects-chunk
@@ -345,14 +345,14 @@
 
 (defmethod ig/init-key ::gc-touched-task
   [_ {:keys [pool] :as cfg}]
-  (letfn [(has-team-font-variant-nrefs? [conn id]
-            (-> (db/exec-one! conn [sql:retrieve-team-font-variant-nrefs id id id id]) :nrefs pos?))
+  (letfn [(get-team-font-variant-nrefs [conn id]
+            (-> (db/exec-one! conn [sql:retrieve-team-font-variant-nrefs id id id id]) :nrefs))
 
-          (has-file-media-object-nrefs? [conn id]
-            (-> (db/exec-one! conn [sql:retrieve-file-media-object-nrefs id id]) :nrefs pos?))
+          (get-file-media-object-nrefs [conn id]
+            (-> (db/exec-one! conn [sql:retrieve-file-media-object-nrefs id id]) :nrefs))
 
-          (has-profile-nrefs? [conn id]
-            (-> (db/exec-one! conn [sql:retrieve-profile-nrefs id id]) :nrefs pos?))
+          (get-profile-nrefs [conn id]
+            (-> (db/exec-one! conn [sql:retrieve-profile-nrefs id id]) :nrefs))
 
           (mark-freeze-in-bulk [conn ids]
             (db/exec-one! conn ["update storage_object set touched_at=null where id = ANY(?)"
@@ -395,15 +395,23 @@
                               :kf first)
                  (sequence cat)))
 
-          (process-objects! [conn pred-fn ids]
+          (process-objects! [conn get-fn ids bucket]
             (loop [to-freeze #{}
                    to-delete #{}
                    ids       (seq ids)]
               (if-let [id (first ids)]
-                (if (pred-fn conn id)
-                  (recur (conj to-freeze id) to-delete (rest ids))
-                  (recur to-freeze (conj to-delete id) (rest ids)))
-
+                (let [nrefs (get-fn conn id)]
+                  (if (pos? nrefs)
+                    (do
+                      (l/debug :hint "processing storage object"
+                               :task "gc-touched" :id id :status "freeze"
+                               :bucket bucket :refs nrefs)
+                      (recur (conj to-freeze id) to-delete (rest ids)))
+                    (do
+                      (l/debug :hint "processing storage object"
+                               :task "gc-touched" :id id :status "delete"
+                               :bucket bucket :refs nrefs)
+                      (recur to-freeze (conj to-delete id) (rest ids)))))
                 (do
                   (some->> (seq to-freeze) (mark-freeze-in-bulk conn))
                   (some->> (seq to-delete) (mark-delete-in-bulk conn))
@@ -417,9 +425,9 @@
                groups    (retrieve-touched conn)]
           (if-let [[bucket ids] (first groups)]
             (let [[f d] (case bucket
-                          "file-media-object" (process-objects! conn has-file-media-object-nrefs? ids)
-                          "team-font-variant" (process-objects! conn has-team-font-variant-nrefs? ids)
-                          "profile"           (process-objects! conn has-profile-nrefs? ids)
+                          "file-media-object" (process-objects! conn get-file-media-object-nrefs ids bucket)
+                          "team-font-variant" (process-objects! conn get-team-font-variant-nrefs ids bucket)
+                          "profile"           (process-objects! conn get-profile-nrefs ids bucket)
                           (ex/raise :type :internal
                                     :code :unexpected-unknown-reference
                                     :hint (dm/fmt "unknown reference %" bucket)))]
@@ -427,15 +435,16 @@
                      (+ to-delete d)
                      (rest groups)))
             (do
-              (l/info :task "gc-touched" :to-freeze to-freeze :to-delete to-delete)
+              (l/info :hint "task finished" :task "gc-touched" :to-freeze to-freeze :to-delete to-delete)
               {:freeze to-freeze :delete to-delete})))))))
 
 (def sql:retrieve-touched-objects-chunk
-  "select so.* from storage_object as so
-    where so.touched_at is not null
-      and so.created_at < ?
-    order by so.created_at desc
-    limit 500;")
+  "SELECT so.*
+     FROM storage_object AS so
+    WHERE so.touched_at IS NOT NULL
+      AND so.created_at < ?
+    ORDER by so.created_at DESC
+    LIMIT 500;")
 
 (def sql:retrieve-file-media-object-nrefs
   "select ((select count(*) from file_media_object where media_id = ?) +
