@@ -64,7 +64,9 @@
 
 (mf/defc templates-section
   [{:keys [default-project-id profile project team content-width] :as props}]
-  (let [templates   (mf/deref builtin-templates)
+  (let [templates   (->>  (mf/deref builtin-templates)
+                          (filter #(not= (:id %) "tutorial-for-beginners")))
+
         route       (mf/deref refs/route)
         route-name  (get-in route [:data :name])
         section     (if (= route-name :dashboard-files)
@@ -141,8 +143,8 @@
                                            :section section})))]
 
     [:div.dashboard-templates-section {:class (when collapsed "collapsed")}
-     [:div.title {:on-click toggle-collapse}
-      [:div
+     [:div.title 
+      [:div {:on-click toggle-collapse}
        [:span (tr "dashboard.libraries-and-templates")]
        [:span.icon (if collapsed i/arrow-up i/arrow-down)]]]
      [:div.content {:ref content-ref
@@ -192,7 +194,10 @@
      (case section
        :dashboard-projects
        [:*
-        [:& projects-section {:team team :projects projects :profile profile}]
+        [:& projects-section {:team team 
+                              :projects projects 
+                              :profile profile
+                              :default-project-id default-project-id}]
         [:& templates-section {:profile profile
                                :project project
                                :default-project-id default-project-id

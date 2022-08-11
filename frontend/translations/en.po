@@ -476,6 +476,30 @@ msgstr "Penpot is meant for teams. Invite members to work together on projects a
 msgid "dasboard.team-hero.management"
 msgstr "Team management"
 
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Hands on Tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Learn the basics at Penpot while having some fun with this hands on tutorial."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Start the tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Interface Walkthrough"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Take a walk through Penpot and get to know its main features."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Start the tour"
+
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-file-prefix"
 msgstr "New File"

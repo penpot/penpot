@@ -202,9 +202,11 @@
               (vals)
               (filter cph/text-shape?)))
 
-        zoom   (:zoom local)
-        frames (:frames page)
-        frame  (get frames index)
+        zoom      (:zoom local)
+        zoom-type (:zoom-type local)
+
+        frames    (:frames page)
+        frame     (get frames index)
 
         fullscreen? (mf/deref refs/viewer-fullscreen?)
         overlays (:overlays local)
@@ -262,7 +264,6 @@
           (reset! scroll (dom/get-target-scroll event)))]
 
     (hooks/use-shortcuts ::viewer sc/shortcuts)
-
     (when (nil? page)
       (ex/raise :type :not-found))
 
@@ -314,8 +315,20 @@
              (wapi/exit-fullscreen))))))
 
     (mf/use-layout-effect
+     (mf/deps page)
+     (fn []
+       (case zoom-type
+         :fit (st/emit! dv/zoom-to-fit)
+         :fill (st/emit! dv/zoom-to-fill)
+         nil)))
+
+    (mf/use-layout-effect
      (mf/deps index)
      (fn []
+       (case zoom-type
+         :fit (st/emit! dv/zoom-to-fit)
+         :fill (st/emit! dv/zoom-to-fill)
+         nil)
         ;; Navigate animation needs to be started after navigation
         ;; is complete, and we have the next page index.
        (when (and current-animation

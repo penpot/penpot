@@ -296,7 +296,7 @@
               (rx/map recent-files-fetched)))))))
 
 
-;; --- EVENT: fetch-team-invitations
+;; --- EVENT: fetch-template-files
 
 (defn builtin-templates-fetched
   [libraries]

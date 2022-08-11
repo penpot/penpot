@@ -1,4 +1,8 @@
-[{:id "penpot-design-system"
+[{:id "tutorial-for-beginners"
+  :name "Tutorial for beginners"
+  :thumbnail-uri "https://penpot.app/images/libraries/tutorial-for-beginners.jpg"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/tutorial-for-beginners.penpot"}
+ {:id "penpot-design-system"
   :name "Penpot Design System"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-ds-penpot.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Penpot-Design-system.penpot"}

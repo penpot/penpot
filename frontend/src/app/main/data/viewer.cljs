@@ -323,7 +323,6 @@
            (dcm/close-thread)
            (rt/nav :viewer pparams (assoc qparams :index (inc index)))))))))
 
-
 (def select-first-frame
   (ptk/reify ::select-first-frame
     ptk/WatchEvent
