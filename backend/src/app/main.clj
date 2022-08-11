@@ -270,10 +270,6 @@
      {:cron #app/cron "0 30 */3,23 * * ?"
       :task :telemetry}
 
-     (when (cf/get :fdata-storage-backed)
-       {:cron #app/cron "0 0 * * * ?"  ;; hourly
-        :task :file-offload})
-
      (when (contains? cf/flags :audit-log-archive)
        {:cron #app/cron "0 */5 * * * ?" ;; every 5m
         :task :audit-log-archive})
@@ -294,7 +290,6 @@
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :session-gc         (ig/ref :app.http.session/gc-task)
-     :file-offload       (ig/ref :app.tasks.file-offload/handler)
      :audit-log-archive  (ig/ref :app.loggers.audit/archive-task)
      :audit-log-gc       (ig/ref :app.loggers.audit/gc-task)}}
 
@@ -325,12 +320,6 @@
    :app.tasks.file-xlog-gc/handler
    {:pool    (ig/ref :app.db/pool)
     :max-age (dt/duration {:hours 72})}
-
-   :app.tasks.file-offload/handler
-   {:pool    (ig/ref :app.db/pool)
-    :max-age (dt/duration {:seconds 5})
-    :storage (ig/ref :app.storage/storage)
-    :backend (cf/get :fdata-storage-backed :fdata-s3)}
 
    :app.tasks.telemetry/handler
    {:pool        (ig/ref :app.db/pool)
