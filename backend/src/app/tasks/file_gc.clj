@@ -14,6 +14,7 @@
    [app.common.logging :as l]
    [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
+   [app.config :as cf]
    [app.db :as db]
    [app.util.blob :as blob]
    [app.util.time :as dt]
@@ -29,26 +30,37 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::max-age ::dt/duration)
+(s/def ::min-age ::dt/duration)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::max-age]))
+  (s/keys :req-un [::db/pool ::min-age]))
+
+(defmethod ig/prep-key ::handler
+  [_ cfg]
+  (merge {:min-age cf/deletion-delay}
+         (d/without-nils cfg)))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as cfg}]
-  (fn [_]
-    (db/with-atomic [conn pool]
-      (let [cfg (assoc cfg :conn conn)]
-        (loop [total 0
-               files (retrieve-candidates cfg)]
-          (if-let [file (first files)]
-            (do
-              (process-file cfg file)
-              (recur (inc total)
-                     (rest files)))
-            (do
-              (l/info :hint "files processed" :processed total)
-              {:processed total})))))))
+  (fn [params]
+    (let [cfg (merge cfg params)]
+      (db/with-atomic [conn pool]
+        (let [cfg (assoc cfg :conn conn)]
+          (loop [total 0
+                 files (retrieve-candidates cfg)]
+            (if-let [file (first files)]
+              (do
+                (process-file cfg file)
+                (recur (inc total)
+                       (rest files)))
+              (do
+                (l/info :hint "files processed" :processed total)
+
+                ;; Allow optional rollback passed by params
+                (when (:rollback? params)
+                  (db/rollback! conn))
+
+                {:processed total}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPL
@@ -69,18 +81,20 @@
     for update skip locked")
 
 (defn- retrieve-candidates
-  [{:keys [conn max-age] :as cfg}]
-  (let [interval (db/interval max-age)
+  [{:keys [conn min-age id] :as cfg}]
+  (if id
+    (do
+      (l/warn :hint "explicit file id passed on params" :id id)
+      (db/query conn :file {:id id}))
+    (let [interval  (db/interval min-age)
+          get-chunk (fn [cursor]
+                      (let [rows (db/exec! conn [sql:retrieve-candidates-chunk interval cursor])]
+                        [(some->> rows peek :modified-at) (seq rows)]))]
 
-        get-chunk
-        (fn [cursor]
-          (let [rows (db/exec! conn [sql:retrieve-candidates-chunk interval cursor])]
-            [(some->> rows peek :modified-at) (seq rows)]))]
-
-    (sequence cat (d/iteration get-chunk
-                               :vf second
-                               :kf first
-                               :initk (dt/now)))))
+      (sequence cat (d/iteration get-chunk
+                                 :vf second
+                                 :kf first
+                                 :initk (dt/now))))))
 
 (defn collect-used-media
   [data]
