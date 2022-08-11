@@ -1317,10 +1317,6 @@ msgstr "Excluir membro da equipe"
 msgid "modals.invite-member-confirm.accept"
 msgstr "Enviar convite"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "Convidar para se juntar à equipe"
-
 msgid "modals.leave-and-reassign.forbiden"
 msgstr ""
 "Você não pode deixar a equipe se não houver outro membro para promover a "

@@ -464,6 +464,18 @@ msgstr "Move to other team"
 msgid "dashboard.new-file"
 msgstr "+ New File"
 
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Team up!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr "Penpot is meant for teams. Invite members to work together on projects and files"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Team management"
+
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-file-prefix"
 msgstr "New File"
@@ -1702,8 +1714,8 @@ msgid "modals.invite-member.emails"
 msgstr "Emails, comma separated"
 
 #: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "Invite to join the team"
+msgid "modals.invite-team-member.title"
+msgstr "Invite members to the team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
@@ -1914,7 +1926,7 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr "Remember to include everyone. Developers, designers, managers... diversity adds up :)"
 
 msgid "onboarding.choice.team-up.roles"
-msgstr "Invite members with the role:"
+msgstr "Invite with the role:"
 
 msgid "onboarding.choice.team-up.create-later"
 msgstr "Create a team later"

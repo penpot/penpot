@@ -484,6 +484,18 @@ msgstr "Nuevo Archivo"
 msgid "dashboard.new-project"
 msgstr "+ Nuevo proyecto"
 
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "¡Forma equipo!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr " Penpot está dirigido a equipos. Invita a personas para trabajar conjuntamente en proyectos y archivos."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Gestión del equipo"
+
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "Nuevo Proyecto"
@@ -1776,8 +1788,8 @@ msgid "modals.invite-member.emails"
 msgstr "Emails, separados por coma"
 
 #: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "Invitar a unirse al equipo"
+msgid "modals.invite-team-member.title"
+msgstr "Invitar a miembros al equipo"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
@@ -1997,7 +2009,7 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr "No olvides incluir personas de desarrollo, diseño, gestión… la diversidad suma :)"
 
 msgid "onboarding.choice.team-up.roles"
-msgstr "Invitar integrantes con el rol:"
+msgstr "Invitar con el rol:"
 
 msgid "onboarding.choice.team-up.create-later"
 msgstr "Crea un equipo más tarde"
@@ -2021,7 +2033,7 @@ msgid "onboarding.team-modal.create-team-feature-4"
 msgstr "Sin límite de integrantes"
 
 msgid "onboarding.team-modal.create-team-feature-5"
-msgstr "¡100 gratis!"
+msgstr "¡100% gratis!"
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Crear equipo e invitar después"

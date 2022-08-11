@@ -9,6 +9,8 @@
    [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
+   [app.main.data.modal :as modal]
+   [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [line-grid]]
@@ -35,6 +37,22 @@
 
      [:a.btn-secondary.btn-small {:on-click create :data-test "new-project-button"}
       (tr "dashboard.new-project")]]))
+
+(mf/defc team-hero
+  {::mf/wrap [mf/memo]}
+  [{:keys [team close-banner] :as props}]
+  (let [go-members    #(st/emit! (dd/go-to-team-members))
+        invite-member #(st/emit! (modal/show {:type :invite-members :team team :origin :hero}))]
+    [:div.team-hero
+     [:img {:src "images/deco-team-banner.png" :border "0"}]
+     [:div.text
+      [:div.title (tr "dasboard.team-hero.title")]
+      [:div.info
+       [:span (tr "dasboard.team-hero.text")]
+       [:a {:on-click  go-members} (tr "dasboard.team-hero.management")]]]
+     [:button.invite {:on-click invite-member} (tr "onboarding.choice.team-up.invite-members")]
+     [:button.close {:on-click close-banner}
+      [:span i/close]]]))
 
 (mf/defc project-item
   [{:keys [project first? team files] :as props}]
@@ -196,11 +214,17 @@
   (l/derived :dashboard-recent-files st/state))
 
 (mf/defc projects-section
-  [{:keys [team projects] :as props}]
-  (let [projects   (->> (vals projects)
-                        (sort-by :modified-at)
-                        (reverse))
-        recent-map (mf/deref recent-files-ref)]
+  [{:keys [team projects profile] :as props}]
+  (let [projects    (->> (vals projects)
+                         (sort-by :modified-at)
+                         (reverse))
+        recent-map  (mf/deref recent-files-ref)
+        props       (some-> profile (get :props {}))
+        team-hero?  (:team-hero? props true)
+
+        close-banner (fn []
+                       (st/emit!
+                        (du/update-profile-props {:team-hero? false})))]
 
     (mf/use-effect
      (mf/deps team)
@@ -219,6 +243,11 @@
     (when (seq projects)
       [:*
        [:& header]
+       (when (and team-hero? (not (:is-default team)))
+         [:& team-hero 
+          {:team team
+           :close-banner close-banner}])
+
        [:section.dashboard-container.no-bg
         (for [{:keys [id] :as project} projects]
           (let [files (when recent-map

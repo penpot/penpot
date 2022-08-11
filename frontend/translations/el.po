@@ -1115,10 +1115,6 @@ msgstr "Διαγραφή μέλους της ομάδας"
 msgid "modals.invite-member-confirm.accept"
 msgstr "Αποστολή πρόσκλησης"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "Προσκαλέστε να συμμετάσχετε στην ομάδα"
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr "Είστε ο ιδιοκτήτης του %s"

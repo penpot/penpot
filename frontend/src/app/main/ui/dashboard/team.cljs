@@ -34,7 +34,9 @@
   (let [go-members           (mf/use-fn #(st/emit! (dd/go-to-team-members)))
         go-settings          (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
         go-invitations       (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
-        invite-member        (mf/use-fn #(st/emit! (modal/show {:type :invite-members :team team})))
+        invite-member        (mf/use-fn 
+                              (mf/deps team)
+                              #(st/emit! (modal/show {:type :invite-members :team team :origin :team})))
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
@@ -87,7 +89,7 @@
 (mf/defc invite-members-modal
   {::mf/register modal/components
    ::mf/register-as :invite-members}
-  [{:keys [team]}]
+  [{:keys [team origin]}]
   (let [perms   (:permissions team)
         roles   (mf/use-memo (mf/deps perms) #(get-available-roles perms))
         initial (mf/use-memo (constantly {:role "editor" :team-id (:id team)}))
@@ -127,24 +129,29 @@
                       (dd/fetch-team-invitations))))]
 
     [:div.modal.dashboard-invite-modal.form-container
+     {:class (dom/classnames
+              :hero (= origin :hero))}
      [:& fm/form {:on-submit on-submit :form form}
       [:div.title
-       [:span.text (tr "modals.invite-member.title")]]
+       [:span.text (tr "modals.invite-team-member.title")]]
 
       (when-not (= "" @error-text)
         [:div.error
          [:span.icon i/msg-error]
          [:span.text @error-text]])
-
       [:div.form-row
+       [:p.label (tr "onboarding.choice.team-up.roles")]
+       [:& fm/select {:name :role :options roles}]]
+      [:div.form-row
+
+
        [:& fm/multi-input {:type "email"
                            :name :emails
                            :auto-focus? true
                            :trim true
                            :valid-item-fn us/parse-email
                            :label (tr "modals.invite-member.emails")
-                           :on-submit  on-submit}]
-       [:& fm/select {:name :role :options roles}]]
+                           :on-submit  on-submit}]]
 
       [:div.action-buttons
        [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))

@@ -1554,10 +1554,6 @@ msgstr "发送邀请"
 msgid "modals.invite-member.emails"
 msgstr "电子邮件，以逗号分隔"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "邀请加入团队"
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
 msgstr "由于你是这个团队的唯一成员，这个团队将连同其项目和文件一起被删除。"

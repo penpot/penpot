@@ -1613,10 +1613,6 @@ msgstr "Envia una invitació"
 msgid "modals.invite-member.emails"
 msgstr "Correus electrònics, separats per una coma"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "Convida a unir-se a l'equip"
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
