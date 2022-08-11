@@ -142,10 +142,10 @@
          (fn [event]
            (dom/prevent-default event)
            (when-not selected?
-             (let [shift? (kbd/shift? event)]
-               (when-not shift?
-                 (st/emit! (dd/clear-selected-files)))
-               (st/emit! (dd/toggle-file-select file))))
+             (when-not (kbd/shift? event)
+               (st/emit! (dd/clear-selected-files)))
+             (st/emit! (dd/toggle-file-select file)))
+
            (let [position (dom/get-client-position event)]
              (swap! local assoc
                     :menu-open true
