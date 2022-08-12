@@ -234,50 +234,6 @@
    :app.rpc/routes
    {:methods (ig/ref :app.rpc/methods)}
 
-   :app.worker/worker
-   {:executor (ig/ref [::worker :app.worker/executor])
-    :tasks    (ig/ref :app.worker/registry)
-    :metrics  (ig/ref :app.metrics/metrics)
-    :pool     (ig/ref :app.db/pool)}
-
-   :app.worker/cron
-   {:executor   (ig/ref [::worker :app.worker/executor])
-    :scheduler  (ig/ref :app.worker/scheduler)
-    :tasks      (ig/ref :app.worker/registry)
-    :pool       (ig/ref :app.db/pool)
-    :entries
-    [{:cron #app/cron "0 0 0 * * ?" ;; daily
-      :task :file-gc}
-
-     {:cron #app/cron "0 0 * * * ?"  ;; hourly
-      :task :file-xlog-gc}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :storage-gc-deleted}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :storage-gc-touched}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :session-gc}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :objects-gc}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :tasks-gc}
-
-     {:cron #app/cron "0 30 */3,23 * * ?"
-      :task :telemetry}
-
-     (when (contains? cf/flags :audit-log-archive)
-       {:cron #app/cron "0 */5 * * * ?" ;; every 5m
-        :task :audit-log-archive})
-
-     (when (contains? cf/flags :audit-log-gc)
-       {:cron #app/cron "0 0 0 * * ?" ;; daily
-        :task :audit-log-gc})]}
-
    :app.worker/registry
    {:metrics (ig/ref :app.metrics/metrics)
     :tasks
@@ -394,14 +350,62 @@
    {:directory (cf/get :storage-assets-fs-directory)}
    })
 
+
+(def worker-config
+  {   :app.worker/cron
+   {:executor   (ig/ref [::worker :app.worker/executor])
+    :scheduler  (ig/ref :app.worker/scheduler)
+    :tasks      (ig/ref :app.worker/registry)
+    :pool       (ig/ref :app.db/pool)
+    :entries
+    [{:cron #app/cron "0 0 0 * * ?" ;; daily
+      :task :file-gc}
+
+     {:cron #app/cron "0 0 * * * ?"  ;; hourly
+      :task :file-xlog-gc}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :storage-gc-deleted}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :storage-gc-touched}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :session-gc}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :objects-gc}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :tasks-gc}
+
+     {:cron #app/cron "0 30 */3,23 * * ?"
+      :task :telemetry}
+
+     (when (contains? cf/flags :audit-log-archive)
+       {:cron #app/cron "0 */5 * * * ?" ;; every 5m
+        :task :audit-log-archive})
+
+     (when (contains? cf/flags :audit-log-gc)
+       {:cron #app/cron "0 0 0 * * ?" ;; daily
+        :task :audit-log-gc})]}
+
+   :app.worker/worker
+   {:executor (ig/ref [::worker :app.worker/executor])
+    :tasks    (ig/ref :app.worker/registry)
+    :metrics  (ig/ref :app.metrics/metrics)
+    :pool     (ig/ref :app.db/pool)}})
+
 (def system nil)
 
 (defn start
   []
-  (ig/load-namespaces system-config)
+  (ig/load-namespaces (merge system-config worker-config))
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
                              (-> system-config
+                                 (cond-> (contains? cf/flags :backend-worker)
+                                   (merge worker-config))
                                  (ig/prep)
                                  (ig/init))))
   (l/info :msg "welcome to penpot"

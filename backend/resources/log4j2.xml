@@ -11,14 +11,7 @@
     <Logger name="com.zaxxer.hikari" level="error" />
     <Logger name="org.postgresql" level="error" />
 
-    <Logger name="app.rpc.commands.binfile" level="info" />
-    <Logger name="app.storage.tmp" level="info" />
-    <Logger name="app.worker" level="info" />
-    <Logger name="app.msgbus" level="info" />
-    <Logger name="app.http.websocket" level="info" />
-    <Logger name="app.util.websocket" level="info" />
-
-    <Logger name="app" level="debug" additivity="false">
+    <Logger name="app" level="info" additivity="false">
       <AppenderRef ref="console" />
     </Logger>
 

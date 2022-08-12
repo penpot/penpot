@@ -186,7 +186,7 @@
         spec  (or (::sv/spec mdata) (s/spec any?))
         auth? (:auth mdata true)]
 
-    (l/trace :action "register" :name (::sv/name mdata))
+    (l/debug :hint "register method" :name (::sv/name mdata))
     (with-meta
       (fn [{:keys [::request] :as params}]
         ;; Raise authentication error when rpc method requires auth but
