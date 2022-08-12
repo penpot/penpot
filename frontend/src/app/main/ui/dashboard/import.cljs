@@ -11,7 +11,7 @@
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
@@ -294,7 +294,7 @@
         (fn []
           (st/emit!
            (modal/hide)
-           (dm/error (tr "dashboard.libraries-and-templates.import-error"))))
+           (msg/error (tr "dashboard.libraries-and-templates.import-error"))))
 
         continue-files
         (fn []
