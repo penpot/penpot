@@ -224,7 +224,11 @@
              #_:else (rect->path shape))
 
            ;; Apply the transforms that had the shape
-           transform (:transform shape)
+           transform
+           (cond-> (:transform shape (gmt/matrix))
+             (:flip-x shape) (gmt/scale (gpt/point -1 1))
+             (:flip-y shape) (gmt/scale (gpt/point 1 -1)))
+
            new-content (cond-> new-content
                          (some? transform)
                          (gsp/transform-content (gmt/transform-in (gsc/center-shape shape) transform)))]
