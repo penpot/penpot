@@ -11,6 +11,7 @@
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
@@ -125,7 +126,8 @@
           (let [params (:clean-data @form)
                 mdata  {:on-success (partial on-success form)
                         :on-error   (partial on-error form)}]
-            (st/emit! (dd/invite-team-members (with-meta params mdata))
+            (st/emit! (-> (dd/invite-team-members (with-meta params mdata))
+                          (with-meta {::ev/origin origin}))
                       (dd/fetch-team-invitations))))]
 
     [:div.modal.dashboard-invite-modal.form-container
@@ -505,7 +507,8 @@
                         :role invitation-role}
                 mdata  {:on-success on-success
                         :on-error (partial on-error email)}]
-            (st/emit! (dd/invite-team-members (with-meta params mdata))
+            (st/emit! (-> (dd/invite-team-members (with-meta params mdata))
+                          (with-meta {::ev/origin :team}))
                       (dd/fetch-team-invitations))))]
     [:div.table-row
      [:div.table-field.mail email]
