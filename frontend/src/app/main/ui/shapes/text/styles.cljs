@@ -83,8 +83,8 @@
                               :caretColor (or text-color "black")
                               :overflowWrap "initial"
                               :lineBreak "auto"
-                              :whiteSpace "break-spaces"}
-
+                              :whiteSpace "break-spaces"
+                              :textRendering "geometricPrecision"}
          fills
          (cond
            (some? (:fills data))
