@@ -79,8 +79,7 @@
    :app.storage/gc-deleted-task
    {:pool     (ig/ref :app.db/pool)
     :storage  (ig/ref :app.storage/storage)
-    :executor (ig/ref [::worker :app.worker/executor])
-    :min-age  (dt/duration {:hours 2})}
+    :executor (ig/ref [::worker :app.worker/executor])}
 
    :app.storage/gc-touched-task
    {:pool (ig/ref :app.db/pool)}
@@ -235,54 +234,6 @@
    :app.rpc/routes
    {:methods (ig/ref :app.rpc/methods)}
 
-   :app.worker/worker
-   {:executor (ig/ref [::worker :app.worker/executor])
-    :tasks    (ig/ref :app.worker/registry)
-    :metrics  (ig/ref :app.metrics/metrics)
-    :pool     (ig/ref :app.db/pool)}
-
-   :app.worker/cron
-   {:executor   (ig/ref [::worker :app.worker/executor])
-    :scheduler  (ig/ref :app.worker/scheduler)
-    :tasks      (ig/ref :app.worker/registry)
-    :pool       (ig/ref :app.db/pool)
-    :entries
-    [{:cron #app/cron "0 0 0 * * ?" ;; daily
-      :task :file-gc}
-
-     {:cron #app/cron "0 0 * * * ?"  ;; hourly
-      :task :file-xlog-gc}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :storage-deleted-gc}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :storage-touched-gc}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :session-gc}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :objects-gc}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :tasks-gc}
-
-     {:cron #app/cron "0 30 */3,23 * * ?"
-      :task :telemetry}
-
-     (when (cf/get :fdata-storage-backed)
-       {:cron #app/cron "0 0 * * * ?"  ;; hourly
-        :task :file-offload})
-
-     (when (contains? cf/flags :audit-log-archive)
-       {:cron #app/cron "0 */5 * * * ?" ;; every 5m
-        :task :audit-log-archive})
-
-     (when (contains? cf/flags :audit-log-gc)
-       {:cron #app/cron "0 0 0 * * ?" ;; daily
-        :task :audit-log-gc})]}
-
    :app.worker/registry
    {:metrics (ig/ref :app.metrics/metrics)
     :tasks
@@ -290,12 +241,11 @@
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
-     :storage-deleted-gc (ig/ref :app.storage/gc-deleted-task)
-     :storage-touched-gc (ig/ref :app.storage/gc-touched-task)
+     :storage-gc-deleted (ig/ref :app.storage/gc-deleted-task)
+     :storage-gc-touched (ig/ref :app.storage/gc-touched-task)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :session-gc         (ig/ref :app.http.session/gc-task)
-     :file-offload       (ig/ref :app.tasks.file-offload/handler)
      :audit-log-archive  (ig/ref :app.loggers.audit/archive-task)
      :audit-log-gc       (ig/ref :app.loggers.audit/gc-task)}}
 
@@ -316,22 +266,13 @@
 
    :app.tasks.objects-gc/handler
    {:pool    (ig/ref :app.db/pool)
-    :storage (ig/ref :app.storage/storage)
-    :max-age cf/deletion-delay}
+    :storage (ig/ref :app.storage/storage)}
 
    :app.tasks.file-gc/handler
-   {:pool    (ig/ref :app.db/pool)
-    :max-age cf/deletion-delay}
+   {:pool (ig/ref :app.db/pool)}
 
    :app.tasks.file-xlog-gc/handler
-   {:pool    (ig/ref :app.db/pool)
-    :max-age (dt/duration {:hours 72})}
-
-   :app.tasks.file-offload/handler
-   {:pool    (ig/ref :app.db/pool)
-    :max-age (dt/duration {:seconds 5})
-    :storage (ig/ref :app.storage/storage)
-    :backend (cf/get :fdata-storage-backed :fdata-s3)}
+   {:pool (ig/ref :app.db/pool)}
 
    :app.tasks.telemetry/handler
    {:pool        (ig/ref :app.db/pool)
@@ -409,14 +350,62 @@
    {:directory (cf/get :storage-assets-fs-directory)}
    })
 
+
+(def worker-config
+  {   :app.worker/cron
+   {:executor   (ig/ref [::worker :app.worker/executor])
+    :scheduler  (ig/ref :app.worker/scheduler)
+    :tasks      (ig/ref :app.worker/registry)
+    :pool       (ig/ref :app.db/pool)
+    :entries
+    [{:cron #app/cron "0 0 0 * * ?" ;; daily
+      :task :file-gc}
+
+     {:cron #app/cron "0 0 * * * ?"  ;; hourly
+      :task :file-xlog-gc}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :storage-gc-deleted}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :storage-gc-touched}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :session-gc}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :objects-gc}
+
+     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+      :task :tasks-gc}
+
+     {:cron #app/cron "0 30 */3,23 * * ?"
+      :task :telemetry}
+
+     (when (contains? cf/flags :audit-log-archive)
+       {:cron #app/cron "0 */5 * * * ?" ;; every 5m
+        :task :audit-log-archive})
+
+     (when (contains? cf/flags :audit-log-gc)
+       {:cron #app/cron "0 0 0 * * ?" ;; daily
+        :task :audit-log-gc})]}
+
+   :app.worker/worker
+   {:executor (ig/ref [::worker :app.worker/executor])
+    :tasks    (ig/ref :app.worker/registry)
+    :metrics  (ig/ref :app.metrics/metrics)
+    :pool     (ig/ref :app.db/pool)}})
+
 (def system nil)
 
 (defn start
   []
-  (ig/load-namespaces system-config)
+  (ig/load-namespaces (merge system-config worker-config))
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
                              (-> system-config
+                                 (cond-> (contains? cf/flags :backend-worker)
+                                   (merge worker-config))
                                  (ig/prep)
                                  (ig/init))))
   (l/info :msg "welcome to penpot"

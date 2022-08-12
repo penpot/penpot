@@ -99,8 +99,8 @@
 
     ;; team is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (task {:max-age (dt/duration 0)})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration 0)})]
+      (t/is (= 0 (:processed result))))
 
     ;; query the list of teams
     (let [data {::th/type :teams
@@ -132,8 +132,8 @@
         (t/is (= (:default-team-id profile1) (get-in result [0 :id])))))
 
     ;; run permanent deletion (should be noop)
-    (let [result (task {:max-age (dt/duration {:minutes 1})})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration {:minutes 1})})]
+      (t/is (= 0 (:processed result))))
 
     ;; query the list of projects after hard deletion
     (let [data {::th/type :projects
@@ -147,8 +147,8 @@
         (t/is (= (:type error-data) :not-found))))
 
     ;; run permanent deletion
-    (let [result (task {:max-age (dt/duration 0)})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration 0)})]
+      (t/is (= 1 (:processed result))))
 
     ;; query the list of projects of a after hard deletion
     (let [data {::th/type :projects

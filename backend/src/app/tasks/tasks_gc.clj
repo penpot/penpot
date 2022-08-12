@@ -8,7 +8,9 @@
   "A maintenance task that performs a cleanup of already executed tasks
   from the database table."
   (:require
+   [app.common.data :as d]
    [app.common.logging :as l]
+   [app.config :as cf]
    [app.db :as db]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -16,20 +18,31 @@
 
 (declare sql:delete-completed-tasks)
 
-(s/def ::max-age ::dt/duration)
+(s/def ::min-age ::dt/duration)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::max-age]))
+  (s/keys :req-un [::db/pool]
+          :opt-un [::min-age]))
+
+(defmethod ig/prep-key ::handler
+  [_ cfg]
+  (merge {:min-age cf/deletion-delay}
+         (d/without-nils cfg)))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [pool max-age] :as cfg}]
-  (fn [_]
-    (db/with-atomic [conn pool]
-      (let [interval (db/interval max-age)
-            result   (db/exec-one! conn [sql:delete-completed-tasks interval])
-            result   (:next.jdbc/update-count result)]
-        (l/debug :hint "trim completed tasks table" :removed result)
-        result))))
+  [_ {:keys [pool] :as cfg}]
+  (fn [params]
+    (let [min-age (or (:min-age params) (:min-age cfg))]
+      (db/with-atomic [conn pool]
+        (let [interval (db/interval min-age)
+              result   (db/exec-one! conn [sql:delete-completed-tasks interval])
+              result   (:next.jdbc/update-count result)]
+          (l/debug :hint "task finished" :total result)
+
+          (when (:rollback? params)
+            (db/rollback! conn))
+
+          result)))))
 
 (def ^:private
   sql:delete-completed-tasks

@@ -308,6 +308,7 @@
 
 (def default-flags
   [:enable-backend-api-doc
+   :enable-backend-worker
    :enable-secure-session-cookies])
 
 (defn- parse-flags
