@@ -19,7 +19,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [clojure.set :refer [union]]
+   [clojure.set :refer [rename-keys union]]
    [rumext.alpha :as mf]))
 
 (def measure-attrs
@@ -46,10 +46,26 @@
    :svg-raw #{:size :position :rotation}
    :text    #{:size :position :rotation}})
 
+(defn select-measure-keys
+  "Consider some shapes can be drawn from bottom to top or from left to right"
+  [shape]
+  (let [shape (cond
+                (and (:flip-x shape) (:flip-y shape))
+                (rename-keys shape {:r1 :r3 :r2 :r4 :r3 :r1 :r4 :r2})
+
+                (:flip-x shape)
+                (rename-keys shape {:r1 :r2 :r2 :r1 :r3 :r4 :r4 :r3})
+
+                (:flip-y shape)
+                (rename-keys shape {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1})
+
+                :else
+                shape)]
+    (select-keys shape measure-attrs)))
+
 ;; -- User/drawing coords
 (mf/defc measures-menu
   [{:keys [ids ids-with-children values type all-types shape] :as props}]
-
   (let [options (if (= type :multiple)
                   (reduce #(union %1 %2) (map #(get type->options %) all-types))
                   (get type->options type))
@@ -221,7 +237,7 @@
              (st/emit! (dch/update-shapes ids (fn [shape] (assoc shape :hide-in-viewer (not value))))))))
 
         select-all #(-> % (dom/get-target) (.select))]
-    
+
     (mf/use-layout-effect
      (mf/deps radius-mode @radius-multi?)
      (fn []
