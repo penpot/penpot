@@ -126,8 +126,8 @@
 
     ;; profile is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (task {:max-age (dt/duration 0)})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration 0)})]
+      (t/is (= 0 (:processed result))))
 
     ;; Request profile to be deleted
     (let [params {::th/type :delete-profile
@@ -145,8 +145,8 @@
       (t/is (= 1 (count (:result out)))))
 
     ;; execute permanent deletion task
-    (let [result (task {:max-age (dt/duration "-1m")})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration "-1m")})]
+      (t/is (= 1 (:processed result))))
 
     ;; query profile after delete
     (let [params {::th/type :profile

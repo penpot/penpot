@@ -253,10 +253,10 @@
       :task :file-xlog-gc}
 
      {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :storage-deleted-gc}
+      :task :storage-gc-deleted}
 
      {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :storage-touched-gc}
+      :task :storage-gc-touched}
 
      {:cron #app/cron "0 0 0 * * ?"  ;; daily
       :task :session-gc}
@@ -285,8 +285,8 @@
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
-     :storage-deleted-gc (ig/ref :app.storage/gc-deleted-task)
-     :storage-touched-gc (ig/ref :app.storage/gc-touched-task)
+     :storage-gc-deleted (ig/ref :app.storage/gc-deleted-task)
+     :storage-gc-touched (ig/ref :app.storage/gc-touched-task)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :session-gc         (ig/ref :app.http.session/gc-task)

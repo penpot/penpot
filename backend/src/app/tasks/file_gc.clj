@@ -43,24 +43,24 @@
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as cfg}]
   (fn [params]
-    (let [cfg (merge cfg params)]
-      (db/with-atomic [conn pool]
-        (let [cfg (assoc cfg :conn conn)]
-          (loop [total 0
-                 files (retrieve-candidates cfg)]
-            (if-let [file (first files)]
-              (do
-                (process-file cfg file)
-                (recur (inc total)
-                       (rest files)))
-              (do
-                (l/info :hint "task finished" :total total)
+    (db/with-atomic [conn pool]
+      (let [min-age (or (:min-age params) (:min-age cfg))
+            cfg     (assoc cfg :min-age min-age :conn conn)]
+        (loop [total 0
+               files (retrieve-candidates cfg)]
+          (if-let [file (first files)]
+            (do
+              (process-file cfg file)
+              (recur (inc total)
+                     (rest files)))
+            (do
+              (l/info :hint "task finished" :min-age (dt/format-duration min-age) :total total)
 
-                ;; Allow optional rollback passed by params
-                (when (:rollback? params)
-                  (db/rollback! conn))
+              ;; Allow optional rollback passed by params
+              (when (:rollback? params)
+                (db/rollback! conn))
 
-                {:processed total}))))))))
+              {:processed total})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IMPL
