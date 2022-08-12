@@ -14,6 +14,7 @@
    [app.common.logging :as l]
    [app.common.pages.migrations :as pmg]
    [app.common.types.shape-tree :as ctt]
+   [app.config :as cf]
    [app.db :as db]
    [app.util.blob :as blob]
    [app.util.time :as dt]
@@ -29,16 +30,22 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::max-age ::dt/duration)
+(s/def ::min-age ::dt/duration)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::max-age]))
+  (s/keys :req-un [::db/pool ::min-age]))
+
+(defmethod ig/prep-key ::handler
+  [_ cfg]
+  (merge {:min-age cf/deletion-delay}
+         (d/without-nils cfg)))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as cfg}]
-  (fn [_]
+  (fn [params]
     (db/with-atomic [conn pool]
-      (let [cfg (assoc cfg :conn conn)]
+      (let [min-age (or (:min-age params) (:min-age cfg))
+            cfg     (assoc cfg :min-age min-age :conn conn)]
         (loop [total 0
                files (retrieve-candidates cfg)]
           (if-let [file (first files)]
@@ -47,7 +54,12 @@
               (recur (inc total)
                      (rest files)))
             (do
-              (l/debug :msg "finished processing files" :processed total)
+              (l/info :hint "task finished" :min-age (dt/format-duration min-age) :total total)
+
+              ;; Allow optional rollback passed by params
+              (when (:rollback? params)
+                (db/rollback! conn))
+
               {:processed total})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -69,18 +81,20 @@
     for update skip locked")
 
 (defn- retrieve-candidates
-  [{:keys [conn max-age] :as cfg}]
-  (let [interval (db/interval max-age)
+  [{:keys [conn min-age id] :as cfg}]
+  (if id
+    (do
+      (l/warn :hint "explicit file id passed on params" :id id)
+      (db/query conn :file {:id id}))
+    (let [interval  (db/interval min-age)
+          get-chunk (fn [cursor]
+                      (let [rows (db/exec! conn [sql:retrieve-candidates-chunk interval cursor])]
+                        [(some->> rows peek :modified-at) (seq rows)]))]
 
-        get-chunk
-        (fn [cursor]
-          (let [rows (db/exec! conn [sql:retrieve-candidates-chunk interval cursor])]
-            [(some->> rows peek :modified-at) (seq rows)]))]
-
-    (sequence cat (d/iteration get-chunk
-                               :vf second
-                               :kf first
-                               :initk (dt/now)))))
+      (sequence cat (d/iteration get-chunk
+                                 :vf second
+                                 :kf first
+                                 :initk (dt/now))))))
 
 (defn collect-used-media
   [data]
@@ -142,14 +156,14 @@
                  "delete from file_object_thumbnail "
                  " where file_id=? and object_id=ANY(?)")
             res (db/exec-one! conn [sql file-id (db/create-array conn "text" unused)])]
-        (l/debug :hint "delete object thumbnails" :total (:next.jdbc/update-count res))))))
+        (l/debug :hint "delete file object thumbnails" :file-id file-id :total (:next.jdbc/update-count res))))))
 
 (defn- clean-file-thumbnails!
   [conn file-id revn]
   (let [sql (str "delete from file_thumbnail "
                  " where file_id=? and revn < ?")
         res (db/exec-one! conn [sql file-id revn])]
-    (l/debug :hint "delete file thumbnails" :total (:next.jdbc/update-count res))))
+    (l/debug :hint "delete file thumbnails" :file-id file-id :total (:next.jdbc/update-count res))))
 
 (defn- process-file
   [{:keys [conn] :as cfg} {:keys [id data revn modified-at] :as file}]

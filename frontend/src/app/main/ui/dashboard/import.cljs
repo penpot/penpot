@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.import
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -379,6 +380,7 @@
          (let [editing? (and (some? (:file-id file))
                              (= (:file-id file) (:editing @state)))]
            [:& import-entry {:state state
+                             :key (dm/str (:id file))
                              :file file
                              :editing? editing?
                              :can-be-deleted? (> (count files) 1)}]))

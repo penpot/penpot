@@ -8,6 +8,7 @@
   "A maintenance task that performs a garbage collection of the file
   change (transaction) log."
   (:require
+   [app.common.data :as d]
    [app.common.logging :as l]
    [app.db :as db]
    [app.util.time :as dt]
@@ -16,21 +17,31 @@
 
 (declare sql:delete-files-xlog)
 
-(s/def ::max-age ::dt/duration)
+(s/def ::min-age ::dt/duration)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::max-age]))
+  (s/keys :req-un [::db/pool]
+          :opt-un [::min-age]))
+
+(defmethod ig/prep-key ::handler
+  [_ cfg]
+  (merge {:min-age (dt/duration {:hours 72})}
+         (d/without-nils cfg)))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [pool max-age] :as cfg}]
-  (fn [_]
-    (db/with-atomic [conn pool]
-      (let [interval (db/interval max-age)
-            result   (db/exec-one! conn [sql:delete-files-xlog interval])
-            result   (:next.jdbc/update-count result)]
-        (l/info :hint "remove old file changes"
-                :removed result)
-        result))))
+  [_ {:keys [pool] :as cfg}]
+  (fn [params]
+    (let [min-age (or (:min-age params) (:min-age cfg))]
+      (db/with-atomic [conn pool]
+        (let [interval (db/interval min-age)
+              result   (db/exec-one! conn [sql:delete-files-xlog interval])
+              result   (:next.jdbc/update-count result)]
+          (l/info :hint "task finished" :min-age (dt/format-duration min-age) :total result)
+
+          (when (:rollback? params)
+            (db/rollback! conn))
+
+          result)))))
 
 (def ^:private
   sql:delete-files-xlog

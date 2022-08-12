@@ -88,7 +88,7 @@
 
   The `on-file` parameter should be a function that receives the file
   and the previous state and returns the new state."
-  [system {:keys [chunk-size on-file] :or {chunk-size 10}}]
+  [system & {:keys [chunk-size on-file] :or {chunk-size 10}}]
   (letfn [(get-chunk [conn cursor]
             (let [rows (db/exec! conn [sql:retrieve-files-chunk cursor chunk-size])]
               [(some->> rows peek :created-at) (seq rows)]))
@@ -108,6 +108,21 @@
           (let [state (on-file file state)]
             (recur state (rest files)))
           state)))))
+
+
+(defn analyze-file-data
+  [system & {:keys [id on-form on-data]}]
+  (let [file (get-file system id)]
+    (cond
+      (fn? on-data)
+      (on-data (:data file))
+
+      (fn? on-form)
+      (walk/postwalk (fn [form]
+                       (on-form form)
+                       form)
+                     (:data file)))
+    nil))
 
 (defn update-pages
   "Apply a function to all pages of one file. The function receives a page and returns an updated page."

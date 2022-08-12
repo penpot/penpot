@@ -192,23 +192,18 @@
       ;; freeze because of the deduplication (we have uploaded 2 times
       ;; 2 two same files).
       (let [task (:app.storage/gc-touched-task th/*system*)
-            res  (task {})]
-
+            res  (task {:min-age (dt/duration 0)})]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
-      ;; run the task immediately
+      ;; run the file-gc task immediately without forced min-age
       (let [task  (:app.tasks.file-gc/handler th/*system*)
             res   (task {})]
         (t/is (= 0 (:processed res))))
 
-      ;; make the file eligible for GC waiting 300ms (configured
-      ;; timeout for testing)
-      (th/sleep 300)
-
       ;; run the task again
       (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {})]
+            res   (task {:min-age (dt/duration 0)})]
         (t/is (= 1 (:processed res))))
 
       ;; retrieve file and check trimmed attribute
@@ -225,22 +220,36 @@
       (t/is (some? @(sto/get-object storage (:media-id fmo1))))
       (t/is (some? @(sto/get-object storage (:thumbnail-id fmo1))))
 
-      ;; now, we have deleted the unused file-media-object, if we
-      ;; execute the touched-gc task, we should see that two of them
-      ;; are marked to be deleted.
+      ;; proceed to remove usage of the file
+      (update-file {:file-id (:id file)
+                    :profile-id (:id profile)
+                    :revn 0
+                    :changes [{:type :del-obj
+                               :page-id (first (get-in file [:data :pages]))
+                               :id shid}]})
+
+      ;; Now, we have deleted the usag of pointers to the
+      ;; file-media-objects, if we pase file-gc, they should be marked
+      ;; as deleted.
+      (let [task  (:app.tasks.file-gc/handler th/*system*)
+            res   (task {:min-age (dt/duration 0)})]
+        (t/is (= 1 (:processed res))))
+
+      ;; Now that file-gc have deleted the file-media-object usage,
+      ;; lets execute the touched-gc task, we should see that two of
+      ;; them are marked to be deleted.
       (let [task (:app.storage/gc-touched-task th/*system*)
-            res  (task {})]
-        (t/is (= 2 (:freeze res)))
-        (t/is (= 0 (:delete res))))
+            res  (task {:min-age (dt/duration 0)})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 2 (:delete res))))
 
       ;; Finally, check that some of the objects that are marked as
       ;; deleted we are unable to retrieve them using standard storage
       ;; public api.
-      (t/is (some? @(sto/get-object storage (:media-id fmo2))))
-      (t/is (some? @(sto/get-object storage (:thumbnail-id fmo2))))
-      (t/is (some? @(sto/get-object storage (:media-id fmo1))))
-      (t/is (some? @(sto/get-object storage (:thumbnail-id fmo1))))
-
+      (t/is (nil? @(sto/get-object storage (:media-id fmo2))))
+      (t/is (nil? @(sto/get-object storage (:thumbnail-id fmo2))))
+      (t/is (nil? @(sto/get-object storage (:media-id fmo1))))
+      (t/is (nil? @(sto/get-object storage (:thumbnail-id fmo1))))
       )))
 
 (t/deftest permissions-checks-creating-file
@@ -359,8 +368,8 @@
                                      :profile-id (:id profile1)})]
     ;; file is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (task {:max-age (dt/duration 0)})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration 0)})]
+      (t/is (= 0 (:processed result))))
 
     ;; query the list of files
     (let [data {::th/type :project-files
@@ -390,8 +399,8 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion (should be noop)
-    (let [result (task {:max-age (dt/duration {:minutes 1})})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration {:minutes 1})})]
+      (t/is (= 0 (:processed result))))
 
     ;; query the list of file libraries of a after hard deletion
     (let [data {::th/type :file-libraries
@@ -404,8 +413,8 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion
-    (let [result (task {:max-age (dt/duration 0)})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration 0)})]
+      (t/is (= 1 (:processed result))))
 
     ;; query the list of file libraries of a after hard deletion
     (let [data {::th/type :file-libraries
@@ -603,7 +612,7 @@
 
       ;; run the task again
       (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {})]
+            res   (task {:min-age (dt/duration 0)})]
         (t/is (= 1 (:processed res))))
 
       ;; check that object thumbnails are still here
@@ -630,7 +639,7 @@
 
       ;; run the task again
       (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {})]
+            res   (task {:min-age (dt/duration 0)})]
         (t/is (= 1 (:processed res))))
 
       ;; check that the unknown frame thumbnail is deleted
@@ -714,7 +723,7 @@
 
       ;; run the task again
       (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {})]
+            res   (task {:min-age (dt/duration 0)})]
         (t/is (= 1 (:processed res))))
 
       ;; Then query the specific revn

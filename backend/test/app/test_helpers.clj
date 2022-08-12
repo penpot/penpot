@@ -57,8 +57,8 @@
                     :file-uri "test"
                     :thumbnail-uri "test"
                     :path (-> "app/test_files/template.penpot" io/resource fs/path)}]
-
         config (-> main/system-config
+                   (merge main/worker-config)
                    (assoc-in [:app.msgbus/msgbus :redis-uri] (:redis-uri config))
                    (assoc-in [:app.db/pool :uri] (:database-uri config))
                    (assoc-in [:app.db/pool :username] (:database-username config))
@@ -85,9 +85,7 @@
                            :app.loggers.database/reporter
                            :app.loggers.zmq/receiver
                            :app.worker/cron
-                           :app.worker/worker)
-                   (d/deep-merge
-                    {:app.tasks.file-gc/handler {:max-age (dt/duration 300)}}))
+                           :app.worker/worker))
         _      (ig/load-namespaces config)
         system (-> (ig/prep config)
                    (ig/init))]

@@ -224,7 +224,7 @@
               :name (d/name name)
               :queue (d/name queue))
       (do
-        (l/info :hint "worker started"
+        (l/info :hint "worker initialized"
                 :name (d/name name)
                 :queue (d/name queue))
         (event-loop cfg)))
@@ -565,7 +565,7 @@
   (l/info :hint "registry initialized" :tasks (count tasks))
   (reduce-kv (fn [res k v]
                (let [tname (name k)]
-                 (l/trace :hint "register task" :name tname)
+                 (l/debug :hint "register task" :name tname)
                  (assoc res k (wrap-task-handler metrics tname v))))
              {}
              tasks))
