@@ -207,7 +207,7 @@
   (dump-selected' @st/state))
 
 (defn dump-tree'
-  ([state ] (dump-tree' state false false))
+  ([state] (dump-tree' state false false))
   ([state show-ids] (dump-tree' state show-ids false))
   ([state show-ids show-touched]
    (let [page-id    (get state :current-page-id)

@@ -5,6 +5,10 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.types.component)
+
+(defn instance-root?
+  [shape]
+  (some? (:component-id shape)))
  
 (defn instance-of?
   [shape file-id component-id]
