@@ -360,7 +360,8 @@
                                  :name name
                                  :parent-id parent-id
                                  :frame-id frame-id)
-                          (dissoc :shapes)
+                          (dissoc :shapes
+                                  :main-instance?)
                           (gsh/move delta)
                           (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 

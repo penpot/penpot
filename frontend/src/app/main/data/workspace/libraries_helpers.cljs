@@ -237,7 +237,7 @@
     (log/debug :msg "Sync component in local library" :component-id (:id container)))
 
   (let [linked-shapes (->> (vals (:objects container))
-                           (filter #(uses-assets? asset-type asset-id % library-id (cph/page? container))))]
+                           (filter #(uses-assets? asset-type asset-id % library-id)))]
     (loop [shapes (seq linked-shapes)
            changes (-> (pcb/empty-changes it)
                        (pcb/with-container container)
@@ -254,23 +254,22 @@
 
 (defmulti uses-assets?
   "Checks if a shape uses some asset of the given type in the given library."
-  (fn [asset-type _ _ _ _] asset-type))
+  (fn [asset-type _ _ _] asset-type))
 
 (defmethod uses-assets? :components
-  [_ component-id shape library-id page?]
-  (and (if (nil? component-id)
-         (ctk/uses-library-components? shape library-id)
-         (ctk/instance-of? shape library-id component-id))
-       (or (:component-root? shape) (not page?)))) ; avoid nested components inside pages
+  [_ component-id shape library-id]
+  (if (nil? component-id)
+    (ctk/uses-library-components? shape library-id)
+    (ctk/instance-of? shape library-id component-id)))
 
 (defmethod uses-assets? :colors
-  [_ color-id shape library-id _]
+  [_ color-id shape library-id]
   (if (nil? color-id)
     (ctc/uses-library-colors? shape library-id)
     (ctc/uses-library-color? shape library-id color-id)))
 
 (defmethod uses-assets? :typographies
-  [_ typography-id shape library-id _]
+  [_ typography-id shape library-id]
   (if (nil? typography-id)
     (cty/uses-library-typographies? shape library-id)
     (cty/uses-library-typography? shape library-id typography-id)))
