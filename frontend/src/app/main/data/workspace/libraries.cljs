@@ -637,7 +637,9 @@
        (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
          (log/info :msg "SYNC-FILE"
                    :file (dwlh/pretty-file file-id state)
-                   :library (dwlh/pretty-file library-id state))
+                   :library (dwlh/pretty-file library-id state)
+                   :asset-type asset-type
+                   :asset-id asset-id)
          (let [file            (wsh/get-file state file-id)
 
                sync-components?   (or (nil? asset-type) (= asset-type :components))
@@ -713,10 +715,11 @@
                      (pcb/empty-changes it)
                      [(dwlh/generate-sync-file it file-id :components asset-id library-id state)
                       (dwlh/generate-sync-library it file-id :components asset-id library-id state)])]
+
+        (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
+                                                                        (:redo-changes changes)
+                                                                        file))
         (when (seq (:redo-changes changes))
-          (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
-                                                                         (:redo-changes changes)
-                                                                         file))
           (rx/of (dch/commit-changes (assoc changes :file-id file-id))))))))
 
 (def ignore-sync
@@ -788,6 +791,8 @@
                                                #{}
                                                changes)]
                 (when (d/not-empty? components-changed)
+                  (log/info :msg "DETECTED COMPONENTS CHANGED"
+                            :ids (map str components-changed))
                   (run! st/emit!
                          (map #(update-component-sync % (:id data))
                               components-changed)))))]
