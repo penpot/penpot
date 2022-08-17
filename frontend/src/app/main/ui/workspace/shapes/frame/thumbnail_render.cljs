@@ -79,7 +79,7 @@
 
         shape-bb-ref (hooks/use-update-var shape-bb)
 
-        updates-str (mf/use-memo #(rx/subject))
+        updates-str  (mf/use-memo #(rx/subject))
 
         thumbnail-data-ref (mf/use-memo (mf/deps page-id id) #(refs/thumbnail-frame-data page-id id))
         thumbnail-data     (mf/deref thumbnail-data-ref)
