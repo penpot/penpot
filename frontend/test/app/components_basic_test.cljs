@@ -4,6 +4,7 @@
     [app.common.geom.point :as gpt]
     [app.common.pages.helpers :as cph]
     [app.common.types.container :as ctn]
+    [app.common.types.file :as ctf]
     [app.main.data.workspace :as dw]
     [app.main.data.workspace.groups :as dwg]
     [app.main.data.workspace.libraries :as dwl]
@@ -33,6 +34,11 @@
 
             store (the/prepare-store state done
                     (fn [new-state]
+                      ;; Uncomment to debug
+                      ;; (ctf/dump-tree (get new-state :workspace-data)
+                      ;;                (get new-state :current-page-id)
+                      ;;                (get new-state :workspace-libraries))
+
                       ; Expected shape tree:
                       ;
                       ; [Page]
@@ -40,7 +46,7 @@
                       ;   Rect-2              #--> Rect-2
                       ;     Rect-1            ---> Rect-1
                       ;
-                      ; [Rect-1]
+                      ; [Rect-2]
                       ; Rect-2
                       ;   Rect-1
                       ;
@@ -55,7 +61,7 @@
 
                         (t/is (= (:name shape1) "Rect-1"))
                         (t/is (= (:name group) "Rect-2"))
-                        (t/is (= (:name component) "Rect-1"))
+                        (t/is (= (:name component) "Rect-2"))
                         (t/is (= (:name c-shape1) "Rect-1"))
                         (t/is (= (:name c-group) "Rect-2"))
 
@@ -207,6 +213,70 @@
        (dwl/add-component)
        :the/end))))
 
+(t/deftest test-add-component-from-component
+  (t/async
+   done
+   (let [state (-> thp/initial-state
+                   (thp/sample-page)
+                   (thp/sample-shape :shape1 :rect
+                                     {:name "Rect-1"})
+                   (thp/make-component :instance1 :component1
+                                       [(thp/id :shape1)]))
+
+         store (the/prepare-store state done
+                 (fn [new-state]
+                   ; Expected shape tree:
+                   ;
+                   ; [Page]
+                   ; Root Frame
+                   ;   Rect-3              #--> Rect-3
+                   ;     Rect-2            @--> Rect-2
+                   ;       Rect-1          ---> Rect-1
+                   ;
+                   ; [Rect-2]
+                   ; Rect-2
+                   ;   Rect-1
+                   ;
+                   ; [Rect-2]
+                   ; Rect-3
+                   ;   Rect-2              @--> Rect-2
+                   ;     Rect-1            ---> Rect-1
+                   ;
+                   (let [[[instance1 shape1]
+                          [c-instance1 c-shape1]
+                          component1]
+                         (thl/resolve-instance-and-main
+                           new-state
+                           (thp/id :instance1)
+                           true)
+
+                         [[instance2 instance1' shape1']
+                          [c-instance2 c-instance1' c-shape1']
+                          component2]
+                         (thl/resolve-instance-and-main
+                           new-state
+                           (:parent-id instance1))]
+
+                     (t/is (= (:name shape1) "Rect-1"))
+                     (t/is (= (:name instance1) "Rect-2"))
+                     (t/is (= (:name component1) "Rect-2"))
+                     (t/is (= (:name c-shape1) "Rect-1"))
+                     (t/is (= (:name c-instance1) "Rect-2"))
+
+                     (t/is (= (:name shape1') "Rect-1"))
+                     (t/is (= (:name instance1') "Rect-2"))
+                     (t/is (= (:name instance2) "Rect-3"))
+                     (t/is (= (:name component2) "Rect-3"))
+                     (t/is (= (:name c-shape1') "Rect-1"))
+                     (t/is (= (:name c-instance1') "Rect-2"))
+                     (t/is (= (:name c-instance2) "Rect-3")))))]
+
+     (ptk/emit!
+       store
+       (dw/select-shape (thp/id :instance1))
+       (dwl/add-component)
+       :the/end))))
+
 (t/deftest test-rename-component
   (t/async
    done
@@ -269,7 +339,7 @@
                    ; Rect-2
                    ;   Rect-1
                    ;
-                   ; [Rect-2]
+                   ; [Rect-3]
                    ; Rect-2
                    ;   Rect-1
                    ;
@@ -293,7 +363,7 @@
                            new-state
                            new-component-id)]
 
-                     (t/is (= (:name component2) "Rect-2")))))]
+                     (t/is (= (:name component2) "Rect-3")))))]
 
      (ptk/emit!
        store

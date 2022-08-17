@@ -77,39 +77,44 @@
 (defn resolve-instance-and-main
   "Get the shape with the given id and all its children, and also
    the main component and all its shapes."
-  [state root-inst-id]
-  (let [page          (thp/current-page state)
-        root-inst     (ctn/get-shape page root-inst-id)
+  ([state root-inst-id]
+   (resolve-instance-and-main state root-inst-id false))
 
-        libs          (wsh/get-libraries state)
-        component     (cph/get-component libs (:component-id root-inst))
+  ([state root-inst-id subinstance?]
+   (let [page          (thp/current-page state)
+         root-inst     (ctn/get-shape page root-inst-id)
 
-        shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
-        shapes-main   (cph/get-children-with-self (:objects component) (:shape-ref root-inst))
+         libs          (wsh/get-libraries state)
+         component     (cph/get-component libs (:component-id root-inst))
 
-        unique-refs   (into #{} (map :shape-ref) shapes-inst)
+         shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
+         shapes-main   (cph/get-children-with-self (:objects component) (:shape-ref root-inst))
 
-        main-exists?  (fn [shape]
-                        (let [component-shape
-                              (cph/get-component-shape (:objects page) shape)
+         unique-refs   (into #{} (map :shape-ref) shapes-inst)
 
-                              component
-                              (cph/get-component libs (:component-id component-shape))
+         main-exists?  (fn [shape]
+                         (let [component-shape
+                               (cph/get-component-shape (:objects page) shape)
 
-                              main-shape
-                              (ctn/get-shape component (:shape-ref shape))]
+                               component
+                               (cph/get-component libs (:component-id component-shape))
 
-                        (t/is (some? main-shape))))]
+                               main-shape
+                               (ctn/get-shape component (:shape-ref shape))]
 
-    ;; Validate that the instance tree is well constructed
-    (is-instance-root (first shapes-inst))
-    (run! is-instance-inner (rest shapes-inst))
-    (t/is (= (count shapes-inst)
-             (count shapes-main)
-             (count unique-refs)))
-    (run! main-exists? shapes-inst)
+                           (t/is (some? main-shape))))]
 
-    [shapes-inst shapes-main component]))
+     ;; Validate that the instance tree is well constructed
+     (if subinstance?
+       (is-instance-subroot (first shapes-inst))
+       (is-instance-root (first shapes-inst)))
+     (run! is-instance-inner (rest shapes-inst))
+     (t/is (= (count shapes-inst)
+              (count shapes-main)
+              (count unique-refs)))
+     (run! main-exists? shapes-inst)
+
+     [shapes-inst shapes-main component])))
 
 (defn resolve-instance-and-main-allow-dangling
   "Get the shape with the given id and all its children, and also
