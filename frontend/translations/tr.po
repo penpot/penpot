@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-07-15 11:18+0000\n"
+"PO-Revision-Date: 2022-08-18 16:16+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
