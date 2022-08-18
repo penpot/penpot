@@ -74,5 +74,6 @@
       [:& grid {:files files
                 :project default-project
                 :origin :libraries
-                :limit limit}]]]))
+                :limit limit
+                :library-view? true}]]]))
 
