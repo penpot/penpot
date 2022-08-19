@@ -152,12 +152,9 @@
          (fn [state]
            (let [old-state (mf/ref-val prev-value)]
              (if (and (some? state) (some? old-state))
-               (let [block-changes (ted/get-content-changes old-state state)
-
-                     prev-data (-> (ted/get-editor-current-inline-styles old-state)
-                                   (dissoc :text-align :text-direction))
-
-                     block-to-setup (get-blocks-to-setup block-changes)
+               (let [block-changes       (ted/get-content-changes old-state state)
+                     prev-data           (ted/get-editor-current-inline-styles old-state)
+                     block-to-setup      (get-blocks-to-setup block-changes)
                      block-to-add-styles (get-blocks-to-add-styles block-changes)]
                  (-> state
                      (ted/setup-block-styles block-to-setup prev-data)
@@ -211,11 +208,12 @@
 
         handle-pasted-text
         (fn [text _ _]
-          (let [style (ted/get-editor-current-inline-styles state)
-                state (-> (ted/insert-text state text style)
-                          (handle-change))]
+          (let [current-block-styles (ted/get-editor-current-block-data state)
+                inline-styles        (ted/get-editor-current-inline-styles state)
+                style                (merge current-block-styles inline-styles)
+                state                (-> (ted/insert-text state text style)
+                                         (handle-change))]
             (st/emit! (dwt/update-editor-state shape state)))
-
           "handled")]
 
     (mf/use-layout-effect on-mount)
