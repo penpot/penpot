@@ -57,6 +57,8 @@
         shape (obj/get props "shape")
         shape (cond-> shape (:is-mask? shape) set-white-fill)
 
+        _ (println "-------------text-shape" shape)
+
         {:keys [x y width height position-data]} shape
 
         transform (gsh/transform-str shape {:no-flip true})

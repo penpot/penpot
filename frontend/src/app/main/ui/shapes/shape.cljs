@@ -54,6 +54,8 @@
         pointer-events   (obj/get props "pointer-events")
         disable-shadows? (obj/get props "disable-shadows?")
 
+        _ (println "shape-container" (:type shape) (:name shape) (cph/svg-raw-shape? shape))
+
         type           (:type shape)
         render-id      (mf/use-memo #(str (uuid/next)))
         filter-id      (str "filter_" render-id)

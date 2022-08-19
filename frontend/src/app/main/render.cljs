@@ -132,7 +132,8 @@
     (let [group-wrapper   (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
           svg-raw-wrapper (mf/use-memo (mf/deps objects) #(svg-raw-wrapper-factory objects))
           bool-wrapper    (mf/use-memo (mf/deps objects) #(bool-wrapper-factory objects))
-          frame-wrapper   (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
+          frame-wrapper   (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))
+          _ (println "shape-wrapper-factory")]
       (when (and shape (not (:hidden shape)))
         (let [shape (gsh/transform-shape shape)
               opts #js {:shape shape}

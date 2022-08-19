@@ -169,7 +169,8 @@
         (assoc :blend-mode (-> (get-in shape [:svg-attrs :style :mix-blend-mode]) keyword)))))
 
 (defn create-raw-svg [name frame-id svg-data {:keys [attrs] :as data}]
-  (let [{:keys [x y width height offset-x offset-y]} svg-data]
+  (let [{:keys [x y width height offset-x offset-y]} svg-data
+        _ (println "create-raw-svg" name data)]
     (-> {:id (uuid/next)
          :type :svg-raw
          :name name
@@ -406,10 +407,13 @@
 
                 shape (cond-> shape
                         hidden (assoc :hidden true))
+                        
+                _ (println "xxxxxxxxxxxxxxxxxx" name tag (:content element-data))
 
                 children (cond->> (:content element-data)
                            (or (= tag :g) (= tag :svg))
-                           (mapv #(usvg/inherit-attributes attrs %)))]
+                           (mapv #(usvg/inherit-attributes attrs %)))
+                _ (println "children" children)]
             [shape children]))))))
 
 (defn add-svg-child-changes [page-id objects selected frame-id parent-id svg-data [unames changes] [index data]]

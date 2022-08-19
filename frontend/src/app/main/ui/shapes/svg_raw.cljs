@@ -36,7 +36,9 @@
 (defn translate-shape [attrs shape]
   (let [transform (dm/str (usvg/svg-transform-matrix shape)
                           " "
-                          (:transform attrs ""))]
+                          (:transform attrs ""))
+        _ (println "translate-shape" shape)
+        _ (println "transform" transform)]
     (cond-> attrs
       (and (:svg-viewbox shape) (graphic-element? (-> shape :content :tag)))
       (assoc :transform transform))))
@@ -72,16 +74,26 @@
         {:keys [content]} shape
         {:keys [attrs tag]} content
 
+        _ (println "content" content)
+
         ids-mapping (mf/use-ctx svg-ids-ctx)
 
         attrs (mf/use-memo #(usvg/replace-attrs-ids attrs ids-mapping))
+
+        _ (println "xxxxxx" attrs)
+        _ (println "children" children)
+
 
         attrs (translate-shape attrs shape)
         element-id (get-in content [:attrs :id])
         attrs (cond-> (set-styles attrs shape)
                 (and element-id (contains? ids-mapping element-id))
-                (obj/set! "id" (get ids-mapping element-id)))]
-    [:> (name tag) attrs children]))
+                (obj/set! "id" (get ids-mapping element-id)))
+        _ (println "svg-element" tag (= tag ":text") (:content shape))]
+    #_[:> (name tag) attrs (:content content)]
+    (if (= tag :text)
+      [:> (name tag) attrs (:content content)]
+      [:> (name tag) attrs children])))
 
 (defn svg-raw-shape [shape-wrapper]
   (mf/fnc svg-raw-shape
