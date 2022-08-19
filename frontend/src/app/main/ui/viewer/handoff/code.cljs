@@ -72,12 +72,7 @@
 
     [:div.element-options
      [:div.code-block
-      [:div.code-row-lang
-       [:select.code-selection
-        [:option {:value "css"} "CSS"]
-        #_[:option {:value "sass"} "SASS"]
-        #_[:option {:value "less"} "Less"]
-        #_[:option {:value "stylus"} "Stylus"]]
+      [:div.code-row-lang "CSS"
 
        [:button.expand-button
         {:on-click on-expand }
@@ -91,10 +86,7 @@
                        :code style-code}]]]
 
      [:div.code-block
-      [:div.code-row-lang
-       [:select.code-selection
-        [:option "SVG"]
-        [:option "HTML"]]
+      [:div.code-row-lang "SVG"
 
        [:button.expand-button
         {:on-click on-expand}

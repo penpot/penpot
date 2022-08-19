@@ -35,6 +35,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix hide html options on handoff [Taiga 3533](https://tree.taiga.io/project/penpot/issue/3533)
 - Fix share prototypes overlay and stroke [Taiga #3994](https://tree.taiga.io/project/penpot/issue/3994)
 - Fix border radious on boolean operations [Taiga #3959](https://tree.taiga.io/project/penpot/issue/3959)
 - Fix inconsistent representation of rectangles [Taiga #3977](https://tree.taiga.io/project/penpot/issue/3977)
