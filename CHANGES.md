@@ -35,7 +35,8 @@
 
 ### :bug: Bugs fixed
 
-- Fix border radious on boolean operations [Taiga](https://tree.taiga.io/project/penpot/issue/3959)
+- Fix share prototypes overlay and stroke [Taiga #3994](https://tree.taiga.io/project/penpot/issue/3994)
+- Fix border radious on boolean operations [Taiga #3959](https://tree.taiga.io/project/penpot/issue/3959)
 - Fix inconsistent representation of rectangles [Taiga #3977](https://tree.taiga.io/project/penpot/issue/3977)
 - Fix recent fonts info [Taiga #3953](https://tree.taiga.io/project/penpot/issue/3953)
 - Fix clipped elements affect boards and centering [Taiga #3666](https://tree.taiga.io/project/penpot/issue/3666)

@@ -1,4 +1,5 @@
 .share-modal {
+  background: none;
   display: block;
   top: 50px;
   left: calc(100vw - 500px);
@@ -6,6 +7,7 @@
   .share-link-dialog {
     width: 480px;
     background-color: $color-white;
+    border: 1px solid $color-gray-10;
 
     .modal-content {
       padding: 16px 32px;
