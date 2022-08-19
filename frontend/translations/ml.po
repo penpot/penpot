@@ -69,23 +69,23 @@ msgstr "നിങ്ങളെ വീണ്ടും കാണാൻ കഴിഞ
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "ഗിറ്റ്ഹബ്ബ് ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+msgstr "ഗിറ്റ്ഹബ്ബ്"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "ഗിറ്റ്ലാബ് ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+msgstr "ഗിറ്റ്ലാബ്"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "ഗൂഗിൾ ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+msgstr "ഗൂഗിൾ"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "LDAP ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "ഓപ്പൺഐഡി (SSO) ഉപയോഗിച്ച് ലോഗിൻ ചെയ്യുക"
+msgstr "ഓപ്പൺഐഡി"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
