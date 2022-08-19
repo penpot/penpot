@@ -126,7 +126,7 @@ function build-backend-bundle {
     mv ./backend/target/dist $bundle_dir;
     echo $version > $bundle_dir/version.txt;
     put-license-file $bundle_dir;
-    echo ">> bundle frontend end";
+    echo ">> bundle backend end";
 }
 
 function build-exporter-bundle {
