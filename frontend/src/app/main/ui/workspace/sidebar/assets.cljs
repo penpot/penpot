@@ -370,6 +370,24 @@
 
         dragging? (mf/use-state false)
 
+        unselect-all
+        (mf/use-callback
+         (fn []
+           (st/emit! (dw/unselect-all-assets))))
+
+        on-component-click
+        (mf/use-callback
+          (mf/deps component selected-components)
+          (fn [event]
+            (dom/stop-propagation event)
+            (let [main-instance-id (:main-instance-id component)
+                  main-instance-page (:main-instance-page component)]
+              (if (and main-instance-id main-instance-page)
+                (st/emit! (dw/go-to-main-instance main-instance-page main-instance-id
+                                                  #(on-asset-click event (:id component) unselect-all)))
+                ;; This may occur when :components-v2 is disabled
+                (on-asset-click event (:id component) unselect-all)))))
+
         on-drop
         (mf/use-callback
          (mf/deps component dragging? selected-components selected-components-full selected-components-paths)
@@ -405,7 +423,7 @@
                    :enum-item (not @listing-thumbs?))
            :id (str "component-shape-id-" (:id component))
            :draggable true
-           :on-click #(on-asset-click % (:id component) nil)
+           :on-click on-component-click
            :on-context-menu (on-context-menu (:id component))
            :on-drag-start on-component-drag-start
            :on-drag-enter on-drag-enter
@@ -1973,7 +1991,7 @@
 
         on-asset-click
         (mf/use-callback
-         (mf/deps extend-selected-assets selected-assets)
+         (mf/deps selected-assets)
          (fn [asset-type asset-groups event asset-id default-click]
            (cond
              (kbd/mod? event)
