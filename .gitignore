@@ -23,6 +23,7 @@
 /backend/resources/public/assets
 /backend/resources/public/media
 /backend/target/
+/backend/builtin-templates
 /bundle*
 /cd.md
 /clj-profiler/
