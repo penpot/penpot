@@ -383,31 +383,43 @@
         image-wrapper  (image-wrapper)
         circle-wrapper (circle-wrapper)]
     (mf/fnc shape-container
-      {::mf/wrap-props false}
+      {::mf/wrap-props false
+       ::mf/wrap [mf/memo]}
       [props]
-      (let [scroll  (mf/use-ctx ctx/scroll-ctx)
-            local   (mf/deref refs/viewer-local)
-            zoom    (:zoom local)
-            shape   (unchecked-get props "shape")
-            parents (map (d/getf objects) (cph/get-parent-ids objects (:id shape)))
-            fixed?  (or (:fixed-scroll shape) (some :fixed-scroll parents))
+      (let [shape   (unchecked-get props "shape")
             frame   (unchecked-get props "frame")
-            delta   {:x (/ (:scroll-left scroll) zoom) :y (/ (:scroll-top scroll) zoom)}
+
+            ;; TODO: this watch of scroll position is killing
+            ;; performance of the viewer.
+            scroll  (mf/use-ctx ctx/current-scroll)
+            zoom    (mf/use-ctx ctx/current-zoom)
+
+            fixed?  (mf/with-memo [shape objects]
+                      (->> (cph/get-parent-ids objects (:id shape))
+                           (map (d/getf objects))
+                           (concat [shape])
+                           (some :fixed-scroll)))
+
+            delta   {:x (/ (:scroll-left scroll) zoom)
+                     :y (/ (:scroll-top scroll) zoom)}
+
             group-container
-            (mf/use-memo (mf/deps objects)
-                         #(group-container-factory objects))
+            (mf/with-memo [objects]
+              (group-container-factory objects))
 
             frame-container
-            (mf/use-memo (mf/deps objects)
-                         #(frame-container-factory objects))
+            (mf/with-memo [objects]
+              (frame-container-factory objects))
 
             bool-container
-            (mf/use-memo (mf/deps objects)
-                         #(bool-container-factory objects))
+            (mf/with-memo [objects]
+              (bool-container-factory objects))
 
             svg-raw-container
-            (mf/use-memo (mf/deps objects)
-                         #(svg-raw-container-factory objects))]
+            (mf/with-memo [objects]
+              (svg-raw-container-factory objects))
+
+            ]
         (when (and shape (not (:hidden shape)))
           (let [shape (-> (gsh/transform-shape shape)
                           (gsh/translate-to-frame frame)
@@ -425,4 +437,3 @@
               :group   [:> group-container {:shape shape :frame frame :objects objects :fixed? fixed? :delta delta}]
               :bool    [:> bool-container {:shape shape :frame frame :objects objects}]
               :svg-raw [:> svg-raw-container {:shape shape :frame frame :objects objects}])))))))
-
