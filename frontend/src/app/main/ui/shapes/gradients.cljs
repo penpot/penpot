@@ -104,7 +104,7 @@
   (let [attr   (obj/get props "attr")
         shape  (obj/get props "shape")
         id     (obj/get props "id")
-        id'    (mf/use-ctx muc/render-ctx)
+        id'    (mf/use-ctx muc/render-id)
         id     (or id (dm/str (name attr) "_" id'))
         gradient (get shape attr)
         gradient-props #js {:id id

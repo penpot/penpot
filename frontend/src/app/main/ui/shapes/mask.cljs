@@ -47,18 +47,18 @@
     {::mf/wrap-props false}
     [props]
     (let [mask        (unchecked-get props "mask")
-          render-id   (mf/use-ctx muc/render-ctx)
+          render-id   (mf/use-ctx muc/render-id)
           svg-text?   (and (= :text (:type mask)) (some? (:position-data mask)))
 
           ;; This factory is generic, it's used for viewer, workspace and handoff.
-          ;; These props are generated in viewer wrappers only, in the rest of the 
-          ;; cases these props will be nil, not affecting the code. 
+          ;; These props are generated in viewer wrappers only, in the rest of the
+          ;; cases these props will be nil, not affecting the code.
           fixed?      (unchecked-get props "fixed?")
           delta       (unchecked-get props "delta")
           mask-bb (-> (gsh/transform-shape mask)
                       (cond-> fixed? (gsh/move delta))
                       (:points))
-          
+
           mask-bb-rect (gsh/points->rect mask-bb)]
       [:defs
        [:filter {:id (filter-id render-id mask)}

@@ -211,7 +211,7 @@
   {::mf/wrap-props false}
   [props]
 
-  (let [render-id      (mf/use-ctx muc/render-ctx)
+  (let [render-id      (mf/use-ctx muc/render-id)
         child          (obj/get props "children")
         base-props     (obj/get child "props")
         elem-name      (obj/get child "type")
@@ -253,7 +253,7 @@
 (mf/defc inner-stroke
   {::mf/wrap-props false}
   [props]
-  (let [render-id  (mf/use-ctx muc/render-ctx)
+  (let [render-id  (mf/use-ctx muc/render-id)
         child      (obj/get props "children")
         base-props (obj/get child "props")
         elem-name  (obj/get child "type")
@@ -292,7 +292,7 @@
 
   (let [child (obj/get props "children")
         shape (obj/get props "shape")
-        render-id (mf/use-ctx muc/render-ctx)
+        render-id (mf/use-ctx muc/render-id)
         index (obj/get props "index")
         stroke-width (:stroke-width shape 0)
         stroke-style (:stroke-style shape :none)
@@ -417,7 +417,7 @@
         shape     (obj/get props "shape")
         elem-name (obj/get child "type")
         position  (or (obj/get props "position") 0)
-        render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-ctx))]
+        render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-id))]
     [:g {:id (dm/fmt "fills-%" (:id shape))}
      [:> elem-name (build-fill-props shape child position render-id)]]))
 
@@ -427,7 +427,7 @@
   (let [child     (obj/get props "children")
         shape     (obj/get props "shape")
         elem-name (obj/get child "type")
-        render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-ctx))
+        render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-id))
         stroke-id (dm/fmt "strokes-%" (:id shape))
         stroke-props (-> (obj/create)
                          (obj/set! "id" stroke-id)

@@ -6,6 +6,7 @@
 
 (ns app.main.ui.comments
   (:require
+   [app.common.geom.point :as gpt]
    [app.config :as cfg]
    [app.main.data.comments :as dcm]
    [app.main.data.modal :as modal]
@@ -110,8 +111,10 @@
         [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]])]))
 
 (mf/defc draft-thread
-  [{:keys [draft zoom on-cancel on-submit] :as props}]
-  (let [position (:position draft)
+  [{:keys [draft zoom on-cancel on-submit position-modifier]}]
+  (let [position (cond-> (:position draft)
+                   (some? position-modifier)
+                   (gpt/transform position-modifier))
         content  (:content draft)
         pos-x    (* (:x position) zoom)
         pos-y    (* (:y position) zoom)
@@ -281,9 +284,12 @@
   (l/derived (l/in [:comments id]) st/state))
 
 (mf/defc thread-comments
-  [{:keys [thread zoom users origin]}]
+  {::mf/wrap [mf/memo]}
+  [{:keys [thread zoom users origin position-modifier]}]
   (let [ref   (mf/use-ref)
-        pos   (:position thread)
+        pos   (cond-> (:position thread)
+                (some? position-modifier)
+                (gpt/transform position-modifier))
 
         pos-x (+ (* (:x pos) zoom) 14)
         pos-y (- (* (:y pos) zoom) 14)
@@ -384,9 +390,12 @@
 
 (mf/defc thread-bubble
   {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom open? on-click origin]}]
-  (let [pos   (:position thread)
-        drag? (mf/use-ref nil)
+  [{:keys [thread zoom open? on-click origin position-modifier]}]
+  (let [pos       (cond-> (:position thread)
+                    (some? position-modifier)
+                    (gpt/transform position-modifier))
+
+        drag?     (mf/use-ref nil)
         was-open? (mf/use-ref nil)
 
         {:keys [on-pointer-down
@@ -398,41 +407,45 @@
         pos-x (* (or (:new-position-x @state) (:x pos)) zoom)
         pos-y (* (or (:new-position-y @state) (:y pos)) zoom)
 
-        on-pointer-down* (mf/use-callback
-                          (mf/deps origin was-open? open? drag? on-pointer-down)
-                          (fn [event]
-                            (when (not= origin :viewer)
-                              (mf/set-ref-val! was-open? open?)
-                              (when open? (st/emit! (dcm/close-thread)))
-                              (mf/set-ref-val! drag? false)
-                              (dom/stop-propagation event)
-                              (on-pointer-down event))))
+        on-pointer-down*
+        (mf/use-callback
+         (mf/deps origin was-open? open? drag? on-pointer-down)
+         (fn [event]
+           (when (not= origin :viewer)
+             (mf/set-ref-val! was-open? open?)
+             (when open? (st/emit! (dcm/close-thread)))
+             (mf/set-ref-val! drag? false)
+             (dom/stop-propagation event)
+             (on-pointer-down event))))
 
-        on-pointer-up* (mf/use-callback
-                        (mf/deps origin thread was-open? drag? on-pointer-up)
-                        (fn [event]
-                          (when (not= origin :viewer)
-                            (dom/stop-propagation event)
-                            (on-pointer-up event thread)
+        on-pointer-up*
+        (mf/use-callback
+         (mf/deps origin thread was-open? drag? on-pointer-up)
+         (fn [event]
+           (when (not= origin :viewer)
+             (dom/stop-propagation event)
+             (on-pointer-up event thread)
 
-                            (when (or (and (mf/ref-val was-open?) (mf/ref-val drag?))
-                                      (and (not (mf/ref-val was-open?)) (not (mf/ref-val drag?))))
-                              (st/emit! (dcm/open-thread thread))))))
+             (when (or (and (mf/ref-val was-open?) (mf/ref-val drag?))
+                       (and (not (mf/ref-val was-open?)) (not (mf/ref-val drag?))))
+               (st/emit! (dcm/open-thread thread))))))
 
-        on-mouse-move* (mf/use-callback
-                        (mf/deps origin drag? on-mouse-move)
-                        (fn [event]
-                         (when (not= origin :viewer)
-                           (mf/set-ref-val! drag? true)
-                           (dom/stop-propagation event)
-                           (on-mouse-move event))))
+        on-mouse-move*
+        (mf/use-callback
+         (mf/deps origin drag? on-mouse-move)
+         (fn [event]
+           (when (not= origin :viewer)
+             (mf/set-ref-val! drag? true)
+             (dom/stop-propagation event)
+             (on-mouse-move event))))
 
-        on-click* (mf/use-callback
-                   (mf/deps origin thread on-click)
-                   (fn [event]
-                     (dom/stop-propagation event)
-                     (when (= origin :viewer)
-                       (on-click thread))))]
+        on-click*
+        (mf/use-callback
+         (mf/deps origin thread on-click)
+         (fn [event]
+           (dom/stop-propagation event)
+           (when (= origin :viewer)
+             (on-click thread))))]
 
     [:div.thread-bubble
      {:style {:top (str pos-y "px")
@@ -448,7 +461,7 @@
      [:span (:seqn thread)]]))
 
 (mf/defc comment-thread
-  [{:keys [item users on-click] :as props}]
+  [{:keys [item users on-click]}]
   (let [owner (get users (:owner-id item))
         on-click*
         (mf/use-callback

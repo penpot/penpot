@@ -9,8 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
-   [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
+   [app.main.ui.hooks :as h]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.fills :as fills]
@@ -49,18 +49,19 @@
   {::mf/forward-ref true
    ::mf/wrap-props false}
   [props ref]
-  (let [shape            (obj/get props "shape")
-        children         (obj/get props "children")
-        pointer-events   (obj/get props "pointer-events")
-        disable-shadows? (obj/get props "disable-shadows?")
 
-        type           (:type shape)
-        render-id      (mf/use-memo #(str (uuid/next)))
-        filter-id      (str "filter_" render-id)
-        styles         (-> (obj/create)
-                           (obj/set! "pointerEvents" pointer-events)
-                           (cond-> (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
-                             (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
+  (let [shape            (unchecked-get props "shape")
+        children         (unchecked-get props "children")
+        pointer-events   (unchecked-get props "pointer-events")
+        disable-shadows? (unchecked-get props "disable-shadows?")
+
+        type             (:type shape)
+        render-id        (h/use-id)
+        filter-id        (dm/str "filter_" render-id)
+        styles           (-> (obj/create)
+                             (obj/set! "pointerEvents" pointer-events)
+                             (cond-> (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
+                               (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
 
         include-metadata? (mf/use-ctx ed/include-metadata-ctx)
 
@@ -91,7 +92,7 @@
                    svg-group?
                    (propagate-wrapper-styles wrapper-props))]
 
-    [:& (mf/provider muc/render-ctx) {:value render-id}
+    [:& (mf/provider muc/render-id) {:value render-id}
      [:> :g wrapper-props
       (when include-metadata?
         [:& ed/export-data {:shape shape}])

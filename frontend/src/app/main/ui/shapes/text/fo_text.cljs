@@ -9,7 +9,6 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.color :as uc]
@@ -90,23 +89,6 @@
       (if (contains? colors current-hex)
         (recur (uc/next-rgb current-rgb))
         current-hex))))
-
-(defn- remap-colors
-  "Returns a new content replacing the original colors by their mapped 'simple color'"
-  [content color-mapping]
-
-  (cond-> content
-    (and (:fill-opacity content) (< (:fill-opacity content) 1.0))
-    (-> (assoc :fill-color (get color-mapping [(:fill-color content) (:fill-opacity content)]))
-        (assoc :fill-opacity 1.0))
-
-    (some? (:fill-color-gradient content))
-    (-> (assoc :fill-color (get color-mapping (:fill-color-gradient content)))
-        (assoc :fill-opacity 1.0)
-        (dissoc :fill-color-gradient))
-
-    (contains? content :children)
-    (update :children #(mapv (fn [node] (remap-colors node color-mapping)) %))))
 
 (defn- fill->color
   "Given a content node returns the information about that node fill color"
@@ -199,13 +181,7 @@
         ;; We add 8px to add a padding for the exporter
         ;; width (+ width 8)
 
-        [colors color-mapping color-mapping-inverse] (retrieve-colors shape)
-
-        plain-colors? (mf/use-ctx muc/text-plain-colors-ctx)
-
-        content (cond-> content
-                  plain-colors?
-                  (remap-colors color-mapping))]
+        [colors _color-mapping color-mapping-inverse] (retrieve-colors shape)]
 
     [:foreignObject
      {:x x

@@ -6,10 +6,10 @@
 
 (ns app.main.ui.viewer.header
   (:require
+   [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.export :refer [export-progress-widget]]
@@ -19,7 +19,13 @@
    [app.main.ui.viewer.interactions :refer [flows-menu interactions-menu]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [okulary.core :as l]
    [rumext.alpha :as mf]))
+
+(def fullscreen-ref
+  (l/derived (fn [state]
+               (dm/get-in state [:viewer-local :fullscreen?]))
+             st/state))
 
 (defn open-login-dialog
   []
@@ -65,7 +71,7 @@
 
 (mf/defc header-options
   [{:keys [section zoom page file index permissions]}]
-  (let [fullscreen? (mf/deref refs/viewer-fullscreen?)
+  (let [fullscreen? (mf/deref fullscreen-ref)
 
         toggle-fullscreen
         (mf/use-callback
