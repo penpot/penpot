@@ -6,6 +6,8 @@
 
 (ns app.main.ui.viewer.comments
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -23,132 +25,145 @@
    [rumext.alpha :as mf]))
 
 (mf/defc comments-menu
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
   []
-  (let [{cmode :mode cshow :show clist :list} (mf/deref refs/comments-local)
+  (let [local           (mf/deref refs/comments-local)
+        owner-filter    (:owner-filter local)
+        status-filter   (:status-filter local)
+        show-sidebar?   (:show-sidebar? local)
 
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
         hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
 
-        update-mode
-        (mf/use-callback
-         (fn [mode]
-           (st/emit! (dcm/update-filters {:mode mode}))))
-
-        update-show
-        (mf/use-callback
-         (fn [mode]
-           (st/emit! (dcm/update-filters {:show mode}))))
-
-        update-list
-        (mf/use-callback
-         (fn [show-list]
-           (st/emit! (dcm/update-filters {:list show-list}))))]
+        update-option   (mf/use-fn
+                         (fn [event]
+                           (let [target (dom/get-current-target event)
+                                 key    (d/read-string (dom/get-attribute target "data-key"))
+                                 val    (d/read-string (dom/get-attribute target "data-val"))]
+                             (st/emit! (dcm/update-options {key val})))))]
 
     [:div.view-options {:on-click toggle-dropdown}
      [:span.label (tr "labels.comments")]
      [:span.icon i/arrow-down]
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
+
       [:ul.dropdown.with-check
-       [:li {:class (dom/classnames :selected (= :all cmode))
-             :on-click #(update-mode :all)}
+       [:li {:class (dom/classnames :selected (= :all owner-filter))
+             :data-key ":owner-filter"
+             :data-val ":all"
+             :on-click update-option}
         [:span.icon i/tick]
         [:span.label (tr "labels.show-all-comments")]]
 
-       [:li {:class (dom/classnames :selected (= :yours cmode))
-             :on-click #(update-mode :yours)}
+       [:li {:class (dom/classnames :selected (= :yours owner-filter))
+             :data-key ":owner-filter"
+             :data-val ":yours"
+             :on-click update-option}
         [:span.icon i/tick]
         [:span.label (tr "labels.show-your-comments")]]
 
        [:hr]
 
-       [:li {:class (dom/classnames :selected (= :pending cshow))
-             :on-click #(update-show (if (= :pending cshow) :all :pending))}
+       [:li {:class (dom/classnames :selected (= :pending status-filter))
+             :data-key ":status-filter"
+             :data-val (if (= :pending status-filter) ":all" ":pending")
+             :on-click update-option}
         [:span.icon i/tick]
         [:span.label (tr "labels.hide-resolved-comments")]]
 
        [:hr]
-
-       [:li {:class (dom/classnames :selected (= :show clist))
-             :on-click #(update-list (if (= :show clist) :hide :show))}
+       [:li {:class (dom/classnames :selected show-sidebar?)
+             :data-key ":show-sidebar?"
+             :data-val (if show-sidebar? "false" "true")
+             :on-click update-option}
         [:span.icon i/tick]
         [:span.label (tr "labels.show-comments-list")]]]]]))
 
 
-(def threads-ref
-  (l/derived :comment-threads st/state))
-
-(def comments-local-ref
-  (l/derived :comments-local st/state))
+(defn- update-thread-position [positions {:keys [id] :as thread}]
+  (if-let [data (get positions id)]
+    (-> thread
+        (assoc :position (:position data))
+        (assoc :frame-id (:frame-id data)))
+    thread))
 
 (mf/defc comments-layer
   [{:keys [zoom file users frame page] :as props}]
-  (let [profile     (mf/deref refs/profile)
-        threads-position-ref  (l/derived (l/in [:viewer :pages (:id page) :options :comment-threads-position]) st/state)
-        threads-position-map  (mf/deref threads-position-ref)
-        threads-map (mf/deref threads-ref)
+  (prn "comments-layer")
+  (let [profile        (mf/deref refs/profile)
+        local          (mf/deref refs/comments-local)
 
-        frame-corner (-> frame :points gsh/points->selrect gpt/point)
-        modifier1   (-> (gmt/matrix)
-                        (gmt/translate (gpt/negate frame-corner)))
+        open-thread-id (:open local)
+        page-id        (:id page)
+        file-id        (:id file)
+        frame-id       (:id frame)
 
-        modifier2   (-> (gpt/point frame-corner)
-                        (gmt/translate-matrix))
+        tpos-ref     (mf/with-memo [page-id]
+                       (-> (l/in [:pages page-id :options :comment-threads-position])
+                           (l/derived refs/viewer-data)))
 
-        cstate      (mf/deref refs/comments-local)
+        positions    (mf/deref tpos-ref)
+        threads-map  (mf/deref refs/comment-threads)
 
-        update-thread-position (fn update-thread-position [thread]
-                                 (if (contains? threads-position-map (:id thread))
-                                   (-> thread
-                                       (assoc :position (get-in threads-position-map [(:id thread) :position]))
-                                       (assoc :frame-id (get-in threads-position-map [(:id thread) :frame-id])))
-                                   thread))
+        frame-corner (mf/with-memo [frame]
+                       (-> frame :points gsh/points->selrect gpt/point))
 
-        threads     (->> (vals threads-map)
-                         (map update-thread-position)
-                         (filter #(= (:frame-id %) (:id frame)))
-                         (dcm/apply-filters cstate profile)
-                         (filter (fn [{:keys [position]}]
-                                   (gsh/has-point? frame position))))
+        modifier1    (mf/with-memo [frame-corner]
+                       (-> (gmt/matrix)
+                           (gmt/translate (gpt/negate frame-corner))))
+        modifier2    (mf/with-memo [frame-corner]
+                       (-> (gpt/point frame-corner)
+                           (gmt/translate-matrix)))
+
+
+        threads      (mf/with-memo [threads-map positions]
+                       (->> (vals threads-map)
+                            (map (partial update-thread-position positions))
+                            (filter #(= (:frame-id %) (:id frame)))
+                            (dcm/apply-filters local profile)
+                            (filter (fn [{:keys [position]}]
+                                      (gsh/has-point? frame position)))))
+
 
         on-bubble-click
-        (mf/use-callback
-         (mf/deps cstate)
-         (fn [thread]
-           (if (= (:open cstate) (:id thread))
-             (st/emit! (dcm/close-thread))
-             (st/emit! (-> (dcm/open-thread thread)
+        (mf/use-fn
+         (mf/deps open-thread-id)
+         (fn [{:keys [id] :as thread}]
+           (st/emit! (if (= open-thread-id id)
+                       (dcm/close-thread)
+                       (-> (dcm/open-thread thread)
                            (with-meta {::ev/origin "viewer"}))))))
 
         on-click
-        (mf/use-callback
-         (mf/deps cstate frame page file zoom)
+        (mf/use-fn
+         (mf/deps open-thread-id zoom page-id file-id modifier2)
          (fn [event]
            (dom/stop-propagation event)
-           (if (some? (:open cstate))
+           (if (some? open-thread-id)
              (st/emit! (dcm/close-thread))
-             (let [event    (.-nativeEvent ^js event)
-                   viewport-point (dom/get-offset-position event)
-                   viewport-point (-> viewport-point (update :x #(/ % zoom)) (update :y #(/ % zoom)))
-                   position (gpt/transform viewport-point modifier2)
+             (let [event    (dom/event->native-event event)
+                   position (-> (dom/get-offset-position event)
+                                (update :x #(/ % zoom))
+                                (update :y #(/ % zoom))
+                                (gpt/transform modifier2))
                    params   {:position position
                              :page-id (:id page)
                              :file-id (:id file)}]
                (st/emit! (dcm/create-draft params))))))
 
         on-draft-cancel
-        (mf/use-callback
-         (mf/deps cstate)
-         #(st/emit! (dcm/close-thread)))
+        (mf/use-fn #(st/emit! (dcm/close-thread)))
 
         on-draft-submit
-        (mf/use-callback
-         (mf/deps frame)
+        (mf/use-fn
+         (mf/deps frame-id modifier2)
          (fn [draft]
            (let [params (-> draft
-                            (update  :position gpt/transform modifier2)
-                            (assoc :frame-id (:id frame)))]
+                            (update :position gpt/transform modifier2)
+                            (assoc :frame-id frame-id))]
              (st/emit! (dcm/create-thread-on-viewer params)
                        (dcm/close-thread)))))]
 
@@ -156,35 +171,37 @@
      [:div.viewer-comments-container
       [:div.threads
        (for [item threads]
-         (let [item (update item :position gpt/transform modifier1)]
-           [:& cmt/thread-bubble {:thread item
-                                  :zoom zoom
-                                  :on-click on-bubble-click
-                                  :open? (= (:id item) (:open cstate))
-                                  :key (:seqn item)
-                                  :origin :viewer}]))
+         [:& cmt/thread-bubble
+          {:thread item
+           :position-modifier modifier1
+           :zoom zoom
+           :on-click on-bubble-click
+           :open? (= (:id item) (:open local))
+           :key (:seqn item)
+           :origin :viewer}])
 
-       (when-let [id (:open cstate)]
-         (when-let [thread (as-> (get threads-map id) $
-                             (when (some? $)
-                               (update $ :position gpt/transform modifier1)))]
-           [:& cmt/thread-comments {:thread thread
-                                    :users users
-                                    :zoom zoom}]))
+       (when-let [thread (get threads-map open-thread-id)]
+         [:& cmt/thread-comments
+          {:thread thread
+           :position-modifier modifier1
+           :users users
+           :zoom zoom}])
 
-       (when-let [draft (:draft cstate)]
-         [:& cmt/draft-thread {:draft (update draft :position gpt/transform modifier1)
-                               :on-cancel on-draft-cancel
-                               :on-submit on-draft-submit
-                               :zoom zoom}])]]]))
+       (when-let [draft (:draft local)]
+         [:& cmt/draft-thread
+          {:draft draft
+           :position-modifier modifier1
+           :on-cancel on-draft-cancel
+           :on-submit on-draft-submit
+           :zoom zoom}])]]]))
 
 (mf/defc comments-sidebar
   [{:keys [users frame page]}]
   (let [profile     (mf/deref refs/profile)
-        cstate      (mf/deref refs/comments-local)
-        threads-map (mf/deref threads-ref)
+        local      (mf/deref refs/comments-local)
+        threads-map (mf/deref refs/comment-threads)
         threads     (->> (vals threads-map)
-                         (dcm/apply-filters cstate profile)
+                         (dcm/apply-filters local profile)
                          (filter (fn [{:keys [position]}]
                                    (gsh/has-point? frame position))))]
     [:aside.settings-bar.settings-bar-right.comments-right-sidebar
