@@ -21,7 +21,7 @@
       (let [shape          (unchecked-get props "shape")
             childs         (unchecked-get props "childs")
             objects        (unchecked-get props "objects")
-            render-id      (mf/use-ctx muc/render-ctx)
+            render-id      (mf/use-ctx muc/render-id)
             masked-group?  (:masked-group? shape)
 
             [mask childs]  (if masked-group?

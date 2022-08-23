@@ -8,7 +8,7 @@
   (:require
    [rumext.alpha :as mf]))
 
-(def render-ctx (mf/create-context nil))
+(def render-id (mf/create-context nil))
 
 (def current-route      (mf/create-context nil))
 (def current-profile    (mf/create-context nil))

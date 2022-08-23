@@ -159,7 +159,7 @@
 
 (defn add-style-attrs
   ([props shape]
-   (let [render-id (mf/use-ctx muc/render-ctx)]
+   (let [render-id (mf/use-ctx muc/render-id)]
      (add-style-attrs props shape render-id)))
 
   ([props shape render-id]
