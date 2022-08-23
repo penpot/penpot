@@ -80,6 +80,7 @@
 
         card-width  275
         num-cards   (count templates)
+        container-size (* (+ 2 num-cards) card-width)
         ;; We need space for num-cards plus the libraries&templates link
         more-cards  (> (+ @card-offset (* (+ 1 num-cards) card-width)) content-width)
         content-ref (mf/use-ref)
@@ -148,7 +149,7 @@
        [:span (tr "dashboard.libraries-and-templates")]
        [:span.icon (if collapsed i/arrow-up i/arrow-down)]]]
      [:div.content {:ref content-ref
-                    :style {:left @card-offset}}
+                    :style {:left @card-offset :width (str container-size "px")}}
       (for [num-item (range (count templates)) :let [item (nth templates num-item)]]
         [:div.card-container {:id (str/concat "card-container-" num-item)
                               :key (:id item)
