@@ -19,5 +19,5 @@
 (def current-scroll     (mf/create-context nil))
 (def current-zoom       (mf/create-context nil))
 
-(def active-frames-ctx  (mf/create-context nil))
+(def active-frames  (mf/create-context nil))
 (def render-thumbnails  (mf/create-context nil))
