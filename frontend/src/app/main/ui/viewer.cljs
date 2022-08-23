@@ -83,7 +83,7 @@
 
 (mf/defc viewer-pagination-and-sidebar
   {::mf/wrap [mf/memo]}
-  [{:keys [section index frames users frame page]}]
+  [{:keys [section index users frame page]}]
   (let [comments-local  (mf/deref refs/comments-local)
         show-sidebar?   (and (= section :comments) (:show-sidebar? comments-local))]
     [:*
@@ -99,7 +99,7 @@
          :page page}])]))
 
 (mf/defc viewer-overlay
-  [{:keys [overlay file page frame zoom wrapper-size close-overlay interactions-mode]}]
+  [{:keys [overlay page frame zoom wrapper-size close-overlay interactions-mode]}]
   (let [close-click-outside? (:close-click-outside overlay)
         background-overlay?  (:background-overlay overlay)
         overlay-frame        (:frame overlay)
@@ -144,7 +144,7 @@
 
 
 (mf/defc viewer-wrapper
-  [{:keys [wrapper-size scroll orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
+  [{:keys [wrapper-size orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
            size frame interactions-mode overlays zoom close-overlay section index] :as props}]
   [:*
    [:& viewer-pagination-and-sidebar
@@ -171,7 +171,6 @@
           :frame-offset (gpt/point 0 0)
           :size orig-size
           :page page
-          :file file
           :users users
           :interactions-mode :hide}]])
 
@@ -191,7 +190,6 @@
 
       (for [overlay overlays]
         [:& viewer-overlay {:overlay overlay
-                            :file file
                             :key (dm/str (:id overlay))
                             :page page
                             :frame frame
@@ -254,7 +252,6 @@
         frame  (get frames index)
 
         fullscreen? (mf/deref header/fullscreen-ref)
-        overlays    (:overlays local)
         overlays    (mf/deref current-overlays-ref)
         scroll      (mf/use-state nil)
 
@@ -464,7 +461,6 @@
             [:& (mf/provider ctx/current-zoom) {:value zoom}
              [:& viewer-wrapper
               {:wrapper-size wrapper-size
-               :scroll @scroll
                :orig-frame orig-frame
                :orig-viewport-ref orig-viewport-ref
                :orig-size orig-size

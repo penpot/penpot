@@ -17,13 +17,12 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.icons :as i]
    [app.main.ui.hooks :as h]
+   [app.main.ui.icons :as i]
    [app.main.ui.viewer.shapes :as shapes]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [goog.events :as events]
    [rumext.alpha :as mf]))
 
@@ -75,8 +74,7 @@
        [:& wrapper {:shape frame :view-box vbox}]]]]))
 
 (mf/defc viewport
-  {
-   ::mf/wrap [mf/memo]
+  {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
   (let [;; NOTE: with `use-equal-memo` hook we ensure that all values
@@ -89,7 +87,6 @@
         page   (unchecked-get props "page")
         frame  (unchecked-get props "frame")
         base   (unchecked-get props "base-frame")]
-
 
     (mf/with-effect [mode]
       (let [on-click

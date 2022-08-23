@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
-   [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
    [app.main.ui.hooks :as h]
    [app.main.ui.shapes.attrs :as attrs]

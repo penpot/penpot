@@ -9,7 +9,6 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.color :as uc]
@@ -182,7 +181,7 @@
         ;; We add 8px to add a padding for the exporter
         ;; width (+ width 8)
 
-        [colors color-mapping color-mapping-inverse] (retrieve-colors shape)]
+        [colors _color-mapping color-mapping-inverse] (retrieve-colors shape)]
 
     [:foreignObject
      {:x x

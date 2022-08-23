@@ -10,7 +10,6 @@
    [app.main.data.modal :as modal]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.export :refer [export-progress-widget]]
