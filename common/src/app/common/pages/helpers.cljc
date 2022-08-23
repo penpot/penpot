@@ -96,16 +96,6 @@
   [objects id]
   (-> objects (get id) :parent-id))
 
-(defn get-parents-seq
-  [objects shape-id]
-
-  (cond
-    (nil? shape-id)
-    nil
-
-    :else
-    (lazy-seq (cons shape-id (get-parents-seq objects (get-in objects [shape-id :parent-id]))))))
-
 (defn get-parent-ids
   "Returns a vector of parents of the specified shape."
   [objects shape-id]
@@ -220,8 +210,8 @@
 (defn- get-base
   [objects id-a id-b]
 
-  (let [parents-a (reverse (get-parents-seq objects id-a))
-        parents-b (reverse (get-parents-seq objects id-b))
+  (let [parents-a (reverse (cons id-a (get-parent-ids objects id-a)))
+        parents-b (reverse (cons id-b (get-parent-ids objects id-b)))
 
         [base base-child-a base-child-b]
         (loop [parents-a (rest parents-a)
@@ -648,7 +638,7 @@
 
 (defn is-child?
   [objects parent-id candidate-child-id]
-  (let [parents (get-parents-seq objects candidate-child-id)]
+  (let [parents (get-parent-ids objects candidate-child-id)]
     (some? (d/seek #(= % parent-id) parents))))
 
 (defn reduce-objects
@@ -688,11 +678,10 @@
 
 (defn get-shape-id-root-frame
   [objects shape-id]
-  (->> (get-parents-seq objects shape-id)
+  (->> (get-parent-ids objects shape-id)
+       (cons shape-id)
        (map (d/getf objects))
-       (d/seek #(and (= :frame (:type %))
-                     (= uuid/zero (:frame-id %))))
-
+       (d/seek root-frame?)
        :id))
 
 (defn get-viewer-frames
