@@ -117,7 +117,7 @@
 
 (defn add-recent-color
   [color]
-  (us/assert ::ctc/recent-color color)
+  (us/assert! ::ctc/recent-color color)
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [it _ _]

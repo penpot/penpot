@@ -64,6 +64,7 @@
 ### :bug: Bugs fixed
 
 - Fix font rendering on grid thumbnails [Taiga #3473](https://tree.taiga.io/project/penpot/issue/3473)
+- Fix inconsistent representation of rectangles [Taiga #3977](https://tree.taiga.io/project/penpot/issue/3977)
 - Fix recent fonts info [Taiga #3953](https://tree.taiga.io/project/penpot/issue/3953)
 - Fix clipped elements affect boards and centering [Taiga #3666](https://tree.taiga.io/project/penpot/issue/3666)
 - Fix intro action in multi input [Taiga #3541](https://tree.taiga.io/project/penpot/issue/3541)
@@ -78,6 +79,7 @@
 - Fix unexpected removal of guides on copy&paste frames [Taiga #3887](https://tree.taiga.io/project/penpot/issue/3887) by @andrewzhurov
 - Fix props preserving on copy&paste texts [Taiga #3629](https://tree.taiga.io/project/penpot/issue/3629) by @andrewzhurov
 - Fix unexpected layers ungrouping on moving it [Taiga #3932](https://tree.taiga.io/project/penpot/issue/3932) by @andrewzhurov
+- Fix unexpected exception and behavior on colorpicker with gradients [Taiga #3448](https://tree.taiga.io/project/penpot/issue/3448)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

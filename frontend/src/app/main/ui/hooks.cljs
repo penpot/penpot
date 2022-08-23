@@ -7,15 +7,25 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.pages :as cp]
+   [app.common.uuid :as uuid]
+   [app.main.broadcast :as mbc]
    [app.main.data.shortcuts :as dsc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
+   [app.util.storage :refer [storage]]
    [app.util.timers :as ts]
    [beicon.core :as rx]
+   [goog.functions :as f]
    [rumext.alpha :as mf]))
+
+(defn use-id
+  "Get a stable id value across rerenders."
+  []
+  (mf/use-memo #(dm/str (uuid/next))))
 
 (defn use-rxsub
   [ob]
@@ -191,7 +201,6 @@
 
     [(deref state) ref]))
 
-
 (defn use-stream
   "Wraps the subscription to a stream into a `use-effect` call"
   ([stream on-subscribe]
@@ -205,6 +214,7 @@
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
 (defn use-previous
+  "Returns the value from previuous render cycle."
   [value]
   (let [ref (mf/use-ref value)]
     (mf/use-effect
@@ -214,13 +224,27 @@
     (mf/ref-val ref)))
 
 (defn use-update-var
+  "Returns a var pointer what automatically updates with latest values."
   [value]
-  (let [ref (mf/use-var value)]
-    (mf/use-effect
-     (mf/deps value)
-     (fn []
-       (reset! ref value)))
-    ref))
+  (let [ptr (mf/use-var value)]
+    (mf/with-effect [value]
+      (reset! ptr value))
+    ptr))
+
+(defn use-ref-callback
+  "Returns a stable callback pointer what calls the interned
+  callback. The interned callback will be automatically updated on
+  each reander if the reference changes and works as noop if the
+  pointer references to nil value."
+  [f]
+  (let [ptr (mf/use-ref nil)]
+    (mf/with-effect [f]
+      (mf/set-ref-val! ptr #js {:f f}))
+    (mf/use-fn
+     (fn [& args]
+       (let [obj  (mf/ref-val ptr)]
+         (when ^boolean obj
+           (apply (.-f obj) args)))))))
 
 (defn use-equal-memo
   [val]
@@ -258,4 +282,34 @@
                   #(cp/focus-objects objects focus))]
      objects)))
 
+(defn use-debounce
+  [ms value]
+  (let [[state update-state-fn] (mf/useState value)
+        update-fn (mf/use-memo (mf/deps ms) #(f/debounce update-state-fn ms))]
+    (mf/with-effect [value]
+      (update-fn value))
+    state))
 
+(defn use-shared-state
+  "A specialized hook that adds persistence and inter-context reactivity
+  to the default mf/use-state hook.
+
+  The state is automatically persisted under the provided key on
+  localStorage. And it will keep watching events with type equals to
+  `key` for new values."
+  [key default]
+  (let [id     (use-id)
+        state  (mf/use-state (get @storage key default))
+        stream (mf/with-memo []
+                 (->> mbc/stream
+                      (rx/filter #(= (:type %) key))
+                      (rx/filter #(not= (:id %) id))
+                      (rx/map deref)))]
+
+    (mf/with-effect [@state key]
+      (mbc/emit! id key @state)
+      (swap! storage assoc key @state))
+
+    (use-stream stream (partial reset! state))
+
+    state))

@@ -87,11 +87,17 @@
 
 (defn set-radius-4
   [shape attr value]
-  (cond-> shape
-    (:rx shape)
-    (-> (dissoc :rx :rx)
-        (assoc :r1 0 :r2 0 :r3 0 :r4 0))
+  (let [attr (cond->> attr
+               (:flip-x shape)
+               (get {:r1 :r2 :r2 :r1 :r3 :r4 :r4 :r3})
 
-    :always
-    (assoc attr value)))
+               (:flip-y shape)
+               (get {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1}))]
 
+    (cond-> shape
+      (:rx shape)
+      (-> (dissoc :rx :rx)
+          (assoc :r1 0 :r2 0 :r3 0 :r4 0))
+
+      :always
+      (assoc attr value))))

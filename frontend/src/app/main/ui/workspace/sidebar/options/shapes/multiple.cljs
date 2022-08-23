@@ -21,11 +21,11 @@
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
-   [rumext.alpha :as mf]))
+      [rumext.alpha :as mf]))
 
 ;; Define how to read each kind of attribute depending on the shape type:
 ;;   - shape: read the attribute directly from the shape.
@@ -197,8 +197,10 @@
               :shape    (let [;; Get the editable attrs from the shape, ensuring that all attributes
                               ;; are present, with value nil if they are not present in the shape.
                               shape-values (merge
-                                             (into {} (map #(vector % nil)) editable-attrs)
-                                             (select-keys shape editable-attrs))]
+                                            (into {} (map #(vector % nil)) editable-attrs)
+                                            (cond
+                                              (= attr-group :measure) (select-measure-keys shape)
+                                              :else (select-keys shape editable-attrs)))]
                           [(conj ids id)
                            (merge-attrs values shape-values)])
 

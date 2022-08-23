@@ -63,23 +63,23 @@ msgstr "Рады видеть Вас снова!"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Вход через Gitnub"
+msgstr "Gitnub"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Вход через Gitlab"
+msgstr "Gitlab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "Войти с Google"
+msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Вход через LDAP"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "Войти с OpenID (SSO)"
+msgstr "OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"

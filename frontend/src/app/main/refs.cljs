@@ -426,3 +426,6 @@
      (->> ids
           (some #(-> (cph/get-parent objects %) :layout))))
    workspace-page-objects))
+
+(def colorpicker
+  (l/derived :colorpicker st/state))

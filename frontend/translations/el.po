@@ -60,15 +60,15 @@ msgstr "Χαίρομαι που σας ξαναδώ"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Συνδεθείτε με το Github"
+msgstr "Github"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Συνδεθείτε με το Gitlab"
+msgstr "Gitlab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Συνδεθείτε με το LDAP"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"

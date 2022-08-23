@@ -78,11 +78,11 @@ msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "LDAP ile oturum aç"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "OpenID ile Bağlan"
+msgstr "OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
