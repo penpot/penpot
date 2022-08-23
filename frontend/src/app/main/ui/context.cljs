@@ -9,7 +9,6 @@
    [rumext.alpha :as mf]))
 
 (def render-ctx (mf/create-context nil))
-(def def-ctx (mf/create-context false))
 
 (def current-route      (mf/create-context nil))
 (def current-profile    (mf/create-context nil))
