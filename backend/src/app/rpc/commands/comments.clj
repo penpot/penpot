@@ -496,7 +496,8 @@
 ;; --- COMMAND: Update comment thread position
 
 (s/def ::update-comment-thread-position
-  (s/keys :req-un [::profile-id ::id ::position ::frame-id ::share-id]))
+  (s/keys :req-un [::profile-id ::id ::position ::frame-id]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread-position
   {::doc/added "1.15"}
@@ -514,7 +515,8 @@
 ;; --- COMMAND: Update comment frame
 
 (s/def ::update-comment-thread-frame
-  (s/keys :req-un [::profile-id ::id ::frame-id ::share-id]))
+  (s/keys :req-un [::profile-id ::id ::frame-id]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread-frame
   {::doc/added "1.15"}

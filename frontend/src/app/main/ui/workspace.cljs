@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data.macros :as dm]
+   [app.main.data.comments :as dcm]
    [app.main.data.messages :as msg]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.persistence :as dwp]
@@ -127,6 +128,7 @@
 
     (mf/with-effect [project-id file-id]
       (st/emit! (dw/initialize-file project-id file-id))
+      (st/emit! (dcm/retrieve-comment-threads file-id))
       (fn []
         (st/emit! ::dwp/force-persist
                   (dw/finalize-file project-id file-id))))
