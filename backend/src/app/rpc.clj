@@ -258,12 +258,12 @@
 (s/def ::public-uri ::us/not-empty-string)
 (s/def ::session map?)
 (s/def ::storage some?)
-(s/def ::tokens fn?)
+(s/def ::sprops map?)
 
 (defmethod ig/pre-init-spec ::methods [_]
   (s/keys :req-un [::storage
                    ::session
-                   ::tokens
+                   ::sprops
                    ::audit
                    ::executors
                    ::public-uri

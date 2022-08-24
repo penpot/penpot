@@ -114,18 +114,18 @@
 ;; HTTP ROUTER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::oauth map?)
-(s/def ::storage map?)
 (s/def ::assets map?)
-(s/def ::feedback fn?)
-(s/def ::ws fn?)
 (s/def ::audit-handler fn?)
 (s/def ::awsns-handler fn?)
-(s/def ::session map?)
-(s/def ::rpc-routes (s/nilable vector?))
 (s/def ::debug-routes (s/nilable vector?))
-(s/def ::oidc-routes (s/nilable vector?))
 (s/def ::doc-routes (s/nilable vector?))
+(s/def ::feedback fn?)
+(s/def ::oauth map?)
+(s/def ::oidc-routes (s/nilable vector?))
+(s/def ::rpc-routes (s/nilable vector?))
+(s/def ::session map?)
+(s/def ::storage map?)
+(s/def ::ws fn?)
 
 (defmethod ig/pre-init-spec ::router [_]
   (s/keys :req-un [::mtx/metrics

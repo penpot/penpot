@@ -11,6 +11,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.tokens :as tokens]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
@@ -39,7 +40,7 @@
   (delete-session [store key]))
 
 (defn- make-database-store
-  [{:keys [pool tokens executor]}]
+  [{:keys [pool sprops executor]}]
   (reify ISessionStore
     (read-session [_ token]
       (px/with-dispatch executor
@@ -50,9 +51,9 @@
         (let [profile-id (:profile-id data)
               user-agent (:user-agent data)
               created-at (or (:created-at data) (dt/now))
-              token      (tokens :generate {:iss "authentication"
-                                            :iat created-at
-                                            :uid profile-id})
+              token      (tokens/generate sprops {:iss "authentication"
+                                                  :iat created-at
+                                                  :uid profile-id})
               params     {:user-agent user-agent
                           :profile-id profile-id
                           :created-at created-at
@@ -75,7 +76,7 @@
         nil))))
 
 (defn make-inmemory-store
-  [{:keys [tokens]}]
+  [{:keys [sprops]}]
   (let [cache (atom {})]
     (reify ISessionStore
       (read-session [_ token]
@@ -86,9 +87,9 @@
           (let [profile-id (:profile-id data)
                 user-agent (:user-agent data)
                 created-at (or (:created-at data) (dt/now))
-                token      (tokens :generate {:iss "authentication"
-                                              :iat created-at
-                                              :uid profile-id})
+                token      (tokens/generate sprops {:iss "authentication"
+                                                    :iat created-at
+                                                    :uid profile-id})
                 params     {:user-agent user-agent
                             :created-at created-at
                             :updated-at created-at
@@ -108,9 +109,9 @@
           (swap! cache dissoc token)
           nil)))))
 
-(s/def ::tokens fn?)
+(s/def ::sprops map?)
 (defmethod ig/pre-init-spec ::store [_]
-  (s/keys :req-un [::db/pool ::wrk/executor ::tokens]))
+  (s/keys :req-un [::db/pool ::wrk/executor ::sprops]))
 
 (defmethod ig/init-key ::store
   [_ {:keys [pool] :as cfg}]

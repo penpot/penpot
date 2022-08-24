@@ -5,28 +5,27 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.tokens
-  "Tokens generation service."
+  "Tokens generation API."
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.util.time :as dt]
-   [buddy.sign.jwe :as jwe]
-   [clojure.spec.alpha :as s]
-   [integrant.core :as ig]))
+   [buddy.sign.jwe :as jwe]))
 
-(defn- generate
-  [cfg claims]
+(defn generate
+  [{:keys [tokens-key]} claims]
+  (us/assert! ::us/not-empty-string tokens-key)
   (let [payload (-> claims
                     (assoc :iat (dt/now))
                     (d/without-nils)
                     (t/encode))]
-    (jwe/encrypt payload (::secret cfg) {:alg :a256kw :enc :a256gcm})))
+    (jwe/encrypt payload tokens-key {:alg :a256kw :enc :a256gcm})))
 
-(defn- verify
-  [cfg {:keys [token] :as params}]
-  (let [payload (jwe/decrypt token (::secret cfg) {:alg :a256kw :enc :a256gcm})
+(defn verify
+  [{:keys [tokens-key]} {:keys [token] :as params}]
+  (let [payload (jwe/decrypt token tokens-key {:alg :a256kw :enc :a256gcm})
         claims  (t/decode payload)]
     (when (and (dt/instant? (:exp claims))
                (dt/is-before? (:exp claims) (dt/now)))
@@ -45,30 +44,7 @@
                 :params params))
     claims))
 
-(defn- generate-predefined
-  [cfg {:keys [iss profile-id] :as params}]
-  (case iss
-    :profile-identity
-    (do
-      (us/verify uuid? profile-id)
-      (generate cfg (assoc params
-                           :exp (dt/in-future {:days 30}))))
 
-    (ex/raise :type :internal
-              :code :not-implemented
-              :hint "no predefined token")))
 
-(s/def ::keys fn?)
 
-(defmethod ig/pre-init-spec ::tokens [_]
-  (s/keys :req-un [::keys]))
 
-(defmethod ig/init-key ::tokens
-  [_ {:keys [keys] :as cfg}]
-  (let [secret (keys :salt "tokens" :size 32)
-        cfg    (assoc cfg ::secret secret)]
-    (fn [action params]
-      (case action
-        :generate-predefined (generate-predefined cfg params)
-        :verify (verify cfg params)
-        :generate (generate cfg params)))))

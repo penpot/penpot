@@ -19,6 +19,7 @@
    [app.rpc.queries.profile :as profile]
    [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
+   [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -183,15 +184,16 @@
   {:changed true})
 
 (defn- request-email-change
-  [{:keys [conn tokens] :as cfg} {:keys [profile email] :as params}]
-  (let [token   (tokens :generate
-                        {:iss :change-email
-                         :exp (dt/in-future "15m")
-                         :profile-id (:id profile)
-                         :email email})
-        ptoken  (tokens :generate-predefined
-                        {:iss :profile-identity
-                         :profile-id (:id profile)})]
+  [{:keys [conn sprops] :as cfg} {:keys [profile email] :as params}]
+  (let [token   (tokens/generate sprops
+                                 {:iss :change-email
+                                  :exp (dt/in-future "15m")
+                                  :profile-id (:id profile)
+                                  :email email})
+        ptoken  (tokens/generate sprops
+                                 {:iss :profile-identity
+                                  :profile-id (:id profile)
+                                  :exp (dt/in-future {:days 30})})]
 
     (when (not= email (:email profile))
       (cmd.auth/check-profile-existence! conn params))

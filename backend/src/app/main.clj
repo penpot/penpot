@@ -69,9 +69,6 @@
     :executor  (ig/ref [::default :app.worker/executor])
     :redis-uri (cf/get :redis-uri)}
 
-   :app.tokens/tokens
-   {:keys (ig/ref :app.setup/keys)}
-
    :app.storage.tmp/cleaner
    {:executor (ig/ref [::worker :app.worker/executor])
     :scheduler (ig/ref :app.worker/scheduler)}
@@ -92,7 +89,7 @@
 
    :app.http.session/store
    {:pool     (ig/ref :app.db/pool)
-    :tokens   (ig/ref :app.tokens/tokens)
+    :sprops   (ig/ref :app.setup/props)
     :executor (ig/ref [::default :app.worker/executor])}
 
    :app.http.session/gc-task
@@ -100,7 +97,7 @@
     :max-age     (cf/get :auth-token-cookie-max-age)}
 
    :app.http.awsns/handler
-   {:tokens      (ig/ref :app.tokens/tokens)
+   {:sprops      (ig/ref :app.setup/props)
     :pool        (ig/ref :app.db/pool)
     :http-client (ig/ref :app.http/client)
     :executor    (ig/ref [::worker :app.worker/executor])}
@@ -168,13 +165,14 @@
                   :github (ig/ref :app.auth.oidc/github-provider)
                   :gitlab (ig/ref :app.auth.oidc/gitlab-provider)
                   :oidc   (ig/ref :app.auth.oidc/generic-provider)}
-    :tokens      (ig/ref :app.tokens/tokens)
+    :sprops      (ig/ref :app.setup/props)
     :http-client (ig/ref :app.http/client)
     :pool        (ig/ref :app.db/pool)
     :session     (ig/ref :app.http/session)
     :public-uri  (cf/get :public-uri)
     :executor    (ig/ref [::default :app.worker/executor])}
 
+   ;; TODO: revisit the dependencies of this service, looks they are too much unused of them
    :app.http/router
    {:assets        (ig/ref :app.http.assets/handlers)
     :feedback      (ig/ref :app.http.feedback/handler)
@@ -186,7 +184,6 @@
     :metrics       (ig/ref :app.metrics/metrics)
     :public-uri    (cf/get :public-uri)
     :storage       (ig/ref :app.storage/storage)
-    :tokens        (ig/ref :app.tokens/tokens)
     :audit-handler (ig/ref :app.loggers.audit/http-handler)
     :rpc-routes    (ig/ref :app.rpc/routes)
     :doc-routes    (ig/ref :app.rpc.doc/routes)
@@ -218,7 +215,7 @@
    :app.rpc/methods
    {:pool        (ig/ref :app.db/pool)
     :session     (ig/ref :app.http/session)
-    :tokens      (ig/ref :app.tokens/tokens)
+    :sprops      (ig/ref :app.setup/props)
     :metrics     (ig/ref :app.metrics/metrics)
     :storage     (ig/ref :app.storage/storage)
     :msgbus      (ig/ref :app.msgbus/msgbus)
@@ -293,8 +290,8 @@
    {:pool (ig/ref :app.db/pool)
     :key  (cf/get :secret-key)}
 
-   :app.setup/keys
-   {:props (ig/ref :app.setup/props)}
+   ;; :app.setup/keys
+   ;; {:props (ig/ref :app.setup/props)}
 
    :app.loggers.zmq/receiver
    {:endpoint (cf/get :loggers-zmq-uri)}
@@ -309,7 +306,7 @@
 
    :app.loggers.audit/archive-task
    {:uri         (cf/get :audit-log-archive-uri)
-    :tokens      (ig/ref :app.tokens/tokens)
+    :sprops      (ig/ref :app.setup/props)
     :pool        (ig/ref :app.db/pool)
     :http-client (ig/ref :app.http/client)}
 

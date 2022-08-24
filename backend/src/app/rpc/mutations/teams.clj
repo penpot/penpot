@@ -22,6 +22,7 @@
    [app.rpc.queries.teams :as teams]
    [app.rpc.rlimit :as rlimit]
    [app.storage :as sto]
+   [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -398,20 +399,21 @@
           update set role = ?, valid_until = ?, updated_at = now();")
 
 (defn- create-team-invitation
-  [{:keys [conn tokens team profile role email] :as cfg}]
+  [{:keys [conn sprops team profile role email] :as cfg}]
   (let [member    (profile/retrieve-profile-data-by-email conn email)
         token-exp (dt/in-future "168h") ;; 7 days
-        itoken    (tokens :generate
-                          {:iss :team-invitation
-                           :exp token-exp
-                           :profile-id (:id profile)
-                           :role role
-                           :team-id (:id team)
-                           :member-email (:email member email)
-                           :member-id (:id member)})
-        ptoken    (tokens :generate-predefined
-                          {:iss :profile-identity
-                           :profile-id (:id profile)})]
+        itoken    (tokens/generate sprops
+                                   {:iss :team-invitation
+                                    :exp token-exp
+                                    :profile-id (:id profile)
+                                    :role role
+                                    :team-id (:id team)
+                                    :member-email (:email member email)
+                                    :member-id (:id member)})
+        ptoken    (tokens/generate sprops
+                                   {:iss :profile-identity
+                                    :profile-id (:id profile)
+                                    :exp (dt/in-future {:days 30})})]
 
     (when (contains? cf/flags :log-invitation-tokens)
       (l/trace :hint "invitation token" :token itoken))

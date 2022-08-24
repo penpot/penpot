@@ -6,24 +6,17 @@
 
 (ns app.setup.keys
   "Keys derivation service."
+  (:refer-clojure :exclude [derive])
   (:require
    [app.common.spec :as us]
-   [buddy.core.kdf :as bk]
-   [clojure.spec.alpha :as s]
-   [integrant.core :as ig]))
+   [buddy.core.kdf :as bk]))
 
-(s/def ::secret-key ::us/string)
-(s/def ::props (s/keys :req-un [::secret-key]))
-
-(defmethod ig/pre-init-spec :app.setup/keys [_]
-  (s/keys :req-un [::props]))
-
-(defmethod ig/init-key :app.setup/keys
-  [_ {:keys [props] :as cfg}]
-  (fn [& {:keys [salt _]}]
-    (let [engine (bk/engine {:key (:secret-key props)
-                             :salt salt
-                             :alg :hkdf
-                             :digest :blake2b-512})]
-      (bk/get-bytes engine 32))))
-
+(defn derive
+  "Derive a key from secret-key"
+  [secret-key & {:keys [salt size]}]
+  (us/assert! ::us/not-empty-string secret-key)
+  (let [engine (bk/engine {:key secret-key
+                           :salt salt
+                           :alg :hkdf
+                           :digest :blake2b-512})]
+    (bk/get-bytes engine size)))
