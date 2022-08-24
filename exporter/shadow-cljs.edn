@@ -12,7 +12,7 @@
               :after-load app.core/start}
 
    :compiler-options
-   {:output-feature-set :es8
+   {:output-feature-set :es2020
     :output-wrapper false}
 
    :release
