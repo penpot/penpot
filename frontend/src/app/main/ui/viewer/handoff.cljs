@@ -22,7 +22,17 @@
   (fn [event]
     (dom/prevent-default event)
     (dom/stop-propagation event)
-    (st/emit! (dv/select-shape (:id frame)))))
+    (st/emit! (dv/select-shape (:id frame)))
+
+    (let [origin (dom/get-target event)
+          over-section? (dom/class? origin "handoff-svg-container")
+          layout (dom/get-element "viewer-layout")
+          has-force? (dom/class? layout "force-visible")]
+
+      (when over-section?
+        (if has-force?
+          (dom/remove-class! layout "force-visible")
+          (dom/add-class! layout "force-visible"))))))
 
 (mf/defc viewport
   [{:keys [local file page frame index viewer-pagination size]}]
