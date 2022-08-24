@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-24 12:18+0000\n"
+"PO-Revision-Date: 2022-08-25 13:21+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -2519,3 +2519,266 @@ msgstr "از بین بردن لینک"
 
 msgid "common.share-link.permissions-pages"
 msgstr "صفحات به اشتراک گذاشته شده"
+
+#: src/app/main/ui/static.cljs
+#, fuzzy
+msgid "labels.bad-gateway.desc-message"
+msgstr ""
+"به نظر می‌رسد باید کمی صبر کنید و دوباره تلاش کنید; ما در حال انجام تعمیرات "
+"کوچک روی سرورهای خود هستیم."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "انجمن"
+
+msgid "labels.continue-with-penpot"
+msgstr "شما می‌توانید با یک حساب Penpot ادامه دهید"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "ایجاد تیم جدید"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "نام تیم جدید را وارد کنید"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "حذف نظر"
+
+#: src/app/main/ui/comments.cljs
+#, fuzzy
+msgid "labels.delete-comment-thread"
+msgstr "حذف موضوع"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "حذف دعوت"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "حذف فایل‌های %s"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "labels.github-repo"
+msgstr "مخزن Github"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+#, fuzzy
+msgid "labels.hide-resolved-comments"
+msgstr "پنهان کردن نظرات حل شده"
+
+msgid "labels.installed-fonts"
+msgstr "فونت‌های نصب‌شده"
+
+msgid "labels.log-or-sign"
+msgstr "ورود یا ثبت نام"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "هیچ دعوتنامه‌ای وجود ندارد."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"دکمه \"دعوت به تیم\" را فشار دهید تا اعضای بیشتری را به این تیم دعوت کنید."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "حذف عضو"
+
+msgid "labels.num-of-frames"
+msgid_plural "labels.num-of-frames"
+msgstr[0] "۱ برد"
+msgstr[1] "%s برد"
+
+msgid "labels.show-comments-list"
+msgstr "نمایش لیست نظرات"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+#, fuzzy
+msgid "labels.show-your-comments"
+msgstr "فقط نظرات خودتان را نشان دهید"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "modals.add-shared-confirm.accept"
+msgstr "افزودن به عنوان کتابخانه مشترک"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.message"
+msgstr "افزودن «%s» به عنوان کتابخانه مشترک"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "منقضی شده"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "labels.help-center"
+msgstr "مرکز کمک"
+
+msgid "labels.edit-file"
+msgstr "ویرایش فایل"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.main-message"
+msgstr "خطای داخلی"
+
+#: src/app/main/ui/static.cljs
+#, fuzzy
+msgid "labels.not-found.auth-info"
+msgstr "شما وارد شده‌اید به عنوان"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.sign-out"
+msgstr "خروج"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-all-comments"
+msgstr "نمایش همه نظرات"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+#, fuzzy
+msgid "handoff.tabs.code.selected.multiple"
+msgstr "%s انتخاب شد"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "کتابخانه‌ها و قالب‌ها"
+
+#: src/app/main/ui/static.cljs
+#, fuzzy
+msgid "labels.internal-error.desc-message"
+msgstr ""
+"اتفاق بدی افتاد. لطفاً عملیات را دوباره امتحان کنید و اگر مشکل همچنان ادامه "
+"داشت، با پشتیبانی تماس بگیرید."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr ""
+"ممکن است این صفحه وجود نداشته باشد یا شما مجوز دسترسی به آن را نداشته باشید."
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "دعوت‌نامه‌ها"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "تایید رمزعبور"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-files"
+msgid_plural "labels.num-of-files"
+msgstr[0] "۱ فایل"
+msgstr[1] "%s فایل"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "فرستادن مجدد دعوتنامه"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+#, fuzzy
+msgid "labels.update-team"
+msgstr "بروزرسانی تیم"
+
+msgid "labels.upload-custom-fonts"
+msgstr "آپلود فونت‌های سفارشی"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.write-new-comment"
+msgstr "نظر جدید بنویس"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "media.loading"
+msgstr "در حال بارگیری تصویر…"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.confirm-email"
+msgstr "تایید ایمیل جدید"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.hint"
+msgstr ""
+"پس از افزودن به‌عنوان کتابخانه مشترک، دارایی‌های این کتابخانۀ فایل برای "
+"استفاده در بین بقیه فایل‌های شما در دسترس خواهد بود."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.info"
+msgstr "برای تأیید هویت شما یک ایمیل به ایمیل فعلی شما \"%s\" ارسال می‌کنیم."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.new-email"
+msgstr "ایمیل جدید"
+
+#, fuzzy
+msgid "history.alert-message"
+msgstr "شما در حال مشاهده نسخه %s هستید"
+
+msgid "labels.continue-with"
+msgstr "ادامه دادن با"
+
+msgid "labels.custom-fonts"
+msgstr "فونت‌های سفارشی"
+
+msgid "labels.manage-fonts"
+msgstr "مدیریت فونت‌ها"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "رمزعبور جدید"
+
+#: src/app/main/ui/workspace/comments.cljs
+#, fuzzy
+msgid "labels.only-yours"
+msgstr "فقط برای تو"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.rename-team"
+msgstr "تغییر نام تیم"
+
+msgid "labels.search-font"
+msgstr "جستجوی فونت"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.desc-message"
+msgstr "ما در حال تعمیر و نگهداری برنامه‌ریزی شده سیستم‌های خود هستیم."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.main-message"
+msgstr "سرویس در دسترس نیست"
+
+msgid "labels.share-prototype"
+msgstr "به اشتراک گذاشتن پروتوتایپ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "درباره Penpot"
+
+msgid "labels.add-custom-font"
+msgstr "اضافه کردن فونت سفارشی"
+
+msgid "labels.font-family"
+msgstr "خانواده فونت"
+
+msgid "labels.font-providers"
+msgstr "ارائه‌دهندگان فونت"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "بازخورد ارسال شد"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-disabled"
+msgstr "بازخورد غیرفعال شد"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-projects"
+msgid_plural "labels.num-of-projects"
+msgstr[0] "۱ پروژه"
+msgstr[1] "%s پروژه"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.old-password"
+msgstr "رمزعبور قدیمی"
