@@ -1119,7 +1119,7 @@
              (on-assets-delete)
              (st/emit! (dwu/start-undo-transaction)
                        (dwl/delete-color color)
-                       (dwl/sync-file file-id file-id :color (:id color))
+                       (dwl/sync-file file-id file-id :colors (:id color))
                        (dwu/commit-undo-transaction)))))
 
         rename-color-clicked
