@@ -229,6 +229,12 @@ msgstr "Compartir prototipos"
 msgid "common.share-link.view-all"
 msgstr "Selecctionar todas"
 
+msgid "common.publish"
+msgstr "Publicar"
+
+msgid "common.unpublish"
+msgstr "Despublicar"
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"

@@ -224,6 +224,12 @@ msgstr "Share prototypes"
 msgid "common.share-link.view-all"
 msgstr "Select All"
 
+msgid "common.publish"
+msgstr "Publish"
+
+msgid "common.unpublish"
+msgstr "Unpublish"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Add as Shared Library"
