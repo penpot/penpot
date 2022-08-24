@@ -22,6 +22,7 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
+   [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
@@ -113,7 +114,8 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (rx/merge
-       (rx/of (dwp/fetch-bundle project-id file-id))
+       (rx/of (dwp/fetch-bundle project-id file-id)
+              (dcm/retrieve-comment-threads file-id))
 
        ;; Initialize notifications (websocket connection) and the file persistence
        (->> stream
