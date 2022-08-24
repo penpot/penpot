@@ -1940,13 +1940,11 @@
          (fn [asset-type asset-groups asset-id]
            (letfn [(flatten-groups
                      [groups]
-                     (concat
-                      (get groups "" [])
-                      (reduce concat
-                              (into []
-                                    (->> (filter #(seq (first %)) groups)
-                                         (map second)
-                                         (mapcat flatten-groups))))))]
+                     (reduce concat [(get groups "" [])
+                                     (into []
+                                           (->> (filter #(seq (first %)) groups)
+                                                (map second)
+                                                (mapcat flatten-groups)))]))]
              (let [selected-assets-type (get selected-assets asset-type)
                    count-assets (count selected-assets-type)]
                (if (<= count-assets 0)

@@ -54,6 +54,7 @@
 - Fix props preserving on copy&paste texts [Taiga #3629](https://tree.taiga.io/project/penpot/issue/3629) by @andrewzhurov
 - Fix unexpected layers ungrouping on moving it [Taiga #3932](https://tree.taiga.io/project/penpot/issue/3932) by @andrewzhurov
 - Fix unexpected exception and behavior on colorpicker with gradients [Taiga #3448](https://tree.taiga.io/project/penpot/issue/3448)
+- Fix multiselection with shift not working inside a library group [Taiga #3532](https://tree.taiga.io/project/penpot/issue/3532)
 
 
 
