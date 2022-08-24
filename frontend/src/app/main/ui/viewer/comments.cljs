@@ -91,7 +91,6 @@
 
 (mf/defc comments-layer
   [{:keys [zoom file users frame page] :as props}]
-  (prn "comments-layer")
   (let [profile        (mf/deref refs/profile)
         local          (mf/deref refs/comments-local)
 
@@ -113,19 +112,18 @@
         modifier1    (mf/with-memo [frame-corner]
                        (-> (gmt/matrix)
                            (gmt/translate (gpt/negate frame-corner))))
+
         modifier2    (mf/with-memo [frame-corner]
                        (-> (gpt/point frame-corner)
                            (gmt/translate-matrix)))
 
-
-        threads      (mf/with-memo [threads-map positions]
+        threads      (mf/with-memo [threads-map positions frame local profile]
                        (->> (vals threads-map)
                             (map (partial update-thread-position positions))
                             (filter #(= (:frame-id %) (:id frame)))
                             (dcm/apply-filters local profile)
                             (filter (fn [{:keys [position]}]
                                       (gsh/has-point? frame position)))))
-
 
         on-bubble-click
         (mf/use-fn
@@ -160,9 +158,7 @@
         (mf/use-fn
          (mf/deps frame-id modifier2)
          (fn [draft]
-           (let [params (-> draft
-                            (update :position gpt/transform modifier2)
-                            (assoc :frame-id frame-id))]
+           (let [params (assoc draft :frame-id frame-id)]
              (st/emit! (dcm/create-thread-on-viewer params)
                        (dcm/close-thread)))))]
 
