@@ -2037,7 +2037,7 @@
 
       (if local?
         [:*
-         [:span (tr "workspace.assets.file-library")]
+         [:span (:name file) " (" (tr "workspace.assets.local-library") ")"]
          (when shared?
            [:span.tool-badge (tr "workspace.assets.shared")])]
         [:*
