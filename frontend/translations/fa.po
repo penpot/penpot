@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-07-27 08:17+0000\n"
+"PO-Revision-Date: 2022-08-24 12:18+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -2510,3 +2510,12 @@ msgstr "منوی اصلی"
 
 msgid "shortcut-subsection.edit"
 msgstr "ویرایش"
+
+msgid "common.share-link.current-tag"
+msgstr "(فعلی)"
+
+msgid "common.share-link.destroy-link"
+msgstr "از بین بردن لینک"
+
+msgid "common.share-link.permissions-pages"
+msgstr "صفحات به اشتراک گذاشته شده"
