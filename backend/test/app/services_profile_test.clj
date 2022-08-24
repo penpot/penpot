@@ -10,6 +10,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.rpc.mutations.profile :as profile]
+   [app.rpc.commands.auth :as cauth]
    [app.test-helpers :as th]
    [app.util.time :as dt]
    [clojure.java.io :as io]
@@ -27,11 +28,10 @@
 ;; Test with wrong credentials
 (t/deftest profile-login-failed-1
   (let [profile (th/create-profile* 1)
-        data    {::th/type :login
+        data    {::th/type :login-with-password
                  :email "profile1.test@nodomain.com"
-                 :password "foobar"
-                 :scope "foobar"}
-        out     (th/mutation! data)]
+                 :password "foobar"}
+        out     (th/command! data)]
 
     #_(th/print-result! out)
     (let [error (:error out)]
@@ -42,11 +42,10 @@
 ;; Test with good credentials but profile not activated.
 (t/deftest profile-login-failed-2
   (let [profile (th/create-profile* 1)
-        data    {::th/type :login
+        data    {::th/type :login-with-password
                  :email "profile1.test@nodomain.com"
-                 :password "123123"
-                 :scope "foobar"}
-        out     (th/mutation! data)]
+                 :password "123123"}
+        out     (th/command! data)]
     ;; (th/print-result! out)
     (let [error (:error out)]
       (t/is (th/ex-info? error))
@@ -58,8 +57,7 @@
   (let [profile (th/create-profile* 1 {:is-active true})
         data    {::th/type :login
                  :email "profile1.test@nodomain.com"
-                 :password "123123"
-                 :scope "foobar"}
+                 :password "123123"}
         out     (th/mutation! data)]
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
@@ -128,8 +126,8 @@
 
     ;; profile is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (task {:max-age (dt/duration 0)})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration 0)})]
+      (t/is (= 0 (:processed result))))
 
     ;; Request profile to be deleted
     (let [params {::th/type :delete-profile
@@ -147,8 +145,8 @@
       (t/is (= 1 (count (:result out)))))
 
     ;; execute permanent deletion task
-    (let [result (task {:max-age (dt/duration "-1m")})]
-      (t/is (nil? result)))
+    (let [result (task {:min-age (dt/duration "-1m")})]
+      (t/is (= 1 (:processed result))))
 
     ;; query profile after delete
     (let [params {::th/type :profile
@@ -161,11 +159,11 @@
 (t/deftest registration-domain-whitelist
   (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]
     (t/testing "allowed email domain"
-      (t/is (true? (profile/email-domain-in-whitelist? whitelist "username@ya.ru")))
-      (t/is (true? (profile/email-domain-in-whitelist? #{} "username@somedomain.com"))))
+      (t/is (true? (cauth/email-domain-in-whitelist? whitelist "username@ya.ru")))
+      (t/is (true? (cauth/email-domain-in-whitelist? #{} "username@somedomain.com"))))
 
     (t/testing "not allowed email domain"
-      (t/is (false? (profile/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
+      (t/is (false? (cauth/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
 
 (t/deftest prepare-register-and-register-profile
   (let [data  {::th/type :prepare-register-profile

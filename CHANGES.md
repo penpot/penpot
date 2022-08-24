@@ -1,5 +1,66 @@
 # CHANGELOG
 
+## 1.15.0-beta
+
+### :boom: Breaking changes & Deprecations
+
+- The `PENPOT_LOGIN_WITH_LDAP` environment variable is finally removed (after
+  many version with deprecation). It is replaced with the
+  `enable-login-with-ldap` flag.
+- The `PENPOT_LDAP_ATTRS_PHOTO` finally removed, it was unused for many
+  versions.
+- If you are using social login (google, github, gitlab or generic OIDC) you
+  will need to ensure to add the following flags respectivelly to let them
+  enabled: `enable-login-with-google`, `enable-login-with-github`,
+  `enable-login-with-gitlab` and `enable-login-with-oidc`. If not, they will
+  remain disabled after application start independently if you set the client-id
+  and client-sectet options.
+- The `PENPOT_REGISTRATION_ENABLED` is finally removed in favour of
+  `<enable|disable>-registration` flag.
+- The OIDC providers are now initialized synchronously, and if you are using the
+  discovery mechanism of the generic OIDC integration, the start time of the
+  application will depend on how fast the OIDC provider responds to the
+  discovery http request.
+
+### :sparkles: New features
+
+- Allow for nested and rotated boards inside other boards and groups [Taiga #2874](https://tree.taiga.io/project/penpot/us/2874?milestone=319982)
+- View mode improvements to enable access and use in different conditions [Taiga #3023](https://tree.taiga.io/project/penpot/us/3023)
+- Improved share link options. Now you can allow non-team members to comment and/or inspect [Taiga #3056] (https://tree.taiga.io/project/penpot/us/3056)
+- Signin/Signup from shared link [Taiga #3472](https://tree.taiga.io/project/penpot/us/3472)
+- Support for import/export binary format [Taiga #2991](https://tree.taiga.io/project/penpot/us/2991)
+- Comments positioning [Taiga #2007](https://tree.taiga.io/project/penpot/us/2007)
+- Select all inside a group select only the objects at this group level [Taiga #2382](https://tree.taiga.io/project/penpot/issue/2382)
+- Make the media maximum upload size configurable
+
+### :bug: Bugs fixed
+
+- Fix hide html options on handoff [Taiga 3533](https://tree.taiga.io/project/penpot/issue/3533)
+- Fix share prototypes overlay and stroke [Taiga #3994](https://tree.taiga.io/project/penpot/issue/3994)
+- Fix border radious on boolean operations [Taiga #3959](https://tree.taiga.io/project/penpot/issue/3959)
+- Fix inconsistent representation of rectangles [Taiga #3977](https://tree.taiga.io/project/penpot/issue/3977)
+- Fix recent fonts info [Taiga #3953](https://tree.taiga.io/project/penpot/issue/3953)
+- Fix clipped elements affect boards and centering [Taiga #3666](https://tree.taiga.io/project/penpot/issue/3666)
+- Fix intro action in multi input [Taiga #3541](https://tree.taiga.io/project/penpot/issue/3541)
+- Fix team default image [Taiga #3919](https://tree.taiga.io/project/penpot/issue/3919)
+- Fix problem with group coordinates [#2008](https://github.com/penpot/penpot/issues/2008)
+- Fix problem with line-height and texts [Taiga #3578](https://tree.taiga.io/project/penpot/issue/3578)
+- Fix moving frame-guides outside frames [Taiga #3839](https://tree.taiga.io/project/penpot/issue/3839)
+- Fix problem with 180 degree rotations [#2082](https://github.com/penpot/penpot/issues/2082)
+- Fix font rendering on grid thumbnails [Taiga #3473](https://tree.taiga.io/project/penpot/issue/3473)
+- Fix Drag and drop font assets in groups [Taiga #3763](https://tree.taiga.io/project/penpot/issue/3763)
+- Fix copy and paste layers order [Taiga #1617](https://tree.taiga.io/project/penpot/issue/1617)
+- Fix unexpected removal of guides on copy&paste frames [Taiga #3887](https://tree.taiga.io/project/penpot/issue/3887) by @andrewzhurov
+- Fix props preserving on copy&paste texts [Taiga #3629](https://tree.taiga.io/project/penpot/issue/3629) by @andrewzhurov
+- Fix unexpected layers ungrouping on moving it [Taiga #3932](https://tree.taiga.io/project/penpot/issue/3932) by @andrewzhurov
+- Fix unexpected exception and behavior on colorpicker with gradients [Taiga #3448](https://tree.taiga.io/project/penpot/issue/3448)
+- Fix multiselection with shift not working inside a library group [Taiga #3532](https://tree.taiga.io/project/penpot/issue/3532)
+
+
+
+### :arrow_up: Deps updates
+### :heart: Community contributions by (Thank you!)
+
 ## 1.14.2-beta
 
 ### :bug: Bugs fixed

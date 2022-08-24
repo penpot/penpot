@@ -7,9 +7,8 @@
 (ns app.main.data.workspace.notifications
   (:require
    [app.common.data :as d]
+   [app.common.pages.changes-spec :as pcs]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
-   [app.common.uuid :as uuid]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
@@ -34,51 +33,53 @@
   (ptk/reify ::initialize
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [subs-id (uuid/next)
-            stoper  (rx/filter (ptk/type? ::finalize) stream)
+      (let [stoper     (rx/filter (ptk/type? ::finalize) stream)
+            profile-id (:profile-id state)
 
-            initmsg [{:type :subscribe-file
-                      :subs-id subs-id
-                      :file-id file-id}
-                     {:type :subscribe-team
-                      :team-id team-id}]
+            initmsg    [{:type :subscribe-file
+                         :file-id file-id}
+                        {:type :subscribe-team
+                         :team-id team-id}]
 
-            endmsg  {:type :unsubscribe-file
-                     :subs-id subs-id}
+            endmsg     {:type :unsubscribe-file
+                        :file-id file-id}
 
-            stream  (->> (rx/merge
-                          ;; Send the subscription message
-                          (->> (rx/from initmsg)
-                               (rx/map dws/send))
+            stream     (->> (rx/merge
+                             ;; Send the subscription message
+                             (->> (rx/from initmsg)
+                                  (rx/map dws/send))
 
-                          ;; Subscribe to notifications of the subscription
-                          (->> stream
-                               (rx/filter (ptk/type? ::dws/message))
-                               (rx/map deref) ;; :library-change events occur in a different file, but need to be processed anyway
-                               (rx/filter #(or (= subs-id (:subs-id %)) (= (:type %) :library-change)))
-                               (rx/map process-message))
+                             ;; Subscribe to notifications of the subscription
+                             (->> stream
+                                  (rx/filter (ptk/type? ::dws/message))
+                                  (rx/map deref)
+                                  (rx/filter (fn [{:keys [subs-id] :as msg}]
+                                               (or (= subs-id team-id)
+                                                   (= subs-id profile-id)
+                                                   (= subs-id file-id))))
+                                  (rx/map process-message))
 
-                          ;; On reconnect, send again the subscription messages
-                          (->> stream
-                               (rx/filter (ptk/type? ::dws/opened))
-                               (rx/mapcat #(->> (rx/from initmsg)
-                                                (rx/map dws/send))))
+                             ;; On reconnect, send again the subscription messages
+                             (->> stream
+                                  (rx/filter (ptk/type? ::dws/opened))
+                                  (rx/mapcat #(->> (rx/from initmsg)
+                                                   (rx/map dws/send))))
 
-                          ;; Emit presence event for current user;
-                          ;; this is because websocket server don't
-                          ;; emits this for the same user.
-                          (rx/of (handle-presence {:type :connect
-                                                   :session-id (:session-id state)
-                                                   :profile-id (:profile-id state)}))
+                             ;; Emit presence event for current user;
+                             ;; this is because websocket server don't
+                             ;; emits this for the same user.
+                             (rx/of (handle-presence {:type :connect
+                                                      :session-id (:session-id state)
+                                                      :profile-id (:profile-id state)}))
 
-                          ;; Emit to all other connected users the current pointer
-                          ;; position changes.
-                          (->> stream
-                               (rx/filter ms/pointer-event?)
-                               (rx/sample 50)
-                               (rx/map #(handle-pointer-send subs-id file-id (:pt %)))))
+                             ;; Emit to all other connected users the current pointer
+                             ;; position changes.
+                             (->> stream
+                                  (rx/filter ms/pointer-event?)
+                                  (rx/sample 50)
+                                  (rx/map #(handle-pointer-send file-id (:pt %)))))
 
-                         (rx/take-until stoper))]
+                            (rx/take-until stoper))]
 
         (rx/concat stream (rx/of (dws/send endmsg)))))))
 
@@ -95,13 +96,12 @@
     nil))
 
 (defn- handle-pointer-send
-  [subs-id file-id point]
+  [file-id point]
   (ptk/reify ::handle-pointer-send
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id (:current-page-id state)
             message {:type :pointer-update
-                     :subs-id subs-id
                      :file-id file-id
                      :page-id page-id
                      :position point}]
@@ -184,7 +184,7 @@
 (s/def ::file-id uuid?)
 (s/def ::session-id uuid?)
 (s/def ::revn integer?)
-(s/def ::changes ::spec.change/changes)
+(s/def ::changes ::pcs/changes)
 
 (s/def ::file-change-event
   (s/keys :req-un [::type ::profile-id ::file-id ::session-id ::revn ::changes]))

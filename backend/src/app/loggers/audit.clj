@@ -257,12 +257,16 @@
         (ex/raise :type :internal
                   :code :task-not-configured
                   :hint "archive task not configured, missing uri"))
+
       (when enabled
-        (loop []
-          (let [res (archive-events cfg)]
-            (when (= res :continue)
-              (aa/thread-sleep 200)
-              (recur))))))))
+        (loop [total 0]
+          (let [n (archive-events cfg)]
+            (if n
+              (do
+                (aa/thread-sleep 200)
+                (recur (+ total n)))
+              (when (pos? total)
+                (l/trace :hint "events chunk archived" :num total)))))))))
 
 (def sql:retrieve-batch-of-audit-log
   "select * from audit_log
@@ -332,7 +336,7 @@
           (l/debug :action "archive-events" :uri uri :events (count events))
           (when (send events)
             (mark-as-archived conn rows)
-            :continue))))))
+            (count events)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GC Task

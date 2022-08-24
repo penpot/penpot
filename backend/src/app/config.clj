@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
@@ -41,8 +42,7 @@
     data))
 
 (def defaults
-  {
-   :database-uri "postgresql://postgres/penpot"
+  {:database-uri "postgresql://postgres/penpot"
    :database-username "penpot"
    :database-password "penpot"
 
@@ -79,24 +79,20 @@
    :ldap-attrs-username "uid"
    :ldap-attrs-email "mail"
    :ldap-attrs-fullname "cn"
-   :ldap-attrs-photo "jpegPhoto"
 
    ;; a server prop key where initial project is stored.
    :initial-project-skey "initial-project"})
 
-(s/def ::flags ::us/set-of-keywords)
 
-;; DEPRECATED PROPERTIES
-(s/def ::registration-enabled ::us/boolean)
-(s/def ::smtp-enabled ::us/boolean)
+(s/def ::media-max-file-size ::us/integer)
+
+(s/def ::flags ::us/vec-of-valid-keywords)
 (s/def ::telemetry-enabled ::us/boolean)
-(s/def ::asserts-enabled ::us/boolean)
-;; END DEPRECATED
 
 (s/def ::audit-log-archive-uri ::us/string)
 (s/def ::audit-log-gc-max-age ::dt/duration)
 
-(s/def ::admins ::us/set-of-str)
+(s/def ::admins ::us/set-of-non-empty-strings)
 (s/def ::file-change-snapshot-every ::us/integer)
 (s/def ::file-change-snapshot-timeout ::dt/duration)
 
@@ -104,10 +100,14 @@
 (s/def ::blocking-executor-parallelism ::us/integer)
 (s/def ::worker-executor-parallelism ::us/integer)
 
+(s/def ::authenticated-cookie-domain ::us/string)
+(s/def ::authenticated-cookie-name ::us/string)
+(s/def ::auth-token-cookie-name ::us/string)
+(s/def ::auth-token-cookie-max-age ::dt/duration)
+
 (s/def ::secret-key ::us/string)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::assets-path ::us/string)
-(s/def ::authenticated-cookie-domain ::us/string)
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
 (s/def ::database-username (s/nilable ::us/string))
@@ -131,8 +131,8 @@
 (s/def ::oidc-token-uri ::us/string)
 (s/def ::oidc-auth-uri ::us/string)
 (s/def ::oidc-user-uri ::us/string)
-(s/def ::oidc-scopes ::us/set-of-str)
-(s/def ::oidc-roles ::us/set-of-str)
+(s/def ::oidc-scopes ::us/set-of-non-empty-strings)
+(s/def ::oidc-roles ::us/set-of-non-empty-strings)
 (s/def ::oidc-roles-attr ::us/keyword)
 (s/def ::oidc-email-attr ::us/keyword)
 (s/def ::oidc-name-attr ::us/keyword)
@@ -143,13 +143,9 @@
 (s/def ::http-server-max-multipart-body-size ::us/integer)
 (s/def ::http-server-io-threads ::us/integer)
 (s/def ::http-server-worker-threads ::us/integer)
-(s/def ::http-session-idle-max-age ::dt/duration)
-(s/def ::http-session-updater-batch-max-age ::dt/duration)
-(s/def ::http-session-updater-batch-max-size ::us/integer)
 (s/def ::initial-project-skey ::us/string)
 (s/def ::ldap-attrs-email ::us/string)
 (s/def ::ldap-attrs-fullname ::us/string)
-(s/def ::ldap-attrs-photo ::us/string)
 (s/def ::ldap-attrs-username ::us/string)
 (s/def ::ldap-base-dn ::us/string)
 (s/def ::ldap-bind-dn ::us/string)
@@ -169,7 +165,7 @@
 (s/def ::profile-complaint-threshold ::us/integer)
 (s/def ::public-uri ::us/string)
 (s/def ::redis-uri ::us/string)
-(s/def ::registration-domain-whitelist ::us/set-of-str)
+(s/def ::registration-domain-whitelist ::us/set-of-non-empty-strings)
 (s/def ::rlimit-font ::us/integer)
 (s/def ::rlimit-file-update ::us/integer)
 (s/def ::rlimit-image ::us/integer)
@@ -210,6 +206,9 @@
                    ::allow-demo-users
                    ::audit-log-archive-uri
                    ::audit-log-gc-max-age
+                   ::auth-token-cookie-name
+                   ::auth-token-cookie-max-age
+                   ::authenticated-cookie-name
                    ::authenticated-cookie-domain
                    ::database-password
                    ::database-uri
@@ -250,13 +249,9 @@
                    ::http-server-max-multipart-body-size
                    ::http-server-io-threads
                    ::http-server-worker-threads
-                   ::http-session-idle-max-age
-                   ::http-session-updater-batch-max-age
-                   ::http-session-updater-batch-max-size
                    ::initial-project-skey
                    ::ldap-attrs-email
                    ::ldap-attrs-fullname
-                   ::ldap-attrs-photo
                    ::ldap-attrs-username
                    ::ldap-base-dn
                    ::ldap-bind-dn
@@ -269,6 +264,7 @@
                    ::local-assets-uri
                    ::loggers-loki-uri
                    ::loggers-zmq-uri
+                   ::media-max-file-size
                    ::profile-bounce-max-age
                    ::profile-bounce-threshold
                    ::profile-complaint-max-age
@@ -276,7 +272,6 @@
                    ::public-uri
                    ::redis-uri
                    ::registration-domain-whitelist
-                   ::registration-enabled
                    ::rlimit-font
                    ::rlimit-file-update
                    ::rlimit-image
@@ -287,7 +282,6 @@
                    ::sentry-trace-sample-rate
                    ::smtp-default-from
                    ::smtp-default-reply-to
-                   ::smtp-enabled
                    ::smtp-host
                    ::smtp-password
                    ::smtp-port
@@ -314,6 +308,7 @@
 
 (def default-flags
   [:enable-backend-api-doc
+   :enable-backend-worker
    :enable-secure-session-cookies])
 
 (defn- parse-flags
@@ -354,8 +349,12 @@
                        (str/trim))
                "%version%")))
 
-(def ^:dynamic config (read-config))
-(def ^:dynamic flags  (parse-flags config))
+(defonce ^:dynamic config (read-config))
+
+(defonce ^:dynamic flags
+  (let [flags (parse-flags config)]
+    (l/info :hint "flags initialized" :flags (str/join "," (map name flags)))
+    flags))
 
 (def deletion-delay
   (dt/duration {:days 7}))

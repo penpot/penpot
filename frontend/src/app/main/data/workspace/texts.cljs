@@ -17,6 +17,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.util.router :as rt]
@@ -78,7 +79,7 @@
 
             (when (some? id)
               (rx/of (dws/deselect-shape id)
-                     (dwc/delete-shapes #{id})))))))))
+                     (dwsh/delete-shapes #{id})))))))))
 
 (defn initialize-editor-state
   [{:keys [id content] :as shape} decorator]

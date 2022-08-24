@@ -7,15 +7,17 @@
 (ns app.main.ui.viewer.interactions
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
-   [app.common.spec.page :as csp]
+   [app.common.types.page :as ctp]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.shapes :as shapes]
    [app.util.dom :as dom]
@@ -25,89 +27,114 @@
    [rumext.alpha :as mf]))
 
 (defn prepare-objects
-  [page frame]
-  (fn []
-    (let [objects   (:objects page)
-          frame-id  (:id frame)
-          modifier  (-> (gpt/point (:x frame) (:y frame))
-                        (gpt/negate)
-                        (gmt/translate-matrix))
+  [page frame size]
+  (let [objects   (:objects page)
+        frame-id  (:id frame)
+        modifier  (-> (gpt/point (:x size) (:y size))
+                      (gpt/negate)
+                      (gmt/translate-matrix))
 
-          update-fn #(d/update-when %1 %2 assoc-in [:modifiers :displacement] modifier)]
+        update-fn #(d/update-when %1 %2 assoc-in [:modifiers :displacement] modifier)]
 
-      (->> (cph/get-children-ids objects frame-id)
-           (into [frame-id])
-           (reduce update-fn objects)))))
+    (->> (cph/get-children-ids objects frame-id)
+         (into [frame-id])
+         (reduce update-fn objects))))
 
-(mf/defc viewport
-  {::mf/wrap [mf/memo]}
-  [{:keys [page interactions-mode frame base-frame frame-offset size]}]
-  (let [objects       (mf/use-memo
-                       (mf/deps page frame)
-                       (prepare-objects page frame))
+(mf/defc viewport-svg
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [props]
+  (let [page    (unchecked-get props "page")
+        frame   (unchecked-get props "frame")
+        base    (unchecked-get props "base")
+        offset  (unchecked-get props "offset")
+        size    (unchecked-get props "size")
 
-        wrapper       (mf/use-memo
-                       (mf/deps objects)
-                       #(shapes/frame-container-factory objects))
+        vbox    (:vbox size)
+
+        objects (mf/with-memo [page frame size]
+                  (prepare-objects page frame size))
+
+        wrapper (mf/with-memo [objects]
+                  (shapes/frame-container-factory objects))
 
         ;; Retrieve frames again with correct modifier
-        frame         (get objects (:id frame))
-        base-frame    (get objects (:id base-frame))
+        frame   (get objects (:id frame))
+        base    (get objects (:id base))]
 
-        on-click
-        (fn [_]
-          (when (= interactions-mode :show-on-click)
-            (st/emit! dv/flash-interactions)))
-
-        on-mouse-wheel
-        (fn [event]
-          (when (kbd/mod? event)
-            (dom/prevent-default event)
-            (let [event (.getBrowserEvent ^js event)
-                  delta (+ (.-deltaY ^js event) (.-deltaX ^js event))]
-              (if (pos? delta)
-                (st/emit! dv/decrease-zoom)
-                (st/emit! dv/increase-zoom)))))
-
-        on-key-down
-        (fn [event]
-          (when (kbd/esc? event)
-            (st/emit! (dcm/close-thread))))]
-
-    (mf/use-effect
-      (mf/deps interactions-mode) ;; on-click event depends on interactions-mode
-      (fn []
-        ;; bind with passive=false to allow the event to be cancelled
-        ;; https://stackoverflow.com/a/57582286/3219895
-        (let [key1 (events/listen goog/global "wheel" on-mouse-wheel #js {"passive" false})
-              key2 (events/listen js/window "keydown" on-key-down)
-              key3 (events/listen js/window "click" on-click)]
-          (fn []
-            (events/unlistenByKey key1)
-            (events/unlistenByKey key2)
-            (events/unlistenByKey key3)))))
-
-    [:& (mf/provider shapes/base-frame-ctx) {:value base-frame}
-     [:& (mf/provider shapes/frame-offset-ctx) {:value frame-offset}
-      [:svg {:view-box (:vbox size)
+    [:& (mf/provider shapes/base-frame-ctx) {:value base}
+     [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
+      [:svg {:view-box vbox
              :width (:width size)
              :height (:height size)
              :version "1.1"
              :xmlnsXlink "http://www.w3.org/1999/xlink"
              :xmlns "http://www.w3.org/2000/svg"
              :fill "none"}
-       [:& wrapper {:shape frame
-                    :view-box (:vbox size)}]]]]))
+       [:& wrapper {:shape frame :view-box vbox}]]]]))
 
+(mf/defc viewport
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [props]
+  (let [;; NOTE: with `use-equal-memo` hook we ensure that all values
+        ;; conserves the reference identity for avoid unnecesary dummy
+        ;; rerenders.
+        mode   (h/use-equal-memo (unchecked-get props "interactions-mode"))
+        offset (h/use-equal-memo (unchecked-get props "frame-offset"))
+        size   (h/use-equal-memo (unchecked-get props "size"))
+
+        page   (unchecked-get props "page")
+        frame  (unchecked-get props "frame")
+        base   (unchecked-get props "base-frame")]
+
+    (mf/with-effect [mode]
+      (let [on-click
+            (fn [_]
+              (when (= mode :show-on-click)
+                (st/emit! (dv/flash-interactions))))
+
+            on-mouse-wheel
+            (fn [event]
+              (when (kbd/mod? event)
+                (dom/prevent-default event)
+                (let [event (dom/event->browser-event event)
+                      delta (+ (.-deltaY ^js event)
+                               (.-deltaX ^js event))]
+                  (if (pos? delta)
+                    (st/emit! dv/decrease-zoom)
+                    (st/emit! dv/increase-zoom)))))
+
+            on-key-down
+            (fn [event]
+              (when (kbd/esc? event)
+                (st/emit! (dcm/close-thread))))
+
+
+            ;; bind with passive=false to allow the event to be cancelled
+            ;; https://stackoverflow.com/a/57582286/3219895
+            key1 (events/listen goog/global "wheel" on-mouse-wheel #js {"passive" false})
+            key2 (events/listen goog/global "keydown" on-key-down)
+            key3 (events/listen goog/global "click" on-click)]
+        (fn []
+          (events/unlistenByKey key1)
+          (events/unlistenByKey key2)
+          (events/unlistenByKey key3))))
+
+    [:& viewport-svg {:page page
+                      :frame frame
+                      :base base
+                      :offset offset
+                      :size size}]))
 
 (mf/defc flows-menu
   {::mf/wrap [mf/memo]}
   [{:keys [page index]}]
-  (let [flows        (get-in page [:options :flows])
+  (let [flows        (dm/get-in page [:options :flows])
         frames       (:frames page)
         frame        (get frames index)
         current-flow (mf/use-state
-                       (csp/get-frame-flow flows (:id frame)))
+                       (ctp/get-frame-flow flows (:id frame)))
 
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
@@ -127,12 +154,12 @@
        [:& dropdown {:show @show-dropdown?
                      :on-close hide-dropdown}
         [:ul.dropdown.with-check
-         (for [flow flows]
-           [:li {:class (dom/classnames :selected (= (:id flow) (:id @current-flow)))
+         (for [[index flow] (d/enumerate flows)]
+           [:li {:key (dm/str "flow-" (:id flow) "-" index)
+                 :class (dom/classnames :selected (= (:id flow) (:id @current-flow)))
                  :on-click #(select-flow flow)}
             [:span.icon i/tick]
             [:span.label (:name flow)]])]]])))
-
 
 (mf/defc interactions-menu
   []

@@ -6,9 +6,7 @@
 
 (ns app.handlers.export-shapes
   (:require
-   ["path" :as path]
    [app.common.data :as d]
-   [app.common.exceptions :as exc]
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.handlers.resources :as rsc]
@@ -102,8 +100,6 @@
         total       (count exports)
         topic       (str profile-id)
 
-        to-delete   (atom #{})
-
         on-progress (fn [{:keys [done]}]
                       (when-not wait
                         (let [data {:type :export-update
@@ -137,16 +133,15 @@
                                     :on-progress on-progress)
 
         append      (fn [{:keys [filename path] :as object}]
-                      (swap! to-delete conj path)
                       (rsc/add-to-zip! zip path filename))
 
         proc        (-> (p/do
                           (p/loop [exports (seq exports)]
                             (when-let [export (first exports)]
-                              (p/let [proc (rd/render export append)]
+                              (p/do
+                                (rd/render export append)
                                 (p/recur (rest exports)))))
                           (.finalize zip))
-                        (p/then (fn [_] (p/run! #(sh/rmdir! (path/dirname %)) @to-delete)))
                         (p/then (constantly resource))
                         (p/catch on-error))
         ]

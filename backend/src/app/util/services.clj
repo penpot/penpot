@@ -27,7 +27,7 @@
       (throw (IllegalArgumentException. "Missing arguments on `defmethod` macro.")))
 
     (let [mdata (assoc mdata
-                       ::docs (some-> docs str/<<-)
+                       ::docstring (some-> docs str/<<-)
                        ::spec sname
                        ::name (name sname))
 
@@ -40,9 +40,14 @@
   (comp
    (d/domap require)
    (map find-ns)
-   (mapcat ns-publics)
-   (map second)
-   (filter #(::spec (meta %)))))
+   (mapcat (fn [ns]
+             (->> (ns-publics ns)
+                  (map second)
+                  (filter #(::spec (meta %)))
+                  (map (fn [fvar]
+                         (with-meta (deref fvar)
+                           (-> (meta fvar)
+                               (assoc :ns (-> ns ns-name str)))))))))))
 
 (defn scan-ns
   [& nsyms]

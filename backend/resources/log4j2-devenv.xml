@@ -20,10 +20,16 @@
   </Appenders>
 
   <Loggers>
-    <Logger name="com.zaxxer.hikari" level="error"/>
     <Logger name="io.lettuce" level="error" />
-    <Logger name="org.eclipse.jetty" level="error" />
+    <Logger name="com.zaxxer.hikari" level="error"/>
     <Logger name="org.postgresql" level="error" />
+
+    <Logger name="app.rpc.commands.binfile" level="debug" />
+    <Logger name="app.storage.tmp" level="info" />
+    <Logger name="app.worker" level="info" />
+    <Logger name="app.msgbus" level="info" />
+    <Logger name="app.http.websocket" level="info" />
+    <Logger name="app.util.websocket" level="info" />
 
     <Logger name="app.cli" level="debug" additivity="false">
       <AppenderRef ref="console"/>
@@ -35,11 +41,6 @@
 
     <Logger name="app" level="all" additivity="false">
       <AppenderRef ref="main" level="trace" />
-      <AppenderRef ref="zmq" level="debug" />
-    </Logger>
-
-    <Logger name="penpot" level="debug" additivity="false">
-      <AppenderRef ref="main" level="debug" />
       <AppenderRef ref="zmq" level="debug" />
     </Logger>
 

@@ -95,6 +95,10 @@
         (add! :constraints-v)
         (add! :fixed-scroll)
 
+        (cond-> frame?
+          (-> (add! :show-content)
+              (add! :hide-in-viewer)))
+
         (cond-> (and (or rect? image? frame?) (some? (:r1 shape)))
           (-> (add! :r1)
               (add! :r2)
@@ -262,7 +266,7 @@
     (when (= (:type shape) :svg-raw)
       (let [shape (-> shape (d/update-in-when [:content :attrs :style] str->style))
             props
-            (-> (obj/new)
+            (-> (obj/create)
                 (obj/set! "penpot:x" (:x shape))
                 (obj/set! "penpot:y" (:y shape))
                 (obj/set! "penpot:width" (:width shape))
@@ -282,7 +286,7 @@
       (for [[index fill] (d/enumerate fills)]
         [:> "penpot:fill"
          #js {:penpot:fill-color          (if (some? (:fill-color-gradient fill))
-                                              (str/format "url(#%s)" (str "fill-color-gradient_" (mf/use-ctx muc/render-ctx) "_" index))
+                                              (str/format "url(#%s)" (str "fill-color-gradient_" (mf/use-ctx muc/render-id) "_" index))
                                               (d/name (:fill-color fill)))
               :penpot:fill-color-ref-file (d/name (:fill-color-ref-file fill))
               :penpot:fill-color-ref-id   (d/name (:fill-color-ref-id fill))
@@ -295,7 +299,7 @@
       (for [[index stroke] (d/enumerate strokes)]
         [:> "penpot:stroke"
          #js {:penpot:stroke-color          (if (some? (:stroke-color-gradient stroke))
-                                              (str/format "url(#%s)" (str "stroke-color-gradient_" (mf/use-ctx muc/render-ctx) "_" index))
+                                              (str/format "url(#%s)" (str "stroke-color-gradient_" (mf/use-ctx muc/render-id) "_" index))
                                               (d/name (:stroke-color stroke)))
               :penpot:stroke-color-ref-file (d/name (:stroke-color-ref-file stroke))
               :penpot:stroke-color-ref-id   (d/name (:stroke-color-ref-id stroke))
@@ -328,7 +332,7 @@
 
 (mf/defc export-data
   [{:keys [shape]}]
-  (let [props (-> (obj/new) (add-data shape) (add-library-refs shape))]
+  (let [props (-> (obj/create) (add-data shape) (add-library-refs shape))]
     [:> "penpot:shape" props
      (export-shadow-data       shape)
      (export-blur-data         shape)

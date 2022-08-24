@@ -6,13 +6,10 @@
 
 (ns app.handlers.export-frames
   (:require
-   ["path" :as path]
    [app.common.logging :as l]
-   [app.common.exceptions :as exc]
    [app.common.spec :as us]
-   [app.common.pprint :as pp]
-   [app.handlers.resources :as rsc]
    [app.handlers.export-shapes :refer [prepare-exports]]
+   [app.handlers.resources :as rsc]
    [app.redis :as redis]
    [app.renderer :as rd]
    [app.util.shell :as sh]
@@ -41,7 +38,7 @@
           :opt-un [::name]))
 
 (defn handler
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports profile-id] :as params}]
+  [{:keys [:request/auth-token] :as exchange} {:keys [exports] :as params}]
   ;; NOTE: we need to have the `:type` prop because the exports
   ;; datastructure preparation uses it for creating the groups.
   (let [exports  (-> (map #(assoc % :type :pdf :scale 1 :suffix "") exports)
@@ -111,7 +108,8 @@
 
     (-> (p/loop [exports (seq exports)]
           (when-let [export (first exports)]
-            (p/let [proc (rd/render export on-object)]
+            (p/do
+              (rd/render export on-object)
               (p/recur (rest exports)))))
 
         (p/then (fn [_] (deref result)))
@@ -122,14 +120,14 @@
                   (-> (sh/stat (:path resource))
                       (p/then #(merge resource %)))))
         (p/catch on-error)
-        (p/finally (fn [result cause]
+        (p/finally (fn [_ cause]
                      (when-not cause
                        (on-complete)))))))
 
 (defn- join-pdf
   [file-id paths]
-  (p/let [tmpdir (sh/mktmpdir! "join-pdf")
-          path   (path/join tmpdir (str/concat file-id ".pdf"))]
+  (p/let [prefix (str/concat "penpot.tmp.pdfunite." file-id ".")
+          path   (sh/tempfile :prefix prefix :suffix ".pdf")]
     (sh/run-cmd! (str "pdfunite " (str/join " " paths) " " path))
     path))
 
@@ -137,5 +135,4 @@
   [{:keys [path] :as resource} output-path]
   (p/do
     (sh/move! output-path path)
-    (sh/rmdir! (path/dirname output-path))
     resource))

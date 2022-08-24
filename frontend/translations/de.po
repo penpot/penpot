@@ -66,23 +66,23 @@ msgstr "Schön, Sie wiederzusehen!"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Anmelden mit GitHub"
+msgstr "GitHub"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Einloggen mit Gitlab"
+msgstr "Gitlab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "Anmelden mit Google"
+msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Anmelden mit LDAP"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "Anmelden mit OpenID (SSO)"
+msgstr "OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -188,32 +188,14 @@ msgstr "Link wurde erfolgreich kopiert"
 msgid "common.share-link.link-deleted-success"
 msgstr "Link wurde erfolgreich gelöscht"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "Freigabe für"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Sichtbar"
-
 msgid "common.share-link.permissions-hint"
 msgstr "Jeder mit dem Link kann auf die Datei zugreifen"
 
 msgid "common.share-link.placeholder"
 msgstr "Link zum Teilen wird hier erscheinen"
 
-msgid "common.share-link.remove-link"
-msgstr "Link entfernen"
-
 msgid "common.share-link.title"
 msgstr "Prototypen teilen"
-
-msgid "common.share-link.view-all-pages"
-msgstr "Alle Seiten"
-
-msgid "common.share-link.view-current-page"
-msgstr "Nur diese Seite"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Ausgewählte Seiten"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -711,7 +693,7 @@ msgstr "Das Bildformat wird nicht unterstützt (es muss ein SVG, JPG oder PNG se
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "Das Bild ist zu groß, um eingefügt zu werden (es muss unter 5MB sein)."
+msgstr "Das Bild ist zu groß, um eingefügt zu werden."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
@@ -2812,10 +2794,6 @@ msgstr "Zeile"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.square"
 msgstr "Quadrat"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "Raster & Layouts"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"

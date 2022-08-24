@@ -63,23 +63,23 @@ msgstr "Рады видеть Вас снова!"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Вход через Gitnub"
+msgstr "Gitnub"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Вход через Gitlab"
+msgstr "Gitlab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "Войти с Google"
+msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Вход через LDAP"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "Войти с OpenID (SSO)"
+msgstr "OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -186,34 +186,15 @@ msgstr "Ссылка скопирована"
 msgid "common.share-link.link-deleted-success"
 msgstr "Ссылка удалена"
 
-#, fuzzy
-msgid "common.share-link.permissions-can-access"
-msgstr "Могут зайти"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Могут видеть"
-
 msgid "common.share-link.permissions-hint"
 msgstr "Доступ открыт для получателей ссылки"
 
 msgid "common.share-link.placeholder"
 msgstr "Ссылка появится здесь"
 
-msgid "common.share-link.remove-link"
-msgstr "Удалить ссылку"
-
 #, fuzzy
 msgid "common.share-link.title"
 msgstr "Поделиться прототипами"
-
-msgid "common.share-link.view-all-pages"
-msgstr "Все страницы"
-
-msgid "common.share-link.view-current-page"
-msgstr "Только эту страницу"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Выбранные страницы"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -651,7 +632,7 @@ msgstr "Формат изображения не поддерживается (�
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "Изображение слишком большое для вставки (должно быть меньше 5mb)."
+msgstr "Изображение слишком большое для вставки."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
@@ -2033,10 +2014,6 @@ msgstr "Строки"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.square"
 msgstr "Квадрат"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.title"
-msgstr "Сетка и Макеты"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.group-fill"

@@ -7,6 +7,7 @@
 (ns app.common.geom.shapes.transforms
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
@@ -143,15 +144,29 @@
   ([shape params]
    (transform-matrix shape params (or (gco/center-shape shape) (gpt/point 0 0))))
 
-  ([{:keys [flip-x flip-y] :as shape} {:keys [no-flip]} shape-center]
+  ([{:keys [flip-x flip-y transform] :as shape} {:keys [no-flip]} shape-center]
    (-> (gmt/matrix)
        (gmt/translate shape-center)
 
-       (gmt/multiply (:transform shape (gmt/matrix)))
+       (cond-> (some? transform)
+         (gmt/multiply transform))
+
        (cond->
            (and (not no-flip) flip-x) (gmt/scale (gpt/point -1 1))
            (and (not no-flip) flip-y) (gmt/scale (gpt/point 1 -1)))
        (gmt/translate (gpt/negate shape-center)))))
+
+(defn transform-str
+  ([shape]
+   (transform-str shape nil))
+
+  ([{:keys [transform flip-x flip-y] :as shape} {:keys [no-flip]}]
+   (if (and (some? shape)
+            (or (some? transform)
+                (and (not no-flip) flip-x)
+                (and (not no-flip) flip-y)))
+     (dm/str (transform-matrix shape))
+     "")))
 
 (defn inverse-transform-matrix
   ([shape]
@@ -236,11 +251,6 @@
                        (gmt/rotate-matrix (- rotation-angle)))]
      [stretch-matrix stretch-matrix-inverse rotation-angle])))
 
-(defn is-rotated?
-  [[a b _c _d]]
-  ;; true if either a-b or c-d are parallel to the axis
-  (not (mth/close? (:y a) (:y b))))
-
 (defn- adjust-rotated-transform
   [{:keys [transform transform-inverse flip-x flip-y]} points]
   (let [center          (gco/center-points points)
@@ -272,12 +282,9 @@
         points   (gco/transform-points points' transform-mtx)
         bool?    (= (:type shape) :bool)
         path?    (= (:type shape) :path)
-        rotated? (is-rotated? points)
 
         [selrect transform transform-inverse]
-        (if (not rotated?)
-          [(gpr/points->selrect points) nil nil]
-          (adjust-rotated-transform shape points))
+        (adjust-rotated-transform shape points)
 
         base-rotation  (or (:rotation shape) 0)
         modif-rotation (or (get-in shape [:modifiers :rotation]) 0)
@@ -631,6 +638,13 @@
         (gpr/rect->points)
         (transform-bounds center modifiers)
         (gpr/points->selrect))))
+
+(defn transform-selrect-matrix
+  [selrect mtx]
+  (-> selrect
+      (gpr/rect->points)
+      (gco/transform-points mtx)
+      (gpr/points->selrect)))
 
 (defn selection-rect
   "Returns a rect that contains all the shapes and is aware of the

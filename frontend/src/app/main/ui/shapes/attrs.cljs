@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.common.spec.radius :as ctr]
-   [app.common.spec.shape :refer [stroke-caps-line stroke-caps-marker]]
+   [app.common.types.shape :refer [stroke-caps-line stroke-caps-marker]]
+   [app.common.types.shape.radius :as ctsr]
    [app.main.ui.context :as muc]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
@@ -31,7 +31,7 @@
 
 
 (defn add-border-radius [attrs {:keys [x y width height] :as shape}]
-  (case (ctr/radius-mode shape)
+  (case (ctsr/radius-mode shape)
     :radius-1
     (let [radius (gsh/shape-corners-1 shape)]
       (obj/merge! attrs #js {:rx radius :ry radius}))
@@ -159,7 +159,7 @@
 
 (defn add-style-attrs
   ([props shape]
-   (let [render-id (mf/use-ctx muc/render-ctx)]
+   (let [render-id (mf/use-ctx muc/render-id)]
      (add-style-attrs props shape render-id)))
 
   ([props shape render-id]
@@ -169,7 +169,7 @@
          [svg-attrs svg-styles]
          (extract-svg-attrs render-id svg-defs svg-attrs)
 
-         styles (-> (obj/get props "style" (obj/new))
+         styles (-> (obj/get props "style" (obj/create))
                     (obj/merge! svg-styles)
                     (add-layer-props shape))
 
@@ -211,24 +211,24 @@
 
 (defn extract-style-attrs
   [shape]
-  (-> (obj/new)
+  (-> (obj/create)
       (add-style-attrs shape)))
 
 (defn extract-fill-attrs
   [fill-data render-id index type]
-  (let [fill-styles (-> (obj/get fill-data "style" (obj/new))
+  (let [fill-styles (-> (obj/get fill-data "style" (obj/create))
                         (add-fill fill-data render-id index type))]
-    (-> (obj/new)
+    (-> (obj/create)
         (obj/set! "style" fill-styles))))
 
 (defn extract-stroke-attrs
   [stroke-data index render-id]
-  (let [stroke-styles (-> (obj/get stroke-data "style" (obj/new))
+  (let [stroke-styles (-> (obj/get stroke-data "style" (obj/create))
                           (add-stroke stroke-data render-id index))]
-    (-> (obj/new)
+    (-> (obj/create)
         (obj/set! "style" stroke-styles))))
 
 (defn extract-border-radius-attrs
   [shape]
-  (-> (obj/new)
+  (-> (obj/create)
       (add-border-radius shape)))

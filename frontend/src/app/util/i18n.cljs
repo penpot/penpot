@@ -7,7 +7,9 @@
 (ns app.util.i18n
   "A i18n foundation."
   (:require
+   [app.common.logging :as log]
    [app.config :as cfg]
+   [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.object :as obj]
    [app.util.storage :refer [storage]]
@@ -15,6 +17,8 @@
    [goog.object :as gobj]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
+
+(log/set-level! :info)
 
 (def supported-locales
   [{:label "English" :value "en"}
@@ -83,11 +87,12 @@
                           locale
                           (recur (rest locales)))
                         cfg/default-language))]
+
       (swap! storage assoc ::locale lname)
       (reset! locale lname))
-    (do
+    (let [lname (autodetect)]
       (swap! storage dissoc ::locale)
-      (reset! locale (autodetect)))))
+      (reset! locale lname))))
 
 (defn reset-locale
   "Set the current locale to the browser detected one if it is
@@ -95,6 +100,15 @@
   []
   (swap! storage dissoc ::locale)
   (reset! locale (autodetect)))
+
+(add-watch locale ::browser-font
+           (fn [_ _ _ locale]
+             (log/info :hint "locale changed" :locale locale)
+             (let [node  (dom/get-body)]
+               (if (or (= locale "fa")
+                       (= locale "ar"))
+                 (dom/set-css-property! node "--font-family" "'vazirmatn', 'worksans', sans-serif")
+                 (dom/unset-css-property! node "--font-family")))))
 
 (deftype C [val]
   IDeref

@@ -7,6 +7,7 @@
 (ns app.worker.import
   (:refer-clojure :exclude [resolve])
   (:require
+   ["jszip" :as zip]
    [app.common.data :as d]
    [app.common.file-builder :as fb]
    [app.common.geom.point :as gpt]
@@ -20,6 +21,7 @@
    [app.util.http :as http]
    [app.util.import.parser :as cip]
    [app.util.json :as json]
+   [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [beicon.core :as rx]
@@ -519,48 +521,95 @@
           (rx/flat-map link-file-libraries)
           (rx/ignore)))))
 
+(defn parse-mtype [ba]
+  (let [u8 (js/Uint8Array. ba 0 4)
+        sg (areduce u8 i ret "" (str ret (if (zero? i) "" " ") (.toString (aget u8 i) 8)))]
+    (case sg
+      "120 113 3 4" "application/zip"
+      "application/octet-stream")))
+
 (defmethod impl/handler :analyze-import
   [{:keys [files]}]
 
   (->> (rx/from files)
        (rx/flat-map
-        (fn [uri]
-          (->> (rx/of uri)
-               (rx/flat-map uz/load-from-url)
-               (rx/flat-map #(get-file {:zip %} :manifest))
-               (rx/map (comp d/kebab-keys cip/string->uuid))
-               (rx/map #(hash-map :uri uri :data %))
-               (rx/catch #(rx/of {:uri uri :error (.-message %)})))))))
+        (fn [file]
+          (let [st (->> (http/send!
+                         {:uri (:uri file)
+                          :response-type :blob
+                          :method :get})
+                        (rx/map :body)
+                        (rx/mapcat wapi/read-file-as-array-buffer)
+                        (rx/map (fn [data]
+                                  {:type (parse-mtype data)
+                                   :uri (:uri file)
+                                   :body data})))]
+            (->> (rx/merge
+                  (->> st
+                       (rx/filter (fn [data] (= "application/zip" (:type data))))
+                       (rx/flat-map #(zip/loadAsync (:body %)))
+                       (rx/flat-map #(get-file {:zip %} :manifest))
+                       (rx/map (comp d/kebab-keys cip/string->uuid))
+                       (rx/map #(hash-map :uri (:uri file) :data % :type "application/zip")))
+                  (->> st
+                       (rx/filter (fn [data] (= "application/octet-stream" (:type data))))
+                       (rx/map (fn [_]
+                                 (let [file-id (uuid/next)]
+                                   {:uri (:uri file)
+                                    :data {:name (:name file)
+                                           :file-id file-id
+                                           :files {file-id {:name (:name file)}}
+                                           :status :ready}
+                                    :type "application/octet-stream"})))))
+                 (rx/catch #(rx/of {:uri (:uri file) :error (.-message %)}))))))))
 
 (defmethod impl/handler :import-files
   [{:keys [project-id files]}]
 
   (let [context {:project-id project-id
-                 :resolve    (resolve-factory)}]
+                 :resolve    (resolve-factory)}
+        zip-files (filter #(= "application/zip" (:type %)) files)
+        binary-files (filter #(= "application/octet-stream" (:type %)) files)]
 
-    (->> (create-files context files)
-         (rx/flat-map
-          (fn [[file data]]
-            (->> (uz/load-from-url (:uri data))
-                 (rx/map #(-> context (assoc :zip %) (merge data)))
-                 (rx/merge-map
-                  (fn [context]
-                    ;; process file retrieves a stream that will emit progress notifications
-                    ;; and other that will emit the files once imported
-                    (let [[progress-stream file-stream] (process-file context file)]
-                      (rx/merge progress-stream
-                                (->> file-stream
-                                     (rx/map
-                                      (fn [file]
-                                        {:status :import-finish
-                                         :errors (:errors file)
-                                         :file-id (:file-id data)})))))))
-                 (rx/catch (fn [cause]
-                             (log/error :hint (ex-message cause) :file-id (:file-id data) :cause cause)
-                             (rx/of {:status :import-error
-                                     :file-id (:file-id data)
-                                     :error (ex-message cause)
-                                     :error-data (ex-data cause)}))))))
+    (->> (rx/merge
+          (->> (create-files context zip-files)
+               (rx/flat-map
+                (fn [[file data]]
+                  (->> (uz/load-from-url (:uri data))
+                       (rx/map #(-> context (assoc :zip %) (merge data)))
+                       (rx/merge-map
+                        (fn [context]
+                          ;; process file retrieves a stream that will emit progress notifications
+                          ;; and other that will emit the files once imported
+                          (let [[progress-stream file-stream] (process-file context file)]
+                            (rx/merge progress-stream
+                                      (->> file-stream
+                                           (rx/map
+                                            (fn [file]
+                                              {:status :import-finish
+                                               :errors (:errors file)
+                                               :file-id (:file-id data)})))))))
+                       (rx/catch (fn [cause]
+                                   (log/error :hint (ex-message cause) :file-id (:file-id data) :cause cause)
+                                   (rx/of {:status :import-error
+                                           :file-id (:file-id data)
+                                           :error (ex-message cause)
+                                           :error-data (ex-data cause)})))))))
+
+          (->> (rx/from binary-files)
+               (rx/flat-map
+                (fn [data]
+                  (->> (http/send!
+                        {:uri (:uri data)
+                         :response-type :blob
+                         :method :get})
+                       (rx/map :body)
+                       (rx/mapcat #(rp/command! :import-binfile {:file %
+                                                                 :project-id project-id}))
+                       (rx/map
+                        (fn [_]
+                          {:status :import-finish
+                           :file-id (:file-id data)})))))))
 
          (rx/catch (fn [cause]
                      (log/error :hint "unexpected error on import process"

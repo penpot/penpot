@@ -7,14 +7,11 @@
   </Appenders>
 
   <Loggers>
+    <Logger name="io.lettuce" level="error" />
     <Logger name="com.zaxxer.hikari" level="error" />
-    <Logger name="org.eclipse.jetty" level="error" />
+    <Logger name="org.postgresql" level="error" />
 
-    <Logger name="app" level="debug" additivity="false">
-      <AppenderRef ref="console" />
-    </Logger>
-
-    <Logger name="penpot" level="fatal" additivity="false">
+    <Logger name="app" level="info" additivity="false">
       <AppenderRef ref="console" />
     </Logger>
 

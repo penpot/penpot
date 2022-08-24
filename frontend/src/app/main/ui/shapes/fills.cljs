@@ -41,7 +41,7 @@
                   (cfg/resolve-file-media (:fill-image shape)))
 
             embed (embed/use-data-uris [uri])
-            transform (gsh/transform-matrix shape)
+            transform (gsh/transform-str shape)
 
             ;; When true the image has not loaded yet
             loading? (and (some? uri) (not (contains? embed uri)))

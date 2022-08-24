@@ -6,6 +6,7 @@
 
 (ns app.rpc.mutations.files
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
@@ -63,21 +64,23 @@
          (db/insert! conn :file-profile-rel))))
 
 (defn create-file
-  [conn {:keys [id name project-id is-shared data deleted-at revn]
-         :or {is-shared false
-              revn 0
-              deleted-at nil}
+  [conn {:keys [id name project-id is-shared data revn
+                modified-at deleted-at ignore-sync-until]
+         :or {is-shared false revn 0}
          :as params}]
   (let [id   (or id (:id data) (uuid/next))
         data (or data (cp/make-file-data id))
         file (db/insert! conn :file
-                         {:id id
-                          :project-id project-id
-                          :name name
-                          :revn revn
-                          :is-shared is-shared
-                          :data (blob/encode data)
-                          :deleted-at deleted-at})]
+                         (d/without-nils
+                          {:id id
+                           :project-id project-id
+                           :name name
+                           :revn revn
+                           :is-shared is-shared
+                           :data (blob/encode data)
+                           :ignore-sync-until ignore-sync-until
+                           :modified-at modified-at
+                           :deleted-at deleted-at}))]
 
     (->> (assoc params :file-id id :role :owner)
          (create-file-role conn))

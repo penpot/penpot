@@ -32,8 +32,8 @@
 
 (defn strip-modifier
   [modifier]
-  (if (or (some? (get-in modifier [:modifiers :resize-vector]))
-          (some? (get-in modifier [:modifiers :resize-vector-2])))
+  (if (or (some? (dm/get-in modifier [:modifiers :resize-vector]))
+          (some? (dm/get-in modifier [:modifiers :resize-vector-2])))
     modifier
     (d/update-when modifier :modifiers dissoc :displacement :rotation)))
 
@@ -66,7 +66,7 @@
   [{:keys [grow-type id migrate] :as shape} node]
   ;; Check if we need to update the size because it's auto-width or auto-height
   ;; Update the position-data of every text fragment
-  (p/let [position-data (tsp/calc-position-data node)]
+  (p/let [position-data (tsp/calc-position-data id)]
     ;; At least one paragraph needs to be inside the bounding box
     (when (gsht/overlaps-position-data? shape position-data)
       (st/emit! (dwt/update-position-data id position-data)))
@@ -85,7 +85,7 @@
 
 (defn- update-text-modifier
   [{:keys [grow-type id]} node]
-  (p/let [position-data (tsp/calc-position-data node)
+  (p/let [position-data (tsp/calc-position-data id)
           props {:position-data position-data}
 
           props

@@ -1,11 +1,11 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v16.14.2
+    NODE_VERSION=v16.15.1
 
 RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
@@ -95,7 +95,7 @@ WORKDIR /opt/app
 ADD ./bundle-exporter/ /opt/app/
 
 RUN set -ex; \
-    yarn install; \
+    yarn; \
     npx playwright install chromium;
 
 CMD ["/usr/local/nodejs/bin/node", "app.js"]

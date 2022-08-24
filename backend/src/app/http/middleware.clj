@@ -12,6 +12,8 @@
    [app.config :as cf]
    [app.util.json :as json]
    [cuerdas.core :as str]
+   [promesa.core :as p]
+   [promesa.exec :as px]
    [yetti.adapter :as yt]
    [yetti.middleware :as ymw]
    [yetti.request :as yrq]
@@ -35,14 +37,14 @@
             (let [header (yrq/get-header request "content-type")]
               (cond
                 (str/starts-with? header "application/transit+json")
-                (with-open [is (-> request yrq/body yrq/body-stream)]
+                (with-open [is (yrq/body request)]
                   (let [params (t/read! (t/reader is))]
                     (-> request
                         (assoc :body-params params)
                         (update :params merge params))))
 
                 (str/starts-with? header "application/json")
-                (with-open [is (-> request yrq/body yrq/body-stream)]
+                (with-open [is (yrq/body request)]
                   (let [params (json/read is)]
                     (-> request
                         (assoc :body-params params)
@@ -192,3 +194,21 @@
 (def restrict-methods
   {:name ::restrict-methods
    :compile compile-restrict-methods})
+
+(def with-promise-async
+  {:compile
+   (fn [& _]
+     (fn [handler executor]
+       (fn [request respond raise]
+         (-> (px/submit! executor #(handler request))
+             (p/bind p/wrap)
+             (p/then respond)
+             (p/catch raise)))))})
+
+(def with-config
+  {:compile
+   (fn [& _]
+     (fn [handler config]
+       (fn
+         ([request] (handler config request))
+         ([request respond raise] (handler config request respond raise)))))})

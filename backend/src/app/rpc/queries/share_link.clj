@@ -11,7 +11,7 @@
 (defn decode-share-link-row
   [row]
   (-> row
-      (update :flags db/decode-pgarray #{})
+      (dissoc :flags)
       (update :pages db/decode-pgarray #{})))
 
 (defn retrieve-share-link

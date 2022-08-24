@@ -116,6 +116,9 @@
   Duration
   (-edn [o] (pr-str o)))
 
+(defn format-duration
+  [o]
+  (str/lower (subs (str o) 2)))
 
 ;; --- INSTANT
 

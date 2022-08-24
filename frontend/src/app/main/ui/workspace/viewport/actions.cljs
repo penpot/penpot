@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.workspace :as dw]
@@ -50,10 +51,7 @@
              mod?   (kbd/mod? event)
 
              left-click?   (and (not panning) (= 1 (.-which event)))
-             middle-click? (and (not panning) (= 2 (.-which event)))
-
-             frame? (= :frame type)
-             selected? (contains? selected id)]
+             middle-click? (and (not panning) (= 2 (.-which event)))]
 
          (cond
            middle-click?
@@ -96,7 +94,7 @@
                  drawing-tool
                  (st/emit! (dd/start-drawing drawing-tool))
 
-                 (or (not id) (and frame? (not selected?)) mod?)
+                 (or (not id) mod?)
                  (st/emit! (dw/handle-area-selection shift? mod?))
 
                  (not drawing-tool)
@@ -156,13 +154,10 @@
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
-             mod? (kbd/mod? event)
-             hovering? (some? @hover)
-             frame? (= :frame (:type @hover))]
+             hovering? (some? @hover)]
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt? meta?))
 
          (when (and hovering?
-                    (or (not frame?) mod?)
                     (not @space?)
                     (not edition)
                     (not drawing-path?)
@@ -171,6 +166,7 @@
 
 (defn on-double-click
   [hover hover-ids drawing-path? objects edition]
+
   (mf/use-callback
    (mf/deps @hover @hover-ids drawing-path? edition)
    (fn [event]
@@ -180,30 +176,28 @@
            alt? (kbd/alt? event)
            meta? (kbd/meta? event)
 
-           {:keys [id type] :as shape} @hover
+           {:keys [id type] :as shape} (or @hover (get objects (first @hover-ids)))
 
-           frame? (= :frame type)
-           group? (= :group type)]
+           editable? (contains? #{:text :rect :path :image :circle} type)]
 
        (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt? meta?))
 
        ;; Emit asynchronously so the double click to exit shapes won't break
        (timers/schedule
-        #(when (and (not drawing-path?) shape)
-           (cond
-             frame?
-             (st/emit! (dw/select-shape id shift?))
+        (fn []
+          (when (and (not drawing-path?) shape)
+            (cond
+              (and editable? (not= id edition))
+              (st/emit! (dw/select-shape id)
+                        (dw/start-editing-selected))
 
-             (and group? (> (count @hover-ids) 1))
-             (let [selected (get objects (second @hover-ids))]
-               (reset! hover selected)
-               (reset! hover-ids (into [] (rest @hover-ids)))
-
-               (st/emit! (dw/select-shape (:id selected))))
-
-             (not= id edition)
-             (st/emit! (dw/select-shape id)
-                       (dw/start-editing-selected)))))))))
+              :else
+              (let [;; We only get inside childrens of the hovering shape
+                    hover-ids (->> @hover-ids (filter (partial cph/is-child? objects id)))
+                    selected (get objects (if (> (count hover-ids) 1) (second hover-ids) (first hover-ids)))]
+                (when (some? selected)
+                  (reset! hover selected)
+                  (st/emit! (dw/select-shape (:id selected)))))))))))))
 
 (defn on-context-menu
   [hover hover-ids]

@@ -98,7 +98,7 @@
     state))
 
 (mf/defc object-svg
-  [{:keys [page-id file-id object-id render-embed? render-texts?]}]
+  [{:keys [page-id file-id object-id render-embed?]}]
   (let [fetch-state (mf/use-fn
                      (mf/deps file-id page-id object-id)
                      (fn []
@@ -131,11 +131,10 @@
       [:& render/object-svg
        {:objects objects
         :object-id object-id
-        :render-embed? render-embed?
-        :render-texts? render-texts?}])))
+        :render-embed? render-embed?}])))
 
 (mf/defc objects-svg
-  [{:keys [page-id file-id object-ids render-embed? render-texts?]}]
+  [{:keys [page-id file-id object-ids render-embed?]}]
   (let [fetch-state (mf/use-fn
                      (mf/deps file-id page-id)
                      (fn []
@@ -157,27 +156,24 @@
            {:objects objects
             :key (str object-id)
             :object-id object-id
-            :render-embed? render-embed?
-            :render-texts? render-texts?}])))))
+            :render-embed? render-embed?}])))))
 
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::object-id
   (s/or :single ::us/uuid
         :multiple (s/coll-of ::us/uuid)))
-(s/def ::render-text ::us/boolean)
 (s/def ::embed ::us/boolean)
 
 (s/def ::render-objects
   (s/keys :req-un [::file-id ::page-id ::object-id]
-          :opt-un [::render-text ::render-embed]))
+          :opt-un [::render-embed]))
 
 (defn- render-objects
   [params]
   (let [{:keys [file-id
                 page-id
-                render-embed
-                render-texts]
+                render-embed]
          :as params}
         (us/conform ::render-objects params)
 
@@ -190,8 +186,7 @@
         {:file-id file-id
          :page-id page-id
          :object-id object-id
-         :render-embed? render-embed
-         :render-texts? render-texts}])
+         :render-embed? render-embed}])
 
       :multiple
       (mf/html
@@ -199,8 +194,7 @@
         {:file-id file-id
          :page-id page-id
          :object-ids (into #{} object-id)
-         :render-embed? render-embed
-         :render-texts? render-texts}]))))
+         :render-embed? render-embed}]))))
 
 ;; ---- COMPONENTS SPRITE
 

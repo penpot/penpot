@@ -12,6 +12,7 @@
    [app.storage :as sto]
    [app.test-helpers :as th]
    [app.util.time :as dt]
+   [app.util.bytes :as bs]
    [clojure.java.io :as io]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -27,11 +28,11 @@
   "Given storage map, returns a storage configured with the appropriate
   backend for assets."
   ([storage]
-   (assoc storage :backend :tmp))
+   (assoc storage :backend :assets-fs))
   ([storage conn]
    (-> storage
        (assoc :conn conn)
-       (assoc :backend :tmp))))
+       (assoc :backend :assets-fs))))
 
 (t/deftest put-and-retrieve-object
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -43,7 +44,7 @@
     (t/is (sto/storage-object? object))
     (t/is (fs/path? @(sto/get-object-path storage object)))
     (t/is (nil? (:expired-at object)))
-    (t/is (= :tmp (:backend object)))
+    (t/is (= :assets-fs (:backend object)))
     (t/is (= "data" (:other (meta object))))
     (t/is (= "text/plain" (:content-type (meta object))))
     (t/is (= "content" (slurp @(sto/get-object-data storage object))))
@@ -197,7 +198,8 @@
                                     :is-shared false})
 
         ttfdata (-> (io/resource "app/test_files/font-1.ttf")
-                    (fs/slurp-bytes))
+                    io/input-stream
+                    bs/read-as-bytes)
 
         mfile   {:filename "sample.jpg"
                  :path (th/tempfile "app/test_files/sample.jpg")

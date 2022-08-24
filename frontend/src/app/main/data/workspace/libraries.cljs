@@ -11,25 +11,26 @@
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.changes-spec :as pcs]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
-   [app.common.spec.color :as spec.color]
-   [app.common.spec.file :as spec.file]
-   [app.common.spec.typography :as spec.typography]
+   [app.common.types.color :as ctc]
+   [app.common.types.file :as ctf]
+   [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
+   [app.util.names :as un]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
@@ -98,7 +99,7 @@
         color (-> color
                   (assoc :id id)
                   (assoc :name (default-color-name color)))]
-    (us/assert ::spec.color/color color)
+    (us/assert ::ctc/color color)
     (ptk/reify ::add-color
       IDeref
       (-deref [_] color)
@@ -112,7 +113,7 @@
 
 (defn add-recent-color
   [color]
-  (us/assert ::spec.color/recent-color color)
+  (us/assert! ::ctc/recent-color color)
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [it _ _]
@@ -141,7 +142,7 @@
 
 (defn update-color
   [color file-id]
-  (us/assert ::spec.color/color color)
+  (us/assert ::ctc/color color)
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-color
     ptk/WatchEvent
@@ -175,7 +176,7 @@
 
 (defn add-media
   [media]
-  (us/assert ::spec.file/media-object media)
+  (us/assert ::ctf/media-object media)
   (ptk/reify ::add-media
     ptk/WatchEvent
     (watch [it _ _]
@@ -217,7 +218,7 @@
   ([typography] (add-typography typography true))
   ([typography edit?]
    (let [typography (update typography :id #(or % (uuid/next)))]
-     (us/assert ::spec.typography/typography typography)
+     (us/assert ::ctt/typography typography)
      (ptk/reify ::add-typography
        IDeref
        (-deref [_] typography)
@@ -246,7 +247,7 @@
 
 (defn update-typography
   [typography file-id]
-  (us/assert ::spec.typography/typography typography)
+  (us/assert ::ctt/typography typography)
   (us/assert ::us/uuid file-id)
   (ptk/reify ::update-typography
     ptk/WatchEvent
@@ -297,7 +298,7 @@
                 (dwlh/generate-add-component it shapes objects page-id file-id)]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
-                     (dwc/select-shapes (d/ordered-set (:id group)))))))))))
+                     (dws/select-shapes (d/ordered-set (:id group)))))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
@@ -353,7 +354,7 @@
             component      (cph/get-component libraries id)
             all-components (-> state :workspace-data :components vals)
             unames         (into #{} (map :name) all-components)
-            new-name       (dwc/generate-unique-name unames (:name component))
+            new-name       (un/generate-unique-name unames (:name component))
 
             [new-shape new-shapes _updated-shapes]
             (dwlh/duplicate-component component)
@@ -403,7 +404,7 @@
                                                  page
                                                  libraries)]
         (rx/of (dch/commit-changes changes)
-               (dwc/select-shapes (d/ordered-set (:id new-shape))))))))
+               (dws/select-shapes (d/ordered-set (:id new-shape))))))))
 
 (defn detach-component
   "Remove all references to components in the shape with the given id,
@@ -464,7 +465,7 @@
 (defn ext-library-changed
   [file-id modified-at revn changes]
   (us/assert ::us/uuid file-id)
-  (us/assert ::spec.change/changes changes)
+  (us/assert ::pcs/changes changes)
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]

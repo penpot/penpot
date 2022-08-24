@@ -6,11 +6,13 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.rect
   (:require
+   [app.main.constants :refer [has-layout-item]]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
@@ -21,17 +23,22 @@
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
-        measure-values (select-keys shape measure-attrs)
+        measure-values (select-measure-keys shape)
         layer-values (select-keys shape layer-attrs)
         constraint-values (select-keys shape constraint-attrs)
         fill-values (select-keys shape fill-attrs)
-        stroke-values (select-keys shape stroke-attrs)]
+        stroke-values (select-keys shape stroke-attrs)
+        layout-item-values (select-keys shape layout-item-attrs)]
     [:*
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values
                         :shape shape}]
-
+     (when has-layout-item
+       [:& layout-item-menu {:ids ids
+                             :type type
+                             :values layout-item-values
+                             :shape shape}])
      [:& constraints-menu {:ids ids
                            :values constraint-values}]
 

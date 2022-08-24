@@ -98,13 +98,6 @@
 (defn distance-shapes [shape other]
   (distance-selrect (:selrect shape) (:selrect other)))
 
-(defn shape-stroke-margin
-  [shape stroke-width]
-  (if (= (:type shape) :path)
-    ;; TODO: Calculate with the stroke offset (not implemented yet
-    (mth/sqrt (* 2 stroke-width stroke-width))
-    (- (mth/sqrt (* 2 stroke-width stroke-width)) stroke-width)))
-
 (defn close-attrs?
   "Compares two shapes attributes to see if they are equal or almost
   equal (in case of numeric). Takes into account attributes that are
@@ -159,6 +152,7 @@
 (dm/export gtr/move)
 (dm/export gtr/absolute-move)
 (dm/export gtr/transform-matrix)
+(dm/export gtr/transform-str)
 (dm/export gtr/inverse-transform-matrix)
 (dm/export gtr/transform-point-center)
 (dm/export gtr/transform-rect)
@@ -171,6 +165,7 @@
 (dm/export gtr/merge-modifiers)
 (dm/export gtr/transform-shape)
 (dm/export gtr/transform-selrect)
+(dm/export gtr/transform-selrect-matrix)
 (dm/export gtr/transform-bounds)
 (dm/export gtr/modifiers->transform)
 (dm/export gtr/empty-modifiers?)

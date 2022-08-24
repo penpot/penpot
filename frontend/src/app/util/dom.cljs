@@ -37,6 +37,14 @@
   (when (some? e)
     (.-target e)))
 
+(defn event->native-event
+  [^js e]
+  (.-nativeEvent e))
+
+(defn event->browser-event
+  [^js e]
+  (.getBrowserEvent e))
+
 ;; --- New methods
 
 (declare get-elements-by-tag)
@@ -91,6 +99,11 @@
   (when event
     (.stopPropagation event)))
 
+(defn stop-immediate-propagation
+  [^js event]
+  (when event
+    (.stopImmediatePropagation event)))
+
 (defn prevent-default
   [^js event]
   (when event
@@ -102,9 +115,23 @@
   (when (some? event)
     (.-target event)))
 
+(defn select-target
+  "Extract the target from event instance and select it"
+  [^js event]
+  (when (some? event)
+    (-> event
+        (.-target)
+        (.-select))))
+
+(defn select-node
+  "Select element by node"
+  [^js node]
+  (when (some? node)
+    (.-select node)))
+
 (defn get-current-target
   "Extract the current target from event instance (different from target
-   when event triggered in a child of the subscribing element)."
+  when event triggered in a child of the subscribing element)."
   [^js event]
   (when (some? event)
     (.-currentTarget event)))
@@ -113,6 +140,14 @@
   [^js node]
   (when (some? node)
     (.-parentElement ^js node)))
+
+(defn get-parent-with-selector
+  [^js node selector]
+
+  (loop [current node]
+    (if (or (nil? current) (.matches current selector) )
+      current
+      (recur (.-parentElement current)))))
 
 (defn get-value
   "Extract the value from dom node."
@@ -373,6 +408,11 @@
     (.setProperty (.-style ^js node) property value))
   node)
 
+(defn unset-css-property! [^js node property]
+  (when (some? node)
+    (.removeProperty (.-style ^js node) property))
+  node)
+
 (defn capture-pointer [^js event]
   (when (some? event)
     (-> event get-target (.setPointerCapture (.-pointerId event)))))
@@ -380,6 +420,9 @@
 (defn release-pointer [^js event]
   (when (and (some? event) (.-pointerId event))
     (-> event get-target (.releasePointerCapture (.-pointerId event)))))
+
+(defn get-body []
+  (.-body globals/document))
 
 (defn get-root []
   (query globals/document "#app"))
@@ -566,3 +609,12 @@
 (defn load-font [font]
   (let [fonts (.-fonts globals/document)]
     (.load fonts font)))
+
+(defn text-measure [font]
+  (let [element (.createElement globals/document "canvas")
+        context (.getContext element "2d")
+        _ (set! (.-font context) font)
+        measure ^js (.measureText context "Ag")]
+
+    {:ascent (.-fontBoundingBoxAscent measure)
+     :descent (.-fontBoundingBoxDescent measure)}))

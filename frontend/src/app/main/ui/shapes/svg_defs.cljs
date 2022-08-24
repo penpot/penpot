@@ -10,8 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.shapes.filters :as f]
-   [app.util.object :as obj]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.util.svg :as usvg]
    [rumext.alpha :as mf]))
 
@@ -68,7 +67,7 @@
           [wrapper wrapper-props] (if (= tag :mask)
                                     ["g" #js {:className "svg-mask-wrapper"
                                               :transform (str transform)}]
-                                    [mf/Fragment (obj/new)])]
+                                    [mf/Fragment #js {}])]
 
       [:> (name tag) (clj->js attrs)
        [:> wrapper wrapper-props
@@ -88,7 +87,7 @@
                          (d/parse-double (get-in svg-def [:attrs :width]))
                          (d/parse-double (get-in svg-def [:attrs :height])))
           (gsh/transform-rect transform))
-      (f/get-filters-bounds shape))))
+      (gsb/get-shape-filter-bounds shape))))
 
 (mf/defc svg-defs [{:keys [shape render-id]}]
   (let [svg-defs (:svg-defs shape)

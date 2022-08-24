@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages.helpers :as cph]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as ui-hooks]
@@ -19,7 +20,7 @@
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
-   [app.main.ui.workspace.shapes.text.viewport-texts :as stv]
+   [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.drawarea :as drawarea]
@@ -155,7 +156,13 @@
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
         show-grids?              (contains? layout :display-grid)
-        show-outlines?           (and (nil? transform) (not edition) (not drawing-obj) (not (#{:comments :path :curve} drawing-tool)))
+
+        show-frame-outline?      (= transform :move)
+        show-outlines?           (and (nil? transform)
+                                      (not edition)
+                                      (not drawing-obj)
+                                      (not (#{:comments :path :curve} drawing-tool)))
+
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
@@ -187,6 +194,13 @@
 
     [:div.viewport
      [:div.viewport-overlays {:ref overlays-ref}
+      [:div {:style {:pointer-events "none" :opacity 0}}
+       [:& stvh/viewport-texts
+        {:key (dm/str "texts-" page-id)
+         :page-id page-id
+         :objects objects
+         :modifiers modifiers
+         :edition edition}]]
 
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
@@ -229,23 +243,6 @@
                                :objects base-objects
                                :active-frames @active-frames}]]]]
 
-     [:svg.render-shapes
-      {:id "text-position-layer"
-       :xmlns "http://www.w3.org/2000/svg"
-       :xmlnsXlink "http://www.w3.org/1999/xlink"
-       :preserveAspectRatio "xMidYMid meet"
-       :key (str "text-position-layer" page-id)
-       :width (:width vport 0)
-       :height (:height vport 0)
-       :view-box (utils/format-viewbox vbox)}
-
-      [:g {:pointer-events "none" :opacity 0}
-       [:& stv/viewport-texts {:key (dm/str "texts-" page-id)
-                               :page-id page-id
-                               :objects objects
-                               :modifiers modifiers
-                               :edition edition}]]]
-
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
@@ -275,16 +272,20 @@
        (when show-text-editor?
          [:& editor/text-editor-svg {:shape editing-shape}])
 
+       (when show-frame-outline?
+         [:& outline/shape-outlines
+          {:objects base-objects
+           :hover #{(->> @hover-ids
+                         (filter #(cph/frame-shape? base-objects %))
+                         (remove selected)
+                         (first))}
+           :zoom zoom}])
+
        (when show-outlines?
          [:& outline/shape-outlines
           {:objects base-objects
            :selected selected
-           :hover (cond
-                    (and @hover (or @mod? (not= :frame (:type @hover))))
-                    #{(:id @hover)}
-
-                    @frame-hover
-                    #{@frame-hover})
+           :hover #{(:id @hover) @frame-hover}
            :edition edition
            :zoom zoom}])
 
@@ -311,10 +312,9 @@
            :zoom zoom}])
 
        [:& widgets/frame-titles
-        {:objects objects-modified
+        {:objects base-objects
          :selected selected
          :zoom zoom
-         :modifiers modifiers
          :show-artboard-names? show-artboard-names?
          :on-frame-enter on-frame-enter
          :on-frame-leave on-frame-leave
@@ -391,14 +391,6 @@
 
        [:& widgets/viewport-actions]
 
-       (when show-prototypes?
-         [:& interactions/interactions
-          {:selected selected
-           :zoom zoom
-           :objects objects-modified
-           :current-transform transform
-           :hover-disabled? hover-disabled?}])
-
        [:& scroll-bars/viewport-scrollbars
         {:objects base-objects
          :zoom zoom
@@ -435,6 +427,12 @@
             :shapes selected-shapes
             :zoom zoom
             :edition edition
-            :disable-handlers (or drawing-tool edition @space?)}]])
+            :disable-handlers (or drawing-tool edition @space?)}]
 
-       ]]]))
+          (when show-prototypes?
+            [:& interactions/interactions
+             {:selected selected
+              :zoom zoom
+              :objects objects-modified
+              :current-transform transform
+              :hover-disabled? hover-disabled?}])])]]]))

@@ -28,7 +28,7 @@
     (.on client "reconnect"
          (fn [ms] (l/warn :hint "reconnecting to redis" :ms ms)))
     (.on client "end"
-         (fn [ms] (l/warn :hint "client ended, no more connections will be attempted")))
+         (fn [] (l/warn :hint "client ended, no more connections will be attempted")))
     client))
 
 (defn init

@@ -77,7 +77,7 @@
         ]
        (filterv identity)))
 
-(s/def ::emails (s/and ::us/set-of-emails d/not-empty?))
+(s/def ::emails (s/and ::us/set-of-valid-emails d/not-empty?))
 (s/def ::role  ::us/keyword)
 (s/def ::team-id ::us/uuid)
 
@@ -142,7 +142,8 @@
                            :auto-focus? true
                            :trim true
                            :valid-item-fn us/parse-email
-                           :label (tr "modals.invite-member.emails")}]
+                           :label (tr "modals.invite-member.emails")
+                           :on-submit  on-submit}]
        [:& fm/select {:name :role :options roles}]]
 
       [:div.action-buttons
@@ -605,7 +606,7 @@
          [:div.label (tr "dashboard.team-info")]
          [:div.name (:name team)]
          [:div.icon
-          [:span.update-overlay {:on-click on-image-click} i/exit]
+          [:span.update-overlay {:on-click on-image-click} i/image]
           [:img {:src (cfg/resolve-team-photo-url team)}]
           [:& file-uploader {:accept "image/jpeg,image/png"
                              :multi false

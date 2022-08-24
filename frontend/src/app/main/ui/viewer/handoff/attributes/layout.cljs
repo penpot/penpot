@@ -6,7 +6,7 @@
 
 (ns app.main.ui.viewer.handoff.attributes.layout
   (:require
-   [app.common.spec.radius :as ctr]
+   [app.common.types.shape.radius :as ctsr]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.formats :as fmt]
    [app.util.code-gen :as cg]
@@ -59,13 +59,13 @@
         [:div.attributes-value (fmt/format-pixels y)]
         [:& copy-button {:data (copy-data selrect :y)}]])
 
-     (when (ctr/radius-1? shape)
+     (when (ctsr/radius-1? shape)
        [:div.attributes-unit-row
         [:div.attributes-label (tr "handoff.attributes.layout.radius")]
         [:div.attributes-value (fmt/format-pixels (:rx shape 0))]
         [:& copy-button {:data (copy-data shape :rx)}]])
 
-     (when (ctr/radius-4? shape)
+     (when (ctsr/radius-4? shape)
        [:div.attributes-unit-row
         [:div.attributes-label (tr "handoff.attributes.layout.radius")]
         [:div.attributes-value

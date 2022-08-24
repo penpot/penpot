@@ -17,7 +17,7 @@
   [props]
   (let [shape (unchecked-get props "shape")
         {:keys [x y width height]} shape
-        transform (gsh/transform-matrix shape)
+        transform (gsh/transform-str shape)
 
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!

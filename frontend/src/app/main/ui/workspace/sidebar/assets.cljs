@@ -47,14 +47,10 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
 
-;; TODO: refactor to remove duplicate code and less parameter passing.
-;;  - Move all state to [:workspace-local :assets-bar file-id :open-boxes {}
-;;                                                            :open-groups {}
-;;                                                            :reverse-sort?
-;;                                                            :listing-thumbs?
-;;                                                            :selected-assets {}]
-;;  - Move selection code to independent functions that receive the state as a parameter.
-;;
+;; NOTE: TODO: for avoid too many arguments, I think we can use react
+;; context variables for pass to the down tree all the common
+;; variables that are defined on the MAIN container/box component.
+
 ;; TODO: change update operations to admit multiple ids, thus avoiding the need of
 ;;       emitting many events and opening an undo transaction. Also move the logic
 ;;       of grouping, deleting, etc. to events in the data module, since now the
@@ -205,8 +201,6 @@
               create-typed-assets-group (partial create-typed-assets-group components-to-group)]
           (modal/show! :name-group-dialog {:accept create-typed-assets-group}))))))
 
-
-
 (defn- on-drag-enter-asset
   [event asset dragging? selected-assets selected-assets-paths]
   (when (and
@@ -274,8 +268,6 @@
          (rename
           (:id target-asset)
           (cph/merge-path-item prefix (:name target-asset))))))))
-
-
 
 ;; ---- Common blocks ----
 
@@ -1090,6 +1082,7 @@
                        :else (:value color))
 
         ;; TODO: looks like the first argument is not necessary
+        ;; TODO: this code should be out of this UI component
         apply-color
         (fn [_ event]
           (let [objects  (wsh/lookup-page-objects @st/state)
@@ -1629,6 +1622,17 @@
 
         local-data (mf/deref typography-data)
         menu-state (mf/use-state auto-pos-menu-state)
+
+        extract-path-if-missing
+        (fn [typography]
+          (let [[path name] (cph/parse-path-name (:name typography))]
+            (if (= (:name typography) name)
+              typography
+              (assoc  typography :path path :name name))))
+
+        typographies (->> typographies
+                          (map extract-path-if-missing))
+
         groups     (group-assets typographies reverse-sort?)
 
         selected-typographies (:typographies selected-assets)
@@ -1937,13 +1941,11 @@
          (fn [asset-type asset-groups asset-id]
            (letfn [(flatten-groups
                      [groups]
-                     (concat
-                      (get groups "" [])
-                      (reduce concat
-                              (into []
-                                    (->> (filter #(seq (first %)) groups)
-                                         (map second)
-                                         (mapcat flatten-groups))))))]
+                     (reduce concat [(get groups "" [])
+                                     (into []
+                                           (->> (filter #(seq (first %)) groups)
+                                                (map second)
+                                                (mapcat flatten-groups)))]))]
              (let [selected-assets-type (get selected-assets asset-type)
                    count-assets (count selected-assets-type)]
                (if (<= count-assets 0)

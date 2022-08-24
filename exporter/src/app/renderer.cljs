@@ -31,7 +31,7 @@
 (s/def ::render-params
   (s/keys :req-un [::file-id ::page-id ::scale ::token ::type ::objects]))
 
-(defn- render
+(defn render
   [{:keys [type] :as params} on-object]
   (us/verify ::render-params params)
   (us/verify fn? on-object)

@@ -6,8 +6,8 @@
 
 (ns app.main.data.workspace.undo
   (:require
+   [app.common.pages.changes-spec :as pcs]
    [app.common.spec :as us]
-   [app.common.spec.change :as spec.change]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
@@ -15,8 +15,8 @@
 ;; Undo / Redo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::undo-changes ::spec.change/changes)
-(s/def ::redo-changes ::spec.change/changes)
+(s/def ::undo-changes ::pcs/changes)
+(s/def ::redo-changes ::pcs/changes)
 (s/def ::undo-entry
   (s/keys :req-un [::undo-changes ::redo-changes]))
 

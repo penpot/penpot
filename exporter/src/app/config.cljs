@@ -7,13 +7,10 @@
 (ns app.config
   (:refer-clojure :exclude [get])
   (:require
-   ["fs" :as fs]
    ["process" :as process]
-   [app.common.exceptions :as ex]
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.version :as v]
-   [app.common.uri :as u]
    [cljs.core :as c]
    [cljs.pprint]
    [cljs.spec.alpha :as s]

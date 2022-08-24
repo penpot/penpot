@@ -209,7 +209,7 @@
 
 (def workspace-recent-fonts
   (l/derived (fn [data]
-               (get data :workspace-data []))
+               (get data :recent-fonts []))
              workspace-data))
 
 (def workspace-file-typography
@@ -270,6 +270,14 @@
        (into [] (keep (d/getf objects)) children-ids)))
    workspace-page-objects =))
 
+(defn all-children-objects
+  [id]
+  (l/derived
+   (fn [objects]
+     (let [children-ids (cph/get-children-ids objects id)]
+       (into [] (keep (d/getf objects)) children-ids)))
+   workspace-page-objects =))
+
 (def workspace-page-options
   (l/derived :options workspace-page))
 
@@ -306,8 +314,11 @@
    (fn [{:keys [modifiers objects]}]
      (let [keys (->> modifiers
                      (keys)
-                     (filter #(or (= frame-id %)
-                                  (= frame-id (get-in objects [% :frame-id])))))]
+                     (filter (fn [id]
+                               (let [shape (get objects id)]
+                                 (or (= frame-id id)
+                                     (and (= frame-id (:frame-id shape))
+                                          (not (= :frame (:type shape)))))))))]
        (select-keys modifiers keys)))
    workspace-modifiers-with-objects
    =))
@@ -376,6 +387,9 @@
 (def users
   (l/derived :users st/state))
 
+(def current-file-comments-users
+  (l/derived :current-file-comments-users st/state))
+
 (def viewer-fullscreen?
   (l/derived (fn [state]
                (dm/get-in state [:viewer-local :fullscreen?]))
@@ -396,3 +410,7 @@
 
 (defn workspace-text-modifier-by-id [id]
   (l/derived #(get % id) workspace-text-modifier =))
+
+(def colorpicker
+  (l/derived :colorpicker st/state))
+

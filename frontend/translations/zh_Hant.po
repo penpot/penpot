@@ -61,23 +61,23 @@ msgstr "很高興再次見到你！"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "透過 GitHub 登入"
+msgstr "GitHub"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "透過 GitLab 登入"
+msgstr "GitLab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "透過 Google 登入"
+msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "透過 LDAP 登入"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "使用 OpenID (SSO) 登入"
+msgstr "OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -181,32 +181,14 @@ msgstr "成功複製連結"
 msgid "common.share-link.link-deleted-success"
 msgstr "成功刪除連結"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "能夠存取"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "能夠檢視"
-
 msgid "common.share-link.permissions-hint"
 msgstr "任何有連結的人皆能存取"
 
 msgid "common.share-link.placeholder"
 msgstr "可分享的連結將會在此顯示"
 
-msgid "common.share-link.remove-link"
-msgstr "移除連結"
-
 msgid "common.share-link.title"
 msgstr "分享原型"
-
-msgid "common.share-link.view-all-pages"
-msgstr "所有頁面"
-
-msgid "common.share-link.view-current-page"
-msgstr "僅此頁面"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "選擇的頁面"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 #, fuzzy
@@ -559,7 +541,7 @@ msgstr "不支援此影像格式（必須是 svg，jpg 或者 png）"
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
-msgstr "影像檔案過大，無法插入（須小於 5MB）"
+msgstr "影像檔案過大，無法插入"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"

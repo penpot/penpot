@@ -29,7 +29,7 @@
 
 (defn coerce-id
   [id]
-  (let [res (us/uuid-conformer id)]
+  (let [res (parse-uuid id)]
     (when-not (uuid? res)
       (ex/raise :type :not-found
                 :hint "object not found"))

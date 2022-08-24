@@ -13,14 +13,13 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.shape :as spec.shape]
    [app.common.text :as txt]
    [app.common.transit :as t]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.events :as ev]
@@ -28,8 +27,10 @@
    [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]
@@ -43,10 +44,12 @@
    [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.repo :as rp]
    [app.main.streams :as ms]
@@ -54,6 +57,7 @@
    [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n]
+   [app.util.names :as un]
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
@@ -62,7 +66,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
-(s/def ::shape-attrs ::spec.shape/shape-attrs)
+(s/def ::shape-attrs ::cts/shape-attrs)
 (s/def ::set-of-string
   (s/every string? :kind set?))
 
@@ -129,7 +133,6 @@
                           (rx/merge
                            (rx/of (dwn/initialize team-id file-id)
                                   (dwp/initialize-file-persistence file-id))
-
                            (->> stream
                                 (rx/filter #(= ::dwc/index-initialized %))
                                 (rx/take 1)
@@ -141,7 +144,7 @@
         (unchecked-set ug/global "name" name)))))
 
 (defn- file-initialized
-  [{:keys [file users project libraries] :as bundle}]
+  [{:keys [file users project libraries file-comments-users] :as bundle}]
   (ptk/reify ::file-initialized
     ptk/UpdateEvent
     (update [_ state]
@@ -152,11 +155,13 @@
              :workspace-project project
              :workspace-file (assoc file :initialized true)
              :workspace-data (-> (:data file)
+                                 (cph/start-object-indices)
                                  ;; DEBUG: Uncomment this to try out migrations in local without changing
                                  ;; the version number
                                  #_(assoc :version 17)
                                  #_(app.common.pages.migrations/migrate-data 19))
-             :workspace-libraries (d/index-by :id libraries)))
+             :workspace-libraries (d/index-by :id libraries)
+             :current-file-comments-users (d/index-by :id file-comments-users)))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -263,8 +268,8 @@
       ptk/WatchEvent
       (watch [it state _]
         (let [pages   (get-in state [:workspace-data :pages-index])
-              unames  (dwc/retrieve-used-names pages)
-              name    (dwc/generate-unique-name unames "Page-1")
+              unames  (un/retrieve-used-names pages)
+              name    (un/generate-unique-name unames "Page-1")
 
               changes (-> (pcb/empty-changes it)
                           (pcb/add-empty-page id name))]
@@ -278,9 +283,9 @@
     (watch [it state _]
       (let [id      (uuid/next)
             pages   (get-in state [:workspace-data :pages-index])
-            unames  (dwc/retrieve-used-names pages)
+            unames  (un/retrieve-used-names pages)
             page    (get-in state [:workspace-data :pages-index page-id])
-            name    (dwc/generate-unique-name unames (:name page))
+            name    (un/generate-unique-name unames (:name page))
 
             no_thumbnails_objects (->> (:objects page)
                                       (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
@@ -392,140 +397,6 @@
         (assoc-in state [:workspace-global :tooltip] content)
         (assoc-in state [:workspace-global :tooltip] nil)))))
 
-;; --- Viewport Sizing
-
-(defn initialize-viewport
-  [{:keys [width height] :as size}]
-  (letfn [(update* [{:keys [vport] :as local}]
-            (let [wprop (/ (:width vport) width)
-                  hprop (/ (:height vport) height)]
-              (-> local
-                  (assoc :vport size)
-                  (update :vbox (fn [vbox]
-                                  (-> vbox
-                                      (update :width #(/ % wprop))
-                                      (update :height #(/ % hprop))))))))
-
-          (initialize [state local]
-            (let [page-id (:current-page-id state)
-                  objects (wsh/lookup-page-objects state page-id)
-                  shapes  (cph/get-immediate-children objects)
-                  srect   (gsh/selection-rect shapes)
-                  local   (assoc local :vport size :zoom 1)]
-              (cond
-                (or (not (d/num? (:width srect)))
-                    (not (d/num? (:height srect))))
-                (assoc local :vbox (assoc size :x 0 :y 0))
-
-                (or (> (:width srect) width)
-                    (> (:height srect) height))
-                (let [srect (gal/adjust-to-viewport size srect {:padding 40})
-                      zoom  (/ (:width size) (:width srect))]
-                  (-> local
-                      (assoc :zoom zoom)
-                      (update :vbox merge srect)))
-
-                :else
-                (assoc local :vbox (assoc size
-                                          :x (+ (:x srect) (/ (- (:width srect) width) 2))
-                                          :y (+ (:y srect) (/ (- (:height srect) height) 2)))))))
-
-          (setup [state local]
-            (if (and (:vbox local) (:vport local))
-              (update* local)
-              (initialize state local)))]
-
-    (ptk/reify ::initialize-viewport
-      ptk/UpdateEvent
-      (update [_ state]
-        (update state :workspace-local
-                (fn [local]
-                  (setup state local)))))))
-
-(defn update-viewport-position
-  [{:keys [x y] :or {x identity y identity}}]
-  (us/assert fn? x)
-  (us/assert fn? y)
-  (ptk/reify ::update-viewport-position
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-local :vbox]
-                 (fn [vbox]
-                   (-> vbox
-                       (update :x x)
-                       (update :y y)))))))
-
-(defn update-viewport-size
-  [resize-type {:keys [width height] :as size}]
-  (ptk/reify ::update-viewport-size
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local
-              (fn [{:keys [vport] :as local}]
-                (if (or (nil? vport)
-                        (mth/almost-zero? width)
-                        (mth/almost-zero? height))
-                  ;; If we have a resize to zero just keep the old value
-                  local
-                  (let [wprop (/ (:width vport) width)
-                        hprop (/ (:height vport) height)
-
-                        vbox (:vbox local)
-                        vbox-x (:x vbox)
-                        vbox-y (:y vbox)
-                        vbox-width (:width vbox)
-                        vbox-height (:height vbox)
-
-                        vbox-width' (/ vbox-width wprop)
-                        vbox-height' (/ vbox-height hprop)
-
-                        vbox-x'
-                        (case resize-type
-                          :left  (+ vbox-x (- vbox-width vbox-width'))
-                          :right vbox-x
-                          (+ vbox-x (/ (- vbox-width vbox-width') 2)))
-
-                        vbox-y'
-                        (case resize-type
-                          :top  (+ vbox-y (- vbox-height vbox-height'))
-                          :bottom vbox-y
-                          (+ vbox-y (/ (- vbox-height vbox-height') 2)))]
-                    (-> local
-                        (assoc :vport size)
-                        (assoc-in [:vbox :x] vbox-x')
-                        (assoc-in [:vbox :y] vbox-y')
-                        (assoc-in [:vbox :width] vbox-width')
-                        (assoc-in [:vbox :height] vbox-height')))))))))
-
-(defn start-panning []
-  (ptk/reify ::start-panning
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stopper (->> stream (rx/filter (ptk/type? ::finish-panning)))
-            zoom (-> (get-in state [:workspace-local :zoom]) gpt/point)]
-        (when-not (get-in state [:workspace-local :panning])
-          (rx/concat
-           (rx/of #(-> % (assoc-in [:workspace-local :panning] true)))
-           (->> stream
-                (rx/filter ms/pointer-event?)
-                (rx/filter #(= :delta (:source %)))
-                (rx/map :pt)
-                (rx/take-until stopper)
-                (rx/map (fn [delta]
-                          (let [delta (gpt/divide delta zoom)]
-                            (update-viewport-position {:x #(- % (:x delta))
-                                                       :y #(- % (:y delta))})))))))))))
-
-(defn finish-panning []
-  (ptk/reify ::finish-panning
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update :workspace-local dissoc :panning)))))
-
-
-
-
 ;; --- Update Shape Attrs
 
 (defn update-shape
@@ -576,7 +447,7 @@
             hover-guides (get-in state [:workspace-guides :hover])]
         (cond
           (d/not-empty? selected)
-          (rx/of (dwc/delete-shapes selected)
+          (rx/of (dwsh/delete-shapes selected)
                  (dws/deselect-all))
 
           (d/not-empty? hover-guides)
@@ -794,7 +665,7 @@
                                              ids)]
 
         (rx/of (dch/commit-changes changes)
-               (dwc/expand-collapse parent-id))))))
+               (dwco/expand-collapse parent-id))))))
 
 (defn relocate-selected-shapes
   [parent-id to-index]
@@ -819,15 +690,15 @@
 
             (case type
               :text
-              (rx/of (dwc/start-edition-mode id))
+              (rx/of (dwe/start-edition-mode id))
 
               (:group :bool)
-              (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
+              (rx/of (dws/select-shapes (into (d/ordered-set) [(last shapes)])))
 
               :svg-raw
               nil
 
-              (rx/of (dwc/start-edition-mode id)
+              (rx/of (dwe/start-edition-mode id)
                      (dwdp/start-path-edit id)))))))))
 
 
@@ -1215,16 +1086,9 @@
                   ;; selected and its parents
                   objects (cph/selected-subtree objects selected)
 
-                  z-index (cp/calculate-z-index objects)
-                  z-values (->> selected
-                                (map #(vector %
-                                              (+ (get z-index %)
-                                                 (get z-index (get-in objects [% :frame-id]))))))
-                  selected
-                  (->> z-values
-                       (sort-by second)
-                       (map first)
-                       (into (d/ordered-set)))]
+                  selected (->> (cph/sort-z-index objects selected)
+                                (reverse)
+                                (into (d/ordered-set)))]
 
               (assoc data :selected selected)))
 
@@ -1241,8 +1105,8 @@
           ;; Prepare the shape object. Mainly needed for image shapes
           ;; for retrieve the image data and convert it to the
           ;; data-url.
-          (prepare-object [objects selected {:keys [type] :as obj}]
-            (let [obj (maybe-translate obj objects selected)]
+          (prepare-object [objects selected+children {:keys [type] :as obj}]
+            (let [obj (maybe-translate obj objects selected+children)]
               (if (= type :image)
                 (let [url (cfg/resolve-file-media (:metadata obj))]
                   (->> (http/send! {:method :get
@@ -1265,9 +1129,9 @@
                   (update res :images conj img-part))
                 res)))
 
-          (maybe-translate [shape objects selected]
+          (maybe-translate [shape objects selected+children]
             (if (and (not= (:type shape) :frame)
-                     (not (contains? selected (:frame-id shape))))
+                     (not (contains? selected+children (:frame-id shape))))
               ;; When the parent frame is not selected we change to relative
               ;; coordinates
               (let [frame (get objects (:frame-id shape))]
@@ -1284,6 +1148,8 @@
         (let [objects  (wsh/lookup-page-objects state)
               selected (->> (wsh/lookup-selected state)
                             (cph/clean-loops objects))
+
+              selected+children (cph/selected-with-children objects selected)
               pdata    (reduce (partial collect-object-ids objects) {} selected)
               initial  {:type :copied-shapes
                         :file-id (:current-file-id state)
@@ -1293,7 +1159,7 @@
 
 
           (->> (rx/from (seq (vals pdata)))
-               (rx/merge-map (partial prepare-object objects selected))
+               (rx/merge-map (partial prepare-object objects selected+children))
                (rx/reduce collect-data initial)
                (rx/map (partial sort-selected state))
                (rx/map t/encode-str)
@@ -1553,7 +1419,7 @@
                                  (into (d/ordered-set)))]
 
               (rx/of (dch/commit-changes changes)
-                     (dwc/select-shapes selected))))]
+                     (dws/select-shapes selected))))]
 
     (ptk/reify ::paste-shape
       ptk/WatchEvent
@@ -1602,7 +1468,7 @@
                     :content (as-content text)})]
         (rx/of (dwu/start-undo-transaction)
                (dws/deselect-all)
-               (dwc/add-shape shape)
+               (dwsh/add-shape shape)
                (dwu/commit-undo-transaction))))))
 
 ;; TODO: why not implement it in terms of upload-media-workspace?
@@ -1673,21 +1539,23 @@
     (watch [_ state _]
       (let [page-id       (:current-page-id state)
             objects       (wsh/lookup-page-objects state page-id)
-            shapes        (cph/get-immediate-children objects)
             selected      (wsh/lookup-selected state)
-            selected-objs (map #(get objects %) selected)
-            has-frame?    (some #(= (:type %) :frame) selected-objs)]
-        (when (not (or (empty? selected) has-frame?))
+            selected-objs (map #(get objects %) selected)]
+        (when (d/not-empty? selected)
           (let [srect    (gsh/selection-rect selected-objs)
-                frame-id (:frame-id (first shapes))
+                frame-id (get-in objects [(first selected) :frame-id])
+                parent-id (get-in objects [(first selected) :parent-id])
                 shape    (-> (cp/make-minimal-shape :frame)
                              (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
-                             (assoc :frame-id frame-id)
+                             (assoc :frame-id frame-id :parent-id parent-id)
+                             (cond-> (not= frame-id uuid/zero)
+                               (assoc :fills [] :hide-in-viewer true))
                              (cp/setup-rect-selrect))]
             (rx/of
              (dwu/start-undo-transaction)
-             (dwc/add-shape shape)
-             (dwc/move-shapes-into-frame (:id shape) selected)
+             (dwsh/add-shape shape)
+             (dwsh/move-shapes-into-frame (:id shape) selected)
+
              (dwu/commit-undo-transaction))))))))
 
 
@@ -1710,10 +1578,10 @@
 (dm/export dwly/set-opacity)
 
 ;; Common
-(dm/export dwc/add-shape)
-(dm/export dwc/clear-edition-mode)
-(dm/export dwc/select-shapes)
-(dm/export dwc/start-edition-mode)
+(dm/export dwsh/add-shape)
+(dm/export dwe/clear-edition-mode)
+(dm/export dws/select-shapes)
+(dm/export dwe/start-edition-mode)
 
 ;; Drawing
 (dm/export dwd/select-for-drawing)
@@ -1761,3 +1629,10 @@
 
 ;; Thumbnails
 (dm/export dwth/update-thumbnail)
+
+;; Viewport
+(dm/export dwv/initialize-viewport)
+(dm/export dwv/update-viewport-position)
+(dm/export dwv/update-viewport-size)
+(dm/export dwv/start-panning)
+(dm/export dwv/finish-panning)

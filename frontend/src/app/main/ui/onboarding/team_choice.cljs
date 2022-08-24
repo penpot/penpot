@@ -102,7 +102,7 @@
   [{:value "editor" :label (tr "labels.editor")}
    {:value "admin" :label (tr "labels.admin")}])
 
-(s/def ::emails (s/and ::us/set-of-emails d/not-empty?))
+(s/def ::emails (s/and ::us/set-of-valid-emails d/not-empty?))
 (s/def ::role  ::us/keyword)
 (s/def ::invite-form
   (s/keys :req-un [::role ::emails]))
@@ -171,7 +171,8 @@
                               :auto-focus? true
                               :trim true
                               :valid-item-fn us/parse-email
-                              :label (tr "modals.invite-member.emails")}]
+                              :label (tr "modals.invite-member.emails")
+                              :on-submit  on-submit}]
           [:& fm/select {:name :role :options roles}]]
 
        [:div.buttons

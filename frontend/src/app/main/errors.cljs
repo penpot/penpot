@@ -21,6 +21,7 @@
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
 (defn on-error
@@ -44,6 +45,14 @@
 
 ;; Set the main potok error handler
 (reset! st/on-error on-error)
+
+(defmethod ptk/handle-error :default
+  [error]
+  (let [hint (str/concat "Unexpected error: " (:hint error))]
+    (ts/schedule #(st/emit! (rt/assign-exception error)))
+    (js/console.group hint)
+    (ex/ignoring (js/console.error (pr-str error)))
+    (js/console.groupEnd hint)))
 
 ;; We receive a explicit authentication error; this explicitly clears
 ;; all profile data and redirect the user to the login page. This is
@@ -104,7 +113,6 @@
       (js/console.groupEnd "Spec explain:"))
 
     (js/console.groupEnd msg)))
-
 
 ;; Error on parsing an SVG
 ;; TODO: looks unused and deprecated
@@ -187,14 +195,20 @@
 
 (defn on-unhandled-error
   [error]
-  (if (instance? ExceptionInfo error)
-    (-> error ex-data ptk/handle-error)
-    (let [hint (ex-message error)
-          msg  (dm/str "Unhandled Internal Error: " hint)]
-      (ts/schedule #(st/emit! (rt/assign-exception error)))
-      (js/console.group msg)
-      (ex/ignoring (js/console.error error))
-      (js/console.groupEnd msg))))
+  (letfn [(is-ignorable-exception? [cause]
+            (let [message (ex-message cause)]
+              (or (= message "Possible side-effect in debug-evaluate")
+                  (= message "Unexpected end of input") true
+                  (str/starts-with? message "Unexpected token "))))]
+    (if (instance? ExceptionInfo error)
+      (-> error ex-data ptk/handle-error)
+      (when-not (is-ignorable-exception? error)
+        (let [hint (ex-message error)
+              msg  (dm/str "Unhandled Internal Error: " hint)]
+          (ts/schedule #(st/emit! (rt/assign-exception error)))
+          (js/console.group msg)
+          (ex/ignoring (js/console.error error))
+          (js/console.groupEnd msg))))))
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]

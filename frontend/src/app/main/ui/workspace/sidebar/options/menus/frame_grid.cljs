@@ -245,7 +245,7 @@
         handle-create-grid  (mf/use-fn (mf/deps id) #(st/emit! (dw/add-frame-grid id)))]
     [:div.element-set
      [:div.element-set-title
-      [:span (tr "workspace.options.grid.title")]
+      [:span (tr "workspace.options.grid.grid-title")]
       [:div.add-page {:on-click handle-create-grid} i/close]]
 
      (when (seq (:grids shape))

@@ -23,7 +23,7 @@
                 (some? text-modifier)
                 (dwt/apply-text-modifier text-modifier))
 
-        transform (gsh/transform-matrix shape {:no-flip true})
+        transform (gsh/transform-str shape {:no-flip true})
         {:keys [x y width height]} shape]
 
     [:rect.main.viewport-selrect
@@ -31,7 +31,7 @@
       :y y
       :width width
       :height height
-      :transform (str transform)
+      :transform transform
       :style {:stroke "var(--color-select)"
               :stroke-width (/ 1 zoom)
               :fill "none"}}]))

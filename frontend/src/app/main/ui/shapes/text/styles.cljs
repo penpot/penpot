@@ -63,7 +63,6 @@
    (let [letter-spacing  (:letter-spacing data 0)
          text-decoration (:text-decoration data)
          text-transform  (:text-transform data)
-         line-height     (:line-height data 1.2)
 
          font-id         (:font-id data (:font-id txt/default-text-attrs))
          font-variant-id (:font-variant-id data)
@@ -80,13 +79,12 @@
 
          base            #js {:textDecoration text-decoration
                               :textTransform text-transform
-                              :lineHeight (or line-height "1.2")
                               :color (if show-text? text-color "transparent")
                               :caretColor (or text-color "black")
                               :overflowWrap "initial"
                               :lineBreak "auto"
-                              :whiteSpace "break-spaces"}
-
+                              :whiteSpace "break-spaces"
+                              :textRendering "geometricPrecision"}
          fills
          (cond
            (some? (:fills data))

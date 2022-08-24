@@ -13,8 +13,8 @@
    [app.common.path.shapes-to-path :as upsp]
    [app.common.spec :as us]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.common :as dwdc]
+   [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.helpers :as helpers]
@@ -276,7 +276,7 @@
     (watch [_ _ _]
       (rx/of (setup-frame-path)
              (dwdc/handle-finish-drawing)
-             (dwc/start-edition-mode shape-id)
+             (dwe/start-edition-mode shape-id)
              (change-edit-mode :draw)))))
 
 (defn handle-new-shape

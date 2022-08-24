@@ -51,7 +51,7 @@
 (mf/defc export-dialog
   {::mf/register modal/components
    ::mf/register-as :export}
-  [{:keys [team-id files has-libraries?]}]
+  [{:keys [team-id files has-libraries? binary?]}]
   (let [state (mf/use-state {:status :prepare
                              :files  (->> files (mapv #(assoc % :loading? true)))})
         selected-option (mf/use-state :all)
@@ -60,10 +60,11 @@
         (fn []
           (swap! state assoc :status :exporting)
           (->> (uw/ask-many!
-                {:cmd :export-file
+                {:cmd (if binary? :export-binary-file :export-standard-file)
                  :team-id team-id
                  :export-type @selected-option
-                 :files (->> files (mapv :id))})
+                 :files files
+                 })
                (rx/delay-emit 1000)
                (rx/subs
                 (fn [msg]
@@ -73,6 +74,7 @@
                   (when  (= :finish (:type msg))
                     (swap! state update :files mark-file-success (:file-id msg))
                     (dom/trigger-download-uri (:filename msg) (:mtype msg) (:uri msg)))))))
+
         cancel-fn
         (mf/use-callback
          (fn [event]

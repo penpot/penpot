@@ -71,7 +71,7 @@
                :stroke-opacity 1}]}
 
    {:type :frame
-    :name "Artboard-1"
+    :name "Board-1"
     :fills [{:fill-color clr/white
              :fill-opacity 1}]
     :strokes []

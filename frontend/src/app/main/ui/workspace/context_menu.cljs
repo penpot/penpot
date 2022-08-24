@@ -8,8 +8,9 @@
   "A workspace specific context menu (mouse right click)."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
-   [app.common.spec.page :as csp]
+   [app.common.types.page :as ctp]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -123,17 +124,25 @@
      [:& menu-separator]]))
 
 (mf/defc context-menu-layer-position
-  [{:keys [hover-objs shapes]}]
-  (let [do-bring-forward  #(st/emit! (dw/vertical-order-selected :up))
-        do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
-        do-send-backward  #(st/emit! (dw/vertical-order-selected :down))
-        do-send-to-back   #(st/emit! (dw/vertical-order-selected :bottom))
-        select-shapes     (fn [id] #(st/emit! (dws/select-shape id)))]
+  [{:keys [shapes]}]
+  (let [do-bring-forward  (mf/use-fn #(st/emit! (dw/vertical-order-selected :up)))
+        do-bring-to-front (mf/use-fn #(st/emit! (dw/vertical-order-selected :top)))
+        do-send-backward  (mf/use-fn #(st/emit! (dw/vertical-order-selected :down)))
+        do-send-to-back   (mf/use-fn #(st/emit! (dw/vertical-order-selected :bottom)))
+        select-shapes     (fn [id] #(st/emit! (dws/select-shape id)))
+
+        ;; NOTE: we use deref instead of mf/deref on objects because
+        ;; we really don't want rerender on object changes
+        hover-ids         (deref refs/current-hover-ids)
+        objects           (deref refs/workspace-page-objects)
+        hover-objs        (into [] (keep (d/getf objects)) hover-ids)]
+
     [:*
      (when (> (count hover-objs) 1)
        [:& menu-entry {:title (tr "workspace.shape.menu.select-layer")}
         (for [object hover-objs]
           [:& menu-entry {:title (:name object)
+                          :key (dm/str (:id object))
                           :selected? (some #(= object %) shapes)
                           :on-click (select-shapes (:id object))
                           :icon (si/element-icon {:shape object})}])])
@@ -191,7 +200,6 @@
         has-group? (->> shapes (d/seek #(= :group (:type %))))
         has-bool? (->> shapes (d/seek #(= :bool (:type %))))
         has-mask? (->> shapes (d/seek :masked-group?))
-        has-frame? (->> shapes (d/seek #(= :frame (:type %))))
 
         is-group? (and single? has-group?)
         is-bool? (and single? has-bool?)
@@ -207,10 +215,9 @@
                        :shortcut (sc/get-tooltip :ungroup)
                        :on-click do-remove-group}])
 
-     (when (not has-frame?)
-       [:& menu-entry {:title (tr "workspace.shape.menu.group")
-                       :shortcut (sc/get-tooltip :group)
-                       :on-click do-create-group}])
+     [:& menu-entry {:title (tr "workspace.shape.menu.group")
+                     :shortcut (sc/get-tooltip :group)
+                     :on-click do-create-group}]
 
      (when (or multiple? (and is-group? (not has-mask?)) is-bool?)
        [:& menu-entry {:title (tr "workspace.shape.menu.mask")
@@ -222,12 +229,10 @@
                        :shortcut (sc/get-tooltip :unmask)
                        :on-click do-unmask-group}])
 
-     (when (not has-frame?)
-       [:*
-        [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
-                        :shortcut (sc/get-tooltip :artboard-selection)
-                        :on-click do-create-artboard-from-selection}]
-        [:& menu-separator]])]))
+     [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
+                     :shortcut (sc/get-tooltip :artboard-selection)
+                     :on-click do-create-artboard-from-selection}]
+     [:& menu-separator]]))
 
 (mf/defc context-focus-mode-menu
   [{:keys []}]
@@ -333,7 +338,7 @@
         is-frame?       (and single? has-frame?)]
 
     (when (and prototype? is-frame?)
-      (let [flow (csp/get-frame-flow flows (-> shapes first :id))]
+      (let [flow (ctp/get-frame-flow flows (-> shapes first :id))]
         (if (some? flow)
           [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
                           :on-click (do-remove-flow flow)}]
@@ -439,14 +444,11 @@
                     :on-click do-delete}]))
 
 (mf/defc shape-context-menu
+  {::mf/wrap [mf/memo]}
   [{:keys [mdata] :as props}]
   (let [{:keys [disable-booleans? disable-flatten?]} mdata
         shapes (mf/deref refs/selected-objects)
-        hover-ids (mf/deref refs/current-hover-ids)
-        hover-objs (mf/deref (refs/objects-by-id hover-ids))
-
         props #js {:shapes shapes
-                   :hover-objs hover-objs
                    :disable-booleans? disable-booleans?
                    :disable-flatten? disable-flatten?}]
     (when-not (empty? shapes)

@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.transit :as t]
-   [app.http.doc :as doc]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
@@ -67,8 +66,10 @@
                  :xnio/worker-threads (:worker-threads cfg)
                  :xnio/dispatch (:executor cfg)
                  :ring/async true}
+
         handler (if (some? router)
                   (wrap-router router)
+
                   handler)
         server  (yt/server handler (d/without-nils options))]
     (assoc cfg :server (yt/start! server))))
@@ -113,23 +114,35 @@
 ;; HTTP ROUTER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::rpc map?)
 (s/def ::oauth map?)
 (s/def ::storage map?)
 (s/def ::assets map?)
 (s/def ::feedback fn?)
 (s/def ::ws fn?)
 (s/def ::audit-handler fn?)
-(s/def ::debug map?)
 (s/def ::awsns-handler fn?)
 (s/def ::session map?)
+(s/def ::rpc-routes (s/nilable vector?))
+(s/def ::debug-routes (s/nilable vector?))
+(s/def ::oidc-routes (s/nilable vector?))
+(s/def ::doc-routes (s/nilable vector?))
 
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::rpc ::mtx/metrics ::ws ::oauth ::storage ::assets
-                   ::session ::feedback ::awsns-handler ::debug ::audit-handler]))
+  (s/keys :req-un [::mtx/metrics
+                   ::ws
+                   ::storage
+                   ::assets
+                   ::session
+                   ::feedback
+                   ::awsns-handler
+                   ::debug-routes
+                   ::oidc-routes
+                   ::audit-handler
+                   ::rpc-routes
+                   ::doc-routes]))
 
 (defmethod ig/init-key ::router
-  [_ {:keys [ws session rpc oauth metrics assets feedback debug] :as cfg}]
+  [_ {:keys [ws session metrics assets feedback] :as cfg}]
   (rr/router
    [["" {:middleware [[middleware/server-timing]
                       [middleware/format-response]
@@ -137,20 +150,14 @@
                       [middleware/parse-request]
                       [middleware/errors errors/handle]
                       [middleware/restrict-methods]]}
+
      ["/metrics" {:handler (:handler metrics)}]
      ["/assets" {:middleware [(:middleware session)]}
       ["/by-id/:id" {:handler (:objects-handler assets)}]
       ["/by-file-media-id/:id" {:handler (:file-objects-handler assets)}]
       ["/by-file-media-id/:id/thumbnail" {:handler (:file-thumbnails-handler assets)}]]
 
-     ["/dbg" {:middleware [(:middleware session)]}
-      ["" {:handler (:index debug)}]
-      ["/changelog" {:handler (:changelog debug)}]
-      ["/error-by-id/:id" {:handler (:retrieve-error debug)}]
-      ["/error/:id" {:handler (:retrieve-error debug)}]
-      ["/error" {:handler (:retrieve-error-list debug)}]
-      ["/file/data" {:handler (:file-data debug)}]
-      ["/file/changes" {:handler (:retrieve-file-changes debug)}]]
+     (:debug-routes cfg)
 
      ["/webhooks"
       ["/sns" {:handler (:awsns-handler cfg)
@@ -161,22 +168,12 @@
                            :allowed-methods #{:get}}]
 
      ["/api" {:middleware [[middleware/cors]
-                           (:middleware session)]}
-      ["/health" {:handler (:health-check debug)}]
-      ["/_doc" {:handler (doc/handler rpc)
-                :allowed-methods #{:get}}]
-      ["/feedback" {:handler feedback
-                    :allowed-methods #{:post}}]
-
-      ["/auth/oauth/:provider" {:handler (:handler oauth)
-                                :allowed-methods #{:post}}]
-      ["/auth/oauth/:provider/callback" {:handler (:callback-handler oauth)
-                                         :allowed-methods #{:get}}]
-
+                           [(:middleware session)]]}
       ["/audit/events" {:handler (:audit-handler cfg)
                         :allowed-methods #{:post}}]
+      ["/feedback" {:handler feedback
+                    :allowed-methods #{:post}}]
+      (:doc-routes cfg)
+      (:oidc-routes cfg)
+      (:rpc-routes cfg)]]]))
 
-      ["/rpc"
-       ["/query/:type" {:handler (:query-handler rpc)}]
-       ["/mutation/:type" {:handler (:mutation-handler rpc)
-                           :allowed-methods #{:post}}]]]]]))

@@ -450,13 +450,33 @@
                          (->> (uz/compress-files data)
                               (rx/map #(vector (get files file-id) %)))))))))
 
-(defmethod impl/handler :export-file
+(defmethod impl/handler :export-binary-file
+  [{:keys [files export-type] :as message}]
+  (->> (rx/from files)
+       (rx/mapcat
+        (fn [file]
+          (->> (rp/command! :export-binfile {:file-id (:id file)
+                                             :include-libraries? (= export-type :all)
+                                             :embed-assets? (= export-type :merge)})
+               (rx/map #(hash-map :type :finish
+                                  :file-id (:id file)
+                                  :filename (:name file)
+                                  :mtype "application/penpot"
+                                  :description "Penpot export (*.penpot)"
+                                  :uri (wapi/create-uri (wapi/create-blob %))))
+               (rx/catch
+                (fn [err]
+                  (rx/of {:type :error
+                          :error (str err)
+                          :file-id (:id file)}))))))))
+
+(defmethod impl/handler :export-standard-file
   [{:keys [team-id files export-type] :as message}]
 
   (->> (rx/from files)
        (rx/mapcat
         (fn [file]
-          (->> (export-file team-id file export-type)
+          (->> (export-file team-id (:id file) export-type)
                (rx/map
                 (fn [value]
                   (if (contains? value :type)
@@ -465,11 +485,11 @@
                       {:type :finish
                        :file-id (:id file)
                        :filename (:name file)
-                       :mtype "application/penpot"
-                       :description "Penpot export (*.penpot)"
+                       :mtype "application/zip"
+                       :description "Penpot export (*.zip)"
                        :uri (wapi/create-uri export-blob)}))))
                (rx/catch
                    (fn [err]
                      (rx/of {:type :error
                              :error (str err)
-                             :file-id file}))))))))
+                             :file-id (:id file)}))))))))

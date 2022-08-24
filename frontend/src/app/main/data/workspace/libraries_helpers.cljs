@@ -8,17 +8,17 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.spec.color :as color]
    [app.common.text :as txt]
-   [app.main.data.workspace.common :as dwc]
+   [app.common.types.color :as ctc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.util.names :as un]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]))
 
@@ -144,13 +144,13 @@
         delta     (gpt/subtract position orig-pos)
 
         objects   (:objects page)
-        unames    (volatile! (dwc/retrieve-used-names objects))
+        unames    (volatile! (un/retrieve-used-names objects))
 
         frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
 
         update-new-shape
         (fn [new-shape original-shape]
-          (let [new-name (dwc/generate-unique-name @unames (:name new-shape))]
+          (let [new-name (un/generate-unique-name @unames (:name new-shape))]
 
             (when (nil? (:parent-id original-shape))
               (vswap! unames conj new-name))
@@ -158,7 +158,7 @@
             (cond-> new-shape
               true
               (as-> $
-                (geom/move $ delta)
+                (gsh/move $ delta)
                 (assoc $ :frame-id frame-id)
                 (assoc $ :parent-id
                        (or (:parent-id $) (:frame-id $)))
@@ -299,7 +299,7 @@
 
 (defmethod uses-assets? :colors
   [_ shape library-id _]
-  (color/uses-library-colors? shape library-id))
+  (ctc/uses-library-colors? shape library-id))
 
 (defmethod uses-assets? :typographies
   [_ shape library-id _]
@@ -331,7 +331,7 @@
   (let [library-colors (get-assets library-id :colors state)]
     (pcb/update-shapes changes
                        [(:id shape)]
-                       #(color/sync-shape-colors % library-id library-colors))))
+                       #(ctc/sync-shape-colors % library-id library-colors))))
 
 (defmethod generate-sync-shape :typographies
   [_ changes library-id state container shape]
@@ -1150,7 +1150,7 @@
         origin-root-pos (shape-pos origin-root)
         dest-root-pos   (shape-pos dest-root)
         delta           (gpt/subtract dest-root-pos origin-root-pos)]
-    (geom/move shape delta)))
+    (gsh/move shape delta)))
 
 (defn- make-change
   [container change]
