@@ -81,8 +81,8 @@
      (deref [_] cause)))
 
 
-(ns-unmap 'app.common.exceptions '->WrappedException)
-(ns-unmap 'app.common.exceptions 'map->WrappedException)
+#?(:clj (ns-unmap 'app.common.exceptions '->WrappedException))
+#?(:clj (ns-unmap 'app.common.exceptions 'map->WrappedException))
 
 (defn wrapped?
   [o]
