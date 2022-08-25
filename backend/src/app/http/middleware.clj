@@ -115,7 +115,7 @@
 
           (format-response [response request]
             (let [body (yrs/body response)]
-              (if (coll? body)
+              (if (or (boolean? body) (coll? body))
                 (let [qs   (yrq/query request)
                       opts (if (or (contains? cf/flags :transit-readable-response)
                                    (str/includes? qs "transit_verbose"))
