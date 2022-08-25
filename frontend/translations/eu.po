@@ -1,2 +1,211 @@
 msgid ""
-msgstr "X-Generator: Weblate\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit"
+msgstr ""
+"PO-Revision-Date: 2022-08-25 13:21+0000\n"
+"Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
+"Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
+"eu/>\n"
+"Language: eu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.14-dev\n"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Baieztatu pasahitza"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Sortu probak egiteko kontua"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Baduzu kontua?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Begiratu zure eposta eta egin klik egiaztapen estekan Penpot erabiltzen "
+"hasteko."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Probatu egin nahi al duzu?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Hau PROBAK EGITEKO zerbitzua da. EZ ERABILI benetako lana egiteko, hemengo "
+"proiektuak noizean behin ezabatu egingo dira."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Posta elektronikoa"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Izen osoa"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Sartu"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Sartu"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Ongi etorri berriz ere!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "Sartu LDAP erabiliz"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID Connect"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Sartu Pasahitz berria"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Ados nago Penpoten posta zerrendara harpidetza egitearekin"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Berreskuratzeko kodea ez da zuzena."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Pasahitza ondo aldatu da"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "Profila ez da oraindik egiaztatu, egiaztatu ezazu jarraitu aurretik."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Eposta mezu bat bidali dizugu zure pasahitza berreskuratzeko."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Taldera ondo gehitu zara"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Pasahitza"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Gutxienez 8 karaktere"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Sortu kontua"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Doakoa da, Kode Irekia da"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Sortu kontua"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Diseinuak eta prototipoak egiteko kode irekiko soluzioa."
+
+msgid "auth.terms-of-service"
+msgstr "Zerbitzuaren erabilpen-baldintzak"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Egiaztapen mezu bat bidali dugu helbide honetara"
+
+msgid "common.share-link.all-users"
+msgstr "Penpoten erabiltzaile guztiak"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Esteka ezabatu nahi duzu? Hori egiten baduzu, inori ez dio funtzionatuko"
+
+msgid "common.share-link.current-tag"
+msgstr "(oraingoa)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Ezabatu esteka"
+
+msgid "common.share-link.get-link"
+msgstr "Lortu esteka"
+
+msgid "common.share-link.manage-ops"
+msgstr "Kudeatu baimenak"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Iruzkinak egin ditzakete"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Kodea ikus dezakete"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Esteka duen edonor sar daiteke"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Ez duzu konturik?"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Pasahitza ahaztu duzu?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Aldatu pasahitza"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Pasahitza ahaztu duzu?"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Mezu bat bidaliko dizugu epostaz jarraibideekin"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Esteka ondo ezabatu da"
+
+msgid "auth.privacy-policy"
+msgstr "Pribatutasun politika"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Berreskuratu pasahitza"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Kontu berri bat sortzean, gure erabilpen-baldintzak eta pribatutasun "
+"politika onartzen dituzu."
+
+msgid "common.share-link.link-copied-success"
+msgstr "Esteka ondo kopiatu da"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "Orrialde 1 partekatuta"
+msgstr[1] "%s orrialde partekatuta"
