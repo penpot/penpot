@@ -52,6 +52,12 @@
     :labels ["name"]
     :type :histogram}
 
+   :rpc-command-timing
+   {:name "rpc_command_timing"
+    :help "RPC command method call timming."
+    :labels ["name"]
+    :type :histogram}
+
    :rpc-query-timing
    {:name "rpc_query_timing"
     :help "RPC query method call timing."
