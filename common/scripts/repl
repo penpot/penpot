@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export PENPOT_FLAGS="enable-asserts enable-audit-log $PENPOT_FLAGS"
-export OPTIONS="-A:dev -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -J-XX:+UseZGC -J-XX:ConcGCThreads=1 -J-XX:-OmitStackTraceInFastThrow -J-Xms50m -J-Xmx512m";
+export OPTIONS="-A:dev -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -J-XX:+UseG1GC -J-XX:-OmitStackTraceInFastThrow -J-Xms50m -J-Xmx512m";
 export OPTIONS_EVAL="nil"
 # export OPTIONS_EVAL="(set! *warn-on-reflection* true)"
 
