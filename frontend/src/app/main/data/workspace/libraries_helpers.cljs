@@ -242,7 +242,7 @@
     (log/debug :msg "Sync component in local library" :component-id (:id container)))
 
   (let [linked-shapes (->> (vals (:objects container))
-                           (filter #(uses-assets? asset-type asset-id % library-id)))]
+                           (filter #(uses-assets? asset-type asset-id % library-id (cph/component? container))))]
     (loop [shapes (seq linked-shapes)
            changes (-> (pcb/empty-changes it)
                        (pcb/with-container container)
@@ -260,22 +260,26 @@
 
 (defmulti uses-assets?
   "Checks if a shape uses some asset of the given type in the given library."
-  (fn [asset-type _ _ _] asset-type))
+  (fn [asset-type _ _ _ _] asset-type))
 
 (defmethod uses-assets? :components
-  [_ component-id shape library-id]
-  (if (nil? component-id)
-    (ctk/uses-library-components? shape library-id)
-    (ctk/instance-of? shape library-id component-id)))
+  [_ component-id shape library-id component?]
+  (and (if (nil? component-id)
+         (ctk/uses-library-components? shape library-id)
+         (ctk/instance-of? shape library-id component-id))
+       ;; Subinstances are synced with the near component, not the remote.
+       ;; So an instance that is not root, cannot be considered "using"
+       ;; the component.
+       (or (:component-root? shape) component?)))
 
 (defmethod uses-assets? :colors
-  [_ color-id shape library-id]
+  [_ color-id shape library-id _]
   (if (nil? color-id)
     (ctc/uses-library-colors? shape library-id)
     (ctc/uses-library-color? shape library-id color-id)))
 
 (defmethod uses-assets? :typographies
-  [_ typography-id shape library-id]
+  [_ typography-id shape library-id _]
   (if (nil? typography-id)
     (cty/uses-library-typographies? shape library-id)
     (cty/uses-library-typography? shape library-id typography-id)))

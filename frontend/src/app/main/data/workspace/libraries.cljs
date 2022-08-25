@@ -754,8 +754,8 @@
                                    :library-id library-id})))
             (when (and (seq (:redo-changes library-changes))
                        sync-components?)
-              (rx/of (sync-file-2nd-stage file-id library-id asset-id))))))))))
-
+              (rx/of (sync-file-2nd-stage file-id library-id nil)))))))))) ; In 2nd stage the original asset is not used
+                                                                            ; because other components may have changed
 (defn- sync-file-2nd-stage
   "If some components have been modified, we need to launch another synchronization
   to update the instances of the changed components."
