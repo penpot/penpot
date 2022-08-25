@@ -10,7 +10,6 @@
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
   display: flex;
-  justify-content: center;
   align-items: center;
   flex-flow: wrap;
   overflow: auto;
@@ -56,8 +55,8 @@
   }
 
   & .viewer-go-next {
-    right: 0;
-    padding-right: 29px;
+    right: 8px;
+    width: 46px;
     svg {
       margin-left: 2px;
     }
@@ -81,12 +80,13 @@
 
   & .viewer-bottom {
     position: absolute;
-    bottom: 0;
-    height: 50px;
+    bottom: 8px;
+    height: 30px;
     width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    z-index: 2;
 
     &.left-bar {
       width: calc(100% - 512px);
@@ -128,6 +128,8 @@
   }
 
   & .viewer-wrapper {
+    margin-left: auto;
+    margin-right: auto;
     position: relative;
   }
 
