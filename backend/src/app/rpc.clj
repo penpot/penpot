@@ -204,7 +204,6 @@
 (defn- process-method
   [cfg vfn]
   (let [mdata (meta vfn)]
-    ;; (prn mdata)
     [(keyword (::sv/name mdata))
      (wrap cfg vfn mdata)]))
 

@@ -54,7 +54,7 @@
    ::mf/wrap [mf/memo]}
   [props]
 
-  (let [render-id (mf/use-ctx muc/render-ctx)
+  (let [render-id (mf/use-ctx muc/render-id)
         shape (obj/get props "shape")
         shape (cond-> shape (:is-mask? shape) set-white-fill)
 
@@ -109,6 +109,6 @@
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
 
-          [:& (mf/provider muc/render-ctx) {:key index :value (str render-id "_" (:id shape) "_" index)}
+          [:& (mf/provider muc/render-id) {:key index :value (str render-id "_" (:id shape) "_" index)}
            [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
             [:> :text props (:text data)]]]))]]))

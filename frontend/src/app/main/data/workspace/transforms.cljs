@@ -17,6 +17,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.shape-tree :as ctt]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.comments :as-alias dwcm]
@@ -762,7 +763,17 @@
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
-                (pcb/update-shapes moving-frames (fn [shape] (assoc shape :hide-in-viewer true)))
+                (pcb/update-shapes moving-frames
+                                   (fn [shape]
+                                     ;; Hide in viwer must be enabled just when a board is moved
+                                     ;; inside another artboard an nested to it, we have to avoid
+                                     ;; situations like: - Moving inside the same frame - Moving
+                                     ;; outside the frame
+                                     (cond-> shape
+                                       (and (not= frame-id (:id shape))
+                                            (not= frame-id (:frame-id shape))
+                                            (not= frame-id uuid/zero))
+                                       (assoc :hide-in-viewer true))))
                 (pcb/change-parent frame-id moving-shapes))]
 
         (when-not (empty? changes)

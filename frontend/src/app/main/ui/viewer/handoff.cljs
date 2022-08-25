@@ -6,13 +6,13 @@
 
 (ns app.main.ui.viewer.handoff
   (:require
-   [app.main.data.viewer :as dv]   
+   [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.viewer.handoff.left-sidebar :refer [left-sidebar]]
    [app.main.ui.viewer.handoff.render :refer [render-frame-svg]]
    [app.main.ui.viewer.handoff.right-sidebar :refer [right-sidebar]]
    [app.util.dom :as dom]
-   [app.util.keyboard :as kbd]   
+   [app.util.keyboard :as kbd]
    [goog.events :as events]
    [rumext.alpha :as mf])
   (:import goog.events.EventType))

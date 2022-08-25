@@ -342,6 +342,13 @@
                   (some? list)
                   (assoc :list list)))))))
 
+(defn update-options
+  [params]
+  (ptk/reify ::update-options
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :comments-local merge params))))
+
 (s/def ::create-draft-params
   (s/keys :req-un [::page-id ::file-id ::position]))
 

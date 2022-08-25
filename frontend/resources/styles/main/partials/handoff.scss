@@ -330,26 +330,13 @@
   }
 
   .code-row-lang {
+    color: $color-gray-10;
     position: relative;
     display: flex;
     flex-direction: row;
+    font-size: $fs14;
     margin: 0.5rem;
 
-    .code-selection {
-      height: 100%;
-      margin: 0;
-      padding: 0.5rem;
-      width: 4.5rem;
-      font-size: $fs12;
-      background: $color-gray-50;
-      color: $color-gray-10;
-      border-radius: 2px;
-      border: 1px solid $color-gray-30;
-      background-image: url("/images/icons/arrow-down-white.svg");
-      background-repeat: no-repeat;
-      background-position: 90% 48%;
-      background-size: 8px;
-    }
     .expand-button,
     .copy-button {
       margin-top: 8px;

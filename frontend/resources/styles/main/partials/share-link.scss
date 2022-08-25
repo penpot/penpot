@@ -1,4 +1,5 @@
 .share-modal {
+  background: none;
   display: block;
   top: 50px;
   left: calc(100vw - 500px);
@@ -7,6 +8,7 @@
     width: 480px;
     background-color: $color-white;
     box-shadow: 0px 2px 8px 0px rgb(0 0 0 / 20%);
+
     .modal-content {
       padding: 16px 32px;
       &:first-child {

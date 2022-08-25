@@ -37,6 +37,14 @@
   (when (some? e)
     (.-target e)))
 
+(defn event->native-event
+  [^js e]
+  (.-nativeEvent e))
+
+(defn event->browser-event
+  [^js e]
+  (.getBrowserEvent e))
+
 ;; --- New methods
 
 (declare get-elements-by-tag)

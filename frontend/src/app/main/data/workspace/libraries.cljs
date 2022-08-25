@@ -238,10 +238,12 @@
 
 (defn- do-update-tipography
   [it state typography file-id]
-  (let [data    (get state :workspace-data)
-        changes (-> (pcb/empty-changes it)
-                    (pcb/with-library-data data)
-                    (pcb/update-typography typography))]
+  (let [data        (get state :workspace-data)
+        [path name] (cph/parse-path-name (:name typography))
+        typography  (assoc typography :path path :name name)
+        changes     (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/update-typography typography))]
     (rx/of (dwu/start-undo-transaction)
            (dch/commit-changes changes)
            (sync-file (:current-file-id state) file-id :typographies (:id typography))
@@ -264,9 +266,9 @@
   (ptk/reify ::rename-typography
     ptk/WatchEvent
     (watch [it state _]
-      (let [data    (get state :workspace-data)
+      (let [data        (get state :workspace-data)
             [path name] (cph/parse-path-name new-name)
-            object  (get-in data [:typographies id])
+            object      (get-in data [:typographies id])
             new-object  (assoc object :path path :name name)]
         (do-update-tipography it state new-object file-id)))))
 

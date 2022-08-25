@@ -132,8 +132,8 @@
 (defn get-base
   [objects id-a id-b]
 
-  (let [parents-a (reverse (cph/get-parents-seq objects id-a))
-        parents-b (reverse (cph/get-parents-seq objects id-b))
+  (let [parents-a (reverse (cons id-a (cph/get-parent-ids objects id-a)))
+        parents-b (reverse (cons id-b (cph/get-parent-ids objects id-b)))
 
         [base base-child-a base-child-b]
         (loop [parents-a (rest parents-a)

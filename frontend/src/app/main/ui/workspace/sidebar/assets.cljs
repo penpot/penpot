@@ -909,6 +909,17 @@
                                 (seq (:colors selected-assets))
                                 (seq (:typographies selected-assets)))
 
+        extract-path-if-missing
+        (fn [graphic]
+          (let [[path name] (cph/parse-path-name (:name graphic))]
+            (if (and
+                 (= (:name graphic) name)
+                 (contains? graphic :path))
+              graphic
+              (assoc  graphic :path path :name name))))
+        
+        objects (->> objects
+                     (map extract-path-if-missing))
 
 
         groups (group-assets objects reverse-sort?)
@@ -1572,7 +1583,6 @@
          (fn [event]
            (on-drop-asset-group event dragging? prefix selected-typographies-paths selected-typographies-full move-typography)))]
 
-
     [:div {:on-drag-enter on-drag-enter
            :on-drag-leave on-drag-leave
            :on-drag-over on-drag-over
@@ -1598,6 +1608,7 @@
              [:div.drop-space])
            (for [typography typographies]
              [:& typography-item {:typography typography
+                                  :key (dm/str (:id typography))
                                   :file file
                                   :local? local?
                                   :handle-change handle-change
@@ -1615,6 +1626,7 @@
           (when-not (empty? path-item)
             [:& typographies-group {:file-id file-id
                                     :prefix (cph/merge-path-item prefix path-item)
+                                    :key (dm/str path-item)
                                     :groups content
                                     :open-groups open-groups
                                     :file file
@@ -1642,7 +1654,9 @@
         extract-path-if-missing
         (fn [typography]
           (let [[path name] (cph/parse-path-name (:name typography))]
-            (if (= (:name typography) name)
+            (if (and
+                 (= (:name typography) name)
+                 (contains? typography :path))
               typography
               (assoc  typography :path path :name name))))
 
@@ -1957,13 +1971,11 @@
          (fn [asset-type asset-groups asset-id]
            (letfn [(flatten-groups
                      [groups]
-                     (concat
-                      (get groups "" [])
-                      (reduce concat
-                              (into []
-                                    (->> (filter #(seq (first %)) groups)
-                                         (map second)
-                                         (mapcat flatten-groups))))))]
+                     (reduce concat [(get groups "" [])
+                                     (into []
+                                           (->> (filter #(seq (first %)) groups)
+                                                (map second)
+                                                (mapcat flatten-groups)))]))]
              (let [selected-assets-type (get selected-assets asset-type)
                    count-assets (count selected-assets-type)]
                (if (<= count-assets 0)

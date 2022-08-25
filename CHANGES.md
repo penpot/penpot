@@ -52,6 +52,7 @@
 
 ### :sparkles: New features
 
+- Add some cosmetic changes in viewer mode [Taiga #3688](https://tree.taiga.io/project/penpot/us/3688)
 - Allow for nested and rotated boards inside other boards and groups [Taiga #2874](https://tree.taiga.io/project/penpot/us/2874?milestone=319982)
 - View mode improvements to enable access and use in different conditions [Taiga #3023](https://tree.taiga.io/project/penpot/us/3023)
 - Improved share link options. Now you can allow non-team members to comment and/or inspect [Taiga #3056] (https://tree.taiga.io/project/penpot/us/3056)
@@ -63,7 +64,10 @@
 
 ### :bug: Bugs fixed
 
-- Fix font rendering on grid thumbnails [Taiga #3473](https://tree.taiga.io/project/penpot/issue/3473)
+- Fix viewer scroll problems [Taiga 3403](https://tree.taiga.io/project/penpot/issue/3403)
+- Fix hide html options on handoff [Taiga 3533](https://tree.taiga.io/project/penpot/issue/3533)
+- Fix share prototypes overlay and stroke [Taiga #3994](https://tree.taiga.io/project/penpot/issue/3994)
+- Fix border radious on boolean operations [Taiga #3959](https://tree.taiga.io/project/penpot/issue/3959)
 - Fix inconsistent representation of rectangles [Taiga #3977](https://tree.taiga.io/project/penpot/issue/3977)
 - Fix recent fonts info [Taiga #3953](https://tree.taiga.io/project/penpot/issue/3953)
 - Fix clipped elements affect boards and centering [Taiga #3666](https://tree.taiga.io/project/penpot/issue/3666)
@@ -80,6 +84,8 @@
 - Fix props preserving on copy&paste texts [Taiga #3629](https://tree.taiga.io/project/penpot/issue/3629) by @andrewzhurov
 - Fix unexpected layers ungrouping on moving it [Taiga #3932](https://tree.taiga.io/project/penpot/issue/3932) by @andrewzhurov
 - Fix unexpected exception and behavior on colorpicker with gradients [Taiga #3448](https://tree.taiga.io/project/penpot/issue/3448)
+- Fix multiselection with shift not working inside a library group [Taiga #3532](https://tree.taiga.io/project/penpot/issue/3532)
+- Fix drag and drop graphic assets in groups [Taiga #4002](https://tree.taiga.io/project/penpot/issue/4002)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
@@ -91,6 +97,8 @@
 - Fix colors from unlinked libs in color selected widget [Taiga #3712](https://tree.taiga.io/project/penpot/issue/3712)
 - Fix fill information not complete when paste plain text [Taiga #3680](https://tree.taiga.io/project/penpot/issue/3680)
 - Fix problem when resizing groups [Taiga #3702](https://tree.taiga.io/project/penpot/issue/3702)
+- Fix issues on typographies assets grouping [#2073](https://github.com/penpot/penpot/issues/2073)
+- Fix text positioning inconsistencies between browsers
 
 ## 1.14.1-beta
 

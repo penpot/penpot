@@ -496,16 +496,15 @@
 ;; --- COMMAND: Update comment thread position
 
 (s/def ::update-comment-thread-position
-  (s/keys :req-un [::profile-id ::id ::position ::frame-id]))
+  (s/keys :req-un [::profile-id ::id ::position ::frame-id]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread-position
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id id position frame-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id id position frame-id share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
-      (when-not (= (:owner-id thread) profile-id)
-        (ex/raise :type :validation
-                  :code :not-allowed))
+      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
       (db/update! conn :comment-thread
                   {:modified-at (dt/now)
                    :position (db/pgpoint position)
@@ -516,16 +515,15 @@
 ;; --- COMMAND: Update comment frame
 
 (s/def ::update-comment-thread-frame
-  (s/keys :req-un [::profile-id ::id ::frame-id]))
+  (s/keys :req-un [::profile-id ::id ::frame-id]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread-frame
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id id frame-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id id frame-id share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
-      (when-not (= (:owner-id thread) profile-id)
-        (ex/raise :type :validation
-                  :code :not-allowed))
+      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
       (db/update! conn :comment-thread
                   {:modified-at (dt/now)
                    :frame-id frame-id}

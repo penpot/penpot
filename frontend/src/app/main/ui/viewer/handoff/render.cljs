@@ -188,9 +188,8 @@
 
 (mf/defc render-frame-svg
   [{:keys [page frame local size]}]
-  (let [objects (mf/use-memo
-                 (mf/deps page frame)
-                 (prepare-objects page frame size))
+  (let [objects (mf/with-memo [page frame size]
+                  (prepare-objects page frame size))
 
         ;; Retrieve frame again with correct modifier
         frame   (get objects (:id frame))

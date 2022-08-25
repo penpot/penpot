@@ -174,7 +174,9 @@
                               (fn [shape]
                                 (if (ctsr/has-radius? shape)
                                   (update-fn shape)
-                                  shape)))))
+                                  shape))
+                              {:reg-objects? true
+                               :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
 
         on-switch-to-radius-1
         (mf/use-callback

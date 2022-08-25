@@ -8,12 +8,7 @@
   (:require
    [rumext.alpha :as mf]))
 
-(def render-ctx (mf/create-context nil))
-(def def-ctx (mf/create-context false))
-
-;; This content is used to replace complex colors to simple ones
-;; for text shapes in the export process
-(def text-plain-colors-ctx (mf/create-context false))
+(def render-id          (mf/create-context nil))
 
 (def current-route      (mf/create-context nil))
 (def current-profile    (mf/create-context nil))
@@ -21,8 +16,12 @@
 (def current-project-id (mf/create-context nil))
 (def current-page-id    (mf/create-context nil))
 (def current-file-id    (mf/create-context nil))
-(def libraries          (mf/create-context nil))
-(def scroll-ctx         (mf/create-context nil))
-(def active-frames-ctx  (mf/create-context nil))
+
+(def active-frames      (mf/create-context nil))
 (def render-thumbnails  (mf/create-context nil))
+
+(def libraries          (mf/create-context nil))
 (def components-v2      (mf/create-context nil))
+
+(def current-scroll     (mf/create-context nil))
+(def current-zoom       (mf/create-context nil))

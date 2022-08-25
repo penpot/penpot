@@ -467,27 +467,21 @@
          (fn [event]
            (let [name (dom/get-target-val event)]
              (when-not (str/blank? name)
-               (on-change {:name name })))))]
+               (on-change {:name name})))))]
 
-    (mf/use-effect
-     (mf/deps editing?)
-     (fn []
-       (when editing?
-         (reset! open? editing?))))
+    (mf/with-effect [editing?]
+      (when editing?
+        (reset! open? editing?)))
 
-    (mf/use-effect
-     (mf/deps focus-name?)
-     (fn []
-       (when focus-name?
-         (tm/schedule
-          #(when-let [node (mf/ref-val name-input-ref)]
-             (dom/focus! node)
-             (dom/select-text! node))))))
+    (mf/with-effect [focus-name?]
+      (when focus-name?
+        (tm/schedule
+         #(when-let [node (mf/ref-val name-input-ref)]
+            (dom/focus! node)
+            (dom/select-text! node)))))
 
-    (mf/use-effect
-     (mf/deps on-change)
-     (fn []
-       (mf/set-ref-val! on-change-ref {:on-change on-change})))
+    (mf/with-effect [on-change]
+      (mf/set-ref-val! on-change-ref {:on-change on-change}))
 
     [:*
      [:div.element-set-options-group.typography-entry

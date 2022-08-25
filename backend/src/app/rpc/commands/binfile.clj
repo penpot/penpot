@@ -728,10 +728,15 @@
   [data]
   (letfn [(process-map-form [form]
             (cond-> form
-              ;; Relink Image Shapes
+              ;; Relink image shapes
               (and (map? (:metadata form))
                    (= :image (:type form)))
               (update-in [:metadata :id] lookup-index)
+
+              ;; Relink paths with fill image
+              (and (map? (:fill-image form))
+                   (= :path (:type form)))
+              (update-in [:fill-image :id] lookup-index)
 
               ;; This covers old shapes and the new :fills.
               (uuid? (:fill-color-ref-file form))

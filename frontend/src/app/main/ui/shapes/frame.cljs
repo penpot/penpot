@@ -62,7 +62,7 @@
                         :height height
                         :className "frame-background"}))
         path? (some? (.-d props))
-        render-id (mf/use-ctx muc/render-ctx)]
+        render-id (mf/use-ctx muc/render-id)]
 
     [:*
      [:g {:clip-path (when (not show-content) (frame-clip-url shape render-id))}

@@ -54,7 +54,7 @@
          (mf/deps objects)
          #(cph/objects-by-frame objects))]
 
-    [:& (mf/provider ctx/active-frames-ctx) {:value active-frames}
+    [:& (mf/provider ctx/active-frames) {:value active-frames}
      ;; Render font faces only for shapes that are part of the root
      ;; frame but don't belongs to any other frame.
      (let [xform (comp
@@ -79,7 +79,7 @@
   (let [shape (obj/get props "shape")
 
         active-frames
-        (when (cph/root-frame? shape) (mf/use-ctx ctx/active-frames-ctx))
+        (when (cph/root-frame? shape) (mf/use-ctx ctx/active-frames))
 
         thumbnail?
         (and (some? active-frames)

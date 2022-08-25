@@ -5,7 +5,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v16.15.1
+    NODE_VERSION=v16.17.0
 
 RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \

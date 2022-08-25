@@ -41,6 +41,5 @@
 
 (defn is-in-focus?
   [objects focus id]
-  (d/seek
-   #(contains? focus %)
-   (cph/get-parents-seq objects id)))
+  (d/seek (partial contains? focus)
+          (cons id (cph/get-parent-ids objects id))))
