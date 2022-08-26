@@ -46,7 +46,7 @@
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :warn)
+(log/set-level! :info)
 
 (s/def ::file ::dd/file)
 

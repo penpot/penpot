@@ -27,7 +27,7 @@
    [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :warn)
+(log/set-level! :info)
 
 (declare generate-sync-container)
 (declare generate-sync-shape)
@@ -242,7 +242,11 @@
     (log/debug :msg "Sync component in local library" :component-id (:id container)))
 
   (let [linked-shapes (->> (vals (:objects container))
-                           (filter #(uses-assets? asset-type asset-id % library-id (cph/component? container))))]
+                           (filter #(uses-assets? asset-type
+                                                  asset-id
+                                                  %
+                                                  library-id
+                                                  (ctk/standalone-instance? % container))))]
     (loop [shapes (seq linked-shapes)
            changes (-> (pcb/empty-changes it)
                        (pcb/with-container container)
@@ -263,14 +267,19 @@
   (fn [asset-type _ _ _ _] asset-type))
 
 (defmethod uses-assets? :components
-  [_ component-id shape library-id component?]
+  [_ component-id shape library-id standalone-instance?]
+  (when (and (if (nil? component-id)
+               (ctk/uses-library-components? shape library-id)
+               (ctk/instance-of? shape library-id component-id))
+             (not standalone-instance?))
+    (js/console.log "ignored shape" (clj->js shape)))
   (and (if (nil? component-id)
          (ctk/uses-library-components? shape library-id)
          (ctk/instance-of? shape library-id component-id))
        ;; Subinstances are synced with the near component, not the remote.
        ;; So an instance that is not root, cannot be considered "using"
        ;; the component.
-       (or (:component-root? shape) component?)))
+       standalone-instance?))
 
 (defmethod uses-assets? :colors
   [_ color-id shape library-id _]
