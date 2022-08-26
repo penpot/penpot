@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-17 10:18+0000\n"
-"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"PO-Revision-Date: 2022-08-28 21:15+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14-dev\n"
+"X-Generator: Weblate 4.14.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3787,3 +3787,29 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+msgid "common.share-link.all-users"
+msgstr "Alle Penpot-Benutzer"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Können kommentieren"
+
+msgid "common.share-link.current-tag"
+msgstr "(aktuell)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Link entfernen"
+
+msgid "common.share-link.manage-ops"
+msgstr "Verwalten von Berechtigungen"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 Seite freigegeben"
+msgstr[1] "%s Seiten freigegeben"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Können den Code ansehen"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Geteilte Seiten"
