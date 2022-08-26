@@ -75,17 +75,36 @@
 
         unlink-library
         (mf/use-callback
-          (mf/deps file)
-          (fn [library-id]
-            (st/emit! (dwl/unlink-file-from-library (:id file) library-id)
-                      (dwl/sync-file (:id file) library-id))))]
+         (mf/deps file)
+         (fn [library-id]
+           (st/emit! (dwl/unlink-file-from-library (:id file) library-id)
+                     (dwl/sync-file (:id file) library-id))))
+        add-shared
+        (mf/use-callback
+         (mf/deps file)
+         #(st/emit! (dwl/set-file-shared (:id file) true)))
+
+        del-shared
+        (mf/use-callback
+         (mf/deps file)
+         #(st/emit! (dwl/set-file-shared (:id file) false)))]
     [:*
      [:div.section
       [:div.section-title (tr "workspace.libraries.in-this-file")]
       [:div.section-list
        [:div.section-list-item
+        [:div
         [:div.item-name (tr "workspace.libraries.file-library")]
         [:div.item-contents (contents-str file)]]
+       [:div
+        (if (:is-shared file)
+          [:input.item-button {:type "button"
+                               :value (tr "common.unpublish")
+                               :on-click del-shared}]
+          [:input.item-button {:type "button"
+                               :value (tr "common.publish")
+                               :on-click add-shared}])]]
+
        (for [library sorted-libraries]
          [:div.section-list-item {:key (:id library)}
           [:div.item-name (:name library)]
