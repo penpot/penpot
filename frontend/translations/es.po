@@ -2914,9 +2914,8 @@ msgstr "Duplicar"
 msgid "workspace.assets.edit"
 msgstr "Editar"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Biblioteca del archivo"
+msgid "workspace.assets.local-library"
+msgstr "biblioteca local"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
