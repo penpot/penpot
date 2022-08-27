@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-18 16:16+0000\n"
-"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"PO-Revision-Date: 2022-08-28 21:15+0000\n"
+"Last-Translator: Rubén <rubenx@mail.com>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
 "ca/>\n"
 "Language: ca\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14-dev\n"
+"X-Generator: Weblate 4.14.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -68,12 +68,10 @@ msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-#, fuzzy
 msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
 #: src/app/main/ui/auth/login.cljs
-#, fuzzy
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 
@@ -244,7 +242,7 @@ msgstr ""
 "plantilles](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "Exporta les taules de treball a PDF..."
+msgstr "Exporta els taulers a PDF…"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -264,7 +262,7 @@ msgstr "Exporta"
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
-"Pots afegir una configuració d'exportació a elements des de les propietats "
+"Podeu afegir una configuració d'exportació a elements des de les propietats "
 "del disseny (a sota de la barra de la dreta)."
 
 #: src/app/main/ui/export.cljs
@@ -320,14 +318,14 @@ msgid "dashboard.export.title"
 msgstr "Exporta els fitxers"
 
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "S'ha eliminat el tipus de lletra"
+msgstr "S'ha eliminat la tipografia"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.dismiss-all"
 msgstr "Descarta-ho tot"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Encara no teniu cap tipus de lletra personalitzat instal·lat."
+msgstr "Encara no teniu cap tipografia personalitzada instal·lada."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
@@ -338,20 +336,20 @@ msgstr[1] "S'han afegit %s tipografies"
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Els tipus de lletra web que pengeu aquí s'afegiran a la llista de famílies "
+"Les tipografies web que pengeu aquí s'afegiran a la llista de famílies "
 "tipogràfiques disponibles a les propietats del text dels fitxers d'aquest "
-"equip. Els tipus de lletra amb el mateix nom de família s'agruparan en "
-"**una sola família tipogràfica**. Podeu pujar tipus de lletra en aquests "
-"formats: **TTF, OTF i WOFF** (només és necessari un)."
+"equip. Les tipografies amb el mateix nom de família s'agruparan en **una "
+"sola família tipogràfica**. Podeu pujar tipografies en aquests formats: **"
+"TTF, OTF i WOFF** (només en cal un)."
 
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Només podeu pujar tipus de lletra de la vostra propietat o dels que tingueu "
-"una llicència que us permeti utilitzar-los al Penpot. Teniu més informació "
-"a la secció de drets de contingut de les [Condicions del servei del "
-"Penpot](https://penpot.app/terms.html). També podeu llegir sobre les "
-"[llicències dels tipus de lletra](https://www.typography.com/faq)."
+"Només podeu pujar tipografies de la vostra propietat o de les que tingueu "
+"una llicència que us permeti utilitzar-los al Penpot. Teniu més informació a "
+"la secció de drets de contingut de les [Condicions del servei del "
+"Penpot](https://penpot.app/terms.html). També podeu llegir sobre les ["
+"llicències de les tipografies](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -410,7 +408,7 @@ msgid "dashboard.loading-files"
 msgstr "S'estan carregant els fitxers…"
 
 msgid "dashboard.loading-fonts"
-msgstr "carregant els tipus de lletra…"
+msgstr "s'estan carregant les tipografies…"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
@@ -505,7 +503,7 @@ msgstr "Elimina de les biblioteques compartides"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.save-settings"
-msgstr "Desa configuració"
+msgstr "Desa la configuració"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.search-placeholder"
@@ -589,7 +587,7 @@ msgstr "Actualitza la configuració"
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
-msgstr "El vostre compte"
+msgstr "El meu compte"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.your-email"
@@ -967,7 +965,7 @@ msgid "handoff.tabs.code.selected.curve"
 msgstr "Corba"
 
 msgid "handoff.tabs.code.selected.frame"
-msgstr "Taula de treball"
+msgstr "Tauler"
 
 msgid "handoff.tabs.code.selected.group"
 msgstr "Grup"
@@ -1013,7 +1011,7 @@ msgid "labels.accept"
 msgstr "Acceptar"
 
 msgid "labels.add-custom-font"
-msgstr "Afegeix tipus de lletra"
+msgstr "Afegeix tipografia"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
@@ -1021,7 +1019,7 @@ msgstr "Administració"
 
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.all"
-msgstr "Tot"
+msgstr "Tots"
 
 msgid "labels.and"
 msgstr "i"
@@ -1055,7 +1053,7 @@ msgstr "Comentaris"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
-msgstr "Confirma la contrasenya"
+msgstr "Confirmeu la contrasenya"
 
 msgid "labels.content"
 msgstr "Contingut"
@@ -1079,7 +1077,7 @@ msgid "labels.create-team.placeholder"
 msgstr "Introduïu el nom de l'equip nou"
 
 msgid "labels.custom-fonts"
-msgstr "Tipus de lletra personalitzats"
+msgstr "Tipografies personalitzades"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
@@ -1117,7 +1115,7 @@ msgid "labels.edit"
 msgstr "Edita"
 
 msgid "labels.edit-file"
-msgstr "Edita el fitxer"
+msgstr "Edita'l"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
@@ -1143,16 +1141,16 @@ msgid "labels.feedback-sent"
 msgstr "S'ha enviat l'opinió"
 
 msgid "labels.font-family"
-msgstr "Família de tipus de lletra"
+msgstr "Família tipogràfica"
 
 msgid "labels.font-providers"
-msgstr "Proveïdors de tipus de lletra"
+msgstr "Proveïdors de tipografies"
 
 msgid "labels.font-variants"
 msgstr "Estils"
 
 msgid "labels.fonts"
-msgstr "Tipus de lletra"
+msgstr "Tipografies"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.github-repo"
@@ -1180,7 +1178,7 @@ msgid "labels.images"
 msgstr "Imatges"
 
 msgid "labels.installed-fonts"
-msgstr "Tipus de lletra instal·lats"
+msgstr "Tipografies instal·lades"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
@@ -1212,7 +1210,7 @@ msgid "labels.logout"
 msgstr "Tanca la sessió"
 
 msgid "labels.manage-fonts"
-msgstr "Gestiona els tipus de lletra"
+msgstr "Gestiona les tipografies"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
@@ -1243,7 +1241,8 @@ msgstr "No hi ha invitacions."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
-msgstr "Prem el botó \"Convida a l'equip\" per convidar més membres a aquest equip."
+msgstr ""
+"Feu clic al botó «Convida a l'equip» per convidar més membres a aquest equip."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.auth-info"
@@ -1267,8 +1266,8 @@ msgstr[1] "%s fitxers"
 
 msgid "labels.num-of-frames"
 msgid_plural "labels.num-of-frames"
-msgstr[0] "1 taula de treball"
-msgstr[1] "%s taules de treball"
+msgstr[0] "1 tauler"
+msgstr[1] "%s taulers"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-projects"
@@ -1282,7 +1281,7 @@ msgstr "Contrasenya antiga"
 
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.only-yours"
-msgstr "Només els vostres"
+msgstr "Només els meus"
 
 msgid "labels.or"
 msgstr "o"
@@ -1350,7 +1349,7 @@ msgid "labels.save"
 msgstr "Desa"
 
 msgid "labels.search-font"
-msgstr "Cerca tipus de lletra"
+msgstr "Cerca tipografia"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.send"
@@ -1373,7 +1372,7 @@ msgid "labels.settings"
 msgstr "Configuració"
 
 msgid "labels.share-prototype"
-msgstr "Comparteix el prototip"
+msgstr "Comparteix prototip"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
@@ -1417,14 +1416,14 @@ msgid "labels.upload"
 msgstr "Puja"
 
 msgid "labels.upload-custom-fonts"
-msgstr "Pugeu tipus de lletra personalitzats"
+msgstr "Pugeu tipografies personalitzades"
 
 msgid "labels.uploading"
 msgstr "S'està pujant…"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
-msgstr "Espectador"
+msgstr "Visor"
 
 msgid "labels.workspace"
 msgstr "Espai de treball"
@@ -1435,7 +1434,7 @@ msgstr "Escriu un comentari nou"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
-msgstr "(tu)"
+msgstr "(jo)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.your-account"
@@ -1462,21 +1461,21 @@ msgstr "Afegeix \"%s\" com a biblioteca compartida"
 
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.big-nudge"
-msgstr "Empenta gran"
+msgstr "Màxima"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.confirm-email"
-msgstr "Verifica el correu electrònic nou"
+msgstr "Repetiu el correu electrònic nou"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"Us enviarem un correu electrònic a la vostra adreça actual \"%s\" per a "
-"verificar la vostra identitat."
+"Us enviarem un correu electrònic a l'adreça actual \"%s\" per a verificar la "
+"vostra identitat."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
-msgstr "Nou correu electrònic"
+msgstr "Correu electrònic nou"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.submit"
@@ -1489,8 +1488,8 @@ msgstr "Canvieu el vostre correu electrònic"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.change-owner-and-leave-confirm.message"
 msgstr ""
-"Ets qui té la propietat d'aquest equip. Abans de marxar, cal que escullis "
-"una persona per substituir-te."
+"Sou qui té la propietat d'aquest equip. Abans d'abandonar-lo, ascendiu un "
+"membre a propietari."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1552,15 +1551,15 @@ msgstr ""
 "s'utilitza en un fitxer."
 
 msgid "modals.delete-font-variant.title"
-msgstr "S'està eliminant l'estil de tipus de lletra"
+msgstr "S'està eliminant l'estil de tipografia"
 
 msgid "modals.delete-font.message"
 msgstr ""
-"Segur que voleu eliminar aquest tipus de lletra? No es carregarà si "
-"s'utilitza en un fitxer."
+"Segur que voleu eliminar aquesta tipografia? No es carregarà si s'utilitza "
+"en un fitxer."
 
 msgid "modals.delete-font.title"
-msgstr "S'està eliminant el tipus de lletra"
+msgstr "S'està eliminant la tipografia"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.body"
@@ -1668,7 +1667,7 @@ msgstr "S'està abandonant l'equip"
 
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.nudge-title"
-msgstr "Quantitat d'empenta"
+msgstr "Quantitat d'atracció"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
@@ -1677,12 +1676,14 @@ msgstr "Ascendeix"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
-"Si transfereixes la propietat, canviaràs el teu rol a Admin, perdent alguns "
+"Si transferiu la propietat, canviareu el vostre rol a admin, perdent alguns "
 "permisos sobre l'equip. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
-msgstr "Segur que voleu ascendir aquest usuari a propietari?"
+msgstr ""
+"Actualment sou el propietari de l'equip. Segur que voleu ascendir aquest "
+"usuari a propietari?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
@@ -1700,11 +1701,11 @@ msgstr ""
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
-msgstr "Elimina \"%s\" com a biblioteca compartida"
+msgstr "Elimina «%s» com a biblioteca compartida"
 
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
-msgstr "Empenta petita"
+msgstr "Mínima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
@@ -1770,21 +1771,20 @@ msgstr ""
 "juntes en projectes i compartiu recursos de disseny."
 
 msgid "onboarding.choice.team-up.create-team"
-msgstr "Nom del teu equip"
+msgstr "Nom de l'equip"
 
 msgid "onboarding.choice.team-up.create-team-desc"
-msgstr "Quan hagis posat un nom al teu equip podràs convidar persones a unir-s'hi."
+msgstr "Quan poseu un nom a l'equip, podreu convidar persones a unir-s'hi."
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Introdueix el nom de l'equip"
+msgstr "Introduïu el nom de l'equip"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Convida membres"
 
 msgid "onboarding.choice.team-up.invite-members-desc"
 msgstr ""
-"També podràs convidar membres o canviar els rols des de la pàgina de "
-"l'equip."
+"També podreu convidar membres o canviar els rols des de la pàgina de l'equip."
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Crea l'equip ara i convida membres en un altre moment"
@@ -1793,7 +1793,7 @@ msgid "onboarding.choice.team-up.invite-members-submit"
 msgstr "Crea l'equip i envia les invitacions"
 
 msgid "onboarding.choice.title"
-msgstr "Et donem la benvinguda a Penpot"
+msgstr "Us donem la benvinguda a Penpot"
 
 msgid "onboarding.contrib.alt"
 msgstr "Codi obert"
@@ -1813,41 +1813,41 @@ msgid "onboarding.contrib.link"
 msgstr "projecte a github"
 
 msgid "onboarding.contrib.title"
-msgstr "Ets contribuïdor de codi obert?"
+msgstr "Sou contribuïdor de codi obert?"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Sí, subscriu-m'hi"
 
 msgid "onboarding.newsletter.acceptance-message"
 msgstr ""
-"S'ha enviat la teva sol·licitud de subscripció. T'enviarem un e-mail per "
-"confirmar-ho."
+"S'ha enviat la sol·licitud de subscripció. Us enviarem un correu electrònic "
+"per confirmar-ho."
 
 msgid "onboarding.newsletter.decline"
 msgstr "No, gràcies"
 
 msgid "onboarding.newsletter.desc"
 msgstr ""
-"Subscriu-te al nostre butlletí per estar al dia de les novetats i del "
-"progrés del desenvolupament de producte."
+"Subscriviu-vos al nostre butlletí per estar al dia de les novetats i del "
+"progrés del desenvolupament del producte."
 
 msgid "onboarding.newsletter.policy"
 msgstr "Política de privacitat."
 
 msgid "onboarding.newsletter.privacy1"
-msgstr "Com que ens preocupa la privacitat, aquí hi ha "
+msgstr "Com que ens preocupa la privacitat, aquí hi ha la nostra "
 
 msgid "onboarding.newsletter.privacy2"
 msgstr ""
-"Només t'enviarem correus rellevants. Et podràs desapuntar sempre que "
-"vulguis des del teu perfil d'usuari o des de l'enllaç que trobaràs a "
-"qualsevol dels nostres butlletins."
+"Només us enviarem correus rellevants. Podeu anul·lar la subscripció sempre "
+"que vulgueu des del perfil d'usuari o amb l'enllaç que trobareu a qualsevol "
+"dels nostres butlletins."
 
 msgid "onboarding.newsletter.title"
-msgstr "Vols rebre novetats de Penpot?"
+msgstr "Voleu rebre les novetats de Penpot?"
 
 msgid "onboarding.slide.0.alt"
-msgstr "Crea dissenys"
+msgstr "Creeu dissenys"
 
 msgid "onboarding.slide.0.desc1"
 msgstr ""
@@ -1968,7 +1968,7 @@ msgid "shortcut-section.dashboard"
 msgstr "Panell de control"
 
 msgid "shortcut-section.viewer"
-msgstr "Visualitzador"
+msgstr "Visor"
 
 msgid "shortcut-section.workspace"
 msgstr "Espai de treball"
@@ -2044,7 +2044,7 @@ msgid "shortcuts.align-vcenter"
 msgstr "Alinea al centre verticalment"
 
 msgid "shortcuts.artboard-selection"
-msgstr "Crea una taula de treball a partir de selecció"
+msgstr "Crea un tauler a partir de selecció"
 
 msgid "shortcuts.bool-difference"
 msgstr "Diferència booleana"
@@ -2089,10 +2089,10 @@ msgid "shortcuts.decrease-zoom"
 msgstr "Disminueix el zoom"
 
 msgid "shortcuts.delete"
-msgstr "Esborra"
+msgstr "Elimina"
 
 msgid "shortcuts.delete-node"
-msgstr "Esborra el node"
+msgstr "Elimina el node"
 
 msgid "shortcuts.detach-component"
 msgstr "Separa el component"
@@ -2104,7 +2104,7 @@ msgid "shortcuts.draw-ellipse"
 msgstr "El·lipse"
 
 msgid "shortcuts.draw-frame"
-msgstr "Taula de treball"
+msgstr "Tauler"
 
 msgid "shortcuts.draw-nodes"
 msgstr "Dibuixa el camí"
@@ -2140,19 +2140,19 @@ msgid "shortcuts.go-to-drafts"
 msgstr "Ves als esborranys"
 
 msgid "shortcuts.go-to-libs"
-msgstr "Ves a les llibreries compartides"
+msgstr "Ves a les biblioteques compartides"
 
 msgid "shortcuts.go-to-search"
 msgstr "Cerca"
 
 msgid "shortcuts.group"
-msgstr "Grup"
+msgstr "Agrupa"
 
 msgid "shortcuts.h-distribute"
 msgstr "Distribueix horitzontalment"
 
 msgid "shortcuts.hide-ui"
-msgstr "Mostra/Amaga UI"
+msgstr "Mostra/Amaga la interfície"
 
 msgid "shortcuts.increase-zoom"
 msgstr "Amplia"
@@ -2206,7 +2206,7 @@ msgid "shortcuts.move-unit-up"
 msgstr "Mou amunt"
 
 msgid "shortcuts.next-frame"
-msgstr "Següent taula de treball"
+msgstr "Següent tauler"
 
 msgid "shortcuts.opacity-0"
 msgstr "Fixa l'opacitat al 100%"
@@ -2242,19 +2242,19 @@ msgid "shortcuts.open-color-picker"
 msgstr "Selector de color"
 
 msgid "shortcuts.open-comments"
-msgstr "Ves a la visualització de comentaris"
+msgstr "Ves als comentaris del visor"
 
 msgid "shortcuts.open-dashboard"
 msgstr "Ves al panell de control"
 
 msgid "shortcuts.open-handoff"
-msgstr "Ves a la secció de transferència d'observadors"
+msgstr "Ves a la secció de lliurament al visor"
 
 msgid "shortcuts.open-interactions"
-msgstr "Ves a la secció d'interaccions de visitant"
+msgstr "Ves a les interaccions del visor"
 
 msgid "shortcuts.open-viewer"
-msgstr "Ves a la secció d'interaccions de visitant"
+msgstr "Ves a les interaccions del visor"
 
 msgid "shortcuts.open-workspace"
 msgstr "Ves a l'espai de treball"
@@ -2263,13 +2263,13 @@ msgid "shortcuts.paste"
 msgstr "Enganxa"
 
 msgid "shortcuts.prev-frame"
-msgstr "Taula de treball anterior"
+msgstr "Tauler anterior"
 
 msgid "shortcuts.redo"
 msgstr "Refés"
 
 msgid "shortcuts.reset-zoom"
-msgstr "Desfés zoom"
+msgstr "Restableix el zoom"
 
 msgid "shortcuts.search-placeholder"
 msgstr "Cerca dreceres"
@@ -2278,7 +2278,7 @@ msgid "shortcuts.select-all"
 msgstr "Selecciona-ho tot"
 
 msgid "shortcuts.separate-nodes"
-msgstr "Separa nodes"
+msgstr "Separa els nodes"
 
 msgid "shortcuts.show-pixel-grid"
 msgstr "Mostra/Amaga graella de píxels"
@@ -2312,34 +2312,34 @@ msgid "shortcuts.toggle-alignment"
 msgstr "Commuta l'alineació dinàmica"
 
 msgid "shortcuts.toggle-assets"
-msgstr "Commuta actius"
+msgstr "Commuta els recursos"
 
 msgid "shortcuts.toggle-colorpalette"
 msgstr "Commuta paleta de colors"
 
 msgid "shortcuts.toggle-focus-mode"
-msgstr "Commuta el mode d'enfocament"
+msgstr "Activa/desactiva el mode de concentració"
 
 msgid "shortcuts.toggle-grid"
-msgstr "Mostra/Amaga graella"
+msgstr "Mostra/Amaga la graella"
 
 msgid "shortcuts.toggle-history"
-msgstr "Commuta l'historial"
+msgstr "Mostra/Amaga l'historial"
 
 msgid "shortcuts.toggle-layers"
-msgstr "Commuta capes"
+msgstr "Commutales capes"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Bloqueja la selecció"
 
 msgid "shortcuts.toggle-lock-size"
-msgstr "Bloqueja proporcions"
+msgstr "Bloqueja les proporcions"
 
 msgid "shortcuts.toggle-rules"
-msgstr "Mostra/Amaga regles"
+msgstr "Mostra/Amaga les regles"
 
 msgid "shortcuts.toggle-scale-text"
-msgstr "Commuta l'escala del text"
+msgstr "Activa/desactiva l'escalat de text"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Ajusta a la graella"
@@ -2348,16 +2348,16 @@ msgid "shortcuts.toggle-snap-guide"
 msgstr "Ajusta a les guies"
 
 msgid "shortcuts.toggle-textpalette"
-msgstr "Commuta paleta de text"
+msgstr "Mostra/amaga la paleta de text"
 
 msgid "shortcuts.toggle-visibility"
-msgstr "Commuta visibilitat"
+msgstr "Mostra/amaga l'element"
 
 msgid "shortcuts.toggle-zoom-style"
-msgstr "Commuta estil de zoom"
+msgstr "Commuta l'estil de zoom"
 
 msgid "shortcuts.toogle-fullscreen"
-msgstr "Commuta pantalla completa"
+msgstr "Activa/desactiva la pantalla completa"
 
 msgid "shortcuts.undo"
 msgstr "Desfés"
@@ -2380,11 +2380,11 @@ msgstr "%s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.font-providers"
-msgstr "Proveïdors de tipus de lletra - %s - Penpot"
+msgstr "Proveïdors de tipografies - %s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.fonts"
-msgstr "Tipus de lletra - %s - Penpot"
+msgstr "Tipografies - %s - Penpot"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "title.dashboard.projects"
@@ -2432,7 +2432,7 @@ msgstr "Configuració - %s - Penpot"
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
-msgstr "%s - Mode de visualització - Penpot"
+msgstr "%s - Visor - Penpot"
 
 #: src/app/main/ui/workspace.cljs
 msgid "title.workspace"
@@ -2448,11 +2448,11 @@ msgstr "Ho sentim!"
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.empty-state"
-msgstr "No s'ha trobat cap taula de treball a la pàgina."
+msgstr "No s'ha trobat cap tauler a la pàgina."
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.frame-not-found"
-msgstr "No s'ha trobat la taula de treball."
+msgstr "No s'ha trobat el tauler."
 
 msgid "viewer.header.comments-section"
 msgstr "Comentaris (%s)"
@@ -2640,7 +2640,7 @@ msgstr "Tipografies"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-id"
-msgstr "Tipus de lletra"
+msgstr "Tipografia"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-size"
@@ -2704,14 +2704,14 @@ msgstr "Desactiva l'escalat del text"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Desactiva l'ajust a la quadrícula"
+msgstr "No ajustis a la quadrícula"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
-msgstr "No ajustes a les guies"
+msgstr "No ajustis a les guies"
 
 msgid "workspace.header.menu.disable-snap-pixel-grid"
-msgstr "Desactiva l'ajustament al píxel"
+msgstr "No ajustis als píxels"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
@@ -2730,11 +2730,11 @@ msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Ajusta a les guies"
 
 msgid "workspace.header.menu.enable-snap-pixel-grid"
-msgstr "Activa l'ajustament al píxel"
+msgstr "Ajusta als píxels"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
-msgstr "Amaga els noms de les taules"
+msgstr "Amaga els noms dels taulers"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
@@ -2752,9 +2752,8 @@ msgid "workspace.header.menu.hide-rules"
 msgstr "Amaga les regles"
 
 #: src/app/main/ui/workspace/header.cljs
-#, fuzzy
 msgid "workspace.header.menu.hide-textpalette"
-msgstr "Amaga la paleta de tipus de lletra"
+msgstr "Amaga la paleta de tipografies"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.edit"
@@ -2766,7 +2765,7 @@ msgstr "Fixer"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.help-info"
-msgstr "Ajuda & Informació"
+msgstr "Ajuda i informació"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.preferences"
@@ -2782,7 +2781,7 @@ msgstr "Selecciona-ho tot"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
-msgstr "Mostra els noms de les taules"
+msgstr "Mostra els noms dels taulers"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
@@ -2800,9 +2799,8 @@ msgid "workspace.header.menu.show-rules"
 msgstr "Mostra les regles"
 
 #: src/app/main/ui/workspace/header.cljs
-#, fuzzy
 msgid "workspace.header.menu.show-textpalette"
-msgstr "Mostra la paleta de tipus de lletra"
+msgstr "Mostra la paleta de tipografies"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -2826,7 +2824,7 @@ msgstr "Canvis sense desar"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
-msgstr "Mode de visualització (%s)"
+msgstr "Visor (%s)"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fill"
@@ -3048,7 +3046,9 @@ msgstr "Exporta la selecció"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "Exporta"
+msgid_plural ""
+msgstr[0] "Exporta 1 element"
+msgstr[1] "Exporta %s elements"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3509,17 +3509,17 @@ msgid "workspace.options.rotation"
 msgstr "Rotació"
 
 msgid "workspace.options.search-font"
-msgstr "Cerca tipus de lletra"
+msgstr "Cerca tipografia"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
 msgstr ""
-"Seleccioneu una forma, una taula de treball o un grup per a arrossegar una "
-"connexió a un altra taula de treball."
+"Seleccioneu una forma, un tauler o un grup per a arrossegar una connexió a "
+"un altre tauler."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-artboard"
-msgstr "Selecciona la taula de treball"
+msgstr "Selecciona el tauler"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.selection-color"
@@ -3822,7 +3822,7 @@ msgstr "Copia"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-artboard-from-selection"
-msgstr "Selecciona a la taula de treball"
+msgstr "Selecciona al tauler"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
@@ -3898,7 +3898,7 @@ msgid "workspace.shape.menu.hide"
 msgstr "Amaga"
 
 msgid "workspace.shape.menu.hide-ui"
-msgstr "Mostra/Amaga UI"
+msgstr "Mostra/Amaga la interfície"
 
 msgid "workspace.shape.menu.intersection"
 msgstr "Intersecció"
@@ -3935,7 +3935,7 @@ msgid "workspace.shape.menu.show-main"
 msgstr "Vés al component principal"
 
 msgid "workspace.shape.menu.thumbnail-remove"
-msgstr "Esborra la miniatura"
+msgstr "Elimina la miniatura"
 
 msgid "workspace.shape.menu.thumbnail-set"
 msgstr "Estableix com a miniatura"
@@ -3978,7 +3978,7 @@ msgid "workspace.sidebar.layers.components"
 msgstr "Components"
 
 msgid "workspace.sidebar.layers.frames"
-msgstr "Taules de treball"
+msgstr "Taulers"
 
 msgid "workspace.sidebar.layers.groups"
 msgstr "Grups"
@@ -4032,7 +4032,7 @@ msgstr "El·lipse (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.frame"
-msgstr "Taula de treball (%s)"
+msgstr "Tauler (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.image"
@@ -4091,7 +4091,7 @@ msgid "workspace.undo.entry.multiple.curve"
 msgstr "corbes"
 
 msgid "workspace.undo.entry.multiple.frame"
-msgstr "taula de treball"
+msgstr "tauler"
 
 msgid "workspace.undo.entry.multiple.group"
 msgstr "grups"
@@ -4118,7 +4118,7 @@ msgid "workspace.undo.entry.multiple.text"
 msgstr "textos"
 
 msgid "workspace.undo.entry.multiple.typography"
-msgstr "tipus de lletra"
+msgstr "recursos tipogràfics"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.new"
@@ -4137,7 +4137,7 @@ msgid "workspace.undo.entry.single.curve"
 msgstr "corba"
 
 msgid "workspace.undo.entry.single.frame"
-msgstr "taula de treball"
+msgstr "tauler"
 
 msgid "workspace.undo.entry.single.group"
 msgstr "grup"
@@ -4167,7 +4167,7 @@ msgid "workspace.undo.entry.single.text"
 msgstr "text"
 
 msgid "workspace.undo.entry.single.typography"
-msgstr "tipus de lletra"
+msgstr "recurs tipogràfic"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.unknown"
@@ -4191,3 +4191,189 @@ msgstr "Actualitza"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Feu clic per a tancar el camí"
+
+msgid "common.share-link.all-users"
+msgstr "Tots els usuaris de Penpot"
+
+msgid "common.share-link.current-tag"
+msgstr "(actual)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Destrueix l'enllaç"
+
+msgid "common.share-link.manage-ops"
+msgstr "Gestió de permisos"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 pàgina compartida"
+msgstr[1] "%s pàgines compartides"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Pot comentar"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Pot inspeccionar el codi"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Pàgines compartides"
+
+msgid "common.share-link.team-members"
+msgstr "Només membres de l'equip"
+
+msgid "common.share-link.view-all"
+msgstr "Selecciona-ho tot"
+
+msgid "dashboard.download-binary-file"
+msgstr "Baixa el fitxer Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Baixa fitxer estàndard (.svg + .json)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Baixa %s fitxers Penpot (.penpot)"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Baixa %s fitxers estàndard (.svg + .json)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "L'autenticació del proveïdor no està configurada."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Compte per a ajudar amb dubtes tècnics."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Comunitat"
+
+msgid "labels.continue-with-penpot"
+msgstr "Podeu continuar amb un compte de Penpot"
+
+msgid "labels.show-comments-list"
+msgstr "Mostra la llista de comentaris"
+
+msgid "shortcuts.not-found"
+msgstr "No s'han trobat dreceres"
+
+msgid "shortcuts.or"
+msgstr " o "
+
+msgid "workspace.options.clip-content"
+msgstr "Trunca el contingut"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "Graella"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "Opcions avançades"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-h"
+msgstr "Alçada màxima"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-h"
+msgstr "Alçada mínima"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-w"
+msgstr "Amplada mínima"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-w"
+msgstr "Amplada màxima"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "Columna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "Fila"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "Tots els costats"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Marge senzill"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "no agrupis"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "Tots els costats"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Dreta"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "Mostra al visor"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.title"
+msgstr "Disposició"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "centre"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Ves al fòrum de Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Ens encanta que sigueu aquí. Si necessiteu ajuda, cerqueu abans de publicar."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Comunitat de Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Ves al Twitter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.left"
+msgstr "esquerra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.right"
+msgstr "dreta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Esquerra"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Compte de Twitter d'ajuda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.right"
+msgstr "Fila invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.top"
+msgstr "Columna invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.center"
+msgstr "centre"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Marge"
+
+msgid "labels.log-or-sign"
+msgstr "Inicia sessió o registra'm"
