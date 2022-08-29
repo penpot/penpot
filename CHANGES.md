@@ -2,6 +2,12 @@
 
 ## 1.15.0-beta
 
+### :bug: Bugs fixed
+
+- Fix problems with double-click and selection [Taiga #4005](https://tree.taiga.io/project/penpot/issue/4005)
+
+## 1.15.0-beta
+
 ### :boom: Breaking changes & Deprecations
 
 - The `PENPOT_LOGIN_WITH_LDAP` environment variable is finally removed (after
