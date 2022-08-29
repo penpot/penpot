@@ -194,7 +194,7 @@
               :else
               (let [;; We only get inside childrens of the hovering shape
                     hover-ids (->> @hover-ids (filter (partial cph/is-child? objects id)))
-                    selected (get objects (if (> (count hover-ids) 1) (second hover-ids) (first hover-ids)))]
+                    selected (get objects (first hover-ids))]
                 (when (some? selected)
                   (reset! hover selected)
                   (st/emit! (dw/select-shape (:id selected)))))))))))))
