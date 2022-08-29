@@ -35,3 +35,7 @@
   [file-data component-id f]
   (update-in file-data [:components component-id] f))
 
+(defn delete-component
+  [file-data component-id]
+  (update file-data :components dissoc component-id))
+

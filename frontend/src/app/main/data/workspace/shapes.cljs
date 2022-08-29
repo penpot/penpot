@@ -233,7 +233,16 @@
                         (pcb/with-page page)
                         (pcb/with-objects objects)
                         (pcb/with-library-data file)
-                        (pcb/set-page-option :guides guides)
+                        (pcb/set-page-option :guides guides))
+
+            changes (reduce (fn [changes component-id]
+                              ;; It's important to delete the component before the main instance, because we
+                              ;; need to store the instance position if we want to restore it later.
+                              (pcb/delete-component changes component-id components-v2))
+                            changes
+                            components-to-delete)
+
+            changes (-> changes
                         (pcb/remove-objects all-children)
                         (pcb/remove-objects ids)
                         (pcb/remove-objects empty-parents)
@@ -252,12 +261,7 @@
                         (cond-> (seq starting-flows)
                           (pcb/update-page-option :flows (fn [flows]
                                                            (->> (map :id starting-flows)
-                                                                (reduce ctp/remove-flow flows))))))
-
-            changes (reduce (fn [changes component-id]
-                              (pcb/delete-component changes component-id))
-                            changes
-                            components-to-delete)]
+                                                                (reduce ctp/remove-flow flows))))))]
 
         (rx/of (dc/detach-comment-thread ids)
                (dwsl/update-layout-positions all-parents)

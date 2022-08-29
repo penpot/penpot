@@ -22,3 +22,7 @@
   [file-data color-id f]
   (update-in file-data [:colors color-id] f))
 
+(defn delete-color
+  [file-data color-id]
+  (update file-data :colors dissoc color-id))
+

@@ -37,3 +37,9 @@
   [file-data page-id f]
   (update-in file-data [:pages-index page-id] f))
 
+(defn delete-page
+  [file-data page-id]
+  (-> file-data
+      (update :pages (fn [pages] (filterv #(not= % page-id) pages)))
+      (update :pages-index dissoc page-id)))
+

@@ -19,6 +19,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.colors-list :as ctcl]
+   [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -302,9 +303,7 @@
 
 (defmethod process-change :del-page
   [data {:keys [id]}]
-  (-> data
-      (update :pages (fn [pages] (filterv #(not= % id) pages)))
-      (update :pages-index dissoc id)))
+  (ctpl/delete-page data id))
 
 (defmethod process-change :mov-page
   [data {:keys [id index]}]
@@ -320,7 +319,7 @@
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
-  (update data :colors dissoc id))
+  (ctcl/delete-color data id))
 
 (defmethod process-change :add-recent-color
   [data {:keys [color]}]
@@ -372,7 +371,15 @@
 
 (defmethod process-change :del-component
   [data {:keys [id]}]
-  (d/dissoc-in data [:components id]))
+  (ctf/delete-component data id))
+
+(defmethod process-change :restore-component
+  [data {:keys [id]}]
+  (ctf/restore-component data id))
+
+(defmethod process-change :purge-component
+  [data {:keys [id]}]
+  (ctf/purge-component data id))
 
 ;; -- Typography
 
@@ -386,7 +393,7 @@
 
 (defmethod process-change :del-typography
   [data {:keys [id]}]
-  (update data :typographies dissoc id))
+  (ctyl/delete-typography data id))
 
 ;; === Operations
 

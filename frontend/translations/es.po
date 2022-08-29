@@ -4498,6 +4498,9 @@ msgstr "Actualizar componentes"
 msgid "workspace.shape.menu.update-main"
 msgstr "Actualizar componente principal"
 
+msgid "workspace.shape.menu.restore-main"
+msgstr "Restaurar componente principal"
+
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
 msgstr "Historial (%s)"
