@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-28 21:15+0000\n"
+"PO-Revision-Date: 2022-08-29 08:20+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -3813,3 +3813,10 @@ msgstr "Können den Code ansehen"
 
 msgid "common.share-link.permissions-pages"
 msgstr "Geteilte Seiten"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Zum Penpot-Forum wechseln"
+
+msgid "errors.invite-invalid.info"
+msgstr "Diese Einladung wurde möglicherweise abgebrochen oder ist abgelaufen."
