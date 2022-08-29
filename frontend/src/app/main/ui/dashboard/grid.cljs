@@ -78,14 +78,14 @@
            typographies (:typographies summary)]
        [:*
 
-        (when (> (:count components) 0)
+        (when (pos? (:count components))
           [:div.asset-section
            [:div.asset-title
             [:span (tr "workspace.assets.components")]
             [:span.num-assets (str "\u00A0(") (:count components) ")"]] ;; Unicode 00A0 is non-breaking space
            [:div.asset-list
             (for [component (:sample components)]
-              [:div.asset-list-item
+              [:div.asset-list-item {:key (str "assets-component-" (:id component))}
                [:& component-svg {:group (get-in component [:objects (:id component)])
                                   :objects (:objects component)}]
                [:div.name-block
@@ -96,7 +96,7 @@
                [:div.name-block
                 [:span.item-name "(...)"]]])]])
 
-        (when (> (:count colors) 0)
+        (when (pos? (:count colors))
           [:div.asset-section
            [:div.asset-title
             [:span (tr "workspace.assets.colors")]
@@ -107,7 +107,7 @@
                                    (:gradient color) (bc/gradient-type->string (get-in color [:gradient :type]))
                                    (:color color) (:color color)
                                    :else (:value color))]
-                [:div.asset-list-item
+                [:div.asset-list-item {:key (str "assets-color-" (:id color))}
                  [:& bc/color-bullet {:color {:color (:color color)
                                               :opacity (:opacity color)}}]
                  [:div.name-block
@@ -119,14 +119,14 @@
                [:div.name-block
                 [:span.item-name "(...)"]]])]])
 
-        (when (> (:count typographies) 0)
+        (when (pos? (:count typographies))
           [:div.asset-section
            [:div.asset-title
             [:span (tr "workspace.assets.typography")]
             [:span.num-assets (str "\u00A0(") (:count typographies) ")"]] ;; Unicode 00A0 is non-breaking space
            [:div.asset-list
             (for [typography (:sample typographies)]
-              [:div.asset-list-item
+              [:div.asset-list-item {:key (str "assets-typography-" (:id typography))}
                [:div.typography-sample
                 {:style {:font-family (:font-family typography)
                          :font-weight (:font-weight typography)

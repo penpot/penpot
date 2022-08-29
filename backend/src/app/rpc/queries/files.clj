@@ -423,13 +423,11 @@
   [{:keys [pool] :as cfg} {:keys [team-id] :as params}]
   (let [assets-sample
         (fn [assets limit]
-          (let [sorted-assets (->> assets
-                                   (vals)
-                                   (vec)
+          (let [sorted-assets (->> (vals assets)
                                    (sort-by #(str/lower (:name %))))]
 
           {:count (count sorted-assets)
-           :sample (take limit sorted-assets)}))
+           :sample (into [] (take limit sorted-assets))}))
 
         library-summary
         (fn [data]
