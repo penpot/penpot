@@ -40,7 +40,7 @@
             childs        (mf/deref childs-ref)]
 
         [:& (mf/provider embed/context) {:value true}
-         [:& shape-container {:shape shape :ref ref :disable-shadows? true}
+         [:& shape-container {:shape shape :ref ref :disable-shadows? (cph/root-frame? shape)}
           [:& frame-shape {:shape shape :childs childs} ]]]))))
 
 (defn check-props

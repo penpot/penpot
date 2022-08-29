@@ -1,5 +1,13 @@
 # CHANGELOG
 
+
+## 1.15.1-beta
+
+### :bug: Bugs fixed
+
+- Fix shadows doesn't work on nested artboards [Taiga #3886](https://tree.taiga.io/project/penpot/issue/3886)
+
+
 ## 1.15.0-beta
 
 ### :boom: Breaking changes & Deprecations
