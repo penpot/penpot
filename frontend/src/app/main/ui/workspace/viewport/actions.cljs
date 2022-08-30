@@ -21,8 +21,8 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
+   [app.util.dom.normalize-wheel :as nw]
    [app.util.keyboard :as kbd]
-   [app.util.normalize-wheel :as nw]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [beicon.core :as rx]
@@ -194,7 +194,7 @@
               :else
               (let [;; We only get inside childrens of the hovering shape
                     hover-ids (->> @hover-ids (filter (partial cph/is-child? objects id)))
-                    selected (get objects (if (> (count hover-ids) 1) (second hover-ids) (first hover-ids)))]
+                    selected (get objects (first hover-ids))]
                 (when (some? selected)
                   (reset! hover selected)
                   (st/emit! (dw/select-shape (:id selected)))))))))))))

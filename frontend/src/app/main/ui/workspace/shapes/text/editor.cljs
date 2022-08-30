@@ -268,8 +268,7 @@
         text-modifier
         (mf/deref text-modifier-ref)
 
-        bounding-box
-        (gsht/position-data-bounding-box text-modifier)
+        bounding-box (gsht/position-data-bounding-box (or text-modifier shape))
 
         x      (min (:x bounding-box) (:x shape))
         y      (min (:y bounding-box) (:y shape))
@@ -280,15 +279,15 @@
                      :transform (dm/str (gsh/transform-matrix shape))}
      [:defs
       [:clipPath {:id clip-id}
-       [:rect {:x (or x (:x shape))
-               :y (or y (:y shape))
-               :width (or width (:width shape))
-               :height (or height (:height shape))
+       [:rect {:x x
+               :y y
+               :width width
+               :height height
                :fill "red"}]]]
 
-     [:foreignObject {:x (:x shape) :y (:y shape) :width width :height height}
+     [:foreignObject {:x x :y y :width width :height height}
       [:div {:style {:position "absolute"
                      :left 0
-                     :top  0
+                     :top  (- (:y shape) y)
                      :pointer-events "all"}}
        [:& text-shape-edit-html {:shape shape :key (str (:id shape))}]]]]))

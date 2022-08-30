@@ -330,10 +330,10 @@
 (defn bounding-rect->rect
   [rect]
   (when (some? rect)
-    {:x      (or (.-left rect)   (:left rect))
-     :y      (or (.-top rect)    (:top rect))
-     :width  (or (.-width rect)  (:width rect))
-     :height (or (.-height rect) (:height rect))}))
+    {:x      (or (.-left rect)   (:left rect)   0)
+     :y      (or (.-top rect)    (:top rect)    0)
+     :width  (or (.-width rect)  (:width rect)  1)
+     :height (or (.-height rect) (:height rect) 1)}))
 
 (defn get-window-size
   []
@@ -482,10 +482,20 @@
   (when (some? element)
     (.-scrollTop element)))
 
+(defn get-h-scroll-pos
+  [^js element]
+  (when (some? element)
+    (.-scrollLeft element)))
+
 (defn set-scroll-pos!
   [^js element scroll]
   (when (some? element)
     (obj/set! element "scrollTop" scroll)))
+
+(defn set-h-scroll-pos!
+  [^js element scroll]
+  (when (some? element)
+    (obj/set! element "scrollLeft" scroll)))
 
 (defn scroll-into-view!
   ([^js element]

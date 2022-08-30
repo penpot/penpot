@@ -195,13 +195,17 @@
 
     [:div.viewport
      [:div.viewport-overlays {:ref overlays-ref}
-      [:div {:style {:pointer-events "none" :opacity 0}}
-       [:& stvh/viewport-texts
-        {:key (dm/str "texts-" page-id)
-         :page-id page-id
-         :objects objects
-         :modifiers modifiers
-         :edition edition}]]
+      ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
+      ;; inside a foreign object "dummy" so this awkward behaviour is take into account
+      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity 0}}
+       [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
+        [:div {:style {:pointer-events "none"}}
+         [:& stvh/viewport-texts
+          {:key (dm/str "texts-" page-id)
+           :page-id page-id
+           :objects objects
+           :modifiers modifiers
+           :edition edition}]]]]
 
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
