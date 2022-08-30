@@ -13,7 +13,6 @@
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.layout :as layout]
-   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.util.color :as uc]
@@ -430,8 +429,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when-let [color (some-> state :colorpicker get-color-from-colorpicker-state)]
-        (on-change color)
-        (rx/of (dwl/add-recent-color color))))))
+        (on-change color)))))
 
 (defn initialize-colorpicker
   [on-change]
