@@ -94,7 +94,16 @@
         (mf/use-fn #(st/emit! (dc/activate-colorpicker-gradient :linear-gradient)))
 
         on-activate-radial-gradient
-        (mf/use-fn #(st/emit! (dc/activate-colorpicker-gradient :radial-gradient)))]
+        (mf/use-fn #(st/emit! (dc/activate-colorpicker-gradient :radial-gradient)))
+
+        on-finish-drag
+        (mf/use-fn
+         (mf/deps state)
+         (fn []
+           (let [color (dc/get-color-from-colorpicker-state state)]
+           (st/emit! 
+            (dwl/add-recent-color color)
+            (dwu/commit-undo-transaction)))))]
 
     ;; Initialize colorpicker state
     (mf/with-effect []
@@ -186,21 +195,21 @@
             :disable-opacity disable-opacity
             :on-change handle-change-color
             :on-start-drag #(st/emit! (dwu/start-undo-transaction))
-            :on-finish-drag #(st/emit! (dwu/commit-undo-transaction))}]
+            :on-finish-drag on-finish-drag}]
           :harmony
           [:& harmony-selector
            {:color current-color
             :disable-opacity disable-opacity
             :on-change handle-change-color
             :on-start-drag #(st/emit! (dwu/start-undo-transaction))
-            :on-finish-drag #(st/emit! (dwu/commit-undo-transaction))}]
+            :on-finish-drag on-finish-drag}]
           :hsva
           [:& hsva-selector
            {:color current-color
             :disable-opacity disable-opacity
             :on-change handle-change-color
             :on-start-drag #(st/emit! (dwu/start-undo-transaction))
-            :on-finish-drag #(st/emit! (dwu/commit-undo-transaction))}]
+            :on-finish-drag on-finish-drag}]
           nil))
 
       [:& color-inputs
