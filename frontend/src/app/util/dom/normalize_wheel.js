@@ -15,15 +15,10 @@
 
 'use strict';
 
-goog.provide("app.util.normalize_wheel");
+goog.provide("app.util.dom.normalize_wheel");
 
 goog.scope(function() {
-  const self = app.util.normalize_wheel;
-  
-  // const UserAgent_DEPRECATED = require('UserAgent_DEPRECATED');
-
-  // const isEventSupported = require('isEventSupported');
-
+  const self = app.util.dom.normalize_wheel;
 
   // Reasonable defaults
   const PIXEL_STEP  = 10;
@@ -174,6 +169,5 @@ goog.scope(function() {
 
 
   self.normalize_wheel = normalizeWheel;
-  
 });
 

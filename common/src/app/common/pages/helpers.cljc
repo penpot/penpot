@@ -308,23 +308,18 @@
   "Check if `parent-candidate` is parent of `shape-id`"
   [objects shape-id parent-candidate]
 
-  (loop [current (get objects parent-candidate)
-         done #{}
-         pending (:shapes current)]
-
+  (loop [current-id shape-id]
     (cond
-      (contains? done (:id current))
-      (recur (get objects (first pending))
-             done
-             (rest pending))
+      (= current-id parent-candidate)
+      true
 
-      (empty? pending) false
-      (and current (contains? (set (:shapes current)) shape-id)) true
+      (or (nil? current-id)
+          (= current-id uuid/zero)
+          (= current-id (get-in objects [current-id :parent-id])))
+      false
 
       :else
-      (recur (get objects (first pending))
-             (conj done (:id current))
-             (concat (rest pending) (:shapes current))))))
+      (recur (get-in objects [current-id :parent-id])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS HELPERS
