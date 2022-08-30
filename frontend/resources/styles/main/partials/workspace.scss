@@ -352,9 +352,10 @@ $height-palette-max: 80px;
   position: absolute;
   width: 100%;
   z-index: 12;
-  pointer-events: initial;
+  pointer-events: none;
 
   .path-actions {
+    pointer-events: initial;
     display: flex;
     flex-direction: row;
     background: white;
