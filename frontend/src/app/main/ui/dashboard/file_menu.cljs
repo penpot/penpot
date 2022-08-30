@@ -6,7 +6,6 @@
 
 (ns app.main.ui.dashboard.file-menu
   (:require
-   [app.common.data :as d]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as dm]
@@ -175,8 +174,8 @@
           (->> (rx/from files)
                (rx/flat-map
                 (fn [file]
-                  (->> (rp/query :file-libraries {:file-id (:id file)})
-                       (rx/map #(assoc file :has-libraries? (d/not-empty? %))))))
+                  (->> (rp/command :has-file-libraries {:file-id (:id file)})
+                       (rx/map #(assoc file :has-libraries? %)))))
                (rx/reduce conj [])
                (rx/subs
                 (fn [files]

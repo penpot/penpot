@@ -37,7 +37,7 @@
 - Fix mismatch between editor and displayed text in workspace [Taiga #3975](https://tree.taiga.io/project/penpot/issue/3975)
 - Fix validation error on text position [Taiga #4010](https://tree.taiga.io/project/penpot/issue/4010)
 - Fix objects jitter while scrolling [Github #2167](https://github.com/penpot/penpot/issues/2167)
->>>>>>> origin/staging
+- Fix on color-picker, click+drag adds lots of recent colors [Taiga #4013](https://tree.taiga.io/project/penpot/issue/4013)
 
 ## 1.15.0-beta
 
@@ -97,6 +97,7 @@
 - Fix unexpected exception and behavior on colorpicker with gradients [Taiga #3448](https://tree.taiga.io/project/penpot/issue/3448)
 - Fix multiselection with shift not working inside a library group [Taiga #3532](https://tree.taiga.io/project/penpot/issue/3532)
 - Fix drag and drop graphic assets in groups [Taiga #4002](https://tree.taiga.io/project/penpot/issue/4002)
+- Fix bringing complete file data when launching the export dialog [Taiga #4006](https://tree.taiga.io/project/penpot/issue/4006)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

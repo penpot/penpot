@@ -244,7 +244,8 @@
                      'app.rpc.commands.management
                      'app.rpc.commands.auth
                      'app.rpc.commands.ldap
-                     'app.rpc.commands.demo)
+                     'app.rpc.commands.demo
+                     'app.rpc.commands.files)
          (map (partial process-method cfg))
          (into {}))))
 
