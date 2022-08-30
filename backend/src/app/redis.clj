@@ -283,14 +283,14 @@
                   (p/rejected cause))))
 
             (eval-script [sha]
-              (let [start-ts (System/nanoTime)]
+              (let [tpoint (dt/tpoint)]
                 (-> (.evalsha ^RedisScriptingAsyncCommands cmd
                               ^String sha
                               ^ScriptOutputType ScriptOutputType/MULTI
                               ^"[Ljava.lang.String;" keys
                               ^"[Ljava.lang.String;" vals)
                     (p/then (fn [result]
-                              (let [elapsed (dt/duration {:nanos (- (System/nanoTime) start-ts)})]
+                              (let [elapsed (tpoint)]
                                 (mtx/run! metrics {:id :redis-eval-timing
                                                    :labels [(name sname)]
                                                    :val (inst-ms elapsed)})
