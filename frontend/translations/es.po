@@ -455,7 +455,7 @@ msgstr "Abandonar equipo"
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
-msgstr "Bibliotecas Compartidas"
+msgstr "Bibliotecas"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
@@ -1577,7 +1577,7 @@ msgstr "Compartir prototipo"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
-msgstr "Bibliotecas Compartidas"
+msgstr "Bibliotecas"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"

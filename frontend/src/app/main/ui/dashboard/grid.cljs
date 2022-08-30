@@ -12,7 +12,9 @@
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
+   [app.main.render :refer [component-svg]]
    [app.main.store :as st]
+   [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.dashboard.file-menu :refer [file-menu]]
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
@@ -56,6 +58,88 @@
                         :ref container}
      i/loader-pencil]))
 
+;; --- Grid Item Library
+
+(mf/defc grid-item-library
+  {::mf/wrap [mf/memo]}
+  [{:keys [file] :as props}]
+
+  (mf/with-effect [file]
+    (when file
+      (let [font-ids (map :font-id (get-in file [:library-summary :typographies :sample] []))]
+        (run! fonts/ensure-loaded! font-ids))))
+
+  [:div.grid-item-th.library
+   (if (nil? file)
+     i/loader-pencil
+     (let [summary (:library-summary file)
+           components (:components summary)
+           colors (:colors summary)
+           typographies (:typographies summary)]
+       [:*
+
+        (when (pos? (:count components))
+          [:div.asset-section
+           [:div.asset-title
+            [:span (tr "workspace.assets.components")]
+            [:span.num-assets (str "\u00A0(") (:count components) ")"]] ;; Unicode 00A0 is non-breaking space
+           [:div.asset-list
+            (for [component (:sample components)]
+              [:div.asset-list-item {:key (str "assets-component-" (:id component))}
+               [:& component-svg {:group (get-in component [:objects (:id component)])
+                                  :objects (:objects component)}]
+               [:div.name-block
+                [:span.item-name {:title (:name component)}
+                 (:name component)]]])
+            (when (> (:count components) (count (:sample components)))
+              [:div.asset-list-item
+               [:div.name-block
+                [:span.item-name "(...)"]]])]])
+
+        (when (pos? (:count colors))
+          [:div.asset-section
+           [:div.asset-title
+            [:span (tr "workspace.assets.colors")]
+            [:span.num-assets (str "\u00A0(") (:count colors) ")"]] ;; Unicode 00A0 is non-breaking space
+           [:div.asset-list
+            (for [color (:sample colors)]
+              (let [default-name (cond
+                                   (:gradient color) (bc/gradient-type->string (get-in color [:gradient :type]))
+                                   (:color color) (:color color)
+                                   :else (:value color))]
+                [:div.asset-list-item {:key (str "assets-color-" (:id color))}
+                 [:& bc/color-bullet {:color {:color (:color color)
+                                              :opacity (:opacity color)}}]
+                 [:div.name-block
+                  [:span.color-name (:name color)]
+                  (when-not (= (:name color) default-name)
+                    [:span.color-value (:color color)])]]))
+            (when (> (:count colors) (count (:sample colors)))
+              [:div.asset-list-item
+               [:div.name-block
+                [:span.item-name "(...)"]]])]])
+
+        (when (pos? (:count typographies))
+          [:div.asset-section
+           [:div.asset-title
+            [:span (tr "workspace.assets.typography")]
+            [:span.num-assets (str "\u00A0(") (:count typographies) ")"]] ;; Unicode 00A0 is non-breaking space
+           [:div.asset-list
+            (for [typography (:sample typographies)]
+              [:div.asset-list-item {:key (str "assets-typography-" (:id typography))}
+               [:div.typography-sample
+                {:style {:font-family (:font-family typography)
+                         :font-weight (:font-weight typography)
+                         :font-style (:font-style typography)}}
+                (tr "workspace.assets.typography.sample")]
+               [:div.name-block
+                [:span.item-name {:title (:name typography)}
+                 (:name typography)]]])
+            (when (> (:count typographies) (count (:sample typographies)))
+              [:div.asset-list-item
+               [:div.name-block
+                [:span.item-name "(...)"]]])]])]))])
+
 ;; --- Grid Item
 
 (mf/defc grid-item-metadata
@@ -74,7 +158,7 @@
 
 (mf/defc grid-item
   {:wrap [mf/memo]}
-  [{:keys [file navigate? origin] :as props}]
+  [{:keys [file navigate? origin library-view?] :as props}]
   (let [file-id        (:id file)
         local          (mf/use-state {:menu-open false
                                       :menu-pos nil
@@ -174,7 +258,8 @@
          (swap! local assoc :menu-open false))))
 
     [:div.grid-item.project-th
-     {:class (dom/classnames :selected selected?)
+     {:class (dom/classnames :selected selected?
+                             :library library-view?)
       :ref item-ref
       :draggable true
       :on-click on-select
@@ -183,8 +268,10 @@
       :on-context-menu on-menu-click}
 
      [:div.overlay]
-     [:& grid-item-thumbnail {:file file}]
-     (when (:is-shared file)
+     (if library-view?
+       [:& grid-item-library {:file file}]
+       [:& grid-item-thumbnail {:file file}])
+     (when (and (:is-shared file) (not library-view?))
        [:div.item-badge i/library])
      [:div.item-info
       (if (:edition @local)
@@ -210,7 +297,7 @@
                         :dashboard-local dashboard-local}])]]]))
 
 (mf/defc grid
-  [{:keys [files project on-create-clicked origin limit] :as props}]
+  [{:keys [files project on-create-clicked origin limit library-view?] :as props}]
   (let [dragging?  (mf/use-state false)
         project-id (:id project)
 
@@ -272,7 +359,8 @@
            {:file item
             :key (:id item)
             :navigate? true
-            :origin origin}])]
+            :origin origin
+            :library-view? library-view?}])]
        :else
        [:& empty-placeholder {:default? (:is-default project)
                               :on-create-clicked on-create-clicked

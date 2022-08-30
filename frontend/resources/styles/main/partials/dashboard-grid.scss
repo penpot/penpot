@@ -296,11 +296,6 @@
     }
   }
 
-  // STYLES FOR LIBRARIES
-  &.library {
-    padding: $size-4;
-  }
-
   .grid-item-th {
     background-position: center;
     background-size: auto 80%;
@@ -330,6 +325,91 @@
 
     svg#loader-pencil {
       fill: $color-gray-20;
+    }
+  }
+
+  // LIBRARY VIEW
+  .grid-item {
+    &.project-th.library {
+      height: 610px;
+      width: 300px;
+    }
+
+    .grid-item-th.library {
+      background-color: $color-gray-50;
+      flex-direction: column;
+      height: 90%;
+      justify-content: start;
+      max-height: 550px;
+      padding: $size-6;
+
+      .asset-section {
+        font-size: $fs12;
+        color: $color-gray-20;
+
+        &:not(:first-child) {
+          margin-top: $size-4;
+        }
+      }
+
+      .asset-title {
+        display: flex;
+        font-size: $fs12;
+        text-transform: uppercase;
+
+        & .num-assets {
+          color: $color-gray-30;
+        }
+      }
+
+      .asset-list-item {
+        display: flex;
+        align-items: center;
+        border: 1px solid transparent;
+        border-radius: $br-small;
+        margin-top: $size-1;
+        padding: 2px;
+        font-size: $fs12;
+        color: $color-white;
+        position: relative;
+
+        & .name-block {
+          color: $color-gray-20;
+          width: calc(100% - 24px - #{$size-2});
+        }
+
+        & .item-name {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          display: block;
+        }
+
+        & svg {
+          background-color: $color-canvas;
+          border-radius: 4px;
+          border: 2px solid transparent;
+          height: 24px;
+          width: 24px;
+          margin-right: $size-2;
+        }
+
+        & .color-name {
+          color: $color-white;
+        }
+
+        & .color-value {
+          margin-left: $size-1;
+          color: $color-gray-30;
+          text-transform: uppercase;
+        }
+
+        & .typography-sample {
+          height: 20px;
+          margin-right: $size-1;
+          width: 20px;
+        }
+      }
     }
   }
 }
