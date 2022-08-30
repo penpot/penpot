@@ -484,10 +484,20 @@
   (when (some? element)
     (.-scrollTop element)))
 
+(defn get-h-scroll-pos
+  [^js element]
+  (when (some? element)
+    (.-scrollLeft element)))
+
 (defn set-scroll-pos!
   [^js element scroll]
   (when (some? element)
     (obj/set! element "scrollTop" scroll)))
+
+(defn set-h-scroll-pos!
+  [^js element scroll]
+  (when (some? element)
+    (obj/set! element "scrollLeft" scroll)))
 
 (defn scroll-into-view!
   ([^js element]

@@ -32,7 +32,9 @@
    [app.main.ui.viewer.login]
    [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
    [app.util.dom :as dom]
+   [app.util.dom.normalize-wheel :as nw]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [goog.events :as events]
@@ -305,7 +307,28 @@
         on-scroll
         (mf/use-fn
          (fn [event]
-           (reset! scroll (dom/get-target-scroll event))))]
+           (reset! scroll (dom/get-target-scroll event))))
+
+        on-wheel
+        (mf/use-fn
+         (fn [event]
+           (let [event  (.getBrowserEvent ^js event)
+                 norm-event ^js (nw/normalize-wheel event)
+                 mod? (kbd/mod? event)
+                 shift? (kbd/shift? event)
+                 delta (.-pixelY norm-event)
+                 viewer-section (mf/ref-val viewer-section-ref)
+                 scroll-pos (if shift?
+                              (dom/get-h-scroll-pos viewer-section)
+                              (dom/get-scroll-pos viewer-section))
+                 new-scroll-pos (+ scroll-pos delta)]
+             (when-not mod?
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (if shift?
+                   (dom/set-h-scroll-pos! viewer-section new-scroll-pos)
+                   (dom/set-scroll-pos! viewer-section new-scroll-pos)))))))]
 
     (hooks/use-shortcuts ::viewer sc/shortcuts)
 
@@ -326,10 +349,12 @@
     (mf/with-effect []
       (dom/set-html-theme-color clr/gray-50 "dark")
       (let [key1 (events/listen js/window "click" on-click)
-            key2 (events/listen (mf/ref-val viewer-section-ref) "scroll" on-scroll)]
+            key2 (events/listen (mf/ref-val viewer-section-ref) "scroll" on-scroll #js {"passive" true})
+            key3 (events/listen (mf/ref-val viewer-section-ref) "wheel" on-wheel #js {"passive" false})]
         (fn []
           (events/unlistenByKey key1)
-          (events/unlistenByKey key2))))
+          (events/unlistenByKey key2)
+          (events/unlistenByKey key3))))
 
     (mf/use-layout-effect
      (fn []
@@ -429,13 +454,13 @@
 
      [:div.viewer-content
       [:& header/header {:project project
-                  :index index
-                  :file file
-                  :page page
-                  :frame frame
-                  :permissions permissions
-                  :zoom zoom
-                  :section section}]
+                         :index index
+                         :file file
+                         :page page
+                         :frame frame
+                         :permissions permissions
+                         :zoom zoom
+                         :section section}]
       [:div.thumbnail-close {:on-click #(st/emit! dv/close-thumbnails-panel)
                              :class (dom/classnames :invisible (not (:show-thumbnails local false)))}]
       [:& thumbnails-panel {:frames frames

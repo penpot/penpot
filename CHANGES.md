@@ -9,6 +9,7 @@
 - Fix problems with double-click and selection [Taiga #4005](https://tree.taiga.io/project/penpot/issue/4005)
 - Fix mismatch between editor and displayed text in workspace [Taiga #3975](https://tree.taiga.io/project/penpot/issue/3975)
 - Fix validation error on text position [Taiga #4010](https://tree.taiga.io/project/penpot/issue/4010)
+- Fix objects jitter while scrolling [Github #2167](https://github.com/penpot/penpot/issues/2167)
 
 ## 1.15.0-beta
 
