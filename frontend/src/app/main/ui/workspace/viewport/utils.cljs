@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.main.ui.cursors :as cur]
    [app.main.ui.formats :refer [format-number]]
    [app.util.dom :as dom]))
@@ -45,3 +46,18 @@
     :zoom-in cur/zoom-in
     :zooom-out cur/zoom-out
     cur/pointer-inner))
+
+;; Ensure that the label has always the same font
+;; size, regardless of zoom
+;; https://css-tricks.com/transforms-on-svg-elements/
+(defn text-transform
+  [{:keys [x y]} zoom]
+  (let [inv-zoom (/ 1 zoom)]
+    (str
+     "scale(" inv-zoom ", " inv-zoom ") "
+     "translate(" (* zoom x) ", " (* zoom y) ")")))
+
+(defn title-transform [frame zoom]
+  (let [frame-transform (gsh/transform-str frame {:no-flip true})
+        label-pos (gpt/point (:x frame) (- (:y frame) (/ 10 zoom)))]
+    (dm/str frame-transform " " (text-transform label-pos zoom))))
