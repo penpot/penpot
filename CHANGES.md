@@ -11,6 +11,7 @@
 - Fix validation error on text position [Taiga #4010](https://tree.taiga.io/project/penpot/issue/4010)
 - Fix objects jitter while scrolling [Github #2167](https://github.com/penpot/penpot/issues/2167)
 - Fix on color-picker, click+drag adds lots of recent colors [Taiga #4013](https://tree.taiga.io/project/penpot/issue/4013)
+- Fix opening profile URL while signed out takes to "your account" section[Taiga #3976](https://tree.taiga.io/project/penpot/issue/3976)
 
 ## 1.15.0-beta
 
