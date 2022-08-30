@@ -15,7 +15,7 @@
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
-   [app.rpc.rlimit :as rlimit]
+   [app.rpc.semaphore :as rsem]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.bytes :as bs]
@@ -53,7 +53,7 @@
           :opt-un [::id]))
 
 (sv/defmethod ::upload-file-media-object
-  {::rlimit/permits (cf/get :rlimit-image)}
+  {::rsem/permits (cf/get :rpc-semaphore-permits-image)}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id content] :as params}]
   (let [file (select-file pool file-id)
         cfg  (update cfg :storage media/configure-assets-storage)]
@@ -181,7 +181,7 @@
           :opt-un [::id ::name]))
 
 (sv/defmethod ::create-file-media-object-from-url
-  {::rlimit/permits (cf/get :rlimit-image)}
+  {::rsem/permits (cf/get :rpc-semaphore-permits-image)}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (let [file (select-file pool file-id)
         cfg  (update cfg :storage media/configure-assets-storage)]

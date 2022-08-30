@@ -29,8 +29,6 @@
   org.postgresql/postgresql {:mvn/version "42.4.0"}
   com.zaxxer/HikariCP {:mvn/version "5.0.1"}
 
-  funcool/datoteka {:mvn/version "3.0.64"}
-
   buddy/buddy-hashers {:mvn/version "1.8.158"}
   buddy/buddy-sign {:mvn/version "3.4.333"}
 

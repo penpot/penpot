@@ -69,7 +69,6 @@
                       {:id (:id data)})
           (assoc data :updated-at updated-at))))
 
-
     (delete-session [_ token]
       (px/with-dispatch executor
         (db/delete! pool :http-session {:id token})

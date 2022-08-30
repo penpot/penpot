@@ -16,7 +16,7 @@
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [integrant.core :as ig]
    [promesa.exec :as px]))
 

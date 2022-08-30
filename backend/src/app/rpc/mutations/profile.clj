@@ -17,7 +17,7 @@
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
-   [app.rpc.rlimit :as rlimit]
+   [app.rpc.semaphore :as rsem]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
@@ -87,7 +87,7 @@
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
 (sv/defmethod ::update-profile-password
-  {::rlimit/permits (cf/get :rlimit-password)}
+  {::rsem/permits (cf/get :rpc-semaphore-permits-password)}
   [{:keys [pool] :as cfg} {:keys [password] :as params}]
   (db/with-atomic [conn pool]
     (let [profile    (validate-password! conn params)
@@ -130,7 +130,7 @@
   (s/keys :req-un [::profile-id ::file]))
 
 (sv/defmethod ::update-profile-photo
-  {::rlimit/permits (cf/get :rlimit-image)}
+  {::rsem/permits (cf/get :rpc-semaphore-permits-image)}
   [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
@@ -305,7 +305,7 @@
 (s/def ::login ::cmd.auth/login-with-password)
 
 (sv/defmethod ::login
-  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false ::rsem/permits (cf/get :rpc-semaphore-permits-password)}
   [cfg params]
   (cmd.auth/login-with-password cfg params))
 
@@ -323,7 +323,7 @@
 (s/def ::recover-profile ::cmd.auth/recover-profile)
 
 (sv/defmethod ::recover-profile
-  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false ::rsem/permits (cf/get :rpc-semaphore-permits-password)}
   [cfg params]
   (cmd.auth/recover-profile cfg params))
 
@@ -340,7 +340,7 @@
 (s/def ::register-profile ::cmd.auth/register-profile)
 
 (sv/defmethod ::register-profile
-  {:auth false ::rlimit/permits (cf/get :rlimit-password)}
+  {:auth false ::rsem/permits (cf/get :rpc-semaphore-permits-password)}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)

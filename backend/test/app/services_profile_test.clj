@@ -9,9 +9,10 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.rpc.mutations.profile :as profile]
    [app.rpc.commands.auth :as cauth]
+   [app.rpc.mutations.profile :as profile]
    [app.test-helpers :as th]
+   [app.tokens :as tokens]
    [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.test :as t]
@@ -196,13 +197,13 @@
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
   (with-redefs [app.config/flags [:disable-registration]]
-    (let [tokens-fn (:app.tokens/tokens th/*system*)
-          itoken    (tokens-fn :generate
-                               {:iss :team-invitation
-                                :exp (dt/in-future "48h")
-                                :role :editor
-                                :team-id uuid/zero
-                                :member-email "user@example.com"})
+    (let [sprops (:app.setup/props th/*system*)
+          itoken (tokens/generate sprops
+                                  {:iss :team-invitation
+                                   :exp (dt/in-future "48h")
+                                   :role :editor
+                                   :team-id uuid/zero
+                                   :member-email "user@example.com"})
           data  {::th/type :prepare-register-profile
                  :invitation-token itoken
                  :email "user@example.com"
@@ -226,13 +227,13 @@
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-2
   (with-redefs [app.config/flags [:disable-registration]]
-    (let [tokens-fn (:app.tokens/tokens th/*system*)
-          itoken    (tokens-fn :generate
-                               {:iss :team-invitation
-                                :exp (dt/in-future "48h")
-                                :role :editor
-                                :team-id uuid/zero
-                                :member-email "user2@example.com"})
+    (let [sprops (:app.setup/props th/*system*)
+          itoken (tokens/generate sprops
+                                  {:iss :team-invitation
+                                   :exp (dt/in-future "48h")
+                                   :role :editor
+                                   :team-id uuid/zero
+                                   :member-email "user2@example.com"})
 
           data  {::th/type :prepare-register-profile
                  :invitation-token itoken

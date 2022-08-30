@@ -20,7 +20,7 @@
    [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
-   [app.rpc.rlimit :as rlimit]
+   [app.rpc.semaphore :as rsem]
    [app.storage.impl :as simpl]
    [app.util.blob :as blob]
    [app.util.services :as sv]
@@ -318,7 +318,7 @@
          (contains? o :changes-with-metadata)))))
 
 (sv/defmethod ::update-file
-  {::rlimit/permits (cf/get :rlimit-file-update)}
+  {::rsem/permits (cf/get :rpc-semaphore-permits-file-update)}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn id)

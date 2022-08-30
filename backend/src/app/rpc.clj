@@ -10,10 +10,12 @@
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.http :as-alias http]
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
    [app.rpc.retry :as retry]
    [app.rpc.rlimit :as rlimit]
+   [app.rpc.semaphore :as rsem]
    [app.util.async :as async]
    [app.util.services :as sv]
    [app.worker :as wrk]
@@ -39,81 +41,72 @@
     (ex/ignoring (hook-fn)))
   response)
 
+(defn- handle-response
+  [request result]
+  (let [mdata (meta result)]
+    (p/-> (yrs/response 200 result (::http/headers mdata {}))
+          (handle-response-transformation request mdata)
+          (handle-before-comple-hook mdata))))
+
 (defn- rpc-query-handler
   "Ring handler that dispatches query requests and convert between
   internal async flow into ring async flow."
   [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (letfn [(handle-response [result]
-            (let [mdata (meta result)]
-              (-> (yrs/response 200 result)
-                  (handle-response-transformation request mdata))))]
+  (let [type   (keyword (:type params))
+        data   (into {::http/request request} params)
+        data   (if profile-id
+                 (assoc data :profile-id profile-id ::session-id session-id)
+                 (dissoc data :profile-id))
+        method (get methods type default-handler)]
 
-    (let [type   (keyword (:type params))
-          data   (into {::request request} params)
-          data   (if profile-id
-                   (assoc data :profile-id profile-id ::session-id session-id)
-                   (dissoc data :profile-id))
-          method (get methods type default-handler)]
-
-      (-> (method data)
-          (p/then handle-response)
-          (p/then respond)
-          (p/catch (fn [cause]
-                     (let [context {:profile-id profile-id}]
-                       (raise (ex/wrap-with-context cause context)))))))))
+    (-> (method data)
+        (p/then (partial handle-response request))
+        (p/then respond)
+        (p/catch (fn [cause]
+                   (let [context {:profile-id profile-id}]
+                     (raise (ex/wrap-with-context cause context))))))))
 
 (defn- rpc-mutation-handler
   "Ring handler that dispatches mutation requests and convert between
   internal async flow into ring async flow."
   [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (letfn [(handle-response [result]
-            (let [mdata (meta result)]
-              (p/-> (yrs/response 200 result)
-                    (handle-response-transformation request mdata)
-                    (handle-before-comple-hook mdata))))]
+  (let [type   (keyword (:type params))
+        data   (into {::request request} params)
+        data   (if profile-id
+                 (assoc data :profile-id profile-id ::session-id session-id)
+                 (dissoc data :profile-id))
 
-    (let [type   (keyword (:type params))
-          data   (into {::request request} params)
-          data   (if profile-id
-                   (assoc data :profile-id profile-id ::session-id session-id)
-                   (dissoc data :profile-id))
-
-          method (get methods type default-handler)]
-      (-> (method data)
-          (p/then handle-response)
-          (p/then respond)
-          (p/catch (fn [cause]
-                     (let [context {:profile-id profile-id}]
-                       (raise (ex/wrap-with-context cause context)))))))))
+        method (get methods type default-handler)]
+    (-> (method data)
+        (p/then (partial handle-response request))
+        (p/then respond)
+        (p/catch (fn [cause]
+                   (let [context {:profile-id profile-id}]
+                     (raise (ex/wrap-with-context cause context))))))))
 
 (defn- rpc-command-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
   [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (letfn [(handle-response [result]
-            (let [mdata (meta result)]
-              (p/-> (yrs/response 200 result)
-                    (handle-response-transformation request mdata)
-                    (handle-before-comple-hook mdata))))]
+  (let [cmd    (keyword (:command params))
+        data   (into {::request request} params)
+        data   (if profile-id
+                 (assoc data :profile-id profile-id ::session-id session-id)
+                 (dissoc data :profile-id))
 
-    (let [cmd    (keyword (:command params))
-          data   (into {::request request} params)
-          data   (if profile-id
-                   (assoc data :profile-id profile-id ::session-id session-id)
-                   (dissoc data :profile-id))
-
-          method (get methods cmd default-handler)]
-      (-> (method data)
-          (p/then handle-response)
-          (p/then respond)
-          (p/catch (fn [cause]
-                     (let [context {:profile-id profile-id}]
-                       (raise (ex/wrap-with-context cause context)))))))))
+        method (get methods cmd default-handler)]
+    (-> (method data)
+        (p/then (partial handle-response request))
+        (p/then respond)
+        (p/catch (fn [cause]
+                   (let [context {:profile-id profile-id}]
+                     (raise (ex/wrap-with-context cause context))))))))
 
 (defn- wrap-metrics
   "Wrap service method with metrics measurement."
   [{:keys [metrics ::metrics-id]} f mdata]
   (let [labels (into-array String [(::sv/name mdata)])]
+
     (fn [cfg params]
       (let [start (System/nanoTime)]
         (p/finally
@@ -177,7 +170,8 @@
   [cfg f mdata]
   (let [f     (as-> f $
                 (wrap-dispatch cfg $ mdata)
-                (rlimit/wrap-rlimit cfg $ mdata)
+                (rsem/wrap cfg $ mdata)
+                (rlimit/wrap cfg $ mdata)
                 (retry/wrap-retry cfg $ mdata)
                 (wrap-audit cfg $ mdata)
                 (wrap-metrics cfg $ mdata)

@@ -8,7 +8,7 @@
   "Bytes & Byte Streams helpers"
   (:require
    [clojure.java.io :as io]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [yetti.adapter :as yt])
   (:import
    com.github.luben.zstd.ZstdInputStream
@@ -22,6 +22,8 @@
    java.lang.AutoCloseable
    org.apache.commons.io.IOUtils
    org.apache.commons.io.input.BoundedInputStream))
+
+;; TODO: migrate to datoteka.io
 
 (set! *warn-on-reflection* true)
 

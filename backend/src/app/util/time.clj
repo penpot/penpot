@@ -27,16 +27,29 @@
 ;; Instant & Duration
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn temporal-unit
+  [o]
+  (if (instance? TemporalUnit o)
+    o
+    (case o
+      :nanos   ChronoUnit/NANOS
+      :millis  ChronoUnit/MILLIS
+      :micros  ChronoUnit/MICROS
+      :seconds ChronoUnit/SECONDS
+      :minutes ChronoUnit/MINUTES
+      :hours   ChronoUnit/HOURS
+      :days    ChronoUnit/DAYS
+      :weeks   ChronoUnit/WEEKS
+      :monts   ChronoUnit/MONTHS)))
+
 ;; --- DURATION
 
 (defn- obj->duration
-  [{:keys [days minutes seconds hours nanos millis]}]
-  (cond-> (Duration/ofMillis (if (int? millis) ^long millis 0))
-    (int? days)    (.plusDays ^long days)
-    (int? hours)   (.plusHours ^long hours)
-    (int? minutes) (.plusMinutes ^long minutes)
-    (int? seconds) (.plusSeconds ^long seconds)
-    (int? nanos)   (.plusNanos ^long nanos)))
+  [params]
+  (reduce-kv (fn [o k v]
+               (.plus ^Duration o ^long v ^TemporalUnit (temporal-unit k)))
+             (Duration/ofMillis 0)
+             params))
 
 (defn duration?
   [v]
@@ -57,20 +70,17 @@
     :else
     (obj->duration ms-or-obj)))
 
+(defn ->seconds
+  [d]
+  (-> d inst-ms (/ 1000) int))
+
 (defn diff
   [t1 t2]
   (Duration/between t1 t2))
 
 (defn truncate
   [o unit]
-  (let [unit (if (instance? TemporalUnit unit)
-               unit
-               (case unit
-                 :nanos ChronoUnit/NANOS
-                 :millis ChronoUnit/MILLIS
-                 :micros ChronoUnit/MICROS
-                 :seconds ChronoUnit/SECONDS
-                 :minutes ChronoUnit/MINUTES))]
+  (let [unit (temporal-unit unit)]
     (cond
       (instance? Instant o)
       (.truncatedTo ^Instant o ^TemporalUnit unit)
@@ -159,11 +169,11 @@
 
 (defn in-future
   [v]
-  (plus (now) (duration v)))
+  (plus (now) v))
 
 (defn in-past
   [v]
-  (minus (now) (duration v)))
+  (minus (now) v))
 
 (defn instant->zoned-date-time
   [v]

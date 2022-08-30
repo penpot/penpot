@@ -37,51 +37,51 @@
 
 (def default-metrics
   {:update-file-changes
-   {:name "rpc_update_file_changes_total"
+   {:name "penpot_rpc_update_file_changes_total"
     :help "A total number of changes submitted to update-file."
     :type :counter}
 
    :update-file-bytes-processed
-   {:name "rpc_update_file_bytes_processed_total"
+   {:name "penpot_rpc_update_file_bytes_processed_total"
     :help "A total number of bytes processed by update-file."
     :type :counter}
 
    :rpc-mutation-timing
-   {:name "rpc_mutation_timing"
+   {:name "penpot_rpc_mutation_timing"
     :help "RPC mutation method call timming."
     :labels ["name"]
     :type :histogram}
 
    :rpc-command-timing
-   {:name "rpc_command_timing"
+   {:name "penpot_rpc_command_timing"
     :help "RPC command method call timming."
     :labels ["name"]
     :type :histogram}
 
    :rpc-query-timing
-   {:name "rpc_query_timing"
+   {:name "penpot_rpc_query_timing"
     :help "RPC query method call timing."
     :labels ["name"]
     :type :histogram}
 
    :websocket-active-connections
-   {:name "websocket_active_connections"
+   {:name "penpot_websocket_active_connections"
     :help "Active websocket connections gauge"
     :type :gauge}
 
    :websocket-messages-total
-   {:name "websocket_message_total"
+   {:name "penpot_websocket_message_total"
     :help "Counter of processed messages."
     :labels ["op"]
     :type :counter}
 
    :websocket-session-timing
-   {:name "websocket_session_timing"
+   {:name "penpot_websocket_session_timing"
     :help "Websocket session timing (seconds)."
     :type :summary}
 
    :session-update-total
-   {:name "http_session_update_total"
+   {:name "penpot_http_session_update_total"
     :help "A counter of session update batch events."
     :type :counter}
 
@@ -91,21 +91,27 @@
     :labels ["name"]
     :type :summary}
 
-   :rlimit-queued-submissions
-   {:name "penpot_rlimit_queued_submissions"
-    :help "Current number of queued submissions on RLIMIT."
+   :redis-eval-timing
+   {:name "penpot_redis_eval_timing"
+    :help "Redis EVAL commands execution timings (ms)"
+    :labels ["name"]
+    :type :summary}
+
+   :rpc-semaphore-queued-submissions
+   {:name "penpot_rpc_semaphore_queued_submissions"
+    :help "Current number of queued submissions on RPC-SEMAPHORE."
     :labels ["name"]
     :type :gauge}
 
-   :rlimit-used-permits
-   {:name "penpot_rlimit_used_permits"
-    :help "Current number of used permits on RLIMIT."
+   :rpc-semaphore-used-permits
+   {:name "penpot_rpc_semaphore_used_permits"
+    :help "Current number of used permits on RPC-SEMAPHORE."
     :labels ["name"]
     :type :gauge}
 
-   :rlimit-acquires-total
-   {:name "penpot_rlimit_acquires_total"
-    :help "Total number of acquire operations on RLIMIT."
+   :rpc-semaphore-acquires-total
+   {:name "penpot_rpc_semaphore_acquires_total"
+    :help "Total number of acquire operations on RPC-SEMAPHORE."
     :labels ["name"]
     :type :counter}
 
@@ -147,6 +153,8 @@
      :definitions definitions
      :registry registry}))
 
+
+;; TODO: revisit
 (s/def ::handler fn?)
 (s/def ::registry #(instance? CollectorRegistry %))
 (s/def ::metrics

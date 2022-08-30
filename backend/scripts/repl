@@ -2,7 +2,7 @@
 
 export PENPOT_HOST=devenv
 export PENPOT_TENANT=dev
-export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-audit-log enable-transit-readable-response enable-demo-users disable-secure-session-cookies"
+export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-audit-log enable-transit-readable-response enable-demo-users disable-secure-session-cookies enable-rpc-rate-limit enable-warn-rpc-rate-limits"
 
 # export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot"
 # export PENPOT_DATABASE_USERNAME="penpot"
@@ -15,6 +15,8 @@ export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-audit-log enabl
 
 # export PENPOT_LOGGERS_LOKI_URI="http://172.17.0.1:3100/loki/api/v1/push"
 # export PENPOT_AUDIT_LOG_ARCHIVE_URI="http://localhost:6070/api/audit"
+
+export PENPOT_DEFAULT_RATE_LIMIT="default,window,10000/h"
 
 # Initialize MINIO config
 mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin

@@ -15,7 +15,7 @@
    [app.media :as media]
    [app.rpc.doc :as-alias doc]
    [app.rpc.queries.teams :as teams]
-   [app.rpc.rlimit :as rlimit]
+   [app.rpc.semaphore :as rsem]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -42,7 +42,7 @@
                    ::font-id ::font-family ::font-weight ::font-style]))
 
 (sv/defmethod ::create-font-variant
-  {::rlimit/permits (cf/get :rlimit-font)}
+  {::rsem/permits (cf/get :rpc-semaphore-permits-font)}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id] :as params}]
   (let [cfg (update cfg :storage media/configure-assets-storage)]
     (teams/check-edition-permissions! pool profile-id team-id)

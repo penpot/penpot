@@ -133,9 +133,9 @@
           (dm/str v))]
   (s/def ::rgb-color-str (s/conformer conformer unformer)))
 
-;; --- SPEC: set/vec of valid Keywords
+;; --- SPEC: set/vector of Keywords
 
-(letfn [(conform-fn [dest s]
+(letfn [(conformer-fn [dest s]
           (let [xform (keep (fn [s]
                               (cond
                                 (string? s) (keyword s)
@@ -144,17 +144,38 @@
             (cond
               (set? s)    (into dest xform s)
               (string? s) (into dest xform (str/words s))
-              :else       ::s/invalid)))]
+              :else       ::s/invalid)))
+        (unformer-fn [v]
+          (str/join " " (map name v)))]
 
-  (s/def ::set-of-valid-keywords
-    (s/conformer
-     (fn [s] (conform-fn #{} s))
-     (fn [s] (str/join " " (map name s)))))
+  (s/def ::set-of-keywords
+    (s/conformer (partial conformer-fn #{}) unformer-fn))
 
-  (s/def ::vec-of-valid-keywords
-    (s/conformer
-     (fn [s] (conform-fn [] s))
-     (fn [s] (str/join " " (map name s))))))
+  (s/def ::vector-of-keywords
+    (s/conformer (partial conformer-fn []) unformer-fn)))
+
+;; --- SPEC: set/vector of strings
+
+(def non-empty-strings-xf
+  (comp
+   (filter string?)
+   (remove str/empty?)
+   (remove str/blank?)))
+
+(letfn [(conformer-fn [dest v]
+          (cond
+            (string? v) (into dest non-empty-strings-xf (str/split v #"[\s,]+"))
+            (vector? v) (into dest non-empty-strings-xf v)
+            (set? v)    (into dest non-empty-strings-xf v)
+            :else       ::s/invalid))
+        (unformer-fn [v]
+          (str/join "," v))]
+
+  (s/def ::set-of-strings
+    (s/conformer (partial conformer-fn #{}) unformer-fn))
+
+  (s/def ::vector-of-strings
+    (s/conformer (partial conformer-fn []) unformer-fn)))
 
 ;; --- SPEC: set-of-valid-emails
 
@@ -173,23 +194,15 @@
           (str/join " " v))]
   (s/def ::set-of-valid-emails (s/conformer conformer unformer)))
 
-;; --- SPEC: set-of-non-empty-strings
-
-(def non-empty-strings-xf
-  (comp
-   (filter string?)
-   (remove str/empty?)
-   (remove str/blank?)))
+;; --- SPEC: query-string
 
 (letfn [(conformer [s]
-          (cond
-            (string? s) (->> (str/split s #"\s*,\s*")
-                             (into #{} non-empty-strings-xf))
-            (set? s)    (into #{} non-empty-strings-xf s)
-            :else       ::s/invalid))
+          (if (string? s)
+            (ex/try* #(u/query-string->map s) (constantly ::s/invalid))
+            s))
         (unformer [s]
-          (str/join "," s))]
-  (s/def ::set-of-non-empty-strings (s/conformer conformer unformer)))
+          (u/map->query-string s))]
+  (s/def ::query-string (s/conformer conformer unformer)))
 
 ;; --- SPECS WITHOUT CONFORMER
 

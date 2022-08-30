@@ -59,7 +59,7 @@
                     :path (-> "app/test_files/template.penpot" io/resource fs/path)}]
         config (-> main/system-config
                    (merge main/worker-config)
-                   (assoc-in [:app.msgbus/msgbus :redis-uri] (:redis-uri config))
+                   (assoc-in [:app.redis/redis :uri] (:redis-uri config))
                    (assoc-in [:app.db/pool :uri] (:database-uri config))
                    (assoc-in [:app.db/pool :username] (:database-username config))
                    (assoc-in [:app.db/pool :password] (:database-password config))

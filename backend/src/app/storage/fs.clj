@@ -14,7 +14,7 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [integrant.core :as ig]
    [promesa.core :as p]
    [promesa.exec :as px])

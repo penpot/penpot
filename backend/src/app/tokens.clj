@@ -12,11 +12,14 @@
    [app.common.spec :as us]
    [app.common.transit :as t]
    [app.util.time :as dt]
-   [buddy.sign.jwe :as jwe]))
+   [buddy.sign.jwe :as jwe]
+   [clojure.spec.alpha :as s]))
+
+(s/def ::tokens-key bytes?)
 
 (defn generate
   [{:keys [tokens-key]} claims]
-  (us/assert! ::us/not-empty-string tokens-key)
+  (us/assert! ::tokens-key tokens-key)
   (let [payload (-> claims
                     (assoc :iat (dt/now))
                     (d/without-nils)
