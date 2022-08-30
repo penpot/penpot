@@ -19,13 +19,14 @@
   [parent-node direction text-node]
 
   (letfn [(parse-entry [^js entry]
-            {:node      (.-node entry)
-             :position  (dom/bounding-rect->rect (.-position entry))
-             :text      (.-text entry)
-             :direction direction})]
+            (when (some? (.-position entry))
+              {:node      (.-node entry)
+               :position  (dom/bounding-rect->rect (.-position entry))
+               :text      (.-text entry)
+               :direction direction}))]
     (into
      []
-     (map parse-entry)
+     (keep parse-entry)
      (tpd/parse-text-nodes parent-node text-node))))
 
 (def load-promises (atom {}))

@@ -332,10 +332,10 @@
 (defn bounding-rect->rect
   [rect]
   (when (some? rect)
-    {:x      (or (.-left rect)   (:left rect))
-     :y      (or (.-top rect)    (:top rect))
-     :width  (or (.-width rect)  (:width rect))
-     :height (or (.-height rect) (:height rect))}))
+    {:x      (or (.-left rect)   (:left rect)   0)
+     :y      (or (.-top rect)    (:top rect)    0)
+     :width  (or (.-width rect)  (:width rect)  1)
+     :height (or (.-height rect) (:height rect) 1)}))
 
 (defn get-window-size
   []
