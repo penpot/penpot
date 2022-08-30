@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.15.2-beta
+
+### :bug: Bugs fixed
+
+- Fix problem with multi-user text editing [Taiga #3446](https://tree.taiga.io/project/penpot/issue/3446)
 
 ## 1.15.1-beta
 

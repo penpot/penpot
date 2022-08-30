@@ -268,7 +268,11 @@
         text-modifier
         (mf/deref text-modifier-ref)
 
-        bounding-box (gsht/position-data-bounding-box (or text-modifier shape))
+        shape (cond-> shape
+                (some? text-modifier)
+                (dwt/apply-text-modifier text-modifier))
+
+        bounding-box (gsht/position-data-bounding-box shape)
 
         x      (min (:x bounding-box) (:x shape))
         y      (min (:y bounding-box) (:y shape))

@@ -28,7 +28,10 @@
    [rumext.alpha :as mf]))
 
 (defn strip-position-data [shape]
-  (dissoc shape :position-data :transform :transform-inverse))
+  (-> shape
+      (cond-> (some? (meta (:position-data shape)))
+        (with-meta (meta (:position-data shape))))
+      (dissoc :position-data :transform :transform-inverse)))
 
 (defn strip-modifier
   [modifier]
@@ -131,14 +134,17 @@
         ;; A change in position-data won't be a "real" change
         text-change?
         (fn [id]
-          (let [old-shape (get prev-text-shapes id)
-                new-shape (get text-shapes id)
+          (let [new-shape (get text-shapes id)
+                old-shape (get prev-text-shapes id)
                 old-modifiers (-> (get prev-modifiers id) strip-modifier)
-                new-modifiers (-> (get modifiers id) strip-modifier)]
+                new-modifiers (-> (get modifiers id) strip-modifier)
 
-            (or (and (not (identical? old-shape new-shape))
-                     (not= (dissoc old-shape :migrate :position-data)
-                           (dissoc new-shape :migrate :position-data)))
+                remote? (some? (-> new-shape meta :session-id)) ]
+
+            (or (and (not remote?)
+                     (not (identical? old-shape new-shape))
+                     (not= (dissoc old-shape :migrate)
+                           (dissoc new-shape :migrate)))
                 (not= new-modifiers old-modifiers)
 
                 ;; When the position data is nil we force to recalculate
