@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.header
   (:require
-   [app.common.data :as d]
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
@@ -31,7 +30,6 @@
    [okulary.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
-
 
 (def workspace-persistence-ref
   (l/derived :workspace-persistence st/state))
@@ -168,8 +166,8 @@
           (->> (rx/of file)
                (rx/flat-map
                 (fn [file]
-                  (->> (rp/query :file-libraries {:file-id (:id file)})
-                       (rx/map #(assoc file :has-libraries? (d/not-empty? %))))))
+                  (->> (rp/command :has-file-libraries {:file-id (:id file)})
+                       (rx/map #(assoc file :has-libraries? %)))))
                (rx/reduce conj [])
                (rx/subs
                 (fn [files]
@@ -341,7 +339,7 @@
          (if (contains? layout :textpalette)
            (tr "workspace.header.menu.hide-textpalette")
            (tr "workspace.header.menu.show-textpalette"))]
-        [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]       
+        [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]
 
        [:li {:on-click #(st/emit! (toggle-flag :display-artboard-names))}
         [:span
