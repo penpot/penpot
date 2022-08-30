@@ -150,7 +150,7 @@
 
     ;; When metrics namespace is provided
     (when metrics
-      (->> (:registry metrics)
+      (->> (::mtx/registry metrics)
            (PrometheusMetricsTrackerFactory.)
            (.setMetricsTrackerFactory config)))
 

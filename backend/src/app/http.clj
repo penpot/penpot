@@ -151,7 +151,7 @@
                       [middleware/errors errors/handle]
                       [middleware/restrict-methods]]}
 
-     ["/metrics" {:handler (:handler metrics)}]
+     ["/metrics" {:handler (::mtx/handler metrics)}]
      ["/assets" {:middleware [(:middleware session)]}
       ["/by-id/:id" {:handler (:objects-handler assets)}]
       ["/by-file-media-id/:id" {:handler (:file-objects-handler assets)}]
