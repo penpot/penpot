@@ -43,7 +43,7 @@
                :status status
                :data body})))
 
-(def ^:private base-uri cf/public-uri)
+(def ^:private base-uri cf/get-public-uri)
 
 (defn- send-query!
   "A simple helper for send and receive transit data on the penpot
@@ -56,7 +56,7 @@
                           http/conditional-error-decode-transit
                           http/conditional-decode-transit)]
      (->> (http/send! {:method :get
-                       :uri (u/join base-uri "api/rpc/query/" (name id))
+                       :uri (u/join (base-uri) "api/rpc/query/" (name id))
                        :credentials "include"
                        :query params})
           (rx/map decode-transit)
@@ -66,8 +66,9 @@
   "A simple helper for a common case of sending and receiving transit
   data to the penpot mutation api."
   [id params]
+  (log/debug :hint "send-mutation" (base-uri))
   (->> (http/send! {:method :post
-                    :uri (u/join base-uri "api/rpc/mutation/" (name id))
+                    :uri (u/join (base-uri) "api/rpc/mutation/" (name id))
                     :credentials "include"
                     :body (http/transit-data params)})
        (rx/map http/conditional-decode-transit)
@@ -78,7 +79,7 @@
   data to the penpot mutation api."
   [id params {:keys [response-type form-data?]}]
   (->> (http/send! {:method :post
-                    :uri (u/join base-uri "api/rpc/command/" (name id))
+                    :uri (u/join (base-uri) "api/rpc/command/" (name id))
                     :credentials "include"
                     :body (if form-data? (http/form-data params) (http/transit-data params))
                     :response-type (or response-type :text)})
@@ -133,7 +134,7 @@
 
 (defmethod command :login-with-oidc
   [_ {:keys [provider] :as params}]
-  (let [uri    (u/join base-uri "api/auth/oauth/" (d/name provider))
+  (let [uri    (u/join (base-uri) "api/auth/oauth/" (d/name provider))
         params (dissoc params :provider)]
     (->> (http/send! {:method :post
                       :uri uri
@@ -145,7 +146,7 @@
 (defmethod command :send-feedback
   [_ params]
   (->> (http/send! {:method :post
-                    :uri (u/join base-uri "api/feedback")
+                    :uri (u/join (base-uri) "api/feedback")
                     :credentials "include"
                     :body (http/transit-data params)})
        (rx/map http/conditional-decode-transit)
@@ -154,7 +155,7 @@
 (defn- send-export
   [{:keys [blob?] :as params}]
   (->> (http/send! {:method :post
-                    :uri (u/join base-uri "api/export")
+                    :uri (u/join (base-uri) "api/export")
                     :body (http/transit-data (dissoc params :blob?))
                     :credentials "include"
                     :response-type (if blob? :blob :text)})
@@ -173,7 +174,7 @@
 (defmethod mutation ::multipart-upload
   [id params]
   (->> (http/send! {:method :post
-                    :uri  (u/join base-uri "api/rpc/mutation/" (name id))
+                    :uri  (u/join (base-uri) "api/rpc/mutation/" (name id))
                     :credentials "include"
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)
