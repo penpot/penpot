@@ -20,6 +20,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
+   [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
    [rumext.alpha :as mf]))
 
@@ -82,25 +83,11 @@
               :stroke "rgb(49, 239, 184)"
               :stroke-width (/ 1 zoom)}}]))
 
-;; Ensure that the label has always the same font
-;; size, regardless of zoom
-;; https://css-tricks.com/transforms-on-svg-elements/
-(defn text-transform
-  [{:keys [x y]} zoom]
-  (let [inv-zoom (/ 1 zoom)]
-    (str
-     "scale(" inv-zoom ", " inv-zoom ") "
-     "translate(" (* zoom x) ", " (* zoom y) ")")))
 
 (mf/defc frame-title
   {::mf/wrap [mf/memo]}
   [{:keys [frame selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
-  (let [{:keys [width x y]} frame
-        label-pos (gpt/point x (- y (/ 10 zoom)))
-
-        frame-transform (gsh/transform-str frame)
-
-        on-mouse-down
+  (let [on-mouse-down
         (mf/use-callback
          (mf/deps (:id frame) on-frame-select)
          (fn [bevent]
@@ -140,23 +127,22 @@
         text-pos-x (if (:use-for-thumbnail? frame) 15 0)]
 
     (when (not (:hidden frame))
-      [:g {:id (dm/str "frame-title-" (:id frame))}
+      [:g.frame-title {:id (dm/str "frame-title-" (:id frame)) :transform (vwu/title-transform frame zoom)}
        (when (:use-for-thumbnail? frame)
-         [:g {:transform (dm/str frame-transform " " (text-transform label-pos zoom))}
-          [:svg {:x 0
-                 :y -9
-                 :width 12
-                 :height 12
-                 :class "workspace-frame-icon"
-                 :style {:fill (when selected? "var(--color-primary-dark)")}
-                 :visibility (if show-artboard-names? "visible" "hidden")}
-           [:use {:href "#icon-set-thumbnail"}]]])
+         [:svg {:x 0
+                :y -9
+                :width 12
+                :height 12
+                :class "workspace-frame-icon"
+                :style {:fill (when selected? "var(--color-primary-dark)")}
+                :visibility (if show-artboard-names? "visible" "hidden")}
+          [:use {:href "#icon-set-thumbnail"}]])
        [:text {:x text-pos-x
                :y 0
-               :width width
+               :width (:width frame)
                :height 20
                :class "workspace-frame-label"
-               :transform (dm/str frame-transform " " (text-transform label-pos zoom))
+               ;:transform (dm/str frame-transform " " (text-transform label-pos zoom))
                :style {:fill (when selected? "var(--color-primary-dark)")}
                :visibility (if show-artboard-names? "visible" "hidden")
                :on-mouse-down on-mouse-down
@@ -172,7 +158,6 @@
   [props]
   (let [objects         (unchecked-get props "objects")
         zoom            (unchecked-get props "zoom")
-        modifiers       (unchecked-get props "modifiers")
         selected        (or (unchecked-get props "selected") #{})
         show-artboard-names? (unchecked-get props "show-artboard-names?")
         on-frame-enter  (unchecked-get props "on-frame-enter")
@@ -188,7 +173,6 @@
                           :selected? (contains? selected (:id frame))
                           :zoom zoom
                           :show-artboard-names? show-artboard-names?
-                          :modifiers modifiers
                           :on-frame-enter on-frame-enter
                           :on-frame-leave on-frame-leave
                           :on-frame-select on-frame-select}]))]))
@@ -231,7 +215,7 @@
                      :height 24
                      :transform (str (when (and selected? modifiers)
                                        (str (:displacement modifiers) " " ))
-                                     (text-transform flow-pos zoom))}
+                                     (vwu/text-transform flow-pos zoom))}
      [:div.flow-badge {:class (dom/classnames :selected selected?)}
       [:div.content {:on-mouse-down on-mouse-down
                      :on-double-click on-double-click

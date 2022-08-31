@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.15.2-beta
+
+### :bug: Bugs fixed
+
+- Fix problem with multi-user text editing [Taiga #3446](https://tree.taiga.io/project/penpot/issue/3446)
+- Fix path tools blocking elements underneath [#2050](https://github.com/penpot/penpot/issues/2050)
+- Fix frame titles deforming when resize [#2207](https://github.com/penpot/penpot/issues/2207)
 
 ## 1.15.1-beta
 
