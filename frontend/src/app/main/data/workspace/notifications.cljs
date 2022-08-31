@@ -203,18 +203,24 @@
             (fn [{:keys [type attr]}]
               (and (= :set type) (= attr :position-data)))
 
-            remove-update-position-data
+            add-origin-session-id
+            (fn [{:keys [] :as op}]
+              (cond-> op
+                (position-data-operation? op)
+                (update :val with-meta {:session-id (:session-id msg)})))
+
+            update-position-data
             (fn [change]
               (cond-> change
                 (= :mod-obj (:type change))
-                (update :operations #(filterv (comp not position-data-operation?) %))))
+                (update :operations #(mapv add-origin-session-id %))))
 
             process-page-changes
             (fn [[page-id changes]]
               (dch/update-indices page-id changes))
 
-            ;; We remove `position-data` from the incomming message
-            changes (->> changes (mapv remove-update-position-data))
+            ;; We update `position-data` from the incomming message
+            changes (->> changes (mapv update-position-data))
             changes-by-pages (group-by :page-id changes)]
 
         (rx/merge

@@ -11,6 +11,8 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.main.store :as st]
+   [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
    [rumext.alpha :as mf]))
 
@@ -201,6 +203,12 @@
                               (gsh/transform-shape)
                               (gsh/transform-matrix {:no-flip true}))]
                   (override-transform-att! node "transform" mtx))))
+
+            (dom/class? node "frame-title")
+            (let [shape (-> shape (assoc :modifiers modifiers) gsh/transform-shape)
+                  zoom (get-in @st/state [:workspace-local :zoom] 1)
+                  mtx  (vwu/title-transform shape zoom)]
+              (override-transform-att! node "transform" mtx))
 
             (or (= (dom/get-tag-name node) "mask")
                 (= (dom/get-tag-name node) "filter"))
