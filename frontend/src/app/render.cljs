@@ -7,6 +7,7 @@
 (ns app.render
   "The main entry point for UI part needed by the exporter."
   (:require
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.spec :as us]
@@ -122,10 +123,11 @@
     ;; exportation process.
     (mf/with-effect [object]
       (when object
-        (dom/set-page-style!
-          {:size (str/concat
-                  (mth/ceil (:width object)) "px "
-                  (mth/ceil (:height object)) "px")})))
+        (let [{:keys [width height]} (gsb/get-object-bounds [objects] object)]
+          (dom/set-page-style!
+           {:size (str/concat
+                   (mth/ceil width) "px "
+                   (mth/ceil height) "px")}))))
 
     (when objects
       [:& render/object-svg
