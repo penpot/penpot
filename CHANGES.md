@@ -15,6 +15,7 @@
 - Outline highlights on layer hovering [Taiga #2645](https://tree.taiga.io/project/penpot/us/2645) by @andrewzhurov
 - Add zoom to shape on double click up on its icon [Taiga #3929](https://tree.taiga.io/project/penpot/us/3929) by @andrewzhurov
 - Add Libraries & Templates carousel [Taiga #3860](https://tree.taiga.io/project/penpot/us/3860)
+- Ungroup frames [Taiga #4012](https://tree.taiga.io/project/penpot/us/4012)
 
 ### :bug: Bugs fixed
 
