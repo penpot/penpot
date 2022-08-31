@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.15.2-beta
+
+### :bug: Bugs fixed
+
+- Fix problem with multi-user text editing [Taiga #3446](https://tree.taiga.io/project/penpot/issue/3446)
+- Fix path tools blocking elements underneath [#2050](https://github.com/penpot/penpot/issues/2050)
+- Fix frame titles deforming when resize [#2207](https://github.com/penpot/penpot/issues/2207)
 
 ## 1.15.1-beta
 
@@ -11,6 +18,7 @@
 - Fix validation error on text position [Taiga #4010](https://tree.taiga.io/project/penpot/issue/4010)
 - Fix objects jitter while scrolling [Github #2167](https://github.com/penpot/penpot/issues/2167)
 - Fix on color-picker, click+drag adds lots of recent colors [Taiga #4013](https://tree.taiga.io/project/penpot/issue/4013)
+- Fix opening profile URL while signed out takes to "your account" section[Taiga #3976](https://tree.taiga.io/project/penpot/issue/3976)
 
 ## 1.15.0-beta
 
