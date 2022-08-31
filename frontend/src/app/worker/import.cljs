@@ -46,14 +46,15 @@
   ([context type id media]
    (let [file-id (:file-id context)
          path (case type
-                :manifest     (str "manifest.json")
-                :page         (str file-id "/" id ".svg")
-                :colors       (str file-id "/colors.json")
-                :typographies (str file-id "/typographies.json")
-                :media-list   (str file-id "/media.json")
-                :media        (let [ext (cm/mtype->extension (:mtype media))]
-                                (str/concat file-id "/media/" id ext))
-                :components   (str file-id "/components.svg"))
+                :manifest           (str "manifest.json")
+                :page               (str file-id "/" id ".svg")
+                :colors             (str file-id "/colors.json")
+                :typographies       (str file-id "/typographies.json")
+                :media-list         (str file-id "/media.json")
+                :media              (let [ext (cm/mtype->extension (:mtype media))]
+                                      (str/concat file-id "/media/" id ext))
+                :components         (str file-id "/components.svg")
+                :deleted-components (str file-id "/deleted-components.svg"))
 
          parse-svg?  (and (not= type :media) (str/ends-with? path "svg"))
          parse-json? (and (not= type :media) (str/ends-with? path "json"))
@@ -125,7 +126,7 @@
 
 (defn create-file
   "Create a new file on the back-end"
-  [context]
+  [context components-v2]
   (let [resolve (:resolve context)
         file-id (resolve (:file-id context))]
     (rp/mutation :create-temp-file
@@ -133,7 +134,9 @@
                   :name (:name context)
                   :is-shared (:shared context)
                   :project-id (:project-id context)
-                  :data (-> ctf/empty-file-data (assoc :id file-id))})))
+                  :data (-> ctf/empty-file-data
+                            (assoc :id file-id)
+                            (assoc-in [:options :components-v2] components-v2))})))
 
 (defn link-file-libraries
   "Create a new file on the back-end"
@@ -380,18 +383,22 @@
                  (rx/map (comp fb/close-page setup-interactions))))))))
 
 (defn import-component [context file node]
-  (let [resolve      (:resolve context)
-        content      (cip/find-node node :g)
-        file-id      (:id file)
-        old-id       (cip/get-id node)
-        id           (resolve old-id)
-        path         (get-in node [:attrs :penpot:path] "")
-        data         (-> (cip/parse-data :group content)
-                         (assoc :path path)
-                         (assoc :id id))
+  (let [resolve            (:resolve context)
+        content            (cip/find-node node :g)
+        file-id            (:id file)
+        old-id             (cip/get-id node)
+        id                 (resolve old-id)
+        path               (get-in node [:attrs :penpot:path] "")
+        main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
+        main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
+        data               (-> (cip/parse-data :group content)
+                               (assoc :path path)
+                               (assoc :id id)
+                               (assoc :main-instance-id main-instance-id)
+                               (assoc :main-instance-page main-instance-page))
 
-        file         (-> file (fb/start-component data))
-        children      (cip/node-seq node)]
+        file               (-> file (fb/start-component data))
+        children            (cip/node-seq node)]
 
     (->> (rx/from children)
          (rx/filter cip/shape?)
@@ -400,6 +407,43 @@
          (rx/mapcat (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map fb/finish-component))))
+
+(defn import-deleted-component [context file node]
+  (let [resolve            (:resolve context)
+        content            (cip/find-node node :g)
+        file-id            (:id file)
+        old-id             (cip/get-id node)
+        id                 (resolve old-id)
+        path               (get-in node [:attrs :penpot:path] "")
+        main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
+        main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
+        main-instance-x    (get-in node [:attrs :penpot:main-instance-x] "")
+        main-instance-y    (get-in node [:attrs :penpot:main-instance-y] "")
+
+        data (-> (cip/parse-data :group content)
+                 (assoc :path path)
+                 (assoc :id id)
+                 (assoc :main-instance-id main-instance-id)
+                 (assoc :main-instance-page main-instance-page)
+                 (assoc :main-instance-x main-instance-x)
+                 (assoc :main-instance-y main-instance-y))
+
+        file         (-> file (fb/start-component data))
+        component-id (:current-component-id file)
+        children     (cip/node-seq node)]
+
+    (->> (rx/from children)
+         (rx/filter cip/shape?)
+         (rx/skip 1)
+         (rx/skip-last 1)
+         (rx/mapcat (partial resolve-media context file-id))
+         (rx/reduce (partial process-import-node context) file)
+         (rx/map fb/finish-component)
+         (rx/map (partial fb/finish-deleted-component
+                          component-id
+                          main-instance-page
+                          main-instance-x
+                          main-instance-y)))))
 
 (defn process-pages
   [context file]
@@ -486,6 +530,18 @@
            (rx/concat-reduce (partial import-component context) file)))
     (rx/of file)))
 
+(defn process-deleted-components
+  [context file]
+  (if (:has-deleted-components context)
+    (let [split-components
+          (fn [content] (->> (cip/node-seq content)
+                             (filter #(= :symbol (:tag %)))))]
+
+      (->> (get-file context :deleted-components)
+           (rx/flat-map split-components)
+           (rx/concat-reduce (partial import-deleted-component context) file)))
+    (rx/of file)))
+
 (defn process-file
   [context file]
 
@@ -502,18 +558,20 @@
           (rx/flat-map (partial process-library-media context))
           (rx/tap #(progress! context :process-components))
           (rx/flat-map (partial process-library-components context))
+          (rx/tap #(progress! context :process-deleted-components))
+          (rx/flat-map (partial process-deleted-components context))
           (rx/flat-map (partial send-changes context))
           (rx/tap #(rx/end! progress-str)))]))
 
 (defn create-files
-  [context files]
+  [context files components-v2]
 
   (let [data (group-by :file-id files)]
     (rx/concat
      (->> (rx/from files)
           (rx/map #(merge context %))
           (rx/flat-map (fn [context]
-                         (->> (create-file context)
+                         (->> (create-file context components-v2)
                               (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
@@ -564,7 +622,7 @@
                  (rx/catch #(rx/of {:uri (:uri file) :error (.-message %)}))))))))
 
 (defmethod impl/handler :import-files
-  [{:keys [project-id files]}]
+  [{:keys [project-id files components-v2]}]
 
   (let [context {:project-id project-id
                  :resolve    (resolve-factory)}
@@ -572,7 +630,7 @@
         binary-files (filter #(= "application/octet-stream" (:type %)) files)]
 
     (->> (rx/merge
-          (->> (create-files context zip-files)
+          (->> (create-files context zip-files components-v2)
                (rx/flat-map
                 (fn [[file data]]
                   (->> (uz/load-from-url (:uri data))

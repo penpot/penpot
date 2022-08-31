@@ -9,12 +9,16 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes :as ch]
    [app.common.pages.changes-spec :as pcs]
    [app.common.spec :as us]
+   [app.common.types.components-list :as ctkl]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
+   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -516,10 +520,17 @@
   [file data]
 
   (let [selrect cts/empty-selrect
-        name (:name data)
-        path (:path data)
+        name               (:name data)
+        path               (:path data)
+        main-instance-id   (:main-instance-id data)
+        main-instance-page (:main-instance-page data)
         obj (-> (cts/make-minimal-group nil selrect name)
                 (merge data)
+                (dissoc :path
+                        :main-instance-id
+                        :main-instance-page
+                        :main-instance-x
+                        :main-instance-y)
                 (check-name file :group)
                 (d/without-nils))]
     (-> file
@@ -528,6 +539,8 @@
           :id (:id obj)
           :name name
           :path path
+          :main-instance-id main-instance-id
+          :main-instance-page main-instance-page
           :shapes [obj]})
 
         (assoc :last-id (:id obj))
@@ -546,7 +559,8 @@
           (commit-change
            file
            {:type :del-component
-            :id component-id})
+            :id component-id
+            :skip-undelete? true})
 
           (:masked-group? component)
           (let [mask (first children)]
@@ -585,6 +599,42 @@
     (-> file
         (dissoc :current-component-id)
         (update :parent-stack pop))))
+
+(defn finish-deleted-component
+  [component-id page-id main-instance-x main-instance-y file]
+  (let [file             (assoc file :current-component-id component-id)
+        page             (ctpl/get-page (:data file) page-id)
+        component        (ctkl/get-component (:data file) component-id)
+        main-instance-id (:main-instance-id component)
+
+        ; To obtain a deleted component, we first create the component
+        ; and the main instance in the workspace, and then delete them.
+        [_ shapes]
+        (ctn/make-component-instance page
+                                     component
+                                     (:id file)
+                                     (gpt/point main-instance-x
+                                                main-instance-y)
+                                     {:main-instance? true
+                                      :force-id main-instance-id})]
+    (as-> file $
+      (reduce #(commit-change %1
+                              {:type :add-obj
+                               :id (:id %2)
+                               :page-id (:id page)
+                               :parent-id (:parent-id %2)
+                               :frame-id (:frame-id %2)
+                               :obj %2})
+              $
+              shapes)
+      (commit-change $ {:type :del-component
+                        :id component-id})
+      (reduce #(commit-change %1 {:type :del-obj
+                                  :page-id page-id
+                                  :id (:id %2)})
+              $
+              shapes)
+      (dissoc $ :current-component-id))))
 
 (defn delete-object
   [file id]

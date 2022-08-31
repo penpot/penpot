@@ -370,8 +370,8 @@
                   (assoc :objects objects))))
 
 (defmethod process-change :del-component
-  [data {:keys [id]}]
-  (ctf/delete-component data id))
+  [data {:keys [id skip-undelete?]}]
+  (ctf/delete-component data id skip-undelete?))
 
 (defmethod process-change :restore-component
   [data {:keys [id]}]

@@ -400,7 +400,8 @@
         component-id          (get-meta node :component-id uuid/uuid)
         component-file        (get-meta node :component-file uuid/uuid)
         shape-ref             (get-meta node :shape-ref uuid/uuid)
-        component-root?       (get-meta node :component-root str->bool)]
+        component-root?       (get-meta node :component-root str->bool)
+        main-instance?        (get-meta node :main-instance str->bool)]
 
     (cond-> props
       (some? stroke-color-ref-id)
@@ -413,6 +414,9 @@
 
       component-root?
       (assoc :component-root? component-root?)
+
+      main-instance?
+      (assoc :main-instance? main-instance?)
 
       (some? shape-ref)
       (assoc :shape-ref shape-ref))))

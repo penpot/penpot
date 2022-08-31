@@ -750,6 +750,10 @@
               (uuid? (:typography-ref-file form))
               (update :typography-ref-file lookup-index)
 
+              ;; This covers the component instance links
+              (uuid? (:component-file form))
+              (update :component-file lookup-index)
+
               ;; This covers the shadows and grids (they have directly
               ;; the :file-id prop)
               (uuid? (:file-id form))

@@ -108,53 +108,59 @@
   "Clone the shapes of the component, generating new names and ids, and linking
   each new shape to the corresponding one of the component. Place the new instance
   coordinates in the given position."
-  [container component component-file-id position main-instance?]
-  (let [component-shape (get-shape component (:id component))
+  ([container component component-file-id position]
+   (make-component-instance container component component-file-id position {}))
 
-        orig-pos  (gpt/point (:x component-shape) (:y component-shape))
-        delta     (gpt/subtract position orig-pos)
+  ([container component component-file-id position
+    {:keys [main-instance? force-id] :or {main-instance? false force-id nil}}]
+   (let [component-shape (get-shape component (:id component))
 
-        objects   (:objects container)
-        unames    (volatile! (ctst/retrieve-used-names objects))
+         orig-pos  (gpt/point (:x component-shape) (:y component-shape))
+         delta     (gpt/subtract position orig-pos)
 
-        frame-id  (ctst/frame-id-by-position objects (gpt/add orig-pos delta))
+         objects   (:objects container)
+         unames    (volatile! (ctst/retrieve-used-names objects))
 
-        update-new-shape
-        (fn [new-shape original-shape]
-          (let [new-name (ctst/generate-unique-name @unames (:name new-shape))]
+         frame-id  (ctst/frame-id-by-position objects (gpt/add orig-pos delta))
 
-            (when (nil? (:parent-id original-shape))
-              (vswap! unames conj new-name))
+         update-new-shape
+         (fn [new-shape original-shape]
+           (let [new-name (ctst/generate-unique-name @unames (:name new-shape))]
 
-            (cond-> new-shape
-              true
-              (as-> $
-                (gsh/move $ delta)
-                (assoc $ :frame-id frame-id)
-                (assoc $ :parent-id
-                       (or (:parent-id $) (:frame-id $)))
-                (dissoc $ :touched))
+             (when (nil? (:parent-id original-shape))
+               (vswap! unames conj new-name))
 
-              (nil? (:shape-ref original-shape))
-              (assoc :shape-ref (:id original-shape))
+             (cond-> new-shape
+               true
+               (as-> $
+                 (gsh/move $ delta)
+                 (assoc $ :frame-id frame-id)
+                 (assoc $ :parent-id
+                        (or (:parent-id $) (:frame-id $)))
+                 (dissoc $ :touched))
 
-              (nil? (:parent-id original-shape))
-              (assoc :component-id (:id original-shape)
-                     :component-file component-file-id
-                     :component-root? true
-                     :name new-name)
+               (nil? (:shape-ref original-shape))
+               (assoc :shape-ref (:id original-shape))
 
-              (and (nil? (:parent-id original-shape)) main-instance?)
-              (assoc :main-instance? true)
+               (nil? (:parent-id original-shape))
+               (assoc :component-id (:id original-shape)
+                      :component-file component-file-id
+                      :component-root? true
+                      :name new-name)
 
-              (some? (:parent-id original-shape))
-              (dissoc :component-root?))))
+               (and (nil? (:parent-id original-shape)) main-instance?)
+               (assoc :main-instance? true)
 
-        [new-shape new-shapes _]
-        (ctst/clone-object component-shape
-                           nil
-                           (get component :objects)
-                           update-new-shape)]
+               (some? (:parent-id original-shape))
+               (dissoc :component-root?))))
 
-    [new-shape new-shapes]))
- 
+         [new-shape new-shapes _]
+         (ctst/clone-object component-shape
+                            nil
+                            (get component :objects)
+                            update-new-shape
+                            (fn [object _] object)
+                            force-id)]
+
+     [new-shape new-shapes])))
+

@@ -124,29 +124,32 @@
   "Delete a component and store it to be able to be recovered later.
 
   Remember also the position of the main instance."
-  [file-data component-id]
-  (let [components-v2 (get-in file-data [:options :components-v2])
+  ([file-data component-id]
+   (delete-component file-data component-id false))
 
-        add-to-deleted-components
-        (fn [file-data]
-          (let [component (ctkl/get-component file-data component-id)]
-            (if (some? component)
-              (let [page          (ctpl/get-page file-data (:main-instance-page component))
-                    main-instance (ctn/get-shape page (:main-instance-id component))
-                    component     (assoc component
-                                         :main-instance-x (:x main-instance)   ; An instance root is always a group,
-                                         :main-instance-y (:y main-instance))] ; so it will have :x and :y
-                (when (nil? main-instance)
-                  (throw (ex-info "Cannot delete the main instance before the component" {:component-id component-id})))
-                (assoc-in file-data [:deleted-components component-id] component))
-              file-data)))]
+  ([file-data component-id skip-undelete?]
+   (let [components-v2 (get-in file-data [:options :components-v2])
 
-    (cond-> file-data
-      components-v2
-      (add-to-deleted-components)
+         add-to-deleted-components
+         (fn [file-data]
+           (let [component (ctkl/get-component file-data component-id)]
+             (if (some? component)
+               (let [page          (ctpl/get-page file-data (:main-instance-page component))
+                     main-instance (ctn/get-shape page (:main-instance-id component))
+                     component     (assoc component
+                                          :main-instance-x (:x main-instance)   ; An instance root is always a group,
+                                          :main-instance-y (:y main-instance))] ; so it will have :x and :y
+                 (when (nil? main-instance)
+                   (throw (ex-info "Cannot delete the main instance before the component" {:component-id component-id})))
+                 (assoc-in file-data [:deleted-components component-id] component))
+               file-data)))]
 
-      :always
-      (ctkl/delete-component component-id))))
+     (cond-> file-data
+       (and components-v2 (not skip-undelete?))
+       (add-to-deleted-components)
+
+       :always
+       (ctkl/delete-component component-id)))))
 
 (defn get-deleted-component
   "Retrieve a component that has been deleted but still is in the safe store."
@@ -253,7 +256,7 @@
                                                  component
                                                  (:id file-data)
                                                  position
-                                                 true)
+                                                 {:main-instance? true})
 
                     add-shapes
                     (fn [page]
@@ -317,7 +320,7 @@
                                              component
                                              (:id file-data)
                                              position
-                                             true)
+                                             {:main-instance? true})
 
                 ; Add all shapes of the main instance to the library page
                 add-main-instance-shapes

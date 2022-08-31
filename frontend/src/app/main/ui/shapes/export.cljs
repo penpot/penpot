@@ -54,7 +54,8 @@
     ([props attr trfn]
      (let [val (get shape attr)
            val (if (keyword? val) (d/name val) val)
-           ns-attr (str "penpot:" (-> attr d/name))]
+           ns-attr (-> (str "penpot:" (-> attr d/name))
+                       (str/strip-suffix "?"))]
        (cond-> props
          (some? val)
          (obj/set! ns-attr (trfn val)))))))
@@ -136,7 +137,8 @@
         (add! :typography-ref-file)
         (add! :component-file)
         (add! :component-id)
-        (add! :component-root)
+        (add! :component-root?)
+        (add! :main-instance?)
         (add! :shape-ref))))
 
 (defn prefix-keys [m]
@@ -177,11 +179,11 @@
                              :axis (d/name axis)}])])
 
 (mf/defc export-page
-  [{:keys [options]}]
+  [{:keys [id options]}]
   (let [saved-grids (get options :saved-grids)
         flows       (get options :flows)
         guides      (get options :guides)]
-    [:> "penpot:page" #js {}
+    [:> "penpot:page" #js {:id id}
      (when (d/not-empty? saved-grids)
        (let [parse-grid (fn [[type params]] {:type type :params params})
              grids (->> saved-grids (mapv parse-grid))]
