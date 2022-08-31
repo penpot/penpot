@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.data :as d]
+   [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
@@ -41,13 +42,24 @@
         shapes   (->> (:shapes root)
                       (map (d/getf objects)))]
     [:g.shapes
-     (for [item shapes]
-       (if (= (:type item) :frame)
-         [:& shapes/frame-wrapper {:shape item
-                                   :key (:id item)
-                                   :objects objects}]
-         [:& shapes/shape-wrapper {:shape item
-                                   :key (:id item)}]))]))
+     (for [shape shapes]
+       (cond
+         (not (cph/frame-shape? shape))
+         [:& shapes/shape-wrapper
+          {:shape shape
+           :key (:id shape)}]
+
+         (cph/root-frame? shape)
+         [:& shapes/root-frame-wrapper
+          {:shape shape
+           :key (:id shape)
+           :objects objects}]
+
+         :else
+         [:& shapes/nested-frame-wrapper
+          {:shape shape
+           :key (:id shape)
+           :objects objects}]))]))
 
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
