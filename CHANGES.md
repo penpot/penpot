@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.15.3-beta
+
+### :bug: Bugs fixed
+
+- Fix problem when hovering over nested frames [Taiga #4018] https://tree.taiga.io/project/penpot/issue/4018
 ## 1.15.2-beta
 
 ### :bug: Bugs fixed

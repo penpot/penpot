@@ -44,6 +44,10 @@
   [{:keys [type]}]
   (= type :group))
 
+(defn bool-shape?
+  [{:keys [type]}]
+  (= type :bool))
+
 (defn text-shape?
   [{:keys [type]}]
   (= type :text))
@@ -268,7 +272,7 @@
                  (= id-a id-b)
                  0
 
-                 (is-shape-over-shape? objects id-a id-b options)
+                 (is-shape-over-shape? objects id-a id-b {:top-frames? true})
                  1
 
                  :else
