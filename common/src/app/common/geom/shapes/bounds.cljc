@@ -117,7 +117,11 @@
   [bounds padding]
   (-> bounds
       (update :x - (:horizontal padding))
+      (update :x1 - (:horizontal padding))
+      (update :x2 + (:horizontal padding))
       (update :y - (:vertical padding))
+      (update :y1 - (:vertical padding))
+      (update :y2 + (:vertical padding))
       (update :width + (* 2 (:horizontal padding)))
       (update :height + (* 2 (:vertical padding)))))
 
