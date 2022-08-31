@@ -18,11 +18,11 @@
    [app.rpc.semaphore :as rsem]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
-   [app.util.bytes :as bs]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
+   [datoteka.io :as io]
    [promesa.core :as p]
    [promesa.exec :as px]))
 
@@ -224,7 +224,7 @@
           (process-response [{:keys [body headers] :as response}]
             (let [{:keys [size mtype]} (parse-and-validate-size headers)
                   path                 (tmp/tempfile :prefix "penpot.media.download.")
-                  written              (bs/write-to-file! body path :size size)]
+                  written              (io/write-to-file! body path :size size)]
 
               (when (not= written size)
                 (ex/raise :type :internal

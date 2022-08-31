@@ -9,10 +9,10 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.util.bytes :as bs]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
-   [clojure.java.io :as io])
+   [clojure.java.io :as jio]
+   [datoteka.io :as io])
   (:import
    java.nio.ByteBuffer
    java.nio.file.Files
@@ -110,14 +110,14 @@
     IContentObject
     (get-size [_] size)
 
-    io/IOFactory
+    jio/IOFactory
     (make-reader [this opts]
-      (io/make-reader this opts))
+      (jio/make-reader this opts))
     (make-writer [_ _]
       (throw (UnsupportedOperationException. "not implemented")))
     (make-input-stream [_ _]
       (-> (io/input-stream path)
-          (bs/bounded-input-stream size)))
+          (io/bounded-input-stream size)))
     (make-output-stream [_ _]
       (throw (UnsupportedOperationException. "not implemented")))))
 
@@ -127,14 +127,14 @@
     IContentObject
     (get-size [_] size)
 
-    io/IOFactory
+    jio/IOFactory
     (make-reader [this opts]
-      (io/make-reader this opts))
+      (jio/make-reader this opts))
     (make-writer [_ _]
       (throw (UnsupportedOperationException. "not implemented")))
     (make-input-stream [_ _]
-      (-> (bs/bytes-input-stream data)
-          (bs/bounded-input-stream size)))
+      (-> (io/bytes-input-stream data)
+          (io/bounded-input-stream size)))
     (make-output-stream [_ _]
       (throw (UnsupportedOperationException. "not implemented")))))
 
@@ -169,7 +169,7 @@
   (when-not (satisfies? IContentObject content)
     (throw (UnsupportedOperationException. "`content` should be an instance of IContentObject")))
 
-  (when-not (satisfies? io/IOFactory content)
+  (when-not (satisfies? jio/IOFactory content)
     (throw (UnsupportedOperationException. "`content` should be an instance of IOFactory")))
 
   (reify
@@ -179,15 +179,15 @@
     IContentHash
     (get-hash [_] hash)
 
-    io/IOFactory
+    jio/IOFactory
     (make-reader [_ opts]
-      (io/make-reader content opts))
+      (jio/make-reader content opts))
     (make-writer [_ opts]
-      (io/make-writer content opts))
+      (jio/make-writer content opts))
     (make-input-stream [_ opts]
-      (io/make-input-stream content opts))
+      (jio/make-input-stream content opts))
     (make-output-stream [_ opts]
-      (io/make-output-stream content opts))))
+      (jio/make-output-stream content opts))))
 
 (defn content?
   [v]

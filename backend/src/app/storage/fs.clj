@@ -10,11 +10,10 @@
    [app.common.spec :as us]
    [app.common.uri :as u]
    [app.storage.impl :as impl]
-   [app.util.bytes :as bs]
-   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
+   [datoteka.io :as io]
    [integrant.core :as ig]
    [promesa.core :as p]
    [promesa.exec :as px])
@@ -59,7 +58,7 @@
         (fs/create-dir (fs/parent full)))
       (with-open [^InputStream src  (io/input-stream content)
                   ^OutputStream dst (io/output-stream full)]
-        (io/copy src dst)))))
+        (io/copy! src dst)))))
 
 (defmethod impl/get-object-data :fs
   [{:keys [executor] :as backend} {:keys [id] :as object}]
@@ -76,8 +75,8 @@
 (defmethod impl/get-object-bytes :fs
   [backend object]
   (p/let [input (impl/get-object-data backend object)]
-    (ex/with-always (bs/close! input)
-      (bs/read-as-bytes input))))
+    (ex/with-always (io/close! input)
+      (io/read-as-bytes input))))
 
 (defmethod impl/get-object-url :fs
   [{:keys [uri executor] :as backend} {:keys [id] :as object} _]
