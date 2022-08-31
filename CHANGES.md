@@ -22,6 +22,7 @@
 - Fix props preserving on copy&paste texts [Taiga #3629](https://tree.taiga.io/project/penpot/issue/3629) by @andrewzhurov
 - Fix unexpected layers ungrouping on moving it [Taiga #3932](https://tree.taiga.io/project/penpot/issue/3932) by @andrewzhurov
 - Fix artboards moving with comment tool selected [Taiga #3938](https://tree.taiga.io/project/penpot/issue/3938)
+- Fix undo on delete page does not preserve its order [Taiga #3375](https://tree.taiga.io/project/penpot/issue/3375)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
