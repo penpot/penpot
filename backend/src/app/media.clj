@@ -13,14 +13,14 @@
    [app.common.spec :as us]
    [app.config :as cf]
    [app.storage.tmp :as tmp]
-   [app.util.bytes :as bs]
    [app.util.svg :as svg]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
    [clojure.java.shell :as sh]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.fs :as fs])
+   [datoteka.fs :as fs]
+   [datoteka.io :as io])
   (:import
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation
@@ -199,7 +199,7 @@
   (letfn [(ttf->otf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
                   foutput (fs/path (str finput ".otf"))
-                  _       (bs/write-to-file! data finput)
+                  _       (io/write-to-file! data finput)
                   res     (sh/sh "fontforge" "-lang=ff" "-c"
                                  (str/fmt "Open('%s'); Generate('%s')"
                                           (str finput)
@@ -210,7 +210,7 @@
           (otf->ttf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
                   foutput (fs/path (str finput ".ttf"))
-                  _       (bs/write-to-file! data finput)
+                  _       (io/write-to-file! data finput)
                   res     (sh/sh "fontforge" "-lang=ff" "-c"
                                  (str/fmt "Open('%s'); Generate('%s')"
                                           (str finput)
@@ -224,7 +224,7 @@
             ;; command.
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
                   foutput (fs/path (str finput ".woff"))
-                  _       (bs/write-to-file! data finput)
+                  _       (io/write-to-file! data finput)
                   res     (sh/sh "sfnt2woff" (str finput))]
               (when (zero? (:exit res))
                 foutput)))
@@ -235,14 +235,14 @@
             ;; command.
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix ".tmp")
                   foutput (fs/path (str (fs/base finput) ".woff2"))
-                  _       (bs/write-to-file! data finput)
+                  _       (io/write-to-file! data finput)
                   res      (sh/sh "woff2_compress" (str finput))]
               (when (zero? (:exit res))
                 foutput)))
 
           (woff->sfnt [data]
             (let [finput  (tmp/tempfile :prefix "penpot" :suffix "")
-                  _       (bs/write-to-file! data finput)
+                  _       (io/write-to-file! data finput)
                   res     (sh/sh "woff2sfnt" (str finput)
                                  :out-enc :bytes)]
               (when (zero? (:exit res))

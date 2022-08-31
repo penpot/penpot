@@ -17,13 +17,12 @@
    [app.rpc.mutations.files :refer [create-file]]
    [app.rpc.queries.profile :as profile]
    [app.util.blob :as blob]
-   [app.util.bytes :as bs]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
+   [datoteka.io :as io]
    [emoji.core :as emj]
    [integrant.core :as ig]
    [markdown.core :as md]
@@ -126,7 +125,7 @@
 (defn- upload-file-data
   [{:keys [pool]} {:keys [profile-id params] :as request}]
   (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
-        data       (some-> params :file :path bs/read-as-bytes blob/decode)]
+        data       (some-> params :file :path io/read-as-bytes blob/decode)]
 
     (if (and data project-id)
       (let [fname      (str "Imported file *: " (dt/now))

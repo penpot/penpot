@@ -23,16 +23,17 @@
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
    [app.util.blob :as blob]
-   [app.util.bytes :as bs]
    [app.util.fressian :as fres]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
+   [datoteka.io :as io]
    [yetti.adapter :as yt])
   (:import
+   com.github.luben.zstd.ZstdInputStream
+   com.github.luben.zstd.ZstdOutputStream
    java.io.DataInputStream
    java.io.DataOutputStream
    java.io.InputStream
@@ -201,7 +202,7 @@
            :position @*position*
            ::l/async false)
   (let [vers   (-> version name (subs 1) parse-long)
-        output (bs/data-output-stream output)]
+        output (io/data-output-stream output)]
     (doto output
       (write-byte! (get-mark :header))
       (write-long! penpot-magic-number)
@@ -210,7 +211,7 @@
 (defn read-header!
   [^InputStream input]
   (l/trace :fn "read-header!" :position @*position* ::l/async false)
-  (let [input (bs/data-input-stream input)
+  (let [input (io/data-input-stream input)
         mark  (read-byte! input)
         mnum  (read-long! input)
         vers  (read-long! input)]
@@ -225,7 +226,7 @@
 
 (defn copy-stream!
   [^OutputStream output ^InputStream input ^long size]
-  (let [written (bs/copy! input output :size size)]
+  (let [written (io/copy! input output :size size)]
     (l/trace :fn "copy-stream!" :position @*position* :size size :written written ::l/async false)
     (swap! *position* + written)
     written))
@@ -254,11 +255,11 @@
 
     (if (> s temp-file-threshold)
       (with-open [^OutputStream output (io/output-stream p)]
-        (let [readed (bs/copy! input output :offset 0 :size s)]
+        (let [readed (io/copy! input output :offset 0 :size s)]
           (l/trace :fn "read-stream*!" :expected s :readed readed :position @*position* ::l/async false)
           (swap! *position* + readed)
           [s p]))
-      [s (bs/read-as-bytes input :size s)])))
+      [s (io/read-as-bytes input :size s)])))
 
 (defmacro assert-read-label!
   [input expected-label]
@@ -274,6 +275,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- HELPERS
+
+(defn zstd-input-stream
+  ^InputStream
+  [input]
+  (ZstdInputStream. ^InputStream input))
+
+(defn zstd-output-stream
+  ^OutputStream
+  [output & {:keys [level] :or {level 0}}]
+  (ZstdOutputStream. ^OutputStream output (int level)))
 
 (defn- retrieve-file
   [pool file-id]
@@ -411,7 +422,7 @@
 (defmulti write-export ::version)
 (defmulti write-section ::section)
 
-(s/def ::output bs/output-stream?)
+(s/def ::output io/output-stream?)
 (s/def ::file-ids (s/every ::us/uuid :kind vector? :min-count 1))
 (s/def ::include-libraries? (s/nilable ::us/boolean))
 (s/def ::embed-assets? (s/nilable ::us/boolean))
@@ -441,8 +452,8 @@
 (defmethod write-export :default
   [{:keys [::output] :as options}]
   (write-header! output :v1)
-  (with-open [output (bs/zstd-output-stream output :level 12)]
-    (with-open [output (bs/data-output-stream output)]
+  (with-open [output (zstd-output-stream output :level 12)]
+    (with-open [output (io/data-output-stream output)]
       (binding [*state* (volatile! {})]
         (run! (fn [section]
                 (l/debug :hint "write section" :section section ::l/async false)
@@ -530,7 +541,7 @@
 (defmulti read-section ::section)
 
 (s/def ::project-id ::us/uuid)
-(s/def ::input bs/input-stream?)
+(s/def ::input io/input-stream?)
 (s/def ::overwrite? (s/nilable ::us/boolean))
 (s/def ::migrate? (s/nilable ::us/boolean))
 (s/def ::ignore-index-errors? (s/nilable ::us/boolean))
@@ -562,8 +573,8 @@
 
 (defmethod read-import :v1
   [{:keys [pool ::input] :as options}]
-  (with-open [input (bs/zstd-input-stream input)]
-    (with-open [input (bs/data-input-stream input)]
+  (with-open [input (zstd-input-stream input)]
+    (with-open [input (io/data-input-stream input)]
       (db/with-atomic [conn pool]
         (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED;"])
         (binding [*state* (volatile! {:media [] :index {}})]

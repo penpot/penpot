@@ -12,11 +12,10 @@
    [app.storage :as sto]
    [app.test-helpers :as th]
    [app.util.time :as dt]
-   [app.util.bytes :as bs]
-   [clojure.java.io :as io]
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
+   [datoteka.io :as io]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
@@ -199,7 +198,7 @@
 
         ttfdata (-> (io/resource "app/test_files/font-1.ttf")
                     io/input-stream
-                    bs/read-as-bytes)
+                    io/read-as-bytes)
 
         mfile   {:filename "sample.jpg"
                  :path (th/tempfile "app/test_files/sample.jpg")

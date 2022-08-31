@@ -11,10 +11,9 @@
    [app.http :as http]
    [app.storage :as sto]
    [app.test-helpers :as th]
-   [app.util.bytes :as bs]
-   [clojure.java.io :as io]
    [clojure.test :as t]
-   [datoteka.core :as fs]))
+   [datoteka.fs :as fs]
+   [datoteka.io :as io]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -27,7 +26,7 @@
 
         ttfdata (-> (io/resource "app/test_files/font-1.ttf")
                     io/input-stream
-                    bs/read-as-bytes)
+                    io/read-as-bytes)
 
         params  {::th/type :create-font-variant
                  :profile-id (:id prof)
@@ -63,7 +62,7 @@
 
         data    (-> (io/resource "app/test_files/font-1.woff")
                     io/input-stream
-                    bs/read-as-bytes)
+                    io/read-as-bytes)
 
         params  {::th/type :create-font-variant
                  :profile-id (:id prof)
