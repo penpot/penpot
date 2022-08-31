@@ -14,8 +14,8 @@
    [app.main.ui.settings.options :refer [options-page]]
    [app.main.ui.settings.password :refer [password-page]]
    [app.main.ui.settings.profile :refer [profile-page]]
-   [app.main.ui.settings.sidebar :refer [sidebar]]      
-   [app.util.i18n :as i18n :refer [tr]]   
+   [app.main.ui.settings.sidebar :refer [sidebar]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [rumext.alpha :as mf]))
 
@@ -31,10 +31,11 @@
   (let [section (get-in route [:data :name])
         profile (mf/deref refs/profile)
         locale  (mf/deref i18n/locale)]
+
     (mf/use-effect
      #(when (nil? profile)
         (st/emit! (rt/nav :auth-login))))
-     
+
     [:section.dashboard-layout
      [:& sidebar {:profile profile
                   :locale locale

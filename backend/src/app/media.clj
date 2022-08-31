@@ -20,7 +20,7 @@
    [clojure.java.shell :as sh]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.core :as fs])
+   [datoteka.fs :as fs])
   (:import
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation

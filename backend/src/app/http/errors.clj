@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
+   [app.http :as-alias http]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [yetti.request :as yrq]
@@ -49,6 +50,11 @@
 (defmethod handle-exception :restriction
   [err _]
   (yrs/response 400 (ex-data err)))
+
+(defmethod handle-exception :rate-limit
+  [err _]
+  (let [headers (-> err ex-data ::http/headers)]
+    (yrs/response :status 429 :body "" :headers headers)))
 
 (defmethod handle-exception :validation
   [err _]

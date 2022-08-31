@@ -28,7 +28,8 @@
                     :exclusions [org.clojure/data.json]}
 
   frankiesardo/linked {:mvn/version "1.3.0"}
-  commons-io/commons-io {:mvn/version "2.11.0"}
+
+  funcool/datoteka {:mvn/version "3.0.65"}
   com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
 
   ;; exception printing

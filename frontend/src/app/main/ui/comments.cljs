@@ -116,6 +116,7 @@
                    (some? position-modifier)
                    (gpt/transform position-modifier))
         content  (:content draft)
+
         pos-x    (* (:x position) zoom)
         pos-y    (* (:y position) zoom)
 

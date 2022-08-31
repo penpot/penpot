@@ -12,6 +12,8 @@
    [app.loggers.audit :as audit]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
+   [app.tokens :as tokens]
+   [app.tokens.spec.team-invitation :as-alias spec.team-invitation]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
@@ -23,9 +25,9 @@
           :opt-un [::profile-id]))
 
 (sv/defmethod ::verify-token {:auth false}
-  [{:keys [pool tokens] :as cfg} {:keys [token] :as params}]
+  [{:keys [pool sprops] :as cfg} {:keys [token] :as params}]
   (db/with-atomic [conn pool]
-    (let [claims (tokens :verify {:token token})
+    (let [claims (tokens/verify sprops {:token token})
           cfg    (assoc cfg :conn conn)]
       (process-token cfg params claims))))
 
@@ -76,19 +78,19 @@
 (s/def ::iss keyword?)
 (s/def ::exp ::us/inst)
 
-(s/def :internal.tokens.team-invitation/profile-id ::us/uuid)
-(s/def :internal.tokens.team-invitation/role ::us/keyword)
-(s/def :internal.tokens.team-invitation/team-id ::us/uuid)
-(s/def :internal.tokens.team-invitation/member-email ::us/email)
-(s/def :internal.tokens.team-invitation/member-id (s/nilable ::us/uuid))
+(s/def ::spec.team-invitation/profile-id ::us/uuid)
+(s/def ::spec.team-invitation/role ::us/keyword)
+(s/def ::spec.team-invitation/team-id ::us/uuid)
+(s/def ::spec.team-invitation/member-email ::us/email)
+(s/def ::spec.team-invitation/member-id (s/nilable ::us/uuid))
 
 (s/def ::team-invitation-claims
   (s/keys :req-un [::iss ::exp
-                   :internal.tokens.team-invitation/profile-id
-                   :internal.tokens.team-invitation/role
-                   :internal.tokens.team-invitation/team-id
-                   :internal.tokens.team-invitation/member-email]
-          :opt-un [:internal.tokens.team-invitation/member-id]))
+                   ::spec.team-invitation/profile-id
+                   ::spec.team-invitation/role
+                   ::spec.team-invitation/team-id
+                   ::spec.team-invitation/member-email]
+          :opt-un [::spec.team-invitation/member-id]))
 
 (defn- accept-invitation
   [{:keys [conn] :as cfg} {:keys [member-id team-id role member-email] :as claims}]

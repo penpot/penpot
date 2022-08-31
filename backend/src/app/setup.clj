@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.setup.builtin-templates]
+   [app.setup.keys :as keys]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
    [clojure.spec.alpha :as s]
@@ -59,6 +60,8 @@
                          "all sessions on each restart, it is hightly recommeded setting up the "
                          "PENPOT_SECRET_KEY environment variable")))
 
-    (let [stored (-> (retrieve-all conn)
-                     (assoc :secret-key (or key (generate-random-key))))]
-      (update stored :instance-id handle-instance-id conn (db/read-only? pool)))))
+    (let [secret (or key (generate-random-key))]
+      (-> (retrieve-all conn)
+          (assoc :secret-key secret)
+          (assoc :tokens-key (keys/derive secret :salt "tokens" :size 32))
+          (update :instance-id handle-instance-id conn (db/read-only? pool))))))

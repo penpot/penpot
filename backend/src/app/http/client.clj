@@ -31,7 +31,6 @@
            (http/send-async req {:client client :as response-type}))))
       {::client client})))
 
-
 (defn req!
   "A convencience toplevel function for gradual migration to a new API
   convention."

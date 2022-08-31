@@ -15,6 +15,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.tokens :as tokens]
    [app.util.async :as aa]
    [app.util.time :as dt]
    [app.worker :as wrk]
@@ -237,10 +238,10 @@
 
 (s/def ::http-client fn?)
 (s/def ::uri ::us/string)
-(s/def ::tokens fn?)
+(s/def ::sprops map?)
 
 (defmethod ig/pre-init-spec ::archive-task [_]
-  (s/keys :req-un [::db/pool ::tokens ::http-client]
+  (s/keys :req-un [::db/pool ::sprops ::http-client]
           :opt-un [::uri]))
 
 (defmethod ig/init-key ::archive-task
@@ -276,7 +277,7 @@
       for update skip locked;")
 
 (defn archive-events
-  [{:keys [pool uri tokens http-client] :as cfg}]
+  [{:keys [pool uri sprops http-client] :as cfg}]
   (letfn [(decode-row [{:keys [props ip-addr context] :as row}]
             (cond-> row
               (db/pgobject? props)
@@ -300,9 +301,9 @@
                               :context]))
 
           (send [events]
-            (let [token   (tokens :generate {:iss "authentication"
-                                             :iat (dt/now)
-                                             :uid uuid/zero})
+            (let [token   (tokens/generate sprops {:iss "authentication"
+                                                   :iat (dt/now)
+                                                   :uid uuid/zero})
                   body    (t/encode {:events events})
                   headers {"content-type" "application/transit+json"
                            "origin" (cf/get :public-uri)

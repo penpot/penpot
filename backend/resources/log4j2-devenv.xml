@@ -30,6 +30,8 @@
     <Logger name="app.msgbus" level="info" />
     <Logger name="app.http.websocket" level="info" />
     <Logger name="app.util.websocket" level="info" />
+    <Logger name="app.redis" level="info" />
+    <Logger name="app.rpc.rlimit" level="info" />
 
     <Logger name="app.cli" level="debug" additivity="false">
       <AppenderRef ref="console"/>

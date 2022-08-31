@@ -15,9 +15,11 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
+   [app.http.client :as http]
    [app.http.middleware :as hmw]
    [app.loggers.audit :as audit]
    [app.rpc.queries.profile :as profile]
+   [app.tokens :as tokens]
    [app.util.json :as json]
    [app.util.time :as dt]
    [app.worker :as wrk]
@@ -47,7 +49,7 @@
 (defn- discover-oidc-config
   [{:keys [http-client]} {:keys [base-uri] :as opts}]
   (let [discovery-uri (u/join base-uri ".well-known/openid-configuration")
-        response      (ex/try (http-client {:method :get :uri (str discovery-uri)} {:sync? true}))]
+        response      (ex/try (http/req! http-client {:method :get :uri (str discovery-uri)} {:sync? true}))]
     (cond
       (ex/exception? response)
       (do
@@ -158,10 +160,10 @@
 (defn- retrieve-github-email
   [{:keys [http-client]} tdata info]
   (or (some-> info :email p/resolved)
-      (-> (http-client {:uri "https://api.github.com/user/emails"
-                        :headers {"Authorization" (dm/str (:type tdata) " " (:token tdata))}
-                        :timeout 6000
-                        :method :get})
+      (-> (http/req! http-client {:uri "https://api.github.com/user/emails"
+                                  :headers {"Authorization" (dm/str (:type tdata) " " (:token tdata))}
+                                  :timeout 6000
+                                  :method :get})
           (p/then (fn [{:keys [status body] :as response}]
                     (when-not (s/int-in-range? 200 300 status)
                       (ex/raise :type :internal
@@ -278,7 +280,7 @@
                 :uri (:token-uri provider)
                 :body (u/map->query-string params)}]
     (p/then
-     (http-client req)
+     (http/req! http-client req)
      (fn [{:keys [status body] :as res}]
        (if (= status 200)
          (let [data (json/read body)]
@@ -292,11 +294,10 @@
 (defn- retrieve-user-info
   [{:keys [provider http-client] :as cfg} tdata]
   (letfn [(retrieve []
-            (http-client {:uri (:user-uri provider)
-                          :headers {"Authorization" (str (:type tdata) " " (:token tdata))}
-                          :timeout 6000
-                          :method :get}))
-
+            (http/req! http-client {:uri (:user-uri provider)
+                                    :headers {"Authorization" (str (:type tdata) " " (:token tdata))}
+                                    :timeout 6000
+                                    :method :get}))
           (validate-response [response]
             (when-not (s/int-in-range? 200 300 (:status response))
               (ex/raise :type :internal
@@ -353,7 +354,7 @@
                    ::props]))
 
 (defn retrieve-info
-  [{:keys [tokens provider] :as cfg} {:keys [params] :as request}]
+  [{:keys [sprops provider] :as cfg} {:keys [params] :as request}]
   (letfn [(validate-oidc [info]
             ;; If the provider is OIDC, we can proceed to check
             ;; roles if they are defined.
@@ -392,7 +393,7 @@
 
     (let [state  (get params :state)
           code   (get params :code)
-          state  (tokens :verify {:token state :iss :oauth})]
+          state  (tokens/verify sprops {:token state :iss :oauth})]
       (-> (p/resolved code)
           (p/then #(retrieve-access-token cfg %))
           (p/then #(retrieve-user-info cfg %))
@@ -420,13 +421,13 @@
     (redirect-response uri)))
 
 (defn- generate-redirect
-  [{:keys [tokens session audit] :as cfg} request info profile]
+  [{:keys [sprops session audit] :as cfg} request info profile]
   (if profile
     (let [sxf    ((:create session) (:id profile))
           token  (or (:invitation-token info)
-                     (tokens :generate {:iss :auth
-                                        :exp (dt/in-future "15m")
-                                        :profile-id (:id profile)}))
+                     (tokens/generate sprops {:iss :auth
+                                              :exp (dt/in-future "15m")
+                                              :profile-id (:id profile)}))
           params {:token token}
 
           uri    (-> (u/uri (:public-uri cfg))
@@ -448,7 +449,7 @@
                         :iss :prepared-register
                         :is-active true
                         :exp (dt/in-future {:hours 48}))
-          token  (tokens :generate info)
+          token  (tokens/generate sprops info)
           params (d/without-nils
                   {:token token
                    :fullname (:fullname info)})
@@ -458,13 +459,13 @@
       (redirect-response uri))))
 
 (defn- auth-handler
-  [{:keys [tokens] :as cfg} {:keys [params] :as request}]
+  [{:keys [sprops] :as cfg} {:keys [params] :as request}]
   (let [props (audit/extract-utm-params params)
-        state (tokens :generate
-                      {:iss :oauth
-                       :invitation-token (:invitation-token params)
-                       :props props
-                       :exp (dt/in-future "15m")})
+        state (tokens/generate sprops
+                               {:iss :oauth
+                                :invitation-token (:invitation-token params)
+                                :props props
+                                :exp (dt/in-future "15m")})
         uri   (build-auth-uri cfg state)]
     (yrs/response 200 {:redirect-uri uri})))
 
@@ -496,16 +497,16 @@
                        :hint "provider not configured"))))))})
 
 (s/def ::public-uri ::us/not-empty-string)
-(s/def ::http-client fn?)
+(s/def ::http-client ::http/client)
 (s/def ::session map?)
-(s/def ::tokens fn?)
+(s/def ::sprops map?)
 (s/def ::providers map?)
 
 (defmethod ig/pre-init-spec ::routes
   [_]
   (s/keys :req-un [::public-uri
                    ::session
-                   ::tokens
+                   ::sprops
                    ::http-client
                    ::providers
                    ::db/pool
