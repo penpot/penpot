@@ -16,6 +16,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.path :as dwdp]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.workspace.viewport.utils :as utils]
@@ -124,10 +125,11 @@
    (mf/deps selected)
    (fn [event id]
      (let [shift? (kbd/shift? event)
-           selected? (contains? selected id)]
+           selected? (contains? selected id)
+           selected-drawtool (deref refs/selected-drawing-tool)]
        (st/emit! (when (or shift? (not selected?))
                    (dw/select-shape id shift?))
-                 (when (not shift?)
+                 (when (and (nil? selected-drawtool) (not shift?))
                    (dw/start-move-selected)))))))
 
 (defn on-frame-enter
