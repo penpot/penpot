@@ -8,6 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.text :as gsht]
    [app.common.math :as mth]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
@@ -37,19 +39,28 @@
       [:& text/text-shape {:shape shape}]]
 
      (when (and (debug? :text-outline) (d/not-empty? (:position-data shape)))
-       (for [[index data] (d/enumerate (:position-data shape))]
-         (let [{:keys [x y width height]} data]
-           [:g {:key (dm/str index)}
-            ;; Text fragment bounding box
-            [:rect {:x x
-                    :y (- y height)
-                    :width width
-                    :height height
-                    :style {:fill "none" :stroke "red"}}]
+       [:g {:transform (gsh/transform-str shape {:no-flip true})}
+        (let [bounding-box (gsht/position-data-selrect shape)]
+          [:rect {
+                  :x (:x bounding-box)
+                  :y (:y bounding-box)
+                  :width (:width bounding-box)
+                  :height (:height bounding-box)
+                  :style { :fill "none" :stroke "orange"}}])
 
-            ;; Text baselineazo
-            [:line {:x1 (mth/round x)
-                    :y1 (mth/round (- (:y data) (:height data)))
-                    :x2 (mth/round (+ x width))
-                    :y2 (mth/round (- (:y data) (:height data)))
-                    :style {:stroke "blue"}}]])))]))
+        (for [[index data] (d/enumerate (:position-data shape))]
+          (let [{:keys [x y width height]} data]
+            [:g {:key (dm/str index)}
+             ;; Text fragment bounding box
+             [:rect {:x x
+                     :y (- y height)
+                     :width width
+                     :height height
+                     :style {:fill "none" :stroke "red"}}]
+
+             ;; Text baselineazo
+             [:line {:x1 (mth/round x)
+                     :y1 (mth/round (- (:y data) (:height data)))
+                     :x2 (mth/round (+ x width))
+                     :y2 (mth/round (- (:y data) (:height data)))
+                     :style {:stroke "blue"}}]]))])]))
