@@ -6,7 +6,8 @@
 
 (ns app.common.types.pages-list
   (:require
-   [app.common.data :as d]))
+   [app.common.data :as d]
+   [app.common.pages.helpers :as cph]))
 
 (defn get-page
   [file-data id]
@@ -14,14 +15,18 @@
 
 (defn add-page
   [file-data page]
-  (let [; It's legitimate to add a page that is already there,
+  (let [index (:index page)
+        page (dissoc page :index)
+
+        ; It's legitimate to add a page that is already there,
         ; for example in an idempotent changes operation.
-        conj-if-not-exists (fn [pages id]
-                             (cond-> pages
-                               (not (d/seek #(= % id) pages))
-                               (conj id)))]
+        add-if-not-exists (fn [pages id]
+                            (cond
+                              (d/seek #(= % id) pages) pages
+                              (nil? index)             (conj pages id)
+                              :else                    (cph/insert-at-index pages index [id])))]
     (-> file-data
-        (update :pages conj-if-not-exists (:id page))
+        (update :pages add-if-not-exists (:id page))
         (update :pages-index assoc (:id page) page))))
 
 (defn pages-seq

@@ -326,7 +326,10 @@
   (ptk/reify ::delete-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [page (get-in state [:workspace-data :pages-index id])
+      (let [pages (get-in state [:workspace-data :pages])
+            index (d/index-of pages id)
+            page (get-in state [:workspace-data :pages-index id])
+            page (assoc page :index index)
 
             changes (-> (pcb/empty-changes it)
                         (pcb/del-page page))]
