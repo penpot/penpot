@@ -11,15 +11,16 @@
    [cuerdas.core :as str]
    [fipp.ednize :as fez])
   (:import
+   java.nio.file.attribute.FileTime
    java.time.Duration
    java.time.Instant
    java.time.OffsetDateTime
    java.time.ZoneId
    java.time.ZonedDateTime
    java.time.format.DateTimeFormatter
+   java.time.temporal.ChronoUnit
    java.time.temporal.TemporalAmount
    java.time.temporal.TemporalUnit
-   java.time.temporal.ChronoUnit
    java.util.Date
    org.apache.logging.log4j.core.util.CronExpression))
 
@@ -113,7 +114,11 @@
   (inst-ms* [v] (.toMillis ^Duration v))
 
   OffsetDateTime
-  (inst-ms* [v] (.toEpochMilli (.toInstant ^OffsetDateTime v))))
+  (inst-ms* [v] (.toEpochMilli (.toInstant ^OffsetDateTime v)))
+
+  FileTime
+  (inst-ms* [v] (.toMillis ^FileTime v)))
+
 
 (defmethod print-method Duration
   [mv ^java.io.Writer writer]

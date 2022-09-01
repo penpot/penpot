@@ -216,6 +216,10 @@
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref [::default :app.worker/executor])}
 
+   :app.rpc/rlimit
+   {:executor  (ig/ref [::worker :app.worker/executor])
+    :scheduler (ig/ref :app.worker/scheduler)}
+
    :app.rpc/methods
    {:pool        (ig/ref :app.db/pool)
     :session     (ig/ref :app.http/session)
@@ -228,6 +232,7 @@
     :audit       (ig/ref :app.loggers.audit/collector)
     :ldap        (ig/ref :app.auth.ldap/provider)
     :http-client (ig/ref :app.http/client)
+    :rlimit      (ig/ref :app.rpc/rlimit)
     :executors   (ig/ref :app.worker/executors)
     :templates   (ig/ref :app.setup/builtin-templates)}
 
