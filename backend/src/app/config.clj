@@ -49,6 +49,7 @@
 
    :default-blob-version 4
    :loggers-zmq-uri "tcp://localhost:45556"
+   :rpc-rlimit-config (fs/path "resources/rlimit.edn")
 
    :file-change-snapshot-every 5
    :file-change-snapshot-timeout "3h"

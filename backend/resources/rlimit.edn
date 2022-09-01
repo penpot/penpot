@@ -1,0 +1,6 @@
+^{:refresh "30s"}
+{:default
+ [[:default :window "200000/h"]]
+
+ #{:query/profile}
+ [[:burst :bucket "100/60/1m"]]}
