@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-28 21:15+0000\n"
+"PO-Revision-Date: 2022-09-05 12:17+0000\n"
 "Last-Translator: Rubén <rubenx@mail.com>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
 "ca/>\n"
@@ -4377,3 +4377,55 @@ msgstr "Marge"
 
 msgid "labels.log-or-sign"
 msgstr "Inicia sessió o registra'm"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-h"
+msgstr "Alçada màx."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-w"
+msgstr "Amplada màx."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-w"
+msgstr "Amplada mín."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-h"
+msgstr "Alçada mín."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "Redimensió de l'element"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Baix"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Espaiat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "ajuntat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "dalt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "baix"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Dalt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "espaiat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "separat"
