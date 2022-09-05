@@ -23,6 +23,8 @@
 - Fix unexpected layers ungrouping on moving it [Taiga #3932](https://tree.taiga.io/project/penpot/issue/3932) by @andrewzhurov
 - Fix artboards moving with comment tool selected [Taiga #3938](https://tree.taiga.io/project/penpot/issue/3938)
 - Fix undo on delete page does not preserve its order [Taiga #3375](https://tree.taiga.io/project/penpot/issue/3375)
+- Fix unexpected 404 on deleting library that is used by deleted files
+- Fix inconsistent message on deleting library when a library is linked from deleted files
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
