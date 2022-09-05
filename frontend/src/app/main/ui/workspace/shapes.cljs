@@ -32,7 +32,8 @@
 (declare group-wrapper)
 (declare svg-raw-wrapper)
 (declare bool-wrapper)
-(declare frame-wrapper)
+(declare root-frame-wrapper)
+(declare nested-frame-wrapper)
 
 (def circle-wrapper (common/generic-wrapper-factory circle/circle-shape))
 (def image-wrapper (common/generic-wrapper-factory image/image-shape))
@@ -62,15 +63,25 @@
                   (mapcat #(cph/get-children-with-self objects (:id %))))]
        [:& ff/fontfaces-style {:shapes (into [] xform shapes)}])
 
-     (for [item shapes]
-       (if (cph/frame-shape? item)
-         [:& frame-wrapper {:shape item
-                            :key (:id item)
-                            :objects (get frame-objects (:id item))
-                            :thumbnail? (not (contains? active-frames (:id item)))}]
+     (for [shape shapes]
+       (cond
+         (not (cph/frame-shape? shape))
+         [:& shape-wrapper
+          {:shape shape
+           :key (:id shape)}]
 
-         [:& shape-wrapper {:shape item
-                            :key (:id item)}]))]))
+         (cph/root-frame? shape)
+         [:& root-frame-wrapper
+          {:shape shape
+           :key (:id shape)
+           :objects (get frame-objects (:id shape))
+           :thumbnail? (not (contains? active-frames (:id shape)))}]
+
+         :else
+         [:& nested-frame-wrapper
+          {:shape shape
+           :key (:id shape)
+           :objects (get frame-objects (:id shape))}]))]))
 
 (mf/defc shape-wrapper
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
@@ -98,12 +109,13 @@
         :bool    [:> bool-wrapper opts]
 
         ;; Only used when drawing a new frame.
-        :frame [:> frame-wrapper opts]
+        :frame [:> nested-frame-wrapper opts]
 
         nil))))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))
 (def bool-wrapper (bool/bool-wrapper-factory shape-wrapper))
-(def frame-wrapper (frame/frame-wrapper-factory shape-wrapper))
+(def root-frame-wrapper (frame/root-frame-wrapper-factory shape-wrapper))
+(def nested-frame-wrapper (frame/nested-frame-wrapper-factory shape-wrapper))
 
