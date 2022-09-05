@@ -46,6 +46,9 @@
 
                  shape
                  (cond-> shape
+                   (not click-draw?)
+                   (-> (assoc :grow-type :fixed))
+                   
                    (and click-draw? (not text?))
                    (-> (assoc :width min-side :height min-side)
                        (assoc-in [:modifiers :displacement]
