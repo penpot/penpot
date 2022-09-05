@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-03 08:15+0000\n"
+"PO-Revision-Date: 2022-09-06 06:05+0000\n"
 "Last-Translator: Valentina Chapellu <valentina.chapellu@gmail.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -1041,3 +1041,474 @@ msgstr "Il tuo progetto è stato eliminato con successo"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-files"
 msgstr "I tuoi file sono stati spostati con successo"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "Modificare"
+
+msgid "labels.edit-file"
+msgstr "Modificare il file"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "Conferma la password"
+
+msgid "labels.content"
+msgstr "Contenuto"
+
+msgid "labels.continue"
+msgstr "Continua"
+
+msgid "labels.continue-with"
+msgstr "Continua con"
+
+msgid "labels.images"
+msgstr "Immagini"
+
+msgid "labels.installed-fonts"
+msgstr "Font installati"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr ""
+"L'e-mail \"%s\" è stata riportata come spam o respinta in modo permanente."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.desc-message"
+msgstr ""
+"Sembra che tu debba aspettare un po' e riprovare; stiamo eseguendo dei "
+"piccoli lavori di manutenzione sui nostri server."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "Gateway non corretto"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "Annulla"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Community"
+
+msgid "labels.continue-with-penpot"
+msgstr "Puoi continuare con un account Penpot"
+
+msgid "labels.custom-fonts"
+msgstr "Font personalizzati"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment-thread"
+msgstr "Eliminare il thread"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Eliminare l'invito"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "Eliminare %s file"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "Bozze"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Scaduto"
+
+msgid "labels.font-family"
+msgstr "Font Family"
+
+msgid "labels.font-providers"
+msgstr "Fornitori di font"
+
+msgid "labels.font-variants"
+msgstr "Stili"
+
+msgid "labels.fonts"
+msgstr "Font"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.give-feedback"
+msgstr "Dai la tua opinione"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "Lingua"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Librerie e template"
+
+msgid "labels.link"
+msgstr "Link"
+
+msgid "labels.log-or-sign"
+msgstr "Connettiti o iscriviti"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.auth-info"
+msgstr "Sei connesso come"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-projects"
+msgid_plural "labels.num-of-projects"
+msgstr[0] "1 progetto"
+msgstr[1] "%s progetti"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.rename-team"
+msgstr "Rinominare il team"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "In attesa"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.role"
+msgstr "Ruolo"
+
+msgid "labels.search-font"
+msgstr "Cerca un font"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.send"
+msgstr "Inviare"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.sending"
+msgstr "Invio…"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.desc-message"
+msgstr "Stiamo effettuando la manutenzione programmata dei nostri sistemi."
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "Configurazione"
+
+msgid "labels.show-comments-list"
+msgstr "Mostra la lista dei commenti"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-your-comments"
+msgstr "Mostra solo i tuoi commenti"
+
+msgid "labels.workspace"
+msgstr "Spazio di lavoro"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.write-new-comment"
+msgstr "Scrivere un nuovo commento"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(tu)"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.accept"
+msgstr "Aggiungere come libreria condivisa"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.confirm"
+msgstr "Sì, cancellare il mio account"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "Crea un nuovo team"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "Inserisci il nome del nuovo team"
+
+msgid "labels.centered"
+msgstr "Centrato"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Crea"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "Dashboard"
+
+msgid "labels.default"
+msgstr "predefinito"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "Eliminare"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "Eliminare il commento"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "Redattore"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.email"
+msgstr "Indirizzo e-mail"
+
+msgid "labels.export"
+msgstr "Esportare"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-disabled"
+msgstr "Feedback disabilitato"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "Feedback inviato"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Inviti"
+
+msgid "labels.manage-fonts"
+msgstr "Gestisci i font"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "Membri"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "Disconnetti"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Membro"
+
+msgid "labels.next"
+msgstr "Prossimo"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr ""
+"Questa pagina non esiste oppure non hai i permessi necessari per accedervi."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.name"
+msgstr "Nome"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "Nuova password"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr "Non ci sono notifiche di commenti in attesa"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "Ops!"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-files"
+msgid_plural "labels.num-of-files"
+msgstr[0] "1 file"
+msgstr[1] "%s file"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.old-password"
+msgstr "Vecchia password"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.only-yours"
+msgstr "Solo tuoi"
+
+msgid "labels.or"
+msgstr "oppure"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.owner"
+msgstr "Proprietario"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.permissions"
+msgstr "Permessi"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.profile"
+msgstr "Profilo"
+
+msgid "labels.recent"
+msgstr "Recenti"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.release-notes"
+msgstr "Note di versione"
+
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove"
+msgstr "Rimuovere"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Rimuovi membro"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "Rinominare"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Invia di nuovo l'invito"
+
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+msgid "labels.retry"
+msgstr "Riprova"
+
+msgid "labels.save"
+msgstr "Salvare"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.main-message"
+msgstr "Servizio non disponibile"
+
+msgid "labels.share-prototype"
+msgstr "Condividi il prototipo"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.sign-out"
+msgstr "Disconnetti"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Stato"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "labels.update"
+msgstr "Aggiornare"
+
+msgid "labels.upload"
+msgstr "Caricare"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Caricare font personalizzati"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Il tuo account"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "media.loading"
+msgstr "Caricamento dell'immagine…"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.message"
+msgstr "Aggiungere \"%s\" come libreria condivisa"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.hint"
+msgstr ""
+"Una volta aggiunta come libreria condivisa, le risorse di questa libreria "
+"saranno disponibili per essere utilizzate nel resto dei tuoi file."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.info"
+msgstr ""
+"Ti invieremo un'e-mail al tuo attuale indirizzo e-mail \"%s\" per verificare "
+"la tua identità."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.confirm-email"
+msgstr "Verificare il nuovo indirizzo e-mail"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.new-email"
+msgstr "Nuovo indirizzo e-mail"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.title"
+msgstr "Cambia il tuo indirizzo e-mail"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"Sei il proprietario di questo team. Promuovi a proprietario un nuovo membro "
+"prima di abbandonare il team."
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.cancel"
+msgstr "Annulla e mantieni il mio account"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "Progetti"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "Commenti"
+
+msgid "labels.close"
+msgstr "Chiudere"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "Password"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "Non ci sono inviti."
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-all-comments"
+msgstr "Mostra tutti i commenti"
+
+msgid "labels.skip"
+msgstr "Saltare"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shared-libraries"
+msgstr "Librerie condivise"
+
+msgid "labels.start"
+msgstr "Iniziare"
+
+msgid "labels.go-back"
+msgstr "Torna indietro"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Supporto"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.hide-resolved-comments"
+msgstr "Non mostrare i commenti risolti"
+
+msgid "labels.icons"
+msgstr "Icone"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Tutorial"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"Premi il pulsante \"Invita nel team\" per invitare altri membri in questo "
+"team."
+
+msgid "labels.uploading"
+msgstr "Caricamento…"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Repository Github"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.desc-message"
+msgstr ""
+"Si è verificato un problema. Ritenta l'operazione, se il problema persiste "
+"contatta il supporto."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.main-message"
+msgstr "Errore interno"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.submit"
+msgstr "Cambiare indirizzo e-mail"
