@@ -141,7 +141,7 @@
         context (dm/fmt "ns: '%'\nname: '%'\nfile: '%:%'"
                         (:ns error)
                         (:name error)
-                        (dm/str cf/public-uri "js/cljs-runtime/" (:file error))
+                        (dm/str @cf/public-uri "js/cljs-runtime/" (:file error))
                         (:line error))]
 
     (ts/schedule

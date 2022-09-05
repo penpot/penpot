@@ -21,7 +21,7 @@
 (mf/defc template-item
   [{:keys [name path image project-id]}]
   (let [downloading? (mf/use-state false)
-        link         (str (assoc cf/public-uri :path path))
+        link         (str (assoc @cf/public-uri :path path))
 
         on-finish-import
         (fn []

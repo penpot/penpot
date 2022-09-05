@@ -102,17 +102,19 @@
 (def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" nil))
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" nil))
 
-(defn get-public-uri
-  []
-  (let [uri (u/uri (or (obj/get global "penpotPublicURI")
-                       (.-origin ^js location)))]
+(defn- normalize-uri
+  [uri-str]
+  (let [uri (u/uri uri-str)]
     ;; Ensure that the path always ends with "/"; this ensures that
     ;; all path join operations works as expected.
     (cond-> uri
       (not (str/ends-with? (:path uri) "/"))
       (update :path #(str % "/")))))
 
-(def public-uri (get-public-uri))
+(def public-uri
+  (atom
+   (normalize-uri (or (obj/get global "penpotPublicURI")
+                      (.-origin ^js location)))))
 
 ;; --- Helper Functions
 
@@ -128,18 +130,18 @@
   [{:keys [photo-id fullname name] :as profile}]
   (if (nil? photo-id)
     (avatars/generate {:name (or fullname name)})
-    (str (u/join public-uri "assets/by-id/" photo-id))))
+    (str (u/join @public-uri "assets/by-id/" photo-id))))
 
 (defn resolve-team-photo-url
   [{:keys [photo-id name] :as team}]
   (if (nil? photo-id)
     (avatars/generate {:name name})
-    (str (u/join public-uri "assets/by-id/" photo-id))))
+    (str (u/join @public-uri "assets/by-id/" photo-id))))
 
 (defn resolve-file-media
   ([media]
    (resolve-file-media media false))
   ([{:keys [id] :as media} thumbnail?]
-   (str (cond-> (u/join public-uri "assets/by-file-media-id/")
+   (str (cond-> (u/join @public-uri "assets/by-file-media-id/")
           (true? thumbnail?) (u/join (str id "/thumbnail"))
           (false? thumbnail?) (u/join (str id))))))

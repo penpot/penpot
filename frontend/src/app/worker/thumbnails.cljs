@@ -8,7 +8,7 @@
   (:require
    ["react-dom/server" :as rds]
    [app.common.uri :as u]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.fonts :as fonts]
    [app.main.render :as render]
    [app.util.http :as http]
@@ -55,7 +55,7 @@
                  :strip-frames-with-thumbnails true
                  :components-v2 components-v2}
         request {:method :get
-                 :uri (u/join (cfg/get-public-uri) path)
+                 :uri (u/join @cf/public-uri path)
                  :credentials "include"
                  :query params}]
     (->> (http/send! request)
@@ -68,7 +68,7 @@
         params  {:file-id file-id
                  :revn revn}
         request {:method :get
-                 :uri (u/join (cfg/get-public-uri) path)
+                 :uri (u/join @cf/public-uri path)
                  :credentials "include"
                  :query params}]
 
@@ -97,7 +97,7 @@
                  :props {:fonts fonts}
                  :data data}
         request {:method :post
-                 :uri (u/join (cfg/get-public-uri) path)
+                 :uri (u/join @cf/public-uri path)
                  :credentials "include"
                  :body (http/transit-data params)}]
 

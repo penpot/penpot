@@ -8,9 +8,12 @@
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.uri :as uri]
    [cognitect.transit :as t]
+   [lambdaisland.uri :as luri]
    [linked.core :as lk]
    [linked.set :as lks]
+
    #?(:cljs ["luxon" :as lxn]))
   #?(:clj
      (:import
@@ -19,9 +22,10 @@
       java.io.ByteArrayInputStream
       java.io.ByteArrayOutputStream
       java.io.File
-      java.time.Instant
       java.time.Duration
+      java.time.Instant
       java.time.OffsetDateTime
+      lambdaisland.uri.URI
       linked.set.LinkedSet)))
 
 ;; --- MISC
@@ -121,6 +125,16 @@
    (constantly "m")
    (fn [v] (str (inst-ms v)))))
 
+;; --- URI
+
+(def uri-read-handler
+  (t/read-handler uri/uri))
+
+(def uri-write-handler
+  (t/write-handler
+   (constantly "uri")
+   (fn [v] (str v))))
+
 ;; --- HANDLERS
 
 (def +read-handlers+
@@ -129,6 +143,7 @@
    "point"       point-read-handler
    "duration"    duration-read-handler
    "m"           instant-read-handler
+   "uri"         uri-read-handler
    #?@(:cljs ["n" bigint-read-handler
               "u" uuid-read-handler])
    })
@@ -139,7 +154,7 @@
       Point          point-write-handler
       Instant        instant-write-handler
       LinkedSet      ordered-set-write-handler
-
+      URI            uri-write-handler
       File           file-write-handler
       OffsetDateTime instant-write-handler}
      :cljs
@@ -147,7 +162,8 @@
       gpt/Point      point-write-handler
       lxn/DateTime   instant-write-handler
       lxn/Duration   duration-write-handler
-      lks/LinkedSet  ordered-set-write-handler}
+      lks/LinkedSet  ordered-set-write-handler
+      luri/URI       uri-write-handler}
      ))
 
 ;; --- Low-Level Api
