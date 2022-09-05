@@ -617,18 +617,34 @@
       changes)))
 
 (defn delete-component
-  [changes id]
+  [changes id components-v2]
   (assert-library changes)
   (let [library-data   (::library-data (meta changes))
         prev-component (get-in library-data [:components id])]
     (-> changes
         (update :redo-changes conj {:type :del-component
                                     :id id})
-        (update :undo-changes d/preconj {:type :add-component
-                                         :id id
-                                         :name (:name prev-component)
-                                         :path (:path prev-component)
-                                         :main-instance-id (:main-instance-id prev-component)
-                                         :main-instance-page (:main-instance-page prev-component)
-                                         :shapes (vals (:objects prev-component))}))))
+        (update :undo-changes
+                (fn [undo-changes]
+                  (cond-> undo-changes
+                    components-v2
+                    (d/preconj {:type :purge-component
+                                :id id})
 
+                    :always
+                    (d/preconj {:type :add-component
+                                :id id
+                                :name (:name prev-component)
+                                :path (:path prev-component)
+                                :main-instance-id (:main-instance-id prev-component)
+                                :main-instance-page (:main-instance-page prev-component)
+                                :shapes (vals (:objects prev-component))})))))))
+
+(defn restore-component
+  [changes id]
+  (assert-library changes)
+  (-> changes
+      (update :redo-changes conj {:type :restore-component
+                                  :id id})
+      (update :undo-changes d/preconj {:type :del-component
+                                       :id id})))

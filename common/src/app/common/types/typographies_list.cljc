@@ -22,3 +22,7 @@
   [file-data typography-id f]
   (update-in file-data [:typographies typography-id] f))
 
+(defn delete-typography
+  [file-data typography-id]
+  (update file-data :typographies dissoc typography-id))
+

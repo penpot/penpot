@@ -120,6 +120,57 @@
 
 ;; Asset helpers
 
+(defn delete-component
+  "Delete a component and store it to be able to be recovered later.
+
+  Remember also the position of the main instance."
+  ([file-data component-id]
+   (delete-component file-data component-id false))
+
+  ([file-data component-id skip-undelete?]
+   (let [components-v2 (get-in file-data [:options :components-v2])
+
+         add-to-deleted-components
+         (fn [file-data]
+           (let [component (ctkl/get-component file-data component-id)]
+             (if (some? component)
+               (let [page          (ctpl/get-page file-data (:main-instance-page component))
+                     main-instance (ctn/get-shape page (:main-instance-id component))
+                     component     (assoc component
+                                          :main-instance-x (:x main-instance)   ; An instance root is always a group,
+                                          :main-instance-y (:y main-instance))] ; so it will have :x and :y
+                 (when (nil? main-instance)
+                   (throw (ex-info "Cannot delete the main instance before the component" {:component-id component-id})))
+                 (assoc-in file-data [:deleted-components component-id] component))
+               file-data)))]
+
+     (cond-> file-data
+       (and components-v2 (not skip-undelete?))
+       (add-to-deleted-components)
+
+       :always
+       (ctkl/delete-component component-id)))))
+
+(defn get-deleted-component
+  "Retrieve a component that has been deleted but still is in the safe store."
+  [file-data component-id]
+  (get-in file-data [:deleted-components component-id]))
+
+(defn restore-component
+  "Recover a deleted component and put it again in place."
+  [file-data component-id]
+  (let [component (-> (get-in file-data [:deleted-components component-id])
+                      (dissoc :main-instance-x :main-instance-y))]
+    (cond-> file-data
+      (some? component)
+      (-> (assoc-in [:components component-id] component)
+          (d/dissoc-in [:deleted-components component-id])))))
+
+(defn purge-component
+  "Remove permanently a component."
+  [file-data component-id]
+  (d/dissoc-in file-data [:deleted-components component-id]))
+
 (defmulti uses-asset?
   "Checks if a shape uses the given asset."
   (fn [asset-type _ _ _] asset-type))
@@ -185,7 +236,7 @@
 
 (defn migrate-to-components-v2
   "If there is any component in the file library, add a new 'Library backup' and generate
-  main instances for all components there. Mark the file with the :comonents-v2 option."
+  main instances for all components there. Mark the file with the :components-v2 option."
   [file-data]
   (let [components (ctkl/components-seq file-data)]
     (if (or (empty? components)
@@ -205,7 +256,7 @@
                                                  component
                                                  (:id file-data)
                                                  position
-                                                 true)
+                                                 {:main-instance? true})
 
                     add-shapes
                     (fn [page]
@@ -269,7 +320,7 @@
                                              component
                                              (:id file-data)
                                              position
-                                             true)
+                                             {:main-instance? true})
 
                 ; Add all shapes of the main instance to the library page
                 add-main-instance-shapes

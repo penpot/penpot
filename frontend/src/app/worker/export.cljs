@@ -40,17 +40,18 @@
                                  (reduce format-page {}))]
               (-> manifest
                   (assoc (str (:id file))
-                         {:name            name
-                          :shared          is-shared
-                          :pages           pages
-                          :pagesIndex      index
-                          :version         current-version
-                          :libraries       (->> (:libraries file) (into #{}) (mapv str))
-                          :exportType      (d/name export-type)
-                          :hasComponents   (d/not-empty? (get-in file [:data :components]))
-                          :hasMedia        (d/not-empty? (get-in file [:data :media]))
-                          :hasColors       (d/not-empty? (get-in file [:data :colors]))
-                          :hasTypographies (d/not-empty? (get-in file [:data :typographies]))}))))]
+                         {:name                 name
+                          :shared               is-shared
+                          :pages                pages
+                          :pagesIndex           index
+                          :version              current-version
+                          :libraries            (->> (:libraries file) (into #{}) (mapv str))
+                          :exportType           (d/name export-type)
+                          :hasComponents        (d/not-empty? (get-in file [:data :components]))
+                          :hasDeletedComponents (d/not-empty? (get-in file [:data :deleted-components]))
+                          :hasMedia             (d/not-empty? (get-in file [:data :media]))
+                          :hasColors            (d/not-empty? (get-in file [:data :colors]))
+                          :hasTypographies      (d/not-empty? (get-in file [:data :typographies]))}))))]
     (let [manifest {:teamId (str team-id)
                     :fileId (str file-id)
                     :files (->> (vals files) (reduce format-file {}))}]
@@ -146,8 +147,13 @@
 
 (defn parse-library-components
   [file]
-  (->> (r/render-components (:data file))
+  (->> (r/render-components (:data file) :components)
        (rx/map #(vector (str (:id file) "/components.svg") %))))
+
+(defn parse-deleted-components
+  [file]
+  (->> (r/render-components (:data file) :deleted-components)
+       (rx/map #(vector (str (:id file) "/deleted-components.svg") %))))
 
 (defn fetch-file-with-libraries [file-id components-v2]
   (->> (rx/zip (rp/query :file {:id file-id :components-v2 components-v2})
@@ -426,6 +432,12 @@
              (rx/filter #(d/not-empty? (get-in % [:data :components])))
              (rx/flat-map parse-library-components))
 
+        deleted-components-stream
+        (->> files-stream
+             (rx/flat-map vals)
+             (rx/filter #(d/not-empty? (get-in % [:data :deleted-components])))
+             (rx/flat-map parse-deleted-components))
+
         pages-stream
         (->> render-stream
              (rx/map collect-page))]
@@ -441,6 +453,7 @@
            manifest-stream
            pages-stream
            components-stream
+           deleted-components-stream
            media-stream
            colors-stream
            typographies-stream)

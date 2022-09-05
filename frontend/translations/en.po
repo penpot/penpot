@@ -4303,6 +4303,9 @@ msgstr "Update main components"
 msgid "workspace.shape.menu.update-main"
 msgstr "Update main component"
 
+msgid "workspace.shape.menu.restore-main"
+msgstr "Restore main component"
+
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
 msgstr "History (%s)"

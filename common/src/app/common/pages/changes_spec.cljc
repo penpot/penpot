@@ -159,7 +159,16 @@
   (s/keys :req-un [::id]
           :opt-un [::name :internal.changes.add-component/shapes]))
 
+(s/def :internal.changes.del-component/skip-undelete? boolean?)
+
 (defmethod change-spec :del-component [_]
+  (s/keys :req-un [::id]
+          :opt-un [:internal.changes.del-component/skip-undelete?]))
+
+(defmethod change-spec :restore-component [_]
+  (s/keys :req-un [::id]))
+
+(defmethod change-spec :purge-component [_]
   (s/keys :req-un [::id]))
 
 (defmethod change-spec :add-typography [_]

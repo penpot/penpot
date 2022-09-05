@@ -220,7 +220,7 @@
               :fill "none"}
 
         (when include-metadata?
-          [:& export/export-page {:options (:options data)}])
+          [:& export/export-page {:id (:id data) :options (:options data)}])
 
         (let [shapes (->> shapes
                           (remove cph/frame-shape?)
@@ -393,6 +393,11 @@
         object  (get objects id)
         selrect (:selrect object)
 
+        main-instance-id   (:main-instance-id data)
+        main-instance-page (:main-instance-page data)
+        main-instance-x    (:main-instance-x data)
+        main-instance-y    (:main-instance-y data)
+
         vbox
         (format-viewbox
          {:width (:width selrect)
@@ -403,7 +408,13 @@
          (mf/deps objects)
          (fn [] (group-wrapper-factory objects)))]
 
-    [:> "symbol" #js {:id (str id) :viewBox vbox "penpot:path" path}
+    [:> "symbol" #js {:id (str id)
+                      :viewBox vbox
+                      "penpot:path" path
+                      "penpot:main-instance-id" main-instance-id
+                      "penpot:main-instance-page" main-instance-page
+                      "penpot:main-instance-x" main-instance-x
+                      "penpot:main-instance-y" main-instance-y}
      [:title name]
      [:> shape-container {:shape object}
       [:& group-wrapper {:shape object :view-box vbox}]]]))
@@ -414,7 +425,8 @@
   (let [data              (obj/get props "data")
         children          (obj/get props "children")
         render-embed?     (obj/get props "render-embed?")
-        include-metadata? (obj/get props "include-metadata?")]
+        include-metadata? (obj/get props "include-metadata?")
+        source            (keyword (obj/get props "source" "components"))]
     [:& (mf/provider embed/context) {:value render-embed?}
      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata?}
       [:svg {:version "1.1"
@@ -424,7 +436,7 @@
              :style {:display (when-not (some? children) "none")}
              :fill "none"}
        [:defs
-        (for [[id data] (:components data)]
+        (for [[id data] (source data)]
           [:& component-symbol {:id id :key (dm/str id) :data data}])]
 
        children]]]))
@@ -482,9 +494,9 @@
              (rds/renderToStaticMarkup elem)))))))
 
 (defn render-components
-  [data]
+  [data source]
   (let [;; Join all components objects into a single map
-        objects (->> (:components data)
+        objects (->> (source data)
                      (vals)
                      (map :objects)
                      (reduce conj))]
@@ -498,5 +510,6 @@
           (rx/map
            (fn [data]
              (let [elem (mf/element components-sprite-svg
-                                    #js {:data data :render-embed? true :include-metadata? true})]
+                                    #js {:data data :render-embed? true :include-metadata? true
+                                         :source (name source)})]
                (rds/renderToStaticMarkup elem))))))))

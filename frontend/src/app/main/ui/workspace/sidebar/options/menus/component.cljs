@@ -6,9 +6,11 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
+    [app.common.types.components-list :as ctkl]
     [app.main.data.modal :as modal]
     [app.main.data.workspace :as dw]
     [app.main.data.workspace.libraries :as dwl]
+    [app.main.refs :as refs]
     [app.main.store :as st]
     [app.main.ui.components.context-menu :refer [context-menu]]
     [app.main.ui.context :as ctx]
@@ -34,6 +36,15 @@
                           (:main-instance? values)
                           true)
 
+        local-component? (= library-id current-file-id)
+        local-library    (when local-component?
+                           ;; Not needed to subscribe to changes because it's not expected
+                           ;; to change while context menu is open
+                           (deref refs/workspace-local-library))
+
+        main-component (when local-component?
+                         (ctkl/get-component local-library component-id))
+
         on-menu-click
         (mf/use-callback
          (fn [event]
@@ -53,6 +64,9 @@
 
         do-update-component
         #(st/emit! (dwl/update-component-sync id library-id))
+
+        do-restore-component
+        #(st/emit! (dwl/restore-component component-id))
 
         do-update-remote-component
         #(st/emit! (modal/show
@@ -85,11 +99,13 @@
           ;;          app/main/ui/workspace/context_menu.cljs
           [:& context-menu {:on-close on-menu-close
                             :show (:menu-open @local)
-                            :options (if (= library-id current-file-id)
-                                       [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                        [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
-                                        [(tr "workspace.shape.menu.update-main") do-update-component]
-                                        [(tr "workspace.shape.menu.show-main") do-show-component]]
+                            :options (if local-component?
+                                       (if (and (nil? main-component) components-v2)
+                                         [[(tr "workspace.shape.menu.restore-main") do-restore-component]]
+                                         [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                          [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
+                                          [(tr "workspace.shape.menu.update-main") do-update-component]
+                                          [(tr "workspace.shape.menu.show-main") do-show-component]])
 
                                        [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
                                         [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
