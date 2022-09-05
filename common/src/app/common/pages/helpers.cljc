@@ -35,6 +35,10 @@
   [{:keys [type]}]
   (= type :group))
 
+(defn bool-shape?
+  [{:keys [type]}]
+  (= type :bool))
+
 (defn text-shape?
   [{:keys [type]}]
   (= type :text))

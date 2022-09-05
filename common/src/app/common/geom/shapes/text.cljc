@@ -17,16 +17,22 @@
    :width width
    :height height})
 
-(defn position-data-points
-  [{:keys [position-data] :as shape}]
-  (let [points    (->> position-data
-                       (mapcat (comp gpr/rect->points position-data->rect)))
-        transform (gtr/transform-matrix shape)]
-    (gco/transform-points points transform)))
+(defn position-data-selrect
+  [shape]
+  (let [points    (->> shape
+                       :position-data
+                       (mapcat (comp gpr/rect->points position-data->rect)))]
+    (-> points (gpr/points->selrect))))
 
 (defn position-data-bounding-box
   [shape]
-  (gpr/points->selrect (position-data-points shape)))
+  (let [points    (->> shape
+                       :position-data
+                       (mapcat (comp gpr/rect->points position-data->rect)))
+        transform (gtr/transform-matrix shape)]
+    (-> points
+        (gco/transform-points transform)
+        (gpr/points->selrect ))))
 
 (defn overlaps-position-data?
   "Checks if the given position data is inside the shape"
