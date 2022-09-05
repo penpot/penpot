@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-03 08:15+0000\n"
+"PO-Revision-Date: 2022-09-06 06:05+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -4308,3 +4308,45 @@ msgstr "Min. Höhe"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-in-out"
 msgstr "Ease in out"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Schnell nach links verschieben"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Schnell nach unten verschieben"
+
+msgid "shortcuts.join-nodes"
+msgstr "Punkte verbinden"
+
+msgid "shortcuts.mask"
+msgstr "Maskieren"
+
+msgid "shortcuts.make-curve"
+msgstr "Kurve erstellen"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Punkte zusammenführen"
+
+msgid "shortcuts.move"
+msgstr "Verschieben"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Schnell nach rechts verschieben"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Nach rechts verschieben"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Schnell nach oben verschieben"
+
+msgid "shortcuts.move-nodes"
+msgstr "Punkte verschieben"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Nach unten verschieben"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Nach links verschieben"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Nach oben verschieben"
