@@ -15,10 +15,9 @@
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
-   [app.main.data.modal :as modal]
+   [app.main.data.messages :as msg]
    [app.main.features :as features]
    [app.main.repo :as rp]
-   [app.main.store :as st]
    [app.util.globals :as ug]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -124,14 +123,10 @@
                  (->> (rx/of (df/fonts-fetched fonts)
                              (bundle-fetched (merge bundle params))))))
              (rx/catch (fn [err]
-                         (let [team-id (-> state :teams keys first)]
-                           (if (and (= (:type err) :restriction)
-                                    (= (:code err) :feature-disabled))
-                             (rx/of (modal/show
-                                      {:type :alert
-                                       :message (tr "errors.components-v2")
-                                       :on-accept #(st/emit! (rt/nav ""))}))
-                             (rx/throw err))))))))))
+                         (if (and (= (:type err) :restriction)
+                                  (= (:code err) :feature-disabled))
+                           (rx/of (msg/error (tr "errors.components-v2") {:timeout nil}))
+                           (rx/throw err)))))))))
 
 (declare go-to-frame-auto)
 

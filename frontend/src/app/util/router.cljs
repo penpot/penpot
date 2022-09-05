@@ -27,9 +27,8 @@
   ([router id] (resolve router id {} {}))
   ([router id path-params] (resolve router id path-params {}))
   ([router id path-params query-params]
-   (if-let [match (r/match-by-name router id path-params)]
-     (r/match->path match query-params)
-     "")))
+   (when-let [match (r/match-by-name router id path-params)]
+     (r/match->path match query-params))))
 
 (defn create
   [routes]
