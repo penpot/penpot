@@ -7,14 +7,12 @@
 (ns app.main.ui.viewer.shapes
   "The main container for a frame in viewer mode"
   (:require
-   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
@@ -223,8 +221,6 @@
           childs       (unchecked-get props "childs")
           frame        (unchecked-get props "frame")
           objects      (unchecked-get props "objects")
-          fixed?       (unchecked-get props "fixed?")
-          delta        (unchecked-get props "delta")
           base-frame   (mf/use-ctx base-frame-ctx)
           frame-offset (mf/use-ctx frame-offset-ctx)
 
@@ -269,9 +265,7 @@
                         :frame frame
                         :childs childs
                         :is-child-selected? true
-                        :objects objects
-                        :fixed? fixed?
-                        :delta delta}]
+                        :objects objects}]
 
          [:& interaction {:shape shape
                           :interactions interactions
@@ -393,20 +387,6 @@
       (let [shape   (unchecked-get props "shape")
             frame   (unchecked-get props "frame")
 
-            ;; TODO: this watch of scroll position is killing
-            ;; performance of the viewer.
-            scroll  (mf/use-ctx ctx/current-scroll)
-            zoom    (mf/use-ctx ctx/current-zoom)
-
-            fixed?  (mf/with-memo [shape objects]
-                      (->> (cph/get-parent-ids objects (:id shape))
-                           (map (d/getf objects))
-                           (concat [shape])
-                           (some :fixed-scroll)))
-
-            delta   {:x (/ (:scroll-left scroll) zoom)
-                     :y (/ (:scroll-top scroll) zoom)}
-
             group-container
             (mf/with-memo [objects]
               (group-container-factory objects))
@@ -426,8 +406,7 @@
             ]
         (when (and shape (not (:hidden shape)))
           (let [shape (-> (gsh/transform-shape shape)
-                          (gsh/translate-to-frame frame)
-                          (cond-> fixed? (gsh/move delta)))
+                          (gsh/translate-to-frame frame))
 
                 opts #js {:shape shape
                           :objects objects}]
@@ -438,6 +417,6 @@
               :path    [:> path-wrapper opts]
               :image   [:> image-wrapper opts]
               :circle  [:> circle-wrapper opts]
-              :group   [:> group-container {:shape shape :frame frame :objects objects :fixed? fixed? :delta delta}]
+              :group   [:> group-container {:shape shape :frame frame :objects objects}]
               :bool    [:> bool-container {:shape shape :frame frame :objects objects}]
               :svg-raw [:> svg-raw-container {:shape shape :frame frame :objects objects}])))))))
