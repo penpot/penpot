@@ -162,25 +162,21 @@
   "Find all files using a shared library, and absorb all library assets
   into the file local libraries"
   [conn {:keys [id] :as params}]
-  (let [library (->> (db/get-by-id conn :file id)
-                     (files/decode-row)
-                     (pmg/migrate-file))]
+  (let [library (db/get-by-id conn :file id)]
     (when (:is-shared library)
-      (let [process-file
-            (fn [row]
-              (let [ts (dt/now)
-                    file (->> (db/get-by-id conn :file (:file-id row))
-                              (files/decode-row)
-                              (pmg/migrate-file))
-                    updated-data (ctf/absorb-assets (:data file) (:data library))]
-
-                (db/update! conn :file
-                            {:revn (inc (:revn file))
-                             :data (blob/encode updated-data)
-                             :modified-at ts}
-                            {:id (:id file)})))]
-
-        (run! process-file (db/query conn :file-library-rel {:library-file-id id}))))))
+      (let [ldata (-> library files/decode-row pmg/migrate-file :data)]
+        (->> (db/query conn :file-library-rel {:library-file-id id})
+             (keep (fn [{:keys [file-id]}]
+                    (some->> (db/get-by-id conn :file file-id {:check-not-found false})
+                             (files/decode-row)
+                             (pmg/migrate-file))))
+             (run! (fn [{:keys [id data revn] :as file}]
+                     (let [data (ctf/absorb-assets data ldata)]
+                       (db/update! conn :file
+                                   {:revn (inc revn)
+                                    :data (blob/encode data)
+                                    :modified-at (dt/now)}
+                                   {:id id})))))))))
 
 ;; --- Mutation: Link file to library
 

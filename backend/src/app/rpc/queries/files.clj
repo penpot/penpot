@@ -488,11 +488,12 @@
 ;; --- Query: Files that use this File library
 
 (def ^:private sql:library-using-files
-  "SELECT f.id, 
+  "SELECT f.id,
           f.name
-     FROM file_library_rel AS flr 
-     INNER JOIN file AS f ON f.id = flr.file_id
-    WHERE flr.library_file_id = ?;")
+     FROM file_library_rel AS flr
+     JOIN file AS f ON (f.id = flr.file_id)
+    WHERE flr.library_file_id = ?
+      AND (f.deleted_at IS NULL OR f.deleted_at > now())")
 
 (s/def ::library-using-files
   (s/keys :req-un [::profile-id ::file-id]))
