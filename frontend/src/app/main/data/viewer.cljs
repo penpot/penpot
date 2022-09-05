@@ -15,9 +15,11 @@
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
+   [app.main.data.messages :as msg]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.globals :as ug]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -117,9 +119,14 @@
 
         (->> (rp/query! :view-only-bundle params')
              (rx/mapcat
-              (fn [{:keys [fonts] :as bundle}]
-                (rx/of (df/fonts-fetched fonts)
-                       (bundle-fetched (merge bundle params))))))))))
+               (fn [{:keys [fonts] :as bundle}]
+                 (->> (rx/of (df/fonts-fetched fonts)
+                             (bundle-fetched (merge bundle params))))))
+             (rx/catch (fn [err]
+                         (if (and (= (:type err) :restriction)
+                                  (= (:code err) :feature-disabled))
+                           (rx/of (msg/error (tr "errors.components-v2") {:timeout nil}))
+                           (rx/throw err)))))))))
 
 (declare go-to-frame-auto)
 

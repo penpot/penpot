@@ -45,6 +45,7 @@
 (s/def ::file-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
 (s/def ::share-id ::us/uuid)
+(s/def ::components-v2 ::us/boolean)
 
 (s/def ::view-only-bundle
   (s/keys :req-un [::file-id] :opt-un [::profile-id ::share-id ::components-v2]))
