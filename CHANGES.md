@@ -17,6 +17,7 @@
 - Fix path tools blocking elements underneath [#2050](https://github.com/penpot/penpot/issues/2050)
 - Fix frame titles deforming when resize [#2207](https://github.com/penpot/penpot/issues/2207)
 - Fix export simple line path [#3890](https://tree.taiga.io/project/penpot/issue/3890)
+- Fix color-picker recent colors [Taiga #4013](https://tree.taiga.io/project/penpot/issue/4013)
 
 ## 1.15.1-beta
 
