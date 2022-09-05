@@ -13,12 +13,19 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.metrics :as mtx]
+   [app.msgbus :as mbus]
    [app.util.time :as dt]
    [app.util.websocket :as ws]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [yetti.websocket :as yws]))
+
+(def recv-labels
+  (into-array String ["recv"]))
+
+(def send-labels
+  (into-array String ["send"]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBSOCKET HOOKS
@@ -30,21 +37,30 @@
   [{:keys [metrics]} wsp]
   (let [created-at (dt/now)]
     (swap! state assoc (::ws/id @wsp) wsp)
-    (mtx/run! metrics {:id :websocket-active-connections :inc 1})
+    (mtx/run! metrics
+              :id :websocket-active-connections
+              :inc 1)
     (fn []
       (swap! state dissoc (::ws/id @wsp))
-      (mtx/run! metrics {:id :websocket-active-connections :dec 1})
-      (mtx/run! metrics {:id :websocket-session-timing
-                         :val (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0)}))))
+      (mtx/run! metrics :id :websocket-active-connections :dec 1)
+      (mtx/run! metrics
+                :id :websocket-session-timing
+                :val (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0)))))
 
 (defn- on-rcv-message
   [{:keys [metrics]} _ message]
-  (mtx/run! metrics {:id :websocket-messages-total :labels ["recv"] :inc 1})
+  (mtx/run! metrics
+            :id :websocket-messages-total
+            :labels recv-labels
+            :inc 1)
   message)
 
 (defn- on-snd-message
   [{:keys [metrics]} _ message]
-  (mtx/run! metrics {:id :websocket-messages-total :labels ["send"] :inc 1})
+  (mtx/run! metrics
+            :id :websocket-messages-total
+            :labels send-labels
+            :inc 1)
   message)
 
 ;; REPL HELPERS
@@ -72,12 +88,12 @@
 (defn repl-get-connection-info
   [id]
   (when-let [wsp (get @state id)]
-    {:id id
-     :created-at (dt/instant id)
-     :profile-id (::profile-id @wsp)
-     :session-id (::session-id @wsp)
-     :user-agent (::ws/user-agent @wsp)
-     :ip-addr    (::ws/remote-addr @wsp)
+    {:id               id
+     :created-at       (dt/instant id)
+     :profile-id       (::profile-id @wsp)
+     :session-id       (::session-id @wsp)
+     :user-agent       (::ws/user-agent @wsp)
+     :ip-addr          (::ws/remote-addr @wsp)
      :last-activity-at (::ws/last-activity-at @wsp)
      :http-session-id  (::ws/http-session-id @wsp)
      :subscribed-file  (-> wsp deref ::file-subscription :file-id)
@@ -104,7 +120,7 @@
 (defmethod handle-message :connect
   [cfg wsp _]
 
-  (let [msgbus-fn  (:msgbus cfg)
+  (let [msgbus     (:msgbus cfg)
         conn-id    (::ws/id @wsp)
         profile-id (::profile-id @wsp)
         session-id (::session-id @wsp)
@@ -113,17 +129,17 @@
         xform      (remove #(= (:session-id %) session-id))
         channel    (a/chan (a/dropping-buffer 16) xform)]
 
-    (l/trace :fn "handle-message" :event :connect :conn-id conn-id)
+    (l/trace :fn "handle-message" :event "connect" :conn-id conn-id)
 
     ;; Subscribe to the profile channel and forward all messages to
     ;; websocket output channel (send them to the client).
     (swap! wsp assoc ::profile-subscription channel)
     (a/pipe channel output-ch false)
-    (msgbus-fn :cmd :sub :topic profile-id :chan channel)))
+    (mbus/sub! msgbus :topic profile-id :chan channel)))
 
 (defmethod handle-message :disconnect
   [cfg wsp _]
-  (let [msgbus-fn  (:msgbus cfg)
+  (let [msgbus     (:msgbus cfg)
         conn-id    (::ws/id @wsp)
         profile-id (::profile-id @wsp)
         session-id (::session-id @wsp)
@@ -143,21 +159,21 @@
     (a/go
       ;; Close the main profile subscription
       (a/close! profile-ch)
-      (a/<! (msgbus-fn :cmd :purge :chans [profile-ch]))
+      (a/<! (mbus/purge! msgbus [profile-ch]))
 
       ;; Close tram subscription if exists
       (when-let [channel (:channel tsub)]
         (a/close! channel)
-        (a/<! (msgbus-fn :cmd :purge :chans [channel])))
+        (a/<! (mbus/purge! msgbus channel)))
 
       (when-let [{:keys [topic channel]} fsub]
         (a/close! channel)
-        (a/<! (msgbus-fn :cmd :purge :chans [channel]))
-        (a/<! (msgbus-fn :cmd :pub :topic topic :message message))))))
+        (a/<! (mbus/purge! msgbus channel))
+        (a/<! (mbus/pub! msgbus :topic topic :message message))))))
 
 (defmethod handle-message :subscribe-team
   [cfg wsp {:keys [team-id] :as params}]
-  (let [msgbus-fn  (:msgbus cfg)
+  (let [msgbus     (:msgbus cfg)
         conn-id    (::ws/id @wsp)
         session-id (::session-id @wsp)
         output-ch  (::ws/output-ch @wsp)
@@ -182,14 +198,14 @@
       ;; Close previous subscription if exists
       (when-let [channel (:channel prev-subs)]
         (a/close! channel)
-        (a/<! (msgbus-fn :cmd :purge :chans [channel]))))
+        (a/<! (mbus/purge! msgbus channel))))
 
     (a/go
-      (a/<! (msgbus-fn :cmd :sub :topic team-id :chan channel)))))
+      (a/<! (mbus/sub! msgbus :topic team-id :chan channel)))))
 
 (defmethod handle-message :subscribe-file
   [cfg wsp {:keys [file-id] :as params}]
-  (let [msgbus-fn  (:msgbus cfg)
+  (let [msgbus     (:msgbus cfg)
         conn-id    (::ws/id @wsp)
         profile-id (::profile-id @wsp)
         session-id (::session-id @wsp)
@@ -211,7 +227,7 @@
       ;; Close previous subscription if exists
       (when-let [channel (:channel prev-subs)]
         (a/close! channel)
-        (a/<! (msgbus-fn :cmd :purge :chans [channel]))))
+        (a/<! (mbus/purge! msgbus channel))))
 
     ;; Message forwarding
     (a/go
@@ -224,15 +240,13 @@
                            :file-id file-id
                            :session-id session-id
                            :profile-id profile-id}]
-              (a/<! (msgbus-fn :cmd :pub
-                               :topic file-id
-                               :message message))))
+              (a/<! (mbus/pub! msgbus :topic file-id :message message))))
           (a/>! output-ch message)
           (recur))))
 
     (a/go
       ;; Subscribe to file topic
-      (a/<! (msgbus-fn :cmd :sub :topic file-id :chan channel))
+      (a/<! (mbus/sub! msgbus :topic file-id :chan channel))
 
       ;; Notifify the rest of participants of the new connection.
       (let [message {:type :join-file
@@ -240,13 +254,11 @@
                      :subs-id file-id
                      :session-id session-id
                      :profile-id profile-id}]
-        (a/<! (msgbus-fn :cmd :pub
-                         :topic file-id
-                         :message message))))))
+        (a/<! (mbus/pub! msgbus :topic file-id :message message))))))
 
 (defmethod handle-message :unsubscribe-file
   [cfg wsp {:keys [file-id] :as params}]
-  (let [msgbus-fn  (:msgbus cfg)
+  (let [msgbus     (:msgbus cfg)
         conn-id    (::ws/id @wsp)
         session-id (::session-id @wsp)
         profile-id (::profile-id @wsp)
@@ -266,8 +278,8 @@
       (when (= (:file-id subs) file-id)
         (let [channel (:channel subs)]
           (a/close! channel)
-          (a/<! (msgbus-fn :cmd :purge :chans [channel]))
-          (a/<! (msgbus-fn :cmd :pub :topic file-id :message message)))))))
+          (a/<! (mbus/purge! msgbus channel))
+          (a/<! (mbus/pub! msgbus :topic file-id :message message)))))))
 
 (defmethod handle-message :keepalive
   [_ _ _]
@@ -276,7 +288,7 @@
 
 (defmethod handle-message :pointer-update
   [cfg wsp {:keys [file-id] :as message}]
-  (let [msgbus-fn  (:msgbus cfg)
+  (let [msgbus     (:msgbus cfg)
         profile-id (::profile-id @wsp)
         session-id (::session-id @wsp)
         subs       (::file-subscription @wsp)
@@ -287,9 +299,7 @@
     (a/go
       ;; Only allow receive pointer updates when active subscription
       (when subs
-        (a/<! (msgbus-fn :cmd :pub
-                         :topic file-id
-                         :message message))))))
+        (a/<! (mbus/pub! msgbus :topic file-id :message message))))))
 
 (defmethod handle-message :default
   [_ wsp message]
@@ -303,7 +313,7 @@
 ;; HTTP HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::msgbus fn?)
+(s/def ::msgbus ::mbus/msgbus)
 (s/def ::session-id ::us/uuid)
 
 (s/def ::handler-params

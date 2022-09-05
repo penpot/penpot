@@ -6,12 +6,16 @@
 
 (ns app.util.async
   (:require
+   [app.common.exceptions :as ex]
    [clojure.core.async :as a]
+   [clojure.core.async.impl.protocols :as ap]
    [clojure.spec.alpha :as s])
   (:import
-   java.util.concurrent.Executor))
+   java.util.concurrent.Executor
+   java.util.concurrent.RejectedExecutionException))
 
 (s/def ::executor #(instance? Executor %))
+(s/def ::channel #(satisfies? ap/Channel %))
 
 (defonce processors
   (delay (.availableProcessors (Runtime/getRuntime))))
@@ -23,7 +27,7 @@
        ~@body
        (catch Exception e# e#))))
 
-(defmacro thread-try
+(defmacro thread
   [& body]
   `(a/thread
      (try
@@ -47,19 +51,19 @@
 
 (defn thread-call
   [^Executor executor f]
-  (let [c (a/chan 1)]
+  (let [ch (a/chan 1)
+        f' (fn []
+             (try
+               (let [ret (ex/try* f identity)]
+                 (when (some? ret) (a/>!! ch ret)))
+               (finally
+                 (a/close! ch))))]
     (try
-      (.execute executor
-                (fn []
-                  (try
-                    (let [ret (try (f) (catch Exception e e))]
-                      (when (some? ret) (a/>!! c ret)))
-                    (finally
-                      (a/close! c)))))
-      c
-      (catch java.util.concurrent.RejectedExecutionException _e
-        (a/close! c)
-        c))))
+      (.execute executor f')
+      (catch RejectedExecutionException _cause
+        (a/close! ch)))
+
+    ch))
 
 (defmacro with-thread
   [executor & body]
