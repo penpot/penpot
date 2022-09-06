@@ -94,7 +94,7 @@
 
     [group changes]))
 
-(defn prepare-remove-group
+(defn remove-group-changes
   [it page-id group objects]
   (let [children  (mapv #(get objects %) (:shapes group))
         parent-id (cph/get-parent-id objects (:id group))
@@ -126,6 +126,18 @@
       (some? ids-to-detach)
       (pcb/update-shapes ids-to-detach detach-fn))))
 
+(defn remove-frame-changes
+  [it page-id frame objects]
+
+  (let [children      (mapv #(get objects %) (:shapes frame))
+        parent-id     (cph/get-parent-id objects (:id frame))
+        idx-in-parent (cph/get-position-on-parent objects (:id frame))]
+
+    (-> (pcb/empty-changes it page-id)
+        (pcb/with-objects objects)
+        (pcb/change-parent parent-id children idx-in-parent)
+        (pcb/remove-objects [(:id frame)]))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GROUPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -149,17 +161,22 @@
   (ptk/reify ::ungroup-selected
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id   (:current-page-id state)
-            objects   (wsh/lookup-page-objects state page-id)
-            is-group? #(or (= :bool (:type %)) (= :group (:type %)))
-            lookup    #(get objects %)
-            prepare   #(prepare-remove-group it page-id % objects)
+      (let [page-id       (:current-page-id state)
+            objects       (wsh/lookup-page-objects state page-id)
+
+            prepare
+            (fn [shape-id]
+              (let [shape (get objects shape-id)]
+                (cond
+                  (or (cph/group-shape? shape) (cph/bool-shape? shape))
+                  (remove-group-changes it page-id shape objects)
+
+                  (cph/frame-shape? shape)
+                  (remove-frame-changes it page-id shape objects))))
 
             changes-list (sequence
-                           (comp (map lookup)
-                                 (filter is-group?)
-                                 (map prepare))
-                           (wsh/lookup-selected state))
+                          (keep prepare)
+                          (wsh/lookup-selected state))
 
             changes {:redo-changes (vec (mapcat :redo-changes changes-list))
                      :undo-changes (vec (mapcat :undo-changes changes-list))

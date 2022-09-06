@@ -213,8 +213,9 @@
         single?   (= (count shapes) 1)
         do-create-artboard-from-selection #(st/emit! (dw/create-artboard-from-selection))
 
-        has-group? (->> shapes (d/seek #(= :group (:type %))))
-        has-bool? (->> shapes (d/seek #(= :bool (:type %))))
+        has-frame? (->> shapes (d/seek cph/frame-shape?))
+        has-group? (->> shapes (d/seek cph/group-shape?))
+        has-bool? (->> shapes (d/seek cph/bool-shape?))
         has-mask? (->> shapes (d/seek :masked-group?))
 
         is-group? (and single? has-group?)
@@ -226,7 +227,7 @@
         do-unmask-group #(st/emit! dw/unmask-group)]
 
     [:*
-     (when (or has-bool? has-group? has-mask?)
+     (when (or has-bool? has-group? has-mask? has-frame?)
        [:& menu-entry {:title (tr "workspace.shape.menu.ungroup")
                        :shortcut (sc/get-tooltip :ungroup)
                        :on-click do-remove-group}])
@@ -266,9 +267,9 @@
   (let [multiple? (> (count shapes) 1)
         single?   (= (count shapes) 1)
 
-        has-group? (->> shapes (d/seek #(= :group (:type %))))
-        has-bool? (->> shapes (d/seek #(= :bool (:type %))))
-        has-frame? (->> shapes (d/seek #(= :frame (:type %))))
+        has-group? (->> shapes (d/seek cph/group-shape?))
+        has-bool? (->> shapes (d/seek cph/bool-shape?))
+        has-frame? (->> shapes (d/seek cph/frame-shape?))
 
         is-group? (and single? has-group?)
         is-bool? (and single? has-bool?)
@@ -350,7 +351,7 @@
 
         prototype?      (= options-mode :prototype)
         single?         (= (count shapes) 1)
-        has-frame?      (->> shapes (d/seek #(= :frame (:type %))))
+        has-frame?      (->> shapes (d/seek cph/frame-shape?))
         is-frame?       (and single? has-frame?)]
 
     (when (and prototype? is-frame?)
@@ -366,7 +367,7 @@
   [{:keys [shapes]}]
   (let [single?   (= (count shapes) 1)
 
-        has-frame? (->> shapes (d/seek #(= :frame (:type %))))
+        has-frame? (->> shapes (d/seek cph/frame-shape?))
         has-component? (some true? (map #(contains? % :component-id) shapes))
         is-component? (and single? (-> shapes first :component-id some?))
 
