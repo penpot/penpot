@@ -274,6 +274,11 @@
 
 (def select-prev-frame
   (ptk/reify ::select-prev-frame
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (dissoc :viewer-animation)
+          (assoc  :viewer-overlays [])))
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
@@ -287,6 +292,11 @@
 
 (def select-next-frame
   (ptk/reify ::select-next-frame
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (dissoc :viewer-animation)
+          (assoc  :viewer-overlays [])))
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
