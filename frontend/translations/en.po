@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-05-28 21:16+0000\n"
-"Last-Translator: Andrés Moya <andres.moya@kaleidos.net>\n"
-"Language-Team: English "
-"<https://hosted.weblate.org/projects/penpot/frontend/en/>\n"
+"PO-Revision-Date: 2022-08-18 16:16+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"Language-Team: English <https://hosted.weblate.org/projects/penpot/frontend/"
+"en/>\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -67,7 +67,7 @@ msgstr "GitHub"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Gitlab"
+msgstr "GitLab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
