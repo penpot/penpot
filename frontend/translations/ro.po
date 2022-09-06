@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-05-17 21:32+0000\n"
-"Last-Translator: George Lemon <george@getvasco.com>\n"
-"Language-Team: Romanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
+"PO-Revision-Date: 2022-08-18 16:16+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 4.7-dev\n"
+"X-Generator: Weblate 4.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -66,11 +66,11 @@ msgstr "Mă bucur să te văd din nou!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Github"
+msgstr "GitHub"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Gitlab"
+msgstr "GitLab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"

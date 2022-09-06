@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-03-12 23:56+0000\n"
-"Last-Translator: Rodion Borisov <vintprox@gmail.com>\n"
-"Language-Team: Russian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ru/>\n"
+"PO-Revision-Date: 2022-08-18 16:16+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ru/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.12-dev\n"
+"X-Generator: Weblate 4.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -63,11 +63,11 @@ msgstr "Рады видеть Вас снова!"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "Gitnub"
+msgstr "GitHub"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Gitlab"
+msgstr "GitLab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
@@ -86,7 +86,6 @@ msgid "auth.new-password"
 msgstr "Введите новый пароль"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.newsletter-subscription"
 msgstr "Я хочу подписаться на рассылку Penpot."
 
@@ -99,7 +98,6 @@ msgid "auth.notifications.password-changed-successfully"
 msgstr "Пароль изменен успешно"
 
 #: src/app/main/ui/auth/recovery_request.cljs
-#, fuzzy
 msgid "auth.notifications.profile-not-verified"
 msgstr "Профиль не подтверждён: пожалуйста, проверьте почту."
 
@@ -171,7 +169,6 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Мы отправили письмо с подтверждением на"
 
-#, fuzzy
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Вы точно хотите удалить эту ссылку? После этого она перестанет быть "
@@ -192,7 +189,6 @@ msgstr "Доступ открыт для получателей ссылки"
 msgid "common.share-link.placeholder"
 msgstr "Ссылка появится здесь"
 
-#, fuzzy
 msgid "common.share-link.title"
 msgstr "Поделиться прототипами"
 
@@ -205,7 +201,6 @@ msgid "dashboard.change-email"
 msgstr "Сменить email адрес"
 
 #: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-#, fuzzy
 msgid "dashboard.copy-suffix"
 msgstr "(копия)"
 
@@ -266,7 +261,6 @@ msgstr "Файлы с общих библиотек будут включены 
 msgid "dashboard.export.options.all.title"
 msgstr "Экспорт общих библиотек"
 
-#, fuzzy
 msgid "dashboard.export.options.detach.message"
 msgstr ""
 "Общие библиотеки не будут включены в экспорт, и вложенные ресурсы не "
@@ -275,13 +269,11 @@ msgstr ""
 msgid "dashboard.export.options.detach.title"
 msgstr "Воспринимать общие библиотеки как обычные объекты"
 
-#, fuzzy
 msgid "dashboard.export.options.merge.message"
 msgstr ""
 "Ваш файл будет экспортирован с включением всех внешних ресурсов в "
 "библиотеку экспорта."
 
-#, fuzzy
 msgid "dashboard.export.options.merge.title"
 msgstr "Включить общие библиотеки в библиотеку экспорта"
 
@@ -330,7 +322,6 @@ msgstr "Импорт файлов Penpot"
 msgid "dashboard.import.analyze-error"
 msgstr "Ой! Не вышло импортировать этот файл"
 
-#, fuzzy
 msgid "dashboard.import.import-error"
 msgstr "Есть проблема с импортом файла."
 
@@ -436,7 +427,6 @@ msgstr "Участников: %s"
 msgid "dashboard.open-in-new-tab"
 msgstr "Открыть в новой вкладке"
 
-#, fuzzy
 msgid "dashboard.options"
 msgstr "Опции"
 
@@ -461,7 +451,6 @@ msgid "dashboard.remove-account"
 msgstr "Хотите удалить свой аккаунт?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
 msgid "dashboard.remove-shared"
 msgstr "Снять статус общей библиотеки"
 
@@ -518,7 +507,6 @@ msgid "dashboard.switch-team"
 msgstr "Сменить команду"
 
 #: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
 msgid "dashboard.team-info"
 msgstr "О команде"
 
@@ -582,12 +570,10 @@ msgstr "Вы уверены?"
 msgid "ds.updated-at"
 msgstr "Обновлено: %s"
 
-#, fuzzy
 msgid "errors.auth.unable-to-login"
 msgstr "Кажется, сеанс истёк. Войдите снова."
 
 #: src/app/main/data/workspace.cljs
-#, fuzzy
 msgid "errors.clipboard-not-implemented"
 msgstr "Ваш браузер не поддерживает этот метод вставки"
 
@@ -603,7 +589,6 @@ msgid "errors.email-as-password"
 msgstr "Нельзя в качестве пароля указывать адрес электронной почты"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
-#, fuzzy
 msgid "errors.email-has-permanent-bounces"
 msgstr "Получатель «%s» постоянно не доступен."
 
@@ -639,12 +624,10 @@ msgid "errors.media-type-mismatch"
 msgstr "Формат медиа не соответует расширению файла."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
-#, fuzzy
 msgid "errors.media-type-not-allowed"
 msgstr "Неверное медиа."
 
 #: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
 msgid "errors.member-is-muted"
 msgstr "Невозможно пригласить адресата с недоступным адресом электронной почты."
 
@@ -702,7 +685,6 @@ msgid "feedback.description"
 msgstr "Подробности"
 
 #: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
 msgid "feedback.subject"
 msgstr "Краткое описание"
 
@@ -757,7 +739,6 @@ msgid "handoff.attributes.image.width"
 msgstr "Ширина"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs
-#, fuzzy
 msgid "handoff.attributes.layout"
 msgstr "Размещение"
 
@@ -838,7 +819,6 @@ msgid "handoff.attributes.stroke.width"
 msgstr "Толщина"
 
 #: src/app/main/ui/handoff/attributes/text.cljs
-#, fuzzy
 msgid "handoff.attributes.typography"
 msgstr "Текст"
 
@@ -851,7 +831,6 @@ msgid "handoff.attributes.typography.font-size"
 msgstr "Размер"
 
 #: src/app/main/ui/handoff/attributes/text.cljs
-#, fuzzy
 msgid "handoff.attributes.typography.font-style"
 msgstr "Шрифт"
 
@@ -1074,7 +1053,6 @@ msgid "labels.go-back"
 msgstr "Назад"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
 msgid "labels.help-center"
 msgstr "Помощь"
 
@@ -1258,12 +1236,10 @@ msgid "labels.shared-libraries"
 msgstr "Общие библиотеки"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
-#, fuzzy
 msgid "labels.show-all-comments"
 msgstr "Показать все"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
-#, fuzzy
 msgid "labels.show-your-comments"
 msgstr "Показать только ваши"
 
@@ -1295,11 +1271,9 @@ msgid "labels.uploading"
 msgstr "Загрузка…"
 
 #: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
 msgid "labels.viewer"
 msgstr "Наблюдатель"
 
-#, fuzzy
 msgid "labels.workspace"
 msgstr "Рабочая область"
 
@@ -1407,14 +1381,12 @@ msgstr "Точно хотите удалить несколько файлов (
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Удаление файлов (%s)"
 
-#, fuzzy
 msgid "modals.delete-font-variant.message"
 msgstr "Вы действительно хотите удалить это начертание шрифта?"
 
 msgid "modals.delete-font-variant.title"
 msgstr "Удаление начертания шрифта"
 
-#, fuzzy
 msgid "modals.delete-font.message"
 msgstr "Вы действительно хотите удалить этот шрифт?"
 
@@ -1837,7 +1809,6 @@ msgid "workspace.libraries.library"
 msgstr ""
 
 #: src/app/main/ui/workspace/libraries.cljs
-#, fuzzy
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Общие библиотеки не нуждаются в обновлении"
 
@@ -1846,7 +1817,6 @@ msgid "workspace.libraries.no-matches-for"
 msgstr "Совпадений для “%s“ не найдено"
 
 #: src/app/main/ui/workspace/libraries.cljs
-#, fuzzy
 msgid "workspace.libraries.no-shared-libraries-available"
 msgstr "Общие библиотеки отсутсвуют"
 
@@ -2320,7 +2290,6 @@ msgid "workspace.updates.dismiss"
 msgstr ""
 
 #: src/app/main/data/workspace/libraries.cljs
-#, fuzzy
 msgid "workspace.updates.there-are-updates"
 msgstr "Обнаружены обновления общих библиотек"
 

@@ -1,0 +1,1010 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2022-08-11 02:17+0000\n"
+"Last-Translator: Tatsuto Yamamoto <me@laminne33569.net>\n"
+"Language-Team: Japanese <https://hosted.weblate.org/projects/penpot/frontend/"
+"jpn_JP/>\n"
+"Language: jpn_JP\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 4.14-dev\n"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "パスワードを確認"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "デモアカウントを作成"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "試してみませんか？"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr "このサービスはデモ版です。実際の業務には使用しないでください。"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "パスワードを忘れましたか？"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "こちらからログイン"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "ログイン"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "Gitlab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "またお会いしましたね！"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAPでログイン"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Penpotのメーリングリストに登録します。"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "リカバリコードが無効です。"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "パスワードを変更しました"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "プロフィールが確認されていません。続ける前にプロフィールを確認してください。"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "パスワード変更リンクをメールで送信しました。"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "チームに参加しました"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "パスワード"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "手順を記載したメールをお送りします"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "パスワードを忘れましたか？"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "パスワードを変更"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "アカウントをお持ちでない方はこちら"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "アカウントを作成"
+
+msgid "auth.terms-of-service"
+msgstr "利用規約"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr "サービスに登録するには、利用規約とプライバシーポリシーに同意する必要がありま"
+"す。"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "認証メールを送信しました"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "本当にこのリンクを削除しますか？削除すると、リンクは使用できなくなります"
+
+msgid "common.share-link.current-tag"
+msgstr "(現在有効)"
+
+msgid "common.share-link.get-link"
+msgstr "リンクを取得"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "コメント可能"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "コードを調査"
+
+msgid "common.share-link.permissions-hint"
+msgstr "リンクを知っている全員がアクセス可能"
+
+msgid "common.share-link.permissions-pages"
+msgstr "ページ共有済み"
+
+msgid "common.share-link.placeholder"
+msgstr "共有リンクはここに表示されます"
+
+msgid "common.share-link.team-members"
+msgstr "チームのメンバーのみ"
+
+msgid "common.share-link.title"
+msgstr "プロトタイプを共有"
+
+msgid "common.share-link.view-all"
+msgstr "すべて選択"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "共有ライブラリとして追加"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "メールアドレスを変更"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(コピー)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ チームを新規作成"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "あなたのPenpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "チームを削除"
+
+msgid "dashboard.download-binary-file"
+msgstr "Penpotファイル(.penpot)をダウンロード"
+
+msgid "dashboard.download-standard-file"
+msgstr "標準形式(.svg+.json)でダウンロード"
+
+msgid "dashboard.draft-title"
+msgstr "下書き"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "%s ファイルを複製"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "複製"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "ここには何もありません"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"まだファイルがありません。もしいくつかのテンプレートを試してみたいなら、["
+"Libraries & templates](https://penpot.app/libraries-templates.html) "
+"をチェックしてみてください。"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "PDFにエクスポート"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "エクスポートの選択"
+
+msgid "dashboard.export.options.all.title"
+msgstr "共有ライブラリとしてエクスポート"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "%s フォントを追加しました"
+
+msgid "dashboard.import"
+msgstr "Penpotをインポート"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Penpotファイルをインポート"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "色を処理しています"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "コンポーネントを処理しています"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "%s ページ処理中"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "アップロード中 (%s/%s)"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "チームに招待"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "チームから脱退"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "共有ライブラリ"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "ファイルを読みこんでいます…"
+
+msgid "dashboard.loading-fonts"
+msgstr "フォントを読みこんでいます…"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ 新しいファイル"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "新しいファイル"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ 新規プロジェクト"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "新規プロジェクト"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr "Penpotに関する更新情報を受け取る。"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "ニュースレターに登録"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "\"%s\"が見つかりませんでした"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "ピン留めされたプロジェクトはここに表示されます"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "メールアドレスが更新されました"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "メールアドレスが認証されました"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "パスワードを保存しました！"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "新しいタブでファイルで開く"
+
+msgid "dashboard.options"
+msgstr "オプション"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "パスワードを変更"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "プロジェクト"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.promote-to-owner"
+msgstr "オーナーに昇格"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "アカウントを削除したいですか？"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "共有ライブラリから削除"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "設定を保存"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "検索…"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "“%s“ を検索しています…"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "表示言語を選択"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-theme"
+msgstr "テーマを選択"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.show-all-files"
+msgstr "すべてのファイルを表示"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "ファイルを削除しました"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "プロジェクトを削除しました"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "プロジェクトを複製しました"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "ファイルを移動しました"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.switch-team"
+msgstr "チーム切り替え"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-info"
+msgstr "チーム情報"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "チームのメンバー"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "チームのプロジェクト"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.theme-change"
+msgstr "UIテーマ"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.title-search"
+msgstr "検索結果"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.type-something"
+msgstr "タイプして検索"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+msgid "dashboard.update-settings"
+msgstr "設定を更新"
+
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "あなたのアカウント"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "Eメール"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "名前"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "dashboard.your-penpot"
+msgstr "あなたのPenpot"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "ds.updated-at"
+msgstr "%s 更新しました"
+
+msgid "errors.auth.unable-to-login"
+msgstr "認証されていないか、セッションが失効しているようです。"
+
+#: src/app/main/data/workspace.cljs
+msgid "errors.clipboard-not-implemented"
+msgstr "この処理は実行できません"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.email-already-validated"
+msgstr "メールアドレスはすでに有効です。"
+
+msgid "errors.email-as-password"
+msgstr "メールアドレスはパスワードとして設定できません"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-invalid-confirmation"
+msgstr "メールアドレスは同じものを入力する必要があります"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "«%s» はスパムとして報告されたか、または恒久的に受信失敗しています"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.generic"
+msgstr "エラーが発生しました。"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.google-auth-not-enabled"
+msgstr "Googleでのログインは無効になっています"
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "無効な色"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "招待が無効"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "LDAP認証は無効になっています。"
+
+msgid "errors.media-format-unsupported"
+msgstr "画像フォーマットがサポートされていません(svg,jpg,pngのみ対応しています)。"
+
+msgid "errors.network"
+msgstr "サーバーに接続できません。"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-too-short"
+msgstr "パスワードは8文字以上である必要があります"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "errors.registration-disabled"
+msgstr "新規登録は無効化されています。"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "オーナーはチームを脱退できません。オーナーロールを外してください。"
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr "利用規約とプライバシーポリシーに同意する必要があります。"
+
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "errors.unexpected-error"
+msgstr "エラーが発生しました。"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "不明なトークン"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.wrong-credentials"
+msgstr "ユーザー名かパスワードが正しくありません。"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.wrong-old-password"
+msgstr "以前のパスワードが正しくありません"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-start"
+msgstr "Chatに参加"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-subtitle"
+msgstr "おしゃべりしたい気分ですか？Gitterで私たちとチャットする"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "記述"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Penpot forumに参加"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Penpot コミュニティ"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "題名"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "メールアドレス"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Twitterサポートアカウント"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "generic.error"
+msgstr "エラーが発生しました"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "ぼかし"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "塗りつぶし"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.download"
+msgstr "画像をダウンロード"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "高さ"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "横幅"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "レイアウト"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "高さ"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "左"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "半径"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "回転"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "上"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "幅"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "シャドウ"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "中央"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-family"
+msgstr "フォントファミリー"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-size"
+msgstr "フォントサイズ"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "フォントスタイル"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.line-height"
+msgstr "行の高さ"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "文字装飾"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "ショートカット"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "Penpotについて"
+
+msgid "labels.add-custom-font"
+msgstr "カスタムフォントを追加"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "コミュニティ"
+
+msgid "labels.continue"
+msgstr "続ける"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "作成"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "チームを作成"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "チームの名前を入力"
+
+msgid "labels.custom-fonts"
+msgstr "カスタムフォント"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "下書き"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "編集"
+
+msgid "labels.edit-file"
+msgstr "ファイルを編集"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "エディタ"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.email"
+msgstr "メールアドレス"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "失効済み"
+
+msgid "labels.export"
+msgstr "エクスポート"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "フィードバックを送信しました"
+
+msgid "labels.font-family"
+msgstr "フォントファミリー"
+
+msgid "labels.font-variants"
+msgstr "スタイル"
+
+msgid "labels.fonts"
+msgstr "フォント"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "GitHubレポジトリ"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.give-feedback"
+msgstr "フィードバックする"
+
+msgid "labels.go-back"
+msgstr "戻る"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "ヘルプセンター"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.hide-resolved-comments"
+msgstr "解決済みのコメントを非表示"
+
+msgid "labels.icons"
+msgstr "アイコン"
+
+msgid "labels.images"
+msgstr "画像"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "言語"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "メンバー"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.name"
+msgstr "名前"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "新しいパスワード"
+
+msgid "labels.next"
+msgstr "次へ"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "招待がありません。"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID Connect"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "アカウントをお持ちですか？"
+
+msgid "common.share-link.all-users"
+msgstr "すべてのPenpotユーザー"
+
+msgid "common.share-link.destroy-link"
+msgstr "リンクを削除"
+
+msgid "common.share-link.link-copied-success"
+msgstr "リンクをコピーしました"
+
+msgid "common.share-link.manage-ops"
+msgstr "権限の管理"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr "Penpotを使う前にメールのリンクをクリックして、メールアドレスを認証してくださ"
+"い。"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Eメール"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "フルネーム"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "新しいパスワードを入力"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "登録"
+
+msgid "auth.privacy-policy"
+msgstr "プライバシーポリシー"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "パスワードを回復"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "フリーでオープンソースです"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "デザインとプロトタイピングのためのオープンソースです。"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "%s ページが共有済み"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "アカウントを作成"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "リンクを削除しました"
+
+msgid "dashboard.export-frames"
+msgstr "PDFでエクスポート…"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "すべてアップロード"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "アップロード中: %s"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s メンバー"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "ファイルを複製しました"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "ファイルを削除しました"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-ok"
+msgstr "OK"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "本当に実行しますか？"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "画像が大きすぎます。5MB以下にしてください。"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.main-message"
+msgstr "内部エラー"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-not-allowed"
+msgstr "無効な画像です。"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "メディアを処理しています"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "ファイルを移動しました"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "キャンセル"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "認証プロバイダが設定されていません。"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-already-exists"
+msgstr "メールアドレスは使用されています"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.email-has-permanent-bounces"
+msgstr "メールアドレス «%s» には多くの受信失敗レポートがあります。"
+
+msgid "errors.invite-invalid.info"
+msgstr "この招待はキャンセルされたか、失効しています。"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "招待"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "ライブラリ&テンプレート"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "ログアウト"
+
+msgid "labels.manage-fonts"
+msgstr "フォントを管理"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "メンバー"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.old-password"
+msgstr "以前のパスワード"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "プロジェクト"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.rename-team"
+msgstr "チーム名を変更"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-mismatch"
+msgstr "画像の内容と拡張子が一致しません。"
+
+msgid "labels.content"
+msgstr "コンテンツ"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "下線"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "円"
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "コンポーネント"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "曲線"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "グループ"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "画像"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "削除"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "マスク"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "キャンセル"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "コメント"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "パスワードを確認"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "ダッシュボード"
+
+msgid "labels.default"
+msgstr "デフォルト"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "コメントを削除"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment-thread"
+msgstr "スレッドを削除"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "招待を削除"
+
+msgid "labels.link"
+msgstr "リンク"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.only-yours"
+msgstr "あなた専用"
+
+msgid "labels.or"
+msgstr "または"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.permissions"
+msgstr "権限"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "おっと！"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.profile"
+msgstr "プロフィール"
+
+msgid "labels.recent"
+msgstr "最近"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.release-notes"
+msgstr "リリースノート"
+
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove"
+msgstr "削除"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "名前を変更"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "メンバーを削除"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "招待を再送"
+
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+msgid "labels.retry"
+msgstr "リトライ"

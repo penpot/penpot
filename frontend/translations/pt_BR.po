@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-07-01 01:20+0000\n"
-"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
-"Language-Team: Portuguese (Brazil) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
+"PO-Revision-Date: 2022-08-18 16:16+0000\n"
+"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.13.1-dev\n"
+"X-Generator: Weblate 4.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -69,7 +69,7 @@ msgstr "Github"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Gitlab"
+msgstr "GitLab"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
@@ -1190,7 +1190,6 @@ msgstr "Carregar"
 msgid "labels.upload-custom-fonts"
 msgstr "Carregar fontes personalizadas"
 
-#, fuzzy
 msgid "labels.uploading"
 msgstr "Carregando…"
 

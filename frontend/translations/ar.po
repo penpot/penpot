@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-09-14 13:35+0000\n"
+"PO-Revision-Date: 2022-08-28 21:15+0000\n"
 "Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
-"Language-Team: Arabic "
-"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
+"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
+"ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 4.9-dev\n"
+"X-Generator: Weblate 4.14.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -903,7 +903,6 @@ msgstr "عائلة الخط"
 msgid "labels.font-providers"
 msgstr "موفري الخط"
 
-#, fuzzy
 msgid "labels.font-variant"
 msgstr "نمط"
 
@@ -2056,3 +2055,135 @@ msgstr "اختلاف"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لإغلاق المسار"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "قناع"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "مركز المساعدة"
+
+msgid "labels.export"
+msgstr "استخراج"
+
+msgid "common.share-link.permissions-hint"
+msgstr "أي شخص لديه الرابط سيكون لديه حق الوصول"
+
+msgid "common.share-link.all-users"
+msgstr "جميع مستخدمي Penpot"
+
+msgid "common.share-link.destroy-link"
+msgstr "إتلاف الرابط"
+
+msgid "common.share-link.current-tag"
+msgstr "(الحالي)"
+
+msgid "common.share-link.manage-ops"
+msgstr "إدارة التصاريح"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "يمكن التعليق"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "يمكن فحص الكود"
+
+msgid "common.share-link.permissions-pages"
+msgstr "الصفحات المشتركة"
+
+msgid "common.share-link.placeholder"
+msgstr "سيظهر الرابط القابل للمشاركة هنا"
+
+msgid "common.share-link.team-members"
+msgstr "أعضاء الفريق فقط"
+
+msgid "common.share-link.title"
+msgstr "مشاركة النماذج"
+
+msgid "common.share-link.view-all"
+msgstr "اختر الكل"
+
+msgid "dashboard.download-binary-file"
+msgstr "تنزيل ملف Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "تنزيل ملف قياسي (.svg + .json)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "تنزيل ملفات ٪s Penpot (.penpot)"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "استخراج PDF"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "حساب دعم تويتر"
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "مكون"
+
+msgid "labels.close"
+msgstr "غلق"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "مجتمع"
+
+msgid "labels.continue-with"
+msgstr "تابع مع"
+
+msgid "labels.continue-with-penpot"
+msgstr "يمكنك المتابعة مع حساب Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "حذف الدعوة"
+
+msgid "labels.edit-file"
+msgstr "تعديل ملف"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "استخراج"
+
+msgid "labels.and"
+msgstr "و"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "منتهي الصلاحية"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "الدعوات"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "حول Penpot"
+
+msgid "labels.back"
+msgstr "العودة"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "الاختصارات"
+
+msgid "auth.terms-of-service"
+msgstr "شروط الخدمة"
+
+msgid "auth.privacy-policy"
+msgstr "سياسة الخصوصية"
+
+msgid "labels.continue"
+msgstr "استمر"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.update"
+msgstr "تحديث"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"أوه لا! ليس لديك ملفات بعد! إذا كنت تريد تجربة بعض القوالب ، فانتقل إلى ["
+"المكتبات والقوالب] (https://penpot.app/libraries-templates.html)"
