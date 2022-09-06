@@ -69,7 +69,11 @@
 
     :toggle-overlay
     (let [frame-id            (:destination interaction)
-          position            (:overlay-position interaction)
+          dest-frame (get objects frame-id)
+          position            (ctsi/calc-overlay-position interaction
+                                                          base-frame
+                                                          dest-frame
+                                                          frame-offset) 
           close-click-outside (:close-click-outside interaction)
           background-overlay  (:background-overlay interaction)]
       (when frame-id
