@@ -6,11 +6,13 @@
 
 (ns app.worker.impl
   (:require
+   [app.common.logging :as log]
    [app.common.pages.changes :as ch]
    [app.common.transit :as t]
-   [app.util.globals :refer [global]]
-   [app.util.object :as obj]
+   [app.config :as cf]
    [okulary.core :as l]))
+
+(log/set-level! :info)
 
 (enable-console-print!)
 
@@ -22,7 +24,7 @@
 
 (defmethod handler :default
   [message]
-  (println "Unexpected message:" message))
+  (log/warn :hint "unexpected message" :message message))
 
 (defmethod handler :echo
   [message]
@@ -55,6 +57,8 @@
                    (assoc :cmd :snaps/update-index))))))
 
 (defmethod handler :configure
-  [{:keys [params]}]
-  (doseq [[param-key param-value] params]
-    (obj/set! global param-key param-value)))
+  [{:keys [key val]}]
+  (log/info :hint "configure worker" :key key :val val)
+  (case key
+    :public-uri
+    (reset! cf/public-uri val)))

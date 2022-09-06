@@ -8,8 +8,6 @@
   "A lightweight layer on top of webworkers api."
   (:require
    [app.common.uuid :as uuid]
-   [app.util.globals :refer [global]]
-   [app.util.object :as obj]
    [app.worker.messages :as wm]
    [beicon.core :as rx]))
 
@@ -82,11 +80,6 @@
 
     (.addEventListener instance "message" handle-message)
     (.addEventListener instance "error" handle-error)
-
-    (ask! worker
-          {:cmd :configure
-           :params
-           {"penpotPublicURI" (obj/get global "penpotPublicURI")}})
 
     worker))
 

@@ -215,7 +215,7 @@
 (defn- persist-events
   [events]
   (if (seq events)
-    (let [uri    (u/join cf/public-uri "api/audit/events")
+    (let [uri    (u/join @cf/public-uri "api/audit/events")
           params {:uri uri
                   :method :post
                   :body (http/transit-data {:events events})}]

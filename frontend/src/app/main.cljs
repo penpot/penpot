@@ -39,7 +39,7 @@
   (log/info :message "Welcome to penpot"
             :version (:full @cf/version)
             :build-date cf/build-date
-            :public-uri (str cf/public-uri)))
+            :public-uri (str @cf/public-uri)))
 
 (declare reinit)
 
