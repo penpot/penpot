@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-08-18 16:16+0000\n"
 "Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
-"Language-Team: English <https://hosted.weblate.org/projects/penpot/frontend/"
-"en/>\n"
+"Language-Team: English "
+"<https://hosted.weblate.org/projects/penpot/frontend/en/>\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -169,6 +169,9 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "We've sent a verification email to"
 
+msgid "common.publish"
+msgstr "Publish"
+
 msgid "common.share-link.all-users"
 msgstr "All Penpot users"
 
@@ -224,11 +227,48 @@ msgstr "Share prototypes"
 msgid "common.share-link.view-all"
 msgstr "Select All"
 
-msgid "common.publish"
-msgstr "Publish"
-
 msgid "common.unpublish"
 msgstr "Unpublish"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Team management"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot is meant for teams. Invite members to work together on projects and "
+"files"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Team up!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Learn the basics at Penpot while having some fun with this hands on "
+"tutorial."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Start the tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Hands on Tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Take a walk through Penpot and get to know its main features."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Start the tour"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Interface Walkthrough"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -443,6 +483,15 @@ msgstr "Invite to team"
 msgid "dashboard.leave-team"
 msgstr "Leave team"
 
+msgid "dashboard.libraries-and-templates"
+msgstr "Libraries & Templates"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explore more of them and know how to contribute"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "There was a problem importing the template. The template wasn't imported."
+
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
 msgstr "Libraries"
@@ -469,42 +518,6 @@ msgstr "Move to other team"
 #: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
 msgstr "+ New File"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.title"
-msgstr "Team up!"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.text"
-msgstr "Penpot is meant for teams. Invite members to work together on projects and files"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.management"
-msgstr "Team management"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.title"
-msgstr "Hands on Tutorial"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.info"
-msgstr "Learn the basics at Penpot while having some fun with this hands on tutorial."
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.start"
-msgstr "Start the tutorial"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.title"
-msgstr "Interface Walkthrough"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.info"
-msgstr "Take a walk through Penpot and get to know its main features."
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.start"
-msgstr "Start the tour"
 
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-file-prefix"
@@ -580,10 +593,6 @@ msgstr "Want to remove your account?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Remove as Shared Library"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.unpublish-shared"
-msgstr "Unpublish Library"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.save-settings"
@@ -665,6 +674,10 @@ msgstr "Search results"
 msgid "dashboard.type-something"
 msgstr "Type to search results"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Unpublish Library"
+
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Update settings"
@@ -684,15 +697,6 @@ msgstr "Your name"
 #: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
-
-msgid "dashboard.libraries-and-templates"
-msgstr "Libraries & Templates"
-
-msgid "dashboard.libraries-and-templates.explore"
-msgstr "Explore more of them and know how to contribute"
-
-msgid "dashboard.libraries-and-templates.import-error"
-msgstr "There was a problem importing the template. The template wasn't imported."
 
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"
@@ -732,6 +736,10 @@ msgstr "Looks like you are not authenticated or session expired."
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Your browser cannot do this operation"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "This file has already used with Components V2 enabled."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
@@ -780,10 +788,6 @@ msgstr "LDAP authentication is disabled."
 
 msgid "errors.media-format-unsupported"
 msgstr "The image format is not supported (must be svg, jpg or png)."
-
-#: src/app/main/data/workspace/persistence.cljs
-msgid "errors.components-v2"
-msgstr "This file has already used with Components V2 enabled."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -1710,6 +1714,40 @@ msgstr "Are you sure you want to delete this project?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Delete project"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Delete file"
+msgstr[1] "Delete files"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Are you sure you want to delete this file?"
+msgstr[1] "Are you sure you want to delete these files?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "This file has libraries that are being used in this file:"
+msgstr[1] "This file has libraries that are being used in these files:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "These files have libraries that are being used in this file:"
+msgstr[1] "These files have libraries that are being used in these files:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Deleting file"
+msgstr[1] "Deleting files"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "Deleting file"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"
 msgstr "Delete team"
@@ -1830,11 +1868,19 @@ msgstr ""
 msgid "modals.remove-shared-confirm.message"
 msgstr "Remove “%s” as Shared Library"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Small nudge"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.title"
-msgid_plural "modals.unpublish-shared-confirm.title"
-msgstr[0] "Unpublish library"
-msgstr[1] "Unpublish libraries"
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Unpublish"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] "If you unpublish it, the assets in it became a library of this file."
+msgstr[1] "If you unpublish it, the assets in it became a library of these files."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1849,48 +1895,10 @@ msgstr[0] "It's in use in this file:"
 msgstr[1] "It's in use in these files:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "If you unpublish it, the assets in it became a library of this file."
-msgstr[1] "If you unpublish it, the assets in it became a library of these files."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Unpublish"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.title"
-msgid_plural "modals.delete-shared-confirm.title"
-msgstr[0] "Deleting file"
-msgstr[1] "Deleting files"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.message"
-msgid_plural "modals.delete-shared-confirm.message"
-msgstr[0] "Are you sure you want to delete this file?"
-msgstr[1] "Are you sure you want to delete these files?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "This file has libraries that are being used in this file:"
-msgstr[1] "This file has libraries that are being used in these files:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-plural"
-msgid_plural "modals.delete-shared-confirm.scd-message-plural"
-msgstr[0] "These files have libraries that are being used in this file:"
-msgstr[1] "These files have libraries that are being used in these files:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.accept"
-msgid_plural "modals.delete-shared-confirm.accept"
-msgstr[0] "Delete file"
-msgstr[1] "Delete files"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.small-nudge"
-msgstr "Small nudge"
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Unpublish library"
+msgstr[1] "Unpublish libraries"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
@@ -1920,10 +1928,6 @@ msgstr ""
 msgid "modals.update-remote-component.message"
 msgstr "Update a component in a shared library"
 
-#: src/app/main/ui/delete_shared.cljs
-msgid "modals.delete-shared.title"
-msgstr "Deleting file"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Invitation sent successfully"
@@ -1940,6 +1944,56 @@ msgstr "Profile saved successfully!"
 msgid "notifications.validation-email-sent"
 msgstr "Verification email sent to %s. Check your email!"
 
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"You should know that there are lots of resources available to help you get "
+"started with Penpot, like the User Guide and our Youtube channel."
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Detailed info about how to use Penpot. From prototyping to organizing or "
+"sharing designs."
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "User guide"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "You can watch our tutorials and the tutorials made by our community."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Video tutorials"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Before you start"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot is Open Source and it is made by Kaleidos as well as the community, "
+"where lots of people already help each other out. Everyone can collaborate "
+"by:"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"A public space to learn, share and discuss about Penpot, its present and "
+"future with the entire Community and the Penpot core team."
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Participating in the Community"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Where you’ll find how to collaborate with translations, feature requests, "
+"core contributions, bug hunting…"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Contributing guide"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Welcome to Penpot!"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Create a team later"
+
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Your team name"
 
@@ -1953,40 +2007,18 @@ msgid "onboarding.choice.team-up.invite-members"
 msgstr "Invite members"
 
 msgid "onboarding.choice.team-up.invite-members-info"
-msgstr "Remember to include everyone. Developers, designers, managers... diversity adds up :)"
-
-msgid "onboarding.choice.team-up.roles"
-msgstr "Invite with the role:"
-
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Create a team later"
-
-msgid "onboarding.team-modal.create-team"
-msgstr "Create a team"
-
-msgid "onboarding.team-modal.create-team-desc"
-msgstr "A team allows you to collaborate with other Penpot users working in the same files and projects."
-
-msgid "onboarding.team-modal.create-team-feature-1"
-msgstr "Unlimited files and projects"
-
-msgid "onboarding.team-modal.create-team-feature-2"
-msgstr "Multiplayer edition"
-
-msgid "onboarding.team-modal.create-team-feature-3"
-msgstr "Roles management"
-
-msgid "onboarding.team-modal.create-team-feature-4"
-msgstr "Unlimited members"
-
-msgid "onboarding.team-modal.create-team-feature-5"
-msgstr "100% free!"
+msgstr ""
+"Remember to include everyone. Developers, designers, managers... diversity "
+"adds up :)"
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Create team and invite later"
 
 msgid "onboarding.choice.team-up.invite-members-submit"
 msgstr "Create team and send invites"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Invite with the role:"
 
 msgid "onboarding.choice.title"
 msgstr "Welcome to Penpot"
@@ -2094,6 +2126,29 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "One shared source of truth"
 
+msgid "onboarding.team-modal.create-team"
+msgstr "Create a team"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"A team allows you to collaborate with other Penpot users working in the "
+"same files and projects."
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Unlimited files and projects"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Multiplayer edition"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Roles management"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Unlimited members"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100% free!"
+
 msgid "onboarding.templates.subtitle"
 msgstr "Here are some templates."
 
@@ -2102,42 +2157,6 @@ msgstr "Start designing"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding-v2.welcome.title"
-msgstr "Welcome to Penpot!"
-
-msgid "onboarding-v2.welcome.desc1"
-msgstr "Penpot is Open Source and it is made by Kaleidos as well as the community, where lots of people already help each other out. Everyone can collaborate by:"
-
-msgid "onboarding-v2.welcome.desc2.title"
-msgstr "Participating in the Community"
-
-msgid "onboarding-v2.welcome.desc2"
-msgstr "A public space to learn, share and discuss about Penpot, its present and future with the entire Community and the Penpot core team."
-
-msgid "onboarding-v2.welcome.desc3.title"
-msgstr "Contributing guide"
-
-msgid "onboarding-v2.welcome.desc3"
-msgstr "Where you’ll find how to collaborate with translations, feature requests, core contributions, bug hunting…"
-
-msgid "onboarding-v2.before-start.title"
-msgstr "Before you start"
-
-msgid "onboarding-v2.before-start.desc1"
-msgstr "You should know that there are lots of resources available to help you get started with Penpot, like the User Guide and our Youtube channel."
-
-msgid "onboarding-v2.before-start.desc2.title"
-msgstr "User guide"
-
-msgid "onboarding-v2.before-start.desc2"
-msgstr "Detailed info about how to use Penpot. From prototyping to organizing or sharing designs."
-
-msgid "onboarding-v2.before-start.desc3.title"
-msgstr "Video tutorials"
-
-msgid "onboarding-v2.before-start.desc3"
-msgstr "You can watch our tutorials and the tutorials made by our community."
 
 msgid "onboarding.welcome.title"
 msgstr "Welcome to Penpot"
@@ -2774,10 +2793,6 @@ msgstr "Duplicate"
 msgid "workspace.assets.edit"
 msgstr "Edit"
 
-
-msgid "workspace.assets.local-library"
-msgstr "local library"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
 msgstr "Graphics"
@@ -2793,6 +2808,9 @@ msgstr "Group name"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.libraries"
 msgstr "Libraries"
+
+msgid "workspace.assets.local-library"
+msgstr "local library"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.not-found"
@@ -4259,6 +4277,9 @@ msgstr "Path"
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Reset overrides"
 
+msgid "workspace.shape.menu.restore-main"
+msgstr "Restore main component"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.select-layer"
 msgstr "Select layer"
@@ -4302,9 +4323,6 @@ msgstr "Update main components"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "Update main component"
-
-msgid "workspace.shape.menu.restore-main"
-msgstr "Restore main component"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"

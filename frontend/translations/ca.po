@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-05 12:17+0000\n"
 "Last-Translator: Rubén <rubenx@mail.com>\n"
-"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
-"ca/>\n"
+"Language-Team: Catalan "
+"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -171,10 +171,19 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "S'ha enviat un correu de verificació a"
 
+msgid "common.share-link.all-users"
+msgstr "Tots els usuaris de Penpot"
+
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Segur que voleu eliminar l'enllaç? Si ho feu, ja no estarà disponible per a "
 "ningú"
+
+msgid "common.share-link.current-tag"
+msgstr "(actual)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Destrueix l'enllaç"
 
 msgid "common.share-link.get-link"
 msgstr "Obtén l'enllaç"
@@ -185,14 +194,37 @@ msgstr "S'ha copiat l'enllaç correctament"
 msgid "common.share-link.link-deleted-success"
 msgstr "S'ha eliminat l'enllaç correctament"
 
+msgid "common.share-link.manage-ops"
+msgstr "Gestió de permisos"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 pàgina compartida"
+msgstr[1] "%s pàgines compartides"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Pot comentar"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Pot inspeccionar el codi"
+
 msgid "common.share-link.permissions-hint"
 msgstr "Qualsevol persona amb l'enllaç hi tindrà accés"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Pàgines compartides"
 
 msgid "common.share-link.placeholder"
 msgstr "L'enllaç per a compartir apareixerà aquí"
 
+msgid "common.share-link.team-members"
+msgstr "Només membres de l'equip"
+
 msgid "common.share-link.title"
 msgstr "Compartiu prototips"
+
+msgid "common.share-link.view-all"
+msgstr "Selecciona-ho tot"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -218,6 +250,12 @@ msgstr "El meu Penpot"
 msgid "dashboard.delete-team"
 msgstr "Elimina l'equip"
 
+msgid "dashboard.download-binary-file"
+msgstr "Baixa el fitxer Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Baixa fitxer estàndard (.svg + .json)"
+
 msgid "dashboard.draft-title"
 msgstr "Esborrany"
 
@@ -240,6 +278,9 @@ msgstr ""
 "Encara no hi ha fitxers. Si voleu provar algunes plantilles, podeu anar a "
 "la secció [Biblioteques i "
 "plantilles](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Baixa %s fitxers Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
 msgstr "Exporta els taulers a PDF…"
@@ -279,6 +320,9 @@ msgstr "Selecció d'exportació"
 
 msgid "dashboard.export-single"
 msgstr "Exporta el fitxer de Penpot"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Baixa %s fitxers estàndard (.svg + .json)"
 
 msgid "dashboard.export.detail"
 msgstr "* Pot incloure components, gràfics, colors i/o tipografies."
@@ -339,17 +383,17 @@ msgstr ""
 "Les tipografies web que pengeu aquí s'afegiran a la llista de famílies "
 "tipogràfiques disponibles a les propietats del text dels fitxers d'aquest "
 "equip. Les tipografies amb el mateix nom de família s'agruparan en **una "
-"sola família tipogràfica**. Podeu pujar tipografies en aquests formats: **"
-"TTF, OTF i WOFF** (només en cal un)."
+"sola família tipogràfica**. Podeu pujar tipografies en aquests formats: "
+"**TTF, OTF i WOFF** (només en cal un)."
 
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Només podeu pujar tipografies de la vostra propietat o de les que tingueu "
-"una llicència que us permeti utilitzar-los al Penpot. Teniu més informació a "
-"la secció de drets de contingut de les [Condicions del servei del "
-"Penpot](https://penpot.app/terms.html). També podeu llegir sobre les ["
-"llicències de les tipografies](https://www.typography.com/faq)."
+"una llicència que us permeti utilitzar-los al Penpot. Teniu més informació "
+"a la secció de drets de contingut de les [Condicions del servei del "
+"Penpot](https://penpot.app/terms.html). També podeu llegir sobre les "
+"[llicències de les tipografies](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -621,6 +665,10 @@ msgstr "N'esteu segur?"
 msgid "ds.updated-at"
 msgstr "Actualitzat: %s"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "L'autenticació del proveïdor no està configurada."
+
 msgid "errors.auth.unable-to-login"
 msgstr "Sembla que no esteu autenticat o que la sessió ha caducat."
 
@@ -764,6 +812,18 @@ msgid "feedback.description"
 msgstr "Descripció"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Ves al fòrum de Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr "Ens encanta que sigueu aquí. Si necessiteu ajuda, cerqueu abans de publicar."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Comunitat de Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Tema"
 
@@ -777,6 +837,18 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "Correu electrònic"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Ves al Twitter"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Compte per a ajudar amb dubtes tècnics."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Compte de Twitter d'ajuda"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1051,6 +1123,10 @@ msgstr "Tanca"
 msgid "labels.comments"
 msgstr "Comentaris"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Comunitat"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Confirmeu la contrasenya"
@@ -1063,6 +1139,9 @@ msgstr "Continua"
 
 msgid "labels.continue-with"
 msgstr "Continua amb"
+
+msgid "labels.continue-with-penpot"
+msgstr "Podeu continuar amb un compte de Penpot"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1205,6 +1284,9 @@ msgstr "Biblioteques i plantilles"
 msgid "labels.link"
 msgstr "Enllaç"
 
+msgid "labels.log-or-sign"
+msgstr "Inicia sessió o registra'm"
+
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Tanca la sessió"
@@ -1242,7 +1324,8 @@ msgstr "No hi ha invitacions."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr ""
-"Feu clic al botó «Convida a l'equip» per convidar més membres a aquest equip."
+"Feu clic al botó «Convida a l'equip» per convidar més membres a aquest "
+"equip."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.auth-info"
@@ -1382,6 +1465,9 @@ msgstr "Biblioteques compartides"
 msgid "labels.show-all-comments"
 msgstr "Mostra tots els comentaris"
 
+msgid "labels.show-comments-list"
+msgstr "Mostra la llista de comentaris"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Mostra només els meus comentaris"
@@ -1470,8 +1556,8 @@ msgstr "Repetiu el correu electrònic nou"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"Us enviarem un correu electrònic a l'adreça actual \"%s\" per a verificar la "
-"vostra identitat."
+"Us enviarem un correu electrònic a l'adreça actual \"%s\" per a verificar "
+"la vostra identitat."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1763,7 +1849,8 @@ msgstr "Convida membres"
 
 msgid "onboarding.choice.team-up.invite-members-desc"
 msgstr ""
-"També podreu convidar membres o canviar els rols des de la pàgina de l'equip."
+"També podreu convidar membres o canviar els rols des de la pàgina de "
+"l'equip."
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Crea l'equip ara i convida membres en un altre moment"
@@ -2186,6 +2273,9 @@ msgstr "Mou amunt"
 msgid "shortcuts.next-frame"
 msgstr "Següent tauler"
 
+msgid "shortcuts.not-found"
+msgstr "No s'han trobat dreceres"
+
 msgid "shortcuts.opacity-0"
 msgstr "Fixa l'opacitat al 100%"
 
@@ -2236,6 +2326,9 @@ msgstr "Ves a les interaccions del visor"
 
 msgid "shortcuts.open-workspace"
 msgstr "Ves a l'espai de treball"
+
+msgid "shortcuts.or"
+msgstr " o "
 
 msgid "shortcuts.paste"
 msgstr "Enganxa"
@@ -2966,6 +3059,9 @@ msgstr "Difuminat de selecció"
 msgid "workspace.options.canvas-background"
 msgstr "Fons del llenç"
 
+msgid "workspace.options.clip-content"
+msgstr "Trunca el contingut"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "Component"
@@ -3024,9 +3120,7 @@ msgstr "Exporta la selecció"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgid_plural ""
-msgstr[0] "Exporta 1 element"
-msgstr[1] "Exporta %s elements"
+msgstr "Exporta 1 element"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3071,6 +3165,10 @@ msgstr "Automàtic"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.column"
 msgstr "Columnes"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "Graella"
 
 msgid "workspace.options.grid.params.color"
 msgstr "Color"
@@ -3442,6 +3540,142 @@ msgstr "Agrupa les capes"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Capes seleccionades"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "Opcions avançades"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-h"
+msgstr "Alçada màx."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-w"
+msgstr "Amplada màx."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-h"
+msgstr "Alçada mín."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-w"
+msgstr "Amplada mín."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "Redimensió de l'element"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-h"
+msgstr "Alçada màxima"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-w"
+msgstr "Amplada màxima"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-h"
+msgstr "Alçada mínima"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-w"
+msgstr "Amplada mínima"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Baix"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "Columna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "Fila"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.right"
+msgstr "Fila invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.top"
+msgstr "Columna invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Espaiat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.center"
+msgstr "centre"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.left"
+msgstr "esquerra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.right"
+msgstr "dreta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Esquerra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Marge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "Tots els costats"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Marge senzill"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "no agrupis"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "ajuntat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "Tots els costats"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Dreta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "separat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "espaiat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.title"
+msgstr "Disposició"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Dalt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "baix"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "centre"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "dalt"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
 msgstr "Més colors"
@@ -3550,6 +3784,9 @@ msgstr "Ombres de selecció"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.show-fill-on-export"
 msgstr "Mostra en l'exportació"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "Mostra al visor"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.size"
@@ -4166,241 +4403,3 @@ msgstr "Actualitza"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Feu clic per a tancar el camí"
-
-msgid "common.share-link.all-users"
-msgstr "Tots els usuaris de Penpot"
-
-msgid "common.share-link.current-tag"
-msgstr "(actual)"
-
-msgid "common.share-link.destroy-link"
-msgstr "Destrueix l'enllaç"
-
-msgid "common.share-link.manage-ops"
-msgstr "Gestió de permisos"
-
-msgid "common.share-link.page-shared"
-msgid_plural "common.share-link.page-shared"
-msgstr[0] "1 pàgina compartida"
-msgstr[1] "%s pàgines compartides"
-
-msgid "common.share-link.permissions-can-comment"
-msgstr "Pot comentar"
-
-msgid "common.share-link.permissions-can-inspect"
-msgstr "Pot inspeccionar el codi"
-
-msgid "common.share-link.permissions-pages"
-msgstr "Pàgines compartides"
-
-msgid "common.share-link.team-members"
-msgstr "Només membres de l'equip"
-
-msgid "common.share-link.view-all"
-msgstr "Selecciona-ho tot"
-
-msgid "dashboard.download-binary-file"
-msgstr "Baixa el fitxer Penpot (.penpot)"
-
-msgid "dashboard.download-standard-file"
-msgstr "Baixa fitxer estàndard (.svg + .json)"
-
-msgid "dashboard.export-binary-multi"
-msgstr "Baixa %s fitxers Penpot (.penpot)"
-
-msgid "dashboard.export-standard-multi"
-msgstr "Baixa %s fitxers estàndard (.svg + .json)"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.auth-provider-not-configured"
-msgstr "L'autenticació del proveïdor no està configurada."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-subtitle1"
-msgstr "Compte per a ajudar amb dubtes tècnics."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.community"
-msgstr "Comunitat"
-
-msgid "labels.continue-with-penpot"
-msgstr "Podeu continuar amb un compte de Penpot"
-
-msgid "labels.show-comments-list"
-msgstr "Mostra la llista de comentaris"
-
-msgid "shortcuts.not-found"
-msgstr "No s'han trobat dreceres"
-
-msgid "shortcuts.or"
-msgstr " o "
-
-msgid "workspace.options.clip-content"
-msgstr "Trunca el contingut"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.grid-title"
-msgstr "Graella"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.advanced-ops"
-msgstr "Opcions avançades"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "Alçada màxima"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "Alçada mínima"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
-msgstr "Amplada mínima"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "Amplada màxima"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
-msgstr "Columna"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "Fila"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-all"
-msgstr "Tots els costats"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-simple"
-msgstr "Marge senzill"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "no agrupis"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding-all"
-msgstr "Tots els costats"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.right"
-msgstr "Dreta"
-
-msgid "workspace.options.show-in-viewer"
-msgstr "Mostra al visor"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "Disposició"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "centre"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-go-to"
-msgstr "Ves al fòrum de Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-subtitle1"
-msgstr ""
-"Ens encanta que sigueu aquí. Si necessiteu ajuda, cerqueu abans de publicar."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-title"
-msgstr "Comunitat de Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-go-to"
-msgstr "Ves al Twitter"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "esquerra"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.right"
-msgstr "dreta"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.left"
-msgstr "Esquerra"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-title"
-msgstr "Compte de Twitter d'ajuda"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
-msgstr "Fila invertida"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Columna invertida"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.center"
-msgstr "centre"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin"
-msgstr "Marge"
-
-msgid "labels.log-or-sign"
-msgstr "Inicia sessió o registra'm"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "Alçada màx."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "Amplada màx."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "Amplada mín."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "Alçada mín."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title"
-msgstr "Redimensió de l'element"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.bottom"
-msgstr "Baix"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.gap"
-msgstr "Espaiat"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.packed"
-msgstr "ajuntat"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "dalt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "baix"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.top"
-msgstr "Dalt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.space-between"
-msgstr "espaiat"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.space-around"
-msgstr "separat"

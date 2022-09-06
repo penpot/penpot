@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-03 08:15+0000\n"
 "Last-Translator: Aimee <aimeeritleng@outlook.com>\n"
-"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
-"fr/>\n"
+"Language-Team: French "
+"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -172,10 +172,19 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Nous avons envoyé un e-mail de vérification à"
 
+msgid "common.share-link.all-users"
+msgstr "Tous les utilisateurs de Penpot"
+
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Êtes-vous certain de vouloir supprimer ce lien ? Si oui, plus personne ne "
 "pourra y accéder"
+
+msgid "common.share-link.current-tag"
+msgstr "(actuel)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Supprimer le lien"
 
 msgid "common.share-link.get-link"
 msgstr "Obtenir le lien"
@@ -186,14 +195,37 @@ msgstr "Lien copié avec succès"
 msgid "common.share-link.link-deleted-success"
 msgstr "Lien supprimé avec succès"
 
+msgid "common.share-link.manage-ops"
+msgstr "Modifier les permissions"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 page partagée"
+msgstr[1] "%s pages partagées"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Peut commenter"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Peut inspecter le code"
+
 msgid "common.share-link.permissions-hint"
 msgstr "N'importe qui possédant ce lien peut y accéder"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Pages partagées"
 
 msgid "common.share-link.placeholder"
 msgstr "Le lien à partager apparaîtra ici"
 
+msgid "common.share-link.team-members"
+msgstr "Seulement les membres de l'équipe"
+
 msgid "common.share-link.title"
 msgstr "Partager les prototypes"
+
+msgid "common.share-link.view-all"
+msgstr "Tout sélectionner"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -220,6 +252,12 @@ msgstr "Votre Penpot"
 msgid "dashboard.delete-team"
 msgstr "Supprimer l’équipe"
 
+msgid "dashboard.download-binary-file"
+msgstr "Télécharger le fichier Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Télécharger le fichier standard (.svg + .json)"
+
 msgid "dashboard.draft-title"
 msgstr "Brouillon"
 
@@ -243,6 +281,9 @@ msgstr ""
 "Oh non ! Vous n'avez pas encore de fichiers ! Si vous voulez essayer avec "
 "des modèles, allez sur [Bibliothèques et modèles] "
 "(https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Télécharger %s fichiers Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
 msgstr "Exporter les plans de travail au format PDF…"
@@ -282,6 +323,9 @@ msgstr "Exporter la sélection"
 
 msgid "dashboard.export-single"
 msgstr "Exporter le fichier"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Télécharger %s fichiers standards (.svg + .json)"
 
 msgid "dashboard.export.detail"
 msgstr ""
@@ -641,6 +685,10 @@ msgstr "Êtes‑vous sûr ?"
 msgid "ds.updated-at"
 msgstr "Mise à jour : %s"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Fournisseur d'authentification non configuré."
+
 msgid "errors.auth.unable-to-login"
 msgstr "Il semblerait que vous n'êtes pas authentifié ou que votre session a expiré."
 
@@ -797,6 +845,20 @@ msgid "feedback.description"
 msgstr "Description"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Accéder au forum Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Nous sommes heureux de vous avoir ici. Si vous avez besoin d'aide, merci "
+"d'effectuer une recherche avant de poster."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Communauté Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Sujet"
 
@@ -810,6 +872,18 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "Email"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Accéder à Twitter"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Nous sommes là pour répondre à vos questions techniques."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Compte d’assistance Twitter"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1082,6 +1156,10 @@ msgstr "Fermer"
 msgid "labels.comments"
 msgstr "Commentaires"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Communauté"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Confirmer le mot de passe"
@@ -1094,6 +1172,9 @@ msgstr "Continuer"
 
 msgid "labels.continue-with"
 msgstr "Continuer avec"
+
+msgid "labels.continue-with-penpot"
+msgstr "Vous pouvez continuer avec un compte Penpot"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1242,6 +1323,9 @@ msgstr "Bibliothèques et modèles"
 
 msgid "labels.link"
 msgstr "Lien"
+
+msgid "labels.log-or-sign"
+msgstr "Se connecter ou s'inscrire"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -1428,6 +1512,9 @@ msgstr "Bibliothèques Partagées"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"
 msgstr "Afficher tous les commentaires"
+
+msgid "labels.show-comments-list"
+msgstr "Afficher la liste des commentaires"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
@@ -1842,6 +1929,7 @@ msgid "onboarding.choice.team-up.invite-members-desc"
 msgstr ""
 "Vous pourrez également inviter des membres et changer les rôles plus tard "
 "dans la section équipe."
+
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Créer une équipe et inviter plus tard"
 
@@ -1856,8 +1944,8 @@ msgstr "Open Source"
 
 msgid "onboarding.contrib.desc1"
 msgstr ""
-"Penpot est Open Source, conçu par et pour la communauté. Si vous vous voulez "
-"contribuer, vous êtes les bienvenus !"
+"Penpot est Open Source, conçu par et pour la communauté. Si vous vous "
+"voulez contribuer, vous êtes les bienvenus !"
 
 msgid "onboarding.contrib.desc2.1"
 msgstr "Vous pouvez accéder au"
@@ -1885,6 +1973,106 @@ msgstr ""
 "Abonnez-vous à notre newsletter pour être tenu informé du développement et "
 "de notre actualité."
 
+msgid "onboarding.newsletter.policy"
+msgstr "Politique de confidentialité."
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "Parce que nous nous soucions de la vie privée, voici notre "
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"Nous ne vous enverrons que des e-mails pertinents. Vous pouvez vous "
+"désabonner à tout moment via votre profil d’utilisateur ou via le lien de "
+"désabonnement dans l’une de nos newsletters."
+
+msgid "onboarding.newsletter.title"
+msgstr "Vous souhaitez recevoir les actualités de Penpot ?"
+
+msgid "onboarding.slide.0.alt"
+msgstr "Créer des designs"
+
+msgid "onboarding.slide.0.desc1"
+msgstr ""
+"Créez des interfaces utilisateur magnifiques en collaboration avec tous les "
+"membres de l'équipe."
+
+msgid "onboarding.slide.0.desc2"
+msgstr ""
+"Maintenez une cohérence globale grâce aux composants, librairies et design "
+"systems."
+
+msgid "onboarding.slide.0.title"
+msgstr "Designer des libraires, styles and composants"
+
+msgid "onboarding.slide.1.alt"
+msgstr "Prototypes interactifs"
+
+msgid "onboarding.slide.1.desc1"
+msgstr "Créer des interactions complexes pour simuler le comportement final."
+
+msgid "onboarding.slide.1.desc2"
+msgstr ""
+"Partagez avec les parties prenantes, présentez des propositions à votre "
+"équipe et lancez des tests utilisateurs avec vos conceptions, le tout à un "
+"seul endroit."
+
+msgid "onboarding.slide.1.title"
+msgstr "Donnez vie à vos conceptions avec des interactions"
+
+msgid "onboarding.slide.2.alt"
+msgstr "Recueillez des avis"
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"Tous les membres de l'équipe peuvent travailler simultanément grâce à la "
+"conception collaborative en temps réel et aux commentaires, idées et "
+"réactions rassemblées et centralisées."
+
+msgid "onboarding.slide.2.title"
+msgstr "Recueillez des avis, présentez et partagez votre travail"
+
+msgid "onboarding.slide.3.alt"
+msgstr "Handoff et lowcode"
+
+msgid "onboarding.slide.3.desc1"
+msgstr ""
+"Synchronisez le design et le code de tous vos composants et styles et "
+"générez des extraits de code."
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"Obtenez et fournissez des spécifications de code comme le balisage (SVG, "
+"HTML) ou de style (CSS, Less, Stylus…)."
+
+msgid "onboarding.slide.3.title"
+msgstr "Un référentiel unique de contenus"
+
+msgid "onboarding.templates.subtitle"
+msgstr "Voici quelques modèles."
+
+msgid "onboarding.templates.title"
+msgstr "Commencer à concevoir"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+msgid "onboarding.welcome.desc1"
+msgstr "Hourra ! Vous êtes déjà un utilisateur de Penpot :)"
+
+msgid "onboarding.welcome.desc2"
+msgstr ""
+"Penpot en est à sa première version bêta grâce à son ensemble de "
+"fonctionnalités de base, sa maturité, sa stabilité et aux retours très "
+"positifs de la communauté, à laquelle vous êtes plus que bienvenu."
+
+msgid "onboarding.welcome.desc3"
+msgstr ""
+"Pendant que vous appréciez Penpot dans son état actuel, nous continuerons à "
+"l'améliorer, en publiant fréquemment nos projets prometteurs."
+
+msgid "onboarding.welcome.title"
+msgstr "Bienvenue chez Penpot"
+
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
 msgstr "Aller à la page de connexion"
@@ -1897,6 +2085,378 @@ msgstr "Aller à la page de connexion"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Divers"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Bases"
+
+msgid "shortcut-section.dashboard"
+msgstr "Tableau de bord"
+
+msgid "shortcut-section.viewer"
+msgstr "Spectateur"
+
+msgid "shortcut-section.workspace"
+msgstr "Espace de travail"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Alignement"
+
+msgid "shortcut-subsection.edit"
+msgstr "Modifier"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Générique"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Générique"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Menu principal"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "Modifier les calques"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navigation"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navigation"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Navigation"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Tracés"
+
+msgid "shortcut-subsection.shape"
+msgstr "Formes"
+
+msgid "shortcut-subsection.tools"
+msgstr "Outils"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zoom"
+
+msgid "shortcuts.add-comment"
+msgstr "Commentaires"
+
+msgid "shortcuts.add-node"
+msgstr "Ajouter un nœud"
+
+msgid "shortcuts.align-bottom"
+msgstr "Aligner en bas"
+
+msgid "shortcuts.align-hcenter"
+msgstr "Aligner horizontalement au centre"
+
+msgid "shortcuts.align-left"
+msgstr "Aligner à gauche"
+
+msgid "shortcuts.align-right"
+msgstr "Aligner à droite"
+
+msgid "shortcuts.align-top"
+msgstr "Aligner en haut"
+
+msgid "shortcuts.align-vcenter"
+msgstr "Aligner verticalement au centre"
+
+msgid "shortcuts.artboard-selection"
+msgstr "Créer un plan de travail à partir de la sélection"
+
+msgid "shortcuts.bool-difference"
+msgstr "Soustraction booléenne"
+
+msgid "shortcuts.bool-exclude"
+msgstr "Exclusion booléenne"
+
+msgid "shortcuts.bool-intersection"
+msgstr "Intersection booléenne"
+
+msgid "shortcuts.bool-union"
+msgstr "Union booléenne"
+
+msgid "shortcuts.bring-back"
+msgstr "Mettre à l'arrière-plan"
+
+msgid "shortcuts.bring-backward"
+msgstr "Déplacer en arrière"
+
+msgid "shortcuts.bring-forward"
+msgstr "Déplacer vers l'avant"
+
+msgid "shortcuts.bring-front"
+msgstr "Mettre au premier plan"
+
+msgid "shortcuts.clear-undo"
+msgstr "Rétablir"
+
+msgid "shortcuts.copy"
+msgstr "Copier"
+
+msgid "shortcuts.create-component"
+msgstr "Créer un composant"
+
+msgid "shortcuts.create-new-project"
+msgstr "Créer"
+
+msgid "shortcuts.cut"
+msgstr "Couper"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "Dézoomer"
+
+msgid "shortcuts.delete"
+msgstr "Supprimer"
+
+msgid "shortcuts.delete-node"
+msgstr "Supprimer le nœud"
+
+msgid "shortcuts.detach-component"
+msgstr "Détacher le composant"
+
+msgid "shortcuts.draw-curve"
+msgstr "Courbe"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "Ellipse"
+
+msgid "shortcuts.draw-frame"
+msgstr "Plan de travail"
+
+msgid "shortcuts.draw-nodes"
+msgstr "Dessiner un tracé"
+
+msgid "shortcuts.draw-path"
+msgstr "Tracé"
+
+msgid "shortcuts.draw-rect"
+msgstr "Rectangle"
+
+msgid "shortcuts.draw-text"
+msgstr "Texte"
+
+msgid "shortcuts.duplicate"
+msgstr "Dupliquer"
+
+msgid "shortcuts.escape"
+msgstr "Annuler"
+
+msgid "shortcuts.export-shapes"
+msgstr "Exporter les formes"
+
+msgid "shortcuts.fit-all"
+msgstr "Zoom ajusté"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Retourner horizontalement"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Retourner verticalement"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Accéder aux brouillons"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Accéder aux bibliothèques partagées"
+
+msgid "shortcuts.go-to-search"
+msgstr "Recherche"
+
+msgid "shortcuts.group"
+msgstr "Grouper"
+
+msgid "shortcuts.h-distribute"
+msgstr "Répartir horizontalement"
+
+msgid "shortcuts.hide-ui"
+msgstr "Afficher/masquer l'interface utilisateur"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Zoom avant"
+
+msgid "shortcuts.insert-image"
+msgstr "Insérer une image"
+
+msgid "shortcuts.join-nodes"
+msgstr "Joindre les nœuds"
+
+msgid "shortcuts.make-curve"
+msgstr "Faire une courbe"
+
+msgid "shortcuts.mask"
+msgstr "Masque"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Fusionner les nœuds"
+
+msgid "shortcuts.move"
+msgstr "Déplacer"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Déplacement rapide vers le bas"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Déplacement rapide vers la gauche"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Déplacez-vous rapidement vers la droite"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Déplacement rapide vers le haut"
+
+msgid "shortcuts.move-nodes"
+msgstr "Déplacer le nœud"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Déplacer vers la gauche"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Déplacer vers la droite"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Déplacer vers le haut"
+
+msgid "shortcuts.next-frame"
+msgstr "Plan de travail suivant"
+
+msgid "shortcuts.not-found"
+msgstr "Aucun raccourci trouvé"
+
+msgid "shortcuts.opacity-0"
+msgstr "Définir l'opacité à 100%"
+
+msgid "shortcuts.opacity-1"
+msgstr "Définir l'opacité à 10%"
+
+msgid "shortcuts.opacity-2"
+msgstr "Définir l'opacité à 20%"
+
+msgid "shortcuts.opacity-3"
+msgstr "Définir l'opacité à 30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "Définir l'opacité à 40%"
+
+msgid "shortcuts.opacity-5"
+msgstr "Définir l'opacité à 50%"
+
+msgid "shortcuts.opacity-6"
+msgstr "Définir l'opacité à 60%"
+
+msgid "shortcuts.opacity-7"
+msgstr "Définir l'opacité à 70%"
+
+msgid "shortcuts.opacity-8"
+msgstr "Définir l'opacité à 80%"
+
+msgid "shortcuts.opacity-9"
+msgstr "Définir l'opacité à 90%"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Sélecteur de couleurs"
+
+msgid "shortcuts.open-comments"
+msgstr "Accéder aux commentaires des spectateurs"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Accéder au tableau de bord"
+
+msgid "shortcuts.open-handoff"
+msgstr "Accéder à la section Handoff des spectateurs"
+
+msgid "shortcuts.open-interactions"
+msgstr "Accéder aux interactions des spectateurs"
+
+msgid "shortcuts.open-viewer"
+msgstr "Accéder aux interactions des spectateurs"
+
+msgid "shortcuts.open-workspace"
+msgstr "Accéder à l’espace de travail"
+
+msgid "shortcuts.or"
+msgstr " ou "
+
+msgid "shortcuts.paste"
+msgstr "Coller"
+
+msgid "shortcuts.prev-frame"
+msgstr "Plan de travail précédent"
+
+msgid "shortcuts.redo"
+msgstr "Rétablir"
+
+msgid "shortcuts.reset-zoom"
+msgstr "Réinitialiser le zoom"
+
+msgid "shortcuts.search-placeholder"
+msgstr "Rechercher des raccourcis"
+
+msgid "shortcuts.select-all"
+msgstr "Tout sélectionner"
+
+msgid "shortcuts.separate-nodes"
+msgstr "Séparer les nœuds"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "Afficher/masquer la grille de pixels"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "Afficher/masquer les raccourcis"
+
+msgid "shortcuts.snap-nodes"
+msgstr "Aligner sur les nœuds"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Aligner sur la grille de pixels"
+
+msgid "shortcuts.start-editing"
+msgstr "Commencer l'édition"
+
+msgid "shortcuts.start-measure"
+msgstr "Commencer la mesure"
+
+msgid "shortcuts.stop-measure"
+msgstr "Arrêter la mesure"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Définir les vignettes"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "Raccourcis clavier"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Activer/désactiver l'alignement dynamique"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Activer/désactiver les ressources"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Activer/désactiver la palette de couleurs"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Activer/désactiver le mode focus"
+
+msgid "shortcuts.toggle-grid"
+msgstr "Afficher/masquer la grille"
+
+msgid "shortcuts.toggle-history"
+msgstr "Activer/désactiver l'historique"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Activer/désactiver les calques"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Verrouiller les proportions"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Afficher/masquer les règles"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -2471,9 +3031,7 @@ msgstr "Export"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgid_plural ""
-msgstr[0] "Exporter l'élément"
-msgstr[1] "Exporter les %s éléments"
+msgstr "Exporter l'élément"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3225,562 +3783,3 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
-
-msgid "shortcuts.add-node"
-msgstr "Ajouter un nœud"
-
-msgid "shortcuts.copy"
-msgstr "Copier"
-
-msgid "shortcuts.fit-all"
-msgstr "Zoom ajusté"
-
-msgid "shortcuts.increase-zoom"
-msgstr "Zoom avant"
-
-msgid "shortcuts.join-nodes"
-msgstr "Joindre les nœuds"
-
-msgid "shortcuts.opacity-7"
-msgstr "Définir l'opacité à 70%"
-
-msgid "shortcuts.open-color-picker"
-msgstr "Sélecteur de couleurs"
-
-msgid "shortcuts.toggle-alignment"
-msgstr "Activer/désactiver l'alignement dynamique"
-
-msgid "shortcuts.toggle-assets"
-msgstr "Activer/désactiver les ressources"
-
-msgid "shortcut-subsection.zoom-workspace"
-msgstr "Zoom"
-
-msgid "shortcuts.bring-back"
-msgstr "Mettre à l'arrière-plan"
-
-msgid "shortcuts.bring-front"
-msgstr "Mettre au premier plan"
-
-msgid "shortcuts.bring-backward"
-msgstr "Déplacer en arrière"
-
-msgid "shortcuts.clear-undo"
-msgstr "Rétablir"
-
-msgid "shortcuts.create-component"
-msgstr "Créer un composant"
-
-msgid "shortcuts.add-comment"
-msgstr "Commentaires"
-
-msgid "shortcut-subsection.edit"
-msgstr "Modifier"
-
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Générique"
-
-msgid "shortcut-subsection.main-menu"
-msgstr "Menu principal"
-
-msgid "shortcut-subsection.navigation-dashboard"
-msgstr "Navigation"
-
-msgid "shortcut-subsection.general-viewer"
-msgstr "Générique"
-
-msgid "shortcut-subsection.navigation-viewer"
-msgstr "Navigation"
-
-msgid "shortcut-subsection.navigation-workspace"
-msgstr "Navigation"
-
-msgid "shortcuts.insert-image"
-msgstr "Insérer une image"
-
-msgid "shortcuts.move-unit-left"
-msgstr "Déplacer vers la gauche"
-
-msgid "shortcuts.move-unit-right"
-msgstr "Déplacer vers la droite"
-
-msgid "shortcuts.open-comments"
-msgstr "Accéder aux commentaires des spectateurs"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
-msgid "shortcuts.title"
-msgstr "Raccourcis clavier"
-
-msgid "shortcuts.start-measure"
-msgstr "Commencer la mesure"
-
-msgid "shortcuts.show-pixel-grid"
-msgstr "Afficher/masquer la grille de pixels"
-
-msgid "shortcuts.show-shortcuts"
-msgstr "Afficher/masquer les raccourcis"
-
-msgid "shortcuts.start-editing"
-msgstr "Commencer l'édition"
-
-msgid "shortcuts.snap-nodes"
-msgstr "Aligner sur les nœuds"
-
-msgid "shortcuts.snap-pixel-grid"
-msgstr "Aligner sur la grille de pixels"
-
-msgid "shortcuts.stop-measure"
-msgstr "Arrêter la mesure"
-
-msgid "shortcuts.thumbnail-set"
-msgstr "Définir les vignettes"
-
-msgid "shortcuts.align-bottom"
-msgstr "Aligner en bas"
-
-msgid "shortcuts.hide-ui"
-msgstr "Afficher/masquer l'interface utilisateur"
-
-msgid "shortcuts.go-to-libs"
-msgstr "Accéder aux bibliothèques partagées"
-
-msgid "shortcuts.bool-union"
-msgstr "Union booléenne"
-
-msgid "shortcuts.export-shapes"
-msgstr "Exporter les formes"
-
-msgid "shortcuts.group"
-msgstr "Grouper"
-
-msgid "shortcuts.flip-horizontal"
-msgstr "Retourner horizontalement"
-
-msgid "shortcuts.go-to-drafts"
-msgstr "Accéder aux brouillons"
-
-msgid "shortcuts.make-curve"
-msgstr "Faire une courbe"
-
-msgid "shortcuts.mask"
-msgstr "Masque"
-
-msgid "shortcuts.h-distribute"
-msgstr "Répartir horizontalement"
-
-msgid "onboarding.slide.2.alt"
-msgstr "Recueillez des avis"
-
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Tous les membres de l'équipe peuvent travailler simultanément grâce à la "
-"conception collaborative en temps réel et aux commentaires, idées et "
-"réactions rassemblées et centralisées."
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Obtenez et fournissez des spécifications de code comme le balisage (SVG, "
-"HTML) ou de style (CSS, Less, Stylus…)."
-
-msgid "onboarding.templates.subtitle"
-msgstr "Voici quelques modèles."
-
-msgid "onboarding.templates.title"
-msgstr "Commencer à concevoir"
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Pendant que vous appréciez Penpot dans son état actuel, nous continuerons à "
-"l'améliorer, en publiant fréquemment nos projets prometteurs."
-
-msgid "onboarding.slide.3.alt"
-msgstr "Handoff et lowcode"
-
-msgid "onboarding.welcome.title"
-msgstr "Bienvenue chez Penpot"
-
-msgid "common.share-link.all-users"
-msgstr "Tous les utilisateurs de Penpot"
-
-msgid "common.share-link.current-tag"
-msgstr "(actuel)"
-
-msgid "common.share-link.destroy-link"
-msgstr "Supprimer le lien"
-
-msgid "common.share-link.manage-ops"
-msgstr "Modifier les permissions"
-
-msgid "common.share-link.permissions-can-comment"
-msgstr "Peut commenter"
-
-msgid "common.share-link.permissions-can-inspect"
-msgstr "Peut inspecter le code"
-
-msgid "common.share-link.permissions-pages"
-msgstr "Pages partagées"
-
-msgid "common.share-link.page-shared"
-msgid_plural "common.share-link.page-shared"
-msgstr[0] "1 page partagée"
-msgstr[1] "%s pages partagées"
-
-msgid "common.share-link.team-members"
-msgstr "Seulement les membres de l'équipe"
-
-msgid "common.share-link.view-all"
-msgstr "Tout sélectionner"
-
-msgid "dashboard.export-binary-multi"
-msgstr "Télécharger %s fichiers Penpot (.penpot)"
-
-msgid "dashboard.download-binary-file"
-msgstr "Télécharger le fichier Penpot (.penpot)"
-
-msgid "dashboard.download-standard-file"
-msgstr "Télécharger le fichier standard (.svg + .json)"
-
-msgid "dashboard.export-standard-multi"
-msgstr "Télécharger %s fichiers standards (.svg + .json)"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.auth-provider-not-configured"
-msgstr "Fournisseur d'authentification non configuré."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-go-to"
-msgstr "Accéder au forum Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-subtitle1"
-msgstr ""
-"Nous sommes heureux de vous avoir ici. Si vous avez besoin d'aide, merci "
-"d'effectuer une recherche avant de poster."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-title"
-msgstr "Communauté Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-go-to"
-msgstr "Accéder à Twitter"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-subtitle1"
-msgstr "Nous sommes là pour répondre à vos questions techniques."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-title"
-msgstr "Compte d’assistance Twitter"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.community"
-msgstr "Communauté"
-
-msgid "labels.continue-with-penpot"
-msgstr "Vous pouvez continuer avec un compte Penpot"
-
-msgid "labels.log-or-sign"
-msgstr "Se connecter ou s'inscrire"
-
-msgid "labels.show-comments-list"
-msgstr "Afficher la liste des commentaires"
-
-msgid "shortcut-subsection.shape"
-msgstr "Formes"
-
-msgid "shortcut-subsection.tools"
-msgstr "Outils"
-
-msgid "shortcut-subsection.zoom-viewer"
-msgstr "Zoom"
-
-msgid "onboarding.slide.3.desc1"
-msgstr ""
-"Synchronisez le design et le code de tous vos composants et styles et "
-"générez des extraits de code."
-
-msgid "shortcut-subsection.path-editor"
-msgstr "Tracés"
-
-msgid "shortcuts.align-hcenter"
-msgstr "Aligner horizontalement au centre"
-
-msgid "shortcuts.align-left"
-msgstr "Aligner à gauche"
-
-msgid "shortcuts.align-right"
-msgstr "Aligner à droite"
-
-msgid "shortcuts.align-top"
-msgstr "Aligner en haut"
-
-msgid "shortcuts.bring-forward"
-msgstr "Déplacer vers l'avant"
-
-msgid "shortcuts.cut"
-msgstr "Couper"
-
-msgid "shortcuts.align-vcenter"
-msgstr "Aligner verticalement au centre"
-
-msgid "shortcuts.artboard-selection"
-msgstr "Créer un plan de travail à partir de la sélection"
-
-msgid "shortcuts.bool-difference"
-msgstr "Soustraction booléenne"
-
-msgid "shortcuts.bool-exclude"
-msgstr "Exclusion booléenne"
-
-msgid "shortcuts.bool-intersection"
-msgstr "Intersection booléenne"
-
-msgid "shortcuts.create-new-project"
-msgstr "Créer"
-
-msgid "shortcuts.draw-frame"
-msgstr "Plan de travail"
-
-msgid "shortcuts.draw-nodes"
-msgstr "Dessiner un tracé"
-
-msgid "shortcuts.flip-vertical"
-msgstr "Retourner verticalement"
-
-msgid "shortcuts.merge-nodes"
-msgstr "Fusionner les nœuds"
-
-msgid "shortcuts.move"
-msgstr "Déplacer"
-
-msgid "shortcuts.move-fast-down"
-msgstr "Déplacement rapide vers le bas"
-
-msgid "shortcuts.move-nodes"
-msgstr "Déplacer le nœud"
-
-msgid "shortcuts.move-unit-up"
-msgstr "Déplacer vers le haut"
-
-msgid "shortcuts.next-frame"
-msgstr "Plan de travail suivant"
-
-msgid "shortcuts.not-found"
-msgstr "Aucun raccourci trouvé"
-
-msgid "shortcuts.opacity-0"
-msgstr "Définir l'opacité à 100%"
-
-msgid "shortcuts.opacity-1"
-msgstr "Définir l'opacité à 10%"
-
-msgid "shortcuts.opacity-2"
-msgstr "Définir l'opacité à 20%"
-
-msgid "shortcuts.opacity-3"
-msgstr "Définir l'opacité à 30%"
-
-msgid "shortcuts.opacity-8"
-msgstr "Définir l'opacité à 80%"
-
-msgid "shortcuts.opacity-9"
-msgstr "Définir l'opacité à 90%"
-
-msgid "shortcuts.open-dashboard"
-msgstr "Accéder au tableau de bord"
-
-msgid "shortcuts.open-handoff"
-msgstr "Accéder à la section Handoff des spectateurs"
-
-msgid "shortcuts.or"
-msgstr " ou "
-
-msgid "shortcuts.search-placeholder"
-msgstr "Rechercher des raccourcis"
-
-msgid "shortcuts.select-all"
-msgstr "Tout sélectionner"
-
-msgid "shortcuts.separate-nodes"
-msgstr "Séparer les nœuds"
-
-msgid "shortcuts.toggle-colorpalette"
-msgstr "Activer/désactiver la palette de couleurs"
-
-msgid "shortcuts.toggle-focus-mode"
-msgstr "Activer/désactiver le mode focus"
-
-msgid "shortcuts.toggle-grid"
-msgstr "Afficher/masquer la grille"
-
-msgid "onboarding.newsletter.title"
-msgstr "Vous souhaitez recevoir les actualités de Penpot ?"
-
-msgid "onboarding.slide.0.alt"
-msgstr "Créer des designs"
-
-msgid "onboarding.newsletter.policy"
-msgstr "Politique de confidentialité."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Parce que nous nous soucions de la vie privée, voici notre "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Nous ne vous enverrons que des e-mails pertinents. Vous pouvez vous "
-"désabonner à tout moment via votre profil d’utilisateur ou via le lien de "
-"désabonnement dans l’une de nos newsletters."
-
-msgid "onboarding.slide.0.desc1"
-msgstr ""
-"Créez des interfaces utilisateur magnifiques en collaboration avec tous les "
-"membres de l'équipe."
-
-msgid "onboarding.slide.1.title"
-msgstr "Donnez vie à vos conceptions avec des interactions"
-
-msgid "onboarding.slide.2.title"
-msgstr "Recueillez des avis, présentez et partagez votre travail"
-
-msgid "onboarding.slide.1.desc2"
-msgstr ""
-"Partagez avec les parties prenantes, présentez des propositions à votre "
-"équipe et lancez des tests utilisateurs avec vos conceptions, le tout à un "
-"seul endroit."
-
-msgid "onboarding.slide.3.title"
-msgstr "Un référentiel unique de contenus"
-
-msgid "shortcuts.decrease-zoom"
-msgstr "Dézoomer"
-
-msgid "shortcuts.delete"
-msgstr "Supprimer"
-
-msgid "shortcuts.delete-node"
-msgstr "Supprimer le nœud"
-
-msgid "shortcuts.detach-component"
-msgstr "Détacher le composant"
-
-msgid "shortcuts.draw-curve"
-msgstr "Courbe"
-
-msgid "shortcuts.draw-ellipse"
-msgstr "Ellipse"
-
-msgid "shortcuts.draw-path"
-msgstr "Tracé"
-
-msgid "shortcuts.draw-rect"
-msgstr "Rectangle"
-
-msgid "shortcuts.draw-text"
-msgstr "Texte"
-
-msgid "shortcuts.duplicate"
-msgstr "Dupliquer"
-
-msgid "shortcuts.escape"
-msgstr "Annuler"
-
-msgid "shortcuts.go-to-search"
-msgstr "Recherche"
-
-msgid "shortcuts.move-fast-left"
-msgstr "Déplacement rapide vers la gauche"
-
-msgid "shortcuts.move-fast-right"
-msgstr "Déplacez-vous rapidement vers la droite"
-
-msgid "shortcuts.move-fast-up"
-msgstr "Déplacement rapide vers le haut"
-
-msgid "shortcuts.opacity-4"
-msgstr "Définir l'opacité à 40%"
-
-msgid "shortcuts.opacity-5"
-msgstr "Définir l'opacité à 50%"
-
-msgid "shortcuts.opacity-6"
-msgstr "Définir l'opacité à 60%"
-
-msgid "shortcuts.open-interactions"
-msgstr "Accéder aux interactions des spectateurs"
-
-msgid "shortcuts.open-viewer"
-msgstr "Accéder aux interactions des spectateurs"
-
-msgid "shortcuts.open-workspace"
-msgstr "Accéder à l’espace de travail"
-
-msgid "shortcuts.paste"
-msgstr "Coller"
-
-msgid "shortcuts.prev-frame"
-msgstr "Plan de travail précédent"
-
-msgid "shortcuts.redo"
-msgstr "Rétablir"
-
-msgid "shortcuts.reset-zoom"
-msgstr "Réinitialiser le zoom"
-
-msgid "shortcuts.toggle-history"
-msgstr "Activer/désactiver l'historique"
-
-msgid "shortcuts.toggle-layers"
-msgstr "Activer/désactiver les calques"
-
-msgid "shortcuts.toggle-lock-size"
-msgstr "Verrouiller les proportions"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Afficher/masquer les règles"
-
-# SECTIONS
-msgid "shortcut-section.basics"
-msgstr "Bases"
-
-msgid "shortcut-section.dashboard"
-msgstr "Tableau de bord"
-
-msgid "shortcut-section.viewer"
-msgstr "Spectateur"
-
-msgid "shortcut-section.workspace"
-msgstr "Espace de travail"
-
-# SUBSECTIONS
-msgid "shortcut-subsection.alignment"
-msgstr "Alignement"
-
-msgid "shortcut-subsection.modify-layers"
-msgstr "Modifier les calques"
-
-msgid "onboarding.slide.1.alt"
-msgstr "Prototypes interactifs"
-
-msgid "onboarding.slide.0.desc2"
-msgstr ""
-"Maintenez une cohérence globale grâce aux composants, librairies et design "
-"systems."
-
-msgid "onboarding.slide.0.title"
-msgstr "Designer des libraires, styles and composants"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Créer des interactions complexes pour simuler le comportement final."
-
-msgid "onboarding.welcome.alt"
-msgstr "Penpot"
-
-msgid "onboarding.welcome.desc1"
-msgstr "Hourra ! Vous êtes déjà un utilisateur de Penpot :)"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot en est à sa première version bêta grâce à son ensemble de "
-"fonctionnalités de base, sa maturité, sa stabilité et aux retours très "
-"positifs de la communauté, à laquelle vous êtes plus que bienvenu."

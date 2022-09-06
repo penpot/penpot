@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-06 06:05+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
-"de/>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -174,10 +174,19 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Wir haben eine Bestätigungs-E-Mail gesendet an"
 
+msgid "common.share-link.all-users"
+msgstr "Alle Penpot-Benutzer"
+
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Sind Sie sicher, dass Sie diesen Link löschen möchten? Wenn Sie das tun, "
 "wird er für niemanden mehr verfügbar sein"
+
+msgid "common.share-link.current-tag"
+msgstr "(aktuell)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Link entfernen"
 
 msgid "common.share-link.get-link"
 msgstr "Link erstellen"
@@ -188,14 +197,37 @@ msgstr "Link wurde erfolgreich kopiert"
 msgid "common.share-link.link-deleted-success"
 msgstr "Link wurde erfolgreich gelöscht"
 
+msgid "common.share-link.manage-ops"
+msgstr "Verwalten von Berechtigungen"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 Seite freigegeben"
+msgstr[1] "%s Seiten freigegeben"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Können kommentieren"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Können den Code ansehen"
+
 msgid "common.share-link.permissions-hint"
 msgstr "Jeder mit dem Link kann auf die Datei zugreifen"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Geteilte Seiten"
 
 msgid "common.share-link.placeholder"
 msgstr "Link zum Teilen wird hier erscheinen"
 
+msgid "common.share-link.team-members"
+msgstr "Nur Teammitglieder"
+
 msgid "common.share-link.title"
 msgstr "Prototypen teilen"
+
+msgid "common.share-link.view-all"
+msgstr "Alle auswählen"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -222,6 +254,12 @@ msgstr "Ihr Penpot"
 msgid "dashboard.delete-team"
 msgstr "Team löschen"
 
+msgid "dashboard.download-binary-file"
+msgstr "Penpot-Datei herunterladen (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Standarddatei herunterladen (.svg + .json)"
+
 msgid "dashboard.draft-title"
 msgstr "Entwurf"
 
@@ -244,6 +282,9 @@ msgstr ""
 "Hier gibt es noch keine Dateien. Wenn Sie einige Vorlagen ausprobieren "
 "möchten, können Sie zum Abschnitt [Bibliotheken & "
 "Vorlagen](https://penpot.app/libraries-templates.html) gehen"
+
+msgid "dashboard.export-binary-multi"
+msgstr "%s Penpot-Dateien herunterladen (.penpot)"
 
 msgid "dashboard.export-frames"
 msgstr "Zeichenflächen als PDF exportieren…"
@@ -283,6 +324,9 @@ msgstr "Auswahl exportieren"
 
 msgid "dashboard.export-single"
 msgstr "Datei exportieren"
+
+msgid "dashboard.export-standard-multi"
+msgstr "%s Standarddateien herunterladen (.svg + .json)"
 
 msgid "dashboard.export.detail"
 msgstr "* kann Komponenten, Grafiken, Farben und/oder Textstile enthalten."
@@ -638,6 +682,10 @@ msgstr "Sind Sie sicher?"
 msgid "ds.updated-at"
 msgstr "Aktualisiert: %s"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Authentifizierungsanbieter ist nicht konfiguriert."
+
 msgid "errors.auth.unable-to-login"
 msgstr "Anscheinend sind Sie nicht authentifiziert oder die Sitzung ist abgelaufen."
 
@@ -683,6 +731,13 @@ msgstr "Die Authentifizierung mit Google ist im Backend deaktiviert"
 #: src/app/main/ui/components/color_input.cljs
 msgid "errors.invalid-color"
 msgstr "Ungültige Farbe"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Einladung ist ungültig"
+
+msgid "errors.invite-invalid.info"
+msgstr "Diese Einladung wurde möglicherweise abgebrochen oder ist abgelaufen."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
@@ -787,6 +842,20 @@ msgid "feedback.description"
 msgstr "Beschreibung"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Zum Penpot-Forum wechseln"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Wir sind froh, dass Sie hier sind. Wenn Sie Hilfe benötigen, verwenden Sie "
+"die Suchfunktion, bevor Sie einen Beitrag schreiben."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Penpot-Community"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Betreff"
 
@@ -800,6 +869,18 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "E-Mail"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Zu Twitter wechseln"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Hier helfen wir Ihnen bei technischen Fragen."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Twitter Support-Konto"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1020,6 +1101,10 @@ msgstr "Info"
 msgid "history.alert-message"
 msgstr "Sie sehen Version %s"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Tastenkürzel"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.about-penpot"
 msgstr "Über Penpot"
@@ -1040,6 +1125,9 @@ msgstr "Alles"
 
 msgid "labels.and"
 msgstr "und"
+
+msgid "labels.back"
+msgstr "Zurück"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
@@ -1065,6 +1153,10 @@ msgstr "Schließen"
 msgid "labels.comments"
 msgstr "Kommentare"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Community"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Passwort bestätigen"
@@ -1077,6 +1169,9 @@ msgstr "Weiter"
 
 msgid "labels.continue-with"
 msgstr "Weiter mit"
+
+msgid "labels.continue-with-penpot"
+msgstr "Sie können mit einem Penpot-Konto fortfahren"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1171,6 +1266,10 @@ msgstr "Stile"
 msgid "labels.fonts"
 msgstr "Schriftarten"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Github-Repository"
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/settings/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -1222,6 +1321,9 @@ msgstr "Bibliotheken & Vorlagen"
 
 msgid "labels.link"
 msgstr "Link"
+
+msgid "labels.log-or-sign"
+msgstr "Einloggen oder anmelden"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -1409,6 +1511,9 @@ msgstr "Gemeinsam genutzte Bibliotheken"
 msgid "labels.show-all-comments"
 msgstr "Alle Kommentare anzeigen"
 
+msgid "labels.show-comments-list"
+msgstr "Kommentarliste anzeigen"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Nur eigene Kommentare anzeigen"
@@ -1426,6 +1531,10 @@ msgstr "Start"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
 msgstr "Status"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Tutorials"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
@@ -1483,6 +1592,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
 msgstr "Hinzufügen von “%s” als gemeinsam genutzte Bibliothek"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "Maximal"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.confirm-email"
@@ -1686,6 +1799,10 @@ msgstr "Sind Sie sicher, dass Sie dieses Team verlassen wollen?"
 msgid "modals.leave-confirm.title"
 msgstr "Team verlassen"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "Verschiebung"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
 msgstr "Befördern"
@@ -1720,6 +1837,10 @@ msgstr ""
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr "Entfernen Sie “%s” als gemeinsam genutzte Bibliothek"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Minimal"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -1774,6 +1895,29 @@ msgstr "Profil erfolgreich gespeichert!"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "notifications.validation-email-sent"
 msgstr "Verifizierungs-E-Mail an %s gesendet. Prüfen Sie Ihren Posteingang!"
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "Ihr Teamname"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "Nach der Bennenung Ihres Teams, können Sie andere Personen einladen."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Geben Sie den Namen des Teams ein"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Mitglieder einladen"
+
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr ""
+"Im Teambereich können Sie auch später Mitglieder einladen und die Rollen "
+"ändern."
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "Team erstellen und später einladen"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "Team erstellen und Einladungen versenden"
 
 msgid "onboarding.choice.title"
 msgstr "Willkommen bei Penpot"
@@ -1873,6 +2017,9 @@ msgstr ""
 msgid "onboarding.slide.2.title"
 msgstr "Holen Sie sich Feedback, präsentieren und teilen Sie Ihre Entwürfe"
 
+msgid "onboarding.slide.3.alt"
+msgstr "Übergabe und Lowcode"
+
 msgid "onboarding.slide.3.desc1"
 msgstr ""
 "Synchronisieren Sie das Design und den Code all Ihrer Komponenten und Stile "
@@ -1955,6 +2102,230 @@ msgstr "Zur Anmeldung"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Mehrere"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Grundlagen"
+
+msgid "shortcut-section.dashboard"
+msgstr "Dashboard"
+
+msgid "shortcut-section.viewer"
+msgstr "Ansicht"
+
+msgid "shortcut-section.workspace"
+msgstr "Arbeitsbereich"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Ausrichtung"
+
+msgid "shortcut-subsection.edit"
+msgstr "Bearbeiten"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Allgemein"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Allgemein"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Hauptmenü"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "Ändern von Ebenen"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navigation"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navigation"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Navigation"
+
+msgid "shortcut-subsection.panels"
+msgstr "Paneele"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Pfade"
+
+msgid "shortcut-subsection.shape"
+msgstr "Formen"
+
+msgid "shortcut-subsection.tools"
+msgstr "Werkzeuge"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zoom"
+
+msgid "shortcuts.add-comment"
+msgstr "Kommentare"
+
+msgid "shortcuts.add-node"
+msgstr "Punkt hinzufügen"
+
+msgid "shortcuts.align-bottom"
+msgstr "Unten ausrichten"
+
+msgid "shortcuts.align-hcenter"
+msgstr "Horizontal zentrieren"
+
+msgid "shortcuts.align-left"
+msgstr "Linksbündig ausrichten"
+
+msgid "shortcuts.align-right"
+msgstr "Rechtsbündig ausrichten"
+
+msgid "shortcuts.align-top"
+msgstr "Oben ausrichten"
+
+msgid "shortcuts.align-vcenter"
+msgstr "Mittig ausrichten (vertikal)"
+
+msgid "shortcuts.artboard-selection"
+msgstr "Zeichenfläche aus Auswahl erstellen"
+
+msgid "shortcuts.bool-difference"
+msgstr "Subtrahieren (Booleschen Operation)"
+
+msgid "shortcuts.bring-front"
+msgstr "In den Vordergrund"
+
+msgid "shortcuts.clear-undo"
+msgstr "Verlauf löschen"
+
+msgid "shortcuts.copy"
+msgstr "Kopieren"
+
+msgid "shortcuts.create-component"
+msgstr "Komponente erstellen"
+
+msgid "shortcuts.create-new-project"
+msgstr "Neues Projekt erstellen"
+
+msgid "shortcuts.cut"
+msgstr "Ausschneiden"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "Auszoomen"
+
+msgid "shortcuts.delete"
+msgstr "Löschen"
+
+msgid "shortcuts.delete-node"
+msgstr "Punkt löschen"
+
+msgid "shortcuts.detach-component"
+msgstr "Komponente lösen"
+
+msgid "shortcuts.draw-curve"
+msgstr "Kurve"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "Ellipse"
+
+msgid "shortcuts.draw-frame"
+msgstr "Board"
+
+msgid "shortcuts.draw-nodes"
+msgstr "Pfad zeichnen"
+
+msgid "shortcuts.draw-path"
+msgstr "Pfad"
+
+msgid "shortcuts.draw-rect"
+msgstr "Rechteck"
+
+msgid "shortcuts.draw-text"
+msgstr "Text"
+
+msgid "shortcuts.duplicate"
+msgstr "Duplizieren"
+
+msgid "shortcuts.escape"
+msgstr "Abbrechen"
+
+msgid "shortcuts.export-shapes"
+msgstr "Formen exportieren"
+
+msgid "shortcuts.fit-all"
+msgstr "Passend zoomen"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Horizontal spiegeln"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Vertikal spiegeln"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Zu den Entwürfen"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Zu gemeinsam genutzten Bibliotheken wechseln"
+
+msgid "shortcuts.go-to-search"
+msgstr "Suchen"
+
+msgid "shortcuts.group"
+msgstr "Gruppieren"
+
+msgid "shortcuts.h-distribute"
+msgstr "Horizontal verteilen"
+
+msgid "shortcuts.hide-ui"
+msgstr "Benutzeroberfläche ein-/ausblenden"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Einzoomen"
+
+msgid "shortcuts.insert-image"
+msgstr "Bild einfügen"
+
+msgid "shortcuts.join-nodes"
+msgstr "Punkte verbinden"
+
+msgid "shortcuts.make-curve"
+msgstr "Kurve erstellen"
+
+msgid "shortcuts.mask"
+msgstr "Maskieren"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Punkte zusammenführen"
+
+msgid "shortcuts.move"
+msgstr "Verschieben"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Schnell nach unten verschieben"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Schnell nach links verschieben"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Schnell nach rechts verschieben"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Schnell nach oben verschieben"
+
+msgid "shortcuts.move-nodes"
+msgstr "Punkte verschieben"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Nach unten verschieben"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Nach links verschieben"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Nach rechts verschieben"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Nach oben verschieben"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -2364,6 +2735,10 @@ msgid "workspace.header.menu.option.file"
 msgstr "Datei"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "Hilfe und Infos"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.preferences"
 msgstr "Präferenzen"
 
@@ -2439,8 +2814,16 @@ msgid "workspace.header.zoom-fit"
 msgstr "Anpassen - Verkleinern zum Einpassen"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "Passend zoomen"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-full-screen"
 msgstr "Vollbild"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "Zur Auswahl zoomen"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -2588,6 +2971,9 @@ msgstr "Auswahl unschärfe"
 msgid "workspace.options.canvas-background"
 msgstr "Hintergrundfarbe"
 
+msgid "workspace.options.clip-content"
+msgstr "Inhalt beschneiden"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "Komponente"
@@ -2699,6 +3085,10 @@ msgstr "Automatisch"
 msgid "workspace.options.grid.column"
 msgstr "Spalten"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "Raster"
+
 msgid "workspace.options.grid.params.color"
 msgstr "Farbe"
 
@@ -2806,6 +3196,10 @@ msgid "workspace.options.interaction-animation-none"
 msgstr "Keine"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Reinfahren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
 msgstr "Hintergrund hinzufügen"
 
@@ -2834,8 +3228,32 @@ msgid "workspace.options.interaction-duration"
 msgstr "Dauer"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing"
+msgstr "Easing"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease"
+msgstr "Ease"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "Ease in"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "Ease in out"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "Ease out"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-linear"
 msgstr "Linear"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "In"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-enter"
@@ -2862,6 +3280,10 @@ msgid "workspace.options.interaction-none"
 msgstr "(nicht festgelegt)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Offset-Effekt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-on-click"
 msgstr "Beim Klicken"
 
@@ -2876,6 +3298,10 @@ msgstr "Overlay %s öffnen"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
 msgstr "Url öffnen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-out"
+msgstr "Out"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-bottom-center"
@@ -3029,6 +3455,134 @@ msgstr "Ebenen gruppieren"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Ausgewählte Ebenen"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "Erweiterte Optionen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-h"
+msgstr "Max. Höhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-w"
+msgstr "Max. Breite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-h"
+msgstr "Min. Höhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-w"
+msgstr "Min. Breite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-h"
+msgstr "Maximale Höhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-w"
+msgstr "Maximale Breite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-h"
+msgstr "Minimale Höhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-w"
+msgstr "Minimale Breite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Unten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "Spalte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "Reihe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.right"
+msgstr "Reihe-umgekehrt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.top"
+msgstr "Spalte-umgekehrt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Abstand"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.left"
+msgstr "links"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.right"
+msgstr "rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Links"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Rand"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "Alle Seiten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Einfacher Rand"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "no wrap"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "Alle Seiten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "Einfaches Padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Rechts"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.title"
+msgstr "Layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Oben"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "unten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "Mitte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "oben"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.wrap"
+msgstr "wrap"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
 msgstr "Weitere Farben"
@@ -3139,6 +3693,9 @@ msgstr "Auswahl schattieren"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.show-fill-on-export"
 msgstr "In Exporten anzeigen"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "Im Ansichtsmodus anzeigen"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
@@ -3569,6 +4126,9 @@ msgstr "Bilder"
 msgid "workspace.sidebar.layers.masks"
 msgstr "Masken"
 
+msgid "workspace.sidebar.layers.search"
+msgstr "Layer durchsuchen"
+
 msgid "workspace.sidebar.layers.shapes"
 msgstr "Formen"
 
@@ -3627,6 +4187,10 @@ msgstr "Pfad (%s)"
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.rect"
 msgstr "Rechteck (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Tastenkürzel (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text"
@@ -3765,567 +4329,3 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
-
-msgid "common.share-link.all-users"
-msgstr "Alle Penpot-Benutzer"
-
-msgid "common.share-link.permissions-can-comment"
-msgstr "Können kommentieren"
-
-msgid "common.share-link.current-tag"
-msgstr "(aktuell)"
-
-msgid "common.share-link.destroy-link"
-msgstr "Link entfernen"
-
-msgid "common.share-link.manage-ops"
-msgstr "Verwalten von Berechtigungen"
-
-msgid "common.share-link.page-shared"
-msgid_plural "common.share-link.page-shared"
-msgstr[0] "1 Seite freigegeben"
-msgstr[1] "%s Seiten freigegeben"
-
-msgid "common.share-link.permissions-can-inspect"
-msgstr "Können den Code ansehen"
-
-msgid "common.share-link.permissions-pages"
-msgstr "Geteilte Seiten"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-go-to"
-msgstr "Zum Penpot-Forum wechseln"
-
-msgid "errors.invite-invalid.info"
-msgstr "Diese Einladung wurde möglicherweise abgebrochen oder ist abgelaufen."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.tutorials"
-msgstr "Tutorials"
-
-msgid "shortcut-subsection.zoom-viewer"
-msgstr "Zoom"
-
-msgid "shortcuts.decrease-zoom"
-msgstr "Auszoomen"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.nudge-title"
-msgstr "Verschiebung"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-slide"
-msgstr "Reinfahren"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease-in"
-msgstr "Ease in"
-
-msgid "shortcuts.cut"
-msgstr "Ausschneiden"
-
-msgid "shortcuts.insert-image"
-msgstr "Bild einfügen"
-
-msgid "common.share-link.team-members"
-msgstr "Nur Teammitglieder"
-
-msgid "common.share-link.view-all"
-msgstr "Alle auswählen"
-
-msgid "dashboard.download-binary-file"
-msgstr "Penpot-Datei herunterladen (.penpot)"
-
-msgid "dashboard.download-standard-file"
-msgstr "Standarddatei herunterladen (.svg + .json)"
-
-msgid "dashboard.export-binary-multi"
-msgstr "%s Penpot-Dateien herunterladen (.penpot)"
-
-msgid "dashboard.export-standard-multi"
-msgstr "%s Standarddateien herunterladen (.svg + .json)"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.auth-provider-not-configured"
-msgstr "Authentifizierungsanbieter ist nicht konfiguriert."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-subtitle1"
-msgstr ""
-"Wir sind froh, dass Sie hier sind. Wenn Sie Hilfe benötigen, verwenden Sie "
-"die Suchfunktion, bevor Sie einen Beitrag schreiben."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-title"
-msgstr "Penpot-Community"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-go-to"
-msgstr "Zu Twitter wechseln"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-subtitle1"
-msgstr "Hier helfen wir Ihnen bei technischen Fragen."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-title"
-msgstr "Twitter Support-Konto"
-
-msgid "labels.back"
-msgstr "Zurück"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.community"
-msgstr "Community"
-
-msgid "labels.continue-with-penpot"
-msgstr "Sie können mit einem Penpot-Konto fortfahren"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.github-repo"
-msgstr "Github-Repository"
-
-msgid "labels.log-or-sign"
-msgstr "Einloggen oder anmelden"
-
-msgid "labels.show-comments-list"
-msgstr "Kommentarliste anzeigen"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.small-nudge"
-msgstr "Minimal"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Team erstellen und Einladungen versenden"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Übergabe und Lowcode"
-
-msgid "shortcuts.align-hcenter"
-msgstr "Horizontal zentrieren"
-
-msgid "shortcuts.add-comment"
-msgstr "Kommentare"
-
-msgid "shortcuts.add-node"
-msgstr "Punkt hinzufügen"
-
-msgid "shortcuts.bool-difference"
-msgstr "Subtrahieren (Booleschen Operation)"
-
-msgid "shortcuts.align-bottom"
-msgstr "Unten ausrichten"
-
-msgid "shortcuts.align-left"
-msgstr "Linksbündig ausrichten"
-
-msgid "shortcuts.align-right"
-msgstr "Rechtsbündig ausrichten"
-
-msgid "shortcuts.align-top"
-msgstr "Oben ausrichten"
-
-msgid "shortcuts.align-vcenter"
-msgstr "Mittig ausrichten (vertikal)"
-
-msgid "shortcuts.artboard-selection"
-msgstr "Zeichenfläche aus Auswahl erstellen"
-
-msgid "shortcuts.bring-front"
-msgstr "In den Vordergrund"
-
-msgid "shortcuts.copy"
-msgstr "Kopieren"
-
-msgid "shortcuts.create-component"
-msgstr "Komponente erstellen"
-
-msgid "shortcuts.create-new-project"
-msgstr "Neues Projekt erstellen"
-
-msgid "shortcuts.delete-node"
-msgstr "Punkt löschen"
-
-msgid "shortcuts.draw-text"
-msgstr "Text"
-
-msgid "shortcuts.duplicate"
-msgstr "Duplizieren"
-
-msgid "shortcuts.escape"
-msgstr "Abbrechen"
-
-msgid "shortcuts.export-shapes"
-msgstr "Formen exportieren"
-
-msgid "shortcuts.fit-all"
-msgstr "Passend zoomen"
-
-msgid "shortcuts.hide-ui"
-msgstr "Benutzeroberfläche ein-/ausblenden"
-
-msgid "shortcuts.increase-zoom"
-msgstr "Einzoomen"
-
-msgid "workspace.options.clip-content"
-msgstr "Inhalt beschneiden"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.grid-title"
-msgstr "Raster"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease"
-msgstr "Ease"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.advanced-ops"
-msgstr "Erweiterte Optionen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "Max. Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "Max. Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "Min. Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "Maximale Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "Maximale Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "Minimale Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
-msgstr "Minimale Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.bottom"
-msgstr "Unten"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
-msgstr "Spalte"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
-msgstr "Reihe-umgekehrt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Spalte-umgekehrt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "Reihe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.gap"
-msgstr "Abstand"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "links"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.right"
-msgstr "rechts"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.left"
-msgstr "Links"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin"
-msgstr "Rand"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-all"
-msgstr "Alle Seiten"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-simple"
-msgstr "Einfacher Rand"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "no wrap"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding"
-msgstr "Padding"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding-all"
-msgstr "Alle Seiten"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding-simple"
-msgstr "Einfaches Padding"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.right"
-msgstr "Rechts"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "Layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.top"
-msgstr "Oben"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "unten"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "Mitte"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "oben"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "wrap"
-
-msgid "workspace.options.show-in-viewer"
-msgstr "Im Ansichtsmodus anzeigen"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.shortcuts"
-msgstr "Tastenkürzel (%s)"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.big-nudge"
-msgstr "Maximal"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-fit-all"
-msgstr "Passend zoomen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-in"
-msgstr "In"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-offset-effect"
-msgstr "Offset-Effekt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-out"
-msgstr "Out"
-
-msgid "workspace.sidebar.layers.search"
-msgstr "Layer durchsuchen"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.invite-invalid"
-msgstr "Einladung ist ungültig"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Ihr Teamname"
-
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"Im Teambereich können Sie auch später Mitglieder einladen und die Rollen "
-"ändern."
-
-msgid "onboarding.choice.team-up.create-team-desc"
-msgstr "Nach der Bennenung Ihres Teams, können Sie andere Personen einladen."
-
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Geben Sie den Namen des Teams ein"
-
-msgid "onboarding.choice.team-up.invite-members"
-msgstr "Mitglieder einladen"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Team erstellen und später einladen"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.help-info"
-msgstr "Hilfe und Infos"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "label.shortcuts"
-msgstr "Tastenkürzel"
-
-msgid "shortcuts.clear-undo"
-msgstr "Verlauf löschen"
-
-msgid "shortcuts.delete"
-msgstr "Löschen"
-
-msgid "shortcuts.detach-component"
-msgstr "Komponente lösen"
-
-msgid "shortcuts.draw-curve"
-msgstr "Kurve"
-
-msgid "shortcuts.draw-ellipse"
-msgstr "Ellipse"
-
-msgid "shortcuts.draw-frame"
-msgstr "Board"
-
-msgid "shortcuts.draw-nodes"
-msgstr "Pfad zeichnen"
-
-msgid "shortcuts.draw-path"
-msgstr "Pfad"
-
-msgid "shortcuts.draw-rect"
-msgstr "Rechteck"
-
-msgid "shortcuts.group"
-msgstr "Gruppieren"
-
-msgid "shortcuts.h-distribute"
-msgstr "Horizontal verteilen"
-
-msgid "shortcuts.flip-horizontal"
-msgstr "Horizontal spiegeln"
-
-msgid "shortcuts.flip-vertical"
-msgstr "Vertikal spiegeln"
-
-msgid "shortcuts.go-to-drafts"
-msgstr "Zu den Entwürfen"
-
-msgid "shortcuts.go-to-libs"
-msgstr "Zu gemeinsam genutzten Bibliotheken wechseln"
-
-msgid "shortcuts.go-to-search"
-msgstr "Suchen"
-
-# SECTIONS
-msgid "shortcut-section.basics"
-msgstr "Grundlagen"
-
-msgid "shortcut-subsection.panels"
-msgstr "Paneele"
-
-msgid "shortcut-subsection.edit"
-msgstr "Bearbeiten"
-
-msgid "shortcut-subsection.main-menu"
-msgstr "Hauptmenü"
-
-msgid "shortcut-subsection.modify-layers"
-msgstr "Ändern von Ebenen"
-
-msgid "shortcut-subsection.navigation-workspace"
-msgstr "Navigation"
-
-msgid "shortcut-subsection.path-editor"
-msgstr "Pfade"
-
-msgid "shortcut-subsection.shape"
-msgstr "Formen"
-
-msgid "shortcut-section.dashboard"
-msgstr "Dashboard"
-
-msgid "shortcut-subsection.tools"
-msgstr "Werkzeuge"
-
-msgid "shortcut-section.viewer"
-msgstr "Ansicht"
-
-msgid "shortcut-section.workspace"
-msgstr "Arbeitsbereich"
-
-msgid "shortcut-subsection.zoom-workspace"
-msgstr "Zoom"
-
-# SUBSECTIONS
-msgid "shortcut-subsection.alignment"
-msgstr "Ausrichtung"
-
-msgid "shortcut-subsection.navigation-dashboard"
-msgstr "Navigation"
-
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Allgemein"
-
-msgid "shortcut-subsection.general-viewer"
-msgstr "Allgemein"
-
-msgid "shortcut-subsection.navigation-viewer"
-msgstr "Navigation"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.zoom-selected"
-msgstr "Zur Auswahl zoomen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing"
-msgstr "Easing"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease-out"
-msgstr "Ease out"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "Min. Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease-in-out"
-msgstr "Ease in out"
-
-msgid "shortcuts.move-fast-left"
-msgstr "Schnell nach links verschieben"
-
-msgid "shortcuts.move-fast-down"
-msgstr "Schnell nach unten verschieben"
-
-msgid "shortcuts.join-nodes"
-msgstr "Punkte verbinden"
-
-msgid "shortcuts.mask"
-msgstr "Maskieren"
-
-msgid "shortcuts.make-curve"
-msgstr "Kurve erstellen"
-
-msgid "shortcuts.merge-nodes"
-msgstr "Punkte zusammenführen"
-
-msgid "shortcuts.move"
-msgstr "Verschieben"
-
-msgid "shortcuts.move-fast-right"
-msgstr "Schnell nach rechts verschieben"
-
-msgid "shortcuts.move-unit-right"
-msgstr "Nach rechts verschieben"
-
-msgid "shortcuts.move-fast-up"
-msgstr "Schnell nach oben verschieben"
-
-msgid "shortcuts.move-nodes"
-msgstr "Punkte verschieben"
-
-msgid "shortcuts.move-unit-down"
-msgstr "Nach unten verschieben"
-
-msgid "shortcuts.move-unit-left"
-msgstr "Nach links verschieben"
-
-msgid "shortcuts.move-unit-up"
-msgstr "Nach oben verschieben"

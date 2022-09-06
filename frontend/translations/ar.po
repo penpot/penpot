@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-08-28 21:15+0000\n"
 "Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
-"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
-"ar/>\n"
+"Language-Team: Arabic "
+"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -116,6 +116,9 @@ msgstr "كلمه السر"
 msgid "auth.password-length-hint"
 msgstr "8 أحرف على الأقل"
 
+msgid "auth.privacy-policy"
+msgstr "سياسة الخصوصية"
+
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-submit"
 msgstr "إستعادة كلمة المرور"
@@ -152,6 +155,9 @@ msgstr "إنشاء حساب"
 msgid "auth.sidebar-tagline"
 msgstr "الحل (مفتوح المصدر) للتصميم والنمذجة."
 
+msgid "auth.terms-of-service"
+msgstr "شروط الخدمة"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr "عند إنشاء حساب جديد ، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا."
@@ -160,10 +166,19 @@ msgstr "عند إنشاء حساب جديد ، فإنك توافق على شرو
 msgid "auth.verification-email-sent"
 msgstr "لقد أرسلنا رسالة تحقق إلى بريدك الالكتروني"
 
+msgid "common.share-link.all-users"
+msgstr "جميع مستخدمي Penpot"
+
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي "
 "شخص"
+
+msgid "common.share-link.current-tag"
+msgstr "(الحالي)"
+
+msgid "common.share-link.destroy-link"
+msgstr "إتلاف الرابط"
 
 msgid "common.share-link.get-link"
 msgstr "خذ رابطا إلكتروني"
@@ -173,6 +188,33 @@ msgstr "تم نسخ الرابط بنجاح"
 
 msgid "common.share-link.link-deleted-success"
 msgstr "تم حذف الرابط بنجاح"
+
+msgid "common.share-link.manage-ops"
+msgstr "إدارة التصاريح"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "يمكن التعليق"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "يمكن فحص الكود"
+
+msgid "common.share-link.permissions-hint"
+msgstr "أي شخص لديه الرابط سيكون لديه حق الوصول"
+
+msgid "common.share-link.permissions-pages"
+msgstr "الصفحات المشتركة"
+
+msgid "common.share-link.placeholder"
+msgstr "سيظهر الرابط القابل للمشاركة هنا"
+
+msgid "common.share-link.team-members"
+msgstr "أعضاء الفريق فقط"
+
+msgid "common.share-link.title"
+msgstr "مشاركة النماذج"
+
+msgid "common.share-link.view-all"
+msgstr "اختر الكل"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -198,6 +240,12 @@ msgstr "Penpot الخاص بك"
 msgid "dashboard.delete-team"
 msgstr "حذف الفريق"
 
+msgid "dashboard.download-binary-file"
+msgstr "تنزيل ملف Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "تنزيل ملف قياسي (.svg + .json)"
+
 msgid "dashboard.draft-title"
 msgstr "مسودة"
 
@@ -213,8 +261,26 @@ msgstr "تكرير %s الملفات"
 msgid "dashboard.empty-files"
 msgstr "لا يزال لديك 0 ملفات هنا"
 
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"أوه لا! ليس لديك ملفات بعد! إذا كنت تريد تجربة بعض القوالب ، فانتقل إلى "
+"[المكتبات والقوالب] (https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "تنزيل ملفات ٪s Penpot (.penpot)"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "استخراج PDF"
+
 msgid "dashboard.export-multi"
 msgstr "تصدير %s الملفات"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "استخراج"
 
 msgid "dashboard.export-single"
 msgstr "تصدير الملف"
@@ -581,6 +647,10 @@ msgstr ""
 msgid "feedback.title"
 msgstr "البريد الإلكتروني"
 
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "حساب دعم تويتر"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "حدث خطأ"
@@ -761,6 +831,9 @@ msgstr "شفرة"
 msgid "handoff.tabs.code.selected.circle"
 msgstr "دائرة"
 
+msgid "handoff.tabs.code.selected.component"
+msgstr "مكون"
+
 msgid "handoff.tabs.code.selected.curve"
 msgstr "منحنى"
 
@@ -772,6 +845,9 @@ msgstr "مجموعة"
 
 msgid "handoff.tabs.code.selected.image"
 msgstr "صورة"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "قناع"
 
 #: src/app/main/ui/handoff/right_sidebar.cljs
 msgid "handoff.tabs.code.selected.multiple"
@@ -796,6 +872,14 @@ msgstr "معلومات"
 msgid "history.alert-message"
 msgstr "أنت ترى الإصدار %s"
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "الاختصارات"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "حول Penpot"
+
 msgid "labels.accept"
 msgstr "إقبل"
 
@@ -809,6 +893,12 @@ msgstr "مشرف"
 #: src/app/main/ui/workspace/comments.cljs
 msgid "labels.all"
 msgstr "الكل"
+
+msgid "labels.and"
+msgstr "و"
+
+msgid "labels.back"
+msgstr "العودة"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
@@ -827,9 +917,16 @@ msgstr "الغاء"
 msgid "labels.centered"
 msgstr "توسيط"
 
+msgid "labels.close"
+msgstr "غلق"
+
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.comments"
 msgstr "تعليقات"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "مجتمع"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
@@ -837,6 +934,15 @@ msgstr "تأكيد كلمة المرور"
 
 msgid "labels.content"
 msgstr "محتوى"
+
+msgid "labels.continue"
+msgstr "استمر"
+
+msgid "labels.continue-with"
+msgstr "تابع مع"
+
+msgid "labels.continue-with-penpot"
+msgstr "يمكنك المتابعة مع حساب Penpot"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -869,6 +975,10 @@ msgstr "حذف التعليق"
 msgid "labels.delete-comment-thread"
 msgstr "حذف موضوع"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "حذف الدعوة"
+
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete-multi-files"
 msgstr "حذف %s ملفات"
@@ -881,6 +991,9 @@ msgstr "المسودات"
 msgid "labels.edit"
 msgstr "تعديل"
 
+msgid "labels.edit-file"
+msgstr "تعديل ملف"
+
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "محرر"
@@ -888,6 +1001,13 @@ msgstr "محرر"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.email"
 msgstr "البريد الإلكتروني"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "منتهي الصلاحية"
+
+msgid "labels.export"
+msgstr "استخراج"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
@@ -919,6 +1039,10 @@ msgstr "إعطاء ملاحظات"
 msgid "labels.go-back"
 msgstr "الرجوع للخلف"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "مركز المساعدة"
+
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "إخفاء التعليقات التي تم حلها"
@@ -939,6 +1063,10 @@ msgstr "شيء سيء حدث الرجاء إعادة محاولة العملية
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
 msgstr "خطأ داخلي"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "الدعوات"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
@@ -2053,137 +2181,9 @@ msgstr "قاتم"
 msgid "workspace.options.layer-options.blend-mode.difference"
 msgstr "اختلاف"
 
-msgid "workspace.viewport.click-to-close-path"
-msgstr "انقر لإغلاق المسار"
-
-msgid "handoff.tabs.code.selected.mask"
-msgstr "قناع"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.help-center"
-msgstr "مركز المساعدة"
-
-msgid "labels.export"
-msgstr "استخراج"
-
-msgid "common.share-link.permissions-hint"
-msgstr "أي شخص لديه الرابط سيكون لديه حق الوصول"
-
-msgid "common.share-link.all-users"
-msgstr "جميع مستخدمي Penpot"
-
-msgid "common.share-link.destroy-link"
-msgstr "إتلاف الرابط"
-
-msgid "common.share-link.current-tag"
-msgstr "(الحالي)"
-
-msgid "common.share-link.manage-ops"
-msgstr "إدارة التصاريح"
-
-msgid "common.share-link.permissions-can-comment"
-msgstr "يمكن التعليق"
-
-msgid "common.share-link.permissions-can-inspect"
-msgstr "يمكن فحص الكود"
-
-msgid "common.share-link.permissions-pages"
-msgstr "الصفحات المشتركة"
-
-msgid "common.share-link.placeholder"
-msgstr "سيظهر الرابط القابل للمشاركة هنا"
-
-msgid "common.share-link.team-members"
-msgstr "أعضاء الفريق فقط"
-
-msgid "common.share-link.title"
-msgstr "مشاركة النماذج"
-
-msgid "common.share-link.view-all"
-msgstr "اختر الكل"
-
-msgid "dashboard.download-binary-file"
-msgstr "تنزيل ملف Penpot (.penpot)"
-
-msgid "dashboard.download-standard-file"
-msgstr "تنزيل ملف قياسي (.svg + .json)"
-
-msgid "dashboard.export-binary-multi"
-msgstr "تنزيل ملفات ٪s Penpot (.penpot)"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-frames.title"
-msgstr "استخراج PDF"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-title"
-msgstr "حساب دعم تويتر"
-
-msgid "handoff.tabs.code.selected.component"
-msgstr "مكون"
-
-msgid "labels.close"
-msgstr "غلق"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.community"
-msgstr "مجتمع"
-
-msgid "labels.continue-with"
-msgstr "تابع مع"
-
-msgid "labels.continue-with-penpot"
-msgstr "يمكنك المتابعة مع حساب Penpot"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.delete-invitation"
-msgstr "حذف الدعوة"
-
-msgid "labels.edit-file"
-msgstr "تعديل ملف"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "dashboard.export-shapes"
-msgstr "استخراج"
-
-msgid "labels.and"
-msgstr "و"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.expired-invitation"
-msgstr "منتهي الصلاحية"
-
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.invitations"
-msgstr "الدعوات"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.about-penpot"
-msgstr "حول Penpot"
-
-msgid "labels.back"
-msgstr "العودة"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "label.shortcuts"
-msgstr "الاختصارات"
-
-msgid "auth.terms-of-service"
-msgstr "شروط الخدمة"
-
-msgid "auth.privacy-policy"
-msgstr "سياسة الخصوصية"
-
-msgid "labels.continue"
-msgstr "استمر"
-
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.update"
 msgstr "تحديث"
 
-#: src/app/main/ui/dashboard/grid.cljs
-#, markdown
-msgid "dashboard.empty-placeholder-drafts"
-msgstr ""
-"أوه لا! ليس لديك ملفات بعد! إذا كنت تريد تجربة بعض القوالب ، فانتقل إلى ["
-"المكتبات والقوالب] (https://penpot.app/libraries-templates.html)"
+msgid "workspace.viewport.click-to-close-path"
+msgstr "انقر لإغلاق المسار"

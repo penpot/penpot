@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-08-18 16:16+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
-"tr/>\n"
+"Language-Team: Turkish "
+"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -172,10 +172,19 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Onay e-postanı şu adrese gönderdik"
 
+msgid "common.share-link.all-users"
+msgstr "Tüm Penpot kullanıcıları"
+
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Bu bağlantıyı kaldırmak istediğinizden emin misiniz? Bunu yaparsanız, artık "
 "kimse tarafından kullanılamayacak"
+
+msgid "common.share-link.current-tag"
+msgstr "(geçerli)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Bağlantıyı yok et"
 
 msgid "common.share-link.get-link"
 msgstr "Bağlantıyı al"
@@ -186,14 +195,37 @@ msgstr "Bağlantı başarıyla kopyalandı"
 msgid "common.share-link.link-deleted-success"
 msgstr "Bağlantı başarıyla silindi"
 
+msgid "common.share-link.manage-ops"
+msgstr "İzinleri yönet"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 sayfa paylaşıldı"
+msgstr[1] "%s sayfa paylaşıldı"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Yorum yapabilir"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Kodu inceleyebilir"
+
 msgid "common.share-link.permissions-hint"
 msgstr "Bağlantıya sahip olan herkes erişebilir"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Paylaşılan sayfalar"
 
 msgid "common.share-link.placeholder"
 msgstr "Paylaşılabilir bağlantı burada görünecek"
 
+msgid "common.share-link.team-members"
+msgstr "Yalnızca takım üyeleri"
+
 msgid "common.share-link.title"
 msgstr "Prototipleri paylaş"
+
+msgid "common.share-link.view-all"
+msgstr "Tümünü Seç"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -220,6 +252,12 @@ msgstr "Penpot'un"
 msgid "dashboard.delete-team"
 msgstr "Takımı sil"
 
+msgid "dashboard.download-binary-file"
+msgstr "Penpot dosyasını indir (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Standart dosyayı indir (.svg + .json)"
+
 msgid "dashboard.draft-title"
 msgstr "Taslak"
 
@@ -243,6 +281,9 @@ msgstr ""
 "Olamaz! Henüz dosyanız yok! Bazı şablonları denemek isterseniz "
 "[Kütüphaneler ve şablonlar](https://penpot.app/libraries-templates.html) "
 "sayfasına gidin"
+
+msgid "dashboard.export-binary-multi"
+msgstr "%s Penpot dosyasını indir (.penpot)"
 
 msgid "dashboard.export-frames"
 msgstr "Çalışma yüzeylerini PDF'ye aktar…"
@@ -282,6 +323,9 @@ msgstr "Seçimi dışa aktar"
 
 msgid "dashboard.export-single"
 msgstr "Penpot dosyasını dışa aktar"
+
+msgid "dashboard.export-standard-multi"
+msgstr "%s standart dosyayı indir (.svg + .json)"
 
 msgid "dashboard.export.detail"
 msgstr "* Bileşenleri, grafikleri, renkleri ve/veya tipografileri içerebilir."
@@ -632,6 +676,10 @@ msgstr "Emin misin?"
 msgid "ds.updated-at"
 msgstr "Güncellendi: %s"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Kimlik doğrulama sağlayıcısı yapılandırılmadı."
+
 msgid "errors.auth.unable-to-login"
 msgstr "Kimliğiniz doğrulanmamış veya oturumun süresi dolmuş gibi görünüyor."
 
@@ -779,6 +827,20 @@ msgid "feedback.description"
 msgstr "Açıklama"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Penpot forumuna git"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Burada olmanızdan mutluluk duyuyoruz. Yardıma ihtiyacınız varsa, lütfen "
+"göndermeden önce arama yapın."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Penpot topluluğu"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Konu"
 
@@ -791,6 +853,18 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "E-posta"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Twitter'a git"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Teknik sorularınıza yardımcı olmak için buradayız."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Twitter destek hesabı"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1063,6 +1137,10 @@ msgstr "Kapat"
 msgid "labels.comments"
 msgstr "Yorumlar"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Topluluk"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Parolayı onayla"
@@ -1075,6 +1153,9 @@ msgstr "Devam et"
 
 msgid "labels.continue-with"
 msgstr "İle devam et"
+
+msgid "labels.continue-with-penpot"
+msgstr "Penpot hesabıyla devam edebilirsiniz"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1226,6 +1307,9 @@ msgstr "Kütüphaneler ve Şablonlar"
 
 msgid "labels.link"
 msgstr "Bağlantı"
+
+msgid "labels.log-or-sign"
+msgstr "Oturum açın veya kaydolun"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -1408,6 +1492,9 @@ msgstr "Paylaşılan Kütüphaneler"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"
 msgstr "Tüm yorumları göster"
+
+msgid "labels.show-comments-list"
+msgstr "Yorum listesini göster"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
@@ -2230,6 +2317,9 @@ msgstr "Yukarı taşı"
 msgid "shortcuts.next-frame"
 msgstr "Sonraki çalışma yüzeyi"
 
+msgid "shortcuts.not-found"
+msgstr "Kısayol bulunamadı"
+
 msgid "shortcuts.opacity-0"
 msgstr "Opaklığı %100 olarak ayarla"
 
@@ -2280,6 +2370,9 @@ msgstr "Görüntüleyici etkileşimleri bölümüne git"
 
 msgid "shortcuts.open-workspace"
 msgstr "Çalışma alanına git"
+
+msgid "shortcuts.or"
+msgstr " veya "
 
 msgid "shortcuts.paste"
 msgstr "Yapıştır"
@@ -3039,6 +3132,9 @@ msgstr "Seçim bulanıklığı"
 msgid "workspace.options.canvas-background"
 msgstr "Tuval arka planı"
 
+msgid "workspace.options.clip-content"
+msgstr "İçeriği kırp"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "Bileşen"
@@ -3100,9 +3196,7 @@ msgstr "Seçimi dışa aktar"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgid_plural ""
-msgstr[0] "1 ögeyi dışa aktar"
-msgstr[1] "%s ögeyi dışa aktar"
+msgstr "1 ögeyi dışa aktar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3149,6 +3243,10 @@ msgstr "Otomatik"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.column"
 msgstr "Sütunlar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "Izgara"
 
 msgid "workspace.options.grid.params.color"
 msgstr "Renk"
@@ -3520,6 +3618,154 @@ msgstr "Katman grubu"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Seçili katmanlar"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "Gelişmiş seçenekler"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-h"
+msgstr "Azami Yükseklik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-w"
+msgstr "Azami Genişlik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-h"
+msgstr "Asgari Yükseklik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-w"
+msgstr "Asgari Genişlik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "Öge yeniden boyutlandırma"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-h"
+msgstr "Azami yükseklik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-w"
+msgstr "Azami genişlik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-h"
+msgstr "Asgari yükseklik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-w"
+msgstr "Asgari genişlik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Alt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "Sütun"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "Satır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.right"
+msgstr "Ters satır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.top"
+msgstr "Ters sütun"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Boşluk"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.center"
+msgstr "orta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.left"
+msgstr "sol"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.right"
+msgstr "sağ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Sol"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Kenar Boşluğu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "Tüm kenarlar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Basit kenar boşluğu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "sarma yok"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "paketlenmiş"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Dolgu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "Tüm kenarlar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "Basit dolgu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Sağ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "etrafında boşluk"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "arasında boşluk"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.title"
+msgstr "Yerleşim düzeni"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Üst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "alt"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "orta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "üst"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.wrap"
+msgstr "sar"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
 msgstr "Daha fazla renk"
@@ -3576,8 +3822,8 @@ msgstr "Yazı tipi ara"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
 msgstr ""
-"Diğer çalışma yüzeyine bağlantı taşımak için bir şekil, çalışma yüzeyi ya da "
-"grup seçin."
+"Diğer çalışma yüzeyine bağlantı taşımak için bir şekil, çalışma yüzeyi ya "
+"da grup seçin."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-artboard"
@@ -3637,6 +3883,9 @@ msgstr "Gölge seçimi"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.show-fill-on-export"
 msgstr "Dışa aktarmalarda göster"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "Görünüm modunda göster"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
@@ -4267,254 +4516,3 @@ msgstr "Güncelle"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
-
-msgid "common.share-link.destroy-link"
-msgstr "Bağlantıyı yok et"
-
-msgid "common.share-link.permissions-can-inspect"
-msgstr "Kodu inceleyebilir"
-
-msgid "common.share-link.permissions-pages"
-msgstr "Paylaşılan sayfalar"
-
-msgid "common.share-link.team-members"
-msgstr "Yalnızca takım üyeleri"
-
-msgid "common.share-link.view-all"
-msgstr "Tümünü Seç"
-
-msgid "labels.log-or-sign"
-msgstr "Oturum açın veya kaydolun"
-
-msgid "labels.show-comments-list"
-msgstr "Yorum listesini göster"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.advanced-ops"
-msgstr "Gelişmiş seçenekler"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "Azami yükseklik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "Azami genişlik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.center"
-msgstr "orta"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-simple"
-msgstr "Basit kenar boşluğu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "sarma yok"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding"
-msgstr "Dolgu"
-
-msgid "workspace.options.show-in-viewer"
-msgstr "Görünüm modunda göster"
-
-msgid "dashboard.export-binary-multi"
-msgstr "%s Penpot dosyasını indir (.penpot)"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.auth-provider-not-configured"
-msgstr "Kimlik doğrulama sağlayıcısı yapılandırılmadı."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-subtitle1"
-msgstr "Teknik sorularınıza yardımcı olmak için buradayız."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-title"
-msgstr "Twitter destek hesabı"
-
-msgid "common.share-link.all-users"
-msgstr "Tüm Penpot kullanıcıları"
-
-msgid "common.share-link.current-tag"
-msgstr "(geçerli)"
-
-msgid "dashboard.download-standard-file"
-msgstr "Standart dosyayı indir (.svg + .json)"
-
-msgid "common.share-link.manage-ops"
-msgstr "İzinleri yönet"
-
-msgid "common.share-link.page-shared"
-msgid_plural "common.share-link.page-shared"
-msgstr[0] "1 sayfa paylaşıldı"
-msgstr[1] "%s sayfa paylaşıldı"
-
-msgid "common.share-link.permissions-can-comment"
-msgstr "Yorum yapabilir"
-
-msgid "dashboard.download-binary-file"
-msgstr "Penpot dosyasını indir (.penpot)"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-title"
-msgstr "Penpot topluluğu"
-
-msgid "dashboard.export-standard-multi"
-msgstr "%s standart dosyayı indir (.svg + .json)"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-go-to"
-msgstr "Penpot forumuna git"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-subtitle1"
-msgstr ""
-"Burada olmanızdan mutluluk duyuyoruz. Yardıma ihtiyacınız varsa, lütfen "
-"göndermeden önce arama yapın."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.community"
-msgstr "Topluluk"
-
-msgid "shortcuts.not-found"
-msgstr "Kısayol bulunamadı"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "Asgari Yükseklik"
-
-msgid "labels.continue-with-penpot"
-msgstr "Penpot hesabıyla devam edebilirsiniz"
-
-msgid "shortcuts.or"
-msgstr " veya "
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-go-to"
-msgstr "Twitter'a git"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "Azami Genişlik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.grid-title"
-msgstr "Izgara"
-
-msgid "workspace.options.clip-content"
-msgstr "İçeriği kırp"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "Satır"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "Azami Yükseklik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "Asgari Genişlik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "Asgari yükseklik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.bottom"
-msgstr "Alt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title"
-msgstr "Öge yeniden boyutlandırma"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Ters sütun"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
-msgstr "Asgari genişlik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
-msgstr "Sütun"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
-msgstr "Ters satır"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.gap"
-msgstr "Boşluk"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.space-between"
-msgstr "arasında boşluk"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "sol"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.right"
-msgstr "sağ"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.left"
-msgstr "Sol"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin"
-msgstr "Kenar Boşluğu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-all"
-msgstr "Tüm kenarlar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding-simple"
-msgstr "Basit dolgu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.right"
-msgstr "Sağ"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.space-around"
-msgstr "etrafında boşluk"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "Yerleşim düzeni"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "alt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "orta"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.packed"
-msgstr "paketlenmiş"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.top"
-msgstr "Üst"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "üst"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "sar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding-all"
-msgstr "Tüm kenarlar"

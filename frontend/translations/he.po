@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-07-19 06:21+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
-"he/>\n"
+"Language-Team: Hebrew "
+"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -167,8 +167,17 @@ msgstr "יצירת חשבון חדש מהווה את הסכמתך לתנאי ה�
 msgid "auth.verification-email-sent"
 msgstr "שלחנו הודעת דוא״ל לאימות אל"
 
+msgid "common.share-link.all-users"
+msgstr "כל משתמשי Penpot"
+
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr "להסיר את הקישור הזה? ביצוע פעולה זו תמנע מכולם לגשת אליו"
+
+msgid "common.share-link.current-tag"
+msgstr "(נוכחי)"
+
+msgid "common.share-link.destroy-link"
+msgstr "השמדת קישור"
 
 msgid "common.share-link.get-link"
 msgstr "קבלת קישור"
@@ -179,14 +188,39 @@ msgstr "הקישור הועתק בהצלחה"
 msgid "common.share-link.link-deleted-success"
 msgstr "הקישור נמחק בהצלחה"
 
+msgid "common.share-link.manage-ops"
+msgstr "ניהול הרשאות"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "עמוד שותף"
+msgstr[1] "%s עמודים שותפו"
+msgstr[2] "%s עמודים שותפו"
+msgstr[3] "%s עמודים שותפו"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "הרשאות תגובה"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "הרשאות לחקירת הקוד"
+
 msgid "common.share-link.permissions-hint"
 msgstr "כל מי שיש לו את הקישור יכול לגשת"
+
+msgid "common.share-link.permissions-pages"
+msgstr "עמודים ששותפו"
 
 msgid "common.share-link.placeholder"
 msgstr "הקישור לשיתוף יופיע כאן"
 
+msgid "common.share-link.team-members"
+msgstr "רק חברי צוות"
+
 msgid "common.share-link.title"
 msgstr "שיתוף אבות טיפוס"
+
+msgid "common.share-link.view-all"
+msgstr "בחירה בהכול"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -213,6 +247,12 @@ msgstr "ה־Penpot שלך"
 msgid "dashboard.delete-team"
 msgstr "מחיקת צוות"
 
+msgid "dashboard.download-binary-file"
+msgstr "הורדת קובץ Penpot‏ (‎.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "הורדת קובץ תקני (‎.svg + .json)"
+
 msgid "dashboard.draft-title"
 msgstr "טיוטה"
 
@@ -235,6 +275,9 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "אבוי! עדיין אין לך קבצים! כדי להתנסות עם כמה מהתבניות ניתן לגשת אל [הספריות "
 "והתבניות](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "הורדת %s קובצי Penpot‏ (‎.penpot)"
 
 msgid "dashboard.export-frames"
 msgstr "ייצוא לוחות אומנות ל־PDF…"
@@ -272,6 +315,9 @@ msgstr "ייצוא הבחירה"
 
 msgid "dashboard.export-single"
 msgstr "ייצוא קובץ Penpot"
+
+msgid "dashboard.export-standard-multi"
+msgstr "הורדת %s קבצים תקניים (‎.svg + .json)"
 
 msgid "dashboard.export.detail"
 msgstr "* עשוי לכלול רכיבים, גרפיקה, צבעים ו/או טיפוגרפיות."
@@ -615,6 +661,10 @@ msgstr "להמשיך?"
 msgid "ds.updated-at"
 msgstr "עדכון: %s"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "לא מוגדר ספק אימות."
+
 msgid "errors.auth.unable-to-login"
 msgstr "נראה שלא עברת אימות או שתוקף ההפעלה פג."
 
@@ -758,6 +808,18 @@ msgid "feedback.description"
 msgstr "תיאור"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "מעבר לפורום של Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr "אנחנו שמחים שהצטרפת אלינו. לקבלת עזרה, נא לחפש בטרם פרסום הודעה."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "קהילת Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "נושא"
 
@@ -770,6 +832,18 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "דוא״ל"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "מעבר לטוויטר"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "כאן כדי לסייע בסוגיות טכניות."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "חשבון תמיכה בטוויטר"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1042,6 +1116,10 @@ msgstr "סגירה"
 msgid "labels.comments"
 msgstr "הערות"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "קהילה"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "אישור סיסמה"
@@ -1054,6 +1132,9 @@ msgstr "להמשיך"
 
 msgid "labels.continue-with"
 msgstr "להמשיך עם"
+
+msgid "labels.continue-with-penpot"
+msgstr "אפשר להמשיך עם חשבון Penpot"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1202,6 +1283,9 @@ msgstr "ספריות ותבניות"
 
 msgid "labels.link"
 msgstr "קישור"
+
+msgid "labels.log-or-sign"
+msgstr "כניסה או הרשמה"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -1387,6 +1471,9 @@ msgstr "ספריות משותפות"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"
 msgstr "הצגת כל ההערות"
+
+msgid "labels.show-comments-list"
+msgstr "הצגת רשימת הערות"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
@@ -2189,6 +2276,9 @@ msgstr "העברה למעלה"
 msgid "shortcuts.next-frame"
 msgstr "הלוח הבא"
 
+msgid "shortcuts.not-found"
+msgstr "לא נמצאו קיצורי דרך"
+
 msgid "shortcuts.opacity-0"
 msgstr "הגדרת אטימות ל־100%"
 
@@ -2239,6 +2329,9 @@ msgstr "מעבר לסעיף תפעול צופה"
 
 msgid "shortcuts.open-workspace"
 msgstr "מעבר לסביבת עבודה"
+
+msgid "shortcuts.or"
+msgstr " או "
 
 msgid "shortcuts.paste"
 msgstr "הדבקה"
@@ -2992,6 +3085,9 @@ msgstr "טשטוש בחירה"
 msgid "workspace.options.canvas-background"
 msgstr "רקע משטח ציור"
 
+msgid "workspace.options.clip-content"
+msgstr "חיתוך התוכן"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "רכיב"
@@ -3052,11 +3148,7 @@ msgstr "ייצוא הבחירה"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgid_plural ""
-msgstr[0] "ייצוא רכיב"
-msgstr[1] "ייצוא %s רכיבים"
-msgstr[2] "ייצוא %s רכיבים"
-msgstr[3] "ייצוא %s רכיבים"
+msgstr "ייצוא רכיב"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3102,6 +3194,10 @@ msgstr "אוטומטי"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.column"
 msgstr "עמודות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "טבלה"
 
 msgid "workspace.options.grid.params.color"
 msgstr "צבע"
@@ -3473,6 +3569,154 @@ msgstr "קיבוץ שכבות"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "שכבות נבחרות"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "אפשרויות מתקדמות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-h"
+msgstr "גובה מרבי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.max-w"
+msgstr "רוחב מרבי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-h"
+msgstr "גובה מזערי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.min-w"
+msgstr "רוחב מזערי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "שינוי גודל רכיבים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-h"
+msgstr "גובה מרבי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.max-w"
+msgstr "רוחב מרבי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-h"
+msgstr "גובה מזערי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.min-w"
+msgstr "רוחב מזערי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "תחתית"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "עמודה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "שורה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.right"
+msgstr "היפוך שורה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.top"
+msgstr "היפוך עמודה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "מרווח"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.center"
+msgstr "מרכז"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.left"
+msgstr "שמאל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.right"
+msgstr "ימין"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "שמאל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "שול"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "כל הצדדים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "שול פשוט"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "ללא גלישה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "אסוף"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "ריפוד"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "כל הצדדים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "ריפוד פשוט"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "ימין"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "רווח מסביב"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "רווח בין לבין"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.title"
+msgstr "פריסה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "עליון"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "תחתית"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "מרכז"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "עליון"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.wrap"
+msgstr "גלישה"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
 msgstr "צבעים נוספים"
@@ -3588,6 +3832,9 @@ msgstr "צללים של בחירה"
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.show-fill-on-export"
 msgstr "הצגה בייצואים"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "להציג במצב הצגה"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
@@ -4218,254 +4465,3 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
-
-msgid "common.share-link.page-shared"
-msgid_plural "common.share-link.page-shared"
-msgstr[0] "עמוד שותף"
-msgstr[1] "%s עמודים שותפו"
-msgstr[2] "%s עמודים שותפו"
-msgstr[3] "%s עמודים שותפו"
-
-msgid "common.share-link.permissions-pages"
-msgstr "עמודים ששותפו"
-
-msgid "common.share-link.permissions-can-inspect"
-msgstr "הרשאות לחקירת הקוד"
-
-msgid "common.share-link.all-users"
-msgstr "כל משתמשי Penpot"
-
-msgid "common.share-link.current-tag"
-msgstr "(נוכחי)"
-
-msgid "common.share-link.destroy-link"
-msgstr "השמדת קישור"
-
-msgid "common.share-link.manage-ops"
-msgstr "ניהול הרשאות"
-
-msgid "common.share-link.permissions-can-comment"
-msgstr "הרשאות תגובה"
-
-msgid "dashboard.download-standard-file"
-msgstr "הורדת קובץ תקני (‎.svg + .json)"
-
-msgid "dashboard.export-binary-multi"
-msgstr "הורדת %s קובצי Penpot‏ (‎.penpot)"
-
-msgid "dashboard.export-standard-multi"
-msgstr "הורדת %s קבצים תקניים (‎.svg + .json)"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-go-to"
-msgstr "מעבר לפורום של Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-go-to"
-msgstr "מעבר לטוויטר"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.community"
-msgstr "קהילה"
-
-msgid "labels.continue-with-penpot"
-msgstr "אפשר להמשיך עם חשבון Penpot"
-
-msgid "labels.log-or-sign"
-msgstr "כניסה או הרשמה"
-
-msgid "labels.show-comments-list"
-msgstr "הצגת רשימת הערות"
-
-msgid "shortcuts.or"
-msgstr " או "
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.grid-title"
-msgstr "טבלה"
-
-msgid "workspace.options.clip-content"
-msgstr "חיתוך התוכן"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "גובה מרבי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-simple"
-msgstr "שול פשוט"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "ללא גלישה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.packed"
-msgstr "אסוף"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding"
-msgstr "ריפוד"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding-all"
-msgstr "כל הצדדים"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.space-between"
-msgstr "רווח בין לבין"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "עליון"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "גלישה"
-
-msgid "workspace.options.show-in-viewer"
-msgstr "להציג במצב הצגה"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-title"
-msgstr "חשבון תמיכה בטוויטר"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-title"
-msgstr "קהילת Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-subtitle1"
-msgstr "כאן כדי לסייע בסוגיות טכניות."
-
-msgid "shortcuts.not-found"
-msgstr "לא נמצאו קיצורי דרך"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "גובה מזערי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "רוחב מרבי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title"
-msgstr "שינוי גודל רכיבים"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.advanced-ops"
-msgstr "אפשרויות מתקדמות"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "גובה מרבי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.bottom"
-msgstr "תחתית"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "גובה מזערי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "רוחב מזערי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "רוחב מרבי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
-msgstr "רוחב מזערי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
-msgstr "עמודה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "שורה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
-msgstr "היפוך שורה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.gap"
-msgstr "מרווח"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.center"
-msgstr "מרכז"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.right"
-msgstr "ימין"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.left"
-msgstr "שמאל"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin"
-msgstr "שול"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "היפוך עמודה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "שמאל"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-all"
-msgstr "כל הצדדים"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.right"
-msgstr "ימין"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.top"
-msgstr "עליון"
-
-msgid "common.share-link.view-all"
-msgstr "בחירה בהכול"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.padding-simple"
-msgstr "ריפוד פשוט"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.space-around"
-msgstr "רווח מסביב"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "פריסה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "תחתית"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "מרכז"
-
-msgid "common.share-link.team-members"
-msgstr "רק חברי צוות"
-
-msgid "dashboard.download-binary-file"
-msgstr "הורדת קובץ Penpot‏ (‎.penpot)"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.auth-provider-not-configured"
-msgstr "לא מוגדר ספק אימות."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-subtitle1"
-msgstr "אנחנו שמחים שהצטרפת אלינו. לקבלת עזרה, נא לחפש בטרם פרסום הודעה."
