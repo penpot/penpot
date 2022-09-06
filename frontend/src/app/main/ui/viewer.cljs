@@ -101,7 +101,7 @@
          :page page}])]))
 
 (mf/defc viewer-overlay
-  [{:keys [overlay page frame zoom wrapper-size close-overlay interactions-mode]}]
+  [{:keys [overlay page frame zoom wrapper-size interactions-mode]}]
   (let [close-click-outside? (:close-click-outside overlay)
         background-overlay?  (:background-overlay overlay)
         overlay-frame        (:frame overlay)
@@ -113,10 +113,10 @@
 
         on-click
         (mf/use-fn
-         (mf/deps overlay close-overlay close-click-outside?)
+         (mf/deps overlay close-click-outside?)
          (fn [_]
            (when close-click-outside?
-             (close-overlay (:frame overlay)))))]
+             (st/emit! (dv/close-overlay (:id overlay))))))]
 
     [:*
      (when (or close-click-outside? background-overlay?)
@@ -147,7 +147,7 @@
 
 (mf/defc viewer-wrapper
   [{:keys [wrapper-size orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
-           size frame interactions-mode overlays zoom close-overlay section index] :as props}]
+           size frame interactions-mode overlays zoom section index] :as props}]
   [:*
    [:& viewer-pagination-and-sidebar
     {:section section
@@ -197,7 +197,6 @@
                             :frame frame
                             :zoom zoom
                             :wrapper-size wrapper-size
-                            :close-overlay close-overlay
                             :interactions-mode interactions-mode}])
 
       ]]
