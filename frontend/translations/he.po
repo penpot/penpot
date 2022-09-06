@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-07-19 06:21+0000\n"
+"PO-Revision-Date: 2022-09-10 17:20+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 4.14-dev\n"
+"X-Generator: Weblate 4.14.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3148,7 +3148,11 @@ msgstr "ייצוא הבחירה"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "ייצוא רכיב"
+msgid_plural ""
+msgstr[0] "ייצוא רכיב"
+msgstr[1] "ייצוא %s רכיבים"
+msgstr[2] "ייצוא %s רכיבים"
+msgstr[3] "ייצוא %s רכיבים"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -4465,3 +4469,269 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+msgid "common.unpublish"
+msgstr "ביטול פרסום"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "ספריות ותבניות"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "אישור"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "תשומת לב"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "ליצירת צוות מאוחר יותר"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-h"
+msgstr "גובה מזערי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-h"
+msgstr "גובה מר.‏"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-w"
+msgstr "רוחב מר.‏"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "גובה מז.‏"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "שחזור הרכיב הראשי"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "התחלת הסיור"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "עיון ביותר כאלה והסברים כיצד לתרום להן"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "אירעה שגיאה בייבוא התבנית והיא לא ייובאה."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "בקובץ זה כבר נעשה שימוש עם גרסה 2 של Components."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "לקובץ זה יש ספריות שנעשה בהן שימוש בקובץ הזה:"
+msgstr[1] "לקובץ זה יש ספריות שנעשה בהן שימוש בקבצים האלה:"
+msgstr[2] "לקובץ זה יש ספריות שנעשה בהן שימוש בקבצים האלה:"
+msgstr[3] "לקובץ זה יש ספריות שנעשה בהן שימוש בקבצים האלה:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] "ביטול הפרסום הופך את המשאבים לספרייה של הקובץ הזה."
+msgstr[1] "ביטול הפרסום הופך את המשאבים לספרייה של הקבצים האלה."
+msgstr[2] "ביטול הפרסום הופך את המשאבים לספרייה של הקבצים האלה."
+msgstr[3] "ביטול הפרסום הופך את המשאבים לספרייה של הקבצים האלה."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "לבטל את פרסום הספרייה הזאת?"
+msgstr[1] "לבטל את פרסום הספריות האלו?"
+msgstr[2] "לבטל את פרסום הספריות האלו?"
+msgstr[3] "לבטל את פרסום הספריות האלו?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "בשימוש בקובץ הזה:"
+msgstr[1] "בשימוש בקבצים האלה:"
+msgstr[2] "בשימוש בקבצים האלה:"
+msgstr[3] "בשימוש בקבצים האלה:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "ביטול פרסום ספרייה"
+msgstr[1] "ביטול פרסום ספריות"
+msgstr[2] "ביטול פרסום ספריות"
+msgstr[3] "ביטול פרסום ספריות"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "השתתפות בפעילות הקהילתית"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"כאן אפשר למצוא מידע על כיצד לשתף פעולה בנושאי תרגום, בקשות יכולות, תרומות "
+"ליבה, מצוד אחר תקלות…"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"מקום ציבורי ללמידה, שיתוף ודיון על Penpot, ההווה והעתיד שלו עם כל הקהילה "
+"וצוות הליבה של Penpot."
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot הוא בקוד פתוח והוא נוצר על ידי Kaleidos וגם על ידי הקהילה בה מגוון "
+"אנשים כבר מסייעים זה לזה. כל אחד יכול לתרום דרך:"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "לפני שמתחילים"
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "מדריכים מצולמים"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "אפשר לצפות במדריכים שלנו ובמדריכים שנוצרו על ידי חברי הקהילה שלנו."
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "מדריך למשתמשים"
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"מידע מפורט על אופן השימוש ב־Penpot. החל מתכנון אבטיפוס ועד שיתוף עיצובים."
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"רצוי לדעת שיש מגוון משאבים זמינים לך כדי לסייע לך להתחיל להשתמש ב־Penpot כמו "
+"המדריך למשתמשים וערוץ ה־YouTube שלנו."
+
+msgid "workspace.assets.local-library"
+msgstr "ספרייה מקומית"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "ניהול תפקידים"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "יצירת צוות"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "ניהול צוות"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "מחיקת קובץ"
+msgstr[1] "מחיקת קבצים"
+msgstr[2] "מחיקת קבצים"
+msgstr[3] "מחיקת קבצים"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr "Penpot מיועד לצוותים. אפשר להזמין חברים כדי לעבוד ביחד על מיזמים וקבצים"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "להתגבש כקבוצה!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "סיור בנבכי מנשק המשתמש"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "לקבצים אלו יש ספריות שנעשה בהן שימוש בקובץ הזה:"
+msgstr[1] "לקבצים אלו יש ספריות שנעשה בהן שימוש בקבצים אלה:"
+msgstr[2] "לקבצים אלו יש ספריות שנעשה בהן שימוש בקבצים אלה:"
+msgstr[3] "לקבצים אלו יש ספריות שנעשה בהן שימוש בקבצים אלה:"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "מחיקת קובץ"
+
+msgid "common.publish"
+msgstr "פרסום"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "כאן נלמד את היסודות של Penpot תוך השתעשעות עם המדריך המעשי הזה."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "התחלת המדריך"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "מדריך מעשי"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "סיור במרחבי Penpot ועריכת היכרות עם יכולות המפתח שלו."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "ביטול פרסום ספרייה"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "למחוק את הקובץ?"
+msgstr[1] "למחוק את הקבצים?"
+msgstr[2] "למחוק את הקבצים?"
+msgstr[3] "למחוק את הקבצים?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "מחיקת קובץ"
+msgstr[1] "מחיקת קבצים"
+msgstr[2] "מחיקת קבצים"
+msgstr[3] "מחיקת קבצים"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "הזמנת חברים לצוות"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-w"
+msgstr "רוחב מזערי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-h"
+msgstr "גובה מרבי"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "ביטול פרסום"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "ללא הגבלת משתמשים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-w"
+msgstr "רוחב מרבי"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "מהדורת ריבוי משתתפים"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100% בחינם!"
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "אין הגבלה על קבצים או מיזמים"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"צוות מאפשר לך לשתף פעולה עם משתמשים אחרים ב־Penpot שעובדים על אותם קבצים "
+"ומיזמים."
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "הזמנה עם התפקיד:"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "ברוך בואך ל־Penpot!"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr "רצוי לזכור לכלול את כולם. מפתחים, מעצבים, מנהלים… גיוון מעשיר :)"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "מדריך למתנדבים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-w"
+msgstr "רוחב מז.‏"
