@@ -436,7 +436,7 @@
 
       (when (fn? audit)
         (audit :cmd :submit
-               :type "mutation"
+               :type "command"
                :name "login"
                :profile-id (:id profile)
                :ip-addr (audit/parse-client-ip request)

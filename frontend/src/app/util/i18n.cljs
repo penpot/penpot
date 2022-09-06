@@ -26,7 +26,8 @@
    {:label "Català" :value "ca"}
    {:label "Français (community)" :value "fr"}
    {:label "Deutsch (community)" :value "de"}
-   ;; {:label "Italiano (community)" :value "it"}
+   {:label "Italiano (community)" :value "it"}
+   {:label "Euskera" :value "eu"}
    {:label "Norsk - Bokmål (community)" :value "nb_no"}
    {:label "Portuguese - Brazil (community)" :value "pt_br"}
    {:label "Polski (community)" :value "pl"}
