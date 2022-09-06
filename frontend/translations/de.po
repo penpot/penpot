@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-06 06:05+0000\n"
+"PO-Revision-Date: 2022-09-10 17:20+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4329,3 +4329,440 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+msgid "shortcuts.opacity-8"
+msgstr "Deckkraft auf 80% setzen"
+
+msgid "shortcuts.opacity-9"
+msgstr "Deckkraft auf 90% setzen"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Farbwähler"
+
+msgid "shortcuts.not-found"
+msgstr "Kein Tastenkürzel gefunden"
+
+msgid "shortcuts.open-handoff"
+msgstr "Zur Übergabe im Ansichtsmodus"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Zum Dashboard"
+
+msgid "shortcuts.open-workspace"
+msgstr "Zum Arbeitsbereich"
+
+msgid "shortcuts.or"
+msgstr " oder "
+
+msgid "shortcuts.paste"
+msgstr "Einfügen"
+
+msgid "shortcuts.prev-frame"
+msgstr "Vorheriges Board"
+
+msgid "shortcuts.toggle-grid"
+msgstr "Raster ein-/ausblenden"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Ebenen ein-/ausblenden"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Dynamische Ausrichtung umschalten"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Assets einblenden"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Farbpalette ein-/ausblenden"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Fokusmodus umschalten"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Auswahl sperren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.center"
+msgstr "Mitte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "kompakt"
+
+msgid "common.unpublish"
+msgstr "Veröffentlichung aufheben"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "OK"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Achtung"
+
+msgid "shortcuts.opacity-7"
+msgstr "Deckkraft auf 70% setzen"
+
+msgid "shortcuts.redo"
+msgstr "Wiederholen"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Am Pixelraster ausrichten"
+
+msgid "shortcuts.search-placeholder"
+msgstr "Tastenkürzel suchen"
+
+msgid "shortcuts.start-editing"
+msgstr "Mit der Bearbeitung beginnen"
+
+msgid "shortcuts.open-comments"
+msgstr "Zum Kommentarbereich im Ansichtsmodus"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Miniaturansichten festlegen"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "Tastatürkürzel"
+
+msgid "shortcuts.toggle-history"
+msgstr "Verlauf ein-/ausblenden"
+
+msgid "shortcuts.start-measure"
+msgstr "Mit der Vermessung beginnen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-h"
+msgstr "Max.Höhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "im Leerraum verteilt"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot ist für Teams gedacht. Um gemeinsam an Projekten und Dateien zu "
+"arbeiten, laden Sie Mitglieder ein."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Teamwork!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Tutorial starten"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Praktisches Tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Tour starten"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Bibliotheken & Vorlagen"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr ""
+"Beim Importieren der Vorlage ist ein Problem aufgetreten. Die Vorlage wurde "
+"nicht importiert."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Veröffentlichung der Bibliothek aufheben"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr ""
+"Erkunden Sie Penpot um mehr über die wichtigsten Funktionen zu erfahren."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Datei löschen"
+msgstr[1] "Dateien löschen"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Möchten Sie diese Datei wirklich löschen?"
+msgstr[1] "Möchten Sie diese Dateien wirklich löschen?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Datei löschen"
+msgstr[1] "Dateien löschen"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Veröffentlichung aufheben"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Es wird in dieser Datei verwendet:"
+msgstr[1] "Es wird in diesen Dateien verwendet:"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Benutzerhandbuch"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr ""
+"Sie können sich unsere Tutorials und die von unserer Community erstellten "
+"Tutorials ansehen."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Video-Tutorials"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Bevor Sie beginnen"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Diese Datei enthält Bibliotheken, die in dieser Datei verwendet werden:"
+msgstr[1] ""
+"Diese Datei enthält Bibliotheken, die in diesen Dateien verwendet werden:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] ""
+"Diese Dateien enthalten Bibliotheken, die in dieser Datei verwendet werden:"
+msgstr[1] ""
+"Diese Dateien enthalten Bibliotheken, die in diesen Dateien verwendet werden:"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot ist Open Source und wird sowohl von Kaleidos als auch von der "
+"Community entwickelt, wo sich viele Leute bereits gegenseitig helfen. Jeder "
+"kann mitmachen:"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Sie sollten wissen, dass es viele Ressourcen gibt, die Ihnen beim Einstieg "
+"in Penpot erleichtern, wie z. B. das Benutzerhandbuch und unser Youtube-"
+"Kanal."
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "In der Community mitmachen"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Leitfaden für Mitwirkende"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Hier erfahren Sie, wie Sie bei Übersetzungen, Feature Requests, Core-"
+"Entwicklung und der Fehlersuche helfen können…"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Team später erstellen"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Ein Team erstellen"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"In einem Team können Sie mit anderen Penpot-Nutzern zusammenarbeiten, die an "
+"denselben Dateien und Projekten arbeiten."
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Einladen mit der Rolle:"
+
+msgid "workspace.assets.local-library"
+msgstr "lokale Bibliothek"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-h"
+msgstr "Maximale Höhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-w"
+msgstr "Maximale Breite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-h"
+msgstr "Mindesthöhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-w"
+msgstr "Mindestbreite"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "Hauptkomponente wiederherstellen"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Lernen Sie die Grundlagen von Penpot und haben Sie Spaß mit diesem "
+"praktischen Tutorial."
+
+msgid "common.publish"
+msgstr "Veröffentlichen"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Teammanagement"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Diese Datei wurde bereits mit aktivierten V2-Komponenten verwendet."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "Mitglieder in das Team einladen"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "Datei löschen"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Veröffentlichung der Bibliothek aufheben"
+msgstr[1] "Veröffentlichung der Bibliotheken aufheben"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Willkommen bei Penpot!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Benutzeroberfläche erkunden"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "Möchten Sie die Veröffentlichung dieser Bibliothek wirklich aufheben?"
+msgstr[1] "Möchten Sie die Veröffentlichung dieser Bibliotheken wirklich aufheben?"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Denken Sie daran, alle einzubeziehen. Entwickler, Designer, Manager... die "
+"Vielfalt macht's :)"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Unbegrenzte Anzahl von Mitgliedern"
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Unbegrenzte Anzahl von Dateien und Projekten"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Multiplayer-Edition"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Rollenverwaltung"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100% kostenlos!"
+
+msgid "shortcuts.stop-measure"
+msgstr "Mit der Vermessung abbrechen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "Push"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-w"
+msgstr "Max.Breite"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "Min.Höhe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-w"
+msgstr "Min.Breite"
+
+msgid "shortcuts.bring-backward"
+msgstr "Eins nach hinten"
+
+msgid "shortcuts.bring-forward"
+msgstr "Eins nach vorne"
+
+msgid "shortcuts.bring-back"
+msgstr "In den Hintergrund"
+
+msgid "shortcuts.make-corner"
+msgstr "Zur Ecke umwandeln"
+
+msgid "shortcuts.next-frame"
+msgstr "Nächstes Board"
+
+msgid "shortcuts.opacity-2"
+msgstr "Deckkraft auf 20% setzen"
+
+msgid "shortcuts.opacity-3"
+msgstr "Deckkraft auf 30% setzen"
+
+msgid "shortcuts.opacity-4"
+msgstr "Deckkraft auf 40% setzen"
+
+msgid "shortcuts.opacity-5"
+msgstr "Deckkraft auf 50% setzen"
+
+msgid "shortcuts.opacity-6"
+msgstr "Deckkraft auf 60% setzen"
+
+msgid "shortcuts.opacity-0"
+msgstr "Deckkraft auf 100% setzen"
+
+msgid "shortcuts.opacity-1"
+msgstr "Deckkraft auf 10% setzen"
+
+msgid "shortcuts.select-all"
+msgstr "Alles auswählen"
+
+msgid "shortcuts.separate-nodes"
+msgstr "Punkte trennen"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "Pixelraster ein-/ausblenden"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "Tastenkürzel ein-/ausblenden"
+
+msgid "shortcuts.reset-zoom"
+msgstr "Zoom zurücksetzen"
+
+msgid "shortcuts.snap-nodes"
+msgstr "An den Punkten ausrichten"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Lineale ein-/ausblenden"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Am Raster ausrichten"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "An Hilfslinien ausrichten"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Seitenverhältnis sperren/entsperren"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "Textskalierung aktivieren/deaktivieren"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Textpalette ein-/ausblenden"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Elemente ein-/ausblenden"
+
+msgid "shortcuts.undo"
+msgstr "Rückgängig"
+
+msgid "shortcuts.ungroup"
+msgstr "Gruppierung aufheben"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Vollbild aktivieren/deaktivieren"
+
+msgid "shortcuts.unmask"
+msgstr "Maske entfernen"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Zur Auswahl zoomen"
