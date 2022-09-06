@@ -361,26 +361,26 @@
     :tasks      (ig/ref :app.worker/registry)
     :pool       (ig/ref :app.db/pool)
     :entries
-    [{:cron #app/cron "0 0 0 * * ?" ;; daily
-      :task :file-gc}
-
-     {:cron #app/cron "0 0 * * * ?"  ;; hourly
+    [{:cron #app/cron "0 0 * * * ?" ;; hourly
       :task :file-xlog-gc}
 
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :storage-gc-deleted}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
-      :task :storage-gc-touched}
-
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+     {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :session-gc}
 
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+     {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :objects-gc}
 
-     {:cron #app/cron "0 0 0 * * ?"  ;; daily
+     {:cron #app/cron "0 0 0 * * ?" ;; daily
+      :task :storage-gc-deleted}
+
+     {:cron #app/cron "0 0 0 * * ?" ;; daily
+      :task :storage-gc-touched}
+
+     {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :tasks-gc}
+
+     {:cron #app/cron "0 0 2 * * ?" ;; daily
+      :task :file-gc}
 
      {:cron #app/cron "0 30 */3,23 * * ?"
       :task :telemetry}
