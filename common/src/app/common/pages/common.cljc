@@ -71,7 +71,26 @@
    :constraints-h         :constraints-group
    :constraints-v         :constraints-group
    :fixed-scroll          :constraints-group
-   :exports               :exports-group})
+   :exports               :exports-group
+
+   :layout                :layout-container
+   :layout-dir            :layout-container
+   :layout-gap            :layout-container
+   :layout-type           :layout-container
+   :layout-wrap-type      :layout-container
+   :layout-padding-type   :layout-container
+   :layout-padding        :layout-container
+   :layout-h-orientation  :layout-container
+   :layout-v-orientation  :layout-container
+
+   :layout-margin         :layout-item
+   :layout-margin-type    :layout-item
+   :layout-h-behavior     :layout-item
+   :layout-v-behavior     :layout-item
+   :layout-max-h          :layout-item
+   :layout-min-h          :layout-item
+   :layout-max-w          :layout-item
+   :layout-min-w          :layout-item})
 
 ;; Attributes that may directly be edited by the user with forms
 (def editable-attrs
@@ -111,10 +130,29 @@
             :stroke-cap-start
             :stroke-cap-end
 
-            :exports}
+            :exports
 
-  :group #{:proportion-lock
-           :width :height
+            :layout
+            :layout-dir
+            :layout-gap
+            :layout-type
+            :layout-wrap-type
+            :layout-padding-type
+            :layout-padding
+            :layout-h-orientation
+            :layout-v-orientation
+
+            :layout-margin
+            :layout-margin-type
+            :layout-h-behavior
+            :layout-v-behavior
+            :layout-max-h
+            :layout-min-h
+            :layout-max-w
+            :layout-min-w}
+
+   :group #{:proportion-lock
+            :width :height
            :x :y
            :rotation
            :selrect
@@ -135,7 +173,16 @@
 
            :blur
 
-           :exports}
+           :exports
+
+           :layout-margin
+           :layout-margin-type
+           :layout-h-behavior
+           :layout-v-behavior
+           :layout-max-h
+           :layout-min-h
+           :layout-max-w
+           :layout-min-w}
 
    :rect #{:proportion-lock
            :width :height
@@ -180,7 +227,16 @@
 
            :blur
 
-           :exports}
+           :exports
+
+           :layout-margin
+           :layout-margin-type
+           :layout-h-behavior
+           :layout-v-behavior
+           :layout-max-h
+           :layout-min-h
+           :layout-max-w
+           :layout-min-w}
 
    :circle #{:proportion-lock
              :width :height
@@ -223,7 +279,16 @@
 
              :blur
 
-             :exports}
+             :exports
+
+             :layout-margin
+             :layout-margin-type
+             :layout-h-behavior
+             :layout-v-behavior
+             :layout-max-h
+             :layout-min-h
+             :layout-max-w
+             :layout-min-w}
 
   :path #{:proportion-lock
           :width :height
@@ -266,7 +331,16 @@
 
           :blur
 
-          :exports}
+          :exports
+
+          :layout-margin
+          :layout-margin-type
+          :layout-h-behavior
+          :layout-v-behavior
+          :layout-max-h
+          :layout-min-h
+          :layout-max-w
+          :layout-min-w}
 
   :text #{:proportion-lock
           :width :height
@@ -332,7 +406,16 @@
 
           :grow-type
 
-          :exports}
+          :exports
+
+          :layout-margin
+          :layout-margin-type
+          :layout-h-behavior
+          :layout-v-behavior
+          :layout-max-h
+          :layout-min-h
+          :layout-max-w
+          :layout-min-w}
 
   :image #{:proportion-lock
            :width :height
@@ -358,7 +441,16 @@
 
            :blur
 
-           :exports}
+           :exports
+
+           :layout-margin
+           :layout-margin-type
+           :layout-h-behavior
+           :layout-v-behavior
+           :layout-max-h
+           :layout-min-h
+           :layout-max-w
+           :layout-min-w}
 
   :svg-raw #{:proportion-lock
              :width :height
@@ -403,7 +495,16 @@
 
              :blur
 
-             :exports}
+             :exports
+
+             :layout-margin
+             :layout-margin-type
+             :layout-h-behavior
+             :layout-v-behavior
+             :layout-max-h
+             :layout-min-h
+             :layout-max-w
+             :layout-min-w}
 
   :bool #{:proportion-lock
           :width :height
@@ -446,5 +547,14 @@
 
           :blur
 
-          :exports}})
+          :exports
+
+          :layout-margin
+          :layout-margin-type
+          :layout-h-behavior
+          :layout-v-behavior
+          :layout-max-h
+          :layout-min-h
+          :layout-max-w
+          :layout-min-w}})
 

@@ -136,7 +136,8 @@
 
 (mf/defc layout-item-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type"]))]}
-  [{:keys [ids _type values is-layout-child? is-layout-container?] :as props}]
+  [{:keys [ids values is-layout-child? is-layout-container?] :as props}]
+
   (let [open?             (mf/use-state false)
         toggle-open       (fn [] (swap! open? not))
 
