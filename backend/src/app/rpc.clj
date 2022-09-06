@@ -13,6 +13,7 @@
    [app.http :as-alias http]
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
+   [app.msgbus :as-alias mbus]
    [app.rpc.retry :as retry]
    [app.rpc.rlimit :as rlimit]
    [app.rpc.semaphore :as rsem]
@@ -248,7 +249,7 @@
 (s/def ::executors map?)
 (s/def ::http-client fn?)
 (s/def ::ldap (s/nilable map?))
-(s/def ::msgbus fn?)
+(s/def ::msgbus ::mbus/msgbus)
 (s/def ::public-uri ::us/not-empty-string)
 (s/def ::session map?)
 (s/def ::storage some?)

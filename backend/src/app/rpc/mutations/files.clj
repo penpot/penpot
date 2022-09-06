@@ -17,6 +17,7 @@
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
+   [app.msgbus :as mbus]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
@@ -439,12 +440,12 @@
 
 (defn- send-notifications
   [{:keys [conn] :as cfg} {:keys [file changes session-id] :as params}]
-  (let [lchanges  (filter library-change? changes)
-        msgbus-fn (:msgbus cfg)]
+  (let [lchanges (filter library-change? changes)
+        msgbus   (:msgbus cfg)]
 
 
     ;; Asynchronously publish message to the msgbus
-    (msgbus-fn :cmd :pub
+    (mbus/pub! msgbus
                :topic (:id file)
                :message {:type :file-change
                          :profile-id (:profile-id params)
@@ -456,7 +457,7 @@
     (when (and (:is-shared file) (seq lchanges))
       (let [team-id (retrieve-team-id conn (:project-id file))]
         ;; Asynchronously publish message to the msgbus
-        (msgbus-fn :cmd :pub
+        (mbus/pub! msgbus
                    :topic team-id
                    :message {:type :library-change
                              :profile-id (:profile-id params)

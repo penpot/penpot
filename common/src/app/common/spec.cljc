@@ -217,6 +217,9 @@
 (s/def ::coll-of-uuid (s/every ::uuid))
 (s/def ::set-of-uuid (s/every ::uuid :kind set?))
 
+#?(:clj
+   (s/def ::agent #(instance? clojure.lang.Agent %)))
+
 (defn bytes?
   "Test if a first parameter is a byte
   array or not."

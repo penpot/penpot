@@ -212,7 +212,7 @@
 (defmulti create-collector ::mdef/type)
 
 (defn run!
-  [{:keys [::definitions]} {:keys [id] :as params}]
+  [{:keys [::definitions]} & {:keys [id] :as params}]
   (when-let [mobj (get definitions id)]
     (run-collector! mobj params)
     true))
