@@ -181,7 +181,7 @@
               (rx/tap
                (fn [resp]
                  (when (or (< (:status resp) 200) (>= (:status resp) 300))
-                   (rx/throw (js/Error. "Error fetching data uri" #js {:cause (clj->js resp)})))))
+                   (throw (js/Error. "Error fetching data uri" #js {:cause (clj->js resp)})))))
 
               (rx/map :body)
               (rx/mapcat wapi/read-file-as-data-url)
