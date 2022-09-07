@@ -8,6 +8,7 @@
 - Fix error when moving nested frames outside [Taiga #4017](https://tree.taiga.io/project/penpot/issue/4017)
 - Fix problem when hovering over nested frames [Taiga #4018](https://tree.taiga.io/project/penpot/issue/4018)
 - Fix problem editing rotated texts [Taiga #4026](https://tree.taiga.io/project/penpot/issue/4026)
+- Fix problem with texts for non existing fonts [Taiga #4087](https://tree.taiga.io/project/penpot/issue/4087)
 
 ## 1.15.2-beta
 
