@@ -18,6 +18,7 @@
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.transit :as t]
+   [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -641,8 +642,8 @@
                                                 (not (:component-root? shape)))
 
                             parent                 (get objects parent-id)
-                            component-shape        (cph/get-component-shape objects shape)
-                            component-shape-parent (cph/get-component-shape objects parent)
+                            component-shape        (ctn/get-component-shape objects shape)
+                            component-shape-parent (ctn/get-component-shape objects parent)
 
                             detach? (and instance-part? (not= (:id component-shape)
                                                               (:id component-shape-parent)))
@@ -1406,7 +1407,7 @@
           ;; Check if the shape is an instance whose master is defined in a
           ;; library that is not linked to the current file
           (foreign-instance? [shape paste-objects state]
-            (let [root         (cph/get-root-shape paste-objects shape)
+            (let [root         (ctn/get-root-shape paste-objects shape)
                   root-file-id (:component-file root)]
               (and (some? root)
                    (not= root-file-id (:current-file-id state))

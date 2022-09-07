@@ -16,6 +16,7 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]))
 
@@ -44,7 +45,7 @@
 
 (defn with-container
   [changes container]
-  (if (cph/page? container)
+  (if (ctn/page? container)
     (vary-meta changes assoc ::page-id (:id container))
     (vary-meta changes assoc ::component-id (:id container))))
 

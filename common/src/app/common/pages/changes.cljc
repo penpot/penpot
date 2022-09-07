@@ -16,6 +16,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.pages.changes-spec :as pcs]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.colors-list :as ctcl]
@@ -103,7 +104,7 @@
               (cond-> parent
                 (and (:shape-ref parent)
                      (not ignore-touched))
-                (-> (update :touched cph/set-touched-group :shapes-group)
+                (-> (update :touched ctk/set-touched-group :shapes-group)
                     (dissoc :remote-synced?)))))
 
           (delete-from-objects [objects]
@@ -208,7 +209,7 @@
                              (update :shapes d/vec-without-nils))]
               (cond-> parent
                 (and (:shape-ref parent) (= (:type parent) :group) (not ignore-touched))
-                (-> (update :touched cph/set-touched-group :shapes-group)
+                (-> (update :touched ctk/set-touched-group :shapes-group)
                     (dissoc :remote-synced?)))))
 
           (remove-from-old-parent [cpindex objects shape-id]
@@ -228,7 +229,7 @@
                       (d/update-in-when [pid :shapes] without-obj sid)
                       (d/update-in-when [pid :shapes] d/vec-without-nils)
                       (cond-> component? (d/update-when pid #(-> %
-                                                                 (update :touched cph/set-touched-group :shapes-group)
+                                                                 (update :touched ctk/set-touched-group :shapes-group)
                                                                  (dissoc :remote-synced?)))))))))
 
           (update-parent-id [objects id]
@@ -429,7 +430,7 @@
            (not root-name?)
            (not (and ignore-geometry is-geometry?)))
       (->
-        (update :touched cph/set-touched-group group)
+        (update :touched ctk/set-touched-group group)
         (dissoc :remote-synced?))
 
       (nil? val)

@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.spec :as us]
+   [app.common.types.component :as ctk]
    [app.common.types.shape-tree :as ctst]
    [clojure.spec.alpha :as s]))
 
@@ -34,17 +35,6 @@
   [container]
   (= (:type container) :component))
 
-(defn get-container
-  [file type id]
-  (us/assert map? file)
-  (us/assert ::type type)
-  (us/assert uuid? id)
-
-  (-> (if (= type :page)
-        (get-in file [:pages-index id])
-        (get-in file [:components id]))
-      (assoc :type type)))
-
 (defn get-shape
   [container shape-id]
   (us/assert ::container container)
@@ -60,6 +50,40 @@
 (defn update-shape
   [container shape-id f]
   (update-in container [:objects shape-id] f))
+
+(defn get-component-shape
+  "Get the root shape of an instance, the one that is linked to the component.
+  If this is a subinstance, get the most direct root."
+  [objects shape]
+  (if-not (:shape-ref shape)
+    nil
+    (if (:component-id shape)
+      shape
+      (if-let [parent-id (:parent-id shape)]
+        (get-component-shape objects (get objects parent-id))
+        nil))))
+
+(defn get-root-shape
+  "Get the topmost root shape of an instance, the one that is linked to the
+  component and without any container instance upwards."
+  [objects shape]
+  (cond
+    (some? (:component-root? shape))
+    shape
+
+    (some? (:shape-ref shape))
+    (recur objects (get objects (:parent-id shape)))))
+
+(defn get-instances
+  "Get all shapes in the objects list that are near instances of the given one
+
+  ---------------------------------------------------------------------------
+  TODO: Warning!!! this is a slow operation, since it needs to walk the whole
+  objects list. Perhaps there is a way of indexing this someway.
+  ---------------------------------------------------------------------------"
+  [objects main-shape]
+  (filter #(ctk/is-main-of? main-shape %)
+          (vals objects)))
 
 (defn make-component-shape
   "Clone the shape and all children. Generate new ids and detach

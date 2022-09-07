@@ -59,6 +59,11 @@
   [shape]
   (or (:y shape) (:y (:selrect shape)))) ; Paths don't have :y attribute
 
+(defn orig-pos
+  "Return the top left point of the shape wrapper BEFORE applying transformations."
+  [shape]
+  (gpt/point (left-bound shape) (top-bound shape)))
+
 (defn fully-contained?
   "Checks if one rect is fully inside the other"
   [rect other]
@@ -182,6 +187,7 @@
 (dm/export gtr/modifiers->transform)
 (dm/export gtr/empty-modifiers?)
 (dm/export gtr/move-position-data)
+(dm/export gtr/apply-modifiers)
 (dm/export gtr/apply-transform)
 
 ;; Constratins

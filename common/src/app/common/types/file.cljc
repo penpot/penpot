@@ -6,6 +6,7 @@
 
 (ns app.common.types.file
   (:require
+    [app.common.pprint :refer [pprint]]
     [app.common.data :as d]
     [app.common.geom.point :as gpt]
     [app.common.geom.shapes :as gsh]
@@ -110,6 +111,17 @@
   [file-data]
   (concat (map #(ctn/make-container % :page) (ctpl/pages-seq file-data))
           (map #(ctn/make-container % :component) (ctkl/components-seq file-data))))
+
+(defn get-container
+  [file type id]
+  (us/assert map? file)
+  (us/assert :app.common.types.container/type type)
+  (us/assert uuid? id)
+
+  (-> (if (= type :page)
+        (get-in file [:pages-index id])
+        (get-in file [:components id]))
+      (assoc :type type)))
 
 (defn update-container
   "Update a container inside the file, it can be a page or a component"
@@ -512,7 +524,7 @@
              (show-component [shape objects]
                (if (nil? (:shape-ref shape))
                  ""
-                 (let [root-shape        (cph/get-component-shape objects shape)
+                 (let [root-shape        (ctn/get-component-shape objects shape)
                        component-id      (when root-shape (:component-id root-shape))
                        component-file-id (when root-shape (:component-file root-shape))
                        component-file    (when component-file-id (get libraries component-file-id nil))

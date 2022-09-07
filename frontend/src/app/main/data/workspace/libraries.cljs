@@ -367,7 +367,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [libraries      (wsh/get-libraries state)
-            component      (cph/get-component libraries id)
+            component      (ctf/get-component libraries id)
             all-components (-> state :workspace-data :components vals)
             unames         (into #{} (map :name) all-components)
             new-name       (ctst/generate-unique-name unames (:name component))
@@ -484,7 +484,7 @@
     (watch [it state _]
       (let [file      (wsh/get-local-file state)
             page-id   (get state :current-page-id)
-            container (cph/get-container file :page page-id)
+            container (ctf/get-container file :page page-id)
 
             changes   (-> (pcb/empty-changes it)
                           (pcb/with-container container)
@@ -500,7 +500,7 @@
       (let [page-id   (:current-page-id state)
             objects   (wsh/lookup-page-objects state page-id)
             file      (wsh/get-local-file state)
-            container (cph/get-container file :page page-id)
+            container (ctf/get-container file :page page-id)
             selected  (->> state
                            (wsh/lookup-selected)
                            (cph/clean-loops objects))
@@ -557,7 +557,7 @@
             libraries (wsh/get-libraries state)
 
             page-id   (:current-page-id state)
-            container (cph/get-container file :page page-id)
+            container (ctf/get-container file :page page-id)
 
             components-v2
             (features/active-feature? state :components-v2)
@@ -593,7 +593,7 @@
             local-file    (wsh/get-local-file state)
             libraries     (wsh/get-libraries state)
 
-            container     (cph/get-container local-file :page page-id)
+            container     (ctf/get-container local-file :page page-id)
             shape         (ctn/get-shape container id)
 
             changes
