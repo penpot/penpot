@@ -58,6 +58,21 @@
   [shape]
   (or (:y shape) (:y (:selrect shape)))) ; Paths don't have :y attribute
 
+(defn orig-pos
+  "Return the top left point of the shape wrapper BEFORE applying transformations."
+  [shape]
+  (gpt/point (left-bound shape) (top-bound shape)))
+
+(defn width
+  "Return the width of the shape BEFORE transformations."
+  [shape]
+  (-> shape :selrect :width))
+
+(defn height
+  "Return the height of the shape BEFORE transformations."
+  [shape]
+  (-> shape :selrect :height))
+
 (defn fully-contained?
   "Checks if one rect is fully inside the other"
   [rect other]
@@ -178,6 +193,10 @@
 (dm/export gtr/transform-bounds)
 (dm/export gtr/move-position-data)
 (dm/export gtr/apply-objects-modifiers)
+(dm/export gtr/parent-coords-rect)
+(dm/export gtr/parent-coords-points)
+(dm/export gtr/apply-modifiers)
+(dm/export gtr/apply-transform)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)

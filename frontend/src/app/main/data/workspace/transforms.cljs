@@ -16,12 +16,16 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
+   [app.main.data.workspace.comments :as dwcm]
+   [app.main.data.workspace.guides :as dwg]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -32,6 +36,110 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
+
+;; --- copies ---------------------------
+
+(defn- get-copies
+  "If one or more of the shapes belongs to a component's main instance, find all copies of
+  the component in the same page.
+ 
+  Return a map {<main-root-id> [<main-root> [<copy-root> <copy-root>...]] ...}"
+  [shapes objects modifiers]
+  (letfn [(get-copies-one [shape]
+            (let [root-shape (ctn/get-root-shape objects shape)]
+              (when (:main-instance? root-shape)
+                (let [children (->> root-shape
+                                    :shapes
+                                    (map #(get objects %))
+                                    (map #(gsh/apply-modifiers % (get-in modifiers [(:id %) :modifiers]))))
+                      root-shape (gsh/update-group-selrect root-shape children)]
+                  [(:id root-shape) [root-shape (ctn/get-instances objects root-shape)]]))))]
+
+    (into {} (map get-copies-one shapes))))
+
+(defn- reposition-shape
+  [shape origin-root dest-root]
+  (let [shape-pos (fn [shape]
+                    (gpt/point (get-in shape [:selrect :x])
+                               (get-in shape [:selrect :y])))
+
+        origin-root-pos (shape-pos origin-root)
+        dest-root-pos   (shape-pos dest-root)
+        delta           (gpt/subtract dest-root-pos origin-root-pos)]
+    (gsh/move shape delta)))
+
+(defn- sync-shape
+  [main-shape copy-shape copy-root main-root]
+  ;; (js/console.log "+++")
+  ;; (js/console.log "main-shape" (clj->js main-shape))
+  ;; (js/console.log "copy-shape" (clj->js copy-shape))
+  (if (ctk/touched-group? copy-shape :geometry-group)
+    {}
+    (let [main-shape  (reposition-shape main-shape main-root copy-root)
+
+          translation (gpt/subtract (gsh/orig-pos main-shape)
+                                    (gsh/orig-pos copy-shape))
+
+          center      (gsh/orig-pos copy-shape)
+          mult-w      (/ (gsh/width main-shape) (gsh/width copy-shape))
+          mult-h      (/ (gsh/height main-shape) (gsh/height copy-shape))
+          resize      (gpt/point mult-w mult-h)]
+
+      (cond-> {}
+        (not (gpt/almost-zero? translation))
+        (assoc :displacement (gmt/translate-matrix translation))
+
+        (not (gpt/close? resize (gpt/point 1 1)))
+        (assoc :resize-vector resize
+               :resize-origin center)))))
+
+(defn- process-text-modifiers
+  "For texts we only use the displacement because resize
+  needs to recalculate the text layout"
+  [shape modifiers]
+  modifiers)
+  ;; (cond-> modifiers
+  ;;   (= :text (:type shape))
+  ;;   (select-keys [:displacement :rotation])))
+
+(defn- add-copies-modifiers
+  "Add modifiers to all necessary shapes inside the copies"
+  [copies objects modifiers]
+  (letfn [(add-copy-modifiers-one [modifiers copy-shape copy-root main-root main-shapes main-shapes-modif]
+            (let [main-shape-modif (d/seek #(ctk/is-main-of? % copy-shape) main-shapes-modif)
+                  modifier         (cond-> (sync-shape main-shape-modif copy-shape copy-root main-root)
+                                     (some? (:rotation (get-in modifiers [(:id main-shape-modif) :modifiers])))
+                                     (assoc :rotation (:rotation (get-in modifiers [(:id main-shape-modif) :modifiers])))
+                                     )]
+              (if (seq modifier)
+                (assoc-in modifiers [(:id copy-shape) :modifiers] modifier)
+                modifiers)))
+
+          (add-copy-modifiers [modifiers copy-root main-root main-shapes main-shapes-modif]
+            (let [copy-shapes (into [copy-root] (cph/get-children objects (:id copy-root)))]
+              (reduce #(add-copy-modifiers-one %1 %2 copy-root main-root main-shapes main-shapes-modif)
+                      modifiers
+                      copy-shapes)))
+
+          (add-copies-modifiers-one [modifiers [main-root copy-roots]]
+            (let [main-shapes       (into [main-root] (cph/get-children objects (:id main-root)))
+                  main-shapes-modif (map (fn [shape]
+                                           (let [; shape (cond-> shape 
+                                                 ;         (some? (:transform-inverse shape))
+                                                 ;         (gsh/apply-transform (:transform-inverse shape)))
+                                                 ]
+                                                 (->> (get-in modifiers [(:id shape) :modifiers])
+                                                      (process-text-modifiers shape)
+                                                      (gsh/apply-modifiers shape))))
+                                         main-shapes)]
+              (reduce #(add-copy-modifiers %1 %2 main-root main-shapes main-shapes-modif)
+                      modifiers
+                      copy-roots)))]
+
+    (reduce add-copies-modifiers-one
+            modifiers
+            (vals copies))))
+
 
 ;; -- Helpers --------------------------------------------------------
 
@@ -98,6 +206,241 @@
       (update state :workspace-local dissoc :transform))))
 
 
+; === OJO: bloque posiblemente borrado
+;; -- Temporary modifiers -------------------------------------------
+
+;; During an interactive transformation of shapes (e.g. when resizing or rotating
+;; a group with the mouse), there are a lot of objects that need to be modified
+;; (in this case, the group and all its children).
+;;
+;; To avoid updating the shapes theirselves, and forcing redraw of all components
+;; that depend on the "objects" global state, we set a "modifiers" structure, with
+;; the changes that need to be applied, and store it in :workspace-modifiers global
+;; variable. The viewport reads this and merges it into the objects list it uses to
+;; paint the viewport content, redrawing only the objects that have new modifiers.
+;;
+;; When the interaction is finished (e.g. user releases mouse button), the
+;; apply-modifiers event is done, that consolidates all modifiers into the base
+;; geometric attributes of the shapes.
+
+(declare clear-local-transform)
+
+(declare get-ignore-tree)
+
+(defn set-modifiers
+  ([ids]
+   (set-modifiers ids nil false))
+
+  ([ids modifiers]
+   (set-modifiers ids modifiers false))
+
+  ([ids modifiers ignore-constraints]
+   (set-modifiers ids modifiers ignore-constraints false))
+
+  ([ids modifiers ignore-constraints ignore-snap-pixel]
+   (us/verify (s/coll-of uuid?) ids)
+   (ptk/reify ::set-modifiers
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [objects     (wsh/lookup-page-objects state)
+             ids         (into #{} (remove #(get-in objects [% :blocked] false)) ids)
+
+             snap-pixel? (and (not ignore-snap-pixel)
+                              (contains? (:workspace-layout state) :snap-pixel-grid))
+
+             modif-tree
+             (gsh/set-objects-modifiers ids objects (constantly modifiers) ignore-constraints snap-pixel?)
+
+             copies (get-copies (mapv (d/getf objects) ids) objects modif-tree)
+
+             ;; TODO: mark new modifiers to be ignored in apply-modifiers
+             modif-tree (add-copies-modifiers copies objects modif-tree)]
+
+         (update state :workspace-modifiers merge modif-tree))))))
+
+;; (defn set-modifiers-raw
+;;   [modifiers]
+;;   (ptk/reify ::set-modifiers-raw
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (update state :workspace-modifiers merge modifiers))))
+
+;; Rotation use different algorithm to calculate children modifiers (and do not use child constraints).
+(defn- set-rotation-modifiers
+  ([angle shapes]
+   (set-rotation-modifiers angle shapes (-> shapes gsh/selection-rect gsh/center-selrect)))
+
+  ([angle shapes center]
+   (ptk/reify ::set-rotation-modifiers
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [objects     (wsh/lookup-page-objects state)
+             ids
+             (->> shapes
+                  (remove #(get % :blocked false))
+                  (mapcat #(cph/get-children objects (:id %)))
+                  (concat shapes)
+                  (filter #((cpc/editable-attrs (:type %)) :rotation))
+                  (map :id))
+
+             get-modifier
+             (fn [shape]
+               (gsh/rotation-modifiers shape center angle))
+
+             modif-tree
+             (gsh/set-objects-modifiers ids objects get-modifier false false)]
+
+         (update state :workspace-modifiers merge modif-tree))))))
+
+(defn- update-grow-type
+  [shape old-shape]
+  (let [auto-width? (= :auto-width (:grow-type shape))
+        auto-height? (= :auto-height (:grow-type shape))
+
+        changed-width? (not (mth/close? (:width shape) (:width old-shape)))
+        changed-height? (not (mth/close? (:height shape) (:height old-shape)))
+
+        change-to-fixed? (or (and auto-width? (or changed-height? changed-width?))
+                             (and auto-height? changed-height?))]
+    (cond-> shape
+      change-to-fixed?
+      (assoc :grow-type :fixed))))
+
+(defn apply-modifiers
+  ([]
+   (apply-modifiers nil))
+
+  ([{:keys [undo-transation?] :or {undo-transation? true}}]
+   (ptk/reify ::apply-modifiers
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects           (wsh/lookup-page-objects state)
+             object-modifiers  (get state :workspace-modifiers)
+
+             ids (keys object-modifiers)
+             ids-with-children (into (vec ids) (mapcat #(cph/get-children-ids objects %)) ids)
+
+             shapes            (map (d/getf objects) ids)
+             ignore-tree       (->> (map #(get-ignore-tree object-modifiers objects %) shapes)
+                                    (reduce merge {}))]
+
+         (rx/concat
+          (if undo-transation?
+            (rx/of (dwu/start-undo-transaction))
+            (rx/empty))
+          (rx/of (ptk/event ::dwg/move-frame-guides ids-with-children)
+                 (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
+                 (dch/update-shapes
+                  ids
+                  (fn [shape]
+                    (let [modif (get object-modifiers (:id shape))
+                          text-shape? (cph/text-shape? shape)]
+                      (-> shape
+                          (merge modif)
+                          (gsh/transform-shape)
+                          (cond-> text-shape?
+                            (update-grow-type shape)))))
+                  {:reg-objects? true
+                   :ignore-tree ignore-tree
+                   ;; Attributes that can change in the transform. This way we don't have to check
+                   ;; all the attributes
+                   :attrs [:selrect
+                           :points
+                           :x
+                           :y
+                           :width
+                           :height
+                           :content
+                           :transform
+                           :transform-inverse
+                           :rotation
+                           :position-data
+                           :flip-x
+                           :flip-y
+                           :grow-type]})
+                 (clear-local-transform))
+          (if undo-transation?
+            (rx/of (dwu/commit-undo-transaction))
+            (rx/empty))))))))
+
+(defn- check-delta
+  "If the shape is a component instance, check its relative position respect the
+  root of the component, and see if it changes after applying a transformation."
+  [shape root transformed-shape transformed-root objects modif-tree]
+  (let [root
+        (cond
+          (:component-root? shape)
+          shape
+
+          (nil? root)
+          (ctn/get-root-shape objects shape)
+
+          :else root)
+
+        transformed-root
+        (cond
+          (:component-root? transformed-shape)
+          transformed-shape
+
+          (nil? transformed-root)
+          (as-> (ctn/get-root-shape objects transformed-shape) $
+            (gsh/transform-shape (merge $ (get modif-tree (:id $)))))
+
+          :else transformed-root)
+
+        shape-delta
+        (when root
+          (gpt/point (- (gsh/left-bound shape) (gsh/left-bound root))
+                     (- (gsh/top-bound shape) (gsh/top-bound root))))
+
+        transformed-shape-delta
+        (when transformed-root
+          (gpt/point (- (gsh/left-bound transformed-shape) (gsh/left-bound transformed-root))
+                     (- (gsh/top-bound transformed-shape) (gsh/top-bound transformed-root))))
+
+        ;; There are cases in that the coordinates change slightly (e.g. when
+        ;; rounding to pixel, or when recalculating text positions in different
+        ;; zoom levels). To take this into account, we ignore movements smaller
+        ;; than 1 pixel.
+        distance (if (and shape-delta transformed-shape-delta)
+                   (gpt/distance-vector shape-delta transformed-shape-delta)
+                   (gpt/point 0 0))
+
+        ignore-geometry? (and (< (:x distance) 1) (< (:y distance) 1))]
+
+    [root transformed-root ignore-geometry?]))
+
+(defn- get-ignore-tree
+  "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
+  ([modif-tree objects shape]
+   (get-ignore-tree modif-tree objects shape nil nil {}))
+
+  ([modif-tree objects shape root transformed-root ignore-tree]
+   (let [children (map (d/getf objects) (:shapes shape))
+
+         shape-id (:id shape)
+         transformed-shape (gsh/transform-shape (merge shape (get modif-tree shape-id)))
+
+         [root transformed-root ignore-geometry?]
+         (check-delta shape root transformed-shape transformed-root objects modif-tree)
+
+         ignore-tree (assoc ignore-tree shape-id ignore-geometry?)
+
+         set-child
+         (fn [ignore-tree child]
+           (get-ignore-tree modif-tree objects child root transformed-root ignore-tree))]
+
+     (reduce set-child ignore-tree children))))
+
+(defn- clear-local-transform []
+  (ptk/reify ::clear-local-transform
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (dissoc :workspace-modifiers)
+          (dissoc ::current-move-selected)))))
+
+; === OJO: fin bloque
 ;; -- Resize --------------------------------------------------------
 
 (defn start-resize

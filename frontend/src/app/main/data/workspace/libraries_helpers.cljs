@@ -127,7 +127,7 @@
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."
   [it file-id component-id position page libraries]
-  (let [component       (cph/get-component libraries file-id component-id)
+  (let [component       (ctf/get-component libraries file-id component-id)
 
         [new-shape new-shapes]
         (ctn/make-component-instance page component file-id position)
@@ -191,7 +191,7 @@
                                           asset-id
                                           library-id
                                           state
-                                          (cph/make-container page :page)
+                                          (ctn/make-container page :page)
                                           components-v2)))
         changes))))
 
@@ -227,7 +227,7 @@
                                           asset-id
                                           library-id
                                           state
-                                          (cph/make-container local-component :component)
+                                          (ctn/make-container local-component :component)
                                           components-v2)))
         changes))))
 
@@ -236,7 +236,7 @@
   or a component) that use assets of the given type in the given library."
   [it asset-type asset-id library-id state container components-v2]
 
-  (if (cph/page? container)
+  (if (ctn/page? container)
     (log/debug :msg "Sync page in local file" :page-id (:id container))
     (log/debug :msg "Sync component in local library" :component-id (:id container)))
 
@@ -451,7 +451,7 @@
   [changes libraries container shape-id reset? components-v2]
   (log/debug :msg "Sync shape direct" :shape (str shape-id) :reset? reset?)
   (let [shape-inst    (ctn/get-shape container shape-id)
-        component     (cph/get-component libraries
+        component     (ctf/get-component libraries
                                          (:component-file shape-inst)
                                          (:component-id shape-inst))
         component     (or component
@@ -588,7 +588,7 @@
   [changes libraries container shape-id]
   (log/debug :msg "Sync shape inverse" :shape (str shape-id))
   (let [shape-inst    (ctn/get-shape container shape-id)
-        component     (cph/get-component libraries
+        component     (ctf/get-component libraries
                                          (:component-file shape-inst)
                                          (:component-id shape-inst))
         shape-main    (ctn/get-shape component (:shape-ref shape-inst))
@@ -618,7 +618,7 @@
   (if (nil? shape-main)
     ;; This should not occur, but protect against it in any case
     changes
-    (let [component-container  (cph/make-container component :component)
+    (let [component-container  (ctn/make-container component :component)
 
           omit-touched?        false
           set-remote-synced?   (not initial-root?)
@@ -825,7 +825,7 @@
                                                         :shapes all-parents}))
         changes' (reduce del-obj-change changes' new-shapes)]
 
-    (if (and (cph/touched-group? parent-shape :shapes-group) omit-touched?)
+    (if (and (ctk/touched-group? parent-shape :shapes-group) omit-touched?)
       changes
       changes')))
 
@@ -908,7 +908,7 @@
 (defn- remove-shape
   [changes shape container omit-touched?]
   (log/info :msg (str "REMOVE-SHAPE "
-                      (if (cph/page? container) "[P] " "[C] ")
+                      (if (ctn/page? container) "[P] " "[C] ")
                       (:name shape)))
   (let [objects    (get container :objects)
         parents    (cph/get-parent-ids objects (:id shape))
@@ -946,14 +946,14 @@
                          changes'
                          (map :id children))]
 
-    (if (and (cph/touched-group? parent :shapes-group) omit-touched?)
+    (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
       changes
       changes')))
 
 (defn- move-shape
   [changes shape index-before index-after container omit-touched?]
   (log/info :msg (str "MOVE "
-                      (if (cph/page? container) "[P] " "[C] ")
+                      (if (ctn/page? container) "[P] " "[C] ")
                       (:name shape)
                       " "
                       index-before
@@ -977,7 +977,7 @@
                                                         :index index-before
                                                         :ignore-touched true})))]
 
-    (if (and (cph/touched-group? parent :shapes-group) omit-touched?)
+    (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
       changes
       changes')))
 
@@ -989,7 +989,7 @@
     changes
     (do
       (log/info :msg (str "CHANGE-TOUCHED "
-                          (if (cph/page? container) "[P] " "[C] ")
+                          (if (ctn/page? container) "[P] " "[C] ")
                           (:name dest-shape))
                 :options options)
       (let [new-touched (cond
@@ -1024,7 +1024,7 @@
     changes
     (do
       (log/info :msg (str "CHANGE-REMOTE-SYNCED? "
-                          (if (cph/page? container) "[P] " "[C] ")
+                          (if (ctn/page? container) "[P] " "[C] ")
                           (:name shape))
                 :remote-synced? remote-synced?)
       (-> changes
@@ -1054,7 +1054,7 @@
   (log/info :msg (str "SYNC "
                       (:name origin-shape)
                       " -> "
-                      (if (cph/page? container) "[P] " "[C] ")
+                      (if (ctn/page? container) "[P] " "[C] ")
                       (:name dest-shape)))
 
   (let [; To synchronize geometry attributes we need to make a prior
@@ -1133,7 +1133,7 @@
 
 (defn- make-change
   [container change]
-  (if (cph/page? container)
+  (if (ctn/page? container)
     (assoc change :page-id (:id container))
     (assoc change :component-id (:id container))))
 
