@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-28 21:15+0000\n"
+"PO-Revision-Date: 2022-09-10 17:20+0000\n"
 "Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
-"Language-Team: Basque "
-"<https://hosted.weblate.org/projects/penpot/frontend/eu/>\n"
+"Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
+"eu/>\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4380,3 +4380,155 @@ msgstr "Eguneratu"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Egin klik bidea ixteko"
+
+msgid "common.publish"
+msgstr "Argitaratu"
+
+msgid "common.unpublish"
+msgstr "Argitaraketa atzera bota"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Oharra"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Egin taldea!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Hasi tutoriala"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr ""
+"Eman begirada bat Penpoti bere oinarrizko funtzionalitateak zein diren "
+"ezagutzeko."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Hasi"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Ezabatu fitxategia"
+msgstr[1] "Ezabatu fitxategiak"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "Ezabatu fitxategia"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "Gonbidatu kideak taldera"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Arazo bat egon da txantiloia inportatzean. Ezin izan da inportatu."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Ikasi Penpoten oinarriak tutorial atsegin honekin."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Interfazea ezagutu"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Liburutegi eta txantiloiak"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Taldearen kudeaketa"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutorial atsegina"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot taldeentzat sortuta dago. Gonbidatu beste pertsona batzuk proiektu "
+"eta fitxategietan batera lan egiteko."
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Gehiago ikusi eta ikasi nola lagundu"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Atzera bota liburutegia argitaratzea"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Fitxategi hau V2 Osagaiak aktibatuta erabili da."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Ezabatu fitxategia"
+msgstr[1] "Ezabatu fitxategiak"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Benetan fitxategi hau ezabatu nahi duzu?"
+msgstr[1] "Benetan fitxategi hauek ezabatu nahi dituzu?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Argitaratzea atzera bota"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] ""
+"Ezabatu nahi duzun fitxategiak, fitxategi honetan erabiltzen den liburutegi "
+"bat du:"
+msgstr[1] ""
+"Ezabatu nahi duzuen fitxategiak, fitxategi hauetan erabiltzen den liburutegi "
+"bat du:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] ""
+"Ezabatu nahi dituzun fitxategiek, fitxategi honetan erabiltzen den "
+"liburutegi bat dute:"
+msgstr[1] ""
+"Ezabatu nahi dituzun fitxategiek, fitxategi hauetan erabiltzen den "
+"liburutegi bat dute:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Argitaratzea atzera botatzen baduzu, elementuak fitxategiaren liburutegira "
+"pasatuko dira."
+msgstr[1] ""
+"Argitaratzea atzera botatzen baduzu, elementuak fitxategien liburutegietara "
+"pasatuko dira."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "Benetan liburutegi honen argitaratzea atzera bota nahi duzu?"
+msgstr[1] "Benetan liburutegi hauen argitaratzea atzera bota nahi duzu?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Fitxategi honetan erabiltzen ari da:"
+msgstr[1] "Fitxategi hauetan erabiltzen ari da:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Liburutegiaren argitaratzea atzera bota"
+msgstr[1] "Liburutegian argitaratzea atzera bota"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Erabiltzailearen gida"
