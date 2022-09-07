@@ -61,8 +61,17 @@
         set-harmony-tab!    (mf/use-fn #(reset! active-tab :harmony))
         set-hsva-tab!       (mf/use-fn #(reset! active-tab :hsva))
 
+        drag?               (mf/use-state false)
+
         handle-change-color
-        (mf/use-fn #(st/emit! (dc/update-colorpicker-color %)))
+        (mf/use-fn
+         (mf/deps @drag?)
+         (fn [color]
+           (let [recent-color (merge color)
+                 recent-color (dc/materialize-color-components recent-color)]
+             (when (not @drag?)
+               (st/emit! (dwl/add-recent-color recent-color)))
+             (st/emit! (dc/update-colorpicker-color color)))))
 
         handle-click-picker
         (mf/use-fn
@@ -96,14 +105,17 @@
         on-activate-radial-gradient
         (mf/use-fn #(st/emit! (dc/activate-colorpicker-gradient :radial-gradient)))
 
+        on-start-drag
+        (mf/use-fn
+         (fn []
+           (reset! drag? true)
+           (st/emit! (dwu/start-undo-transaction))))
+
         on-finish-drag
         (mf/use-fn
-         (mf/deps state)
          (fn []
-           (let [color (dc/get-color-from-colorpicker-state state)]
-           (st/emit! 
-            (dwl/add-recent-color color)
-            (dwu/commit-undo-transaction)))))]
+           (reset! drag? false)
+           (st/emit! (dwu/commit-undo-transaction))))]
 
     ;; Initialize colorpicker state
     (mf/with-effect []
@@ -194,21 +206,21 @@
            {:color current-color
             :disable-opacity disable-opacity
             :on-change handle-change-color
-            :on-start-drag #(st/emit! (dwu/start-undo-transaction))
+            :on-start-drag on-start-drag
             :on-finish-drag on-finish-drag}]
           :harmony
           [:& harmony-selector
            {:color current-color
             :disable-opacity disable-opacity
             :on-change handle-change-color
-            :on-start-drag #(st/emit! (dwu/start-undo-transaction))
+            :on-start-drag on-start-drag
             :on-finish-drag on-finish-drag}]
           :hsva
           [:& hsva-selector
            {:color current-color
             :disable-opacity disable-opacity
             :on-change handle-change-color
-            :on-start-drag #(st/emit! (dwu/start-undo-transaction))
+            :on-start-drag on-start-drag
             :on-finish-drag on-finish-drag}]
           nil))
 
