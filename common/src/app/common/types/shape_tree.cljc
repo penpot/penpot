@@ -13,6 +13,7 @@
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [clojure.spec.alpha :as s]))
@@ -45,7 +46,7 @@
               (cond-> (and (:shape-ref parent)
                            (not= (:id parent) frame-id)
                            (not ignore-touched))
-                (-> (update :touched cph/set-touched-group :shapes-group)
+                (-> (update :touched ctk/set-touched-group :shapes-group)
                     (dissoc :remote-synced?)))))
 
         ;; TODO: this looks wrong, why we allow nil values?
