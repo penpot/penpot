@@ -11,6 +11,7 @@
 - Fix problem with texts for non existing fonts [Taiga #4087](https://tree.taiga.io/project/penpot/issue/4087)
 - Fix undo after moving layers will wrongly order the layers [Taiga #3344](https://tree.taiga.io/project/penpot/issue/3344)
 - Fix Grouping typographies by drag & drop does not work (again) [#2203](https://github.com/penpot/penpot/issues/2203)
+- Change shortcut for "Clear undo" [#2219](https://github.com/penpot/penpot/issues/2219)
 
 ## 1.15.2-beta
 
