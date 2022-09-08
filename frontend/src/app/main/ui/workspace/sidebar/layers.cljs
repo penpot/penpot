@@ -184,7 +184,7 @@
 
         on-drop
         (mf/use-fn
-         (mf/deps id)
+         (mf/deps id index objects)
          (fn [side _data]
            (if (= side :center)
              (st/emit! (dw/relocate-selected-shapes id 0))
