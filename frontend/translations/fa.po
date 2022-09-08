@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-25 13:21+0000\n"
+"PO-Revision-Date: 2022-09-10 17:20+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
-"Language-Team: Persian "
-"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
+"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
+"fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.14-dev\n"
+"X-Generator: Weblate 4.14.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2779,3 +2779,42 @@ msgstr "به‌روزرسانی"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "برای بستن مسیر کلیک کنید"
+
+msgid "common.unpublish"
+msgstr "لغو انتشار"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "خیلی خوب"
+
+msgid "common.publish"
+msgstr "انتشار"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "شروع آموزش"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "در پنپات قدم بزنید و با ویژگی‌های اصلی آن آشنا شوید."
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.walkthrough-hero.start"
+msgstr "شروع تور"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "کتابخانه‌ها و قالب‌ها"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "مدیریت تیم"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"در حالی که با این آموزش سرگرم می‌شوید، اصول اولیه را در Penpot بیاموزید."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "لغو انتشار کتابخانه"
