@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.15.4-beta
+
+### :bug: Bugs fixed
+
+- Fix overlay remains open on frame change [Taiga #4066](https://tree.taiga.io/project/penpot/issue/4066)
+- Fix toggle overlay position [Taiga #4091](https://tree.taiga.io/project/penpot/issue/4091)
+- Fix overlay closed on clicked outside [Taiga #4027](https://tree.taiga.io/project/penpot/issue/4027)
+- Fix animate multiple overlays [Taiga #3993](https://tree.taiga.io/project/penpot/issue/3993)
+
 ## 1.15.3-beta
 
 ### :bug: Bugs fixed
