@@ -3,6 +3,12 @@
 ## :rocket: Next
 
 ### :boom: Breaking changes & Deprecations
+
+- Removed the support for v2 internal file data blob format.  This
+  version has never been documented nor set as default value so
+  technicaly this is not a breaking change because we are removing
+  a "private API".
+
 ### :sparkles: New features
 
 - Add team hero in projects dashboard [Taiga #3863](https://tree.taiga.io/project/penpot/us/3863)

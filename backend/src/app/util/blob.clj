@@ -10,8 +10,7 @@
   (:require
    [app.common.transit :as t]
    [app.config :as cf]
-   [app.util.fressian :as fres]
-   [taoensso.nippy :as n])
+   [app.util.fressian :as fres])
   (:import
    java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
@@ -27,21 +26,18 @@
 (def lz4-factory (LZ4Factory/fastestInstance))
 
 (declare decode-v1)
-(declare decode-v2)
 (declare decode-v3)
 (declare decode-v4)
 (declare encode-v1)
-(declare encode-v2)
 (declare encode-v3)
 (declare encode-v4)
 
 (defn encode
   ([data] (encode data nil))
   ([data {:keys [version]}]
-   (let [version (or version (cf/get :default-blob-version 3))]
+   (let [version (or version (cf/get :default-blob-version 4))]
      (case (long version)
        1 (encode-v1 data)
-       2 (encode-v2 data)
        3 (encode-v3 data)
        4 (encode-v4 data)
        (throw (ex-info "unsupported version" {:version version}))))))
@@ -55,7 +51,6 @@
           ulen    (.readInt dis)]
       (case version
         1 (decode-v1 data ulen)
-        2 (decode-v2 data ulen)
         3 (decode-v3 data ulen)
         4 (decode-v4 data ulen)
         (throw (ex-info "unsupported version" {:version version}))))))
@@ -83,29 +78,6 @@
         udata (byte-array ulen)]
     (.decompress ^LZ4FastDecompressor dcp cdata 6 ^bytes udata 0 ulen)
     (t/decode udata {:type :json})))
-
-(defn- encode-v2
-  [data]
-  (let [data  (n/fast-freeze data)
-        dlen  (alength ^bytes data)
-        mlen  (Zstd/compressBound dlen)
-        cdata (byte-array mlen)
-        clen  (Zstd/compressByteArray ^bytes cdata 0 mlen
-                                      ^bytes data 0 dlen
-                                      8)]
-    (with-open [^ByteArrayOutputStream baos (ByteArrayOutputStream. (+ (alength cdata) 2 4))
-                ^DataOutputStream dos (DataOutputStream. baos)]
-      (.writeShort dos (short 2)) ;; version number
-      (.writeInt dos (int dlen))
-      (.write dos ^bytes cdata (int 0) clen)
-      (.toByteArray baos))))
-
-(defn- decode-v2
-  [^bytes cdata ^long ulen]
-  (let [udata (byte-array ulen)]
-    (Zstd/decompressByteArray ^bytes udata 0 ulen
-                              ^bytes cdata 6 (- (alength cdata) 6))
-    (n/fast-thaw udata)))
 
 (defn- encode-v3
   [data]
