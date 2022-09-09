@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-19 04:19+0000\n"
-"Last-Translator: Wang Jiaxiang <jasonisjasoon@outlook.com>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"PO-Revision-Date: 2022-09-10 17:20+0000\n"
+"Last-Translator: Beeby Xia <beeby@163.com>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.13.1-dev\n"
+"X-Generator: Weblate 4.14.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -61,23 +61,23 @@ msgstr "很高兴又见到你！"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "GitHub"
+msgstr "GitHub登录"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "Gitlab"
+msgstr "Gitlab登录"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "Google"
+msgstr "Google登录"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "LDAP"
+msgstr "LDAP登录"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "OpenID"
+msgstr "OpenID登录"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -641,14 +641,14 @@ msgstr "无效的颜色"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.invite-invalid"
-msgstr "邀请无效"
+msgstr "无效的邀请"
 
 msgid "errors.invite-invalid.info"
 msgstr "此邀请可能已取消或已过期。"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
-msgstr "仅用了LDAP授权。"
+msgstr "LDAP身份验证已禁用。"
 
 msgid "errors.media-format-unsupported"
 msgstr "不支持该图片格式（只能是svg、jpg或png）。"
@@ -3528,3 +3528,532 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+msgid "shortcuts.clear-undo"
+msgstr "清除回退内容"
+
+msgid "common.share-link.all-users"
+msgstr "所有Penpot用户"
+
+msgid "common.share-link.current-tag"
+msgstr "(当前)"
+
+msgid "common.share-link.destroy-link"
+msgstr "去除链接"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "可评论"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1页已共享"
+msgstr[1] "%s页已共享"
+
+msgid "common.share-link.manage-ops"
+msgstr "权限管理"
+
+msgid "common.share-link.team-members"
+msgstr "只团队成员"
+
+msgid "common.share-link.view-all"
+msgstr "选择所有"
+
+msgid "common.share-link.permissions-pages"
+msgstr "页面已共享"
+
+msgid "dashboard.download-binary-file"
+msgstr "下载Penpot文件 (.penpot)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "下载 %s Penpot文件 (.penpot)"
+
+msgid "dashboard.export-standard-multi"
+msgstr "下载 %s 标准文件 (.svg + .json)"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr "我们很欢迎你的到来。请在发布帮助请求前搜索你所需要的帮助内容。"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "前往Penpot论坛"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Penpot社区"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "前往Twtter"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "这里可以帮助您解决技术问题。"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Twtter支持帐号"
+
+msgid "labels.continue-with-penpot"
+msgstr "你可以使用Penpot帐号继续"
+
+msgid "labels.log-or-sign"
+msgstr "登录或注册"
+
+msgid "labels.show-comments-list"
+msgstr "显示评论列表"
+
+msgid "shortcuts.add-comment"
+msgstr "评论"
+
+msgid "shortcuts.add-node"
+msgstr "添加节点"
+
+msgid "shortcuts.align-bottom"
+msgstr "底部对齐"
+
+msgid "shortcuts.align-hcenter"
+msgstr "水平居中对齐"
+
+msgid "shortcuts.align-left"
+msgstr "左对齐"
+
+msgid "shortcuts.align-top"
+msgstr "顶部对齐"
+
+msgid "shortcuts.align-vcenter"
+msgstr "垂直居中对齐"
+
+msgid "shortcuts.artboard-selection"
+msgstr "以所选内容创建画板"
+
+msgid "shortcuts.bool-difference"
+msgstr "布尔差"
+
+msgid "shortcuts.bool-exclude"
+msgstr "布尔排除"
+
+msgid "shortcuts.bool-intersection"
+msgstr "布尔交集"
+
+msgid "shortcuts.bool-union"
+msgstr "布尔合并"
+
+msgid "shortcuts.bring-forward"
+msgstr "移至上一层"
+
+msgid "shortcuts.bring-front"
+msgstr "移至最上层"
+
+msgid "shortcuts.bring-backward"
+msgstr "移至下一层"
+
+msgid "shortcuts.create-component"
+msgstr "创建组件"
+
+msgid "shortcuts.next-frame"
+msgstr "下个画板"
+
+msgid "shortcuts.not-found"
+msgstr "没找到快捷方式"
+
+msgid "shortcuts.opacity-9"
+msgstr "设置不透明度为90%"
+
+msgid "shortcuts.or"
+msgstr " 或 "
+
+msgid "common.publish"
+msgstr "发布"
+
+msgid "common.unpublish"
+msgstr "未发布"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "团队管理"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "好"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "注意"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "没有配置身份认证服务源"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "社区"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "邀请成员加入团队"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "正在删除文件"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr "有很多资源可以帮助你开始使用Penpot，如用户指南和我们的Youtube频道。"
+
+msgid "shortcut-subsection.shape"
+msgstr "形状"
+
+msgid "shortcut-subsection.tools"
+msgstr "工具"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "缩放"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "缩放"
+
+msgid "shortcuts.align-right"
+msgstr "右对齐"
+
+msgid "shortcuts.bring-back"
+msgstr "移至最下层"
+
+msgid "shortcuts.cut"
+msgstr "剪切"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "缩小"
+
+msgid "shortcuts.delete"
+msgstr "删除"
+
+msgid "shortcuts.delete-node"
+msgstr "删除节点"
+
+msgid "shortcuts.detach-component"
+msgstr "拆分组件"
+
+msgid "shortcuts.draw-curve"
+msgstr "曲线"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "椭圆"
+
+msgid "shortcuts.draw-frame"
+msgstr "画板"
+
+msgid "shortcuts.move-unit-up"
+msgstr "上移"
+
+msgid "shortcuts.open-interactions"
+msgstr "转往阅读器交互部分"
+
+msgid "shortcuts.open-handoff"
+msgstr "前往阅读器切换部分"
+
+msgid "shortcuts.open-viewer"
+msgstr "转往阅读器交互部分"
+
+msgid "shortcuts.open-workspace"
+msgstr "前往工作区"
+
+msgid "shortcuts.paste"
+msgstr "粘贴"
+
+msgid "shortcuts.prev-frame"
+msgstr "前一画板"
+
+msgid "shortcuts.redo"
+msgstr "重做"
+
+msgid "shortcuts.reset-zoom"
+msgstr "重置缩放"
+
+msgid "shortcuts.search-placeholder"
+msgstr "搜索快捷方式"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "显示/隐藏像素网格"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "显示/隐藏快捷方式"
+
+msgid "shortcuts.snap-nodes"
+msgstr "对齐到节点"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "可审查代码"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "组建团队!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "实践教程"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "浏览Penpot, 了解其主要功能。"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "开始浏览"
+
+msgid "dashboard.download-standard-file"
+msgstr "下载标准文件(.svg + .json)"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "界面浏览"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "库和模板"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "导入模板时发生错误。模板未导入成功。"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "未发布库"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "此文件已经在组件V2版本下使用。"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "你是否确认要删除这个文件?"
+msgstr[1] "你是否确认要删除这些文件?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "此文件中使用了以下库:"
+msgstr[1] "这些文件中使用了以下库:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "删除文件"
+msgstr[1] "批量删除文件"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] "如果取消发布，则其中的资源将成为此文件的一个库。"
+msgstr[1] "如果取消发布，则其中的资源将成为这些文件的一个库。"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "你是否确认取消发布这个库?"
+msgstr[1] "你是否确认取消发布这些库?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "在这个文件中被使用:"
+msgstr[1] "在这些文件中被使用:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "取消发布库"
+msgstr[1] "批量取消发布库"
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr "有关如何使用Penpot的详细信息。从原型设计到组织或共享设计。"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "用户指南"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "您可以观看我们的官方教程以及社区制作的教程。"
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "视频教程"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "在开始之前"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr "一个与整个社区和Penpot核心团队学习、分享和讨论Penpot及其现在和未来的公共空间"
+"。"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "参与到社区中"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr "在这里，您将了解如何协作进行翻译、功能需求提出、核心代码贡献、BUG修复等…"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "稍后创建团队"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "创建一个团队"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr "团队能够让你与其它Penpot用户协作处理相同的文件和项目。"
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "无限制的文件和项目"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "无限制成员"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "完全免费!"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "贡献指南"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "邀请角色:"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "开始教程"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr "Penpot是为团队协作而设计，邀请成员合作处理项目和文件"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "通过有趣的实践教程学习Penpot的基础知识。"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "探索更多内容，了解如何做出贡献"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "删除文件"
+msgstr[1] "批量删除文件"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "这些文件中的库在此文件中使用:"
+msgstr[1] "这些文件中的库在此批文件中使用:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "取消发布"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr "Penpot是由Kaleidos及社区共同开发的开源软件，许多人已经在社区中互相帮助。每个"
+"人都可以通过以下方式进行协作："
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr "记得将开发人员、设计师、经理……等各类人员都加进来:)"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "欢迎来到Penpot!"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "多用户编辑"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "角色管理"
+
+msgid "shortcuts.copy"
+msgstr "拷贝"
+
+msgid "shortcuts.create-new-project"
+msgstr "创建新的"
+
+msgid "shortcuts.escape"
+msgstr "取消"
+
+msgid "shortcuts.fit-all"
+msgstr "缩放至适应所有"
+
+msgid "shortcuts.go-to-libs"
+msgstr "前往共享库"
+
+msgid "shortcuts.draw-nodes"
+msgstr "绘制路径"
+
+msgid "shortcuts.draw-path"
+msgstr "路径"
+
+msgid "shortcuts.draw-rect"
+msgstr "长方形"
+
+msgid "shortcuts.draw-text"
+msgstr "文本"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "水平翻转"
+
+msgid "shortcuts.flip-vertical"
+msgstr "垂直翻转"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "前往草稿"
+
+msgid "shortcuts.go-to-search"
+msgstr "搜索"
+
+msgid "shortcuts.group"
+msgstr "组"
+
+msgid "shortcuts.h-distribute"
+msgstr "水平分布"
+
+msgid "shortcuts.opacity-3"
+msgstr "设置不透明度为30%"
+
+msgid "shortcuts.open-color-picker"
+msgstr "色彩拾取器"
+
+msgid "shortcuts.duplicate"
+msgstr "复制"
+
+msgid "shortcuts.opacity-2"
+msgstr "设置不透明度为20%"
+
+msgid "shortcuts.opacity-5"
+msgstr "设置不透明度为50%"
+
+msgid "shortcuts.opacity-4"
+msgstr "设置不透明度为40%"
+
+msgid "shortcuts.opacity-6"
+msgstr "设置不透明度为60%"
+
+msgid "shortcuts.export-shapes"
+msgstr "导出形状"
+
+msgid "shortcuts.move-unit-right"
+msgstr "右移"
+
+msgid "shortcuts.opacity-0"
+msgstr "设置不透明度为100%"
+
+msgid "shortcuts.opacity-8"
+msgstr "设置不透明度为80%"
+
+msgid "shortcuts.move-unit-left"
+msgstr "左移"
+
+msgid "shortcuts.opacity-1"
+msgstr "设置不透明度为10%"
+
+msgid "shortcuts.opacity-7"
+msgstr "设置不透明度为70%"
+
+msgid "shortcuts.open-comments"
+msgstr "前往查阅者评论区"
+
+msgid "shortcuts.open-dashboard"
+msgstr "前往看板"
+
+msgid "shortcuts.select-all"
+msgstr "选择所有"
+
+msgid "shortcuts.separate-nodes"
+msgstr "分离节点"
