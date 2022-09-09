@@ -69,7 +69,7 @@
 
     :toggle-overlay
     (let [frame-id            (:destination interaction)
-          dest-frame (get objects frame-id)
+          dest-frame          (get objects frame-id)
           position            (ctsi/calc-overlay-position interaction
                                                           base-frame
                                                           dest-frame
