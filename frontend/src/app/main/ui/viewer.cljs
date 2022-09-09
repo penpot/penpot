@@ -235,7 +235,6 @@
         viewer-section-ref   (mf/use-ref nil)
 
         current-animations (mf/deref current-animations-ref)
-        first-animation (first (vals current-animations)) 
 
         page-id (or page-id (-> file :data :pages first))
 
@@ -259,8 +258,13 @@
         scroll      (mf/use-state nil)
 
         orig-frame
-        (when (:orig-frame-id first-animation)
-          (d/seek #(= (:id %) (:orig-frame-id first-animation)) frames))
+        (mf/with-memo [current-animations]
+          ;; We assume there can only be one animation with origin (this is used only in
+          ;; navigation animations, and we cannot navigate to two different destinations
+          ;; at the same time).
+          (let [animation-with-origin (d/seek :orig-frame-id (vals current-animations))]
+            (when animation-with-origin
+              (d/seek #(= (:id %) (:orig-frame-id animation-with-origin)) frames))))
 
         size
         (mf/with-memo [frame zoom]
@@ -385,21 +389,21 @@
              (wapi/exit-fullscreen))))))
 
     (mf/use-layout-effect
-     (mf/deps index)
+     (mf/deps index current-animations)
      (fn []
         ;; Navigate animation needs to be started after navigation
         ;; is complete, and we have the next page index.
-       (when (and first-animation
-                  (= (:kind first-animation) :go-to-frame))
-         (let [orig-viewport    (mf/ref-val orig-viewport-ref)
-               current-viewport (mf/ref-val current-viewport-ref)]
-           (interactions/animate-go-to-frame
-            (:animation first-animation)
-            current-viewport
-            orig-viewport
-            size
-            orig-size
-            wrapper-size)))))
+        (let [nav-animation (d/seek #(= (:kind %) :go-to-frame) (vals current-animations))]
+         (when nav-animation
+           (let [orig-viewport    (mf/ref-val orig-viewport-ref)
+                 current-viewport (mf/ref-val current-viewport-ref)]
+             (interactions/animate-go-to-frame
+              (:animation nav-animation)
+              current-viewport
+              orig-viewport
+              size
+              orig-size
+              wrapper-size))))))
 
     (mf/use-layout-effect
      (mf/deps current-animations)
