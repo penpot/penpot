@@ -88,7 +88,7 @@
   [{:keys [conn backend executor]} {:keys [::content ::expired-at ::touched-at] :as params}]
   (us/assert ::storage-content content)
   (px/with-dispatch executor
-    (let [id     (uuid/next)
+    (let [id     (uuid/random)
 
           mdata  (cond-> (get-metadata params)
                    (satisfies? impl/IContentHash content)

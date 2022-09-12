@@ -23,7 +23,22 @@ function build-devenv {
     echo "Building development image $DEVENV_IMGNAME:latest..."
 
     pushd docker/devenv;
-    docker build -t $DEVENV_IMGNAME:latest .
+
+    docker run --privileged --rm tonistiigi/binfmt --install all
+    docker buildx inspect penpot > /dev/null 2>&1;
+
+    if [ $? -eq 1 ]; then
+        docker buildx create --name=penpot --use
+        docker buildx inspect --bootstrap > /dev/null 2>&1;
+    else
+        docker buildx use penpot;
+        docker buildx inspect --bootstrap  > /dev/null 2>&1;
+    fi
+
+    # docker build -t $DEVENV_IMGNAME:latest .
+    docker buildx build --platform linux/amd64,linux/arm64 --push -t $DEVENV_IMGNAME:latest .;
+    docker pull $DEVENV_IMGNAME:latest;
+
     popd;
 }
 
