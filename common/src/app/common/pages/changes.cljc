@@ -472,7 +472,7 @@
 (defmulti components-changed (fn [_ change] (:type change)))
 
 (defmethod components-changed :mod-obj
-  [file-data {:keys [id page-id _component-id operations]}]
+  [file-data {:keys [id page-id operations]}]
   (when page-id
     (let [page (ctpl/get-page file-data page-id)
           shape-and-parents (map #(ctn/get-shape page %)

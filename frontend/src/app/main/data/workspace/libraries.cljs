@@ -721,7 +721,13 @@
                                   (when sync-typographies?
                                     (dwlh/generate-sync-file it file-id :typographies asset-id library-id state))])
 
-               changes         (pcb/concat-changes library-changes file-changes)]
+               changes         (pcb/concat-changes library-changes file-changes)
+
+               changes         (cond-> changes
+                                 ; Store the origin component to avoid sync loops
+                                 (= asset-type :components)
+                                 (update :redo-changes
+                                         #(vary-meta % assoc :origin-component-id asset-id)))]
 
            (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                                (:redo-changes changes)
@@ -842,10 +848,25 @@
 
             check-changes
             (fn [[event data]]
-              (let [{:keys [changes save-undo?]} (deref event)
+              (let [page (wsh/lookup-page state)
+
+                    [{:keys [changes save-undo?]} (deref event)
                     components-changed (reduce #(into %1 (ch/components-changed data %2))
                                                #{}
-                                               changes)]
+                                               changes)
+
+                    orig-component-id (get (meta changes) :origin-component-id)
+
+                    is-orig (fn [shape-id]
+                              (let [shape (ctn/get-shape page shape-id)]
+                                (= (:component-id shape) orig-component-id)))
+
+                    ;; If the changes are derived of the synchronization of a main component,
+                    ;; ignore them to avoid entering loops.
+                    components-changed (if orig-component-id
+                                         (set (remove is-orig components-changed))
+                                         components-changed)]
+
                 (when (and (d/not-empty? components-changed) save-undo?)
                   (log/info :msg "DETECTED COMPONENTS CHANGED"
                             :ids (map str components-changed))
@@ -889,6 +910,7 @@
     (update [_ state]
       (let [state (dissoc state :files)]
         (assoc state :workspace-shared-files files)))))
+
 
 (defn fetch-shared-files
   [{:keys [team-id] :as params}]
