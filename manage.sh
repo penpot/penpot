@@ -24,9 +24,8 @@ function build-devenv {
 
     pushd docker/devenv;
 
-    docker buildx inspect penpot > /dev/null 2>&1;
     docker run --privileged --rm tonistiigi/binfmt --install all
-
+    docker buildx inspect penpot > /dev/null 2>&1;
 
     if [ $? -eq 1 ]; then
         docker buildx create --name=penpot --use
