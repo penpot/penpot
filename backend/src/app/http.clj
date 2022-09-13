@@ -10,7 +10,7 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.http.errors :as errors]
-   [app.http.middleware :as middleware]
+   [app.http.middleware :as mw]
    [app.metrics :as mtx]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
@@ -144,14 +144,16 @@
 (defmethod ig/init-key ::router
   [_ {:keys [ws session metrics assets feedback] :as cfg}]
   (rr/router
-   [["" {:middleware [[middleware/server-timing]
-                      [middleware/format-response]
-                      [middleware/params]
-                      [middleware/parse-request]
-                      [middleware/errors errors/handle]
-                      [middleware/restrict-methods]]}
+   [["" {:middleware [[mw/server-timing]
+                      [mw/format-response]
+                      [mw/params]
+                      [mw/parse-request]
+                      [mw/errors errors/handle]
+                      [mw/restrict-methods]]}
 
-     ["/metrics" {:handler (::mtx/handler metrics)}]
+     ["/metrics" {:handler (::mtx/handler metrics)
+                  :allowed-methods #{:get}}]
+
      ["/assets" {:middleware [(:middleware session)]}
       ["/by-id/:id" {:handler (:objects-handler assets)}]
       ["/by-file-media-id/:id" {:handler (:file-objects-handler assets)}]
@@ -167,7 +169,7 @@
                            :handler ws
                            :allowed-methods #{:get}}]
 
-     ["/api" {:middleware [[middleware/cors]
+     ["/api" {:middleware [[mw/cors]
                            [(:middleware session)]]}
       ["/audit/events" {:handler (:audit-handler cfg)
                         :allowed-methods #{:post}}]
@@ -176,4 +178,3 @@
       (:doc-routes cfg)
       (:oidc-routes cfg)
       (:rpc-routes cfg)]]]))
-
