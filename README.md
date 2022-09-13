@@ -21,7 +21,7 @@
     <a href="https://twitter.com/penpotapp"><b>Twitter</b></a> •
     <a href="https://instagram.com/penpot.app"><b>Instagram</b></a> •
     <a href="https://fosstodon.org/@penpot/"><b>Mastodon</b></a> •
-    <a href="https://www.youtube.com/channel/UCAqS8G72uv9P5HG1IfgnQ9g"><b>Youtube</b></a> •
+    <a href="https://www.youtube.com/channel/UCAqS8G72uv9P5HG1IfgnQ9g"><b>Youtube</b></a>
 </p>
 
 ![PENPOT](https://penpot.app/images/readme/home-ui.jpg)
@@ -51,21 +51,39 @@ Being web based, Penpot is not dependent on operating systems or installations, 
 Using SVG as no other prototyping tool does, Penpot files sport compatibility with most of the vectorial tools, are tech friendly and extremely easy to use on the web.
 
 
-## Help center ##
+## Getting started 🚀 ##
 
-In this documentation you will find (almost) everything you need to know about how to work with Penpot. From the interface basics to advanced functionality.
+### Install with Elestio ###
+[Elestio](https://elest.io/) offers a fully managed service for on-premise instances of a selection of open-source software! This means you can deploy a dedicated instance of Penpot in just 3 minutes with no technical knowledge needed. 
 
-📖 [User guide](https://help.penpot.app/user-guide/)
+You don’t need to worry about DNS configuration, SMTP, backups, SSL certificates, OS & Penpot upgrades, and much more.
 
-❓ [FAQs](https://help.penpot.app/faqs/)
+[Get started with Elestio.](https://help.penpot.app/technical-guide/getting-started/#install-with-elestio)
 
-🖥️ [Technical guide](https://help.penpot.app/technical-guide/)
+### Install with Docker ###
 
-❤️ [Contributing guide](https://help.penpot.app/contributing-guide/)
+You can also get started with Penpot locally or self-host it with **docker** and **docker-compose**. 
 
-![User guide](https://penpot.app/images/readme/help-center.jpg)
+Here’s a step-by-step guide on [getting started with Docker.](https://help.penpot.app/technical-guide/getting-started/#install-with-docker)
 
-## Contributing ##
+### Penpot cloud app ###
+
+If you prefer not to install Penpot in a local environment, [login or register on our Penpot cloud app](https://design.penpot.app). Create a team to work together on projects and share design assets or jump right away into Penpot and **start designing** on your own.
+
+## Community 🗨️##
+
+We love the open source software community. Contributing is our passion and if it’s yours too, [participate](https://community.penpot.app/) and [improve](https://community.penpot.app/c/help-us-improve-penpot/7) Penpot. All your ideas and code are welcome!
+
+If you need help or have any questions; if you’d like to share your experience using Penpot or get inspired; if you’d rather meet our community of developers and designers, [join our Community](https://community.penpot.app/)! 
+
+You will find the following categories: 
+- [Ask the Community](https://community.penpot.app/c/ask-for-help-using-penpot/6)
+- [Troubleshooting](https://community.penpot.app/c/technical/8)
+- [Help us Improve Penpot](https://community.penpot.app/c/help-us-improve-penpot/7)
+- [#MadeWithPenpot](https://community.penpot.app/c/madewithpenpot/9)
+- [Events and Announcements](https://community.penpot.app/c/announcements/5)
+- [Inside Penpot](https://community.penpot.app/c/inside-penpot/21)
+- [Penpot in your language](https://community.penpot.app/c/penpot-in-your-language/12)
 
 <p align="center">
   <img src="https://penpot.app/images/open-source.png" alt="Open Source">
