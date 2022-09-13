@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-10 17:20+0000\n"
+"PO-Revision-Date: 2022-09-13 13:19+0000\n"
 "Last-Translator: Beeby Xia <beeby@163.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -4057,3 +4057,22 @@ msgstr "选择所有"
 
 msgid "shortcuts.separate-nodes"
 msgstr "分离节点"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "对齐像素网格"
+
+msgid "shortcuts.stop-measure"
+msgstr "停止测量"
+
+msgid "shortcuts.start-editing"
+msgstr "启用编辑"
+
+msgid "shortcuts.start-measure"
+msgstr "启用测量"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "设置缩略图"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "快捷键"
