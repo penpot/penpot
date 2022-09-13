@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-13 13:19+0000\n"
+"PO-Revision-Date: 2022-09-14 14:15+0000\n"
 "Last-Translator: Beeby Xia <beeby@163.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -4076,3 +4076,76 @@ msgstr "设置缩略图"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs
 msgid "shortcuts.title"
 msgstr "快捷键"
+
+msgid "shortcuts.toggle-assets"
+msgstr "切换资产"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "切换动态对齐"
+
+msgid "shortcuts.zoom-selected"
+msgstr "缩放到选定对象"
+
+msgid "shortcuts.ungroup"
+msgstr "取消组合"
+
+msgid "shortcuts.unmask"
+msgstr "取消遮罩"
+
+msgid "shortcuts.v-distribute"
+msgstr "垂直分布"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "帮助和信息"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "切换调色板"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "切换焦点模式"
+
+msgid "shortcuts.toggle-grid"
+msgstr "显示/隐藏网格"
+
+msgid "shortcuts.toggle-history"
+msgstr "切换历史"
+
+msgid "shortcuts.toggle-layers"
+msgstr "切换层"
+
+msgid "shortcuts.toggle-lock"
+msgstr "锁定所选"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "锁定比例"
+
+msgid "shortcuts.toggle-rules"
+msgstr "显示/隐藏规则"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "切换缩放文本"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "网络对齐"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "辅助线对齐"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "切换文本调色板"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "切换可见度"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "切换缩放样式"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "切换全屏"
+
+msgid "shortcuts.undo"
+msgstr "回退"
+
+msgid "workspace.assets.local-library"
+msgstr "本地库"
