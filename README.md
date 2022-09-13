@@ -50,6 +50,10 @@ Being web based, Penpot is not dependent on operating systems or installations, 
 ### With love and Open Standards ###
 Using SVG as no other prototyping tool does, Penpot files sport compatibility with most of the vectorial tools, are tech friendly and extremely easy to use on the web.
 
+<p align="center">
+  <img src="https://penpot.app/images/open-source.png" alt="Open Source">
+</p>
+
 
 ## Getting started 🚀 ##
 
@@ -70,7 +74,11 @@ Here’s a step-by-step guide on [getting started with Docker.](https://help.pen
 
 If you prefer not to install Penpot in a local environment, [login or register on our Penpot cloud app](https://design.penpot.app). Create a team to work together on projects and share design assets or jump right away into Penpot and **start designing** on your own.
 
-## Community 🗨️##
+<p align="center">
+  <img src="https://penpot.app/images/open-source.png" alt="Open Source">
+</p>
+
+## Community 🗨️ ##
 
 We love the open source software community. Contributing is our passion and if it’s yours too, [participate](https://community.penpot.app/) and [improve](https://community.penpot.app/c/help-us-improve-penpot/7) Penpot. All your ideas and code are welcome!
 
@@ -89,15 +97,25 @@ You will find the following categories:
   <img src="https://penpot.app/images/open-source.png" alt="Open Source">
 </p>
 
-**Open to you!**
+## Contributing ❤️ ##
 
-We love the open source software community. Contributing is our
-passion and because of this, we'll be glad if you want to participate
-and improve Penpot. All your awesome ideas and code are welcome!
+Every sort of contribution will be very helpful to enhance Penpot. How you’ll participate? All your ideas, designs and code are welcome:
 
-Please refer to the [Contributing Guide](./CONTRIBUTING.md)
+- Invite your [team to join](https://design.penpot.app/#/auth/register)
+- Star this repo and follow us on Social Media:  [Twitter](https://twitter.com/penpotapp), [Instagram](https://www.instagram.com/penpotapp/?hl=es), [Youtube](https://www.youtube.com/c/Penpot) or [Mastodon](https://fosstodon.org/@penpot/).
+- Participate in the [Community](https://community.penpot.app/) asking and answering questions, reacting to others’ articles or opening your own conversations.
+- Report bugs with our easy [guide for bugs hunting](https://help.penpot.app/contributing-guide/reporting-bugs/) or [GitHub issues](https://github.com/penpot/penpot/issues)
+- Create and [share Libraries & templates](https://penpot.app/libraries-templates.html) that will be helpful for the community 
+- Become a [translator](https://help.penpot.app/contributing-guide/translations)
+- Give feedback: [Mail us](mailto:support@penpot.app)
 
-## Give feedback ##
+To find (almost) everything you need to know on how to contribute to Penpot, refer to the [contributing-guide](https://help.penpot.app/contributing-guide/).
+
+<p align="center">
+  <img src="https://penpot.app/images/open-source.png" alt="Open Source">
+</p>
+
+## Resources ⚒️ ##
 
 You can ask and answer questions, have open-ended conversations, and follow along on decisions affecting the project.
 
