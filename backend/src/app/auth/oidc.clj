@@ -516,7 +516,7 @@
   [_ {:keys [executor session] :as cfg}]
   (let [cfg (update cfg :provider d/without-nils)]
     ["" {:middleware [[(:middleware session)]
-                      [hmw/with-promise-async executor]
+                      [hmw/with-dispatch executor]
                       [hmw/with-config cfg]
                       [provider-lookup]
                       ]}

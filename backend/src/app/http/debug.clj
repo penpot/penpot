@@ -378,17 +378,20 @@
 
 (defmethod ig/init-key ::routes
   [_ {:keys [session pool executor] :as cfg}]
-  ["/dbg" {:middleware [[(:middleware session)]
-                        [with-authorization pool]
-                        [mw/with-promise-async executor]
-                        [mw/with-config cfg]]}
-   ["" {:handler index-handler}]
-   ["/health" {:handler health-handler}]
-   ["/changelog" {:handler changelog-handler}]
-   ;; ["/error-by-id/:id" {:handler error-handler}]
-   ["/error/:id" {:handler error-handler}]
-   ["/error" {:handler error-list-handler}]
-   ["/file/export" {:handler export-handler}]
-   ["/file/import" {:handler import-handler}]
-   ["/file/data" {:handler file-data-handler}]
-   ["/file/changes" {:handler file-changes-handler}]])
+  [["/readyz" {:middleware [[mw/with-dispatch executor]
+                            [mw/with-config cfg]]
+               :handler health-handler}]
+   ["/dbg" {:middleware [[(:middleware session)]
+                         [with-authorization pool]
+                         [mw/with-dispatch executor]
+                         [mw/with-config cfg]]}
+    ["" {:handler index-handler}]
+    ["/health" {:handler health-handler}]
+    ["/changelog" {:handler changelog-handler}]
+    ;; ["/error-by-id/:id" {:handler error-handler}]
+    ["/error/:id" {:handler error-handler}]
+    ["/error" {:handler error-list-handler}]
+    ["/file/export" {:handler export-handler}]
+    ["/file/import" {:handler import-handler}]
+    ["/file/data" {:handler file-data-handler}]
+    ["/file/changes" {:handler file-changes-handler}]]])
