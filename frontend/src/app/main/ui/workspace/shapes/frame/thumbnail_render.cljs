@@ -106,7 +106,7 @@
                  ;; If we don't have the thumbnail data saved (normaly the first load) we update the data
                  ;; when available
                  (when (not @thumbnail-data-ref)
-                   (st/emit! (dwt/update-thumbnail page-id id) ))
+                   (st/emit! (dwt/update-thumbnail page-id id)))
 
                  (reset! render-frame? false))))))
 
@@ -240,6 +240,17 @@
           :style {:filter (when (debug? :thumbnails) "invert(1)")
                   :width "100%"
                   :height "100%"}}]]
+
+       ;; This image is needed too. When we only have a local copy of the thumbnail and we try to capture the svg content canvas content can't be rendered properly
+       (when (some? @(refs/thumbnail-frame-data page-id (:id shape)))
+         [:image
+          {:x x
+           :y y
+           :href @(refs/thumbnail-frame-data page-id (:id shape))
+           :width width
+           :height height
+           ;; DEBUG
+           :style {:filter (when (debug? :thumbnails) "invert(1)")}}])
 
        (when (some? @image-url)
          [:image {:ref frame-image-ref

@@ -76,7 +76,7 @@
 
               (rx/merge-map
                (fn [data]
-                 (if (some? file-id)
+                 (if (and (some? file-id) (some? data))
                    (let [params {:file-id file-id :object-id object-id :data data}]
                      (rx/merge
                       ;; Update the local copy of the thumbnails so we don't need to request it again
