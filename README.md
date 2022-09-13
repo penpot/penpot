@@ -30,10 +30,10 @@ Penpot is the first **Open Source design** and prototyping platform meant for cr
 
 ## Table of contents ##
 
-- [Why Penpot](#why-penpot-❔)
-- [Getting Started](#getting-started-🚀)
-- [Community](#community-🗨️)
-- [Resources](#resources-⚒️)
+- [Why Penpot](#why-penpot)
+- [Getting Started](#getting-started)
+- [Community](#community)
+- [Resources](#resources)
 - [License](#license)
 
 ## Why Penpot ❔ ##
@@ -54,7 +54,7 @@ Using SVG as no other prototyping tool does, Penpot files sport compatibility wi
 </p>
 
 
-## Getting started 🚀 ##
+## Getting started ##
 
 ### Install with Elestio ###
 [Elestio](https://elest.io/) offers a fully managed service for on-premise instances of a selection of open-source software! This means you can deploy a dedicated instance of Penpot in just 3 minutes with no technical knowledge needed. 
@@ -77,7 +77,7 @@ If you prefer not to install Penpot in a local environment, [login or register o
   <img src="https://help.penpot.app/img/home-techguide.png" alt="Getting started">
 </p>
 
-## Community 🗨️ ##
+## Community ##
 
 We love the open source software community. Contributing is our passion and if it’s yours too, [participate](https://community.penpot.app/) and [improve](https://community.penpot.app/c/help-us-improve-penpot/7) Penpot. All your ideas and code are welcome!
 
@@ -96,7 +96,7 @@ You will find the following categories:
   <img src="https://penpot.app/images/cross-teams.webp" alt="Community">
 </p>
 
-## Contributing ❤️ ##
+## Contributing ##
 
 Every sort of contribution will be very helpful to enhance Penpot. How you’ll participate? All your ideas, designs and code are welcome:
 
@@ -114,7 +114,7 @@ To find (almost) everything you need to know on how to contribute to Penpot, ref
   <img src="https://help.penpot.app/img/home-contributing.png" alt="Contributing">
 </p>
 
-## Resources ⚒️ ##
+## Resources ##
 
 You can ask and answer questions, have open-ended conversations, and follow along on decisions affecting the project.
 
