@@ -75,7 +75,7 @@ Here’s a step-by-step guide on [getting started with Docker.](https://help.pen
 If you prefer not to install Penpot in a local environment, [login or register on our Penpot cloud app](https://design.penpot.app). Create a team to work together on projects and share design assets or jump right away into Penpot and **start designing** on your own.
 
 <p align="center">
-  <img src="https://penpot.app/images/multi-platforms.webp" alt="Getting started">
+  <img src="https://help.penpot.app/img/home-techguide.png" alt="Getting started">
 </p>
 
 ## Community 🗨️ ##
@@ -119,20 +119,16 @@ To find (almost) everything you need to know on how to contribute to Penpot, ref
 
 You can ask and answer questions, have open-ended conversations, and follow along on decisions affecting the project.
 
-✉️ [Mail us](mailto:info@penpot.app)
+💾 [Documentation](https://help.penpot.app/technical-guide/)
 
-💬 [GitHub discussions](https://github.com/penpot/penpot/discussions)
+🚀 [Getting Started](https://help.penpot.app/technical-guide/getting-started/)
 
-🐞 [GitHub issues](https://github.com/penpot/penpot/issues)
+✏️ [Tutorials](https://www.youtube.com/playlist?list=PLgcCPfOv5v54WpXhHmNO7T-YC7AE-SRsr)
 
-✍️️ [Gitter](https://gitter.im/penpot/community)
+🏘️ [Architecture](https://help.penpot.app/technical-guide/architecture/)
 
-## Tutorials ##
+📚 [Dev Diaries](https://penpot.app/dev-diaries.html)
 
-You can ask and answer questions, have open-ended conversations, and follow along on decisions affecting the project.
-Would you like to know more about Penpot? We recommend you to visit our youtube channel and learn more about the functionalities and possibilities of Penpot with our video tutorials.
-
-🎞️ [YouTube channel](https://www.youtube.com/channel/UCAqS8G72uv9P5HG1IfgnQ9g)
 
 ## License ##
 
@@ -142,4 +138,6 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 Copyright (c) UXBOX Labs SL
+
+Penpot is a Kaleidos’ [open source project](https://kaleidos.net/products)
 ```
