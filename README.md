@@ -50,7 +50,7 @@ Being web based, Penpot is not dependent on operating systems or installations, 
 ### With love and Open Standards ###
 Using SVG as no other prototyping tool does, Penpot files sport compatibility with most of the vectorial tools, are tech friendly and extremely easy to use on the web.
 
-<p align="center" style="max-width: 350px; margin: 20px 10px;">
+<p align="center">
   <img src="https://penpot.app/images/open-source.png" alt="Open Source">
 </p>
 
@@ -74,7 +74,7 @@ Here’s a step-by-step guide on [getting started with Docker.](https://help.pen
 
 If you prefer not to install Penpot in a local environment, [login or register on our Penpot cloud app](https://design.penpot.app). Create a team to work together on projects and share design assets or jump right away into Penpot and **start designing** on your own.
 
-<p align="center" style="max-width: 350px; margin: 20px 10px;">
+<p align="center">
   <img src="https://help.penpot.app/img/home-techguide.png" alt="Getting started">
 </p>
 
@@ -93,7 +93,7 @@ You will find the following categories:
 - [Inside Penpot](https://community.penpot.app/c/inside-penpot/21)
 - [Penpot in your language](https://community.penpot.app/c/penpot-in-your-language/12)
 
-<p align="center" style="max-width: 350px; margin: 20px 10px;">
+<p align="center">
   <img src="https://penpot.app/images/cross-teams.webp" alt="Community">
 </p>
 
@@ -111,7 +111,7 @@ Every sort of contribution will be very helpful to enhance Penpot. How you’ll 
 
 To find (almost) everything you need to know on how to contribute to Penpot, refer to the [contributing-guide](https://help.penpot.app/contributing-guide/).
 
-<p align="center" style="max-width: 350px; margin: 20px 10px;">
+<p align="center">
   <img src="https://help.penpot.app/img/home-contributing.png" alt="Contributing">
 </p>
 
