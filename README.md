@@ -30,10 +30,10 @@ Penpot is the first **Open Source design** and prototyping platform meant for cr
 
 ## Table of contents ##
 
-- [Why Penpot](#why-penpot)
-- [Getting Started](#getting-started)
-- [Community](#community)
-- [Resources](#resources)
+- [Why Penpot](#why-penpot-❔)
+- [Getting Started](#getting-started-🚀)
+- [Community](#community-🗨️)
+- [Resources](#resources-⚒️)
 - [License](#license)
 
 ## Why Penpot ❔ ##
