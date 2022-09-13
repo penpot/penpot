@@ -24,8 +24,7 @@
     <a href="https://www.youtube.com/channel/UCAqS8G72uv9P5HG1IfgnQ9g"><b>Youtube</b></a>
 </p>
 
-![PENPOT](https://penpot.app/images/readme/home-ui.jpg)
-
+![feature-readme](https://user-images.githubusercontent.com/1045247/189871786-0b44f7cf-3a0a-4445-a87b-9919ec398bf7.gif)
 
 Penpot is the first **Open Source design** and prototyping platform meant for cross-domain teams. Non dependent on operating systems, Penpot is web based and works with open web standards (SVG). Penpot invites designers all over the world to fall in love with open source while getting developers excited about the design process in return.
 
