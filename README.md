@@ -36,7 +36,7 @@ Penpot is the first **Open Source design** and prototyping platform meant for cr
 - [Resources](#resources)
 - [License](#license)
 
-## Why Penpot ❔ ##
+## Why Penpot ##
 
 Penpot offers the possibility to build well designed products that are community-first and community-driven.
 
