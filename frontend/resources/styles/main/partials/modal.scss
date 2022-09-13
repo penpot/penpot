@@ -1097,7 +1097,7 @@
   &.newsletter {
     padding: $size-5 0 0 0;
     flex-direction: column;
-    min-width: 555px;
+    min-width: 623px;
     .modal-top {
       padding: 87px 40px 0 40px;
       color: $color-gray-60;
@@ -1127,6 +1127,17 @@
       flex-direction: column;
       border-top: 1px solid $color-gray-10;
 
+      .input-checkbox {
+        margin-bottom: 23px;
+
+        label {
+          font-family: "worksans", sans-serif;
+          text-align: left;
+          color: $color-black;
+          font-size: $fs12;
+        }
+      }
+
       p {
         font-family: "worksans", sans-serif;
         text-align: left;
@@ -1142,6 +1153,12 @@
       .btn-secondary {
         margin-right: 16px;
       }
+    }
+
+    .deco.top {
+      width: 183px;
+      top: -106px;
+      left: 213px;
     }
   }
 }
@@ -1203,7 +1220,7 @@
   }
 
   &.newsletter-right {
-    left: 515px;
+    left: 586px;
     top: 50px;
   }
 

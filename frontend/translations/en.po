@@ -2054,21 +2054,27 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "No, thanks"
 
-msgid "onboarding.newsletter.desc"
+msgid "onboarding-v2.newsletter.desc"
 msgstr ""
-"Subscribe to our newsletter to stay up to date with product development "
-"progress and news."
+"Subscribe to the Penpot newsletter to stay up to date with the product "
+"development progress and news."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr "Send me product updates (new features, releases, fixes...)."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr "Send me news about Penpot (blog posts, video tutorials, streamings...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "We care about privacy, here you can read our "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"We will only send relevant emails to you. You can unsubscribe at any time "
+"via the unsubscribe link in any of our newsletters."
 
 msgid "onboarding.newsletter.policy"
 msgstr "Privacy Policy."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Because we care about privacy, here's our "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"We will only send relevant emails to you. You can unsubscribe at any time "
-"in your user profile or via the unsubscribe link in any of our newsletters."
 
 msgid "onboarding.newsletter.title"
 msgstr "Want to receive Penpot news?"
