@@ -195,8 +195,9 @@
   {:name ::restrict-methods
    :compile compile-restrict-methods})
 
-(def with-promise-async
-  {:compile
+(def with-dispatch
+  {:name ::with-dispatch
+   :compile
    (fn [& _]
      (fn [handler executor]
        (fn [request respond raise]
@@ -206,7 +207,8 @@
              (p/catch raise)))))})
 
 (def with-config
-  {:compile
+  {:name ::with-config
+   :compile
    (fn [& _]
      (fn [handler config]
        (fn
