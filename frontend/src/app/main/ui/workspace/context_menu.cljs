@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
@@ -365,61 +366,60 @@
 
 (mf/defc context-menu-component
   [{:keys [shapes]}]
-  (let [single?   (= (count shapes) 1)
+  (let [single?             (= (count shapes) 1)
 
-        has-frame? (->> shapes (d/seek cph/frame-shape?))
-        has-component? (some true? (map #(contains? % :component-id) shapes))
-        is-component? (and single? (-> shapes first :component-id some?))
+        has-frame?          (->> shapes (d/seek cph/frame-shape?))
+        has-component?      (some true? (map #(contains? % :component-id) shapes))
+        is-component?       (and single? (-> shapes first :component-id some?))
 
-        shape-id (->> shapes first :id)
-        component-id (->> shapes first :component-id)
-        component-file (-> shapes first :component-file)
-        component-shapes (filter #(contains? % :component-id) shapes)
+        shape-id            (->> shapes first :id)
+        component-id        (->> shapes first :component-id)
+        component-file      (-> shapes first :component-file)
+        main-component?     (->> shapes first :main-instance?)
+        component-shapes    (filter #(contains? % :component-id) shapes)
 
-        components-v2 (features/use-feature :components-v2)
+        components-v2       (features/use-feature :components-v2)
 
-        current-file-id (mf/use-ctx ctx/current-file-id)
-        local-component? (= component-file current-file-id)
+        current-file-id     (mf/use-ctx ctx/current-file-id)
+        local-component?    (= component-file current-file-id)
 
-        local-library (when local-component?
-                        ;; Not needed to subscribe to changes because it's not expected
-                        ;; to change while context menu is open
-                        (deref refs/workspace-local-library))
-
-        main-component (when local-component?
-                         (ctkl/get-component local-library (:component-id (first shapes))))
+        workspace-data      (deref refs/workspace-data)
+        workspace-libraries (deref refs/workspace-libraries)
+        is-dangling?        (nil? (if local-component?
+                                    (ctkl/get-component workspace-data component-id)
+                                    (ctf/get-component workspace-libraries component-file component-id)))
 
         do-add-component #(st/emit! (dwl/add-component))
         do-detach-component #(st/emit! (dwl/detach-component shape-id))
         do-detach-component-in-bulk #(st/emit! dwl/detach-selected-components)
-        do-reset-component #(st/emit! (dwl/reset-component shape-id))
+        _do-reset-component #(st/emit! (dwl/reset-component shape-id))
         do-show-component #(st/emit! (dw/go-to-component component-id))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file component-file))
         do-update-component #(st/emit! (dwl/update-component-sync shape-id component-file))
         do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
         do-restore-component #(st/emit! (dwl/restore-component component-id))
 
-        do-update-remote-component
+        _do-update-remote-component
         #(st/emit! (modal/show
-                     {:type :confirm
-                      :message ""
-                      :title (tr "modals.update-remote-component.message")
-                      :hint (tr "modals.update-remote-component.hint")
-                      :cancel-label (tr "modals.update-remote-component.cancel")
-                      :accept-label (tr "modals.update-remote-component.accept")
-                      :accept-style :primary
-                      :on-accept do-update-component}))
+                    {:type :confirm
+                     :message ""
+                     :title (tr "modals.update-remote-component.message")
+                     :hint (tr "modals.update-remote-component.hint")
+                     :cancel-label (tr "modals.update-remote-component.cancel")
+                     :accept-label (tr "modals.update-remote-component.accept")
+                     :accept-style :primary
+                     :on-accept do-update-component}))
 
         do-update-in-bulk #(st/emit! (modal/show
-                                       {:type :confirm
-                                        :message ""
-                                        :title (tr "modals.update-remote-component-in-bulk.message")
-                                        :hint (tr "modals.update-remote-component-in-bulk.hint")
-                                        :items component-shapes
-                                        :cancel-label (tr "modals.update-remote-component.cancel")
-                                        :accept-label (tr "modals.update-remote-component.accept")
-                                        :accept-style :primary
-                                        :on-accept do-update-component-in-bulk}))]
+                                      {:type :confirm
+                                       :message ""
+                                       :title (tr "modals.update-remote-component-in-bulk.message")
+                                       :hint (tr "modals.update-remote-component-in-bulk.hint")
+                                       :items component-shapes
+                                       :cancel-label (tr "modals.update-remote-component.cancel")
+                                       :accept-label (tr "modals.update-remote-component.accept")
+                                       :accept-style :primary
+                                       :on-accept do-update-component-in-bulk}))]
     [:*
      (when (not has-frame?)
        [:*
@@ -442,28 +442,55 @@
 
        [:*
         [:& menu-separator]
-        [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
-                        :shortcut (sc/get-tooltip :detach-component)
-                        :on-click do-detach-component}]
-        [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
-                        :on-click do-reset-component}]
-
-
-        (if local-component?
-          (if (and (nil? main-component) components-v2)
-            [:& menu-entry {:title (tr "workspace.shape.menu.restore-main")
-                            :on-click do-restore-component}]
-            [:*
-             [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
-                             :on-click do-update-component}]
-             [:& menu-entry {:title (tr "workspace.shape.menu.show-main")
-                             :on-click do-show-component}]])
-
-          [:*
-           [:& menu-entry {:title (tr "workspace.shape.menu.go-main")
-                           :on-click do-navigate-component-file}]
-           [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
-                           :on-click do-update-remote-component}]])])
+        (if main-component?
+          [:& menu-entry {:title (tr "workspace.shape.menu.show-in-assets")
+                          :on-click do-show-component}]
+          (if local-component?
+            (if is-dangling?
+              [:*
+               [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
+                               :shortcut (sc/get-tooltip :detach-component)
+                               :on-click do-detach-component}]
+                ;; This is commented due this functionality is not yet available
+                ;; [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                ;;                 :on-click _do-reset-component}]
+               (when components-v2
+                 [:& menu-entry {:title (tr "workspace.shape.menu.restore-main")
+                                 :on-click do-restore-component}])]
+              [:*
+               [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
+                               :shortcut (sc/get-tooltip :detach-component)
+                               :on-click do-detach-component}]
+                ;; This is commented due this functionality is not yet available
+                ;; [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                ;;                 :on-click _do-reset-component}]
+               [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
+                               :on-click do-update-component}]
+               [:& menu-entry {:title (tr "workspace.shape.menu.show-main")
+                               :on-click do-show-component}]])
+            (if is-dangling?
+              [:*
+               [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
+                               :shortcut (sc/get-tooltip :detach-component)
+                               :on-click do-detach-component}]
+                ;; This is commented due this functionality is not yet available
+                ;; [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                ;;                 :on-click _do-reset-component}]
+               (when components-v2
+                 [:& menu-entry {:title (tr "workspace.shape.menu.restore-main")
+                                 :on-click do-restore-component}])]
+              [:*
+               [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
+                               :shortcut (sc/get-tooltip :detach-component)
+                               :on-click do-detach-component}]
+                ;; This is commented due this functionality is not yet available
+                ;; [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                ;;                 :on-click _do-reset-component}]
+                ;; This is commented due this functionality is not yet available
+                ;;[:& menu-entry {:title (tr "workspace.shape.menu.update-main")
+                ;;                :on-click _do-update-remote-component}]
+               [:& menu-entry {:title (tr "workspace.shape.menu.go-main")
+                               :on-click do-navigate-component-file}]])))])
      [:& menu-separator]]))
 
 (mf/defc context-menu-delete

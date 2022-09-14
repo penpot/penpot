@@ -6,7 +6,8 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
-    [app.common.types.components-list :as ctkl]
+       [app.common.types.components-list :as ctkl]
+    [app.common.types.file :as ctf]
     [app.main.data.modal :as modal]
     [app.main.data.workspace :as dw]
     [app.main.data.workspace.libraries :as dwl]
@@ -23,27 +24,24 @@
 
 (mf/defc component-menu
   [{:keys [ids values shape-name] :as props}]
-  (let [current-file-id (mf/use-ctx ctx/current-file-id)
-        components-v2   (mf/use-ctx ctx/components-v2)
+  (let [current-file-id    (mf/use-ctx ctx/current-file-id)
+        components-v2      (mf/use-ctx ctx/components-v2)
 
-        id              (first ids)
-        local           (mf/use-state {:menu-open false})
+        id                 (first ids)
+        local              (mf/use-state {:menu-open false})
 
-        component-id    (:component-id values)
-        library-id      (:component-file values)
-        show?           (some? component-id)
-        main-instance?  (if components-v2
-                          (:main-instance? values)
-                          true)
-
-        local-component? (= library-id current-file-id)
-        local-library    (when local-component?
-                           ;; Not needed to subscribe to changes because it's not expected
-                           ;; to change while context menu is open
-                           (deref refs/workspace-local-library))
-
-        main-component (when local-component?
-                         (ctkl/get-component local-library component-id))
+        component-id       (:component-id values)
+        library-id         (:component-file values)
+        show?              (some? component-id)
+        main-instance?     (if components-v2
+                             (:main-instance? values)
+                             true)
+        local-component?    (= library-id current-file-id)
+        workspace-data      (deref refs/workspace-data)
+        workspace-libraries (deref refs/workspace-libraries)
+        is-dangling?        (nil? (if local-component?
+                                    (ctkl/get-component workspace-data component-id)
+                                    (ctf/get-component workspace-libraries library-id component-id)))
 
         on-menu-click
         (mf/use-callback
@@ -59,7 +57,7 @@
         do-detach-component
         #(st/emit! (dwl/detach-component id))
 
-        do-reset-component
+        _do-reset-component
         #(st/emit! (dwl/reset-component id))
 
         do-update-component
@@ -68,7 +66,7 @@
         do-restore-component
         #(st/emit! (dwl/restore-component component-id))
 
-        do-update-remote-component
+        _do-update-remote-component
         #(st/emit! (modal/show
                     {:type :confirm
                      :message ""
@@ -99,16 +97,29 @@
           ;;          app/main/ui/workspace/context_menu.cljs
           [:& context-menu {:on-close on-menu-close
                             :show (:menu-open @local)
-                            :options (if local-component?
-                                       (if (and (nil? main-component) components-v2)
-                                         [[(tr "workspace.shape.menu.restore-main") do-restore-component]]
-                                         [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                          [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
-                                          [(tr "workspace.shape.menu.update-main") do-update-component]
-                                          [(tr "workspace.shape.menu.show-main") do-show-component]])
+                            :options 
+                            (if main-instance?
+                              [[(tr "workspace.shape.menu.show-in-assets") do-show-component]]
+                              (if local-component?
+                                (if is-dangling?
+                                  [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                   ;; [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   (when components-v2
+                                     [(tr "workspace.shape.menu.restore-main") do-restore-component])]
 
-                                       [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                        [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
-                                        [(tr "workspace.shape.menu.go-main") do-navigate-component-file]
-                                        [(tr "workspace.shape.menu.update-main") do-update-remote-component]])}]]]]])))
+                                  [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                   ;; [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   [(tr "workspace.shape.menu.update-main") do-update-component]
+                                   [(tr "workspace.shape.menu.show-main") do-show-component]])
+                                
+                                (if is-dangling?
+                                  [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                   ;; [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   (when components-v2
+                                     [(tr "workspace.shape.menu.restore-main") do-restore-component])]
+                                  [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
+                                   ;; [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   ;; [(tr "workspace.shape.menu.update-main") _do-update-remote-component]
+                                   [(tr "workspace.shape.menu.go-main") do-navigate-component-file]
+                                   ])))}]]]]])))
 

@@ -120,6 +120,14 @@
 
 ;; Asset helpers
 
+(defn get-component
+  "Retrieve a component from libraries, if no library-id is provided, we
+  iterate over all libraries and find the component on it."
+  ([libraries component-id]
+   (some #(ctkl/get-component (:data %) component-id) (vals libraries)))
+  ([libraries library-id component-id]
+   (ctkl/get-component (get-in libraries [library-id :data]) component-id)))
+
 (defn delete-component
   "Delete a component and store it to be able to be recovered later.
 
