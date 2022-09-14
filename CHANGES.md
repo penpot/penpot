@@ -9,6 +9,7 @@
 - Fix overlay closed on clicked outside [Taiga #4027](https://tree.taiga.io/project/penpot/issue/4027)
 - Fix animate multiple overlays [Taiga #3993](https://tree.taiga.io/project/penpot/issue/3993)
 - Fix problem with snap to grids [#2221](https://github.com/penpot/penpot/issues/2221)
+- Fix issue when scaling to value 0 [Taiga #4109](https://tree.taiga.io/project/penpot/issue/4109)
 
 ## 1.15.3-beta
 

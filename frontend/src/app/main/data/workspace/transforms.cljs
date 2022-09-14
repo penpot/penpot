@@ -463,7 +463,8 @@
                              (gpt/multiply handler-mult))
 
                   ;; Resize vector
-                  scalev (gpt/divide (gpt/add shapev deltav) shapev)
+                  scalev (-> (gpt/divide (gpt/add shapev deltav) shapev)
+                             (gpt/no-zeros))
 
                   scalev (if lock?
                            (let [v (cond
