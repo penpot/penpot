@@ -230,13 +230,12 @@
                                          (handler request respond raise)
 
                                          :else
-                                         (let [request    (-> request
-                                                              (assoc :profile-id (:profile-id session))
-                                                              (assoc :session-id (:id session)))
-                                               respond    (cond-> respond
-                                                            (renew-session? session)
-                                                            (wrap-respond session))]
-
+                                         (let [request (-> request
+                                                           (assoc :profile-id (:profile-id session))
+                                                           (assoc :session-id (:id session)))
+                                               respond (cond-> respond
+                                                         (renew-session? session)
+                                                         (wrap-respond session))]
                                            (handler request respond raise))))))
 
                       (catch Throwable cause

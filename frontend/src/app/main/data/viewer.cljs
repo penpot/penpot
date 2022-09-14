@@ -274,6 +274,11 @@
 
 (def select-prev-frame
   (ptk/reify ::select-prev-frame
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (dissoc :viewer-animations)
+          (assoc  :viewer-overlays [])))
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
@@ -287,6 +292,11 @@
 
 (def select-next-frame
   (ptk/reify ::select-next-frame
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (dissoc :viewer-animations)
+          (assoc  :viewer-overlays [])))
     ptk/WatchEvent
     (watch [_ state _]
       (let [route   (:route state)
@@ -371,7 +381,7 @@
   (ptk/reify ::complete-animation
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :viewer-animation))))
+      (dissoc state :viewer-animations))))
 
 ;; --- Navigation inside page
 
@@ -412,7 +422,7 @@
            (assoc :viewer-overlays [])
 
            (some? animation)
-           (assoc :viewer-animation
+           (assoc-in [:viewer-animations (:id frame)]
                   {:kind :go-to-frame
                    :orig-frame-id (:id frame)
                    :animation animation}))))
@@ -465,13 +475,14 @@
              :id (:id frame)
              :position position
              :close-click-outside close-click-outside
-             :background-overlay background-overlay})
+             :background-overlay background-overlay
+             :animation animation})
 
     (some? animation)
-    (assoc :viewer-animation
-           {:kind :open-overlay
-            :overlay-id (:id frame)
-            :animation animation})))
+    (assoc-in [:viewer-animations (:id frame)]
+              {:kind :open-overlay
+               :overlay-id (:id frame)
+               :animation animation})))
 
 (defn- close-overlay*
   [state frame-id animation]
@@ -479,10 +490,10 @@
     (update state :viewer-overlays
             (fn [overlays]
               (d/removev #(= (:id (:frame %)) frame-id) overlays)))
-    (assoc state :viewer-animation
-           {:kind :close-overlay
-            :overlay-id frame-id
-            :animation animation})))
+    (assoc-in state [:viewer-animations frame-id]
+              {:kind :close-overlay
+               :overlay-id frame-id
+               :animation animation})))
 
 (defn open-overlay
   [frame-id position close-click-outside background-overlay animation]

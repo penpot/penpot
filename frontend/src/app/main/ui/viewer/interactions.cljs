@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
    [app.common.types.page :as ctp]
+   [app.common.uuid :as uuid]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
@@ -27,8 +28,8 @@
    [rumext.alpha :as mf]))
 
 (defn prepare-objects
-  [page frame size]
-  (let [objects   (:objects page)
+  [frame size objects]
+  (let [
         frame-id  (:id frame)
         modifier  (-> (gpt/point (:x size) (:y size))
                       (gpt/negate)
@@ -52,26 +53,60 @@
 
         vbox    (:vbox size)
 
-        objects (mf/with-memo [page frame size]
-                  (prepare-objects page frame size))
+        fixed-ids (filter :fixed-scroll (vals (:objects page)))
 
-        wrapper (mf/with-memo [objects]
-                  (shapes/frame-container-factory objects))
+        ;; we have con consider the children if the fixed element is a group
+        fixed-children-ids (into #{} (mapcat #(cph/get-children-ids (:objects page) (:id %)) fixed-ids))
+
+        parent-children-ids (->> fixed-ids
+                                 (mapcat #(cons (:id %) (cph/get-parent-ids (:objects page) (:id %))))
+                                 (remove #(= % uuid/zero)))
+
+        fixed-ids (concat fixed-children-ids parent-children-ids)
+
+        not-fixed-ids (->> (remove (set fixed-ids) (keys (:objects page)))
+                           (remove #(= % uuid/zero)))
+
+        calculate-objects (fn [ids] (->> ids
+                                         (map (d/getf (:objects page)))
+                                         (concat [frame])
+                                         (d/index-by :id)
+                                         (prepare-objects frame size)))
+
+        wrapper-fixed (mf/with-memo [page frame size]
+                        (shapes/frame-container-factory (calculate-objects fixed-ids)))
+
+        objects-not-fixed (mf/with-memo [page frame size]
+                            (calculate-objects not-fixed-ids))
+
+        wrapper-not-fixed (mf/with-memo [objects-not-fixed]
+                            (shapes/frame-container-factory objects-not-fixed))
 
         ;; Retrieve frames again with correct modifier
-        frame   (get objects (:id frame))
-        base    (get objects (:id base))]
+        frame   (get objects-not-fixed (:id frame))
+        base    (get objects-not-fixed (:id base))]
 
     [:& (mf/provider shapes/base-frame-ctx) {:value base}
      [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
-      [:svg {:view-box vbox
-             :width (:width size)
-             :height (:height size)
-             :version "1.1"
-             :xmlnsXlink "http://www.w3.org/1999/xlink"
-             :xmlns "http://www.w3.org/2000/svg"
-             :fill "none"}
-       [:& wrapper {:shape frame :view-box vbox}]]]]))
+      ;; We have two different svgs for fixed and not fixed elements so we can emulate the sticky css attribute in svg
+      [:svg.not-fixed {:view-box vbox
+                       :width (:width size)
+                       :height (:height size)
+                       :version "1.1"
+                       :xmlnsXlink "http://www.w3.org/1999/xlink"
+                       :xmlns "http://www.w3.org/2000/svg"
+                       :fill "none"}
+       [:& wrapper-not-fixed {:shape frame :view-box vbox}]]
+      [:svg.fixed {:view-box vbox
+                   :width (:width size)
+                   :height (:height size)
+                   :version "1.1"
+                   :xmlnsXlink "http://www.w3.org/1999/xlink"
+                   :xmlns "http://www.w3.org/2000/svg"
+                   :fill "none"
+                   :style {:width (:width size)
+                           :height (:height size)}}
+       [:& wrapper-fixed {:shape (dissoc frame :fills) :view-box vbox}]]]]))
 
 (mf/defc viewport
   {::mf/wrap [mf/memo]
