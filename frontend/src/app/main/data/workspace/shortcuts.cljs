@@ -45,8 +45,8 @@
                           :subsections [:edit]
                           :fn #(st/emit! dwc/redo)}
 
-   :clear-undo           {:tooltip (ds/meta "Q")
-                          :command (ds/c-mod "q")
+   :clear-undo           {:tooltip (ds/alt "Z")
+                          :command "alt+z"
                           :subsections [:edit]
                           :fn #(st/emit! dwu/reinitialize-undo)}
 
