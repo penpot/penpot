@@ -255,13 +255,20 @@
 
          mk-undo-change
          (fn [change-set shape]
+           (let [idx (or (cph/get-position-on-parent objects (:id shape)) 0)
+                 ;; Different index if the movement was from top to bottom or the other way
+                 ;; Similar that on frontend/src/app/main/ui/workspace/sidebar/layers.cljs
+                 ;; with the 'side' property of the on-drop
+                 idx (if (< index idx)
+                       (inc idx)
+                       idx)]
            (d/preconj
              change-set
              {:type :mov-objects
               :page-id (::page-id (meta changes))
               :parent-id (:parent-id shape)
               :shapes [(:id shape)]
-              :index (cph/get-position-on-parent objects (:id shape))}))]
+              :index idx})))] 
 
      (-> changes
          (update :redo-changes conj set-parent-change)

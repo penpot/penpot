@@ -14,6 +14,7 @@
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.common.types.shape.interactions :as ctsi]
    [app.main.data.comments :as dcm]
    [app.main.data.viewer :as dv]
    [app.main.data.viewer.shortcuts :as sc]
@@ -41,8 +42,8 @@
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
-(def current-animation-ref
-  (l/derived :viewer-animation st/state))
+(def current-animations-ref
+  (l/derived :viewer-animations st/state))
 
 (def current-overlays-ref
   (l/derived :viewer-overlays st/state))
@@ -101,7 +102,7 @@
          :page page}])]))
 
 (mf/defc viewer-overlay
-  [{:keys [overlay page frame zoom wrapper-size close-overlay interactions-mode]}]
+  [{:keys [overlay page frame zoom wrapper-size interactions-mode]}]
   (let [close-click-outside? (:close-click-outside overlay)
         background-overlay?  (:background-overlay overlay)
         overlay-frame        (:frame overlay)
@@ -113,10 +114,12 @@
 
         on-click
         (mf/use-fn
-         (mf/deps overlay close-overlay close-click-outside?)
+         (mf/deps overlay close-click-outside?)
          (fn [_]
            (when close-click-outside?
-             (close-overlay (:frame overlay)))))]
+             (if-let [animation (:animation overlay)]
+               (st/emit! (dv/close-overlay (:id overlay) (ctsi/invert-direction animation)))
+               (st/emit! (dv/close-overlay (:id overlay)))))))]
 
     [:*
      (when (or close-click-outside? background-overlay?)
@@ -147,7 +150,7 @@
 
 (mf/defc viewer-wrapper
   [{:keys [wrapper-size orig-frame orig-viewport-ref orig-size page file users current-viewport-ref
-           size frame interactions-mode overlays zoom close-overlay section index] :as props}]
+           size frame interactions-mode overlays zoom section index] :as props}]
   [:*
    [:& viewer-pagination-and-sidebar
     {:section section
@@ -197,10 +200,7 @@
                             :frame frame
                             :zoom zoom
                             :wrapper-size wrapper-size
-                            :close-overlay close-overlay
-                            :interactions-mode interactions-mode}])
-
-      ]]
+                            :interactions-mode interactions-mode}])]]
 
 
     (when (= section :comments)
@@ -234,7 +234,7 @@
         current-viewport-ref (mf/use-ref nil)
         viewer-section-ref   (mf/use-ref nil)
 
-        current-animation (mf/deref current-animation-ref)
+        current-animations (mf/deref current-animations-ref)
 
         page-id (or page-id (-> file :data :pages first))
 
@@ -257,11 +257,15 @@
 
         fullscreen? (mf/deref header/fullscreen-ref)
         overlays    (mf/deref current-overlays-ref)
-        scroll      (mf/use-state nil)
 
         orig-frame
-        (when (:orig-frame-id current-animation)
-          (d/seek #(= (:id %) (:orig-frame-id current-animation)) frames))
+        (mf/with-memo [current-animations]
+          ;; We assume there can only be one animation with origin (this is used only in
+          ;; navigation animations, and we cannot navigate to two different destinations
+          ;; at the same time).
+          (let [animation-with-origin (d/seek :orig-frame-id (vals current-animations))]
+            (when animation-with-origin
+              (d/seek #(= (:id %) (:orig-frame-id animation-with-origin)) frames))))
 
         size
         (mf/with-memo [frame zoom]
@@ -306,11 +310,6 @@
                  size (dom/get-client-size viewer-section)]
              (st/emit! (dv/set-viewport-size {:size size})))))
 
-        on-scroll
-        (mf/use-fn
-         (fn [event]
-           (reset! scroll (dom/get-target-scroll event))))
-
         on-wheel
         (mf/use-fn
          (fn [event]
@@ -350,12 +349,10 @@
     (mf/with-effect []
       (dom/set-html-theme-color clr/gray-50 "dark")
       (let [key1 (events/listen js/window "click" on-click)
-            key2 (events/listen (mf/ref-val viewer-section-ref) "scroll" on-scroll #js {"passive" true})
-            key3 (events/listen (mf/ref-val viewer-section-ref) "wheel" on-wheel #js {"passive" false})]
+            key2 (events/listen (mf/ref-val viewer-section-ref) "wheel" on-wheel #js {"passive" false})]
         (fn []
           (events/unlistenByKey key1)
-          (events/unlistenByKey key2)
-          (events/unlistenByKey key3))))
+          (events/unlistenByKey key2))))
 
     (mf/use-layout-effect
      (fn []
@@ -393,7 +390,7 @@
          nil)))
 
     (mf/use-layout-effect
-     (mf/deps index)
+     (mf/deps index current-animations)
      (fn []
        (case zoom-type
          :fit (st/emit! dv/zoom-to-fit)
@@ -401,55 +398,55 @@
          nil)
         ;; Navigate animation needs to be started after navigation
         ;; is complete, and we have the next page index.
-       (when (and current-animation
-                  (= (:kind current-animation) :go-to-frame))
-         (let [orig-viewport    (mf/ref-val orig-viewport-ref)
-               current-viewport (mf/ref-val current-viewport-ref)]
-           (interactions/animate-go-to-frame
-            (:animation current-animation)
-            current-viewport
-            orig-viewport
-            size
-            orig-size
-            wrapper-size)))))
+        (let [nav-animation (d/seek #(= (:kind %) :go-to-frame) (vals current-animations))]
+         (when nav-animation
+           (let [orig-viewport    (mf/ref-val orig-viewport-ref)
+                 current-viewport (mf/ref-val current-viewport-ref)]
+             (interactions/animate-go-to-frame
+              (:animation nav-animation)
+              current-viewport
+              orig-viewport
+              size
+              orig-size
+              wrapper-size))))))
 
     (mf/use-layout-effect
-     (mf/deps current-animation)
+     (mf/deps current-animations)
      (fn []
         ;; Overlay animations may be started when needed.
-       (when current-animation
-         (case (:kind current-animation)
-
-           :open-overlay
-           (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
-                 overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
-                                 overlays)
-                 overlay-size (calculate-size (:objects page) (:frame overlay) zoom)
+       (when current-animations
+         (doseq [[overlay-frame-id animation-vals] current-animations]
+           (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id animation-vals))))
+                 overlay          (d/seek #(= (:id (:frame %)) overlay-frame-id)
+                                          overlays)
+                 overlay-size     (calculate-size (:objects page) (:frame overlay) zoom)
                  overlay-position {:x (* (:x (:position overlay)) zoom)
-                                   :y (* (:y (:position overlay)) zoom)}]
-             (interactions/animate-open-overlay
-              (:animation current-animation)
-              overlay-viewport
-              wrapper-size
-              overlay-size
-              overlay-position))
+                                   :y (* (:y (:position overlay)) zoom)}
+                 orig-frame       (when (:orig-frame-id animation-vals)
+                                    (d/seek #(= (:id %) (:orig-frame-id animation-vals)) frames))
+                 size             (calculate-size (:objects page) frame zoom)
+                 orig-size        (when orig-frame
+                                    (calculate-size (:objects page) orig-frame zoom))
+                 wrapper-size     (calculate-wrapper size orig-size zoom)]
+             (case (:kind animation-vals)
+               :open-overlay
+               (interactions/animate-open-overlay
+                (:animation animation-vals)
+                overlay-viewport
+                wrapper-size
+                overlay-size
+                overlay-position)
 
-           :close-overlay
-           (let [overlay-viewport (dom/get-element (str "overlay-" (str (:overlay-id current-animation))))
-                 overlay (d/seek #(= (:id (:frame %)) (:overlay-id current-animation))
-                                 overlays)
-                 overlay-size (calculate-size (:objects page) (:frame overlay) zoom)
-                 overlay-position {:x (* (:x (:position overlay)) zoom)
-                                   :y (* (:y (:position overlay)) zoom)}]
-             (interactions/animate-close-overlay
-              (:animation current-animation)
-              overlay-viewport
-              wrapper-size
-              overlay-size
-              overlay-position
-              (:id (:frame overlay))))
+               :close-overlay
+               (interactions/animate-close-overlay
+                (:animation animation-vals)
+                overlay-viewport
+                wrapper-size
+                overlay-size
+                overlay-position
+                (:id (:frame overlay)))
 
-           nil))))
+               nil))))))
 
     (mf/use-effect
      (mf/deps text-shapes)
@@ -507,24 +504,24 @@
              :index index
              :viewer-pagination viewer-pagination}]
 
-           [:& (mf/provider ctx/current-scroll) {:value @scroll}
-            [:& (mf/provider ctx/current-zoom) {:value zoom}
-             [:& viewer-wrapper
-              {:wrapper-size wrapper-size
-               :orig-frame orig-frame
-               :orig-viewport-ref orig-viewport-ref
-               :orig-size orig-size
-               :page page
-               :file file
-               :users users
-               :current-viewport-ref current-viewport-ref
-               :size size
-               :frame frame
-               :interactions-mode interactions-mode
-               :overlays overlays
-               :zoom zoom
-               :section section
-               :index index}]]]))]]]))
+
+           [:& (mf/provider ctx/current-zoom) {:value zoom}
+            [:& viewer-wrapper
+             {:wrapper-size wrapper-size
+              :orig-frame orig-frame
+              :orig-viewport-ref orig-viewport-ref
+              :orig-size orig-size
+              :page page
+              :file file
+              :users users
+              :current-viewport-ref current-viewport-ref
+              :size size
+              :frame frame
+              :interactions-mode interactions-mode
+              :overlays overlays
+              :zoom zoom
+              :section section
+              :index index}]]))]]]))
 
 ;; --- Component: Viewer Page
 

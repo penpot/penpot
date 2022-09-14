@@ -42,21 +42,13 @@
             (if masked-group?
               ["g" (-> (obj/create)
                        (obj/set! "mask" (mask-url render-id mask)))]
-              [mf/Fragment nil])
-
-            ;; This factory is generic, it's used for viewer, workspace and handoff.
-            ;; These props are generated in viewer wrappers only, in the rest of the
-            ;; cases these props will be nil, not affecting the code.
-            delta          (unchecked-get props "delta")
-            fixed?         (unchecked-get props "fixed?")]
+              [mf/Fragment nil])]
 
         [:> clip-wrapper clip-props
          [:> mask-wrapper mask-props
           (when masked-group?
             [:> render-mask #js {:mask mask
-                                 :objects objects
-                                 :delta delta
-                                 :fixed? fixed?}])
+                                 :objects objects}])
 
           (for [item childs]
             [:& shape-wrapper {:shape item

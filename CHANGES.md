@@ -38,6 +38,15 @@
 
 - To @andrewzhurov for many code contributions on this release.
 
+## 1.15.4-beta
+
+### :bug: Bugs fixed
+
+- Fix overlay remains open on frame change [Taiga #4066](https://tree.taiga.io/project/penpot/issue/4066)
+- Fix toggle overlay position [Taiga #4091](https://tree.taiga.io/project/penpot/issue/4091)
+- Fix overlay closed on clicked outside [Taiga #4027](https://tree.taiga.io/project/penpot/issue/4027)
+- Fix animate multiple overlays [Taiga #3993](https://tree.taiga.io/project/penpot/issue/3993)
+
 ## 1.15.3-beta
 
 ### :bug: Bugs fixed
@@ -47,6 +56,9 @@
 - Fix problem when hovering over nested frames [Taiga #4018](https://tree.taiga.io/project/penpot/issue/4018)
 - Fix problem editing rotated texts [Taiga #4026](https://tree.taiga.io/project/penpot/issue/4026)
 - Fix problem with texts for non existing fonts [Taiga #4087](https://tree.taiga.io/project/penpot/issue/4087)
+- Fix undo after moving layers will wrongly order the layers [Taiga #3344](https://tree.taiga.io/project/penpot/issue/3344)
+- Fix grouping typographies by drag & drop does not work (again) [#2203](https://github.com/penpot/penpot/issues/2203)
+- Fix when ungrouping, the items previously grouped should ALWAYS remain selected [Taiga #4064](https://tree.taiga.io/project/penpot/issue/4064)
 
 ## 1.15.2-beta
 

@@ -92,6 +92,15 @@
     (update [_ state]
       (assoc-in state [:workspace-global :assets-files-open file-id :groups box path] open?))))
 
+(defn extract-path-if-missing
+  [item]
+  (let [[path name] (cph/parse-path-name (:name item))]
+    (if (and
+         (= (:name item) name)
+         (contains? item :path))
+      item
+      (assoc  item :path path :name name))))
+
 (defn default-color-name [color]
   (or (:color color)
       (case (get-in color [:gradient :type])
@@ -240,8 +249,7 @@
 (defn- do-update-tipography
   [it state typography file-id]
   (let [data        (get state :workspace-data)
-        [path name] (cph/parse-path-name (:name typography))
-        typography  (assoc typography :path path :name name)
+        typography  (extract-path-if-missing typography)
         changes     (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/update-typography typography))]

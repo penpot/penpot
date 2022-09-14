@@ -161,28 +161,29 @@
   (ptk/reify ::ungroup-selected
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id       (:current-page-id state)
-            objects       (wsh/lookup-page-objects state page-id)
-
-            prepare
-            (fn [shape-id]
-              (let [shape (get objects shape-id)]
-                (cond
-                  (or (cph/group-shape? shape) (cph/bool-shape? shape))
-                  (remove-group-changes it page-id shape objects)
-
-                  (cph/frame-shape? shape)
-                  (remove-frame-changes it page-id shape objects))))
+      (let [page-id   (:current-page-id state)
+            objects   (wsh/lookup-page-objects state page-id)
+            is-group? #(or (= :bool (:type %)) (= :group (:type %)))
+            lookup    #(get objects %)
+            prepare   #(prepare-remove-group it page-id % objects)
+            selected (wsh/lookup-selected state)
+            children (into (d/ordered-set)
+                           (mapcat #(->> %
+                                         lookup
+                                         :shapes) selected))
 
             changes-list (sequence
-                          (keep prepare)
-                          (wsh/lookup-selected state))
+                          (comp (map lookup)
+                                (filter is-group?)
+                                (map prepare))
+                          selected)
 
             changes {:redo-changes (vec (mapcat :redo-changes changes-list))
                      :undo-changes (vec (mapcat :undo-changes changes-list))
                      :origin it}]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (dws/select-shapes children))))))
 
 (def mask-group
   (ptk/reify ::mask-group

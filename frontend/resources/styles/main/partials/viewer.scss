@@ -187,6 +187,20 @@
 }
 
 .viewport-container {
+  clip-path: inset(0 0 0 0);
   grid-column: 1 / 1;
   grid-row: 1 / 1;
+
+  .not-fixed {
+    position: absolute;
+  }
+
+  .fixed {
+    position: fixed;
+    pointer-events: none;
+
+    .frame-children g {
+      pointer-events: auto;
+    }
+  }
 }

@@ -21,7 +21,8 @@
                     :width  width
                     :fontFamily "sourcesanspro"
                     :display "flex"
-                    :whiteSpace "break-spaces"}]
+                    :whiteSpace "break-spaces"
+                    :flex-wrap "wrap"}]
     (cond-> base
       (= valign "top")     (obj/set! "alignItems" "flex-start")
       (= valign "center")  (obj/set! "alignItems" "center")
