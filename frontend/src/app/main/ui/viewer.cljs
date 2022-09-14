@@ -255,7 +255,6 @@
 
         fullscreen? (mf/deref header/fullscreen-ref)
         overlays    (mf/deref current-overlays-ref)
-        scroll      (mf/use-state nil)
 
         orig-frame
         (mf/with-memo [current-animations]
@@ -309,11 +308,6 @@
                  size (dom/get-client-size viewer-section)]
              (st/emit! (dv/set-viewport-size {:size size})))))
 
-        on-scroll
-        (mf/use-fn
-         (fn [event]
-           (reset! scroll (dom/get-target-scroll event))))
-
         on-wheel
         (mf/use-fn
          (fn [event]
@@ -354,12 +348,10 @@
     (mf/with-effect []
       (dom/set-html-theme-color clr/gray-50 "dark")
       (let [key1 (events/listen js/window "click" on-click)
-            key2 (events/listen (mf/ref-val viewer-section-ref) "scroll" on-scroll #js {"passive" true})
-            key3 (events/listen (mf/ref-val viewer-section-ref) "wheel" on-wheel #js {"passive" false})]
+            key2 (events/listen (mf/ref-val viewer-section-ref) "wheel" on-wheel #js {"passive" false})]
         (fn []
           (events/unlistenByKey key1)
-          (events/unlistenByKey key2)
-          (events/unlistenByKey key3))))
+          (events/unlistenByKey key2))))
 
     (mf/use-layout-effect
      (fn []
@@ -499,24 +491,24 @@
              :index index
              :viewer-pagination viewer-pagination}]
 
-           [:& (mf/provider ctx/current-scroll) {:value @scroll}
-            [:& (mf/provider ctx/current-zoom) {:value zoom}
-             [:& viewer-wrapper
-              {:wrapper-size wrapper-size
-               :orig-frame orig-frame
-               :orig-viewport-ref orig-viewport-ref
-               :orig-size orig-size
-               :page page
-               :file file
-               :users users
-               :current-viewport-ref current-viewport-ref
-               :size size
-               :frame frame
-               :interactions-mode interactions-mode
-               :overlays overlays
-               :zoom zoom
-               :section section
-               :index index}]]]))]]]))
+
+           [:& (mf/provider ctx/current-zoom) {:value zoom}
+            [:& viewer-wrapper
+             {:wrapper-size wrapper-size
+              :orig-frame orig-frame
+              :orig-viewport-ref orig-viewport-ref
+              :orig-size orig-size
+              :page page
+              :file file
+              :users users
+              :current-viewport-ref current-viewport-ref
+              :size size
+              :frame frame
+              :interactions-mode interactions-mode
+              :overlays overlays
+              :zoom zoom
+              :section section
+              :index index}]]))]]]))
 
 ;; --- Component: Viewer Page
 
