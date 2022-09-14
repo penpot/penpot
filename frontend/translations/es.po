@@ -2148,22 +2148,28 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "No, gracias"
 
-msgid "onboarding.newsletter.desc"
+msgid "onboarding-v2.newsletter.desc"
 msgstr ""
-"Suscríbete a nuestra newsletter para estar al día de los progresos del "
+"Suscríbete a la newsletter de Penpot para estar al día de los progresos del "
 "producto y noticias."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr "Quiero recibir información sobre actualizaciones del producto (nuevas funcionalidades, releases, mejoras...)."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr "Quiero recibir noticias sobre Penpot (artículos del blog, vídeo tutoriales, directos...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Nos importa la privacidad, aquí puedes leer nuestra "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en "
+"cualquier momento usando el vínculo de desuscripción en "
+"cualquiera de nuestras newsletters."
 
 msgid "onboarding.newsletter.policy"
 msgstr "Política de Privacidad."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Porque nos importa la privacidad, aquí puedes ver nuestra "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en "
-"cualquier momento desde tu perfil o usando el vínculo de desuscripción en "
-"cualquiera de nuestras newsletters."
 
 msgid "onboarding.newsletter.title"
 msgstr "¿Quieres recibir noticias sobre Penpot?"
