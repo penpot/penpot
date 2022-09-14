@@ -55,7 +55,7 @@
   []
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
-                             (-> main/system-config
+                             (-> (merge main/system-config main/worker-config)
                                  (ig/prep)
                                  (ig/init))))
   :started)
