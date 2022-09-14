@@ -146,7 +146,7 @@
         objects   (:objects page)
         unames    (volatile! (un/retrieve-used-names objects))
 
-        frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
+        frame-id (cph/top-nested-frame objects (gpt/add orig-pos delta))
 
         update-new-shape
         (fn [new-shape original-shape]

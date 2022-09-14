@@ -437,7 +437,7 @@
       (try
         (let [page-id  (:current-page-id state)
               objects  (wsh/lookup-page-objects state page-id)
-              frame-id (cph/frame-id-by-position objects position)
+              frame-id (cph/top-nested-frame objects position)
               selected (wsh/lookup-selected state)
 
               [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
