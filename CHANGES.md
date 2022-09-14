@@ -9,6 +9,12 @@
 - Fix overlay closed on clicked outside [Taiga #4027](https://tree.taiga.io/project/penpot/issue/4027)
 - Fix animate multiple overlays [Taiga #3993](https://tree.taiga.io/project/penpot/issue/3993)
 
+### :sparkles: Enhancements
+
+- Print emails to console by default if smtp is disabled
+- Add `email-verification` flag for enable/disable email verification
+
+
 ## 1.15.3-beta
 
 ### :bug: Bugs fixed

@@ -7,6 +7,7 @@
 (ns app.emails
   "Main api for send emails."
   (:require
+   [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.spec :as us]
@@ -141,6 +142,7 @@
 
 (declare send-console!)
 
+(s/def ::enabled? ::us/boolean)
 (s/def ::username ::cf/smtp-username)
 (s/def ::password ::cf/smtp-password)
 (s/def ::tls ::cf/smtp-tls)
@@ -150,26 +152,33 @@
 (s/def ::default-reply-to ::cf/smtp-default-reply-to)
 (s/def ::default-from ::cf/smtp-default-from)
 
-(defmethod ig/pre-init-spec ::sendmail-handler [_]
-  (s/keys :opt-un [::username
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req-un [::enabled?]
+          :opt-un [::username
                    ::password
                    ::tls
                    ::ssl
                    ::host
                    ::port
                    ::default-from
-                   ::default-reply-to]))
+                   ::default-reply-to
+                   ::enabled?]))
 
-(defmethod ig/init-key ::sendmail-handler
+(defmethod ig/prep-key ::handler
   [_ cfg]
+  (d/without-nils cfg))
+
+(defmethod ig/init-key ::handler
+  [_ cfg]
+  ;; (app.common.pprint/pprint cfg)
   (fn [{:keys [props] :as task}]
     (let [enabled? (or (contains? cf/flags :smtp)
-                       (cf/get :smtp-enabled)
                        (:enabled task))]
       (when enabled?
         (emails/send! cfg props))
 
-      (when (contains? cf/flags :log-emails)
+      (when (or (contains? cf/flags :log-emails)
+                (not enabled?))
         (send-console! cfg props)))))
 
 (defn- send-console!

@@ -420,26 +420,51 @@
       (ex/raise :type :validation
                 :code :member-is-muted
                 :email email
-                :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
+                :hint "the profile has reported repeatedly as spam or has bounces"))
 
     ;; Secondly check if the invited member email is part of the global spam/bounce report.
     (when (eml/has-bounce-reports? conn email)
       (ex/raise :type :validation
                 :code :email-has-permanent-bounces
                 :email email
-                :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
+                :hint "the email you invite has been repeatedly reported as spam or bounce"))
 
-    (db/exec-one! conn [sql:upsert-team-invitation
-                        (:id team) (str/lower email) (name role) token-exp (name role) token-exp])
+    ;; When we have email verification disabled and invitation user is
+    ;; already present in the database, we proceed to add it to the
+    ;; team as-is, without email roundtrip.
 
-    (eml/send! {::eml/conn conn
-                ::eml/factory eml/invite-to-team
-                :public-uri (:public-uri cfg)
-                :to email
-                :invited-by (:fullname profile)
-                :team (:name team)
-                :token itoken
-                :extra-data ptoken})))
+    ;; TODO: if member does not exists and email verification is
+    ;; disabled, we should proceed to create the profile (?)
+    (if (and (not (contains? cf/flags :email-verification))
+             (some? member))
+      (let [params (merge {:team-id (:id team)
+                           :profile-id (:id member)}
+                          (role->params role))]
+
+        ;; Insert the invited member to the team
+        (db/insert! conn :team-profile-rel params {:on-conflict-do-nothing true})
+
+        ;; If profile is not yet verified, mark it as verified because
+        ;; accepting an invitation link serves as verification.
+        (when-not (:is-active member)
+          (db/update! conn :profile
+                      {:is-active true}
+                      {:id (:id member)}))
+
+        (assoc member :is-active true))
+
+      (do
+        (db/exec-one! conn [sql:upsert-team-invitation
+                            (:id team) (str/lower email) (name role)
+                            token-exp (name role) token-exp])
+        (eml/send! {::eml/conn conn
+                    ::eml/factory eml/invite-to-team
+                    :public-uri (:public-uri cfg)
+                    :to email
+                    :invited-by (:fullname profile)
+                    :team (:name team)
+                    :token itoken
+                    :extra-data ptoken})))))
 
 ;; --- Mutation: Create Team & Invite Members
 

@@ -237,7 +237,7 @@
    :app.worker/registry
    {:metrics (ig/ref :app.metrics/metrics)
     :tasks
-    {:sendmail           (ig/ref :app.emails/sendmail-handler)
+    {:sendmail           (ig/ref :app.emails/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
@@ -249,7 +249,7 @@
      :audit-log-archive  (ig/ref :app.loggers.audit/archive-task)
      :audit-log-gc       (ig/ref :app.loggers.audit/gc-task)}}
 
-   :app.emails/sendmail-handler
+   :app.emails/handler
    {:host             (cf/get :smtp-host)
     :port             (cf/get :smtp-port)
     :ssl              (cf/get :smtp-ssl)
@@ -258,7 +258,8 @@
     :password         (cf/get :smtp-password)
     :metrics          (ig/ref :app.metrics/metrics)
     :default-reply-to (cf/get :smtp-default-reply-to)
-    :default-from     (cf/get :smtp-default-from)}
+    :default-from     (cf/get :smtp-default-from)
+    :enabled?         (contains? cf/flags :smtp)}
 
    :app.tasks.tasks-gc/handler
    {:pool    (ig/ref :app.db/pool)
@@ -409,6 +410,7 @@
                                  (ig/prep)
                                  (ig/init))))
   (l/info :msg "welcome to penpot"
+          :worker? (contains? cf/flags :backend-worker)
           :version (:full cf/version)))
 
 (defn stop
