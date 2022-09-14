@@ -317,7 +317,8 @@
 (def default-flags
   [:enable-backend-api-doc
    :enable-backend-worker
-   :enable-secure-session-cookies])
+   :enable-secure-session-cookies
+   :enable-email-verification])
 
 (defn- parse-flags
   [config]

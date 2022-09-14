@@ -88,6 +88,37 @@
 
       )))
 
+
+(t/deftest invite-team-member-with-email-verification-disabled
+  (with-mocks [mock {:target 'app.emails/send! :return nil}]
+    (let [profile1 (th/create-profile* 1 {:is-active true})
+          profile2 (th/create-profile* 2 {:is-active true})
+          profile3 (th/create-profile* 3 {:is-active true :is-muted true})
+
+          team     (th/create-team* 1 {:profile-id (:id profile1)})
+
+          pool     (:app.db/pool th/*system*)
+          data     {::th/type :invite-team-member
+                    :team-id (:id team)
+                    :role :editor
+                    :profile-id (:id profile1)}]
+
+      ;; invite internal user without complaints
+      (with-redefs [app.config/flags #{}]
+        (th/reset-mock! mock)
+        (let [data (assoc data :email (:email profile2))
+              out  (th/mutation! data)]
+          (t/is (= {} (:result out)))
+          (t/is (= 0 (:call-count (deref mock)))))
+
+
+        (let [members (db/query pool :team-profile-rel
+                                {:team-id (:id team)
+                                 :profile-id (:id profile2)})]
+          (t/is (= 1 (count members)))
+          (t/is (true? (-> members first :can-edit))))))))
+
+
 (t/deftest test-deletion
   (let [task     (:app.tasks.objects-gc/handler th/*system*)
         profile1 (th/create-profile* 1 {:is-active true})

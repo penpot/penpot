@@ -417,6 +417,7 @@
                                  (ig/prep)
                                  (ig/init))))
   (l/info :msg "welcome to penpot"
+          :worker? (contains? cf/flags :backend-worker)
           :version (:full cf/version)))
 
 (defn stop
