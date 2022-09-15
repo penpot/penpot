@@ -26,7 +26,7 @@
 
 ![feature-readme](https://user-images.githubusercontent.com/1045247/189871786-0b44f7cf-3a0a-4445-a87b-9919ec398bf7.gif)
 
-Penpot is the first **Open Source design** and prototyping platform meant for cross-domain teams. Non dependent on operating systems, Penpot is web based and works with open web standards (SVG). Penpot invites designers all over the world to fall in love with open source while getting developers excited about the design process in return.
+Penpot is the first **Open Source** design and prototyping platform meant for cross-domain teams. Non dependent on operating systems, Penpot is web based and works with open standards (SVG). Penpot invites designers all over the world to fall in love with open source while getting developers excited about the design process in return.
 
 ## Table of contents ##
 
@@ -38,16 +38,16 @@ Penpot is the first **Open Source design** and prototyping platform meant for cr
 
 ## Why Penpot ##
 
-Penpot offers the possibility to build well designed products that are community-first and community-driven.
+Penpot makes design and prototyping accesible to every team in the world. 
 
 ### For cross-domain teams ###
-Product features and capabilities meant for the different roles in the team. 
+We have a clear focus on design and code teams and our capabilities reflect exactly that. The less hand-off mindset, the more fun for everyone.
 
 ### Multiplatform ###
-Being web based, Penpot is not dependent on operating systems or installations, you will only need to run a modern browser. 
+Being web based, Penpot is not dependent on operating systems or local installations, you will only need to run a modern browser. 
 
-### With love and Open Standards ###
-Using SVG as no other prototyping tool does, Penpot files sport compatibility with most of the vectorial tools, are tech friendly and extremely easy to use on the web.
+### Open Standards ###
+Using SVG as no other design and prototyping tool does, Penpot files sport compatibility with most of the vectorial tools, are tech friendly and extremely easy to use on the web. We make sure you will always own your work.
 
 <p align="center">
   <img src="https://penpot.app/images/open-source.png" alt="Open Source">
@@ -136,6 +136,6 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Copyright (c) UXBOX Labs SL
+Copyright (c) KALEIDOS INC
 ```
 Penpot is a Kaleidos’ [open source project](https://kaleidos.net/products)
