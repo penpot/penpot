@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-10 17:20+0000\n"
+"PO-Revision-Date: 2022-09-16 21:18+0000\n"
 "Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
 "Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
 "eu/>\n"
@@ -4532,3 +4532,118 @@ msgstr[1] "Liburutegian argitaratzea atzera bota"
 
 msgid "onboarding-v2.before-start.desc2.title"
 msgstr "Erabiltzailearen gida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-w"
+msgstr "Gehieneko zabalera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-h"
+msgstr "Gutxieneko altuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-h"
+msgstr "Gehieneko altuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "Gutxieneko altuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-w"
+msgstr "Gutxieneko zabalera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-h"
+msgstr "Gehieneko altuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-w"
+msgstr "Gehieneko zabalaera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-w"
+msgstr "Gutxieneko zabalera"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Penpotekin lanean hasteko hainbat eta hainbat baliabide daude, adibidez "
+"erabiltzailearen gida eta gure Youtube kanala."
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Penpot erabiltzeari buruko informazioa. Prototipoak egitetik, diseinuak "
+"antolatu eta partekatzera."
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "Gure eta komunitateak egindako tutorialak ikusi ditzakezu."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Bideo tutorialak"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Hasi aurretik"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot Kode Irekikoa da eta Kaleidos eta komunitateak egindakoa da. "
+"Laguntzeko erak:"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Penpoten oraina eta etorkizunari buruz ikasi, partekatu eta eztabaidatzeko "
+"tokia."
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Komunitatean parte hartzen"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Hemen izango duzu itzulpenekin laguntzeko informazioa, funtzionalitateak "
+"eskatzeko modua, erroreak bilatzekoa…"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Laguntzeko gida"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Ongi etorri Penpotera!"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Sortu taldea beranduago"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Ez ahaztu garapeneko, diseinuko, kudeaketako... pertsonak sartzea, "
+"dibertsitatea ona da :)"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Gonbidatu rol honekin:"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Sortu talde bat"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Talde batek Penpoten fitxategi eta proiektuetan elkarrekin lan egiteko "
+"aukera ematen du."
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Mugarik gabeko fitxategi eta proiektu kopurua"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Jokalari anitzeko edizioa"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Rolen kudeaketa"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Partehartzaile muga gabe"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "%100 doan!"
+
+msgid "workspace.assets.local-library"
+msgstr "liburutegi lokala"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "Berrezarri osagai nagusia"
