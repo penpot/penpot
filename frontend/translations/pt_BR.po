@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-18 16:16+0000\n"
-"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
-"Language-Team: Portuguese (Brazil) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
+"PO-Revision-Date: 2022-09-16 21:18+0000\n"
+"Last-Translator: Ally Tiago <allytiagomail@gmail.com>\n"
+"Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.14-dev\n"
+"X-Generator: Weblate 4.14.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -214,7 +214,7 @@ msgstr "Páginas selecionadas"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
-msgstr "Adicionar como Biblioteca Compartilhada"
+msgstr "Adicionar à Biblioteca Compartilhada"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.change-email"
@@ -350,7 +350,7 @@ msgstr "Sair da equipe"
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
-msgstr "Bibliotecas Compartilhadas"
+msgstr "Bibliotecas"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
@@ -440,7 +440,7 @@ msgstr "Quer remover sua conta?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
-msgstr "Remover como Biblioteca Compartilhada"
+msgstr "Remover da Biblioteca Compartilhada"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.search-placeholder"
@@ -1144,7 +1144,6 @@ msgid "labels.send"
 msgstr "Enviar"
 
 #: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
 msgid "labels.sending"
 msgstr "Enviando…"
 
@@ -1162,7 +1161,7 @@ msgstr "Configurações"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
-msgstr "Bibliotecas compartilhadas"
+msgstr "Bibliotecas"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"
@@ -1207,7 +1206,7 @@ msgstr "Carregando imagem…"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
-msgstr "Adicionar como biblioteca compartilhada"
+msgstr "Adicionar à Biblioteca Compartilhada"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
@@ -1218,7 +1217,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
-msgstr "Adicionar “%s” como Biblioteca Compartilhada"
+msgstr "Adicionar “%s” à Biblioteca Compartilhada"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.confirm-email"
@@ -1367,7 +1366,7 @@ msgstr "Promover a proprietário"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
-msgstr "Remover como Biblioteca Compartilhada"
+msgstr "Remover da Biblioteca Compartilhada"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
@@ -1378,7 +1377,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
-msgstr "Remover “%s” como Biblioteca Compartilhada"
+msgstr "Remover “%s” da Biblioteca Compartilhada"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
@@ -1391,12 +1390,12 @@ msgstr "Cancelar"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
-"Você está prestes a atualizar um Componente em uma Biblioteca "
-"Compartilhada. Isso pode afetar outros arquivos que a utilizam."
+"Você está prestes a atualizar um componente em uma biblioteca compartilhada. "
+"Isso pode afetar outros arquivos que a utilizam."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
-msgstr "Atualizar Componente em uma Biblioteca Compartilhada"
+msgstr "Atualizar componente em uma biblioteca compartilhada"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
@@ -2089,3 +2088,737 @@ msgstr "Atualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clique para fechar o caminho"
+
+msgid "labels.export"
+msgstr "Exportar"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Sua conta"
+
+msgid "errors.team-leave.insufficient-members"
+msgstr ""
+"Membros insuficientes para deixar a equipe, você provavelmente deseja "
+"excluí-la."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "O membro que você tentou atribuir não existe."
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-grid"
+msgstr "Encaixar na grade"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke"
+msgstr "Traço"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.accept"
+msgstr "Excluir projeto"
+
+msgid "onboarding.contrib.link"
+msgstr "projeto no github"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Aprenda o básico no Penpot enquanto se diverte com este tutorial prático."
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Bibliotecas compartilhadas não serão incluídas na exportação e nenhum ativo "
+"será adicionado à biblioteca. "
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Trate os ativos da biblioteca compartilhada como objetos básicos"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr ""
+"O proprietário não pode sair da equipe, você deve reatribuir a função de "
+"proprietário."
+
+msgid "labels.share-prototype"
+msgstr "Compartilhar protótipo"
+
+msgid "labels.edit-file"
+msgstr "Editar arquivo"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "Pendente"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Reenviar convite"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Se você transferir a propriedade, mudará sua função para Admin, perdendo "
+"algumas permissões sobre essa equipe. "
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "Tem certeza de que deseja cancelar a publicação desta biblioteca?"
+msgstr[1] "Tem certeza de que deseja cancelar a publicação dessas bibliotecas?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Atualizar componentes em uma biblioteca compartilhada"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"O Penpot é Open Source e é feito pela Kaleidos e também pela comunidade, "
+"onde muitas pessoas já se ajudam. Todos podem colaborar:"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Um espaço público para aprender, compartilhar e discutir sobre o Penpot, seu "
+"presente e futuro com toda a Comunidade e a equipe principal do Penpot."
+
+msgid "common.share-link.all-users"
+msgstr "Todos os usuários do Penpot"
+
+msgid "common.share-link.current-tag"
+msgstr "(atual)"
+
+msgid "common.share-link.manage-ops"
+msgstr "Gerenciar Permissões"
+
+msgid "common.share-link.destroy-link"
+msgstr "Destruir link"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Pode comentar"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 página compartilhada"
+msgstr[1] "%s páginas compartilhadas"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Páginas compartilhadas"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Pode inspecionar o código"
+
+msgid "common.share-link.team-members"
+msgstr "Apenas membros da equipe"
+
+msgid "common.share-link.view-all"
+msgstr "Selecionar todos"
+
+msgid "dashboard.download-binary-file"
+msgstr "Baixar arquivo Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Baixar arquivo padrão (.svg + .json)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Baixar %s arquivos Penpot (.penpot)"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Baixar %s arquivos padrões (.svg + .json)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Carregando arquivo: %s"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Provedor de autenticação não configurado."
+
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.profile-is-muted"
+msgstr ""
+"Seu perfil tem e-mails silenciados (relatos de spam ou altas devoluções)."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Vá para o fórum do Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Estamos felizes em tê-lo aqui. Se precisar de ajuda, pesquise antes de "
+"postar."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Comunidade Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Vá para o Twitter"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Aqui para ajuda com suas dúvidas técnicas."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Conta de suporte no Twitter"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Atalhos"
+
+msgid "labels.continue"
+msgstr "Continuar"
+
+msgid "labels.continue-with"
+msgstr "Continue com"
+
+msgid "labels.continue-with-penpot"
+msgstr "Você pode continuar com a conta Penpot"
+
+msgid "labels.log-or-sign"
+msgstr "Entrar ou cadastrar-se"
+
+msgid "labels.next"
+msgstr "Próximo"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Tutorial"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(você)"
+
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"Tem certeza de que deseja excluir este estilo de fonte? Ele não será "
+"carregado se for usado em um arquivo."
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.body"
+msgstr "Tem certeza de que deseja excluir esta página?"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.title"
+msgstr "Excluir página"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.message"
+msgstr "Tem certeza de que deseja excluir este projeto?"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.title"
+msgstr "Excluir projeto"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Pequeno deslocamento"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"Você está prestes a atualizar componentes em uma biblioteca compartilhada. "
+"Isso pode afetar outros arquivos que o utilizam."
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Convide membros"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr ""
+"Depois de nomear sua equipe, você poderá convidar pessoas para participar."
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "Crie uma equipe e envie convites"
+
+msgid "onboarding.choice.title"
+msgstr "Bem-vindo ao Penpot"
+
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot é Open Source, feito por e para a comunidade. Se quiser colaborar, é "
+"mais que bem-vindo!"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "Você pode acessar o"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "e siga as instruções de contribuição :)"
+
+msgid "onboarding.contrib.title"
+msgstr "Contribuidor Open Source?"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"Sua solicitação de inscrição foi enviada, enviaremos um e-mail para "
+"confirmá-la."
+
+msgid "onboarding.newsletter.decline"
+msgstr "Não, obrigado"
+
+msgid "onboarding.newsletter.policy"
+msgstr "Politica de privacidade."
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "Porque nos preocupamos com a privacidade, aqui está o nosso "
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-dynamic-alignment"
+msgstr "Habilitar alinhamento dinâmico"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Ativar texto de escala"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "Encaixar nos guias"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Habilitar encaixe por pixel"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saved"
+msgstr "Salvo"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.unsaved"
+msgstr "Alterações não salvas"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr ""
+"Envie-me notícias, atualizações de produtos e recomendações sobre o Penpot."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Assinatura de Newsletter"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Salvar configurações"
+
+msgid "errors.auth.unable-to-login"
+msgstr "Parece que você não está autenticado ou a sessão expirou."
+
+msgid "errors.email-as-password"
+msgstr "Você não pode usar seu e-mail como senha"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.email-has-permanent-bounces"
+msgstr "O e-mail «%s» tem muitos relatórios de devolução permanentes."
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "O e-mail «%s» foi denunciado como spam ou devolvido permanentemente."
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Máscara"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.accept"
+msgstr "Excluir equipe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.title"
+msgstr "Excluindo equipe"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Preferências"
+
+msgid "common.unpublish"
+msgstr "Cancelar publicação"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Processando componentes"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot é destinado a equipes. Convide membros para trabalharem juntos em "
+"projetos e arquivos"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Juntem-se!"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Biblioteca & Modelos"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explore mais deles e saiba como contribuir"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Ocorreu um problema ao importar o modelo. O modelo não foi importado."
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Atenção"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Componentes para atualizar:"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "errors.member-is-muted"
+msgstr ""
+"O perfil que você está convidando tem e-mails silenciados (relatos de spam "
+"ou altas devoluções)."
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "Componente"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "Sobre Penpot"
+
+msgid "labels.close"
+msgstr "Fechar"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Comunidade"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "Não há convites."
+
+msgid "labels.show-comments-list"
+msgstr "Mostrar lista de comentários"
+
+msgid "labels.workspace"
+msgstr "Área de trabalho"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Status"
+
+msgid "modals.delete-font-variant.title"
+msgstr "Excluindo estilo de fonte"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Excluindo arquivo"
+msgstr[1] "Excluindo arquivos"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.message"
+msgstr ""
+"Tem certeza de que deseja excluir esta equipe? Todos os projetos e arquivos "
+"associados à equipe serão excluídos permanentemente."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "Excluir membro"
+
+msgid "modals.invite-member.emails"
+msgstr "E-mails, separados por vírgulas"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Excluir arquivo"
+msgstr[1] "Excluir arquivos"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "Excluindo arquivo"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Crie uma equipe depois"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Convide com a função:"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Você deve saber que existem muitos recursos disponíveis para ajudá-lo a "
+"começar a usar o Penpot, como o Guia do Usuário e nosso canal no Youtube."
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Informações detalhadas sobre como usar o Penpot. Da prototipagem à "
+"organização ou compartilhamento de projetos."
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Bem-vindo ao Penpot!"
+
+msgid "common.publish"
+msgstr "Publicar"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Gerenciamento de equipe"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Começar o tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutorial prático"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Faça um passeio pelo Penpot e conheça suas principais características."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Comece o passeio"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Passo a passo da interface"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Este arquivo já foi usado com componentes V2 habilitado."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Convite inválido"
+
+msgid "errors.invite-invalid.info"
+msgstr "Este convite pode ter sido cancelado ou pode ter expirado."
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "Quantidade de deslocamento"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Cancelar publicação da biblioteca"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Tem certeza de que deseja excluir este arquivo?"
+msgstr[1] "Tem certeza de que deseja excluir estes arquivos?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Este arquivo possui bibliotecas que estão sendo usadas neste arquivo:"
+msgstr[1] "Este arquivo possui bibliotecas que estão sendo usadas nestes arquivos:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] ""
+"Esses arquivos possuem bibliotecas que estão sendo usadas neste arquivo:"
+msgstr[1] "Esses arquivos têm bibliotecas que estão sendo usadas nesses arquivos:"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "Convite membros para a equipe"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Cancelar publicação"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Se você cancelar a publicação, os ativos nele se tornarão uma biblioteca "
+"desse arquivo."
+msgstr[1] ""
+"Se você cancelar a publicação, os ativos nele se tornarão uma biblioteca "
+"desses arquivos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Está em uso neste arquivo:"
+msgstr[1] "Está em uso nestes arquivos:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Cancelar publicação da biblioteca"
+msgstr[1] "Cancelar publicação de bibliotecas"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Guia do Usuário"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr ""
+"Você pode assistir nossos tutoriais e os tutoriais feitos por nossa "
+"comunidade."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Tutoriais em vídeo"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Antes de começar"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Participando da Comunidade"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Onde você poderá colaborar com traduções, solicitações de recursos, "
+"contribuições principais, caça a bugs…"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Guia do contribuidor"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Lembre-se de incluir todos. Desenvolvedores, designers, gerentes... a "
+"diversidade se soma :)"
+
+msgid "onboarding.newsletter.accept"
+msgstr "Sim, assinar"
+
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"Subscreva a nossa newsletter para se manter atualizado com o progresso e as "
+"novidades do desenvolvimento de produtos."
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"Enviaremos apenas e-mails relevantes para você. Você pode cancelar a "
+"inscrição a qualquer momento em seu perfil de usuário ou por meio do link de "
+"cancelamento de inscrição em qualquer um de nossos boletins informativos."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Recusar tudo"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Carregar tudo"
+
+msgid "dashboard.import.import-error"
+msgstr "Ocorreu um problema ao importar o arquivo. O arquivo não foi importado."
+
+msgid "dashboard.import.import-message"
+msgstr "%s arquivos foram importados com sucesso."
+
+msgid "dashboard.import.import-warning"
+msgstr "Alguns arquivos continham objetos inválidos que foram removidos."
+
+msgid "onboarding.contrib.alt"
+msgstr "Open Source"
+
+msgid "labels.and"
+msgstr "e"
+
+msgid "labels.back"
+msgstr "Voltar"
+
+msgid "labels.default"
+msgstr "padrão"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Excluir convite"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Expirado"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Central de Ajuda"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Repositório Github"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Convites"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Biblioteca & Modelos"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Membro"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"Pressione o botão \"Convidar para equipe\" para convidar mais membros para "
+"esta equipe."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Remover membro"
+
+msgid "labels.skip"
+msgstr "Pular"
+
+msgid "labels.start"
+msgstr "Começar"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "Grande deslocamento"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"Você é o dono desta equipe. Selecione outro membro para promover a "
+"proprietário antes de sair."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Como você é o único membro desta equipe, a equipe será excluída junto com "
+"seus projetos e arquivos."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Tem certeza de que deseja sair da equipe %s?"
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Digite o nome da equipe"
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "Crie a equipe e convide depois"
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "O nome da sua equipe"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Seu arquivo será exportado com todos os ativos externos mesclados na "
+"biblioteca de arquivos."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Incluir ativos da biblioteca compartilhada na bibliotecas de arquivos"
+
+msgid "dashboard.export.title"
+msgstr "Exportar arquivos"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Ops! Não foi possível importar este arquivo"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Processando cores"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Processando mídia"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Processando página: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Processando tipografia"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Carregando dados para o servidor (%s/%s)"
+
+msgid "labels.link"
+msgstr "Link"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 fonte adicionada"
+msgstr[1] "%s fontes adicionadas"
