@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-16 21:18+0000\n"
-"Last-Translator: Ally Tiago <allytiagomail@gmail.com>\n"
+"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -148,7 +148,7 @@ msgstr "Criar uma conta"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-subtitle"
-msgstr "É de graça, é código aberto"
+msgstr "É de graça, é Open Source"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
