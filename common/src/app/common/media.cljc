@@ -9,7 +9,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
-(def valid-font-types #{"font/ttf" "font/woff", "font/otf"})
+(def valid-font-types #{"font/ttf" "font/woff", "application/font-woff", "font/otf"})
 (def valid-image-types #{"image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"})
 (def str-image-types (str/join "," valid-image-types))
 (def str-font-types (str/join "," valid-font-types))
