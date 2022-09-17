@@ -23,7 +23,7 @@
     :migrations (ig/ref :app.migrations/all)
     :name       :main
     :min-size   (cf/get :database-min-pool-size 0)
-    :max-size   (cf/get :database-max-pool-size 30)}
+    :max-size   (cf/get :database-max-pool-size 60)}
 
    ;; Default thread pool for IO operations
    [::default :app.worker/executor]

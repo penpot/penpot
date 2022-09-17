@@ -75,7 +75,7 @@
 (def defaults
   {:name :main
    :min-size 0
-   :max-size 30
+   :max-size 60
    :connection-timeout 10000
    :validation-timeout 10000
    :idle-timeout 120000 ; 2min
