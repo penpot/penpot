@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-10 17:20+0000\n"
+"PO-Revision-Date: 2022-09-19 04:15+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2818,3 +2818,57 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "لغو انتشار کتابخانه"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, fuzzy
+msgid "workspace.options.layer-options.blend-mode.hue"
+msgstr "رنگ"
+
+#, fuzzy
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"اطلاعات دقیق در مورد نحوه استفاده از Penpot. از نمونه‌سازی تا سازماندهی یا "
+"به اشتراک‌گذاری طرح‌ها."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.select-a-shape"
+msgstr "یک شکل، برد یا گروه را برای کشیدن اتصال به تابلوی دیگر انتخاب کنید."
+
+#, fuzzy
+msgid "onboarding-v2.before-start.desc3"
+msgstr ""
+"شما می‌توانید آموزش‌های ما و آموزش‌های ساخته شده توسط انجمن ما را تماشا کنید."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, fuzzy
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "روشن کردن"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, fuzzy
+msgid "workspace.options.layer-options.blend-mode.luminosity"
+msgstr "درخشندگی"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, fuzzy
+msgid "workspace.options.layer-options.blend-mode.multiply"
+msgstr "تکثیر"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "حل کردن"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot برای تیم‌ها در نظر گرفته شده است. از اعضا دعوت کنید تا روی پروژه‌ها و "
+"فایل‌ها با هم کار کنند"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.message"
+msgstr "آیا مطمئن هستید که می‌خواهید این عضو را از تیم حذف کنید؟"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "پس از نامگذاری تیم خود، می‌توانید افراد را برای پیوستن دعوت کنید."
