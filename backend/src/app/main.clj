@@ -318,8 +318,7 @@
     :http-client (ig/ref :app.http/client)}
 
    :app.loggers.audit/gc-task
-   {:max-age  (cf/get :audit-log-gc-max-age cf/deletion-delay)
-    :pool     (ig/ref :app.db/pool)}
+   {:pool (ig/ref :app.db/pool)}
 
    :app.loggers.loki/reporter
    {:uri         (cf/get :loggers-loki-uri)
@@ -395,7 +394,7 @@
         :task :audit-log-archive})
 
      (when (contains? cf/flags :audit-log-gc)
-       {:cron #app/cron "0 0 0 * * ?" ;; daily
+       {:cron #app/cron "30 */5 * * * ?" ;; every 5m
         :task :audit-log-gc})]}
 
    :app.worker/worker
