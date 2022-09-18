@@ -191,9 +191,10 @@
     justify-content: space-between;
     align-items: center;
     margin-top: $size-4;
-    padding: $size-1 $size-1 $size-1 $size-2;
+    padding: $size-2 $size-2 $size-2 $size-4;
     width: 99%;
-    height: 40px;
+    max-height: 40px;
+    gap: $size-2;
     .project-name-wrapper {
       display: flex;
       align-items: center;
@@ -227,7 +228,7 @@
 
     .btn-secondary {
       border: none;
-      height: 32px;
+      padding: $size-2;
     }
 
     h2 {
@@ -236,7 +237,7 @@
       line-height: 1rem;
       font-weight: 600;
       color: $color-black;
-      margin-right: $size-4;
+      margin-right: $size-1;
     }
 
     .edit-wrapper {
