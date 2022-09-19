@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-06 06:05+0000\n"
-"Last-Translator: Valentina Chapellu <valentina.chapellu@gmail.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"PO-Revision-Date: 2022-09-20 13:46+0000\n"
+"Last-Translator: Jacopo Lodovico Trabia <jacopo.trabia@gmail.com>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1509,3 +1509,24 @@ msgstr "Annulla e mantieni il mio account"
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.confirm"
 msgstr "Sì, cancellare il mio account"
+
+msgid "common.publish"
+msgstr "Pubblica"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Gestisci team"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot è studiato per i team. Invita membri per lavorare insieme a file e "
+"progetti"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Inizia il tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Inizia il tour"
