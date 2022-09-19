@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-10 17:20+0000\n"
-"Last-Translator: Philippe Accorsi <philippe.accorsi@algoo.fr>\n"
+"PO-Revision-Date: 2022-09-20 13:46+0000\n"
+"Last-Translator: Swapnil C <swapnilchitnis360@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3031,7 +3031,9 @@ msgstr "Export"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "Exporter l'élément"
+msgid_plural ""
+msgstr[0] "Exporter l'élément"
+msgstr[1] "Exporter les %s éléments"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -4120,3 +4122,132 @@ msgstr "au centre"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
 msgstr "Plus de couleurs"
+
+msgid "workspace.shape.menu.union"
+msgstr "Union"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot est conçu pour les équipes. Invitez les membres pour collaborer sur "
+"des projets et des fichiers"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Explorez Penpot et découvrir ses fonctionnalités."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutoriel pratique"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Faites une équipe  !"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Ce fichier a été déjà utilisé avec Components V2 activé."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Ce fichier contient les bibliothèques utilisées dans ce fichier :"
+msgstr[1] "Ce fichier contient les bibliothèques utilisées dans ces fichiers :"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "Ces fichiers contiennent les bibliothèques utilisées dans ce fichier :"
+msgstr[1] ""
+"Ces fichiers contiennent les bibliothèques utilisées dans ces fichiers :"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Si vous le retirez, les ressources là-dedans deviennent une bibliothèque de "
+"ce fichier."
+msgstr[1] ""
+"Si vous le retirez, les ressources là-dedans deviennent une bibliothèque de "
+"ces fichiers."
+
+msgid "workspace.shape.menu.flatten"
+msgstr "Aplatir"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-start"
+msgstr "Début du flux"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Créer un plan de travail depuis la sélection"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Détacher les instances"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Formes"
+
+msgid "common.unpublish"
+msgstr "Dépublier"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Indiquer le début du flux"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Montrer/Masquer l'interface"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Gestion de l'équipe"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Commencer le guide"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Apprenez les bases de Penpot en s'amusant avec ce tutoriel pratique."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Démonstration de l'interface"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Bibliothèques et Modèles"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "En explorez plus et découvrir comment contribuer"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr ""
+"Il y avait un problème pendant l'importation de la modèle. La modèle n'est "
+"pas importé."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Retirer la Bibliothèque"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "Vous êtes sûr de vouloir retirer cette bibliothèque ?"
+msgstr[1] "Vous êtes sûr de vouloir retirer ces bibliothèques ?"
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"De l'information détaillée sur Penpot. De prototypage à l’organisation et le "
+"partage des designs."
+
+msgid "workspace.shape.menu.difference"
+msgstr "Difference"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Raccourcis (%s)"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RVBA"
