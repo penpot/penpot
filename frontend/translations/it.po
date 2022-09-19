@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-20 13:46+0000\n"
-"Last-Translator: Jacopo Lodovico Trabia <jacopo.trabia@gmail.com>\n"
+"Last-Translator: Valentina Chapellu <valentina.chapellu@gmail.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -1530,3 +1530,7 @@ msgstr "Inizia il tutorial"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
 msgstr "Inizia il tour"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Appunta/Rimuovi"
