@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-19 09:17+0000\n"
+"PO-Revision-Date: 2022-09-20 13:46+0000\n"
 "Last-Translator: Semon Xue <semonxue@gmail.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -264,7 +264,7 @@ msgstr "如何使用Penpot导出"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.no-elements"
-msgstr "导出设置中无任何元素"
+msgstr "在导出设置中没找到任何元素"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
@@ -280,7 +280,7 @@ msgid "dashboard.export.explain"
 msgstr "你想导出的一个或多个文件用到了共享库。你想怎么处理它们的素材？"
 
 msgid "dashboard.export.options.all.message"
-msgstr "使用了共享库的文件将会在导出时保持引用"
+msgstr "使用了共享库的文件将会在导出时保持引用关系"
 
 msgid "dashboard.export.options.all.title"
 msgstr "导出共享库"
@@ -313,8 +313,8 @@ msgstr "您仍然没有已安装的字体。"
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
-msgstr[0] "添加字体成功"
-msgstr[1] "添加字体成功"
+msgstr[0] "1 个字体添加成功"
+msgstr[1] "%s 个字体添加成功"
 
 #, markdown
 msgid "dashboard.fonts.hero-text1"
@@ -342,7 +342,7 @@ msgid "dashboard.import.import-error"
 msgstr "文件导入过程中出现未知问题，导入失败。"
 
 msgid "dashboard.import.import-message"
-msgstr "文件导入成功"
+msgstr "%s 个文件导入成功"
 
 msgid "dashboard.import.import-warning"
 msgstr "一些包含无效对象的文档已被移除"
@@ -599,7 +599,7 @@ msgid "ds.updated-at"
 msgstr "最后更新：%s"
 
 msgid "errors.auth.unable-to-login"
-msgstr "你似乎还没有认证或会话已过期"
+msgstr "你似乎还没有登录或会话已过期"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
@@ -915,7 +915,7 @@ msgstr "大写"
 
 #: src/app/main/ui/handoff/right_sidebar.cljs
 msgid "handoff.tabs.code"
-msgstr "码"
+msgstr "代码"
 
 msgid "handoff.tabs.code.selected.circle"
 msgstr "圆"
@@ -1211,7 +1211,7 @@ msgstr "可能该页面不存在，也可能你没有访问权限。"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
-msgstr "嚯！"
+msgstr "哎呀！"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-files"
@@ -1270,7 +1270,7 @@ msgstr "最近"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.release-notes"
-msgstr "發行說明"
+msgstr "发布说明"
 
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
@@ -1740,7 +1740,7 @@ msgid "onboarding.slide.0.alt"
 msgstr "创作设计"
 
 msgid "onboarding.slide.0.desc1"
-msgstr "在协作项目中与团队成员们一起创作漂亮的用户界面"
+msgstr "在协作项目中与团队成员们一起创作好看的用户界面"
 
 msgid "onboarding.slide.0.desc2"
 msgstr "保持组件、库和设计系统规模上的一致性。"
@@ -1970,7 +1970,7 @@ msgid "viewer.breaking-change.description"
 msgstr "此共享的链接已失效。创建一个新的链接或向所有者索取一个新的链接。"
 
 msgid "viewer.breaking-change.message"
-msgstr "Sorry!"
+msgstr "对不起！"
 
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.empty-state"
@@ -2558,7 +2558,9 @@ msgstr "导出已选择"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "导出 %s 个元素"
+msgid_plural ""
+msgstr[0] "导出 1 个元素"
+msgstr[1] "导出 %s 个元素"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3683,7 +3685,7 @@ msgstr "注意"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
-msgstr "没有配置身份认证服务源"
+msgstr "没有配置身份认证服务源."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.community"
@@ -4153,3 +4155,330 @@ msgstr "本地库"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-fit"
 msgstr "适合 - 缩小以适合"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "持续时间"
+
+msgid "workspace.options.stroke-width"
+msgstr "线宽"
+
+msgid "workspace.shape.menu.union"
+msgstr "相加"
+
+msgid "workspace.options.width"
+msgstr "宽度"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+msgid "workspace.path.actions.make-curve"
+msgstr "转圆角 (%s)"
+
+msgid "workspace.shape.menu.difference"
+msgstr "差集"
+
+msgid "workspace.path.actions.snap-nodes"
+msgstr "对接节点 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-w"
+msgstr "最大宽度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-h"
+msgstr "最小高度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-h"
+msgstr "最大高度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-w"
+msgstr "最小宽度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-w"
+msgstr "最小宽度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-complete"
+msgstr "导出完成"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-h"
+msgstr "最大高度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-w"
+msgstr "最大宽度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "最小高度"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "转为画板"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "在预览模式显示"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "三角箭头"
+
+msgid "workspace.options.clip-content"
+msgstr "剪辑内容"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "网格"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "高级选项"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "调整大小"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "底部"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "行"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.right"
+msgstr "倒排行"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.top"
+msgstr "倒排列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "差距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.center"
+msgstr "居中"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.left"
+msgstr "居左"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.right"
+msgstr "居右"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "所有方向"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "内边距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "右"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.title"
+msgstr "布局"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "间隔留空"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "周围留空"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "顶部"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "底部"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "居中"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "顶部"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.wrap"
+msgstr "底部"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "已选颜色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "无边框"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "方头"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "方形标记"
+
+msgid "workspace.options.stroke-color"
+msgstr "线条颜色"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "文本"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "形状"
+
+msgid "workspace.sidebar.layers.search"
+msgstr "搜索图层"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "转换为路径"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "设为缩略图"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "移除缩略图"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "选择图层"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "箭头"
+
+msgid "workspace.options.y"
+msgstr "Y"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "转锐角 (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "解绑实例"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flow-start"
+msgstr "流程起点"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "组件"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "画板"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "图片"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "遮罩"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "编组"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "缩放到选定的位置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "左"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "所有方向"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "简易外边距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "外边距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "简易内边距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "更多颜色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "更多共享库颜色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "不换行"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "相减"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "展平"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "显示/隐藏界面"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "差集"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "快捷键 （%s）"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "恢复主要组件"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "更新主要组件"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "圆头"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.add-flow-start"
+msgstr "增加流程起点"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-start"
+msgstr "流程起点"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-starts"
+msgstr "所有流程起点"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "关闭遮罩层: %s"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "删除流程起点"
+
+msgid "workspace.shape.menu.path"
+msgstr "路径"
