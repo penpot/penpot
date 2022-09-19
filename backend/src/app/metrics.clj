@@ -100,23 +100,23 @@
     ::mdef/labels ["name"]
     ::mdef/type :summary}
 
-   :rpc-semaphore-queued-submissions
-   {::mdef/name "penpot_rpc_semaphore_queued_submissions"
-    ::mdef/help "Current number of queued submissions on RPC-SEMAPHORE."
+   :semaphore-queued-submissions
+   {::mdef/name "penpot_semaphore_queued_submissions"
+    ::mdef/help "Current number of queued submissions on SEMAPHORE."
     ::mdef/labels ["name"]
     ::mdef/type :gauge}
 
-   :rpc-semaphore-used-permits
-   {::mdef/name "penpot_rpc_semaphore_used_permits"
-    ::mdef/help "Current number of used permits on RPC-SEMAPHORE."
+   :semaphore-used-permits
+   {::mdef/name "penpot_semaphore_used_permits"
+    ::mdef/help "Current number of used permits on SEMAPHORE."
     ::mdef/labels ["name"]
     ::mdef/type :gauge}
 
-   :rpc-semaphore-acquires-total
-   {::mdef/name "penpot_rpc_semaphore_acquires_total"
-    ::mdef/help "Total number of acquire operations on RPC-SEMAPHORE."
+   :semaphore-timing
+   {::mdef/name "penpot_semaphore_timing"
+    ::mdef/help "Total timing of SEMAPHORE."
     ::mdef/labels ["name"]
-    ::mdef/type :counter}
+    ::mdef/type :summary}
 
    :executors-active-threads
    {::mdef/name "penpot_executors_active_threads"

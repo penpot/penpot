@@ -170,12 +170,11 @@
 (s/def ::redis-uri ::us/string)
 (s/def ::registration-domain-whitelist ::us/set-of-strings)
 
+(s/def ::semaphore-font-process ::us/integer)
+(s/def ::semaphore-file-update ::us/integer)
+(s/def ::semaphore-image-process ::us/integer)
+(s/def ::semaphore-authentication ::us/integer)
 
-
-(s/def ::rpc-semaphore-permits-font ::us/integer)
-(s/def ::rpc-semaphore-permits-file-update ::us/integer)
-(s/def ::rpc-semaphore-permits-image ::us/integer)
-(s/def ::rpc-semaphore-permits-password ::us/integer)
 (s/def ::smtp-default-from ::us/string)
 (s/def ::smtp-default-reply-to ::us/string)
 (s/def ::smtp-host ::us/string)
@@ -278,10 +277,12 @@
                    ::public-uri
                    ::redis-uri
                    ::registration-domain-whitelist
-                   ::rpc-semaphore-permits-font
-                   ::rpc-semaphore-permits-file-update
-                   ::rpc-semaphore-permits-image
-                   ::rpc-semaphore-permits-password
+
+                   ::semaphore-process-font
+                   ::semaphore-process-image
+                   ::semaphore-update-file
+                   ::semaphore-auth
+
                    ::rpc-rlimit-config
                    ::sentry-dsn
                    ::sentry-debug

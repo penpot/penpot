@@ -44,20 +44,17 @@
 (declare ^:private get-fj-thread-factory)
 (declare ^:private get-thread-factory)
 
-(s/def ::prefix keyword?)
 (s/def ::parallelism ::us/integer)
-(s/def ::idle-timeout ::us/integer)
 
 (defmethod ig/pre-init-spec ::executor [_]
-  (s/keys :req-un [::prefix]
-          :opt-un [::parallelism]))
+  (s/keys :opt-un [::parallelism]))
 
 (defmethod ig/init-key ::executor
-  [_ {:keys [parallelism prefix]}]
-  (let [counter  (AtomicLong. 0)]
+  [skey {:keys [parallelism]}]
+  (let [prefix (if (vector? skey) (-> skey first name keyword) :default)]
     (if parallelism
-      (ForkJoinPool. (int parallelism) (get-fj-thread-factory prefix counter) nil false)
-      (Executors/newCachedThreadPool (get-thread-factory prefix counter)))))
+      (ForkJoinPool. (int parallelism) (get-fj-thread-factory prefix) nil false)
+      (Executors/newCachedThreadPool (get-thread-factory prefix)))))
 
 (defmethod ig/halt-key! ::executor
   [_ instance]
@@ -69,8 +66,7 @@
 
 (defmethod ig/init-key ::scheduler
   [_ {:keys [parallelism prefix] :or {parallelism 1}}]
-  (let [counter (AtomicLong. 0)]
-    (px/scheduled-pool parallelism (get-thread-factory prefix counter))))
+  (px/scheduled-pool parallelism (get-thread-factory prefix)))
 
 (defmethod ig/halt-key! ::scheduler
   [_ instance]
@@ -78,66 +74,90 @@
 
 (defn- get-fj-thread-factory
   ^ForkJoinPool$ForkJoinWorkerThreadFactory
-  [prefix counter]
-  (reify ForkJoinPool$ForkJoinWorkerThreadFactory
-    (newThread [_ pool]
-      (let [^ForkJoinWorkerThread thread (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)
-            ^String thread-name (str "penpot/" (name prefix) "-" (.getAndIncrement ^AtomicLong counter))]
-        (.setName thread thread-name)
-        thread))))
+  [prefix]
+  (let [^AtomicLong counter (AtomicLong. 0)]
+    (reify ForkJoinPool$ForkJoinWorkerThreadFactory
+      (newThread [_ pool]
+        (let [thread (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)
+              tname  (str "penpot/" (name prefix) "-" (.getAndIncrement counter))]
+          (.setName ^ForkJoinWorkerThread thread ^String tname)
+          thread)))))
 
 (defn- get-thread-factory
   ^ThreadFactory
-  [prefix counter]
-  (reify ThreadFactory
-    (newThread [_ runnable]
-      (doto (Thread. runnable)
-        (.setDaemon true)
-        (.setName (str "penpot/" (name prefix) "-" (.getAndIncrement ^AtomicLong counter)))))))
+  [prefix]
+  (let [^AtomicLong counter (AtomicLong. 0)]
+    (reify ThreadFactory
+      (newThread [_ runnable]
+        (doto (Thread. runnable)
+          (.setDaemon true)
+          (.setName (str "penpot/" (name prefix) "-" (.getAndIncrement counter))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Executor Monitor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::executors (s/map-of keyword? ::executor))
+(s/def ::executors
+  (s/map-of keyword? ::executor))
 
-(defmethod ig/pre-init-spec ::executors-monitor [_]
-  (s/keys :req-un [::executors ::scheduler ::mtx/metrics]))
+(defmethod ig/pre-init-spec ::executor-monitor [_]
+  (s/keys :req-un [::executors ::mtx/metrics]))
 
-(defmethod ig/init-key ::executors-monitor
-  [_ {:keys [executors metrics interval scheduler] :or {interval 3000}}]
-  (letfn [(log-stats [state]
-            (doseq [[key ^ForkJoinPool executor] executors]
-              (let [labels  (into-array String [(name key)])
-                    running (.getRunningThreadCount executor)
-                    queued  (.getQueuedSubmissionCount executor)
-                    active  (.getPoolSize executor)
-                    steals  (.getStealCount executor)
-                    steals-increment (- steals (or (get-in @state [key :steals]) 0))
-                    steals-increment (if (neg? steals-increment) 0 steals-increment)]
+(defmethod ig/init-key ::executor-monitor
+  [_ {:keys [executors metrics interval] :or {interval 3000}}]
+  (letfn [(monitor! [state skey ^ForkJoinPool executor]
+            (let [prev-steals (get state skey 0)
+                  running     (.getRunningThreadCount executor)
+                  queued      (.getQueuedSubmissionCount executor)
+                  active      (.getPoolSize executor)
+                  steals      (.getStealCount executor)
+                  labels      (into-array String [(name skey)])
 
-                (mtx/run! metrics {:id :executors-active-threads :labels labels :val active})
-                (mtx/run! metrics {:id :executors-running-threads :labels labels :val running})
-                (mtx/run! metrics {:id :executors-queued-submissions :labels labels :val queued})
-                (mtx/run! metrics {:id :executors-completed-tasks :labels labels :inc steals-increment})
+                  steals-increment (- steals prev-steals)
+                  steals-increment (if (neg? steals-increment) 0 steals-increment)]
 
-                (swap! state update key assoc
-                       :running running
-                       :active active
-                       :queued queued
-                       :steals steals)))
+              (mtx/run! metrics
+                        :id :executor-active-threads
+                        :labels labels
+                        :val active)
+              (mtx/run! metrics
+                        :id :executor-running-threads
+                        :labels labels :val running)
+              (mtx/run! metrics
+                        :id :executors-queued-submissions
+                        :labels labels
+                        :val queued)
+              (mtx/run! metrics
+                          :id :executors-completed-tasks
+                          :labels labels
+                          :inc steals-increment)
 
-            (when (and (not (.isShutdown scheduler))
-                       (not (:shutdown @state)))
-              (px/schedule! scheduler interval (partial log-stats state))))]
+              (aa/thread-sleep interval)
+              (if (.isShutdown executor)
+                (l/debug :hint "stoping monitor; cause: executor is shutdown")
+                (assoc state skey steals))))
 
-    (let [state (atom {})]
-      (px/schedule! scheduler interval (partial log-stats state))
-      {:state state})))
+          (monitor-fn []
+            (try
+              (loop [items (into (d/queue) executors)
+                     state {}]
+                (when-let [[skey executor :as item] (peek items)]
+                  (if-let [state (monitor! state skey executor)]
+                    (recur (conj items item) state)
+                    (recur items state))))
+              (catch InterruptedException _cause
+                (l/debug :hint "stoping monitor; interrupted"))))]
 
-(defmethod ig/halt-key! ::executors-monitor
-  [_ {:keys [state]}]
-  (swap! state assoc :shutdown true))
+    (let [thread (Thread. monitor-fn)]
+      (.setDaemon thread true)
+      (.setName thread "penpot/executor-monitor")
+      (.start thread)
+
+      thread)))
+
+(defmethod ig/halt-key! ::executor-monitor
+  [_ thread]
+  (.interrupt ^Thread thread))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Worker

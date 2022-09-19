@@ -290,7 +290,6 @@
   (s/keys :req-un [::profile-id ::team-id ::file]))
 
 (sv/defmethod ::update-team-photo
-  {::rsem/permits (cf/get :rpc-semaphore-permits-image)}
   [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
@@ -298,8 +297,8 @@
     (update-team-photo cfg params)))
 
 (defn update-team-photo
-  [{:keys [pool storage executors] :as cfg} {:keys [profile-id team-id] :as params}]
-  (p/let [team  (px/with-dispatch (:default executors)
+  [{:keys [pool storage executor] :as cfg} {:keys [profile-id team-id] :as params}]
+  (p/let [team  (px/with-dispatch executor
                   (teams/retrieve-team pool profile-id team-id))
           photo (upload-photo cfg params)]
 
@@ -316,13 +315,13 @@
     (assoc team :photo-id (:id photo))))
 
 (defn upload-photo
-  [{:keys [storage executors] :as cfg} {:keys [file]}]
+  [{:keys [storage semaphores] :as cfg} {:keys [file]}]
   (letfn [(get-info [content]
-            (px/with-dispatch (:blocking executors)
+            (rsem/with-dispatch (:process-image semaphores)
               (media/run {:cmd :info :input content})))
 
           (generate-thumbnail [info]
-            (px/with-dispatch (:blocking executors)
+            (rsem/with-dispatch (:process-image semaphores)
               (media/run {:cmd :profile-thumbnail
                           :format :jpeg
                           :quality 85
@@ -331,11 +330,9 @@
                           :input info})))
 
           ;; Function responsible of calculating cryptographyc hash of
-          ;; the provided data. Even though it uses the hight
-          ;; performance BLAKE2b algorithm, we prefer to schedule it
-          ;; to be executed on the blocking executor.
+          ;; the provided data.
           (calculate-hash [data]
-            (px/with-dispatch (:blocking executors)
+            (rsem/with-dispatch (:process-image semaphores)
               (sto/calculate-hash data)))]
 
     (p/let [info    (get-info file)
@@ -343,11 +340,11 @@
             hash    (calculate-hash (:data thumb))
             content (-> (sto/content (:data thumb) (:size thumb))
                         (sto/wrap-with-hash hash))]
-      (sto/put-object! storage {::sto/content content
-                                ::sto/deduplicate? true
-                                :bucket "profile"
-                                :content-type (:mtype thumb)}))))
-
+      (rsem/with-dispatch (:process-image semaphores)
+        (sto/put-object! storage {::sto/content content
+                                  ::sto/deduplicate? true
+                                  :bucket "profile"
+                                  :content-type (:mtype thumb)})))))
 
 ;; --- Mutation: Invite Member
 

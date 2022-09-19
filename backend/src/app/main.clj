@@ -27,32 +27,22 @@
 
    ;; Default thread pool for IO operations
    [::default :app.worker/executor]
-   {:parallelism (cf/get :default-executor-parallelism 60)
-    :prefix :default}
-
-   ;; Constrained thread pool. Should only be used from high resources
-   ;; demanding operations.
-   [::blocking :app.worker/executor]
-   {:parallelism (cf/get :blocking-executor-parallelism 10)
-    :prefix :blocking}
+   {:parallelism (cf/get :default-executor-parallelism 70)}
 
    ;; Dedicated thread pool for backround tasks execution.
    [::worker :app.worker/executor]
-   {:parallelism (cf/get :worker-executor-parallelism 10)
-    :prefix :worker}
+   {:parallelism (cf/get :worker-executor-parallelism 20)}
 
    :app.worker/scheduler
    {:parallelism 1
     :prefix :scheduler}
 
    :app.worker/executors
-   {:default  (ig/ref [::default :app.worker/executor])
-    :worker   (ig/ref [::worker :app.worker/executor])
-    :blocking (ig/ref [::blocking :app.worker/executor])}
+   {:default (ig/ref [::default :app.worker/executor])
+    :worker  (ig/ref [::worker :app.worker/executor])}
 
-   :app.worker/executors-monitor
+   :app.worker/executor-monitor
    {:metrics   (ig/ref :app.metrics/metrics)
-    :scheduler (ig/ref :app.worker/scheduler)
     :executors (ig/ref :app.worker/executors)}
 
    :app.migrations/migrations
@@ -216,6 +206,10 @@
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref [::default :app.worker/executor])}
 
+   :app.rpc/semaphores
+   {:metrics (ig/ref :app.metrics/metrics)
+    :executor (ig/ref [::default :app.worker/executor])}
+
    :app.rpc/rlimit
    {:executor  (ig/ref [::worker :app.worker/executor])
     :scheduler (ig/ref :app.worker/scheduler)}
@@ -234,7 +228,10 @@
     :http-client (ig/ref :app.http/client)
     :rlimit      (ig/ref :app.rpc/rlimit)
     :executors   (ig/ref :app.worker/executors)
-    :templates   (ig/ref :app.setup/builtin-templates)}
+    :executor    (ig/ref [::default :app.worker/executor])
+    :templates   (ig/ref :app.setup/builtin-templates)
+    :semaphores  (ig/ref :app.rpc/semaphores)
+    }
 
    :app.rpc.doc/routes
    {:methods (ig/ref :app.rpc/methods)}
@@ -359,7 +356,7 @@
 
 
 (def worker-config
-  {   :app.worker/cron
+  {:app.worker/cron
    {:executor   (ig/ref [::worker :app.worker/executor])
     :scheduler  (ig/ref :app.worker/scheduler)
     :tasks      (ig/ref :app.worker/registry)

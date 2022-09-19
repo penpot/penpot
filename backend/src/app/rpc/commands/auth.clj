@@ -136,7 +136,7 @@
 (sv/defmethod ::login-with-password
   "Performs authentication using penpot password."
   {:auth false
-   ::rsem/permits (cf/get :rpc-semaphore-permits-password)
+   ::rsem/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (login-with-password cfg params))
@@ -177,7 +177,7 @@
 
 (sv/defmethod ::recover-profile
   {:auth false
-   ::rsem/permits (cf/get :rpc-semaphore-permits-password)
+   ::rsem/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (recover-profile cfg params))
@@ -368,7 +368,7 @@
 
 (sv/defmethod ::register-profile
   {:auth false
-   ::rsem/permits (cf/get :rpc-semaphore-permits-password)
+   ::rsem/queue :auth
    ::doc/added "1.15"}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]

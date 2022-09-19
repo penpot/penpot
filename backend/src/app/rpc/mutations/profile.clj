@@ -15,6 +15,7 @@
    [app.loggers.audit :as audit]
    [app.media :as media]
    [app.rpc.commands.auth :as cmd.auth]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.rpc.semaphore :as rsem]
@@ -87,7 +88,7 @@
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
 (sv/defmethod ::update-profile-password
-  {::rsem/permits (cf/get :rpc-semaphore-permits-password)}
+  {::rsem/queue :auth}
   [{:keys [pool] :as cfg} {:keys [password] :as params}]
   (db/with-atomic [conn pool]
     (let [profile    (validate-password! conn params)
@@ -130,7 +131,6 @@
   (s/keys :req-un [::profile-id ::file]))
 
 (sv/defmethod ::update-profile-photo
-  {::rsem/permits (cf/get :rpc-semaphore-permits-image)}
   [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
@@ -138,8 +138,8 @@
     (update-profile-photo cfg params)))
 
 (defn update-profile-photo
-  [{:keys [pool storage executors] :as cfg} {:keys [profile-id] :as params}]
-  (p/let [profile (px/with-dispatch (:default executors)
+  [{:keys [pool storage executor] :as cfg} {:keys [profile-id] :as params}]
+  (p/let [profile (px/with-dispatch executor
                     (db/get-by-id pool :profile profile-id))
           photo   (teams/upload-photo cfg params)]
 
@@ -305,7 +305,10 @@
 (s/def ::login ::cmd.auth/login-with-password)
 
 (sv/defmethod ::login
-  {:auth false ::rsem/permits (cf/get :rpc-semaphore-permits-password)}
+  {:auth false
+   ::rsem/queue :auth
+   ::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [cfg params]
   (cmd.auth/login-with-password cfg params))
 
@@ -313,7 +316,10 @@
 
 (s/def ::logout ::cmd.auth/logout)
 
-(sv/defmethod ::logout {:auth false}
+(sv/defmethod ::logout
+  {:auth false
+   ::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [session] :as cfg} _]
   (with-meta {}
     {:transform-response (:delete session)}))
@@ -323,7 +329,8 @@
 (s/def ::recover-profile ::cmd.auth/recover-profile)
 
 (sv/defmethod ::recover-profile
-  {:auth false ::rsem/permits (cf/get :rpc-semaphore-permits-password)}
+  {::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [cfg params]
   (cmd.auth/recover-profile cfg params))
 
@@ -331,7 +338,10 @@
 
 (s/def ::prepare-register-profile ::cmd.auth/prepare-register-profile)
 
-(sv/defmethod ::prepare-register-profile {:auth false}
+(sv/defmethod ::prepare-register-profile
+  {:auth false
+   ::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [cfg params]
   (cmd.auth/prepare-register cfg params))
 
@@ -340,7 +350,10 @@
 (s/def ::register-profile ::cmd.auth/register-profile)
 
 (sv/defmethod ::register-profile
-  {:auth false ::rsem/permits (cf/get :rpc-semaphore-permits-password)}
+  {:auth false
+   ::rsem/queue :auth
+   ::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)
@@ -350,6 +363,9 @@
 
 (s/def ::request-profile-recovery ::cmd.auth/request-profile-recovery)
 
-(sv/defmethod ::request-profile-recovery {:auth false}
+(sv/defmethod ::request-profile-recovery
+  {:auth false
+   ::doc/added "1.0"
+   ::doc/deprecated "1.15"}
   [cfg params]
   (cmd.auth/request-profile-recovery cfg params))
