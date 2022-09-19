@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-16 21:18+0000\n"
-"Last-Translator: Eranot <renato.konflanz@unochapeco.edu.br>\n"
+"PO-Revision-Date: 2022-09-20 13:46+0000\n"
+"Last-Translator: Filipe Pessanha <filipeluizsilva@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -31,7 +31,7 @@ msgstr "Criar conta de demonstração"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
-msgstr "Só quer experimentar?"
+msgstr "Quer apenas experimentar?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
@@ -89,11 +89,11 @@ msgstr "Digite uma nova senha"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.newsletter-subscription"
-msgstr "Concordo em subscrever a lista de emails Penpot."
+msgstr "Concordo em subscrever a lista de e-mails do Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
-msgstr "O token de recuperação é inválido."
+msgstr "O código de recuperação é inválido."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.password-changed-successfully"
@@ -895,7 +895,7 @@ msgstr ""
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.main-message"
-msgstr "Bad Gateway"
+msgstr "Erro do servidor (Bad Gateway)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.cancel"
@@ -1056,7 +1056,7 @@ msgstr "Esta página não existe ou você não tem permissão para acessá-la."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
-msgstr "Oops!"
+msgstr "Ops!"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-files"
@@ -1632,7 +1632,9 @@ msgstr "Exportar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "Exportar forma"
+msgid_plural ""
+msgstr[0] "Exportar 1 elemento"
+msgstr[1] "Exportar %s elementos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -2822,3 +2824,31 @@ msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 fonte adicionada"
 msgstr[1] "%s fontes adicionadas"
+
+msgid "onboarding.newsletter.title"
+msgstr "Deseja receber novidades sobre o Penpot?"
+
+msgid "onboarding.slide.0.desc2"
+msgstr ""
+"Mantenha a consistência em escala com componentes, bibliotecas e sistemas de "
+"design."
+
+msgid "onboarding.slide.0.title"
+msgstr "Bibliotecas de design, estilos e componentes"
+
+msgid "onboarding.slide.1.alt"
+msgstr "Protótipos interativos"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s item selecionado"
+msgstr[1] "%s itens selecionados"
+
+msgid "onboarding.slide.1.desc1"
+msgstr "Crie interações completas para imitar o comportamento do produto."
+
+msgid "onboarding.slide.0.desc1"
+msgstr ""
+"Criar lindas interfaces de usuários em colaboração com todos os membros da "
+"equipe."
