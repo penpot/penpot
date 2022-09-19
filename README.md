@@ -38,7 +38,7 @@ Penpot is the first **Open Source** design and prototyping platform meant for cr
 
 ## Why Penpot ##
 
-Penpot makes design and prototyping accesible to every team in the world.
+Penpot makes design and prototyping accessible to every team in the world.
 
 ### For cross-domain teams ###
 We have a clear focus on design and code teams and our capabilities reflect exactly that. The less hand-off mindset, the more fun for everyone.
