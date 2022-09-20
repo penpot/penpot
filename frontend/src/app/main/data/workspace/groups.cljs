@@ -154,18 +154,24 @@
             is-group? #(or (= :bool (:type %)) (= :group (:type %)))
             lookup    #(get objects %)
             prepare   #(prepare-remove-group it page-id % objects)
+            selected (wsh/lookup-selected state)
+            children (into (d/ordered-set)
+                           (mapcat #(->> %
+                                         lookup
+                                         :shapes) selected))
 
             changes-list (sequence
-                           (comp (map lookup)
-                                 (filter is-group?)
-                                 (map prepare))
-                           (wsh/lookup-selected state))
+                          (comp (map lookup)
+                                (filter is-group?)
+                                (map prepare))
+                          selected)
 
             changes {:redo-changes (vec (mapcat :redo-changes changes-list))
                      :undo-changes (vec (mapcat :undo-changes changes-list))
                      :origin it}]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (dws/select-shapes children))))))
 
 (def mask-group
   (ptk/reify ::mask-group

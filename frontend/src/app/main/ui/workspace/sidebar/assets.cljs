@@ -891,18 +891,8 @@
         multi-assets?       (or (seq (:components selected-assets))
                                 (seq (:colors selected-assets))
                                 (seq (:typographies selected-assets)))
-
-        extract-path-if-missing
-        (fn [graphic]
-          (let [[path name] (cph/parse-path-name (:name graphic))]
-            (if (and
-                 (= (:name graphic) name)
-                 (contains? graphic :path))
-              graphic
-              (assoc  graphic :path path :name name))))
-        
         objects (->> objects
-                     (map extract-path-if-missing))
+                     (map dwl/extract-path-if-missing))
 
 
         groups (group-assets objects reverse-sort?)
@@ -1633,18 +1623,8 @@
 
         local-data (mf/deref typography-data)
         menu-state (mf/use-state auto-pos-menu-state)
-
-        extract-path-if-missing
-        (fn [typography]
-          (let [[path name] (cph/parse-path-name (:name typography))]
-            (if (and
-                 (= (:name typography) name)
-                 (contains? typography :path))
-              typography
-              (assoc  typography :path path :name name))))
-
         typographies (->> typographies
-                          (map extract-path-if-missing))
+                          (map dwl/extract-path-if-missing))
 
         groups     (group-assets typographies reverse-sort?)
 

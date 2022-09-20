@@ -463,7 +463,8 @@
                              (gpt/multiply handler-mult))
 
                   ;; Resize vector
-                  scalev (gpt/divide (gpt/add shapev deltav) shapev)
+                  scalev (-> (gpt/divide (gpt/add shapev deltav) shapev)
+                             (gpt/no-zeros))
 
                   scalev (if lock?
                            (let [v (cond
@@ -863,7 +864,7 @@
       (let [position @ms/mouse-position
             page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            frame-id (cph/frame-id-by-position objects position)
+            frame-id (cph/top-nested-frame objects position)
 
             moving-shapes
             (->> ids
@@ -877,15 +878,17 @@
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)
-                        (pcb/update-shapes moving-frames (fn [shape]
-                                                           ;; Hide in viwer must be enabled just when a board is moved inside another artboard an nested to it, we have to avoid situations like:
-                                                           ;; - Moving inside the same frame
-                                                           ;; - Moving outside the frame
-                                                           (cond-> shape
-                                                             (and (not= frame-id (:id shape))
-                                                                  (not= frame-id (:frame-id shape))
-                                                                  (not= frame-id uuid/zero))
-                                                             (assoc :hide-in-viewer true))))
+                        (pcb/update-shapes
+                         moving-frames
+                         (fn [shape]
+                           ;; Hide in viwer must be enabled just when a board is moved inside another artboard an nested to it, we have to avoid situations like:
+                           ;; - Moving inside the same frame
+                           ;; - Moving outside the frame
+                           (cond-> shape
+                             (and (not= frame-id (:id shape))
+                                  (not= frame-id (:frame-id shape))
+                                  (not= frame-id uuid/zero))
+                             (assoc :hide-in-viewer true))))
                         (pcb/change-parent frame-id moving-shapes))]
 
         (when-not (empty? changes)

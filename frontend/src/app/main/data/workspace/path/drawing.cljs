@@ -258,7 +258,7 @@
       (let [objects  (wsh/lookup-page-objects state)
             content  (get-in state [:workspace-drawing :object :content] [])
             position (get-in content [0 :params] nil)
-            frame-id (cph/frame-id-by-position objects position)]
+            frame-id (cph/top-nested-frame objects position)]
         (-> state
             (assoc-in [:workspace-drawing :object :frame-id] frame-id))))))
 

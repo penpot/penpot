@@ -65,7 +65,7 @@
             focus   (:workspace-focus-selected state)
             zoom    (get-in state [:workspace-local :zoom] 1)
 
-            fid     (cph/frame-id-by-position objects initial)
+            fid     (cph/top-nested-frame objects initial)
 
             shape   (get-in state [:workspace-drawing :object])
             shape   (-> shape

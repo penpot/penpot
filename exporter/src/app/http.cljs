@@ -124,6 +124,16 @@
     (let [token (.get ^js cookies cookie-name)]
       (handler (cond-> exchange token (assoc :request/auth-token token))))))
 
+(defn- wrap-health
+  "Add /healthz entry point intercept."
+  [handler]
+  (fn [{:keys [:request/path] :as exchange}]
+    (if (= path "/readyz")
+      (assoc exchange
+             :response/status 200
+             :response/body "OK")
+      (handler exchange))))
+
 (defn- create-adapter
   [handler]
   (fn [req res]
@@ -149,6 +159,7 @@
 (defn init
   []
   (let [handler (-> handlers/handler
+                    (wrap-health)
                     (wrap-auth "auth-token")
                     (wrap-response-format)
                     (wrap-params)
