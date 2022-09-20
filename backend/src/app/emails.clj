@@ -266,7 +266,7 @@
     (wrk/submit! (assoc email
                         ::wrk/task :sendmail
                         ::wrk/delay 0
-                        ::wrk/max-retries 1
+                        ::wrk/max-retries 4
                         ::wrk/priority 200
                         ::wrk/conn conn))))
 
