@@ -301,10 +301,7 @@
       (t/is (th/ex-of-code? error :email-as-password)))))
 
 (t/deftest test-email-change-request
-  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}
-               cfg-get-mock    {:target 'app.config/get
-                                :return (th/mock-config-get-with
-                                         {:smtp-enabled true})}]
+  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change

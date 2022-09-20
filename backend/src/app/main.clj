@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.util.time :as dt]
+   [cuerdas.core :as str]
    [integrant.core :as ig])
   (:gen-class))
 
@@ -417,6 +418,7 @@
                                  (ig/prep)
                                  (ig/init))))
   (l/info :msg "welcome to penpot"
+          :flags (str/join "," (map name cf/flags))
           :worker? (contains? cf/flags :backend-worker)
           :version (:full cf/version)))
 
