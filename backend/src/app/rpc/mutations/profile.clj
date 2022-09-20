@@ -169,8 +169,7 @@
           params  (assoc params
                          :profile profile
                          :email (str/lower email))]
-      (if (or (cf/get :smtp-enabled)
-              (contains? cf/flags :smtp))
+      (if (contains? cf/flags :smtp)
         (request-email-change cfg params)
         (change-email-immediately cfg params)))))
 

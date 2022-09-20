@@ -10,9 +10,15 @@
   (:require
    [app.common.logging :as l]
    [app.common.pprint :as p]
+   [app.common.spec :as us]
+   [app.db :as db]
+   [app.rpc.commands.auth :as cmd.auth]
+   [app.rpc.queries.profile :as profile]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
-   [clojure.pprint :refer [pprint]]))
+   [app.util.time :as dt]
+   [clojure.pprint :refer [pprint]]
+   [cuerdas.core :as str]))
 
 (defn print-available-tasks
   [system]
@@ -30,7 +36,53 @@
 
 (defn send-test-email!
   [system destination]
+  (us/verify!
+   :expr (some? system)
+   :hint "system should be provided")
+
+  (us/verify!
+   :expr (string? destination)
+   :hint "destination should be provided")
+
   (let [handler (:app.emails/sendmail system)]
     (handler {:body "test email"
               :subject "test email"
               :to [destination]})))
+
+(defn resend-email-verification-email!
+  [system email]
+  (us/verify!
+   :expr (some? system)
+   :hint "system should be provided")
+
+  (let [sprops  (:app.setup/props system)
+        pool    (:app.db/pool system)
+        profile (profile/retrieve-profile-data-by-email pool email)]
+
+    (cmd.auth/send-email-verification! pool sprops profile)
+    :email-sent))
+
+(defn update-profile
+  "Update a limited set of profile attrs."
+  [system & {:keys [email id active? deleted?]}]
+
+  (us/verify!
+   :expr (some? system)
+   :hint "system should be provided")
+
+  (us/verify!
+   :expr (or (string? email) (uuid? id))
+   :hint "email or id should be provided")
+
+  (let [pool   (:app.db/pool system)
+        params (cond-> {}
+                 (true? active?) (assoc :is-active true)
+                 (false? active?) (assoc :is-active false)
+                 (true? deleted?) (assoc :deleted-at (dt/now)))
+        opts   (cond-> {}
+                 (some? email) (assoc :email (str/lower email))
+                 (some? id)    (assoc :id id))]
+
+    (some-> (db/update! pool :profile params opts)
+            (profile/decode-profile-row))))
+
