@@ -131,6 +131,7 @@
         :width canvas-side
         :height canvas-side
         :on-pointer-down handle-start-drag
+        :on-pointer-up handle-stop-drag
         :on-lost-pointer-capture handle-stop-drag
         :on-click calculate-pos
         :on-mouse-move #(when @dragging? (calculate-pos %))}]
