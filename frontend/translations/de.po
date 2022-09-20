@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-12 13:20+0000\n"
-"Last-Translator: Stas Haas <stas@girafic.de>\n"
+"PO-Revision-Date: 2022-09-22 21:21+0000\n"
+"Last-Translator: nautilusx <translate@disroot.org>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1935,7 +1935,7 @@ msgid "onboarding.contrib.desc2.1"
 msgstr "Sie können das Projekt"
 
 msgid "onboarding.contrib.desc2.2"
-msgstr "und mehr über die Richtlinien zum beitragen erfahren :)"
+msgstr "und mehr über die Richtlinien zum Beitragen erfahren :)"
 
 msgid "onboarding.contrib.link"
 msgstr "auf GitHub ansehen"
@@ -3035,7 +3035,9 @@ msgstr "Auswahl exportieren"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "Exportieren"
+msgid_plural ""
+msgstr[0] "1 Element exportieren"
+msgstr[1] "%s Elemente exportieren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3297,7 +3299,7 @@ msgstr "Overlay %s öffnen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
-msgstr "Url öffnen"
+msgstr "URL öffnen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-out"
@@ -4443,7 +4445,7 @@ msgstr "im Leerraum verteilt"
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot ist für Teams gedacht. Um gemeinsam an Projekten und Dateien zu "
-"arbeiten, laden Sie Mitglieder ein."
+"arbeiten, laden Sie Mitglieder ein"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
@@ -4543,9 +4545,8 @@ msgstr ""
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"Sie sollten wissen, dass es viele Ressourcen gibt, die Ihnen beim Einstieg "
-"in Penpot erleichtern, wie z. B. das Benutzerhandbuch und unser Youtube-"
-"Kanal."
+"Sie sollten wissen, dass es viele Ressourcen gibt, die Ihnen den Einstieg in "
+"Penpot erleichtern, wie z. B. das Benutzerhandbuch und unseren Youtube-Kanal."
 
 msgid "onboarding-v2.welcome.desc2.title"
 msgstr "In der Community mitmachen"
@@ -4769,3 +4770,39 @@ msgstr "Zur Auswahl zoomen"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Zoom-Optionen umschalten"
+
+msgid "shortcuts.open-interactions"
+msgstr "Zur Zuschauerinteraktionen"
+
+msgid "shortcuts.open-viewer"
+msgstr "Zum Ansichtsmodus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "Elementgröße ändern"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Entdecken Sie weitere und erfahren Sie, wie Sie beitragen können"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Wenn Sie die Veröffentlichung aufheben, werden die darin enthaltenen "
+"Elemente zu einer Bibliothek dieser Datei."
+msgstr[1] ""
+"Wenn Sie die Veröffentlichung aufheben, werden die darin enthaltenen "
+"Elemente zu einer Bibliothek dieser Dateien."
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Detaillierte Informationen über die Verwendung von Penpot. Vom Prototyping "
+"bis zum Organisieren und Teilen von Designs."
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Ein öffentlicher Raum zum Lernen, Teilen und Diskutieren über Penpot, seine "
+"Gegenwart und Zukunft mit der gesamten Community und dem Penpot-Kernteam."
+
+msgid "shortcuts.v-distribute"
+msgstr "Vertikal verteilen"
