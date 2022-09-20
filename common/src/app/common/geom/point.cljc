@@ -317,9 +317,14 @@
            (unit)
            (scale value))))
 
+(defn no-zeros
+  "Remove zero values from either coordinate"
+  [point]
+  (-> point
+      (update :x #(if (mth/almost-zero? %) 0.001 %))
+      (update :y #(if (mth/almost-zero? %) 0.001 %))))
 
 ;; --- Debug
 
 (defmethod pp/simple-dispatch Point [obj] (pr obj))
-
 

@@ -8,6 +8,9 @@
 - Fix toggle overlay position [Taiga #4091](https://tree.taiga.io/project/penpot/issue/4091)
 - Fix overlay closed on clicked outside [Taiga #4027](https://tree.taiga.io/project/penpot/issue/4027)
 - Fix animate multiple overlays [Taiga #3993](https://tree.taiga.io/project/penpot/issue/3993)
+- Fix problem with snap to grids [#2221](https://github.com/penpot/penpot/issues/2221)
+- Fix issue when scaling to value 0 [#2252](https://github.com/penpot/penpot/issues/2252)
+- Fix problem when moving shapes inside nested frames [Taiga #4113](https://tree.taiga.io/project/penpot/issue/4113)
 
 ## 1.15.3-beta
 
