@@ -242,7 +242,7 @@
    :app.worker/registry
    {:metrics (ig/ref :app.metrics/metrics)
     :tasks
-    {:sendmail           (ig/ref :app.emails/sendmail-handler)
+    {:sendmail           (ig/ref :app.emails/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
@@ -254,16 +254,20 @@
      :audit-log-archive  (ig/ref :app.loggers.audit/archive-task)
      :audit-log-gc       (ig/ref :app.loggers.audit/gc-task)}}
 
-   :app.emails/sendmail-handler
+
+   :app.emails/sendmail
    {:host             (cf/get :smtp-host)
     :port             (cf/get :smtp-port)
     :ssl              (cf/get :smtp-ssl)
     :tls              (cf/get :smtp-tls)
     :username         (cf/get :smtp-username)
     :password         (cf/get :smtp-password)
-    :metrics          (ig/ref :app.metrics/metrics)
     :default-reply-to (cf/get :smtp-default-reply-to)
     :default-from     (cf/get :smtp-default-from)}
+
+   :app.emails/handler
+   {:sendmail (ig/ref :app.emails/sendmail)
+    :metrics  (ig/ref :app.metrics/metrics)}
 
    :app.tasks.tasks-gc/handler
    {:pool    (ig/ref :app.db/pool)
