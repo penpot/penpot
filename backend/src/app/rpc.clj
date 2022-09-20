@@ -157,12 +157,11 @@
   [cfg f mdata]
   (let [f     (as-> f $
                 (wrap-dispatch cfg $ mdata)
-                (rlimit/wrap cfg $ mdata)
-                (rsem/wrap cfg $ mdata)
-                (retry/wrap-retry cfg $ mdata)
-                (wrap-audit cfg $ mdata)
                 (wrap-metrics cfg $ mdata)
-                )
+                (retry/wrap-retry cfg $ mdata)
+                (rsem/wrap cfg $ mdata)
+                (rlimit/wrap cfg $ mdata)
+                (wrap-audit cfg $ mdata))
 
         spec  (or (::sv/spec mdata) (s/spec any?))
         auth? (:auth mdata true)]
