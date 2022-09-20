@@ -1487,7 +1487,7 @@
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
                          (ctst/top-nested-frame @ms/mouse-position))
-            shape (cp/setup-rect-selrect
+            shape (cts/setup-rect-selrect
                    {:id id
                     :type :text
                     :name "Text"

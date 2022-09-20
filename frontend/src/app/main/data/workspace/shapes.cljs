@@ -285,7 +285,7 @@
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
                          (ctst/top-nested-frame {:x frame-x :y frame-y}))
-            shape (-> (cp/make-minimal-shape type)
+            shape (-> (cts/make-minimal-shape type)
                       (merge data)
                       (merge {:x x :y y})
                       (assoc :frame-id frame-id)
