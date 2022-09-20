@@ -60,6 +60,7 @@
                  params (with-meta cdata
                           {:on-success #(on-success cdata %)
                            :on-error #(on-error cdata %)})]
+             (reset! form nil)
              (st/emit! (du/request-profile-recovery params)))))]
 
     [:& fm/form {:on-submit on-submit
