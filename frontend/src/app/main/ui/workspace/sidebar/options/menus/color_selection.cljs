@@ -166,7 +166,17 @@
                                      (dissoc :name)
                                      (dissoc :path)
                                      (d/without-nils))
-                 shapes-by-color (get @grouped-colors* old-color)]
+
+                 prev-color       (-> @prev-color*
+                                      (dissoc :name)
+                                      (dissoc :path)
+                                      (d/without-nils))
+
+                 ;; When dragging on the color picker sometimes all the shapes hasn't updated the color to the prev value so we need this extra calculation
+                 shapes-by-old-color  (get @grouped-colors* old-color)
+                 shapes-by-prev-color (get @grouped-colors* prev-color)
+                 shapes-by-color (or shapes-by-prev-color shapes-by-old-color)]
+             (reset! prev-color* new-color)
              (st/emit! (dc/change-color-in-selected new-color shapes-by-color old-color)))))
 
         on-open (mf/use-fn
@@ -197,7 +207,7 @@
        [:div.element-set-content
         [:div.selected-colors
          (for [[index color] (d/enumerate (take 3 library-colors))]
-           [:& color-row {:key (dm/str "color-" index)
+           [:& color-row {:key (dm/str "library-color-" index)
                           :color color
                           :index index
                           :on-detach on-detach
@@ -210,7 +220,7 @@
             [:span.text (tr "workspace.options.more-lib-colors")]])
          (when @expand-lib-color
            (for [[index color] (d/enumerate (drop 3 library-colors))]
-             [:& color-row {:key (dm/str "color-" index)
+             [:& color-row {:key (dm/str "library-color-" index)
                             :color color
                             :index index
                             :on-detach on-detach
