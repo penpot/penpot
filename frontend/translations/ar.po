@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-28 21:15+0000\n"
-"Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
-"Language-Team: Arabic "
-"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
+"PO-Revision-Date: 2022-09-20 13:46+0000\n"
+"Last-Translator: Shuaib Zahda <shuaib.zahda@gmail.com>\n"
+"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
+"ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -312,7 +312,7 @@ msgstr "استيراد ملفات"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "قم بدعوة فريق"
+msgstr "قم بدعوة للفريق"
 
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
@@ -2063,7 +2063,13 @@ msgstr "تصدير"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "تصدير الشكل"
+msgid_plural ""
+msgstr[0] "تصدير 0 عنصر"
+msgstr[1] "تصدير عنصر واحد"
+msgstr[2] "تصدير عنصرين"
+msgstr[3] "تصدير عناصر"
+msgstr[4] "تصدير عنصر"
+msgstr[5] "تصدير عنصر"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -2187,3 +2193,145 @@ msgstr "تحديث"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لإغلاق المسار"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "حمل الكل"
+
+msgid "dashboard.export.title"
+msgstr "صدر الملفات"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "يتم معالجة العناصر"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr "Penpot تم تصميمه للفرق. أدعُ زملاءك للعمل سوياَ على المشاريع والملفات"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "يتم معالجة الوسائط"
+
+msgid "common.publish"
+msgstr "أنشر"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "دورة تعليمية عملية"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "إبدا الدورة التعليمية"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "إبدا الجولة"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "جولة في الواجهة"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s من %s عناصر مختارة"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "لا يوجد عناصر بإعدادت التصدير."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "إختيار التصدير"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "معلومات عن كيفية إعداد التصدير."
+
+msgid "dashboard.export.options.all.title"
+msgstr "صدر المكتبات المشتركة"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "الغاء الكل"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "يتم معالجة الألوان"
+
+msgid "dashboard.import.import-message"
+msgstr "%s ملف تم ادراجهم بنجاح."
+
+msgid "dashboard.import.import-error"
+msgstr "حصل خلل خلال إدراج الملف. لم يتم إدراج الملف على البرنامج."
+
+msgid "dashboard.import.progress.process-page"
+msgstr "يتم معالجة الصفحة: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "يتم معالجة الخطوط"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "حفظ الإعدادات"
+
+msgid "common.unpublish"
+msgstr "إلغاء النشر"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "حسناَ"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "إنتباه"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.there-are-updates"
+msgstr "يوجد تحديثات في المكتبات المشتركة"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "إدارة الفريق"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "إعمل فريق!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "إذهب في جولة في البرنامج وتعرف على ميزاته."
+
+msgid "dashboard.export-standard-multi"
+msgstr "تحميل %s ملفات أساسية (.svg + .json)"
+
+msgid "dashboard.export.detail"
+msgstr "* ربما يحتوي على عناصر، رسومات، الوان، و/أو خطوط."
+
+msgid "dashboard.import.analyze-error"
+msgstr "لم نستطع استيراد أو إدراج هذا الملف"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "تعلم أساسيات برنامج Penpot بينما تستمع بتجربته في هذه الدورة التعليمية."
+
+msgid "dashboard.libraries-and-templates"
+msgstr "المكتبات & القوالب"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "استعرض المزيد منهم وتعلم كيف تساهم"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "لم يتم مشاركة الصفحة"
+msgstr[1] "مشاركة صفحة واحدة"
+msgstr[2] "مشاركة صفحتين"
+msgstr[3] "مشاركة صفحات"
+msgstr[4] "مشاركة صفحة"
+msgstr[5] "مشاركة صفحة"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "تحميل البيانات للخادم (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "تحميل الملف: %s"
+
+msgid "dashboard.export-frames"
+msgstr "صدر اللوحة الفنية الى ملف PDF…"
