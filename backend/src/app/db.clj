@@ -367,23 +367,23 @@
    (.rollback conn sp)))
 
 (defn interval
-  [data]
+  [o]
   (cond
-    (integer? data)
-    (->> (/ data 1000.0)
+    (or (integer? o)
+        (float? o))
+    (->> (/ o 1000.0)
          (format "%s seconds")
          (pginterval))
 
-    (string? data)
-    (pginterval data)
+    (string? o)
+    (pginterval o)
 
-    (dt/duration? data)
-    (->> (/ (.toMillis ^java.time.Duration data) 1000.0)
-         (format "%s seconds")
-         (pginterval))
+    (dt/duration? o)
+    (interval (inst-ms o))
 
     :else
-    (ex/raise :type :not-implemented)))
+    (ex/raise :type :not-implemented
+              :hint (format "no implementation found for value %s" (pr-str o)))))
 
 (defn decode-json-pgobject
   [^PGobject o]
