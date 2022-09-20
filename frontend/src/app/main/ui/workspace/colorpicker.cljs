@@ -67,7 +67,7 @@
         (mf/use-fn
          (mf/deps @drag?)
          (fn [color]
-           (let [recent-color (merge color)
+           (let [recent-color (merge current-color color)
                  recent-color (dc/materialize-color-components recent-color)]
              (when (not @drag?)
                (st/emit! (dwl/add-recent-color recent-color)))
