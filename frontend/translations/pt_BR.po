@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-22 21:21+0000\n"
-"Last-Translator: Mateus Muller <mateusmullerw@gmail.com>\n"
+"Last-Translator: Ruan Aragão <ruanaragao2@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -2863,3 +2863,51 @@ msgstr "Crie designs"
 
 msgid "onboarding.slide.1.title"
 msgstr "Dê vida aos seus projetos com interações"
+
+msgid "onboarding.slide.2.alt"
+msgstr "Obter feedback"
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"Todos os membros da equipe trabalhando simultaneamente com design "
+"multiusuário em tempo real e comentários, ideias e feedback centralizados "
+"diretamente sobre os designs."
+
+msgid "onboarding.slide.3.alt"
+msgstr "Handoff e lowcode"
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"Obtenha e forneça especificações de código como marcação (SVG, HTML) ou "
+"estilos (CSS, Less, Stylus…)."
+
+msgid "onboarding.slide.3.desc1"
+msgstr ""
+"Sincronize o design e o código de todos os seus componentes e estilos e "
+"obtenha trechos de código."
+
+msgid "onboarding.slide.3.title"
+msgstr "Uma fonte compartilhada de verdade"
+
+msgid "onboarding.slide.2.title"
+msgstr "Obtenha feedback, apresente e compartilhe seu trabalho"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Crie uma equipe"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Uma equipe permite que você colabore com outros usuários do Penpot "
+"trabalhando nos mesmos arquivos e projetos."
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Arquivos e projetos ilimitados"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Edição multiusuário"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Gerenciamento de funções"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Membros ilimitados"
