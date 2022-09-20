@@ -36,9 +36,9 @@
 
   ;; Calculate the frame over which we're drawing
   (let [position @ms/mouse-position
-        frame-id (:frame-id attrs (ctst/frame-id-by-position objects position))
-        shape (when-not (empty? selected)
-                (cph/get-base-shape objects selected))]
+        frame-id (:frame-id attrs (ctst/top-nested-frame objects position))
+        shape    (when-not (empty? selected)
+                   (cph/get-base-shape objects selected))]
 
     ;; When no shapes has been selected or we're over a different frame
     ;; we add it as the latest shape of that frame
@@ -277,7 +277,6 @@
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
     (watch [_ state _]
-      (prn ">>>create-")
       (let [{:keys [width height]} data
 
             [vbc-x vbc-y] (viewport-center state)
@@ -285,8 +284,8 @@
             y (:y data (- vbc-y (/ height 2)))
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
-                         (ctst/frame-id-by-position {:x frame-x :y frame-y}))
-            shape (-> (cts/make-minimal-shape type)
+                         (ctst/top-nested-frame {:x frame-x :y frame-y}))
+            shape (-> (cp/make-minimal-shape type)
                       (merge data)
                       (merge {:x x :y y})
                       (assoc :frame-id frame-id)

@@ -56,7 +56,7 @@
 
 (defn get-grids-snap-points
   [frame coord]
-  (if (not (ctst/rotated-frame? frame))
+  (if (ctst/rotated-frame? frame)
     []
     (let [grid->snap (fn [[grid-type position]]
                        {:type :layout

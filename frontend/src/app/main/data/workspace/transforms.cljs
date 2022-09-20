@@ -16,7 +16,7 @@
    [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.types.shape-tree :as ctt]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
@@ -352,7 +352,8 @@
                              (gpt/multiply handler-mult))
 
                   ;; Resize vector
-                  scalev (gpt/divide (gpt/add shapev deltav) shapev)
+                  scalev (-> (gpt/divide (gpt/add shapev deltav) shapev)
+                             (gpt/no-zeros))
 
                   scalev (if lock?
                            (let [v (cond
@@ -748,13 +749,13 @@
       (let [position @ms/mouse-position
             page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            frame-id (ctt/frame-id-by-position objects position)
+            frame-id (ctst/top-nested-frame objects position)
             lookup   (d/getf objects)
 
             moving-shapes
             (->> ids
                  (cph/clean-loops objects)
-                 (keep (d/getf objects))
+                 (keep lookup)
                  (remove #(= (:frame-id %) frame-id)))
 
             moving-frames
@@ -767,7 +768,7 @@
                                    (fn [shape]
                                      ;; Hide in viwer must be enabled just when a board is moved
                                      ;; inside another artboard an nested to it, we have to avoid
-                                     ;; situations like: - Moving inside the same frame - Moving
+                                     ;; situations like: 1. Moving inside the same frame; 2. Moving
                                      ;; outside the frame
                                      (cond-> shape
                                        (and (not= frame-id (:id shape))

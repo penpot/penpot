@@ -103,6 +103,7 @@
                           (gpt/point (+ (:width main-instance-shape) 50) 0))
 
         component-root (ctk/get-component-root component)
+        frame-id (ctst/top-nested-frame objects (gpt/add orig-pos delta))
 
         [new-component-shape new-component-shapes _]
         (ctst/clone-object component-root

@@ -96,8 +96,8 @@
 
 (defn get-root-frames-ids
   "Retrieves all frame objects as vector. It is not implemented in
-  function of `get-immediate-children` for performance reasons. This
-  function is executed in the render hot path."
+  function of `cph/get-immediate-children` for performance
+  reasons. This function is executed in the render hot path."
   [objects]
   (let [add-frame
         (fn [result shape]
@@ -212,6 +212,28 @@
   [objects position]
   (let [frame-id (frame-id-by-position objects position)]
     (get objects frame-id)))
+
+(defn all-frames-by-position
+  [objects position]
+  (->> (get-frames-ids objects)
+       (sort-z-index objects)
+       (filterv #(and position (gsh/has-point? (get objects %) position)))))
+
+
+(defn top-nested-frame
+  "Search for the top nested frame for positioning shapes when moving or creating.
+  Looks for all the frames in a position and then goes in depth between the top-most and its
+  children to find the target."
+  [objects position]
+  (let [frame-ids (all-frames-by-position objects position)
+        frame-set (set frame-ids)]
+    (loop [current-id (first frame-ids)]
+      (let [current-shape (get objects current-id)
+            child-frame-id (d/seek #(contains? frame-set %)
+                                   (-> (:shapes current-shape) reverse))]
+        (if (nil? child-frame-id)
+          (or current-id uuid/zero)
+          (recur child-frame-id))))))
 
 (defn get-viewer-frames
   ([objects]

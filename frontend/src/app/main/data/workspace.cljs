@@ -1374,7 +1374,7 @@
                   [frame-id frame-id delta])
 
                 (empty? page-selected)
-                (let [frame-id (ctst/frame-id-by-position page-objects mouse-pos)
+                (let [frame-id (ctst/top-nested-frame page-objects mouse-pos)
                       delta    (gpt/subtract mouse-pos orig-pos)]
                   [frame-id frame-id delta])
 
@@ -1486,8 +1486,8 @@
             height 16
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
-                         (ctst/frame-id-by-position @ms/mouse-position))
-            shape (cts/setup-rect-selrect
+                         (ctst/top-nested-frame @ms/mouse-position))
+            shape (cp/setup-rect-selrect
                    {:id id
                     :type :text
                     :name "Text"

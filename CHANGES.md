@@ -47,6 +47,9 @@
 - Fix toggle overlay position [Taiga #4091](https://tree.taiga.io/project/penpot/issue/4091)
 - Fix overlay closed on clicked outside [Taiga #4027](https://tree.taiga.io/project/penpot/issue/4027)
 - Fix animate multiple overlays [Taiga #3993](https://tree.taiga.io/project/penpot/issue/3993)
+- Fix problem with snap to grids [#2221](https://github.com/penpot/penpot/issues/2221)
+- Fix issue when scaling to value 0 [#2252](https://github.com/penpot/penpot/issues/2252)
+- Fix problem when moving shapes inside nested frames [Taiga #4113](https://tree.taiga.io/project/penpot/issue/4113)
 
 ## 1.15.3-beta
 
@@ -60,6 +63,8 @@
 - Fix undo after moving layers will wrongly order the layers [Taiga #3344](https://tree.taiga.io/project/penpot/issue/3344)
 - Fix grouping typographies by drag & drop does not work (again) [#2203](https://github.com/penpot/penpot/issues/2203)
 - Fix when ungrouping, the items previously grouped should ALWAYS remain selected [Taiga #4064](https://tree.taiga.io/project/penpot/issue/4064)
+- Change shortcut for "Clear undo" [#2219](https://github.com/penpot/penpot/issues/2219)
+
 
 ## 1.15.2-beta
 

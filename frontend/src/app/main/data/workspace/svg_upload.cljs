@@ -14,7 +14,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.spec :refer [max-safe-int min-safe-int]]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctt]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
@@ -359,7 +359,7 @@
   (let [{:keys [tag attrs hidden]} element-data
         attrs (usvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
-        name (ctt/generate-unique-name unames (or (:id attrs) (tag->name tag)))
+        name (ctst/generate-unique-name unames (or (:id attrs) (tag->name tag)))
         att-refs (usvg/find-attr-references attrs)
         references (usvg/find-def-references (:defs svg-data) att-refs)
 
@@ -436,17 +436,17 @@
       (try
         (let [page-id  (:current-page-id state)
               objects  (wsh/lookup-page-objects state page-id)
-              frame-id (ctt/frame-id-by-position objects position)
+              frame-id (ctst/top-nested-frame objects position)
               selected (wsh/lookup-selected state)
 
               [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
               x (- x vb-x (/ vb-width 2))
               y (- y vb-y (/ vb-height 2))
 
-              unames (ctt/retrieve-used-names objects)
+              unames (ctst/retrieve-used-names objects)
 
               svg-name (->> (str/replace (:name svg-data) ".svg" "")
-                            (ctt/generate-unique-name unames))
+                            (ctst/generate-unique-name unames))
 
               svg-data (-> svg-data
                            (assoc :x x
