@@ -14,13 +14,10 @@
    [app.srepl.helpers :as h]
    [clojure.pprint :refer [pprint]]))
 
-;; Empty namespace as main entry point for Server REPL
-
 (defn print-available-tasks
   [system]
   (let [tasks (:app.worker/registry system)]
     (p/pprint (keys tasks) :level 200)))
-
 
 (defn run-task!
   ([system name]
@@ -29,4 +26,11 @@
    (let [tasks (:app.worker/registry system)]
      (if-let [task-fn (get tasks name)]
        (task-fn params)
-       (l/warn :hint "no task found" :name name)))))
+       (println (format "no task '%s' found" name))))))
+
+(defn send-test-email!
+  [system destination]
+  (let [handler (:app.emails/sendmail system)]
+    (handler {:body "test email"
+              :subject "test email"
+              :to [destination]})))
