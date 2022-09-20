@@ -36,7 +36,9 @@
 
 (mf/defc palette
   [{:keys [current-colors recent-colors file-colors shared-libs selected on-select]}]
-  (let [state      (mf/use-state {:show-menu false})
+  (let [;; We had to do this due to a bug that leave some bugged colors
+        current-colors (filter #(some? (:color %)) current-colors)
+        state      (mf/use-state {:show-menu false})
 
         width      (:width @state 0)
         visible    (/ width 66)
