@@ -41,6 +41,7 @@
         ]
     [:div.value-saturation-selector
      {:on-pointer-down handle-start-drag
+      :on-pointer-up handle-stop-drag
       :on-lost-pointer-capture handle-stop-drag
       :on-click calculate-pos
       :on-mouse-move #(when @dragging? (calculate-pos %))}

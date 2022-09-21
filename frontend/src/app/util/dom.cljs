@@ -264,6 +264,11 @@
   (when (some? el)
     (.appendChild ^js el child)))
 
+(defn remove-child!
+  [^js el child]
+  (when (some? el)
+    (.removeChild ^js el child)))
+
 (defn get-first-child
   [^js el]
   (when (some? el)

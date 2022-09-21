@@ -13,6 +13,7 @@
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.layout :as layout]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.util.color :as uc]
@@ -242,7 +243,10 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dch/update-shapes ids (fn [shape]
-                                      (let [new-attrs (merge (get-in shape [:shadow index :color]) attrs)]
+                                      (let [;; If we try to set a gradient to a shadow (for example using the color selection from multiple shapes) let's use the first stop color
+                                            attrs (cond-> attrs
+                                                    (:gradient attrs) (get-in [:gradient :stops 0]))
+                                            new-attrs (merge (get-in shape [:shadow index :color]) attrs)]
                                         (assoc-in shape [:shadow index :color] new-attrs))))))))
 
 (defn add-stroke
@@ -487,7 +491,7 @@
                         (dissoc :stops)))))))))
 
 (defn update-colorpicker-color
-  [changes]
+  [changes add-recent?]
   (ptk/reify ::update-colorpicker-color
     ptk/UpdateEvent
     (update [_ state]
@@ -495,14 +499,22 @@
               (fn [state]
                 (let [state (-> state
                                 (update :current-color merge changes)
-                                (update :current-color materialize-color-components))]
+                                (update :current-color materialize-color-components)
+                                ;; current color can be a library one I'm changing via colorpicker
+                                (d/dissoc-in [:current-color :id])
+                                (d/dissoc-in [:current-color :file-id]))]
                   (if-let [stop (:editing-stop state)]
                     (update-in state [:stops stop] (fn [data] (->> changes
                                                                    (merge data)
                                                                    (materialize-color-components))))
                     (-> state
                         (assoc :type :color)
-                        (dissoc :gradient :stops :editing-stop)))))))))
+                        (dissoc :gradient :stops :editing-stop)))))))
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when add-recent?
+        (let [formated-color  (get-color-from-colorpicker-state (:colorpicker state))]
+          (rx/of (dwl/add-recent-color formated-color)))))))
 
 (defn update-colorpicker-gradient
   [changes]
