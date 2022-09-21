@@ -13,6 +13,7 @@
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.layout :as layout]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.util.color :as uc]
@@ -487,7 +488,7 @@
                         (dissoc :stops)))))))))
 
 (defn update-colorpicker-color
-  [changes]
+  [changes add-recent?]
   (ptk/reify ::update-colorpicker-color
     ptk/UpdateEvent
     (update [_ state]
@@ -502,7 +503,12 @@
                                                                    (materialize-color-components))))
                     (-> state
                         (assoc :type :color)
-                        (dissoc :gradient :stops :editing-stop)))))))))
+                        (dissoc :gradient :stops :editing-stop)))))))
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when add-recent?
+        (let [formated-color  (get-color-from-colorpicker-state (:colorpicker state))]
+          (rx/of (dwl/add-recent-color formated-color)))))))
 
 (defn update-colorpicker-gradient
   [changes]
