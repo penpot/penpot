@@ -499,7 +499,10 @@
               (fn [state]
                 (let [state (-> state
                                 (update :current-color merge changes)
-                                (update :current-color materialize-color-components))]
+                                (update :current-color materialize-color-components)
+                                ;; current color can be a library one I'm changing via colorpicker
+                                (d/dissoc-in [:current-color :id])
+                                (d/dissoc-in [:current-color :file-id]))]
                   (if-let [stop (:editing-stop state)]
                     (update-in state [:stops stop] (fn [data] (->> changes
                                                                    (merge data)
