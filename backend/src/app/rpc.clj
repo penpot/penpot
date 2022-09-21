@@ -222,6 +222,7 @@
     (->> (sv/scan-ns 'app.rpc.commands.binfile
                      'app.rpc.commands.comments
                      'app.rpc.commands.management
+                     'app.rpc.commands.verify-token
                      'app.rpc.commands.auth
                      'app.rpc.commands.ldap
                      'app.rpc.commands.demo

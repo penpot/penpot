@@ -399,6 +399,7 @@
   [{:keys [conn sprops team profile role email] :as cfg}]
   (let [member    (profile/retrieve-profile-data-by-email conn email)
         token-exp (dt/in-future "168h") ;; 7 days
+        email     (str/lower email)
         itoken    (tokens/generate sprops
                                    {:iss :team-invitation
                                     :exp token-exp
@@ -412,9 +413,6 @@
                                     :profile-id (:id profile)
                                     :exp (dt/in-future {:days 30})})]
 
-    (when (contains? cf/flags :log-invitation-tokens)
-      (l/trace :hint "invitation token" :token itoken))
-
     (when (and member (not (eml/allow-send-emails? conn member)))
       (ex/raise :type :validation
                 :code :member-is-muted
@@ -427,6 +425,9 @@
                 :code :email-has-permanent-bounces
                 :email email
                 :hint "the email you invite has been repeatedly reported as spam or bounce"))
+
+    (when (contains? cf/flags :log-invitation-tokens)
+      (l/trace :hint "invitation token" :token itoken))
 
     ;; When we have email verification disabled and invitation user is
     ;; already present in the database, we proceed to add it to the

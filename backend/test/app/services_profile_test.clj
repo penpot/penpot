@@ -119,15 +119,14 @@
     ))
 
 (t/deftest profile-deletion-simple
-  (let [task (:app.tasks.objects-gc/handler th/*system*)
-        prof (th/create-profile* 1)
+  (let [prof (th/create-profile* 1)
         file (th/create-file* 1 {:profile-id (:id prof)
                                  :project-id (:default-project-id prof)
                                  :is-shared false})]
 
     ;; profile is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (task {:min-age (dt/duration 0)})]
+    (let [result (th/run-task! :objects-gc {:min-age (dt/duration 0)})]
       (t/is (= 0 (:processed result))))
 
     ;; Request profile to be deleted
@@ -146,7 +145,7 @@
       (t/is (= 1 (count (:result out)))))
 
     ;; execute permanent deletion task
-    (let [result (task {:min-age (dt/duration "-1m")})]
+    (let [result (th/run-task! :objects-gc {:min-age (dt/duration "-1m")})]
       (t/is (= 1 (:processed result))))
 
     ;; query profile after delete
@@ -166,7 +165,7 @@
     (t/testing "not allowed email domain"
       (t/is (false? (cauth/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
 
-(t/deftest prepare-register-and-register-profile
+(t/deftest prepare-register-and-register-profile-1
   (let [data  {::th/type :prepare-register-profile
                :email "user@example.com"
                :password "foobar"}
@@ -194,6 +193,100 @@
       (let [{:keys [result error]} (th/mutation! data)]
         (t/is (nil? error))))
     ))
+
+(t/deftest prepare-register-and-register-profile-1
+  (let [data  {::th/type :prepare-register-profile
+               :email "user@example.com"
+               :password "foobar"}
+        out   (th/mutation! data)
+        token (get-in out [:result :token])]
+    (t/is (string? token))
+
+
+    ;; try register without token
+    (let [data  {::th/type :register-profile
+                 :fullname "foobar"
+                 :accept-terms-and-privacy true}
+          out   (th/mutation! data)]
+      (let [error (:error out)]
+        (t/is (th/ex-info? error))
+        (t/is (th/ex-of-type? error :validation))
+        (t/is (th/ex-of-code? error :spec-validation))))
+
+    ;; try correct register
+    (let [data  {::th/type :register-profile
+                 :token token
+                 :fullname "foobar"
+                 :accept-terms-and-privacy true
+                 :accept-newsletter-subscription true}]
+      (let [{:keys [result error]} (th/mutation! data)]
+        (t/is (nil? error))))
+    ))
+
+(t/deftest prepare-register-and-register-profile-2
+  (with-redefs [app.rpc.commands.auth/register-retry-threshold (dt/duration 500)]
+    (with-mocks [mock {:target 'app.emails/send! :return nil}]
+      (let [current-token (atom nil)]
+
+        ;; PREPARE REGISTER
+        (let [data  {::th/type :prepare-register-profile
+                     :email "hello@example.com"
+                     :password "foobar"}
+              out   (th/command! data)
+              token (get-in out [:result :token])]
+          (t/is (string? token))
+          (reset! current-token token))
+
+        ;; DO REGISTRATION: try correct register attempt 1
+        (let [data  {::th/type :register-profile
+                     :token @current-token
+                     :fullname "foobar"
+                     :accept-terms-and-privacy true
+                     :accept-newsletter-subscription true}
+              out   (th/command! data)]
+          (t/is (nil? (:error out)))
+          (t/is (= 1 (:call-count @mock))))
+
+        (th/reset-mock! mock)
+
+        ;; PREPARE REGISTER without waiting for threshold
+        (let [data  {::th/type :prepare-register-profile
+                     :email "hello@example.com"
+                     :password "foobar"}
+              out   (th/command! data)]
+          (t/is (not (th/success? out)))
+          (t/is (= :validation (-> out :error th/ex-type)))
+          (t/is (= :email-already-exists (-> out :error th/ex-code))))
+
+        (th/sleep {:millis 500})
+        (th/reset-mock! mock)
+
+        ;; PREPARE REGISTER waiting the threshold
+        (let [data  {::th/type :prepare-register-profile
+                     :email "hello@example.com"
+                     :password "foobar"}
+              out   (th/command! data)]
+
+          (t/is (th/success? out))
+          (t/is (= 0 (:call-count @mock)))
+
+          (let [result (:result out)]
+            (t/is (contains? result :token))
+            (reset! current-token (:token result))))
+
+        ;; DO REGISTRATION: try correct register attempt 1
+        (let [data  {::th/type :register-profile
+                     :token @current-token
+                     :fullname "foobar"
+                     :accept-terms-and-privacy true
+                     :accept-newsletter-subscription true}
+              out   (th/command! data)]
+          (t/is (th/success? out))
+          (t/is (= 1 (:call-count @mock))))
+
+        ))
+    ))
+
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
   (with-redefs [app.config/flags [:disable-registration]]
@@ -239,34 +332,39 @@
                  :invitation-token itoken
                  :email "user@example.com"
                  :password "foobar"}
-          {:keys [result error] :as out} (th/mutation! data)]
-      (t/is (th/ex-info? error))
-      (t/is (= :restriction (th/ex-type error)))
-      (t/is (= :email-does-not-match-invitation (th/ex-code error))))))
+          out   (th/command! data)]
 
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :restriction (:type edata)))
+        (t/is (= :email-does-not-match-invitation (:code edata))))
+      )))
 
 (t/deftest prepare-register-with-registration-disabled
-  (th/with-mocks {#'app.config/flags nil}
+  (with-redefs [app.config/flags #{}]
     (let [data  {::th/type :prepare-register-profile
                  :email "user@example.com"
-                 :password "foobar"}]
-      (let [{:keys [result error] :as out} (th/mutation! data)]
-        (t/is (th/ex-info? error))
-        (t/is (th/ex-of-type? error :restriction))
-        (t/is (th/ex-of-code? error :registration-disabled))))))
+                 :password "foobar"}
+          out  (th/command! data)]
+
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :restriction (:type edata)))
+        (t/is (= :registration-disabled (:code edata)))))))
 
 (t/deftest prepare-register-with-existing-user
   (let [profile (th/create-profile* 1)
         data    {::th/type :prepare-register-profile
                  :email (:email profile)
-                 :password "foobar"}]
-    (let [{:keys [result error] :as out} (th/mutation! data)]
-      ;; (th/print-result! out)
-      (t/is (th/ex-info? error))
-      (t/is (th/ex-of-type? error :validation))
-      (t/is (th/ex-of-code? error :email-already-exists)))))
+                 :password "foobar"}
+        out     (th/command! data)]
 
-(t/deftest test-register-profile-with-bounced-email
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :validation (:type edata)))
+        (t/is (= :email-already-exists (:code edata))))))
+
+(t/deftest register-profile-with-bounced-email
   (let [pool  (:app.db/pool th/*system*)
         data  {::th/type :prepare-register-profile
                :email "user@example.com"
@@ -274,34 +372,38 @@
 
     (th/create-global-complaint-for pool {:type :bounce :email "user@example.com"})
 
-    (let [{:keys [result error] :as out} (th/mutation! data)]
-      (t/is (th/ex-info? error))
-      (t/is (th/ex-of-type? error :validation))
-      (t/is (th/ex-of-code? error :email-has-permanent-bounces)))))
+    (let [out (th/command! data)]
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :validation (:type edata)))
+        (t/is (= :email-has-permanent-bounces (:code edata)))))))
 
-(t/deftest test-register-profile-with-complained-email
+(t/deftest register-profile-with-complained-email
   (let [pool  (:app.db/pool th/*system*)
         data  {::th/type :prepare-register-profile
                :email "user@example.com"
                :password "foobar"}]
 
     (th/create-global-complaint-for pool {:type :complaint :email "user@example.com"})
-    (let [{:keys [result error] :as out} (th/mutation! data)]
-      (t/is (nil? error))
-      (t/is (string? (:token result))))))
 
-(t/deftest test-register-profile-with-email-as-password
-  (let [data  {::th/type :prepare-register-profile
-               :email "user@example.com"
-               :password "USER@example.com"}]
+    (let [out (th/command! data)]
+      (t/is (th/success? out))
+      (let [result (:result out)]
+        (t/is (contains? result :token))))))
 
-    (let [{:keys [result error] :as out} (th/mutation! data)]
-      (t/is (th/ex-info? error))
-      (t/is (th/ex-of-type? error :validation))
-      (t/is (th/ex-of-code? error :email-as-password)))))
+(t/deftest register-profile-with-email-as-password
+  (let [data {::th/type :prepare-register-profile
+              :email "user@example.com"
+              :password "USER@example.com"}
+        out  (th/command! data)]
 
-(t/deftest test-email-change-request
-  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}]
+    (t/is (not (th/success? out)))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :validation (:type edata)))
+      (t/is (= :email-as-password (:code edata))))))
+
+(t/deftest email-change-request
+  (with-mocks [mock {:target 'app.emails/send! :return nil}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
@@ -312,7 +414,7 @@
       (let [out (th/mutation! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
-        (let [mock (deref email-send-mock)]
+        (let [mock @mock]
           (t/is (= 1 (:call-count mock)))
           (t/is (true? (:called? mock)))))
 
@@ -321,7 +423,7 @@
       (let [out (th/mutation! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
-        (t/is (= 2 (:call-count (deref email-send-mock)))))
+        (t/is (= 2 (:call-count @mock))))
 
       ;; with bounces
       (th/create-global-complaint-for pool {:type :bounce :email (:email data)})
@@ -331,28 +433,26 @@
         (t/is (th/ex-info? error))
         (t/is (th/ex-of-type? error :validation))
         (t/is (th/ex-of-code? error :email-has-permanent-bounces))
-        (t/is (= 2 (:call-count (deref email-send-mock))))))))
+        (t/is (= 2 (:call-count @mock)))))))
 
 
-(t/deftest test-email-change-request-without-smtp
-  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}]
+(t/deftest email-change-request-without-smtp
+  (with-mocks [mock {:target 'app.emails/send! :return nil}]
     (with-redefs [app.config/flags #{}]
       (let [profile (th/create-profile* 1)
             pool    (:app.db/pool th/*system*)
             data    {::th/type :request-email-change
                      :profile-id (:id profile)
-                     :email "user1@example.com"}]
+                     :email "user1@example.com"}
+            out     (th/mutation! data)]
 
-        (let [out (th/mutation! data)
-              res (:result out)]
-
-          ;; (th/print-result! out)
-          (t/is (= {:changed true} res))
-          (let [mock (deref email-send-mock)]
-            (t/is (false? (:called? mock)))))))))
+        ;; (th/print-result! out)
+        (t/is (false? (:called? @mock)))
+        (let [res (:result out)]
+          (t/is (= {:changed true} res)))))))
 
 
-(t/deftest test-request-profile-recovery
+(t/deftest request-profile-recovery
   (with-mocks [mock {:target 'app.emails/send! :return nil}]
     (let [profile1 (th/create-profile* 1)
           profile2 (th/create-profile* 2 {:is-active true})
@@ -363,13 +463,13 @@
       (let [data (assoc data :email "foo@bar.com")
             out  (th/mutation! data)]
         (t/is (nil? (:result out)))
-        (t/is (= 0 (:call-count (deref mock)))))
+        (t/is (= 0 (:call-count @mock))))
 
       ;; with valid email inactive user
       (let [data  (assoc data :email (:email profile1))
             out   (th/mutation! data)
             error (:error out)]
-        (t/is (= 0 (:call-count (deref mock))))
+        (t/is (= 0 (:call-count @mock)))
         (t/is (th/ex-info? error))
         (t/is (th/ex-of-type? error :validation))
         (t/is (th/ex-of-code? error :profile-not-verified)))
@@ -379,7 +479,7 @@
             out   (th/mutation! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
-        (t/is (= 1 (:call-count (deref mock)))))
+        (t/is (= 1 (:call-count @mock))))
 
       ;; with valid email and active user with global complaints
       (th/create-global-complaint-for pool {:type :complaint :email (:email profile2)})
@@ -387,7 +487,7 @@
             out   (th/mutation! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
-        (t/is (= 2 (:call-count (deref mock)))))
+        (t/is (= 2 (:call-count @mock))))
 
       ;; with valid email and active user with global bounce
       (th/create-global-complaint-for pool {:type :bounce :email (:email profile2)})
@@ -395,7 +495,7 @@
             out   (th/mutation! data)
             error (:error out)]
         ;; (th/print-result! out)
-        (t/is (= 2 (:call-count (deref mock))))
+        (t/is (= 2 (:call-count @mock)))
         (t/is (th/ex-info? error))
         (t/is (th/ex-of-type? error :validation))
         (t/is (th/ex-of-code? error :email-has-permanent-bounces)))

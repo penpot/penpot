@@ -62,33 +62,34 @@
   [{:keys [route] :as props}]
   (let [token (get-in route [:query-params :token])
         bad-token (mf/use-state false)]
-    (mf/use-effect
-     (fn []
-       (dom/set-html-title (tr "title.default"))
-       (->> (rp/mutation :verify-token {:token token})
-            (rx/subs
-             (fn [tdata]
-               (handle-token tdata))
-             (fn [{:keys [type code] :as error}]
-               (cond
-                 (or (= :validation type)
-                      (= :invalid-token code)
-                      (= :token-expired (:reason error)))
-                 (reset! bad-token true)
-                 (= :email-already-exists code)
-                 (let [msg (tr "errors.email-already-exists")]
-                   (ts/schedule 100 #(st/emit! (dm/error msg)))
-                   (st/emit! (rt/nav :auth-login)))
 
-                 (= :email-already-validated code)
-                 (let [msg (tr "errors.email-already-validated")]
-                   (ts/schedule 100 #(st/emit! (dm/warn msg)))
-                   (st/emit! (rt/nav :auth-login)))
+    (mf/with-effect []
+      (dom/set-html-title (tr "title.default"))
+      (->> (rp/command! :verify-token {:token token})
+           (rx/subs
+            (fn [tdata]
+              (handle-token tdata))
+            (fn [{:keys [type code] :as error}]
+              (cond
+                (or (= :validation type)
+                    (= :invalid-token code)
+                    (= :token-expired (:reason error)))
+                (reset! bad-token true)
 
-                 :else
-                 (let [msg (tr "errors.generic")]
-                   (ts/schedule 100 #(st/emit! (dm/error msg)))
-                   (st/emit! (rt/nav :auth-login)))))))))
+                (= :email-already-exists code)
+                (let [msg (tr "errors.email-already-exists")]
+                  (ts/schedule 100 #(st/emit! (dm/error msg)))
+                  (st/emit! (rt/nav :auth-login)))
+
+                (= :email-already-validated code)
+                (let [msg (tr "errors.email-already-validated")]
+                  (ts/schedule 100 #(st/emit! (dm/warn msg)))
+                  (st/emit! (rt/nav :auth-login)))
+
+                :else
+                (let [msg (tr "errors.generic")]
+                  (ts/schedule 100 #(st/emit! (dm/error msg)))
+                  (st/emit! (rt/nav :auth-login))))))))
 
     (if @bad-token
       [:> static/static-header {}

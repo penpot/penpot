@@ -539,8 +539,8 @@
                   :components-v2 true}
             {:keys [error result] :as out} (th/query! data)]
         ;; (th/print-result! out)
-        (t/is (= :validation (th/ex-type error)))
-        (t/is (= :spec-validation (th/ex-code error)))))
+        (t/is (th/ex-of-type? error :validation))
+        (t/is (th/ex-of-code? error :spec-validation (th/ex-code error)))))
 
     (t/testing "RPC :file-data-for-thumbnail"
       ;; Insert a thumbnail data for the frame-id
@@ -728,8 +728,8 @@
 
       ;; Then query the specific revn
       (let [{:keys [result error] :as out} (th/query! (assoc data :revn 1))]
-        (t/is (= :not-found (th/ex-type error)))
-        (t/is (= :file-thumbnail-not-found (th/ex-code error)))))
+        (t/is (th/ex-of-type? error :not-found))
+        (t/is (th/ex-of-code? error :file-thumbnail-not-found))))
     ))
 
 
