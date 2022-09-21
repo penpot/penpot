@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.test-helpers
   (:require
@@ -50,6 +50,11 @@
        (merge cf/defaults defaults)
        (us/conform ::cf/config)))
 
+(def default-flags
+  [:enable-secure-session-cookies
+   :enable-email-verification
+   :enable-smtp])
+
 (defn state-init
   [next]
   (let [templates [{:id "test"
@@ -57,8 +62,7 @@
                     :file-uri "test"
                     :thumbnail-uri "test"
                     :path (-> "app/test_files/template.penpot" io/resource fs/path)}]
-        config (-> main/system-config
-                   (merge main/worker-config)
+        system (-> (merge main/system-config main/worker-config)
                    (assoc-in [:app.redis/redis :uri] (:redis-uri config))
                    (assoc-in [:app.db/pool :uri] (:database-uri config))
                    (assoc-in [:app.db/pool :username] (:database-username config))
@@ -75,7 +79,6 @@
                            :app.auth.oidc/generic-provider
                            :app.setup/builtin-templates
                            :app.auth.oidc/routes
-                           ;; :app.auth.ldap/provider
                            :app.worker/executors-monitor
                            :app.http.oauth/handler
                            :app.notifications/handler
@@ -86,16 +89,16 @@
                            :app.loggers.zmq/receiver
                            :app.worker/cron
                            :app.worker/worker))
-        _      (ig/load-namespaces config)
-        system (-> (ig/prep config)
+        _      (ig/load-namespaces system)
+        system (-> (ig/prep system)
                    (ig/init))]
     (try
       (binding [*system* system
                 *pool*   (:app.db/pool system)]
-        (mk/with-mocks [mock1 {:target 'app.rpc.commands.auth/derive-password
-                               :return identity}
-                        mock2 {:target 'app.rpc.commands.auth/verify-password
-                               :return (fn [a b] {:valid (= a b)})}]
+        (with-redefs [app.config/flags (flags/parse flags/default default-flags (:flags config))
+                      app.config/config config
+                      app.rpc.commands.auth/derive-password identity
+                      app.rpc.commands.auth/verify-password (fn [a b] {:valid (= a b)})]
           (next)))
       (finally
         (ig/halt! system)))))

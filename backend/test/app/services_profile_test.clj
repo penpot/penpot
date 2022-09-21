@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.services-profile-test
   (:require
@@ -97,7 +97,7 @@
                   :profile-id (:id profile)}
             out  (th/query! data)]
 
-        ;; (th/print-result! out)
+        #_(th/print-result! out)
         (t/is (nil? (:error out)))
 
         (let [result (:result out)]
@@ -301,10 +301,7 @@
       (t/is (th/ex-of-code? error :email-as-password)))))
 
 (t/deftest test-email-change-request
-  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}
-               cfg-get-mock    {:target 'app.config/get
-                                :return (th/mock-config-get-with
-                                         {:smtp-enabled true})}]
+  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
@@ -338,22 +335,21 @@
 
 
 (t/deftest test-email-change-request-without-smtp
-  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}
-               cfg-get-mock    {:target 'app.config/get
-                                :return (th/mock-config-get-with
-                                         {:smtp-enabled false})}]
-    (let [profile (th/create-profile* 1)
-          pool    (:app.db/pool th/*system*)
-          data    {::th/type :request-email-change
-                   :profile-id (:id profile)
-                   :email "user1@example.com"}]
+  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}]
+    (with-redefs [app.config/flags #{}]
+      (let [profile (th/create-profile* 1)
+            pool    (:app.db/pool th/*system*)
+            data    {::th/type :request-email-change
+                     :profile-id (:id profile)
+                     :email "user1@example.com"}]
 
-      ;; without complaints
-      (let [out (th/mutation! data)
-            res (:result out)]
-        (t/is (= {:changed true} res))
-        (let [mock (deref email-send-mock)]
-          (t/is (false? (:called? mock))))))))
+        (let [out (th/mutation! data)
+              res (:result out)]
+
+          ;; (th/print-result! out)
+          (t/is (= {:changed true} res))
+          (let [mock (deref email-send-mock)]
+            (t/is (false? (:called? mock)))))))))
 
 
 (t/deftest test-request-profile-recovery

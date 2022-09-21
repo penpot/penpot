@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.db
   (:require
@@ -75,7 +75,7 @@
 (def defaults
   {:name :main
    :min-size 0
-   :max-size 30
+   :max-size 60
    :connection-timeout 10000
    :validation-timeout 10000
    :idle-timeout 120000 ; 2min
@@ -367,23 +367,23 @@
    (.rollback conn sp)))
 
 (defn interval
-  [data]
+  [o]
   (cond
-    (integer? data)
-    (->> (/ data 1000.0)
+    (or (integer? o)
+        (float? o))
+    (->> (/ o 1000.0)
          (format "%s seconds")
          (pginterval))
 
-    (string? data)
-    (pginterval data)
+    (string? o)
+    (pginterval o)
 
-    (dt/duration? data)
-    (->> (/ (.toMillis ^java.time.Duration data) 1000.0)
-         (format "%s seconds")
-         (pginterval))
+    (dt/duration? o)
+    (interval (inst-ms o))
 
     :else
-    (ex/raise :type :not-implemented)))
+    (ex/raise :type :not-implemented
+              :hint (format "no implementation found for value %s" (pr-str o)))))
 
 (defn decode-json-pgobject
   [^PGobject o]

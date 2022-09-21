@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.rpc.mutations.media
   (:require
@@ -23,8 +23,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.io :as io]
-   [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.core :as p]))
 
 (def default-max-file-size (* 1024 1024 10)) ; 10 MiB
 
@@ -53,7 +52,6 @@
           :opt-un [::id]))
 
 (sv/defmethod ::upload-file-media-object
-  {::rsem/permits (cf/get :rpc-semaphore-permits-image)}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id content] :as params}]
   (let [file (select-file pool file-id)
         cfg  (update cfg :storage media/configure-assets-storage)]
@@ -106,26 +104,25 @@
 ;; inverse, soft referential integrity).
 
 (defn create-file-media-object
-  [{:keys [storage pool executors] :as cfg} {:keys [id file-id is-local name content] :as params}]
+  [{:keys [storage pool semaphores] :as cfg}
+   {:keys [id file-id is-local name content] :as params}]
   (letfn [;; Function responsible to retrieve the file information, as
           ;; it is synchronous operation it should be wrapped into
           ;; with-dispatch macro.
           (get-info [content]
-            (px/with-dispatch (:blocking executors)
+            (rsem/with-dispatch (:process-image semaphores)
               (media/run {:cmd :info :input content})))
 
           ;; Function responsible of calculating cryptographyc hash of
-          ;; the provided data. Even though it uses the hight
-          ;; performance BLAKE2b algorithm, we prefer to schedule it
-          ;; to be executed on the blocking executor.
+          ;; the provided data.
           (calculate-hash [data]
-            (px/with-dispatch (:blocking executors)
+            (rsem/with-dispatch (:process-image semaphores)
               (sto/calculate-hash data)))
 
           ;; Function responsible of generating thumnail. As it is synchronous
           ;; opetation, it should be wrapped into with-dispatch macro
           (generate-thumbnail [info]
-            (px/with-dispatch (:blocking executors)
+            (rsem/with-dispatch (:process-image semaphores)
               (media/run (assoc thumbnail-options
                                 :cmd :generic-thumbnail
                                 :input info))))
@@ -157,15 +154,14 @@
                                 :bucket "file-media-object"})))
 
           (insert-into-database [info image thumb]
-            (px/with-dispatch (:default executors)
-              (db/exec-one! pool [sql:create-file-media-object
-                                  (or id (uuid/next))
-                                  file-id is-local name
-                                  (:id image)
-                                  (:id thumb)
-                                  (:width info)
-                                  (:height info)
-                                  (:mtype info)])))]
+            (db/exec-one! pool [sql:create-file-media-object
+                                (or id (uuid/next))
+                                file-id is-local name
+                                (:id image)
+                                (:id thumb)
+                                (:width info)
+                                (:height info)
+                                (:mtype info)]))]
 
     (p/let [info  (get-info content)
             thumb (create-thumbnail info)
@@ -181,7 +177,6 @@
           :opt-un [::id ::name]))
 
 (sv/defmethod ::create-file-media-object-from-url
-  {::rsem/permits (cf/get :rpc-semaphore-permits-image)}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (let [file (select-file pool file-id)
         cfg  (update cfg :storage media/configure-assets-storage)]

@@ -23,6 +23,10 @@
 - Add Libraries & Templates carousel [Taiga #3860](https://tree.taiga.io/project/penpot/us/3860)
 - Ungroup frames [Taiga #4012](https://tree.taiga.io/project/penpot/us/4012)
 - Newsletter Opt-in options for subscription categories [Taiga #3242](https://tree.taiga.io/project/penpot/us/3242)
+- Print emails to console by default if smtp is disabled
+- Add `email-verification` flag for enable/disable email verification
+
+
 
 ### :bug: Bugs fixed
 
@@ -52,6 +56,7 @@
 - Fix problem with snap to grids [#2221](https://github.com/penpot/penpot/issues/2221)
 - Fix issue when scaling to value 0 [#2252](https://github.com/penpot/penpot/issues/2252)
 - Fix problem when moving shapes inside nested frames [Taiga #4113](https://tree.taiga.io/project/penpot/issue/4113)
+
 
 ## 1.15.3-beta
 

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.loggers.audit
   "Services related to the user activity (audit log)."
@@ -264,7 +264,7 @@
           (let [n (archive-events cfg)]
             (if n
               (do
-                (aa/thread-sleep 200)
+                (aa/thread-sleep 100)
                 (recur (+ total n)))
               (when (pos? total)
                 (l/trace :hint "events chunk archived" :num total)))))))))
@@ -345,23 +345,18 @@
 
 (def sql:clean-archived
   "delete from audit_log
-    where archived_at is not null
-      and archived_at < now() - ?::interval")
+    where archived_at is not null")
 
 (defn- clean-archived
-  [{:keys [pool max-age]}]
-  (let [interval (db/interval max-age)
-        result   (db/exec-one! pool [sql:clean-archived interval])
-        result   (:next.jdbc/update-count result)]
-    (l/debug :action "clean archived audit log" :removed result)
+  [{:keys [pool]}]
+  (let [result (db/exec-one! pool [sql:clean-archived])
+        result (:next.jdbc/update-count result)]
+    (l/debug :hint "delete archived audit log entries" :deleted result)
     result))
 
-(s/def ::max-age ::cf/audit-log-gc-max-age)
-
 (defmethod ig/pre-init-spec ::gc-task [_]
-  (s/keys :req-un [::db/pool ::max-age]))
+  (s/keys :req-un [::db/pool]))
 
 (defmethod ig/init-key ::gc-task
   [_ cfg]
-  (fn [_]
-    (clean-archived cfg)))
+  (partial clean-archived cfg))

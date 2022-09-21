@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.main
   (:require
@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.util.time :as dt]
+   [cuerdas.core :as str]
    [integrant.core :as ig])
   (:gen-class))
 
@@ -23,36 +24,26 @@
     :migrations (ig/ref :app.migrations/all)
     :name       :main
     :min-size   (cf/get :database-min-pool-size 0)
-    :max-size   (cf/get :database-max-pool-size 30)}
+    :max-size   (cf/get :database-max-pool-size 60)}
 
    ;; Default thread pool for IO operations
    [::default :app.worker/executor]
-   {:parallelism (cf/get :default-executor-parallelism 60)
-    :prefix :default}
-
-   ;; Constrained thread pool. Should only be used from high resources
-   ;; demanding operations.
-   [::blocking :app.worker/executor]
-   {:parallelism (cf/get :blocking-executor-parallelism 10)
-    :prefix :blocking}
+   {:parallelism (cf/get :default-executor-parallelism 70)}
 
    ;; Dedicated thread pool for backround tasks execution.
    [::worker :app.worker/executor]
-   {:parallelism (cf/get :worker-executor-parallelism 10)
-    :prefix :worker}
+   {:parallelism (cf/get :worker-executor-parallelism 20)}
 
    :app.worker/scheduler
    {:parallelism 1
     :prefix :scheduler}
 
    :app.worker/executors
-   {:default  (ig/ref [::default :app.worker/executor])
-    :worker   (ig/ref [::worker :app.worker/executor])
-    :blocking (ig/ref [::blocking :app.worker/executor])}
+   {:default (ig/ref [::default :app.worker/executor])
+    :worker  (ig/ref [::worker :app.worker/executor])}
 
-   :app.worker/executors-monitor
+   :app.worker/executor-monitor
    {:metrics   (ig/ref :app.metrics/metrics)
-    :scheduler (ig/ref :app.worker/scheduler)
     :executors (ig/ref :app.worker/executors)}
 
    :app.migrations/migrations
@@ -216,6 +207,10 @@
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref [::default :app.worker/executor])}
 
+   :app.rpc/semaphores
+   {:metrics (ig/ref :app.metrics/metrics)
+    :executor (ig/ref [::default :app.worker/executor])}
+
    :app.rpc/rlimit
    {:executor  (ig/ref [::worker :app.worker/executor])
     :scheduler (ig/ref :app.worker/scheduler)}
@@ -234,7 +229,10 @@
     :http-client (ig/ref :app.http/client)
     :rlimit      (ig/ref :app.rpc/rlimit)
     :executors   (ig/ref :app.worker/executors)
-    :templates   (ig/ref :app.setup/builtin-templates)}
+    :executor    (ig/ref [::default :app.worker/executor])
+    :templates   (ig/ref :app.setup/builtin-templates)
+    :semaphores  (ig/ref :app.rpc/semaphores)
+    }
 
    :app.rpc.doc/routes
    {:methods (ig/ref :app.rpc/methods)}
@@ -245,7 +243,7 @@
    :app.worker/registry
    {:metrics (ig/ref :app.metrics/metrics)
     :tasks
-    {:sendmail           (ig/ref :app.emails/sendmail-handler)
+    {:sendmail           (ig/ref :app.emails/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
@@ -257,16 +255,20 @@
      :audit-log-archive  (ig/ref :app.loggers.audit/archive-task)
      :audit-log-gc       (ig/ref :app.loggers.audit/gc-task)}}
 
-   :app.emails/sendmail-handler
+
+   :app.emails/sendmail
    {:host             (cf/get :smtp-host)
     :port             (cf/get :smtp-port)
     :ssl              (cf/get :smtp-ssl)
     :tls              (cf/get :smtp-tls)
     :username         (cf/get :smtp-username)
     :password         (cf/get :smtp-password)
-    :metrics          (ig/ref :app.metrics/metrics)
     :default-reply-to (cf/get :smtp-default-reply-to)
     :default-from     (cf/get :smtp-default-from)}
+
+   :app.emails/handler
+   {:sendmail (ig/ref :app.emails/sendmail)
+    :metrics  (ig/ref :app.metrics/metrics)}
 
    :app.tasks.tasks-gc/handler
    {:pool    (ig/ref :app.db/pool)
@@ -318,8 +320,7 @@
     :http-client (ig/ref :app.http/client)}
 
    :app.loggers.audit/gc-task
-   {:max-age  (cf/get :audit-log-gc-max-age cf/deletion-delay)
-    :pool     (ig/ref :app.db/pool)}
+   {:pool (ig/ref :app.db/pool)}
 
    :app.loggers.loki/reporter
    {:uri         (cf/get :loggers-loki-uri)
@@ -360,7 +361,7 @@
 
 
 (def worker-config
-  {   :app.worker/cron
+  {:app.worker/cron
    {:executor   (ig/ref [::worker :app.worker/executor])
     :scheduler  (ig/ref :app.worker/scheduler)
     :tasks      (ig/ref :app.worker/registry)
@@ -395,7 +396,7 @@
         :task :audit-log-archive})
 
      (when (contains? cf/flags :audit-log-gc)
-       {:cron #app/cron "0 0 0 * * ?" ;; daily
+       {:cron #app/cron "30 */5 * * * ?" ;; every 5m
         :task :audit-log-gc})]}
 
    :app.worker/worker
@@ -417,6 +418,8 @@
                                  (ig/prep)
                                  (ig/init))))
   (l/info :msg "welcome to penpot"
+          :flags (str/join "," (map name cf/flags))
+          :worker? (contains? cf/flags :backend-worker)
           :version (:full cf/version)))
 
 (defn stop

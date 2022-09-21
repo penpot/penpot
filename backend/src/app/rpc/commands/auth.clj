@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.rpc.commands.auth
   (:require
@@ -136,7 +136,7 @@
 (sv/defmethod ::login-with-password
   "Performs authentication using penpot password."
   {:auth false
-   ::rsem/permits (cf/get :rpc-semaphore-permits-password)
+   ::rsem/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (login-with-password cfg params))
@@ -177,7 +177,7 @@
 
 (sv/defmethod ::recover-profile
   {:auth false
-   ::rsem/permits (cf/get :rpc-semaphore-permits-password)
+   ::rsem/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (recover-profile cfg params))
@@ -297,23 +297,52 @@
         (assoc :default-team-id (:id team))
         (assoc :default-project-id (:default-project-id team)))))
 
+(defn send-email-verification!
+  [conn sprops profile]
+  (let [vtoken (tokens/generate sprops
+                                {:iss :verify-email
+                                 :exp (dt/in-future "72h")
+                                 :profile-id (:id profile)
+                                 :email (:email profile)})
+        ;; NOTE: this token is mainly used for possible complains
+        ;; identification on the sns webhook
+        ptoken (tokens/generate sprops
+                                {:iss :profile-identity
+                                 :profile-id (:id profile)
+                                 :exp (dt/in-future {:days 30})})]
+    (eml/send! {::eml/conn conn
+                ::eml/factory eml/register
+                :public-uri (cf/get :public-uri)
+                :to (:email profile)
+                :name (:fullname profile)
+                :token vtoken
+                :extra-data ptoken})))
+
 (defn register-profile
   [{:keys [conn sprops session] :as cfg} {:keys [token] :as params}]
   (let [claims    (tokens/verify sprops {:token token :iss :prepared-register})
         params    (merge params claims)]
     (check-profile-existence! conn params)
     (let [is-active  (or (:is-active params)
+                         (not (contains? cf/flags :email-verification))
+
+                         ;; DEPRECATED: v1.15
                          (contains? cf/flags :insecure-register))
+
           profile    (->> (assoc params :is-active is-active)
                           (create-profile conn)
                           (create-profile-relations conn)
                           (profile/decode-profile-row))
+
           invitation (when-let [token (:invitation-token params)]
                        (tokens/verify sprops {:token token :iss :team-invitation}))]
       (cond
-        ;; If invitation token comes in params, this is because the user comes from team-invitation process;
-        ;; in this case, regenerate token and send back to the user a new invitation token (and mark current
-        ;; session as logged). This happens only if the invitation email matches with the register email.
+        ;; If invitation token comes in params, this is because the
+        ;; user comes from team-invitation process; in this case,
+        ;; regenerate token and send back to the user a new invitation
+        ;; token (and mark current session as logged). This happens
+        ;; only if the invitation email matches with the register
+        ;; email.
         (and (some? invitation) (= (:email profile) (:member-email invitation)))
         (let [claims (assoc invitation :member-id  (:id profile))
               token  (tokens/generate sprops claims)
@@ -342,23 +371,8 @@
 
         ;; In all other cases, send a verification email.
         :else
-        (let [vtoken (tokens/generate sprops
-                                      {:iss :verify-email
-                                       :exp (dt/in-future "48h")
-                                       :profile-id (:id profile)
-                                       :email (:email profile)})
-              ptoken (tokens/generate sprops
-                                      {:iss :profile-identity
-                                       :profile-id (:id profile)
-                                       :exp (dt/in-future {:days 30})})]
-          (eml/send! {::eml/conn conn
-                      ::eml/factory eml/register
-                      :public-uri (:public-uri cfg)
-                      :to (:email profile)
-                      :name (:fullname profile)
-                      :token vtoken
-                      :extra-data ptoken})
-
+        (do
+          (send-email-verification! conn sprops profile)
           (with-meta profile
             {::audit/replace-props (audit/profile->props profile)
              ::audit/profile-id (:id profile)}))))))
@@ -368,7 +382,7 @@
 
 (sv/defmethod ::register-profile
   {:auth false
-   ::rsem/permits (cf/get :rpc-semaphore-permits-password)
+   ::rsem/queue :auth
    ::doc/added "1.15"}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]

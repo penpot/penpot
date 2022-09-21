@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.worker
   "Async tasks abstraction (impl)."
@@ -44,20 +44,17 @@
 (declare ^:private get-fj-thread-factory)
 (declare ^:private get-thread-factory)
 
-(s/def ::prefix keyword?)
 (s/def ::parallelism ::us/integer)
-(s/def ::idle-timeout ::us/integer)
 
 (defmethod ig/pre-init-spec ::executor [_]
-  (s/keys :req-un [::prefix]
-          :opt-un [::parallelism]))
+  (s/keys :opt-un [::parallelism]))
 
 (defmethod ig/init-key ::executor
-  [_ {:keys [parallelism prefix]}]
-  (let [counter  (AtomicLong. 0)]
+  [skey {:keys [parallelism]}]
+  (let [prefix (if (vector? skey) (-> skey first name keyword) :default)]
     (if parallelism
-      (ForkJoinPool. (int parallelism) (get-fj-thread-factory prefix counter) nil false)
-      (Executors/newCachedThreadPool (get-thread-factory prefix counter)))))
+      (ForkJoinPool. (int parallelism) (get-fj-thread-factory prefix) nil false)
+      (Executors/newCachedThreadPool (get-thread-factory prefix)))))
 
 (defmethod ig/halt-key! ::executor
   [_ instance]
@@ -69,8 +66,7 @@
 
 (defmethod ig/init-key ::scheduler
   [_ {:keys [parallelism prefix] :or {parallelism 1}}]
-  (let [counter (AtomicLong. 0)]
-    (px/scheduled-pool parallelism (get-thread-factory prefix counter))))
+  (px/scheduled-pool parallelism (get-thread-factory prefix)))
 
 (defmethod ig/halt-key! ::scheduler
   [_ instance]
@@ -78,66 +74,90 @@
 
 (defn- get-fj-thread-factory
   ^ForkJoinPool$ForkJoinWorkerThreadFactory
-  [prefix counter]
-  (reify ForkJoinPool$ForkJoinWorkerThreadFactory
-    (newThread [_ pool]
-      (let [^ForkJoinWorkerThread thread (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)
-            ^String thread-name (str "penpot/" (name prefix) "-" (.getAndIncrement ^AtomicLong counter))]
-        (.setName thread thread-name)
-        thread))))
+  [prefix]
+  (let [^AtomicLong counter (AtomicLong. 0)]
+    (reify ForkJoinPool$ForkJoinWorkerThreadFactory
+      (newThread [_ pool]
+        (let [thread (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)
+              tname  (str "penpot/" (name prefix) "-" (.getAndIncrement counter))]
+          (.setName ^ForkJoinWorkerThread thread ^String tname)
+          thread)))))
 
 (defn- get-thread-factory
   ^ThreadFactory
-  [prefix counter]
-  (reify ThreadFactory
-    (newThread [_ runnable]
-      (doto (Thread. runnable)
-        (.setDaemon true)
-        (.setName (str "penpot/" (name prefix) "-" (.getAndIncrement ^AtomicLong counter)))))))
+  [prefix]
+  (let [^AtomicLong counter (AtomicLong. 0)]
+    (reify ThreadFactory
+      (newThread [_ runnable]
+        (doto (Thread. runnable)
+          (.setDaemon true)
+          (.setName (str "penpot/" (name prefix) "-" (.getAndIncrement counter))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Executor Monitor
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::executors (s/map-of keyword? ::executor))
+(s/def ::executors
+  (s/map-of keyword? ::executor))
 
-(defmethod ig/pre-init-spec ::executors-monitor [_]
-  (s/keys :req-un [::executors ::scheduler ::mtx/metrics]))
+(defmethod ig/pre-init-spec ::executor-monitor [_]
+  (s/keys :req-un [::executors ::mtx/metrics]))
 
-(defmethod ig/init-key ::executors-monitor
-  [_ {:keys [executors metrics interval scheduler] :or {interval 3000}}]
-  (letfn [(log-stats [state]
-            (doseq [[key ^ForkJoinPool executor] executors]
-              (let [labels  (into-array String [(name key)])
-                    running (.getRunningThreadCount executor)
-                    queued  (.getQueuedSubmissionCount executor)
-                    active  (.getPoolSize executor)
-                    steals  (.getStealCount executor)
-                    steals-increment (- steals (or (get-in @state [key :steals]) 0))
-                    steals-increment (if (neg? steals-increment) 0 steals-increment)]
+(defmethod ig/init-key ::executor-monitor
+  [_ {:keys [executors metrics interval] :or {interval 3000}}]
+  (letfn [(monitor! [state skey ^ForkJoinPool executor]
+            (let [prev-steals (get state skey 0)
+                  running     (.getRunningThreadCount executor)
+                  queued      (.getQueuedSubmissionCount executor)
+                  active      (.getPoolSize executor)
+                  steals      (.getStealCount executor)
+                  labels      (into-array String [(name skey)])
 
-                (mtx/run! metrics {:id :executors-active-threads :labels labels :val active})
-                (mtx/run! metrics {:id :executors-running-threads :labels labels :val running})
-                (mtx/run! metrics {:id :executors-queued-submissions :labels labels :val queued})
-                (mtx/run! metrics {:id :executors-completed-tasks :labels labels :inc steals-increment})
+                  steals-increment (- steals prev-steals)
+                  steals-increment (if (neg? steals-increment) 0 steals-increment)]
 
-                (swap! state update key assoc
-                       :running running
-                       :active active
-                       :queued queued
-                       :steals steals)))
+              (mtx/run! metrics
+                        :id :executor-active-threads
+                        :labels labels
+                        :val active)
+              (mtx/run! metrics
+                        :id :executor-running-threads
+                        :labels labels :val running)
+              (mtx/run! metrics
+                        :id :executors-queued-submissions
+                        :labels labels
+                        :val queued)
+              (mtx/run! metrics
+                          :id :executors-completed-tasks
+                          :labels labels
+                          :inc steals-increment)
 
-            (when (and (not (.isShutdown scheduler))
-                       (not (:shutdown @state)))
-              (px/schedule! scheduler interval (partial log-stats state))))]
+              (aa/thread-sleep interval)
+              (if (.isShutdown executor)
+                (l/debug :hint "stoping monitor; cause: executor is shutdown")
+                (assoc state skey steals))))
 
-    (let [state (atom {})]
-      (px/schedule! scheduler interval (partial log-stats state))
-      {:state state})))
+          (monitor-fn []
+            (try
+              (loop [items (into (d/queue) executors)
+                     state {}]
+                (when-let [[skey executor :as item] (peek items)]
+                  (if-let [state (monitor! state skey executor)]
+                    (recur (conj items item) state)
+                    (recur items state))))
+              (catch InterruptedException _cause
+                (l/debug :hint "stoping monitor; interrupted"))))]
 
-(defmethod ig/halt-key! ::executors-monitor
-  [_ {:keys [state]}]
-  (swap! state assoc :shutdown true))
+    (let [thread (Thread. monitor-fn)]
+      (.setDaemon thread true)
+      (.setName thread "penpot/executor-monitor")
+      (.start thread)
+
+      thread)))
+
+(defmethod ig/halt-key! ::executor-monitor
+  [_ thread]
+  (.interrupt ^Thread thread))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Worker
@@ -250,11 +270,6 @@
   (s/keys :req [::task ::conn]
           :opt [::delay ::queue ::priority ::max-retries]))
 
-(def ^:private sql:insert-new-task
-  "insert into task (id, name, props, queue, priority, max_retries, scheduled_at)
-   values (?, ?, ?, ?, ?, ?, clock_timestamp() + ?)
-   returning id")
-
 (defn- extract-props
   [options]
   (persistent!
@@ -265,6 +280,11 @@
               (transient {})
               options)))
 
+(def ^:private sql:insert-new-task
+  "insert into task (id, name, props, queue, priority, max_retries, scheduled_at)
+   values (?, ?, ?, ?, ?, ?, now() + ?)
+   returning id")
+
 (defn submit!
   [{:keys [::task ::delay ::queue ::priority ::max-retries ::conn]
     :or {delay 0 queue :default priority 100 max-retries 3}
@@ -274,10 +294,13 @@
         interval  (db/interval duration)
         props     (-> options extract-props db/tjson)
         id        (uuid/next)]
+
     (l/debug :action "submit task"
              :name (d/name task)
              :in duration)
-    (db/exec-one! conn [sql:insert-new-task id (d/name task) props (d/name queue) priority max-retries interval])
+
+    (db/exec-one! conn [sql:insert-new-task id (d/name task) props
+                        (d/name queue) priority max-retries interval])
     id))
 
 ;; --- RUNNER
@@ -285,22 +308,20 @@
 (def ^:private
   sql:mark-as-retry
   "update task
-      set scheduled_at = clock_timestamp() + ?::interval,
-          modified_at = clock_timestamp(),
+      set scheduled_at = now() + ?::interval,
+          modified_at = now(),
           error = ?,
           status = 'retry',
-          retry_num = retry_num + ?
+          retry_num = ?
     where id = ?")
-
-(def default-delay
-  (dt/duration {:seconds 10}))
 
 (defn- mark-as-retry
   [conn {:keys [task error inc-by delay]
-         :or {inc-by 1 delay default-delay}}]
+         :or {inc-by 1 delay 1000}}]
   (let [explain (ex-message error)
-        delay   (db/interval delay)
-        sqlv    [sql:mark-as-retry delay explain inc-by (:id task)]]
+        nretry  (+ (:retry-num task) inc-by)
+        delay   (->> (iterate #(* % 2) delay) (take nretry) (last))
+        sqlv    [sql:mark-as-retry (db/interval delay) explain nretry (:id task)]]
     (db/exec-one! conn sqlv)
     nil))
 
@@ -410,8 +431,8 @@
                (map deref)
                (run! (fn [res]
                        (case (:status res)
-                         :retry (mark-as-retry conn res)
-                         :failed (mark-as-failed conn res)
+                         :retry     (mark-as-retry conn res)
+                         :failed    (mark-as-failed conn res)
                          :completed (mark-as-completed conn res)))))
           ::handled)))))
 

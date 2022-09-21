@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.rpc.mutations.fonts
   (:require
@@ -10,7 +10,6 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
    [app.rpc.doc :as-alias doc]
@@ -20,8 +19,7 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.core :as p]))
 
 (declare create-font-variant)
 
@@ -42,24 +40,21 @@
                    ::font-id ::font-family ::font-weight ::font-style]))
 
 (sv/defmethod ::create-font-variant
-  {::rsem/permits (cf/get :rpc-semaphore-permits-font)}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id] :as params}]
   (let [cfg (update cfg :storage media/configure-assets-storage)]
     (teams/check-edition-permissions! pool profile-id team-id)
     (create-font-variant cfg params)))
 
 (defn create-font-variant
-  [{:keys [storage pool executors] :as cfg} {:keys [data] :as params}]
+  [{:keys [storage pool executor semaphores] :as cfg} {:keys [data] :as params}]
   (letfn [(generate-fonts [data]
-            (px/with-dispatch (:blocking executors)
+            (rsem/with-dispatch (:process-font semaphores)
               (media/run {:cmd :generate-fonts :input data})))
 
           ;; Function responsible of calculating cryptographyc hash of
-          ;; the provided data. Even though it uses the hight
-          ;; performance BLAKE2b algorithm, we prefer to schedule it
-          ;; to be executed on the blocking executor.
+          ;; the provided data.
           (calculate-hash [data]
-            (px/with-dispatch (:blocking executors)
+            (rsem/with-dispatch (:process-font semaphores)
               (sto/calculate-hash data)))
 
           (validate-data [data]
@@ -110,8 +105,8 @@
 
     (-> (generate-fonts data)
         (p/then validate-data)
-        (p/then persist-fonts (:default executors))
-        (p/then insert-into-db (:default executors)))))
+        (p/then persist-fonts executor)
+        (p/then insert-into-db executor))))
 
 ;; --- UPDATE FONT FAMILY
 

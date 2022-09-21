@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.config
   "A configuration management."
@@ -11,7 +11,6 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
-   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
@@ -94,7 +93,6 @@
 (s/def ::telemetry-enabled ::us/boolean)
 
 (s/def ::audit-log-archive-uri ::us/string)
-(s/def ::audit-log-gc-max-age ::dt/duration)
 
 (s/def ::admins ::us/set-of-strings)
 (s/def ::file-change-snapshot-every ::us/integer)
@@ -171,12 +169,11 @@
 (s/def ::redis-uri ::us/string)
 (s/def ::registration-domain-whitelist ::us/set-of-strings)
 
+(s/def ::semaphore-font-process ::us/integer)
+(s/def ::semaphore-file-update ::us/integer)
+(s/def ::semaphore-image-process ::us/integer)
+(s/def ::semaphore-authentication ::us/integer)
 
-
-(s/def ::rpc-semaphore-permits-font ::us/integer)
-(s/def ::rpc-semaphore-permits-file-update ::us/integer)
-(s/def ::rpc-semaphore-permits-image ::us/integer)
-(s/def ::rpc-semaphore-permits-password ::us/integer)
 (s/def ::smtp-default-from ::us/string)
 (s/def ::smtp-default-reply-to ::us/string)
 (s/def ::smtp-host ::us/string)
@@ -212,7 +209,6 @@
                    ::admins
                    ::allow-demo-users
                    ::audit-log-archive-uri
-                   ::audit-log-gc-max-age
                    ::auth-token-cookie-name
                    ::auth-token-cookie-max-age
                    ::authenticated-cookie-name
@@ -280,10 +276,12 @@
                    ::public-uri
                    ::redis-uri
                    ::registration-domain-whitelist
-                   ::rpc-semaphore-permits-font
-                   ::rpc-semaphore-permits-file-update
-                   ::rpc-semaphore-permits-image
-                   ::rpc-semaphore-permits-password
+
+                   ::semaphore-process-font
+                   ::semaphore-process-image
+                   ::semaphore-update-file
+                   ::semaphore-auth
+
                    ::rpc-rlimit-config
                    ::sentry-dsn
                    ::sentry-debug
@@ -318,7 +316,8 @@
 (def default-flags
   [:enable-backend-api-doc
    :enable-backend-worker
-   :enable-secure-session-cookies])
+   :enable-secure-session-cookies
+   :enable-email-verification])
 
 (defn- parse-flags
   [config]
@@ -359,11 +358,7 @@
                "%version%")))
 
 (defonce ^:dynamic config (read-config))
-
-(defonce ^:dynamic flags
-  (let [flags (parse-flags config)]
-    (l/info :hint "flags initialized" :flags (str/join "," (map name flags)))
-    flags))
+(defonce ^:dynamic flags (parse-flags config))
 
 (def deletion-delay
   (dt/duration {:days 7}))

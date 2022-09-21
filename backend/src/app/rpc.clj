@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.rpc
   (:require
@@ -16,10 +16,9 @@
    [app.msgbus :as-alias mbus]
    [app.rpc.retry :as retry]
    [app.rpc.rlimit :as rlimit]
-   [app.rpc.semaphore :as rsem]
-   [app.util.async :as async]
+   [app.rpc.semaphore :as-alias rsem]
    [app.util.services :as sv]
-   [app.worker :as wrk]
+   [app.util.time :as ts]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
@@ -107,38 +106,25 @@
   "Wrap service method with metrics measurement."
   [{:keys [metrics ::metrics-id]} f mdata]
   (let [labels (into-array String [(::sv/name mdata)])]
-
     (fn [cfg params]
-      (let [start (System/nanoTime)]
+      (let [tp (ts/tpoint)]
         (p/finally
           (f cfg params)
           (fn [_ _]
             (mtx/run! metrics
-                      {:id metrics-id
-                       :val (/ (- (System/nanoTime) start) 1000000)
-                       :labels labels})))))))
+                      :id metrics-id
+                      :val (inst-ms (tp))
+                      :labels labels)))))))
 
 (defn- wrap-dispatch
   "Wraps service method into async flow, with the ability to dispatching
   it to a preconfigured executor service."
-  [{:keys [executors] :as cfg} f mdata]
-  (let [dname (::async/dispatch mdata :default)]
-    (if (= :none dname)
-      (with-meta
-        (fn [cfg params]
-          (p/do (f cfg params)))
-        mdata)
-
-      (let [executor (get executors dname)]
-        (when-not executor
-          (ex/raise :type :internal
-                    :code :executor-not-configured
-                    :hint (format "executor %s not configured" dname)))
-        (with-meta
-          (fn [cfg params]
-            (-> (px/submit! executor #(f cfg params))
-                (p/bind p/wrap)))
-          mdata)))))
+  [{:keys [executor] :as cfg} f mdata]
+  (with-meta
+    (fn [cfg params]
+      (-> (px/submit! executor #(f cfg params))
+          (p/bind p/wrap)))
+    mdata))
 
 (defn- wrap-audit
   [{:keys [audit] :as cfg} f mdata]
@@ -171,12 +157,11 @@
   [cfg f mdata]
   (let [f     (as-> f $
                 (wrap-dispatch cfg $ mdata)
+                (wrap-metrics cfg $ mdata)
+                (retry/wrap-retry cfg $ mdata)
                 (rsem/wrap cfg $ mdata)
                 (rlimit/wrap cfg $ mdata)
-                (retry/wrap-retry cfg $ mdata)
-                (wrap-audit cfg $ mdata)
-                (wrap-metrics cfg $ mdata)
-                )
+                (wrap-audit cfg $ mdata))
 
         spec  (or (::sv/spec mdata) (s/spec any?))
         auth? (:auth mdata true)]
@@ -245,8 +230,6 @@
          (into {}))))
 
 (s/def ::audit (s/nilable fn?))
-(s/def ::executors (s/map-of keyword? ::wrk/executor))
-(s/def ::executors map?)
 (s/def ::http-client fn?)
 (s/def ::ldap (s/nilable map?))
 (s/def ::msgbus ::mbus/msgbus)
@@ -260,10 +243,10 @@
                    ::session
                    ::sprops
                    ::audit
-                   ::executors
                    ::public-uri
                    ::msgbus
                    ::http-client
+                   ::rsem/semaphores
                    ::rlimit/rlimit
                    ::mtx/metrics
                    ::db/pool
