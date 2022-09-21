@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-20 13:46+0000\n"
+"PO-Revision-Date: 2022-09-22 21:21+0000\n"
 "Last-Translator: Vik <xasertop@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
@@ -299,10 +299,10 @@ msgstr[1] "Шрифты добавлены (%s)"
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Любой загружаемый сюда шрифт будет доступен в свойствах файлов, "
-"редактируемых командой. Шрифты из одного и того же семейства будут "
-"сгруппированы по **названию семейства шрифта**. Для загрузки допустимы "
-"следующие форматы: **TTF, OTF и WOFF** (используйте один из них)."
+"Любой загружаемый сюда шрифт будет добавлен в семейство шрифтов и доступен в "
+"свойствах файлов, редактируемых командой. Шрифты из одного и того же "
+"семейства будут сгруппированы по **названию семейства шрифта**. Для загрузки "
+"допустимы следующие форматы: **TTF, OTF и WOFF** (используйте один из них)."
 
 #, markdown
 msgid "dashboard.fonts.hero-text2"
@@ -981,7 +981,7 @@ msgstr "Создать новую команду"
 
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team.placeholder"
-msgstr "Введите имя для новой команды"
+msgstr "Введите название новой команды"
 
 msgid "labels.custom-fonts"
 msgstr "Произвольные шрифты"
@@ -1026,17 +1026,17 @@ msgstr "Редактор"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.email"
-msgstr "Email"
+msgstr "Эл. почта"
 
 msgid "labels.export"
 msgstr "Экспорт"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
-msgstr "Обратная связь недоступна"
+msgstr "Обратная связь отключена"
 
 msgid "labels.font-family"
-msgstr "Гарнитура"
+msgstr "Семейство шрифтов"
 
 msgid "labels.font-providers"
 msgstr "Поставщики шрифтов"
@@ -1092,7 +1092,7 @@ msgstr "Ссылка"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
-msgstr "Выход"
+msgstr "Выйти"
 
 msgid "labels.manage-fonts"
 msgstr "Управление шрифтами"
@@ -1110,11 +1110,11 @@ msgid "labels.new-password"
 msgstr "Новый пароль"
 
 msgid "labels.next"
-msgstr "След."
+msgstr "Далее"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "Новых комментариев пока нет"
+msgstr "Уведомлений о новых комментариях нет"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.auth-info"
@@ -1449,11 +1449,11 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
-msgstr ""
+msgstr "Обновить"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
-msgstr ""
+msgstr "Отменить"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
@@ -2166,7 +2166,7 @@ msgstr "Вертикальное выравнивание"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
-msgstr "Нажмите кнопку \"Запуск\" вверху для показа прототипа."
+msgstr "Нажмите кнопку воспроизведения вверху для показа прототипа."
 
 msgid "workspace.path.actions.add-node"
 msgstr "Добавить узел (%s)"
@@ -2299,7 +2299,7 @@ msgstr "контур"
 
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.dismiss"
-msgstr ""
+msgstr "Отклонить"
 
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.there-are-updates"
@@ -2307,7 +2307,7 @@ msgstr "Обнаружены обновления общих библиотек"
 
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.update"
-msgstr ""
+msgstr "Обновить"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Нажмите для замыкания контура"
@@ -2956,3 +2956,149 @@ msgstr "Слева направо"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "Справа налево"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete"
+msgstr "Удалить"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.duplicate"
+msgstr "Дублировать"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.edit"
+msgstr "Редактировать"
+
+msgid "workspace.undo.entry.single.rect"
+msgstr "прямоугольник"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 общая страница"
+msgstr[1] "%s общих страниц"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Общие страницы"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Подписка на рассылку"
+
+msgid "errors.invite-invalid.info"
+msgstr "Возможно, это приглашение отменено или истёк срок его действия."
+
+msgid "labels.continue-with-penpot"
+msgstr "Вы можете продолжить с аккаунтом Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Истекло"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "Отзыв отправлен"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Приглашения"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show"
+msgstr "Показать"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "Исключить"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.ungroup"
+msgstr "Разгруппировать"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-main"
+msgstr "Показать основной компонент"
+
+msgid "workspace.undo.entry.single.group"
+msgstr "группа"
+
+msgid "labels.log-or-sign"
+msgstr "Войти или зарегистрироваться"
+
+msgid "labels.back"
+msgstr "Назад"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Удалить приглашение"
+
+msgid "workspace.shape.menu.difference"
+msgstr "Разница"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "Восстановить основной компонент"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.reset-overrides"
+msgstr "Сбросить переопределения"
+
+msgid "workspace.undo.entry.multiple.component"
+msgstr "компоненты"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.title"
+msgstr "История"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Узнайте больше о них и о том, как внести свой вклад"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Возникла проблема с импортом шаблона. Шаблон не был импортирован."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr ""
+"Присылайте мне новости, информацию об обновлениях продуктов и рекомендации о "
+"Penpot."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Снять библиотеку с публикации"
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Введите название команды"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Сделать миниатюрой"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Удалить миниатюру"
+
+msgid "labels.and"
+msgstr "и"
+
+msgid "labels.continue-with"
+msgstr "Продолжить с"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "Приглашений нет."
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Участник"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"Нажмите кнопку «Пригласить в команду», чтобы пригласить в эту команду больше "
+"участников."
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "Название вашей команды"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy"
+msgstr "Скопировать"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-component"
+msgstr "Создать компонент"
