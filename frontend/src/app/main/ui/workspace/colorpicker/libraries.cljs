@@ -25,6 +25,7 @@
         shared-libs      (mf/deref refs/workspace-libraries)
         file-colors      (mf/deref refs/workspace-file-colors)
         recent-colors    (mf/deref refs/workspace-recent-colors)
+        recent-colors    (filter #(or (:gradient %) (:color %)) recent-colors)
 
         on-library-change
         (mf/use-fn
