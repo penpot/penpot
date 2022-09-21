@@ -16,6 +16,10 @@
 (defonce loader (l/atom false))
 (defonce on-error (l/atom identity))
 
+(defmethod ptk/resolve :default
+  [type data]
+  (ptk/data-event type data))
+
 (defonce state
   (ptk/store {:resolve ptk/resolve
               :on-error (fn [e] (@on-error e))}))
