@@ -69,9 +69,7 @@
          (fn [color]
            (let [recent-color (merge current-color color)
                  recent-color (dc/materialize-color-components recent-color)]
-             (when (not @drag?)
-               (st/emit! (dwl/add-recent-color recent-color)))
-             (st/emit! (dc/update-colorpicker-color color)))))
+             (st/emit! (dc/update-colorpicker-color recent-color (not @drag?))))))
 
         handle-click-picker
         (mf/use-fn
