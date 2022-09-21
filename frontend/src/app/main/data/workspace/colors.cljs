@@ -243,7 +243,10 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dch/update-shapes ids (fn [shape]
-                                      (let [new-attrs (merge (get-in shape [:shadow index :color]) attrs)]
+                                      (let [;; If we try to set a gradient to a shadow (for example using the color selection from multiple shapes) let's use the first stop color
+                                            attrs (cond-> attrs
+                                                    (:gradient attrs) (get-in [:gradient :stops 0]))
+                                            new-attrs (merge (get-in shape [:shadow index :color]) attrs)]
                                         (assoc-in shape [:shadow index :color] new-attrs))))))))
 
 (defn add-stroke
