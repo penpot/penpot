@@ -21,7 +21,6 @@
 
 (defmethod ptk/resolve :default
   [type data]
-  (log/warn :hint "no implementation found for event" :event type)
   (ptk/data-event type data))
 
 (defonce state

@@ -7,34 +7,63 @@
 (ns app.main.ui.onboarding.questions
   "External form for onboarding questions."
   (:require
+   [app.main.data.events :as ev]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.util.dom :as dom]
-   [goog.events :as ev]
+   [goog.events :as gev]
+   [potok.core :as ptk]
    [promesa.core :as p]
    [rumext.alpha :as mf]))
 
 (defn load-arengu-sdk
   [container-ref email form-id]
-  (letfn [(on-init []
-            (when-let [container (mf/ref-val container-ref)]
+  (letfn [(on-arengu-loaded [resolve reject]
+            (let [container (mf/ref-val container-ref)]
               (-> (.embed js/ArenguForms form-id container)
                   (p/then (fn [form]
-                            (.setHiddenField ^js form "email" email))))))
+                            (.setHiddenField ^js form "email" email)
+                            (st/emit! (ptk/event ::ev/event {::ev/name "arengu-form-load-success"
+                                                             ::ev/origin "onboarding-questions"
+                                                             ::ev/type "fact"}))
 
-          (on-submit-success [_event]
-            (st/emit! (du/mark-questions-as-answered)))]
+                            (resolve)))
+                  (p/catch reject))))
 
-    (let [script (dom/create-element "script")
-          head   (unchecked-get js/document "head")
-          lkey1  (ev/listen js/document "af-submitForm-success" on-submit-success)]
+          (mark-as-answered []
+            (st/emit! (du/mark-questions-as-answered)))
 
-      (unchecked-set script "src" "https://sdk.arengu.com/forms.js")
-      (unchecked-set script "onload" on-init)
-      (dom/append-child! head script)
+          (initialize [cleaners resolve reject]
+            (let [script (dom/create-element "script")
+                  head   (unchecked-get js/document "head")
+                  lkey1  (gev/listen js/document "af-submitForm-success" mark-as-answered)
+                  lkey2  (gev/listen js/document "af-getForm-error" reject)]
 
+              (unchecked-set script "src" "https://sdk.arengu.com/forms.js")
+              (unchecked-set script "onload" (partial on-arengu-loaded resolve reject))
+              (dom/append-child! head script)
+
+              (swap! cleaners conj
+                     #(do (gev/unlistenByKey lkey1)
+                          (gev/unlistenByKey lkey2)))
+
+              (swap! cleaners conj
+                     #(dom/remove-child! head script))))
+
+          (on-error [_]
+            (st/emit! (ptk/event ::ev/event {::ev/name "arengu-form-load-error"
+                                             ::ev/origin "onboarding-questions"
+                                             ::ev/type "fact"}))
+            (mark-as-answered))
+
+          ]
+
+    (let [cleaners (atom #{})]
+      (-> (p/create (partial initialize cleaners))
+          (p/timeout 5000)
+          (p/catch on-error))
       (fn []
-        (ev/unlistenByKey lkey1)))))
+        (run! (fn [clean-fn] (clean-fn)) @cleaners)))))
 
 (mf/defc questions
   [{:keys [profile form-id]}]
