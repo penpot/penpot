@@ -64,6 +64,16 @@
   [shape]
   (gpt/point (left-bound shape) (top-bound shape)))
 
+(defn width
+  "Return the width of the shape BEFORE transformations."
+  [shape]
+  (-> shape :selrect :width))
+
+(defn height
+  "Return the height of the shape BEFORE transformations."
+  [shape]
+  (-> shape :selrect :height))
+
 (defn fully-contained?
   "Checks if one rect is fully inside the other"
   [rect other]

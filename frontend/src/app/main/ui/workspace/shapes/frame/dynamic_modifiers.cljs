@@ -253,20 +253,102 @@
                 (dom/remove-attribute! node "data-old-transform")
                 (dom/remove-attribute! node "transform")))))))))
 
-(defn get-copy-shapes
+(defn- get-copies
   "If one or more of the shapes belongs to a component's main instance, find all copies of
-  the component in the same page. Ignore copies with the geometry values touched."
-  [shapes objects]
-  (letfn [(get-copy-shapes-one [shape]
+  the component in the same page.
+ 
+  Return a map {<main-root-id> [<main-root> [<copy-root> <copy-root>...]] ...}"
+  [shapes objects modifiers]
+  (letfn [(get-copies-one [shape]
             (let [root-shape (ctn/get-root-shape objects shape)]
               (when (:main-instance? root-shape)
-                (->> (ctn/get-instances objects shape)
-                     (filter #(not (ctk/touched-group? % :geometry-group)))))))
+                (let [children (->> root-shape
+                                    :shapes
+                                    (map #(get objects %))
+                                    (map #(gsh/apply-modifiers % (get-in modifiers [(:id %) :modifiers]))))
+                      root-shape (gsh/update-group-selrect root-shape children)]
+                  [(:id root-shape) [root-shape (ctn/get-instances objects root-shape)]]))))]
 
-          (pack-main-copies [shape]
-            (map #(vector shape %) (get-copy-shapes-one shape)))]
+    (into {} (map get-copies-one shapes))))
 
-    (mapcat pack-main-copies shapes)))
+(defn- reposition-shape
+  [shape origin-root dest-root]
+  (let [shape-pos (fn [shape]
+                    (gpt/point (get-in shape [:selrect :x])
+                               (get-in shape [:selrect :y])))
+
+        origin-root-pos (shape-pos origin-root)
+        dest-root-pos   (shape-pos dest-root)
+        delta           (gpt/subtract dest-root-pos origin-root-pos)]
+    (gsh/move shape delta)))
+
+(defn- sync-shape
+  [main-shape copy-shape copy-root main-root]
+  ;; (js/console.log "+++")
+  ;; (js/console.log "main-shape" (clj->js main-shape))
+  ;; (js/console.log "copy-shape" (clj->js copy-shape))
+  (if (ctk/touched-group? copy-shape :geometry-group)
+    (gmt/matrix)
+    (let [main-shape  (reposition-shape main-shape main-root copy-root)
+
+          translation (gpt/subtract (gsh/orig-pos main-shape)
+                                    (gsh/orig-pos copy-shape))
+
+          center      (gsh/orig-pos copy-shape)
+          mult-w      (/ (gsh/width main-shape) (gsh/width copy-shape))
+          mult-h      (/ (gsh/height main-shape) (gsh/height copy-shape))
+          resize      (gpt/point mult-w mult-h)]
+
+      (cond-> (gmt/matrix)
+        (not (gpt/almost-zero? translation))
+        (gmt/multiply (gmt/translate-matrix translation))
+
+        (not (gpt/almost-zero? resize))
+        (gmt/multiply (gmt/scale-matrix resize center))))))
+
+(defn- add-copies-transforms
+  "Add transform to all necessary shapes inside the copies"
+  [copies objects modifiers transforms]
+  ;; (js/console.log "copies" (clj->js copies))
+  (letfn [(add-copy-transforms-one [transforms copy-shape copy-root main-root main-shapes main-shapes-modif]
+            (update transforms (:id copy-shape)
+                    (fn [transform]
+                      (let [transform (or transform (gmt/matrix))
+                            main-shape-modif (d/seek #(ctk/is-main-of? % copy-shape) main-shapes-modif)]
+                        (gmt/multiply transform (sync-shape main-shape-modif copy-shape copy-root main-root))))))
+
+          (add-copy-transforms [transforms copy-root main-root main-shapes main-shapes-modif]
+            (let [copy-shapes (into [copy-root] (cph/get-children objects (:id copy-root)))]
+              (reduce #(add-copy-transforms-one %1 %2 copy-root main-root main-shapes main-shapes-modif)
+                      transforms
+                      copy-shapes)))
+
+          (add-copies-transforms-one [transforms [main-root copy-roots]]
+            (let [main-shapes       (into [main-root] (cph/get-children objects (:id main-root)))
+                  main-shapes-modif (map #(gsh/apply-modifiers % (get-in modifiers [(:id %) :modifiers]))
+                                         main-shapes)]
+              (reduce #(add-copy-transforms %1 %2 main-root main-shapes main-shapes-modif)
+                      transforms
+                      copy-roots)))]
+
+    (reduce add-copies-transforms-one
+            transforms
+            (vals copies))))
+
+;; (defn get-copy-shapes
+;;   "If one or more of the shapes belongs to a component's main instance, find all copies of
+;;   the component in the same page. Ignore copies with the geometry values touched."
+;;   [shapes objects]
+;;   (letfn [(get-copy-shapes-one [shape]
+;;             (let [root-shape (ctn/get-root-shape objects shape)]
+;;               (when (:main-instance? root-shape)
+;;                 (->> (ctn/get-instances objects shape)
+;;                      (filter #(not (ctk/touched-group? % :geometry-group)))))))
+;;
+;;           (pack-main-copies [shape]
+;;             (map #(vector shape %) (get-copy-shapes-one shape)))]
+;;
+;;     (mapcat pack-main-copies shapes)))
 
 (defn use-dynamic-modifiers
   [objects node modifiers]
@@ -276,6 +358,7 @@
          (mf/deps modifiers)
          (fn []
            (when (some? modifiers)
+             ;; (js/console.log "-----------------")
              (d/mapm (fn [id {modifiers :modifiers}]
                        (let [shape (get objects id)
                              center (gsh/center-shape shape)
@@ -298,104 +381,119 @@
         prev-modifiers (mf/use-var nil)
         prev-transforms (mf/use-var nil)
 
-        copy-shapes
-        (mf/use-memo
-          (mf/deps (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)))
+        copies
+        (mf/use-memo   ; TODO: ojo estas deps hay que revisarlas
+          (mf/deps modifiers (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)))
           (fn []
-            (get-copy-shapes shapes objects)))
+            (get-copies shapes objects modifiers)))
 
         transforms
         (mf/use-memo
-          (mf/deps objects modifiers transforms copy-shapes)
+          (mf/deps objects modifiers transforms copies)
           (fn []
-            (let [add-copy-transforms
-                  (fn [transforms main-shape copy-shape]
-                    (let [main-bounds (gsh/bounding-box main-shape)
-                          copy-bounds (gsh/bounding-box copy-shape)
-                          delta       (gpt/subtract (gpt/point (:x copy-bounds) (:y copy-bounds))
-                                                    (gpt/point (:x main-bounds) (:y main-bounds)))
+            ;; (js/console.log "modifiers" (clj->js modifiers))
+            (add-copies-transforms copies objects modifiers transforms)))
 
-                          ;; Move the modifier origin points to the position of the copy.
-                          main-modifiers (get-in modifiers [(:id main-shape) :modifiers])
-                          copy-modifiers (let [origin   (:resize-origin main-modifiers)
-                                               origin-2 (:resize-origin-2 main-modifiers)]
-                                           (cond-> main-modifiers
-                                             (some? origin)
-                                             (assoc :resize-origin (gpt/add origin delta))
+        ;; copy-shapes
+        ;; (mf/use-memo
+        ;;   (mf/deps (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)))
+        ;;   (fn []
+        ;;     (get-copy-shapes shapes objects)))
 
-                                             (some? origin-2)
-                                             (assoc :resize-origin-2 (gpt/add origin-2 delta))))
+        ;; transforms
+        ;; (mf/use-memo
+        ;;   (mf/deps objects modifiers transforms copy-shapes)
+        ;;   (fn []
+        ;;     (let [add-copy-transforms
+        ;;           (fn [transforms main-shape copy-shape]
+        ;;             (let [main-bounds (gsh/bounding-box main-shape)
+        ;;                   copy-bounds (gsh/bounding-box copy-shape)
+        ;;                   delta       (gpt/subtract (gpt/point (:x copy-bounds) (:y copy-bounds))
+        ;;                                             (gpt/point (:x main-bounds) (:y main-bounds)))
+        ;;
+        ;;                   ;; Move the modifier origin points to the position of the copy.
+        ;;                   main-modifiers (get-in modifiers [(:id main-shape) :modifiers])
+        ;;                   copy-modifiers (let [origin   (:resize-origin main-modifiers)
+        ;;                                        origin-2 (:resize-origin-2 main-modifiers)]
+        ;;                                    (cond-> main-modifiers
+        ;;                                      (some? origin)
+        ;;                                      (assoc :resize-origin (gpt/add origin delta))
+        ;;
+        ;;                                      (some? origin-2)
+        ;;                                      (assoc :resize-origin-2 (gpt/add origin-2 delta))))
+        ;;
+        ;;                   center (gsh/center-shape copy-shape)]
+        ;;
+        ;;               (update transforms (:id copy-shape)
+        ;;                       #(let [transform (or % (gmt/matrix))]
+        ;;                          (gmt/multiply transform
+        ;;                                        (gsh/modifiers->transform center copy-modifiers))))))
+        ;;
+        ;;           apply-delta
+        ;;           (fn [transforms shape-id delta]
+        ;;             (let [shape-ids (-> (cph/get-children-ids objects shape-id)
+        ;;                                 (conj shape-id))
+        ;;
+        ;;                   add-delta (fn [transform]
+        ;;                               (let [transform (or transform (gmt/matrix))]
+        ;;                                 (gmt/multiply transform (gmt/translate-matrix delta))))]
+        ;;
+        ;;               (reduce #(update %1 %2 add-delta)
+        ;;                       transforms
+        ;;                       shape-ids)))
+        ;;
+        ;;           manage-root
+        ;;           (fn [transforms main-shape copy-shape]
+        ;;             (let [main-modifiers (get-in modifiers [(:id main-shape) :modifiers])
+        ;;                   modified-main  (gsh/apply-modifiers main-shape main-modifiers)
+        ;;
+        ;;                   delta          (gpt/subtract (gsh/orig-pos main-shape)
+        ;;                                                (gsh/orig-pos modified-main))]
+        ;;
+        ;;               (cond-> transforms
+        ;;                 (not (gpt/almost-zero? delta))
+        ;;                 (apply-delta (:id copy-shape) delta))))
+        ;;
+        ;;           manage-nonroot
+        ;;           (fn [transforms main-shape copy-shape]
+        ;;             ; TODO: comparar el orig-pos de la main-shape modificada con el del su propio
+        ;;             ;       root también modificado (antes de rotación). Si es menor que cero en alguno
+        ;;             ;       de los dos ejes, añadir un desplazamiento al root y todos sus hijos
+        ;;             (let [main-root            (ctn/get-root-shape objects main-shape)
+        ;;                   main-root-modifiers  (get-in modifiers [(:id main-root) :modifiers])
+        ;;                   modified-main-root   (gsh/apply-modifiers main-root main-root-modifiers)
+        ;;
+        ;;                   main-shape-modifiers (get-in modifiers [(:id main-shape) :modifiers])
+        ;;                   modified-main-shape  (gsh/apply-modifiers main-shape main-shape-modifiers)
+        ;;
+        ;;                   delta     (gpt/subtract (gsh/orig-pos modified-main-shape)
+        ;;                                           (gsh/orig-pos modified-main-root))
+        ;;
+        ;;                   delta-x (- (min 0 (:x delta)))
+        ;;                   delta-y (- (min 0 (:y delta)))]
+        ;;
+        ;;               (if (or (pos? delta-x) (pos? delta-y))
+        ;;                 (let [copy-root (ctn/get-root-shape objects copy-shape)]
+        ;;                   (apply-delta transforms (:id copy-root) (gpt/point delta-x delta-y)))
+        ;;                 transforms)))
+        ;;
+        ;;           add-all-transforms
+        ;;           (fn [transforms [main-shape copy-shape]]
+        ;;             ;; (js/console.log "----------------------")
+        ;;             ;; (js/console.log "main-shape" (clj->js main-shape))
+        ;;             ;; (js/console.log "copy-shape" (clj->js copy-shape))
+        ;;             (as-> transforms $
+        ;;               (add-copy-transforms $ main-shape copy-shape)
+        ;;               (if (ctk/instance-root? main-shape)
+        ;;                 (manage-root $ main-shape copy-shape)
+        ;;                 (manage-nonroot $ main-shape copy-shape))))]
+        ;;
+        ;;       ;; (js/console.log "==================")
+        ;;       (reduce add-all-transforms
+        ;;               transforms
+        ;;               copy-shapes))))
 
-                          center (gsh/center-shape copy-shape)]
-
-                      (update transforms (:id copy-shape)
-                              #(let [transform (or % (gmt/matrix))]
-                                 (gmt/multiply transform
-                                               (gsh/modifiers->transform center copy-modifiers))))))
-
-                  apply-delta
-                  (fn [transforms shape-id delta]
-                    (let [shape-ids (-> (cph/get-children-ids objects shape-id)
-                                        (conj shape-id))
-
-                          add-delta (fn [transform]
-                                      (let [transform (or transform (gmt/matrix))]
-                                        (gmt/multiply transform (gmt/translate-matrix delta))))]
-
-                      (reduce #(update %1 %2 add-delta)
-                              transforms
-                              shape-ids)))
-
-                  manage-root
-                  (fn [transforms main-shape copy-shape]
-                    (let [main-modifiers (get-in modifiers [(:id main-shape) :modifiers])
-                          modified-main  (gsh/apply-modifiers main-shape main-modifiers)
-
-                          delta          (gpt/subtract (gsh/orig-pos main-shape)
-                                                       (gsh/orig-pos modified-main))]
-
-                      (cond-> transforms
-                        (not (gpt/almost-zero? delta))
-                        (apply-delta (:id copy-shape) delta))))
-
-                  manage-nonroot
-                  (fn [transforms main-shape copy-shape]
-                    ; TODO: comparar el orig-pos de la main-shape modificada con el del su propio
-                    ;       root también modificado (antes de rotación). Si es menor que cero en alguno
-                    ;       de los dos ejes, añadir un desplazamiento al root y todos sus hijos
-                    (let [main-root            (ctn/get-root-shape objects main-shape)
-                          main-root-modifiers  (get-in modifiers [(:id main-root) :modifiers])
-                          modified-main-root   (gsh/apply-modifiers main-root main-root-modifiers)
-
-                          main-shape-modifiers (get-in modifiers [(:id main-shape) :modifiers])
-                          modified-main-shape  (gsh/apply-modifiers main-shape main-shape-modifiers)
-
-                          delta     (gpt/subtract (gsh/orig-pos modified-main-shape)
-                                                  (gsh/orig-pos modified-main-root))
-
-                          delta-x (- (min 0 (:x delta)))
-                          delta-y (- (min 0 (:y delta)))]
-
-                      (if (or (pos? delta-x) (pos? delta-y))
-                        (let [copy-root (ctn/get-root-shape objects copy-shape)]
-                          (apply-delta transforms (:id copy-root) (gpt/point delta-x delta-y)))
-                        transforms)))
-
-                  add-all-transforms
-                  (fn [transforms [main-shape copy-shape]]
-                    (js/console.log "----------------------")
-                    (js/console.log "main-shape" (clj->js main-shape))
-                    (js/console.log "copy-shape" (clj->js copy-shape))
-                    (as-> transforms $
-                      (add-copy-transforms $ main-shape copy-shape)
-                      (if (ctk/instance-root? main-shape)
-                        (manage-root $ main-shape copy-shape)
-                        (manage-nonroot $ main-shape copy-shape))))]
-
-              (js/console.log "==================")
-              (reduce add-all-transforms
-                      transforms
-                      copy-shapes))))
+        ;; ---- old
 
             ;; (let [translate1
             ;;       (fn [shape modifiers]
@@ -476,6 +574,7 @@
         (mf/use-memo
           (mf/deps transforms)
           (fn []
+            (js/console.log "transforms" (clj->js transforms))
             (map #(get objects %) (keys transforms))))]
 
     (mf/use-layout-effect

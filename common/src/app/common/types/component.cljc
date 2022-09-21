@@ -33,7 +33,7 @@
 (defn is-main-of?
   "Check if the first shape is the near main of the second one."
   [shape-main shape-inst]
-  (and (not= shape-main shape-inst)
+  (and (not= (:id shape-main) (:id shape-inst))
        (:shape-ref shape-inst)
        (or (= (:shape-ref shape-inst) (:id shape-main))
            (= (:shape-ref shape-inst) (:shape-ref shape-main)))))
