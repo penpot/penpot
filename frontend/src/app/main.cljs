@@ -13,7 +13,6 @@
    [app.main.data.users :as du]
    [app.main.data.websocket :as ws]
    [app.main.errors]
-   [app.main.sentry :as sentry]
    [app.main.store :as st]
    [app.main.ui :as ui]
    [app.main.ui.alert]
@@ -75,7 +74,6 @@
 (defn ^:export init
   []
   (worker/init!)
-  (sentry/init!)
   (i18n/init! cf/translations)
   (theme/init! cf/themes)
   (init-ui)

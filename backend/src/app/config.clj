@@ -198,11 +198,6 @@
 (s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::tenant ::us/string)
 
-(s/def ::sentry-trace-sample-rate ::us/number)
-(s/def ::sentry-attach-stack-trace ::us/boolean)
-(s/def ::sentry-debug ::us/boolean)
-(s/def ::sentry-dsn ::us/string)
-
 (s/def ::config
   (s/keys :opt-un [::secret-key
                    ::flags
@@ -283,10 +278,6 @@
                    ::semaphore-auth
 
                    ::rpc-rlimit-config
-                   ::sentry-dsn
-                   ::sentry-debug
-                   ::sentry-attach-stack-trace
-                   ::sentry-trace-sample-rate
                    ::smtp-default-from
                    ::smtp-default-reply-to
                    ::smtp-host
