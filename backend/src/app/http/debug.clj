@@ -213,7 +213,7 @@
 
           (render-template [report]
             (let [context (dissoc report
-                                  :trace :cause :params :data :spec-problems
+                                  :trace :cause :params :data :spec-problems :message
                                   :spec-explain :spec-value :error :explain :hint)
                   params  {:context       (pp/pprint-str context :width 200)
                            :hint          (:hint report)
