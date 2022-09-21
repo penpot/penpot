@@ -4,6 +4,7 @@
 
 ### :bug: Bugs fixed
 
+- Remove gitter information from feedback page [Taiga #4157](https://tree.taiga.io/project/penpot/issue/4157)
 - Fix overlay remains open on frame change [Taiga #4066](https://tree.taiga.io/project/penpot/issue/4066)
 - Fix toggle overlay position [Taiga #4091](https://tree.taiga.io/project/penpot/issue/4091)
 - Fix overlay closed on clicked outside [Taiga #4027](https://tree.taiga.io/project/penpot/issue/4027)
