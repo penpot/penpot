@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-22 21:21+0000\n"
-"Last-Translator: Jacopo Lodovico Trabia <jacopo.trabia@gmail.com>\n"
+"Last-Translator: Valentina Chapellu <valentina.chapellu@gmail.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -77,11 +77,11 @@ msgstr "Google"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
-msgstr "Accedi con LDAP"
+msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "Connettersi via OpenID (SSO)"
+msgstr "OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -1763,3 +1763,46 @@ msgid "modals.delete-font-variant.message"
 msgstr ""
 "Eliminare questo stile del carattere? Se è usato in un file, non verrà "
 "caricato."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.google-auth-not-enabled"
+msgstr "Autenticazione con Google disabilitata nel backend"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Attenzione"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Impara le basi di Penpot divertendoti con questo tutorial pratico."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutorial pratico"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Esplora Penpot e scopri le sue principali funzionalità."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Spiegazione dell'interfaccia passo per passo"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Librerie e template"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Esplorane di più e scopri come contribuire"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr ""
+"Si è verificato un problema nell'importazione del template. Il template non "
+"è stato importato."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Spubblicare la libreria"
