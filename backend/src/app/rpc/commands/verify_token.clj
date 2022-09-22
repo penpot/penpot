@@ -10,14 +10,13 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.loggers.audit :as audit]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.tokens :as tokens]
-   [app.rpc.doc :as-alias doc]
    [app.tokens.spec.team-invitation :as-alias spec.team-invitation]
    [app.util.services :as sv]
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]))
+   [clojure.spec.alpha :as s]))
 
 (s/def ::iss keyword?)
 (s/def ::exp ::us/inst)

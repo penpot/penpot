@@ -7,9 +7,9 @@
 (ns app.rpc.mutations.verify-token
   (:require
    [app.db :as db]
-   [app.tokens :as tokens]
-   [app.rpc.doc :as-alias doc]
    [app.rpc.commands.verify-token :refer [process-token]]
+   [app.rpc.doc :as-alias doc]
+   [app.tokens :as tokens]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
