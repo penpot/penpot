@@ -14,7 +14,7 @@ export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-audit-log enabl
 # export PENPOT_DATABASE_PASSWORD="penpot_pre"
 
 # export PENPOT_LOGGERS_LOKI_URI="http://172.17.0.1:3100/loki/api/v1/push"
-# export PENPOT_AUDIT_LOG_ARCHIVE_URI="http://localhost:6070/api/audit"
+export PENPOT_AUDIT_LOG_ARCHIVE_URI="http://localhost:6070/api/audit"
 
 export PENPOT_DEFAULT_RATE_LIMIT="default,window,10000/h"
 

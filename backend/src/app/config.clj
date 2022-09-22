@@ -74,7 +74,7 @@
    :profile-bounce-max-age (dt/duration {:days 7})
    :profile-bounce-threshold 10
 
-   :telemetry-uri "https://telemetry.penpot.app/"
+   :telemetry-uri "http://localhost:6070/api/telemetry"
 
    :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
