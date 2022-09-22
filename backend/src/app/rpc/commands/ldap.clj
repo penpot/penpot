@@ -46,6 +46,11 @@
                 :code :wrong-credentials))
 
     (let [profile (login-or-register cfg info)]
+
+      (when (:is-blocked profile)
+        (ex/raise :type :restriction
+                  :code :profile-blocked))
+
       (if-let [token (:invitation-token params)]
         ;; If invitation token comes in params, this is because the
         ;; user comes from team-invitation process; in this case,

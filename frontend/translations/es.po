@@ -4766,3 +4766,6 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "errors.profile-blocked"
+msgstr "El perfil esta blockeado"

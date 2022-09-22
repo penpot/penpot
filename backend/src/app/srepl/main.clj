@@ -64,7 +64,7 @@
 
 (defn update-profile
   "Update a limited set of profile attrs."
-  [system & {:keys [email id active? deleted?]}]
+  [system & {:keys [email id active? deleted? blocked?]}]
 
   (us/verify!
    :expr (some? system)
@@ -74,15 +74,30 @@
    :expr (or (string? email) (uuid? id))
    :hint "email or id should be provided")
 
-  (let [pool   (:app.db/pool system)
-        params (cond-> {}
+  (let [params (cond-> {}
                  (true? active?) (assoc :is-active true)
                  (false? active?) (assoc :is-active false)
-                 (true? deleted?) (assoc :deleted-at (dt/now)))
+                 (true? deleted?) (assoc :deleted-at (dt/now))
+                 (true? blocked?) (assoc :is-blocked true)
+                 (false? blocked?) (assoc :is-blocked false))
         opts   (cond-> {}
                  (some? email) (assoc :email (str/lower email))
                  (some? id)    (assoc :id id))]
 
-    (some-> (db/update! pool :profile params opts)
-            (profile/decode-profile-row))))
+    (db/with-atomic [conn (:app.db/pool system)]
+      (some-> (db/update! conn :profile params opts)
+              (profile/decode-profile-row)))))
 
+(defn mark-profile-as-blocked!
+  "Mark the profile blocked and removes all the http sessiones
+  associated with the profile-id."
+  [system email]
+  (db/with-atomic [conn (:app.db/pool system)]
+    (when-let [profile (db/get-by-params conn :profile
+                                         {:email (str/lower email)}
+                                         {:columns [:id :email]
+                                          :check-not-found false})]
+      (when-not (:is-blocked profile)
+        (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
+        (db/delete! conn :http-session {:profile-id (:id profile)})
+        :blocked))))

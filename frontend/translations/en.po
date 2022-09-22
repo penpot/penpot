@@ -4559,3 +4559,6 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "errors.profile-blocked"
+msgstr "The profile is blocked"

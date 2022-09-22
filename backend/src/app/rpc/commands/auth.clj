@@ -97,15 +97,19 @@
             (:valid (verify-password password (:password profile))))
 
           (validate-profile [profile]
-            (when-not (:is-active profile)
-              (ex/raise :type :validation
-                        :code :wrong-credentials))
             (when-not profile
               (ex/raise :type :validation
                         :code :wrong-credentials))
+            (when-not (:is-active profile)
+              (ex/raise :type :validation
+                        :code :wrong-credentials))
+            (when (:is-blocked profile)
+              (ex/raise :type :restriction
+                        :code :profile-blocked))
             (when-not (check-password profile password)
               (ex/raise :type :validation
                         :code :wrong-credentials))
+
             profile)]
 
     (db/with-atomic [conn pool]
@@ -231,15 +235,19 @@
   (validate-register-attempt! cfg params)
 
   (let [profile (when-let [profile (profile/retrieve-profile-data-by-email pool (:email params))]
-                  (if (:is-active profile)
+                  (cond
+                    (:is-blocked profile)
+                    (ex/raise :type :restriction
+                              :code :profile-blocked)
+
+                    (and (not (:is-active profile))
+                         (elapsed-register-retry-threshold? profile))
+                    profile
+
+                    :else
                     (ex/raise :type :validation
                               :code :email-already-exists
-                              :hint "profile already exists and correctly validated")
-                    (if (elapsed-register-retry-threshold? profile)
-                      profile
-                      (ex/raise :type :validation
-                                :code :email-already-exists
-                                :hint "profile already exists"))))
+                              :hint "profile already exists")))
 
         params  {:email (:email params)
                  :password (:password params)
