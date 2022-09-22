@@ -182,7 +182,7 @@ msgstr "Todo usario de Penpot"
 
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"¿Estas seguro que quieres eliminar el enlace? Si lo haces, el enlace dejara "
+"¿Estás seguro que quieres eliminar el enlace? Si lo haces, el enlace dejara "
 "de funcionar para cualquiera"
 
 msgid "common.share-link.current-tag"
@@ -1754,7 +1754,7 @@ msgstr "Eliminando %s archivos"
 
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"Estas seguro de querer eliminar esta estilo de fuente? Dejara de cargar si "
+"¿Estás seguro de querer eliminar esta estilo de fuente? Dejara de cargar si "
 "es usada en algun fichero."
 
 msgid "modals.delete-font-variant.title"
@@ -2135,10 +2135,10 @@ msgid "onboarding.contrib.link"
 msgstr "proyecto en github"
 
 msgid "onboarding.contrib.title"
-msgstr "Contribuyes en Open Source?"
+msgstr "¿Contribuyes en Open Source?"
 
 msgid "onboarding.newsletter.accept"
-msgstr "Si, suscribirme"
+msgstr "Sí, suscribirme"
 
 msgid "onboarding.newsletter.acceptance-message"
 msgstr ""
