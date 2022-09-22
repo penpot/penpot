@@ -537,10 +537,12 @@
                   :file-id (:id file)
                   :object-id frame1-id
                   :components-v2 true}
-            {:keys [error result] :as out} (th/query! data)]
-        ;; (th/print-result! out)
-        (t/is (th/ex-of-type? error :validation))
-        (t/is (th/ex-of-code? error :spec-validation (th/ex-code error)))))
+            out  (th/query! data)]
+
+        (t/is (not (th/success? out)))
+        (let [{:keys [type code]} (-> out :error ex-data)]
+          (t/is (= :validation type))
+          (t/is (= :spec-validation code)))))
 
     (t/testing "RPC :file-data-for-thumbnail"
       ;; Insert a thumbnail data for the frame-id

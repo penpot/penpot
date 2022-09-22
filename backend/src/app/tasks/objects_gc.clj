@@ -69,8 +69,7 @@
 
 (defmethod delete-objects "team_font_variant"
   [{:keys [conn min-age storage table] :as cfg}]
-  (let [sql     (str/fmt sql:delete-objects
-                         {:table table :limit 50})
+  (let [sql     (str/fmt sql:delete-objects {:table table :limit 50})
         fonts   (db/exec! conn [sql min-age])
         storage (media/configure-assets-storage storage conn)]
     (doseq [{:keys [id] :as font} fonts]
@@ -85,10 +84,9 @@
 
 (defmethod delete-objects "team"
   [{:keys [conn min-age storage table] :as cfg}]
-  (let [sql     (str/fmt sql:delete-objects
-                         {:table table :limit 50})
+  (let [sql     (str/fmt sql:delete-objects {:table table :limit 50})
         teams   (db/exec! conn [sql min-age])
-        storage (assoc storage :conn conn)]
+        storage (media/configure-assets-storage storage conn)]
 
     (doseq [{:keys [id] :as team} teams]
       (l/debug :hint "permanently delete object" :table table :id id)
@@ -103,31 +101,16 @@
     where deleted_at is not null
       and deleted_at < now() - ?::interval
     order by deleted_at
-    limit %(limit)s
+    limit ?
     for update")
-
-(def sql:mark-owned-teams-deleted
-  "with owned as (
-    select tpr.team_id as id
-      from team_profile_rel as tpr
-     where tpr.is_owner is true
-       and tpr.profile_id = ?
-   )
-   update team set deleted_at = now() - ?::interval
-    where id in (select id from owned)")
 
 (defmethod delete-objects "profile"
   [{:keys [conn min-age storage table] :as cfg}]
-  (let [sql      (str/fmt sql:retrieve-deleted-profiles {:limit 50})
-        profiles (db/exec! conn [sql min-age])
-        storage  (assoc storage :conn conn)]
+  (let [profiles (db/exec! conn [sql:retrieve-deleted-profiles min-age 50])
+        storage  (media/configure-assets-storage storage conn)]
 
     (doseq [{:keys [id] :as profile} profiles]
       (l/debug :hint "permanently delete object" :table table :id id)
-
-      ;; Mark the owned teams as deleted; this enables them to be processed
-      ;; in the same transaction in the "team" table step.
-      (db/exec-one! conn [sql:mark-owned-teams-deleted id min-age])
 
       ;; Mark as deleted the storage object related with the photo-id
       ;; field.
@@ -164,22 +147,23 @@
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as cfg}]
   (fn [params]
-    ;; Checking first on task argument allows properly testing it.
-    (let [min-age (or (:min-age params) (:min-age cfg))]
-      (db/with-atomic [conn pool]
-        (let [cfg (-> cfg
-                      (assoc :min-age (db/interval min-age))
-                      (assoc :conn conn))]
-          (loop [tables (seq target-tables)
-                 total  0]
-            (if-let [table (first tables)]
-              (recur (rest tables)
-                     (+ total (process-table (assoc cfg :table table))))
-              (do
-                (l/info :hint "task finished" :min-age (dt/format-duration min-age) :total total)
+    (db/with-atomic [conn pool]
+      (let [min-age (or (:min-age params) (:min-age cfg))
+            cfg     (-> cfg
+                        (assoc :min-age (db/interval min-age))
+                        (assoc :conn conn))]
+        (loop [tables (seq target-tables)
+               total  0]
+          (if-let [table (first tables)]
+            (recur (rest tables)
+                   (+ total (process-table (assoc cfg :table table))))
+            (do
+              (l/info :hint "objects gc finished succesfully"
+                      :min-age (dt/format-duration min-age)
+                      :total total)
 
-                (when (:rollback? params)
-                  (db/rollback! conn))
+              (when (:rollback? params)
+                (db/rollback! conn))
 
-                {:processed total}))))))))
+              {:processed total})))))))
 

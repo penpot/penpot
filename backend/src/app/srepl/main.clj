@@ -62,7 +62,7 @@
     (cmd.auth/send-email-verification! pool sprops profile)
     :email-sent))
 
-(defn update-profile
+(defn update-profile!
   "Update a limited set of profile attrs."
   [system & {:keys [email id active? deleted? blocked?]}]
 
