@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-22 21:21+0000\n"
+"PO-Revision-Date: 2022-09-23 11:06+0000\n"
 "Last-Translator: Vik <xasertop@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
@@ -3102,3 +3102,34 @@ msgstr "Скопировать"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.create-component"
 msgstr "Создать компонент"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "Удалить участника"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-member-confirm.accept"
+msgstr "Отправить приглашение"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.title"
+msgstr "Удалить участника команды"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.message"
+msgstr "Вы уверены, что хотите удалить этого участника из команды?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "Пригласить участников в команду"
+
+msgid "modals.invite-member.emails"
+msgstr "Эл. почты, разделённые запятой"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Вы уверены, что хотите покинуть команду %s?"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.cut"
+msgstr "Вырезать"
