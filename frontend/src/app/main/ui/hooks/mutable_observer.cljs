@@ -27,7 +27,7 @@
                       (remove #(= "transform" (.-attributeName ^js %))))]
              (when (d/not-empty? mutations)
                (on-change (mf/ref-val node-ref))))))
-        
+
         set-node
         (mf/use-callback
          (mf/deps on-mutation)
