@@ -17,6 +17,7 @@
 - Fix change opacity in colorpicker cause bugged color [Taiga #4154](https://tree.taiga.io/project/penpot/issue/4154)
 - Fix gradient colors don't arrive in recent colors palette (https://tree.taiga.io/project/penpot/issue/4155)
 - Fix selected colors allow gradients in shadows [Taiga #4156](https://tree.taiga.io/project/penpot/issue/4156)
+- Fix import files with unexpected format or invalid content [Taiga #4136](https://tree.taiga.io/project/penpot/issue/4136)
 
 ## 1.15.3-beta
 
