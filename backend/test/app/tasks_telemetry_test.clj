@@ -22,7 +22,7 @@
                      :return nil}]
     (let [task-fn (-> th/*system* :app.worker/registry :telemetry)
           prof    (th/create-profile* 1 {:is-active true
-                                         :props {:newsletter-subscribed true}})]
+                                         :props {:newsletter-news true}})]
 
       ;; run the task
       (task-fn {:send? true :enabled? true})
@@ -30,7 +30,7 @@
       (t/is (:called? @mock))
       (let [[_ data] (-> @mock :call-args)]
         (t/is (contains? data :subscriptions))
-        (t/is (= [(:email prof)] (get data :subscriptions)))
+        (t/is (= [(:email prof)] (get-in data [:subscriptions :newsletter-news])))
         (t/is (contains? data :total-fonts))
         (t/is (contains? data :total-users))
         (t/is (contains? data :total-projects))

@@ -42,13 +42,7 @@
 (mf/defc profile-form
   []
   (let [profile (mf/deref refs/profile)
-        initial (mf/with-memo [profile]
-                  (let [subscribed? (-> profile
-                                        :props
-                                        :newsletter-subscribed
-                                        boolean)]
-                    (assoc profile :newsletter-subscribed subscribed?)))
-        form    (fm/use-form :spec ::profile-form :initial initial)]
+        form    (fm/use-form :spec ::profile-form :initial profile)]
 
     [:& fm/form {:on-submit on-submit
                  :form form
@@ -71,17 +65,6 @@
        [:div.change-email
         [:a {:on-click #(modal/show! :change-email {})}
          (tr "dashboard.change-email")]]]]
-
-     (when (contains? @cf/flags :newsletter-subscription)
-       [:div.newsletter-subs
-        [:p.newsletter-title (tr "dashboard.newsletter-title")]
-        [:& fm/input {:name :newsletter-subscribed
-                      :class "check-primary"
-                      :type "checkbox"
-                      :label  (tr "dashboard.newsletter-msg")}]
-        [:p.info (tr "onboarding.newsletter.privacy1")
-         [:a {:target "_blank" :href "https://penpot.app/privacy.html"} (tr "onboarding.newsletter.policy")]]
-        [:p.info (tr "onboarding.newsletter.privacy2")]])
 
      [:& fm/submit-button
       {:label (tr "dashboard.save-settings")
