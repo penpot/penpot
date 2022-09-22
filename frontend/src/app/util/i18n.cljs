@@ -39,7 +39,7 @@
    {:label "عربي/عربى (community)" :value "ar"}
    {:label "فارسی (community)" :value "fa"}
    {:label "简体中文 (community)" :value "zh_cn"}
-   {:label "中国传统的 (community)" :value "zh_hant"}])
+   {:label "繁體中文 (community)" :value "zh_hant"}])
 
 (defn- parse-locale
   [locale]
