@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-23 20:54+0000\n"
-"Last-Translator: Hugo Figueira <hugo.figueira7@gmail.com>\n"
+"Last-Translator: Jaziel Cavalcante <jazielsilvaaa@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -4384,3 +4384,215 @@ msgstr "Desenhar ponto (%s)"
 
 msgid "workspace.path.actions.merge-nodes"
 msgstr "Mesclar pontos (%s)"
+
+msgid "workspace.options.width"
+msgstr "Largura"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.selection-stroke"
+msgstr "Selecionar traçado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.underline"
+msgstr "Sublinhado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "Quadrado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.strikethrough"
+msgstr "Tachado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title"
+msgstr "Texto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy
+msgid "workspace.options.layout.packed"
+msgstr "packed"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy
+msgid "workspace.options.layout.no-wrap"
+msgstr "sem wrap"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Direito"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "Padding simples"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "space between"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "space around"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "Mais cores"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy
+msgid "workspace.options.layout.wrap"
+msgstr "wrap"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Cor da sombra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "Mostrar nas exportações"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "Mostrar no modo de visualização"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Seta de linha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "Nenhum"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "Redondo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.lowercase"
+msgstr "Minúsculo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title-group"
+msgstr "Texto do grupo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title-selection"
+msgstr "Texto de seleção"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.none"
+msgstr "Nenhum"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.back"
+msgstr "Enviar para trás"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "Achatar"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Mostrar/ocultar UI"
+
+msgid "workspace.shape.menu.path"
+msgstr "Caminho"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Remover miniatura"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.paste"
+msgstr "Colar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "Tela"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.uppercase"
+msgstr "Maiúsculo"
+
+msgid "workspace.options.text-options.vertical-align"
+msgstr "Alinhamento vertical"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "Selecionar camada"
+
+msgid "workspace.shape.menu.union"
+msgstr "Unir"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Mais cores da biblioteca"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.reset-overrides"
+msgstr "Redefinir substituições"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke"
+msgstr "Traçado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.preset"
+msgstr "Predefinição"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.backward"
+msgstr "Enviar para trás"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Definir como miniatura"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Transformar em caminho"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Atualizar componentes principais"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "Marcador quadrado"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Seta triangular"
+
+msgid "workspace.options.stroke-color"
+msgstr "Cor do traçado"
+
+msgid "workspace.options.stroke-width"
+msgstr "Largura do traçado"
+
+msgid "workspace.options.y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-rtl"
+msgstr "Direita para a esquerda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.spread"
+msgstr "Espalhar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.use-play-button"
+msgstr ""
+"Use o botão play no cabeçalho para executar a visualização do protótipo."
+
+msgid "workspace.path.actions.make-curve"
+msgstr "Para curvar (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "Virar horizontalmente"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "Virar verticalmente"
