@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-23 14:27+0000\n"
+"PO-Revision-Date: 2022-09-23 20:54+0000\n"
 "Last-Translator: Dário <dariogomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
@@ -55,7 +55,7 @@ msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
-msgstr "OpenID"
+msgstr "OpenID Connect"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -1206,7 +1206,7 @@ msgstr "Adicionar como Biblioteca Partilhada"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"Uma vez adicionados como Biblioteca Partilhada, os ativos na biblioteca "
+"Uma vez adicionados como Biblioteca Partilhada, os recursos na biblioteca "
 "deste ficheiro estarão disponíveis com o resto dos teus ficheiros."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
@@ -1485,10 +1485,10 @@ msgstr "Cancelar publicação"
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
-"Se cancelares a publicação, os ativos nele tornam-se uma biblioteca deste "
+"Se cancelares a publicação, os recursos nele tornam-se uma biblioteca deste "
 "ficheiro."
 msgstr[1] ""
-"Se cancelares a publicação, os ativos nele tornam-se uma biblioteca destes "
+"Se cancelares a publicação, os recursos nele tornam-se uma biblioteca destes "
 "ficheiros."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
@@ -2087,7 +2087,7 @@ msgid "shortcuts.toggle-alignment"
 msgstr "Alternar alinhamento dinâmico"
 
 msgid "shortcuts.toggle-assets"
-msgstr "Alternar ativos"
+msgstr "Alternar recursos"
 
 msgid "shortcuts.toggle-colorpalette"
 msgstr "Alternar selector de cores"
@@ -2229,7 +2229,7 @@ msgid "viewer.header.fullscreen"
 msgstr "Tela Cheia"
 
 msgid "viewer.header.handoff-section"
-msgstr "Handoff (%s)"
+msgstr "Transferência (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
@@ -2292,11 +2292,11 @@ msgstr "Alinhar ao topo (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.assets"
-msgstr "Ativos"
+msgstr "Recursos"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.box-filter-all"
-msgstr "Todos os ativos"
+msgstr "Todos os recursos"
 
 msgid "workspace.assets.box-filter-graphics"
 msgstr "Gráficos"
@@ -2348,7 +2348,7 @@ msgstr "biblioteca local"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.not-found"
-msgstr "Ativos não encontrados"
+msgstr "Recursos não encontrados"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename-group"
@@ -2356,7 +2356,7 @@ msgstr "Renomear grupo"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.search"
-msgstr "Pesquisar ativos"
+msgstr "Pesquisar recursos"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.selected-count"
@@ -2394,7 +2394,7 @@ msgstr "Espaço entre letras"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.line-height"
-msgstr "Entrelinhamento"
+msgstr "Altura da Linha"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
@@ -2636,7 +2636,7 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Desativar escala de texto"
 
 msgid "dashboard.export.options.merge.title"
-msgstr "Incluir ativos da biblioteca partilhada em bibliotecas de ficheiros"
+msgstr "Incluir recursos da biblioteca partilhada em bibliotecas de ficheiros"
 
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "Tipo de letra eliminado"
@@ -2678,7 +2678,7 @@ msgstr "Mostrar interações"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.group"
-msgstr "Grupo"
+msgstr "Agrupar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/handoff/attributes/text.cljs, src/app/main/ui/handoff/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
@@ -3616,7 +3616,7 @@ msgstr "juntos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding"
-msgstr "Padding"
+msgstr "Distância interna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding-all"
@@ -3972,7 +3972,7 @@ msgid "workspace.undo.entry.multiple.circle"
 msgstr "círculos"
 
 msgid "workspace.undo.entry.multiple.color"
-msgstr "ativos de cor"
+msgstr "recursos de cor"
 
 msgid "workspace.undo.entry.multiple.group"
 msgstr "grupos"
@@ -4540,3 +4540,46 @@ msgstr "Comentários (%s)"
 
 msgid "workspace.sidebar.layers.components"
 msgstr "Componentes"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.move"
+msgstr "Mover (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.rect"
+msgstr "Rectângulo (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text"
+msgstr "Texto (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "Tipografias (%s)"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.dismiss"
+msgstr "Ignorar"
+
+msgid "workspace.viewport.click-to-close-path"
+msgstr "Clica para fechar o caminho"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Atalhos (%s)"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.update"
+msgstr "Atualizar"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.path"
+msgstr "Caminho (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.frame"
+msgstr "Prancheta (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.image"
+msgstr "Imagem (%s)"
