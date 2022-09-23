@@ -17,6 +17,11 @@
 - Fix change opacity in colorpicker cause bugged color [Taiga #4154](https://tree.taiga.io/project/penpot/issue/4154)
 - Fix gradient colors don't arrive in recent colors palette (https://tree.taiga.io/project/penpot/issue/4155)
 - Fix selected colors allow gradients in shadows [Taiga #4156](https://tree.taiga.io/project/penpot/issue/4156)
+- Fix import files with unexpected format or invalid content [Taiga #4136](https://tree.taiga.io/project/penpot/issue/4136)
+- Fix wrong shortcut button tip of "Delete" function [Taiga #4162](https://tree.taiga.io/project/penpot/issue/4162)
+- Fix error after user drags any layer in search functionality [Taiga #4161](https://tree.taiga.io/project/penpot/issue/4161)
+- Fix font search works only with lowercase letters [Taiga #4140](https://tree.taiga.io/project/penpot/issue/4140)
+- Fix Terms and Privacy links overlapping [Taiga #4137](https://tree.taiga.io/project/penpot/issue/4137)
 
 ## 1.15.3-beta
 

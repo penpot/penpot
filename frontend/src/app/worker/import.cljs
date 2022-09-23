@@ -19,6 +19,7 @@
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.util.http :as http]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.import.parser :as cip]
    [app.util.json :as json]
    [app.util.webapi :as wapi]
@@ -526,7 +527,8 @@
         sg (areduce u8 i ret "" (str ret (if (zero? i) "" " ") (.toString (aget u8 i) 8)))]
     (case sg
       "120 113 3 4" "application/zip"
-      "application/octet-stream")))
+      "1 13 32 206" "application/octet-stream"
+      "other")))
 
 (defmethod impl/handler :analyze-import
   [{:keys [files]}]
@@ -560,8 +562,15 @@
                                            :file-id file-id
                                            :files {file-id {:name (:name file)}}
                                            :status :ready}
-                                    :type "application/octet-stream"})))))
-                 (rx/catch #(rx/of {:uri (:uri file) :error (.-message %)}))))))))
+                                    :type "application/octet-stream"}))))
+                  (->> st
+                       (rx/filter (fn [data] (= "other" (:type data))))
+                       (rx/map (fn [_]
+                                 {:uri (:uri file)
+                                  :error (tr "dashboard.import.analyze-error")}))))
+                 (rx/catch (fn [data]
+                             (let [error (or (.-message data) (tr "dashboard.import.analyze-error"))]
+                               (rx/of {:uri (:uri file) :error error}))))))))))
 
 (defmethod impl/handler :import-files
   [{:keys [project-id files]}]

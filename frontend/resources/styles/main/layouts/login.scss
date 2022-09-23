@@ -11,6 +11,8 @@
   display: grid;
   grid-template-rows: auto;
   grid-template-columns: 33% auto;
+  height: 100vh;
+  overflow-y: scroll;
 }
 
 .auth-sidebar {
@@ -53,6 +55,7 @@
   height: 100vh;
   justify-content: center;
   position: relative;
+  min-height: 48rem;
 
   input {
     margin-bottom: 0px;
