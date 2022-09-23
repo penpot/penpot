@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-23 20:54+0000\n"
-"Last-Translator: Filipe Pessanha <filipeluizsilva@gmail.com>\n"
+"PO-Revision-Date: 2022-09-24 08:30+0000\n"
+"Last-Translator: Jaziel Cavalcante <jazielsilvaaa@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -13,7 +13,7 @@ msgstr ""
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
-msgstr "Já tem uma conta?"
+msgstr "Já possui uma conta?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
@@ -2441,7 +2441,7 @@ msgid "dasboard.team-hero.title"
 msgstr "Juntem-se!"
 
 msgid "dashboard.libraries-and-templates"
-msgstr "Biblioteca & Modelos"
+msgstr "Biblioteca e Modelos"
 
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Explore mais deles e saiba como contribuir"
@@ -4223,7 +4223,7 @@ msgstr "Recente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.circle-marker"
-msgstr ""
+msgstr "Marcador de círculo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.direction-ltr"
@@ -4414,9 +4414,8 @@ msgid "workspace.options.layout.packed"
 msgstr "packed"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-#, fuzzy
 msgid "workspace.options.layout.no-wrap"
-msgstr "sem wrap"
+msgstr "no wrap"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding"
@@ -4596,3 +4595,22 @@ msgstr "Virar horizontalmente"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Virar verticalmente"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.titlecase"
+msgstr "Title Case"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "Diamond marker"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.unknown"
+msgstr "Operação em %s"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Selecionar o board"
+
+msgid "workspace.undo.entry.single.typography"
+msgstr "recurso de tipografia"
