@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-22 21:21+0000\n"
-"Last-Translator: nautilusx <translate@disroot.org>\n"
+"PO-Revision-Date: 2022-09-23 20:54+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -2190,7 +2190,7 @@ msgid "shortcuts.artboard-selection"
 msgstr "Zeichenfläche aus Auswahl erstellen"
 
 msgid "shortcuts.bool-difference"
-msgstr "Subtrahieren (Booleschen Operation)"
+msgstr "Subtrahieren (Boolesche Operation)"
 
 msgid "shortcuts.bring-front"
 msgstr "In den Vordergrund"
@@ -4806,3 +4806,16 @@ msgstr ""
 
 msgid "shortcuts.v-distribute"
 msgstr "Vertikal verteilen"
+
+msgid "shortcuts.bool-union"
+msgstr "Vereinigung"
+
+msgid "shortcuts.bool-exclude"
+msgstr "Ausschluss"
+
+msgid "shortcuts.bool-intersection"
+msgstr "Schnittmenge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "Abstand zwischen"
