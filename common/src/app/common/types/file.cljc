@@ -223,6 +223,18 @@
                   [[asset instances]])))
             assets-seq)))
 
+(defn used-in?
+  "Checks if a specific asset is used in a given file (by any shape in its pages or in
+  the components of the local library)."
+  [file-data library-id asset asset-type]
+  (letfn [(used-in-shape? [shape]
+            (uses-asset? asset-type shape library-id asset))
+
+          (used-in-container? [container]
+            (some used-in-shape? (ctn/shapes-seq container)))]
+
+    (some used-in-container? (containers-seq file-data))))
+
 (defn get-or-add-library-page
   "If exists a page named 'Library backup', get the id and calculate the position to start
   adding new components. If not, create it and start at (0, 0)."

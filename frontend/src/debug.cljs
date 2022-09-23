@@ -158,6 +158,10 @@
   (logjs "state" @st/state)
   nil)
 
+(defn ^:export dump-data []
+  (logjs "workspace-data" (get @st/state :workspace-data))
+  nil)
+
 (defn ^:export dump-buffer []
   (logjs "last-events" @st/last-events)
   nil)
