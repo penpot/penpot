@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-23 20:54+0000\n"
-"Last-Translator: Dário <dariogomes@gmail.com>\n"
+"Last-Translator: Hugo Figueira <hugo.figueira7@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -3909,7 +3909,7 @@ msgid "workspace.shape.menu.paste"
 msgstr "Colar"
 
 msgid "workspace.shape.menu.path"
-msgstr "Caminho"
+msgstr "Curvas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
