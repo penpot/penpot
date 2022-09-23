@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-22 21:21+0000\n"
-"Last-Translator: Ruan Aragão <ruanaragao2@gmail.com>\n"
+"PO-Revision-Date: 2022-09-23 14:27+0000\n"
+"Last-Translator: Hugo Figueira <hugo.figueira7@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -2911,3 +2911,83 @@ msgstr "Gerenciamento de funções"
 
 msgid "onboarding.team-modal.create-team-feature-4"
 msgstr "Membros ilimitados"
+
+msgid "onboarding.welcome.title"
+msgstr "Bem-vindo ao Penpot"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Fundamentos"
+
+msgid "onboarding.templates.subtitle"
+msgstr "Aqui estão alguns templates."
+
+msgid "onboarding.templates.title"
+msgstr "Começar a desenhar"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Menu principal"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "Modificar camadas"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navegação"
+
+msgid "shortcut-subsection.shape"
+msgstr "Formas"
+
+msgid "shortcut-subsection.tools"
+msgstr "Ferramentas"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zoom"
+
+msgid "shortcut-section.workspace"
+msgstr "Espaço de trabalho"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Alinhamento"
+
+msgid "shortcut-subsection.edit"
+msgstr "Editar"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navegação"
+
+msgid "shortcut-subsection.panels"
+msgstr "Painéis"
+
+msgid "shortcuts.align-right"
+msgstr "Alinhar à direita"
+
+msgid "shortcuts.align-top"
+msgstr "Alinhar ao topo"
+
+msgid "shortcuts.align-vcenter"
+msgstr "Alinhar ao centro vertical"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Navegação"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100% gratuito!"
+
+msgid "shortcuts.add-comment"
+msgstr "Comentários"
+
+msgid "shortcuts.align-left"
+msgstr "Alinhar à esquerda"
+
+msgid "shortcuts.align-bottom"
+msgstr "Alinhar à base"
+
+msgid "shortcuts.add-node"
+msgstr "Adicionar nó"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
