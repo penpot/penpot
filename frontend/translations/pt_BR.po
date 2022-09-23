@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-23 20:54+0000\n"
-"Last-Translator: Jaziel Cavalcante <jazielsilvaaa@gmail.com>\n"
+"Last-Translator: Filipe Pessanha <filipeluizsilva@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -826,7 +826,7 @@ msgid "handoff.attributes.typography.text-transform.none"
 msgstr "Nenhum"
 
 msgid "handoff.attributes.typography.text-transform.titlecase"
-msgstr "Title Case"
+msgstr "Iniciais em maiúsculas"
 
 msgid "handoff.attributes.typography.text-transform.uppercase"
 msgstr "Maiúsculo"
@@ -2859,7 +2859,7 @@ msgstr ""
 "testar seus designs com usuários, tudo isso em um só lugar."
 
 msgid "onboarding.slide.0.alt"
-msgstr "Crie designs"
+msgstr "Criar designs"
 
 msgid "onboarding.slide.1.title"
 msgstr "Dê vida aos seus projetos com interações"
