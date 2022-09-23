@@ -93,9 +93,9 @@
           :opt-un [::spec.team-invitation/member-id]))
 
 (defn- accept-invitation
-  [{:keys [conn] :as cfg} {:keys [member-id team-id role member-email] :as claims}]
+  [{:keys [conn] :as cfg} {:keys [team-id role member-email] :as claims} member]
   (let [
-        member (profile/retrieve-profile conn member-id)
+        member-id (:id member)
         invitation (db/get-by-params conn :team-invitation
                                     {:team-id team-id :email-to (str/lower member-email)}
                                     {:check-not-found false})
@@ -103,8 +103,7 @@
         role (or (some-> invitation :role keyword) role)
         params (merge {:team-id team-id
                        :profile-id member-id}
-                      (teams/role->params role))
-        ]
+                      (teams/role->params role))]
 
     ;; Insert the invited member to the team
     (db/insert! conn :team-profile-rel params {:on-conflict-do-nothing true})
@@ -127,19 +126,23 @@
   (us/assert ::team-invitation-claims claims)
   (let [conn (:conn cfg)
         team-id (:team-id claims)
-        member-email (:member-email claims)
+        current-user-profile (when (uuid? profile-id) (profile/retrieve-profile conn profile-id))
+        current-user-email (str/lower (:email current-user-profile))
+        member-email (str/lower (:member-email claims))
         invitation (db/get-by-params conn :team-invitation
-                                     {:team-id team-id :email-to (str/lower member-email)}
+                                     {:team-id team-id :email-to member-email}
                                      {:check-not-found false})]
     (when (nil? invitation)
       (ex/raise :type :validation
-                :code :invalid-token)))
+                :code :invalid-token))
 
   (cond
-    ;; This happens when token is filled with member-id and current
-    ;; user is already logged in with exactly invited account.
-    (and (uuid? profile-id) (uuid? member-id) (= member-id profile-id))
-    (let [profile (accept-invitation cfg claims)]
+    ;; This happens when current user is already logged in with the invited account (email or member-id)
+    (and (uuid? profile-id)
+         (or (= member-id profile-id)
+             (and (= member-email (str/lower (:email-to invitation)))
+                  (= member-email current-user-email))))
+    (let [profile (accept-invitation cfg claims current-user-profile)]
       (with-meta
         (assoc claims :state :created)
         {::audit/name "accept-team-invitation"
@@ -164,7 +167,7 @@
     {:invitation-token token
      :iss :team-invitation
      :redirect-to :auth-login
-     :state :pending}))
+     :state :pending})))
 
 ;; --- Default
 
