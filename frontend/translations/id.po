@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-19 04:15+0000\n"
-"Last-Translator: liimee <alt3753.7@gmail.com>\n"
+"PO-Revision-Date: 2022-09-23 20:54+0000\n"
+"Last-Translator: Dário <dariogomes@gmail.com>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
 "Language: id\n"
@@ -311,7 +311,7 @@ msgstr ""
 "Apa yang ingin kamu lakukan dengan asetnya*?"
 
 msgid "dashboard.export.options.all.message"
-msgstr "berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor"
+msgstr "berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Ekspor pustaka bersama"
