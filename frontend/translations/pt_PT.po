@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-23 20:54+0000\n"
+"PO-Revision-Date: 2022-09-24 23:03+0000\n"
 "Last-Translator: Hugo Figueira <hugo.figueira7@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
@@ -3440,7 +3440,7 @@ msgstr "Ease"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing"
-msgstr "Easing"
+msgstr "Atenuação"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing-ease-in-out"
