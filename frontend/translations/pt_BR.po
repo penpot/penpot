@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-24 08:30+0000\n"
-"Last-Translator: Jaziel Cavalcante <jazielsilvaaa@gmail.com>\n"
+"Last-Translator: Hugo Figueira <hugo.figueira7@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -1169,7 +1169,7 @@ msgstr "Mostrar todos os comentários"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
-msgstr "Mostrar apenas os seus comentários"
+msgstr "Mostrar apenas seus comentários"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.sign-out"
@@ -3728,7 +3728,7 @@ msgid "shortcuts.separate-nodes"
 msgstr "Separar pontos"
 
 msgid "shortcuts.show-pixel-grid"
-msgstr "Mostrar/ocultar grelha de píxeis"
+msgstr "Mostrar/ocultar grade de pixeis"
 
 msgid "shortcut-subsection.general-dashboard"
 msgstr "Geral"
@@ -4306,7 +4306,7 @@ msgid "shortcuts.snap-nodes"
 msgstr "Ajustar ao ponto"
 
 msgid "shortcuts.snap-pixel-grid"
-msgstr "Ajustar à grelha"
+msgstr "Ajustar à grade"
 
 msgid "shortcuts.start-editing"
 msgstr "Começar a editar"
@@ -4327,7 +4327,7 @@ msgid "shortcuts.toggle-focus-mode"
 msgstr "Alternar modo de foco"
 
 msgid "shortcuts.toggle-grid"
-msgstr "Mostrar/ocultar grelha"
+msgstr "Mostrar/ocultar grade"
 
 msgid "shortcuts.toggle-alignment"
 msgstr "Alternar alinhamento dinâmico"
@@ -4409,9 +4409,8 @@ msgid "workspace.options.text-options.title"
 msgstr "Texto"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-#, fuzzy
 msgid "workspace.options.layout.packed"
-msgstr "packed"
+msgstr "embalado"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.no-wrap"
@@ -4442,9 +4441,8 @@ msgid "workspace.options.more-colors"
 msgstr "Mais cores"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-#, fuzzy
 msgid "workspace.options.layout.wrap"
-msgstr "wrap"
+msgstr "quebrado"
 
 msgid "workspace.options.shadow-options.color"
 msgstr "Cor da sombra"
@@ -4614,3 +4612,6 @@ msgstr "Selecionar o board"
 
 msgid "workspace.undo.entry.single.typography"
 msgstr "recurso de tipografia"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "Em cantos (%s)"
