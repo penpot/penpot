@@ -20,7 +20,7 @@
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def show-alt-login-buttons?
   (some (partial contains? @cf/flags)

@@ -15,7 +15,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [goog.object :as gobj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc context-menu
   {::mf/wrap-props false}

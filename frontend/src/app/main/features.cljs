@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [okulary.core :as l]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (log/set-level! :debug)
 

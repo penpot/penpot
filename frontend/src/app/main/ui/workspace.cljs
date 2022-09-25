@@ -33,7 +33,7 @@
    [app.util.object :as obj]
    [debug :refer [debug?]]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- Workspace
 

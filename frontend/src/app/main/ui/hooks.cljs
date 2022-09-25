@@ -20,7 +20,7 @@
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [goog.functions :as f]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn use-id
   "Get a stable id value across rerenders."

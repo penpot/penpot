@@ -13,7 +13,7 @@
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def scroll-x 10)
 (def scroll-y 10)

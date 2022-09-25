@@ -24,7 +24,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- Refs
 

@@ -17,7 +17,7 @@
    [app.util.strings :refer [matches-search]]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def workspace-file
   (l/derived :workspace-file st/state))

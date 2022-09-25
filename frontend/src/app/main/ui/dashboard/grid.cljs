@@ -28,7 +28,7 @@
    [app.util.time :as dt]
    [app.util.timers :as ts]
    [beicon.core :as rx]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (log/set-level! :warn)
 

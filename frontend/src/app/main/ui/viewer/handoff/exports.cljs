@@ -13,7 +13,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc exports
   {::mf/wrap [#(mf/memo % =)]}

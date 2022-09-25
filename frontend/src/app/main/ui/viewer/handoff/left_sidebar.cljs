@@ -15,7 +15,7 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn- make-collapsed-iref
   [id]

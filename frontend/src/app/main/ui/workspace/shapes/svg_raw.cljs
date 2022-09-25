@@ -10,7 +10,7 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.util.svg :as usvg]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn svg-raw-wrapper-factory
   [shape-wrapper]

@@ -22,7 +22,7 @@
    [app.util.time :as dt]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc resizing-textarea
   {::mf/wrap-props false}

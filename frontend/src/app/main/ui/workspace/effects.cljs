@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn use-pointer-enter
   [{:keys [id]}]

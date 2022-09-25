@@ -13,7 +13,7 @@
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc attribute-value [{:keys [attr value on-change on-delete] :as props}]
   (let [handle-change

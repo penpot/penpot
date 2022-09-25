@@ -9,7 +9,7 @@
   (:require
    [app.util.timers :as ts]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; Static cursors
 (def comments (cursor-ref :comments 0 2 20))

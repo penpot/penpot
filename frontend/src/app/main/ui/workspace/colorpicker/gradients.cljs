@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn- format-rgba
   [{:keys [r g b alpha offset]}]

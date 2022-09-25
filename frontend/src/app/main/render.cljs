@@ -45,7 +45,7 @@
    [beicon.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def ^:const viewbox-decimal-precision 3)
 (def ^:private default-color clr/canvas)

@@ -27,7 +27,7 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc header
   {::mf/wrap [mf/memo]}

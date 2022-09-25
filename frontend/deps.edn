@@ -10,8 +10,12 @@
   funcool/beicon {:mvn/version "2021.07.05-1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
   funcool/potok {:mvn/version "2022.04.28-67"}
-  funcool/rumext {:mvn/version "2022.04.19-148"}
   funcool/tubax {:mvn/version "2021.05.20-0"}
+
+  funcool/rumext
+  {:git/tag "v2.0"
+   :git/sha "fc617a8"
+   :git/url "https://github.com/funcool/rumext.git"}
 
   instaparse/instaparse {:mvn/version "1.4.12"}
   garden/garden {:git/url "https://github.com/noprompt/garden"

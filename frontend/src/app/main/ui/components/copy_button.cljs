@@ -10,7 +10,7 @@
    [app.util.timers :as timers]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc copy-button [{:keys [data on-copied]}]
   (let [just-copied (mf/use-state false)]

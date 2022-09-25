@@ -13,7 +13,7 @@
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
    [app.util.geom.grid :as gg]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc square-grid [{:keys [frame zoom grid] :as props}]
   (let [grid-id (mf/use-memo #(uuid/next))

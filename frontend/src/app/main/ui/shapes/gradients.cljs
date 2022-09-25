@@ -14,7 +14,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.export :as ed]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn add-metadata [props gradient]
   (-> props

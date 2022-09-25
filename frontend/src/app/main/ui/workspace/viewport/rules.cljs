@@ -14,7 +14,7 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as hooks]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def rules-pos 15)
 (def rules-size 4)

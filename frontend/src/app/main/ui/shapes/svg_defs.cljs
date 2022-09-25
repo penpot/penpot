@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.util.svg :as usvg]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn add-matrix [attrs transform-key transform-matrix]
   (update attrs

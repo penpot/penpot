@@ -9,7 +9,7 @@
   (:require-macros [app.util.perf])
   (:require
    [app.common.math :as mth]
-   [rumext.alpha :as mf]
+   [rumext.v2 :as mf]
    [goog.functions :as f]
    ["react" :as react]
    ["tdigest" :as td]))

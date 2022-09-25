@@ -16,7 +16,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as k]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (defn- on-keydown

@@ -19,7 +19,7 @@
    [app.util.router :as rt]
    [beicon.core :as rx]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn get-project-name
   [project]

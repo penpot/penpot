@@ -23,7 +23,7 @@
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn opacity->string
   [opacity]

@@ -25,7 +25,7 @@
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
-      [rumext.alpha :as mf]))
+      [rumext.v2 :as mf]))
 
 ;; Define how to read each kind of attribute depending on the shape type:
 ;;   - shape: read the attribute directly from the shape.

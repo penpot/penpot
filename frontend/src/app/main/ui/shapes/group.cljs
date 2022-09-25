@@ -10,7 +10,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.mask :refer [mask-url clip-url mask-factory]]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn group-shape
   [shape-wrapper]

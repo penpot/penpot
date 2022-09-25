@@ -15,7 +15,7 @@
    [app.util.i18n :refer [t] :as i18n]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def workspace-undo
   (l/derived :workspace-undo st/state))

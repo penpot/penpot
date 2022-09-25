@@ -13,7 +13,7 @@
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn create-color-wheel
   [canvas-node]

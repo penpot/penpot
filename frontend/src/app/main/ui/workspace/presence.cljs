@@ -8,7 +8,7 @@
   (:require
    [app.config :as cfg]
    [app.main.refs :as refs]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- SESSION WIDGET
 

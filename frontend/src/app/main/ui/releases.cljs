@@ -24,7 +24,7 @@
    [app.main.ui.releases.v1-9]
    [app.util.object :as obj]
    [app.util.timers :as tm]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;;; --- RELEASE NOTES MODAL
 

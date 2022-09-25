@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc render-text
   {::mf/wrap-props false}

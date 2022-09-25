@@ -9,7 +9,7 @@
    [app.common.math :as mth]
    [app.util.dom :as dom]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc slider-selector
   [{:keys [value class min-value max-value vertical? reverse? on-change on-start-drag on-finish-drag]}]

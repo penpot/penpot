@@ -16,7 +16,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc template-item
   [{:keys [name path image project-id]}]

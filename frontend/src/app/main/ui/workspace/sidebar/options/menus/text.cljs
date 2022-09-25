@@ -22,7 +22,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as tm]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def text-typography-attrs
   [:typography-ref-id

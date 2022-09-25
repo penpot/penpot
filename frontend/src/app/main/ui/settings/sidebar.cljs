@@ -17,7 +17,7 @@
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc sidebar-content
   [{:keys [profile section] :as props}]

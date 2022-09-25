@@ -17,7 +17,7 @@
    [app.util.router :as rt]
    [app.util.timers :as ts]
    [beicon.core :as rx]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defmulti handle-token (fn [token] (:iss token)))
 

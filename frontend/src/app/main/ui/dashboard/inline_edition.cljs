@@ -9,7 +9,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc inline-edition
   [{:keys [content on-end] :as props}]

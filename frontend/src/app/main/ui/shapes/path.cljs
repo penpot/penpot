@@ -11,7 +11,7 @@
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.util.object :as obj]
    [app.util.path.format :as upf]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc path-shape
   {::mf/wrap-props false}

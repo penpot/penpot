@@ -28,7 +28,7 @@
    [debug]
    [features]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (log/initialize!)
 (log/set-level! :root :warn)

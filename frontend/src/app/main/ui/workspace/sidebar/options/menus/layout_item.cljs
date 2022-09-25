@@ -14,7 +14,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def layout-item-attrs
   [:layout-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}

@@ -22,7 +22,7 @@
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc pixel-grid
   [{:keys [vbox zoom]}]

@@ -37,7 +37,7 @@
    [goog.events :as events]
    [okulary.core :as l]
    [potok.core :as ptk]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (defn ^boolean uuid-str?

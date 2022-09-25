@@ -9,7 +9,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc text-edition-outline
   [{:keys [shape zoom]}]

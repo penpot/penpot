@@ -18,7 +18,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (s/def ::email-1 ::us/email)
 (s/def ::email-2 ::us/email)

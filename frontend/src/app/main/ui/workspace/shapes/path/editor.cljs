@@ -22,7 +22,7 @@
    [app.util.path.format :as upf]
    [clojure.set :refer [map-invert]]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (def point-radius 5)

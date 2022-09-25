@@ -12,8 +12,8 @@
    [app.util.object :as obj]
    [app.util.path.format :as upf]
    [clojure.set :as set]
-   [rumext.alpha :as mf]
-   [rumext.util :refer [map->obj]]))
+   [rumext.v2 :as mf]
+   [rumext.v2.util :refer [map->obj]]))
 
 (mf/defc outline
   {::mf/wrap-props false}

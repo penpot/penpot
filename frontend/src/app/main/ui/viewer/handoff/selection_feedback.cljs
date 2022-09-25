@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.measurements :refer [size-display measurement]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; ------------------------------------------------
 ;; CONSTANTS

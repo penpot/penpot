@@ -19,7 +19,7 @@
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
    [app.util.color :as uc]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; This is a list of svg tags that can be grouped in shape-container
 ;; this allows them to have gradients, shadows and masks

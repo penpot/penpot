@@ -14,7 +14,7 @@
    [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc fills
   {::mf/wrap-props false}
