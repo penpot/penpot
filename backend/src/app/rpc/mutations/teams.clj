@@ -376,18 +376,17 @@
                   :code :profile-is-muted
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
 
-      (doseq [email emails]
-        (create-team-invitation
-         (assoc cfg
-                :email email
-                :conn conn
-                :team team
-                :profile profile
-                :role role))
-        )
-
-      (with-meta {}
-        {::audit/props {:invitations (count emails)}}))))
+      (let [invitations (->> emails
+                             (map (fn [email]
+                                    (assoc cfg
+                                           :email email
+                                           :conn conn
+                                           :team team
+                                           :profile profile
+                                           :role role)))
+                             (map create-team-invitation))]
+        (with-meta (vec invitations)
+          {::audit/props {:invitations (count invitations)}})))))
 
 (def sql:upsert-team-invitation
   "insert into team_invitation(team_id, email_to, role, valid_until)
@@ -449,10 +448,7 @@
         (when-not (:is-active member)
           (db/update! conn :profile
                       {:is-active true}
-                      {:id (:id member)}))
-
-        (assoc member :is-active true))
-
+                      {:id (:id member)})))
       (do
         (db/exec-one! conn [sql:upsert-team-invitation
                             (:id team) (str/lower email) (name role)
@@ -464,7 +460,9 @@
                     :invited-by (:fullname profile)
                     :team (:name team)
                     :token itoken
-                    :extra-data ptoken})))))
+                    :extra-data ptoken})))
+
+    itoken))
 
 ;; --- Mutation: Create Team & Invite Members
 

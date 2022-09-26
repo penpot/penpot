@@ -80,15 +80,18 @@
 ;; --- Team Invitation
 
 (defn- accept-invitation
-  [{:keys [conn] :as cfg} {:keys [member-id team-id role member-email] :as claims} invitation]
-  (let [member (profile/retrieve-profile conn member-id)
-
-        ;; Update the role if there is an invitation
+  [{:keys [conn] :as cfg} {:keys [team-id role member-email] :as claims} invitation member]
+  (let [;; Update the role if there is an invitation
         role   (or (some-> invitation :role keyword) role)
         params (merge
                 {:team-id team-id
-                 :profile-id member-id}
+                 :profile-id (:id member)}
                 (teams/role->params role))]
+
+    ;; Do not allow blocked users accept invitations.
+    (when (:is-blocked member)
+      (ex/raise :type :restriction
+                :code :profile-blocked))
 
     ;; Insert the invited member to the team
     (db/insert! conn :team-profile-rel params {:on-conflict-do-nothing true})
@@ -98,14 +101,13 @@
     (when-not (:is-active member)
       (db/update! conn :profile
                   {:is-active true}
-                  {:id member-id}))
+                  {:id (:id member)}))
 
     ;; Delete the invitation
     (db/delete! conn :team-invitation
                 {:team-id team-id :email-to member-email})
 
     (assoc member :is-active true)))
-
 
 (s/def ::spec.team-invitation/profile-id ::us/uuid)
 (s/def ::spec.team-invitation/role ::us/keyword)
@@ -122,23 +124,28 @@
           :opt-un [::spec.team-invitation/member-id]))
 
 (defmethod process-token :team-invitation
-  [{:keys [conn session] :as cfg} {:keys [profile-id token]} {:keys [member-id team-id member-email] :as claims}]
+  [{:keys [conn session] :as cfg} {:keys [profile-id token]}
+   {:keys [member-id team-id member-email] :as claims}]
+
   (us/assert ::team-invitation-claims claims)
 
-  (let [invitation (db/get-by-params conn :team-invitation
-                                     {:team-id team-id :email-to member-email}
-                                     {:check-not-found false})]
+  (let [invitation (db/get* conn :team-invitation
+                            {:team-id team-id :email-to member-email})
+        profile    (db/get* conn :profile
+                            {:id profile-id}
+                            {:columns [:id :email]})]
     (when (nil? invitation)
       (ex/raise :type :validation
                 :code :invalid-token
                 :hint "no invitation associated with the token"))
 
-    (cond
-      ;; This happens when token is filled with member-id and current
-      ;; user is already logged in with exactly invited account.
-      (and (uuid? profile-id) (uuid? member-id))
-      (if (= member-id profile-id)
-        (let [profile (accept-invitation cfg claims invitation)]
+    (if (some? profile)
+      (if (or (= member-id profile-id)
+              (= member-email (:email profile)))
+        ;; if we have logged-in user and it matches the invitation we
+        ;; proceed with accepting the invitation and joining the
+        ;; current profile to the invited team.
+        (let [profile (accept-invitation cfg claims invitation profile)]
           (with-meta
             (assoc claims :state :created)
             {::audit/name "accept-team-invitation"
@@ -146,40 +153,36 @@
                             (audit/profile->props profile)
                             {:team-id (:team-id claims)
                              :role (:role claims)})
-             ::audit/profile-id member-id}))
+             ::audit/profile-id profile-id}))
+
         (ex/raise :type :validation
                   :code :invalid-token
                   :hint "logged-in user does not matches the invitation"))
 
-      ;; This happens when an unlogged user, uses an invitation link.
-      (and (not profile-id) (uuid? member-id))
-      (let [profile (accept-invitation cfg claims invitation)]
-        (with-meta
-          (assoc claims :state :created)
-          {:transform-response ((:create session) (:id profile))
-           ::audit/name "accept-team-invitation"
-           ::audit/props (merge
-                          (audit/profile->props profile)
-                          {:team-id (:team-id claims)
-                           :role (:role claims)})
-           ::audit/profile-id member-id}))
+      ;; If we have not logged-in user, we try find the invited
+      ;; profile by member-id or member-email props of the invitation
+      ;; token; If profile is found, we accept the invitation and
+      ;; leave the user logged-in.
+      (if-let [member (db/get* conn :profile
+                               (if member-id
+                                 {:id member-id}
+                                 {:email member-email})
+                               {:columns [:id :email]})]
+        (let [profile (accept-invitation cfg claims invitation member)]
+          (with-meta
+            (assoc claims :state :created)
+            {:transform-response ((:create session) (:id profile))
+             ::audit/name "accept-team-invitation"
+             ::audit/props (merge
+                            (audit/profile->props profile)
+                            {:team-id (:team-id claims)
+                             :role (:role claims)})
+             ::audit/profile-id member-id}))
 
-      ;; This case means that invitation token does not match with
-      ;; registred user, so we need to indicate to frontend to redirect
-      ;; it to register page.
-      (and (not profile-id) (nil? member-id))
-      {:invitation-token token
-       :iss :team-invitation
-       :redirect-to :auth-register
-       :state :pending}
-
-      ;; In all other cases, just tell to fontend to redirect the user
-      ;; to the login page.
-      :else
-      {:invitation-token token
-       :iss :team-invitation
-       :redirect-to :auth-login
-       :state :pending})))
+        {:invitation-token token
+         :iss :team-invitation
+         :redirect-to :auth-register
+         :state :pending}))))
 
 ;; --- Default
 
