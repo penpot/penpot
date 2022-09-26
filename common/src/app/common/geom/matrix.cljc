@@ -14,7 +14,7 @@
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
-(def precision 3)
+(def precision 6)
 
 ;; --- Matrix Impl
 

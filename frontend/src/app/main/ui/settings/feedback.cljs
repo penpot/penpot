@@ -96,14 +96,6 @@
       {:href "https://twitter.com/PenpotSupport" :target "_blank"}
       (tr "feedback.twitter-go-to")]
 
-     [:hr]
-
-     [:h2 "Gitter"]
-     [:p (tr "feedback.chat-subtitle")]
-     [:a.btn-secondary.btn-large
-      {:href "https://gitter.im/penpot/community" :target "_blank"}
-      (tr "feedback.chat-start")]
-
      ]))
 
 (mf/defc feedback-page

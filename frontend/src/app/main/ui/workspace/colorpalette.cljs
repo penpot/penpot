@@ -37,17 +37,17 @@
 (mf/defc palette
   [{:keys [current-colors recent-colors file-colors shared-libs selected on-select]}]
   (let [;; We had to do this due to a bug that leave some bugged colors
-        current-colors (filter #(or (:gradient %) (:color %)) current-colors)
-        state      (mf/use-state {:show-menu false})
+        current-colors (h/use-equal-memo (filter #(or (:gradient %) (:color %)) current-colors))
+        state          (mf/use-state {:show-menu false})
 
-        width      (:width @state 0)
-        visible    (/ width 66)
+        width          (:width @state 0)
+        visible        (/ width 66)
 
-        offset     (:offset @state 0)
-        max-offset (- (count current-colors)
-                      visible)
+        offset         (:offset @state 0)
+        max-offset     (- (count current-colors)
+                          visible)
 
-        container  (mf/use-ref nil)
+        container      (mf/use-ref nil)
 
         {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
         (use-resize-hook :palette 72 54 80 :y true :bottom)
@@ -139,7 +139,7 @@
                             (tr "workspace.libraries.colors.file-library")
                             (str/ffmt " (%)" (count file-colors)))]
         [:div.color-sample
-         (for [[i color] (map-indexed vector (take 7 (vals file-colors))) ]
+         (for [[i color] (map-indexed vector (take 7 (vals file-colors)))]
            [:& cb/color-bullet {:key (dm/str "color-" i)
                                 :color color}])]]
 
@@ -150,7 +150,7 @@
         [:div.library-name (str (tr "workspace.libraries.colors.recent-colors")
                                 (str/format " (%s)" (count recent-colors)))]
         [:div.color-sample
-         (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors))) ]
+         (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors)))]
            [:& cb/color-bullet {:key (str "color-" idx)
                                 :color color}])]]]]
 
@@ -185,13 +185,11 @@
         on-select     (mf/use-fn #(reset! selected %))]
 
     (mf/with-effect [@selected]
-      (fn []
-        (reset! colors
-                (into []
-                      (cond
-                        (= @selected :recent) (reverse recent-colors)
-                        (= @selected :file)   (->> (vals file-colors) (sort-by :name))
-                        :else                 (->> (library->colors shared-libs @selected) (sort-by :name)))))))
+      (let [colors' (cond
+                     (= @selected :recent) (reverse recent-colors)
+                     (= @selected :file)   (->> (vals file-colors) (sort-by :name))
+                     :else                 (->> (library->colors shared-libs @selected) (sort-by :name)))]
+        (reset! colors (into [] colors'))))
 
     (mf/with-effect [recent-colors @selected]
       (when (= @selected :recent)

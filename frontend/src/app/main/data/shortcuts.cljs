@@ -93,7 +93,7 @@
   []
   (if (cf/check-platform? :macos)
     mac-delete
-    "Supr"))
+    "Del"))
 
 (defn esc
   []
