@@ -23,6 +23,7 @@
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
    [app.util.blob :as blob]
+   [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
@@ -278,8 +279,10 @@
 (defmacro try-on!
   [expr]
   `(try
-     {:error nil
-      :result (deref ~expr)}
+     (let [result# (deref ~expr)
+           result# (cond-> result# (sv/wrapped? result#) deref)]
+       {:error nil
+        :result result#})
      (catch Exception e#
        {:error (handle-error e#)
         :result nil})))

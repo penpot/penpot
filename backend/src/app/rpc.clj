@@ -31,9 +31,10 @@
 
 (defn- handle-response-transformation
   [response request mdata]
-  (if-let [transform-fn (:transform-response mdata)]
-    (p/do (transform-fn request response))
-    (p/resolved response)))
+  (let [response (if (sv/wrapped? response) @response response)]
+    (if-let [transform-fn (:transform-response mdata)]
+      (p/do (transform-fn request response))
+      (p/resolved response))))
 
 (defn- handle-before-comple-hook
   [response mdata]
