@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.colorpicker.libraries
   (:require
    [app.common.data.macros :as dm]
-   [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.colors :as mdc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
@@ -19,12 +19,13 @@
 
 (mf/defc libraries
   [{:keys [on-select-color on-add-library-color disable-gradient disable-opacity]}]
-  (let [selected         (h/use-shared-state dc/colorpicker-selected-broadcast-key :recent)
+  (let [selected         (h/use-shared-state mdc/colorpicker-selected-broadcast-key :recent)
         current-colors   (mf/use-state [])
 
         shared-libs      (mf/deref refs/workspace-libraries)
         file-colors      (mf/deref refs/workspace-file-colors)
         recent-colors    (mf/deref refs/workspace-recent-colors)
+        recent-colors    (h/use-equal-memo  (filter #(or (:gradient %) (:color %)) recent-colors))
 
         on-library-change
         (mf/use-fn
@@ -80,7 +81,7 @@
          i/plus])
 
       [:div.color-bullet.button {:style {:background-color "var(--color-white)"}
-                                 :on-click #(st/emit! (dc/show-palette @selected))}
+                                 :on-click #(st/emit! (mdc/show-palette @selected))}
        i/palette]
 
       (for [[idx color] (map-indexed vector @current-colors)]

@@ -26,7 +26,6 @@
                             (st/emit! (ptk/event ::ev/event {::ev/name "arengu-form-load-success"
                                                              ::ev/origin "onboarding-questions"
                                                              ::ev/type "fact"}))
-
                             (resolve)))
                   (p/catch reject))))
 
@@ -54,9 +53,7 @@
             (st/emit! (ptk/event ::ev/event {::ev/name "arengu-form-load-error"
                                              ::ev/origin "onboarding-questions"
                                              ::ev/type "fact"}))
-            (mark-as-answered))
-
-          ]
+            (mark-as-answered))]
 
     (let [cleaners (atom #{})]
       (-> (p/create (partial initialize cleaners))

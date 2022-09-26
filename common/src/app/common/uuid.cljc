@@ -11,8 +11,9 @@
    #?(:cljs [app.common.uuid-impl :as impl])
    #?(:cljs [cljs.core :as c]))
   #?(:clj (:import
+           app.common.UUIDv8
            java.util.UUID
-           app.common.UUIDv8)))
+           java.nio.ByteBuffer)))
 
 (def zero #uuid "00000000-0000-0000-0000-000000000000")
 
@@ -50,3 +51,11 @@
    (defn get-word-low
      [id]
      (.getLeastSignificantBits ^UUID id)))
+
+#?(:clj
+   (defn get-bytes
+     [^UUID o]
+     (let [buf (ByteBuffer/allocate 16)]
+       (.putLong buf (.getMostSignificantBits o))
+       (.putLong buf (.getLeastSignificantBits o))
+       (.array buf))))

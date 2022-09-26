@@ -86,7 +86,7 @@
        (when (seq (:touched shape)) " *")])))
 
 (mf/defc layer-item
-  [{:keys [index item selected objects] :as props}]
+  [{:keys [index item selected objects sortable?] :as props}]
   (let [id         (:id item)
         blocked?   (:blocked item)
         hidden?    (:hidden item)
@@ -199,16 +199,17 @@
            (when-not expanded?
              (st/emit! (dwc/toggle-collapse id)))))
 
-        [dprops dref] (hooks/use-sortable
-                       :data-type "penpot/layer"
-                       :on-drop on-drop
-                       :on-drag on-drag
-                       :on-hold on-hold
-                       :disabled @disable-drag
-                       :detect-center? container?
-                       :data {:id (:id item)
-                              :index index
-                              :name (:name item)})
+        [dprops dref] (when sortable?
+                        (hooks/use-sortable
+                         :data-type "penpot/layer"
+                         :on-drop on-drop
+                         :on-drag on-drag
+                         :on-hold on-hold
+                         :disabled @disable-drag
+                         :detect-center? container?
+                         :data {:id (:id item)
+                                :index index
+                                :name (:name item)}))
 
         ref         (mf/use-ref)]
 
@@ -309,13 +310,15 @@
               :selected selected
               :index index
               :objects objects
-              :key id}]
+              :key id
+              :sortable? true}]
             [:& layer-item
              {:item obj
               :selected selected
               :index index
               :objects objects
-              :key id}])))]]))
+              :key id
+              :sortable? true}])))]]))
 
 (mf/defc filters-tree
   {::mf/wrap [#(mf/memo % =)
@@ -332,7 +335,8 @@
            :selected selected
            :index index
            :objects objects
-           :key id}]))]))
+           :key id
+           :sortable? false}]))]))
 
 
 (defn calc-reparented-objects

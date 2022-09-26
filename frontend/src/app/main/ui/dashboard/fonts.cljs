@@ -292,7 +292,7 @@
         (mf/use-callback
          (fn [event]
            (let [val (dom/get-target-val event)]
-             (reset! sterm val))))]
+             (reset! sterm (str/lower val)))))]
 
     [:div.dashboard-installed-fonts
      [:h3 (tr "labels.installed-fonts")]

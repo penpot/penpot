@@ -50,6 +50,7 @@
 
 ### :bug: Bugs fixed
 
+- Remove gitter information from feedback page [Taiga #4157](https://tree.taiga.io/project/penpot/issue/4157)
 - Fix overlay remains open on frame change [Taiga #4066](https://tree.taiga.io/project/penpot/issue/4066)
 - Fix toggle overlay position [Taiga #4091](https://tree.taiga.io/project/penpot/issue/4091)
 - Fix overlay closed on clicked outside [Taiga #4027](https://tree.taiga.io/project/penpot/issue/4027)
@@ -57,6 +58,16 @@
 - Fix problem with snap to grids [#2221](https://github.com/penpot/penpot/issues/2221)
 - Fix issue when scaling to value 0 [#2252](https://github.com/penpot/penpot/issues/2252)
 - Fix problem when moving shapes inside nested frames [Taiga #4113](https://tree.taiga.io/project/penpot/issue/4113)
+- Fix color type icon does not change [Taiga #4133](https://tree.taiga.io/project/penpot/issue/4133)
+- Fix recent colors are not working [Taiga #4153](https://tree.taiga.io/project/penpot/issue/4153)
+- Fix change opacity in colorpicker cause bugged color [Taiga #4154](https://tree.taiga.io/project/penpot/issue/4154)
+- Fix gradient colors don't arrive in recent colors palette (https://tree.taiga.io/project/penpot/issue/4155)
+- Fix selected colors allow gradients in shadows [Taiga #4156](https://tree.taiga.io/project/penpot/issue/4156)
+- Fix import files with unexpected format or invalid content [Taiga #4136](https://tree.taiga.io/project/penpot/issue/4136)
+- Fix wrong shortcut button tip of "Delete" function [Taiga #4162](https://tree.taiga.io/project/penpot/issue/4162)
+- Fix error after user drags any layer in search functionality [Taiga #4161](https://tree.taiga.io/project/penpot/issue/4161)
+- Fix font search works only with lowercase letters [Taiga #4140](https://tree.taiga.io/project/penpot/issue/4140)
+- Fix Terms and Privacy links overlapping [Taiga #4137](https://tree.taiga.io/project/penpot/issue/4137)
 
 
 ## 1.15.3-beta

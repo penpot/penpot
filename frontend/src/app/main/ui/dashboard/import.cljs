@@ -347,7 +347,11 @@
         success-files (->> @state :files (filter #(and (= (:status %) :import-finish) (empty? (:errors %)))) count)
         pending-analysis? (> (->> @state :files (filter #(= (:status %) :analyzing)) count) 0)
         pending-import? (> num-importing 0)
-        files (->> (:files @state) (filterv (comp not :deleted?)))]
+        files (->> (:files @state) (filterv (comp not :deleted?)))
+        ;; pending-import? (> (->> @state :files (filter #(= (:status %) :importing)) count) 0)
+        ;; files (->> (:files @state) (filterv (comp not :deleted?)))
+        valid-files? (or (some? template)
+                         (> (+ (->> files (filterv (fn [x] (not= (:status x) :analyze-error))) count)) 0))]
 
     (mf/use-effect
      (fn []
@@ -408,7 +412,7 @@
            {:class "primary"
             :type "button"
             :value (tr "labels.continue")
-            :disabled pending-analysis?
+            :disabled (or pending-analysis? (not valid-files?))
             :on-click handle-continue}])
 
         (when (= :importing (:status @state))
@@ -416,5 +420,5 @@
            {:class "primary"
             :type "button"
             :value (tr "labels.accept")
-            :disabled pending-import?
+            :disabled (or pending-import? (not valid-files?))
             :on-click handle-accept}])]]]]))

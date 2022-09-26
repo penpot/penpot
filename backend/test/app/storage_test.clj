@@ -232,7 +232,7 @@
     ;; run the touched gc task
     (let [task (:app.storage/gc-touched-task th/*system*)
           res  (task {})]
-      (t/is (= 6 (:freeze res)))
+      (t/is (= 5 (:freeze res)))
       (t/is (= 0 (:delete res)))
 
       (let [result-1 (:result out1)
@@ -247,7 +247,7 @@
         ;; Run the task again
         (let [res  (task {})]
           (t/is (= 2 (:freeze res)))
-          (t/is (= 4 (:delete res))))
+          (t/is (= 3 (:delete res))))
 
         ;; now check that there are no touched objects
         (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where touched_at is not null"])]
@@ -255,7 +255,7 @@
 
         ;; now check that all objects are marked to be deleted
         (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is not null"])]
-          (t/is (= 4 (:count res))))))))
+          (t/is (= 3 (:count res))))))))
 
 (t/deftest test-touched-gc-task-3
   (let [storage (-> (:app.storage/storage th/*system*)

@@ -10,7 +10,9 @@
    [app.common.data.macros :as dm]
    [app.common.pages :as cp]
    [app.main.data.modal :as modal]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.color-input :refer [color-input]]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
@@ -73,18 +75,22 @@
         (mf/use-fn
          (mf/deps color on-change)
          (fn [new-value]
-           (on-change (-> color
-                          (assoc :color new-value)
-                          (dissoc :gradient)))))
+           (let [color (-> color
+                           (assoc :color new-value)
+                           (dissoc :gradient))]
+             (st/emit! (dwl/add-recent-color color)
+             (on-change color)))))
 
         handle-opacity-change
         (mf/use-fn
          (mf/deps color on-change)
          (fn [value]
-           (on-change (assoc color
-                             :opacity (/ value 100)
-                             :id nil
-                             :file-id nil))))
+           (let [color (assoc color
+                              :opacity (/ value 100)
+                              :id nil
+                              :file-id nil)]
+             (st/emit! (dwl/add-recent-color color)
+             (on-change color)))))
 
         handle-click-color
         (mf/use-fn

@@ -229,17 +229,6 @@
               (when (zero? (:exit res))
                 foutput)))
 
-          (ttf-or-otf->woff2 [data]
-            ;; NOTE: foutput is not used directly, it represents the
-            ;; default output of the exection of the underlying
-            ;; command.
-            (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix ".tmp")
-                  foutput (fs/path (str (fs/base finput) ".woff2"))
-                  _       (io/write-to-file! data finput)
-                  res      (sh/sh "woff2_compress" (str finput))]
-              (when (zero? (:exit res))
-                foutput)))
-
           (woff->sfnt [data]
             (let [finput  (tmp/tempfile :prefix "penpot" :suffix "")
                   _       (io/write-to-file! data finput)
@@ -271,15 +260,13 @@
         (let [data (get input "font/ttf")]
           (-> input
               (update "font/otf" gen-if-nil #(ttf->otf data))
-              (update "font/woff" gen-if-nil #(ttf-or-otf->woff data))
-              (assoc "font/woff2" (ttf-or-otf->woff2 data))))
+              (update "font/woff" gen-if-nil #(ttf-or-otf->woff data))))
 
         (contains? current "font/otf")
         (let [data (get input "font/otf")]
           (-> input
               (update "font/woff" gen-if-nil #(ttf-or-otf->woff data))
-              (assoc "font/ttf" (otf->ttf data))
-              (assoc "font/woff2" (ttf-or-otf->woff2 data))))
+              (assoc "font/ttf" (otf->ttf data))))
 
         (contains? current "font/woff")
         (let [data (get input "font/woff")
@@ -291,8 +278,7 @@
           (let [stype (get-sfnt-type sfnt)]
             (cond-> input
               true
-              (-> (assoc "font/woff" data)
-                  (assoc "font/woff2" (ttf-or-otf->woff2 sfnt)))
+              (-> (assoc "font/woff" data))
 
               (= stype :otf)
               (-> (assoc "font/otf" sfnt)
