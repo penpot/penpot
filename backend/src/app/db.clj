@@ -27,6 +27,8 @@
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
+   io.whitfin.siphash.SipHasher
+   io.whitfin.siphash.SipHasherContainer
    java.io.InputStream
    java.io.OutputStream
    java.lang.AutoCloseable
@@ -431,10 +433,19 @@
 
 ;; --- Locks
 
+(def ^:private siphash-state
+  (SipHasher/container
+   (uuid/get-bytes uuid/zero)))
+
+(defn uuid->hash-code
+  [o]
+  (.hash ^SipHasherContainer siphash-state
+         ^bytes (uuid/get-bytes o)))
+
 (defn- xact-check-param
   [n]
   (cond
-    (uuid? n) (uuid/get-word-high n)
+    (uuid? n) (uuid->hash-code n)
     (int? n)  n
     :else (throw (IllegalArgumentException. "uuid or number allowed"))))
 
