@@ -12,7 +12,9 @@
    #?(:clj [clojure.core :as c])
    #?(:cljs [app.common.uuid-impl :as impl])
    #?(:cljs [cljs.core :as c]))
-  #?(:clj (:import java.util.UUID)))
+  #?(:clj (:import
+           java.util.UUID
+           java.nio.ByteBuffer)))
 
 (def zero #uuid "00000000-0000-0000-0000-000000000000")
 
@@ -51,3 +53,11 @@
 
 #?(:clj
    (dm/export impl/get-word-low))
+
+#?(:clj
+   (defn get-bytes
+     [^UUID o]
+     (let [buf (ByteBuffer/allocate 16)]
+       (.putLong buf (.getMostSignificantBits o))
+       (.putLong buf (.getLeastSignificantBits o))
+       (.array buf))))

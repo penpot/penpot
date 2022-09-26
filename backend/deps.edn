@@ -30,6 +30,7 @@
   com.zaxxer/HikariCP {:mvn/version "5.0.1"}
 
   funcool/datoteka {:mvn/version "3.0.64"}
+  io.whitfin/siphash {:mvn/version "2.0.0"}
 
   buddy/buddy-hashers {:mvn/version "1.8.158"}
   buddy/buddy-sign {:mvn/version "3.4.333"}
