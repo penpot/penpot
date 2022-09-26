@@ -46,7 +46,6 @@
       (t/is (uuid? (:ttf-file-id result)))
       (t/is (uuid? (:otf-file-id result)))
       (t/is (uuid? (:woff1-file-id result)))
-      (t/is (uuid? (:woff2-file-id result)))
       (t/are [k] (= (get params k)
                     (get result k))
         :team-id
@@ -82,7 +81,6 @@
       (t/is (uuid? (:ttf-file-id result)))
       (t/is (uuid? (:otf-file-id result)))
       (t/is (uuid? (:woff1-file-id result)))
-      (t/is (uuid? (:woff2-file-id result)))
       (t/are [k] (= (get params k)
                     (get result k))
         :team-id
