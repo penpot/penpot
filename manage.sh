@@ -42,8 +42,12 @@ function build-devenv {
     popd;
 }
 
-function push-devenv {
-    docker push $DEVENV_IMGNAME:latest
+function build-devenv-local {
+    echo "Building local only development image $DEVENV_IMGNAME:latest..."
+
+    pushd docker/devenv;
+    docker build -t $DEVENV_IMGNAME:latest .;
+    popd;
 }
 
 function pull-devenv {
@@ -206,6 +210,10 @@ case $1 in
 
     build-devenv)
         build-devenv ${@:2}
+        ;;
+
+    build-devenv-local)
+        build-devenv-local ${@:2}
         ;;
 
     push-devenv)
