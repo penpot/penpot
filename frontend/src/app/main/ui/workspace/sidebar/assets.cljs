@@ -1736,10 +1736,10 @@
            (apply st/emit!
                   (->> typographies
                        (filter #(str/starts-with? (:path %) path))
-                       (map #(dwl/update-typography
-                              (assoc % :name
-                                     (ungroup % path))
-                              file-id))))
+                       (map #(dwl/rename-typography
+                              file-id
+                              (:id %)
+                              (ungroup % path)))))
            (st/emit! (dwu/commit-undo-transaction))))
 
         on-context-menu
