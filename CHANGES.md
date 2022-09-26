@@ -38,6 +38,7 @@
 - Fix unexpected 404 on deleting library that is used by deleted files
 - Fix inconsistent message on deleting library when a library is linked from deleted files
 - Fix change multiple colors with SVG [Taiga #3889](https://tree.taiga.io/project/penpot/issue/3889)
+- Fix ungroup does not work for typographies [Taiga #4195](https://tree.taiga.io/project/penpot/issue/4195)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
