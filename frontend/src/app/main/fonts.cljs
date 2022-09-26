@@ -155,8 +155,7 @@
     font-style: %(style)s;
     font-weight: %(weight)s;
     font-display: block;
-    src: url(%(woff2-uri)s) format('woff2'),
-         url(%(woff1-uri)s) format('woff'),
+    src: url(%(woff1-uri)s) format('woff'),
          url(%(ttf-uri)s) format('ttf'),
          url(%(otf-uri)s) format('otf');
   }")
