@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-24 23:03+0000\n"
-"Last-Translator: Shuaib Zahda <shuaib.zahda@gmail.com>\n"
+"PO-Revision-Date: 2022-09-27 15:18+0000\n"
+"Last-Translator: Youkho <youkho@gmail.com>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
 "ar/>\n"
 "Language: ar\n"
@@ -2514,3 +2514,24 @@ msgstr "(أنت)"
 msgid "modals.change-owner-and-leave-confirm.message"
 msgstr ""
 "أنت صاحب هذا الفريق. الرجاء تحديد عضو آخر للترقية إلى مالك قبل المغادرة."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"يمكنك إضافة إعدادات التصدير إلى العناصر من خصائص التصميم (أسفل الشريط "
+"الجانبي الأيمن)."
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"لن يتم تضمين المكتبات المشتركة في التصدير ولن يتم إضافة أي أصول إلى المكتبة. "
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"نظرًا لأنك العضو الوحيد في هذا الفريق ، فسيتم حذف الفريق مع مشاريعه وملفاته."
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "حدثت مشكلة في استيراد النموذج. لم يتم استيراد النموذج."
+
+msgid "dashboard.export.options.merge.message"
+msgstr "سيتم تصدير ملفك مع دمج جميع الأصول الخارجية في مكتبة الملفات."
