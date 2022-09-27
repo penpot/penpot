@@ -64,6 +64,7 @@
         (yrs/response :status  307
                       :headers {"location" (str url)
                                 "x-host"   (cond-> host port (str ":" port))
+                                "x-mtype"  (:content-type mdata)
                                 "cache-control" (str "max-age=" (inst-ms cache-max-age))}))
 
       :fs
