@@ -86,7 +86,7 @@
        (when (seq (:touched shape)) " *")])))
 
 (mf/defc layer-item
-  [{:keys [index item selected objects sortable?] :as props}]
+  [{:keys [index item selected objects sortable? filtered?] :as props}]
   (let [id         (:id item)
         blocked?   (:blocked item)
         hidden?    (:hidden item)
@@ -137,13 +137,15 @@
 
         select-shape
         (mf/use-fn
-         (mf/deps id)
+         (mf/deps id filtered? objects)
          (fn [event]
            (dom/prevent-default event)
            (reset! scroll-to-middle? false)
            (cond
              (kbd/shift? event)
-             (st/emit! (dw/shift-select-shapes id))
+             (if filtered?
+               (st/emit! (dw/shift-select-shapes id objects))
+               (st/emit! (dw/shift-select-shapes id)))
 
              (kbd/mod? event)
              (st/emit! (dw/select-shape id true))
@@ -296,7 +298,7 @@
 (mf/defc layers-tree
   {::mf/wrap [#(mf/memo % =)
               #(mf/throttle % 200)]}
-  [{:keys [objects] :as props}]
+  [{:keys [objects filtered?] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected (hooks/use-equal-memo selected)
         root (get objects uuid/zero)]
@@ -311,14 +313,16 @@
               :index index
               :objects objects
               :key id
-              :sortable? true}]
+              :sortable? true
+              :filtered? filtered?}]
             [:& layer-item
              {:item obj
               :selected selected
               :index index
               :objects objects
               :key id
-              :sortable? true}])))]]))
+              :sortable? true
+              :filtered? filtered?}])))]]))
 
 (mf/defc filters-tree
   {::mf/wrap [#(mf/memo % =)
@@ -336,7 +340,8 @@
            :index index
            :objects objects
            :key id
-           :sortable? false}]))]))
+           :sortable? false
+           :filtered? true}]))]))
 
 
 (defn calc-reparented-objects
@@ -562,15 +567,22 @@
 
        filter-component)
 
-     (when (some? filtered-objects)
-       [:div.tool-window-content {:ref on-render-container  :key "filters"}
-        [:& filters-tree {:objects filtered-objects
-                         :key (dm/str (:id page))}]
-        [:div.lazy {:ref lazy-load-ref
-                    :key "lazy-load"
-                    :style {:min-height 16}}]])
+     (if (some? filtered-objects)
+       [:*
+        [:div.tool-window-content {:ref on-render-container  :key "filters"}
+         [:& filters-tree {:objects filtered-objects
+                           :key (dm/str (:id page))}]
+         [:div.lazy {:ref lazy-load-ref
+                     :key "lazy-load"
+                     :style {:min-height 16}}]]
+        [:div.tool-window-content {:on-scroll on-scroll
+                                   :style {:display (when (some? filtered-objects) "none")}}
+         [:& layers-tree {:objects filtered-objects
+                          :key (dm/str (:id page))
+                          :filtered? true}]]]
 
      [:div.tool-window-content {:on-scroll on-scroll
                                 :style {:display (when (some? filtered-objects) "none")}}
       [:& layers-tree {:objects objects
-                       :key (dm/str (:id page))}]]]))
+                       :key (dm/str (:id page))
+                       :filtered? false}]])]))

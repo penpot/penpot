@@ -141,6 +141,16 @@
       (update-in state [:workspace-local :selected] disj id))))
 
 (defn shift-select-shapes
+  ([id objects]
+   (ptk/reify ::shift-select-shapes
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [selection (-> state
+                           wsh/lookup-selected
+                           (conj id))]
+         (-> state
+             (assoc-in [:workspace-local :selected]
+                       (cph/expand-region-selection objects selection)))))))
   ([id]
    (ptk/reify ::shift-select-shapes
      ptk/UpdateEvent

@@ -68,6 +68,8 @@
 - Fix error after user drags any layer in search functionality [Taiga #4161](https://tree.taiga.io/project/penpot/issue/4161)
 - Fix font search works only with lowercase letters [Taiga #4140](https://tree.taiga.io/project/penpot/issue/4140)
 - Fix Terms and Privacy links overlapping [Taiga #4137](https://tree.taiga.io/project/penpot/issue/4137)
+- Fix Export bounding box mask [Taiga #950](https://tree.taiga.io/project/penpot/issue/950)
+- Fix delete layers in bulk [Taiga #4160](https://tree.taiga.io/project/penpot/issue/4160)
 
 
 ## 1.15.3-beta
