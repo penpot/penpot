@@ -101,7 +101,8 @@
           (fn [_ error]
             (a/close! close-ch)
             (when-not (or (instance? java.nio.channels.ClosedChannelException error)
-                          (instance? java.net.SocketException error))
+                          (instance? java.net.SocketException error)
+                          (instance? java.io.IOException error))
               (l/error :hint (ex-message error) :cause error)))
 
           on-ws-message
