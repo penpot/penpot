@@ -227,7 +227,8 @@
        [:li.team-name {:on-click (partial team-selected (:id team))
                        :key (dm/str (:id team))}
         [:span.team-icon
-         [:img {:src (cf/resolve-team-photo-url team)}]]
+         [:img {:src (cf/resolve-team-photo-url team)
+                :alt (:name team)}]]
         [:span.team-text {:title (:name team)} (:name team)]])
 
      [:hr]
@@ -354,7 +355,8 @@
           [:span.team-text (tr "dashboard.default-team-name")]]
          [:div.team-name
           [:span.team-icon
-           [:img {:src (cf/resolve-team-photo-url team)}]]
+           [:img {:src (cf/resolve-team-photo-url team)
+                  :alt (:name team)}]]
           [:span.team-text {:title (:name team)} (:name team)]])
 
        [:span.switch-icon
@@ -487,7 +489,8 @@
     [:div.profile-section
      [:div.profile {:on-click #(reset! show true)
                     :data-test "profile-btn"}
-      [:img {:src photo}]
+      [:img {:src photo
+             :alt (:fullname profile)}]
       [:span (:fullname profile)]]
 
      [:& dropdown {:on-close #(reset! show false)

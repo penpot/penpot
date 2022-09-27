@@ -461,6 +461,7 @@
        [:& export-progress-widget]
        [:button.document-history
         {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+         :aria-label (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
          :class (when (contains? layout :document-history) "selected")
          :on-click #(st/emit! (-> (dw/toggle-layout-flag :document-history)
                                   (vary-meta assoc ::ev/origin "workspace-header")))}

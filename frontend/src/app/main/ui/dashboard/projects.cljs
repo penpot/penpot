@@ -54,7 +54,8 @@
                                   :team team
                                   :origin :hero}))))]
     [:div.team-hero
-     [:img {:src "images/deco-team-banner.png" :border "0"}]
+     [:img {:src "images/deco-team-banner.png" :border "0"
+            :role "presentation"}]
      [:div.text
       [:div.title (tr "dasboard.team-hero.title")]
       [:div.info
@@ -63,7 +64,9 @@
      [:button.btn-primary.invite
       {:on-click invite-member}
       (tr "onboarding.choice.team-up.invite-members")]
-     [:button.close {:on-click close-banner}
+     [:button.close
+      {:on-click close-banner
+      :aria-label (tr "labels.close")}
       [:span i/close]]]))
 
 (def builtin-templates
@@ -113,7 +116,8 @@
          :success "")]]
 
      [:button.close
-      {:on-click close-tutorial}
+      {:on-click close-tutorial
+       :aria-label (tr "labels.close")}
       [:span.icon i/close]]]))
 
 (mf/defc interface-walkthrough
@@ -132,7 +136,8 @@
       [:a.btn-primary.action {:href " https://design.penpot.app/walkthrough" :target "_blank" :on-click handle-walkthrough-link}
        (tr "dasboard.walkthrough-hero.start")]]
      [:button.close
-      {:on-click close-walkthrough}
+      {:on-click close-walkthrough
+       :aria-label (tr "labels.close")}
       [:span.icon i/close]]]))
 
 (mf/defc project-item
