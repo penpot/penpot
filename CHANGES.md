@@ -69,6 +69,7 @@
 - Fix Terms and Privacy links overlapping [Taiga #4137](https://tree.taiga.io/project/penpot/issue/4137)
 - Fix Export bounding box mask [Taiga #950](https://tree.taiga.io/project/penpot/issue/950)
 - Fix delete layers in bulk [Taiga #4160](https://tree.taiga.io/project/penpot/issue/4160)
+- Fix Cannot take out an element from a group at layers panel by drag [Taiga #4209](https://tree.taiga.io/project/penpot/issue/4209)
 
 
 ## 1.15.3-beta
