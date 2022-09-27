@@ -77,7 +77,7 @@
                                              :name (:name resource)
                                              :status "ended"}))))
         on-error    (fn [cause]
-                      (l/error :hint "unexpected error happened on export multiple process"
+                      (l/error :hint "unexpected error on export multiple"
                                :cause cause)
                       (if wait
                         (p/rejected cause)
