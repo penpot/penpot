@@ -36,7 +36,7 @@
                                  :is-not-library-color (nil? (:id color))
                                  :is-gradient (some? (:gradient color)))
           :on-click on-click
-          :alt (or (:name color) (:color color) (gradient-type->string (:type (:gradient color))))}
+          :title (or (:name color) (:color color) (gradient-type->string (:type (:gradient color))))}
          (if  (:gradient color)
            [:div.color-bullet-wrapper {:style {:background (uc/color->background color)}}]
            [:div.color-bullet-wrapper
