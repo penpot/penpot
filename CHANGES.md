@@ -3,6 +3,15 @@
 ## :rocket: Next
 
 ### :boom: Breaking changes & Deprecations
+### :sparkles: New features
+### :bug: Bugs fixed
+### :arrow_up: Deps updates
+### :heart: Community contributions by (Thank you!)
+
+
+## :rocket: 1.16.0-beta
+
+### :boom: Breaking changes & Deprecations
 
 - Removed the support for v2 internal file data blob format.  This
   version has never been documented nor set as default value so
@@ -25,8 +34,6 @@
 - Newsletter Opt-in options for subscription categories [Taiga #3242](https://tree.taiga.io/project/penpot/us/3242)
 - Print emails to console by default if smtp is disabled
 - Add `email-verification` flag for enable/disable email verification
-
-
 
 ### :bug: Bugs fixed
 
