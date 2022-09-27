@@ -247,7 +247,8 @@
               :selected selected
               :index index
               :objects objects
-              :key (:id item)}]))])]))
+              :key (:id item)
+              :sortable? sortable?}]))])]))
 
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not
