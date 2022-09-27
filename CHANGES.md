@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## :rocket: Next
+## :rocket: 1.16.0-beta
 
 ### :boom: Breaking changes & Deprecations
 
@@ -25,8 +25,6 @@
 - Newsletter Opt-in options for subscription categories [Taiga #3242](https://tree.taiga.io/project/penpot/us/3242)
 - Print emails to console by default if smtp is disabled
 - Add `email-verification` flag for enable/disable email verification
-
-
 
 ### :bug: Bugs fixed
 
