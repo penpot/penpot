@@ -157,11 +157,6 @@
     align-items: center;
     overflow: hidden;
 
-    .empty-state {
-      justify-content: center;
-      align-items: center;
-    }
-
     svg {
       transform-origin: center;
     }
@@ -183,6 +178,13 @@
     width: 256px;
     height: 100%;
     z-index: 10;
+  }
+
+  .empty-state {
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 

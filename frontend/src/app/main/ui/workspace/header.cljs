@@ -6,6 +6,8 @@
 
 (ns app.main.ui.workspace.header
   (:require
+   [app.common.pages.helpers :as cph]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
@@ -107,7 +109,9 @@
         show-sub-menu? (mf/use-state false)
         editing?       (mf/use-state false)
         edit-input-ref (mf/use-ref nil)
-        frames         (mf/deref refs/workspace-frames)
+        objects        (mf/deref refs/workspace-page-objects)
+        frames         (->> (cph/get-immediate-children objects uuid/zero)
+                            (filterv cph/frame-shape?))
 
         add-shared-fn
         #(st/emit! (dwl/set-file-shared (:id file) true))

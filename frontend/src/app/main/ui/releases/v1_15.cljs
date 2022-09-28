@@ -77,7 +77,7 @@
          [:img {:src "images/features/1.15-comments.gif" :border "0" :alt "Comments positioning"}]]
         [:div.modal-right
          [:div.modal-title
-          [:h2 "Comments poitioning"]]
+          [:h2 "Comments positioning"]]
          [:div.modal-content
           [:p "They live! Now you can move existing comments wherever you want by dragging them."]
           [:p "Also, comments inside boards will be associated with it, so that if you move a board its comments will maintain its place inside it."]]
