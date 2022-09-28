@@ -245,7 +245,7 @@ msgstr ""
 "(https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "Exporter les plans de travail au format PDF…"
+msgstr "Exporter les plans de travail au format PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

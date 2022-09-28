@@ -240,7 +240,7 @@ msgstr ""
 "section](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "Ekspor artboards ke PDF ..."
+msgstr "Ekspor artboards ke PDF"
 
 msgid "dashboard.export-multi"
 msgstr "Ekspor % file"
