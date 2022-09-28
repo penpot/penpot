@@ -81,7 +81,8 @@
        [:*
         [:& left-toolbar {:layout layout}]
         (if (:collapse-left-sidebar layout)
-          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar))}
+          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar))
+                                               :aria-label (tr "workspace.sidebar.expand")}
            i/arrow-slide]
           [:& left-sidebar {:layout layout}])
         [:& right-sidebar {:section options-mode

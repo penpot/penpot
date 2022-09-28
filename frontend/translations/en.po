@@ -4374,6 +4374,12 @@ msgstr "Imported SVG Attributes"
 msgid "workspace.sidebar.sitemap"
 msgstr "Pages"
 
+msgid "workspace.sidebar.collapse"
+msgstr "Collapse sidebar"
+
+msgid "workspace.sidebar.expand"
+msgstr "Expand sidebar"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.sitemap"
 msgstr "Sitemap"

@@ -4581,6 +4581,12 @@ msgstr "Atributos del SVG Importado"
 msgid "workspace.sidebar.sitemap"
 msgstr "Páginas"
 
+msgid "workspace.sidebar.collapse"
+msgstr "Cerrar barra lateral"
+
+msgid "workspace.sidebar.expand"
+msgstr "Abrir barra lateral"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.sitemap"
 msgstr "Mapa del sitio"

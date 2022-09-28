@@ -56,7 +56,8 @@
             [:& shortcuts-container]
             [:*
              [:button.collapse-sidebar
-              {:on-click handle-collapse}
+              {:on-click handle-collapse
+               :aria-label (tr "workspace.sidebar.collapse")}
               i/arrow-slide]
              [:& tab-container {:on-change-tab #(st/emit! (dw/go-to-layout %))
                                 :selected section

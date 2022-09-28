@@ -53,6 +53,10 @@
   [^string title]
   (set! (.-title globals/document) title))
 
+(defn set-html-lang!
+  [^string lang]
+  (.setAttribute (.querySelector js/document "html") "lang" lang))
+
 (defn set-html-theme-color
   [^string color scheme]
   (let [meta-node (.querySelector js/document "meta[name='theme-color']")]
