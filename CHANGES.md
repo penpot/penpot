@@ -38,6 +38,7 @@
 - Fix change multiple colors with SVG [Taiga #3889](https://tree.taiga.io/project/penpot/issue/3889)
 - Fix ungroup does not work for typographies [Taiga #4195](https://tree.taiga.io/project/penpot/issue/4195)
 - Fix inviting to non existing users can fail [Taiga #4108](https://tree.taiga.io/project/penpot/issue/4108)
+- Fix view-mode login size [Taiga #4210](https://tree.taiga.io/project/penpot/issue/4210)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
