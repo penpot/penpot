@@ -28,7 +28,7 @@
    [app.util.timers :as timers]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def scale-per-pixel -0.0057)
 

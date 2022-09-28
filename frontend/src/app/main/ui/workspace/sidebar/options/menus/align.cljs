@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc align-options
   []

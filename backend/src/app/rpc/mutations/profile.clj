@@ -252,6 +252,7 @@
 
 ;; --- MUTATION: Delete Profile
 
+(declare get-owned-teams-with-participants)
 (declare check-can-delete-profile!)
 (declare mark-profile-as-deleted!)
 
@@ -261,14 +262,29 @@
 (sv/defmethod ::delete-profile
   [{:keys [pool session] :as cfg} {:keys [profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (check-can-delete-profile! conn profile-id)
+    (let [teams      (get-owned-teams-with-participants conn profile-id)
+          deleted-at (dt/now)]
 
-    (db/update! conn :profile
-                {:deleted-at (dt/now)}
-                {:id profile-id})
+      ;; If we found owned teams with participants, we don't allow
+      ;; delete profile until the user properly transfer ownership or
+      ;; explicitly removes all participants from the team
+      (when (some pos? (map :participants teams))
+        (ex/raise :type :validation
+                  :code :owner-teams-with-people
+                  :hint "The user need to transfer ownership of owned teams."
+                  :context {:teams (mapv :id teams)}))
 
-    (with-meta {}
-      {:transform-response (:delete session)})))
+      (doseq [{:keys [id]} teams]
+        (db/update! conn :team
+                    {:deleted-at deleted-at}
+                    {:id id}))
+
+      (db/update! conn :profile
+                  {:deleted-at deleted-at}
+                  {:id profile-id})
+
+      (with-meta {}
+        {:transform-response (:delete session)}))))
 
 (def sql:owned-teams
   "with owner_teams as (
@@ -277,23 +293,16 @@
        where tpr.is_owner is true
          and tpr.profile_id = ?
    )
-   select tpr.team_id,
-          count(tpr.profile_id) as num_profiles
+   select tpr.team_id as id,
+          count(tpr.profile_id) - 1 as participants
      from team_profile_rel as tpr
     where tpr.team_id in (select id from owner_teams)
+      and tpr.profile_id != ?
     group by 1")
 
-(defn- check-can-delete-profile!
+(defn- get-owned-teams-with-participants
   [conn profile-id]
-  (let [rows (db/exec! conn [sql:owned-teams profile-id])]
-    ;; If we found owned teams with more than one profile we don't
-    ;; allow delete profile until the user properly transfer ownership
-    ;; or explicitly removes all participants from the team.
-    (when (some #(> (:num-profiles %) 1) rows)
-      (ex/raise :type :validation
-                :code :owner-teams-with-people
-                :hint "The user need to transfer ownership of owned teams."
-                :context {:teams (mapv :team-id rows)}))))
+  (db/exec! conn [sql:owned-teams profile-id profile-id]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DEPRECATED METHODS (TO BE REMOVED ON 1.16.x)

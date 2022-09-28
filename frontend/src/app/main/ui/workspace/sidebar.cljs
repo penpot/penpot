@@ -22,7 +22,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
 

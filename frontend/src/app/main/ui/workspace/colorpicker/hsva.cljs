@@ -8,7 +8,7 @@
   (:require
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [app.util.color :as uc]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc hsva-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
   (let [{hue :h saturation :s value :v alpha :alpha} color

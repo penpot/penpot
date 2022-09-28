@@ -18,7 +18,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc typography-item
   [{:keys [file-id selected-ids typography name-only?]}]

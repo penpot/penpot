@@ -17,7 +17,7 @@
    [app.main.ui.settings.sidebar :refer [sidebar]]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc header
   {::mf/wrap [mf/memo]}

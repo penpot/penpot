@@ -13,7 +13,7 @@
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.main.ui.formats :as fmt]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; ------------------------------------------------
 ;; CONSTANTS

@@ -13,7 +13,7 @@
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.keyboard :as k]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (mf/defc alert-dialog

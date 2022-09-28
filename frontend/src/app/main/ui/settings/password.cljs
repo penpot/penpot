@@ -14,7 +14,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn- on-error
   [form error]

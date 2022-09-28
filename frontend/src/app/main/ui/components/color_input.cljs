@@ -13,7 +13,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (defn clean-color

@@ -22,7 +22,7 @@
    [clojure.set :as set]
    [clojure.string]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc converted-chars
   [{:keys [char command] :as props}]

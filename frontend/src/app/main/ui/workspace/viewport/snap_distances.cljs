@@ -16,7 +16,7 @@
    [beicon.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def ^:private line-color "var(--color-snap)")
 (def ^:private segment-gap 2)

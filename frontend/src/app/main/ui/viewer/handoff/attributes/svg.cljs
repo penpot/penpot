@@ -10,7 +10,7 @@
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn map->css [attr]
   (->> attr

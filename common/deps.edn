@@ -3,22 +3,22 @@
   org.clojure/data.json {:mvn/version "2.4.0"}
   org.clojure/tools.cli {:mvn/version "1.0.206"}
   metosin/jsonista {:mvn/version "0.3.6"}
-  org.clojure/clojurescript {:mvn/version "1.11.57"}
+  org.clojure/clojurescript {:mvn/version "1.11.60"}
 
   ;; Logging
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.17.2"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.17.2"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.17.2"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.17.2"}
-  org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.17.2"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.19.0"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.19.0"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.19.0"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.19.0"}
+  org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.18.0"}
   org.slf4j/slf4j-api {:mvn/version "2.0.0-alpha1"}
 
-  selmer/selmer {:mvn/version "1.12.51"}
+  selmer/selmer {:mvn/version "1.12.55"}
   criterium/criterium {:mvn/version "0.4.6"}
 
   expound/expound {:mvn/version "0.9.0"}
   com.cognitect/transit-clj {:mvn/version "1.0.329"}
-  com.cognitect/transit-cljs {:mvn/version "0.8.269"}
+  com.cognitect/transit-cljs {:mvn/version "0.8.280"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/promesa {:mvn/version "8.0.450"}
@@ -42,21 +42,22 @@
   {:extra-deps
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
     org.clojure/test.check {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.19.8"}
+    thheller/shadow-cljs {:mvn/version "2.20.2"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}
     mockery/mockery {:mvn/version "RELEASE"}}
    :extra-paths ["test" "dev"]}
 
   :build
-  {:extra-deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+  {:extra-deps {io.github.clojure/tools.build {:git/tag "v0.8.3" :git/sha "0d20256"}}
    :ns-default build}
 
   :test
   {:extra-paths ["test"]
    :extra-deps
    {io.github.cognitect-labs/test-runner
-    {:git/tag "v0.5.0" :git/sha "b3fd0d2"}}
+    {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+   :main-opts ["-m" "cognitect.test-runner"]
    :exec-fn cognitect.test-runner.api/test}
 
   :shadow-cljs

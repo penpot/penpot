@@ -21,7 +21,7 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.rules :as rules]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def guide-width 1)
 (def guide-opacity 0.7)

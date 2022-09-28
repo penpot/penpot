@@ -12,7 +12,7 @@
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.path.common :as pc]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn apply-content-modifiers
   [shape content-modifiers]

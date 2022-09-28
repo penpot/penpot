@@ -376,18 +376,17 @@
                   :code :profile-is-muted
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
 
-      (doseq [email emails]
-        (create-team-invitation
-         (assoc cfg
-                :email email
-                :conn conn
-                :team team
-                :profile profile
-                :role role))
-        )
-
-      (with-meta {}
-        {::audit/props {:invitations (count emails)}}))))
+      (let [invitations (->> emails
+                             (map (fn [email]
+                                    (assoc cfg
+                                           :email email
+                                           :conn conn
+                                           :team team
+                                           :profile profile
+                                           :role role)))
+                             (map create-team-invitation))]
+        (with-meta (vec invitations)
+          {::audit/props {:invitations (count invitations)}})))))
 
 (def sql:upsert-team-invitation
   "insert into team_invitation(team_id, email_to, role, valid_until)
@@ -399,6 +398,7 @@
   [{:keys [conn sprops team profile role email] :as cfg}]
   (let [member    (profile/retrieve-profile-data-by-email conn email)
         token-exp (dt/in-future "168h") ;; 7 days
+        email     (str/lower email)
         itoken    (tokens/generate sprops
                                    {:iss :team-invitation
                                     :exp token-exp
@@ -412,9 +412,6 @@
                                     :profile-id (:id profile)
                                     :exp (dt/in-future {:days 30})})]
 
-    (when (contains? cf/flags :log-invitation-tokens)
-      (l/trace :hint "invitation token" :token itoken))
-
     (when (and member (not (eml/allow-send-emails? conn member)))
       (ex/raise :type :validation
                 :code :member-is-muted
@@ -427,6 +424,9 @@
                 :code :email-has-permanent-bounces
                 :email email
                 :hint "the email you invite has been repeatedly reported as spam or bounce"))
+
+    (when (contains? cf/flags :log-invitation-tokens)
+      (l/trace :hint "invitation token" :token itoken))
 
     ;; When we have email verification disabled and invitation user is
     ;; already present in the database, we proceed to add it to the
@@ -448,10 +448,7 @@
         (when-not (:is-active member)
           (db/update! conn :profile
                       {:is-active true}
-                      {:id (:id member)}))
-
-        (assoc member :is-active true))
-
+                      {:id (:id member)})))
       (do
         (db/exec-one! conn [sql:upsert-team-invitation
                             (:id team) (str/lower email) (name role)
@@ -463,7 +460,9 @@
                     :invited-by (:fullname profile)
                     :team (:name team)
                     :token itoken
-                    :extra-data ptoken})))))
+                    :extra-data ptoken})))
+
+    itoken))
 
 ;; --- Mutation: Create Team & Invite Members
 

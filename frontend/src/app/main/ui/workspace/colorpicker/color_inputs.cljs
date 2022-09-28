@@ -9,7 +9,7 @@
    [app.common.math :as mth]
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn parse-hex
   [val]

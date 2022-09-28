@@ -8,7 +8,7 @@
   (:require
    [app.main.store :as st]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc file-uploader
   {::mf/forward-ref true}

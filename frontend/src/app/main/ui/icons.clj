@@ -5,13 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.icons
-  (:require [rumext.alpha]))
+  (:require [rumext.v2]))
 
 (defmacro icon-xref
   [id]
   (let [href (str "#icon-" (name id))
         class (str "icon-" (name id))]
-    `(rumext.alpha/html
+    `(rumext.v2/html
       [:svg {:width 500 :height 500 :class ~class}
        [:use {:href ~href}]])))
 

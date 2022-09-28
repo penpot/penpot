@@ -8,7 +8,7 @@
   (:require
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc empty-placeholder
   [{:keys [dragging? on-create-clicked project limit origin] :as props}]

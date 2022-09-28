@@ -6,7 +6,7 @@
 
 (ns app.main.ui.context
   (:require
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def render-id          (mf/create-context nil))
 

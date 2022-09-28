@@ -107,12 +107,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='37ceaf232a85cce46bcccfd71839854e8b14bf3160e7ef72a676b9cae45ee8af'; \
-         BINARY_URL='https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18.0.1%2B10/OpenJDK18U-jdk_aarch64_linux_hotspot_18.0.1_10.tar.gz'; \
+         ESUM='c640fc5e5710dba3f92099a791be50fab54f91cf2c3838cb536ded27ecc562a6'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu19.28.81-ca-jdk19.0.0-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='16b1d9d75f22c157af04a1fd9c664324c7f4b5163c022b382a2f2e8897c1b0a2'; \
-         BINARY_URL='https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18.0.1%2B10/OpenJDK18U-jdk_x64_linux_hotspot_18.0.1_10.tar.gz'; \
+         ESUM='6813da339124261092daab369a1c60dea5f27f4ba9608a16517191d30511a087'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu19.28.81-ca-jdk19.0.0-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \

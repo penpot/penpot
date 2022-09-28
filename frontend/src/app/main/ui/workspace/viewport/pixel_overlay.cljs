@@ -23,7 +23,7 @@
    [cuerdas.core :as str]
    [goog.events :as events]
    [promesa.core :as p]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (defn format-viewbox [vbox]

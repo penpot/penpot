@@ -28,7 +28,7 @@
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def base-frame-ctx (mf/create-context nil))
 (def frame-offset-ctx (mf/create-context nil))

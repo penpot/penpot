@@ -10,7 +10,7 @@
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc select [{:keys [default-value options class on-change]}]
   (let [state (mf/use-state {:id (uuid/next)

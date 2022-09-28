@@ -6,10 +6,11 @@
 
 (ns app.main.ui.dashboard.projects
   (:require
+   [app.common.data :as d]
    [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
@@ -27,7 +28,7 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
@@ -43,8 +44,15 @@
 (mf/defc team-hero
   {::mf/wrap [mf/memo]}
   [{:keys [team close-banner] :as props}]
-  (let [go-members    #(st/emit! (dd/go-to-team-members))
-        invite-member #(st/emit! (modal/show {:type :invite-members :team team :origin :hero}))]
+  (let [go-members (mf/use-fn #(st/emit! (dd/go-to-team-members)))
+
+        invite-member
+        (mf/use-fn
+         (mf/deps team)
+         (fn []
+           (st/emit! (modal/show {:type :invite-members
+                                  :team team
+                                  :origin :hero}))))]
     [:div.team-hero
      [:img {:src "images/deco-team-banner.png" :border "0"}]
      [:div.text
@@ -52,7 +60,9 @@
       [:div.info
        [:span (tr "dasboard.team-hero.text")]
        [:a {:on-click  go-members} (tr "dasboard.team-hero.management")]]]
-     [:button.btn-primary.invite {:on-click invite-member} (tr "onboarding.choice.team-up.invite-members")]
+     [:button.btn-primary.invite
+      {:on-click invite-member}
+      (tr "onboarding.choice.team-up.invite-members")]
      [:button.close {:on-click close-banner}
       [:span i/close]]]))
 
@@ -61,46 +71,47 @@
 
 (mf/defc tutorial-project
   [{:keys [close-tutorial default-project-id] :as props}]
-  (let [state (mf/use-state
-               {:status :waiting
-                :file nil})
+  (let [state     (mf/use-state {:status :waiting
+                                 :file nil})
 
-        template (->>  (mf/deref builtin-templates)
-                       (filter #(= (:id %) "tutorial-for-beginners"))
-                       first)
+        templates (mf/deref builtin-templates)
+        template  (d/seek #(= (:id %) "tutorial-for-beginners") templates)
 
         on-template-cloned-success
-        (mf/use-callback
+        (mf/use-fn
+         (mf/deps default-project-id)
          (fn [response]
            (swap! state #(assoc % :status :success :file (:first response)))
            (st/emit! (dd/go-to-workspace {:id (first response) :project-id default-project-id :name "tutorial"})
                      (du/update-profile-props {:viewed-tutorial? true}))))
 
         on-template-cloned-error
-        (fn []
-          (swap! state #(assoc % :status :waiting))
-          (st/emit!
-           (dm/error (tr "dashboard.libraries-and-templates.import-error"))))
+        (mf/use-fn
+         (fn []
+           (swap! state #(assoc % :status :waiting))
+           (st/emit!
+            (msg/error (tr "dashboard.libraries-and-templates.import-error")))))
 
         download-tutorial
-        (fn []
-          (let [mdata  {:on-success on-template-cloned-success :on-error on-template-cloned-error}
-                params {:project-id default-project-id :template-id (:id template)}]
-            (swap! state #(assoc % :status :importing))
-            (st/emit! (with-meta (dd/clone-template (with-meta params mdata))
-                        {::ev/origin "get-started-hero-block"}))))]
+        (mf/use-fn
+         (mf/deps template default-project-id)
+         (fn []
+           (let [mdata  {:on-success on-template-cloned-success :on-error on-template-cloned-error}
+                 params {:project-id default-project-id :template-id (:id template)}]
+             (swap! state #(assoc % :status :importing))
+             (st/emit! (with-meta (dd/clone-template (with-meta params mdata))
+                         {::ev/origin "get-started-hero-block"})))))]
     [:div.tutorial
      [:div.img]
      [:div.text
       [:div.title (tr "dasboard.tutorial-hero.title")]
       [:div.info (tr "dasboard.tutorial-hero.info")]
-      [:button.btn-primary.action {:on-click download-tutorial} 
+      [:button.btn-primary.action {:on-click download-tutorial}
        (case (:status @state)
          :waiting (tr "dasboard.tutorial-hero.start")
          :importing [:span.loader i/loader-pencil]
-         :success ""
-         )
-       ]]
+         :success "")]]
+
      [:button.close
       {:on-click close-tutorial}
       [:span.icon i/close]]]))
@@ -128,32 +139,32 @@
   [{:keys [project first? team files] :as props}]
   (let [locale     (mf/deref i18n/locale)
         file-count (or (:count project) 0)
+        project-id (:id project)
 
         dstate     (mf/deref refs/dashboard-local)
         edit-id    (:project-for-edit dstate)
 
-        local
-        (mf/use-state {:menu-open false
-                       :menu-pos nil
-                       :edition? (= (:id project) edit-id)})
+        local      (mf/use-state {:menu-open false
+                                  :menu-pos nil
+                                  :edition? (= (:id project) edit-id)})
+
+        width      (mf/use-state nil)
+        rowref     (mf/use-ref)
+        itemsize   (if (>= @width 1030)
+                    280
+                    230)
+
+        ratio      (if (some? @width) (/ @width itemsize) 0)
+        nitems     (mth/floor ratio)
+        limit      (min 10 nitems)
+        limit      (max 1 limit)
 
         on-nav
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps project)
-         #(st/emit! (rt/nav :dashboard-files {:team-id (:team-id project)
-                                              :project-id (:id project)})))
-
-        width            (mf/use-state nil)
-        rowref           (mf/use-ref)
-        itemsize       (if (>= @width 1030)
-                         280
-                         230)
-
-        ratio          (if (some? @width) (/ @width itemsize) 0)
-        nitems         (mth/floor ratio)
-        limit          (min 10 nitems)
-        limit          (max 1 limit)
-
+         (fn []
+           (st/emit! (rt/nav :dashboard-files {:team-id (:team-id project)
+                                               :project-id project-id}))))
         toggle-pin
         (mf/use-callback
          (mf/deps project)
@@ -209,22 +220,24 @@
                      (dd/fetch-recent-files (:id team))
                      (dd/clear-selected-files))))]
 
-    (mf/use-effect
-     (fn []
-       (let [node (mf/ref-val rowref)
-             mnt? (volatile! true)
-             sub  (->> (wapi/observe-resize node)
-                       (rx/observe-on :af)
-                       (rx/subs (fn [entries]
-                                  (let [row (first entries)
-                                        row-rect (.-contentRect ^js row)
-                                        row-width (.-width ^js row-rect)]
-                                    (when @mnt?
-                                      (reset! width row-width))))))]
-         (fn []
-           (vreset! mnt? false)
-           (rx/dispose! sub)))))
-    [:div.dashboard-project-row {:class (when first? "first")}
+    (mf/with-effect
+      (let [node (mf/ref-val rowref)
+            mnt? (volatile! true)
+            sub  (->> (wapi/observe-resize node)
+                      (rx/observe-on :af)
+                      (rx/subs (fn [entries]
+                                 (let [row (first entries)
+                                       row-rect (.-contentRect ^js row)
+                                       row-width (.-width ^js row-rect)]
+                                   (when @mnt?
+                                     (reset! width row-width))))))]
+        (fn []
+          (vreset! mnt? false)
+          (rx/dispose! sub))))
+
+
+    [:div.dashboard-project-row
+     {:class (when first? "first")}
      [:div.project {:ref rowref}
       [:div.project-name-wrapper
        (if (:edition? @local)
@@ -265,6 +278,7 @@
         [:a.btn-secondary.btn-small.tooltip.tooltip-bottom
          {:on-click on-menu-click :alt (tr "dashboard.options") :data-test "project-options"}
          i/actions]]]
+
       (when (and (> limit 0)
                  (> file-count limit))
         [:div.show-more {:on-click on-nav}
@@ -290,53 +304,53 @@
                                  (reverse))
         recent-map          (mf/deref recent-files-ref)
         props               (some-> profile (get :props {}))
-        team-hero?          (:team-hero? props true)
+        team-hero?          (and (:team-hero? props true)
+                                 (not (:is-default team)))
         tutorial-viewed?    (:viewed-tutorial? props true)
         walkthrough-viewed? (:viewed-walkthrough? props true)
 
-        close-banner        (fn []
-                              (st/emit!
-                               (du/update-profile-props {:team-hero? false})
-                               (ptk/event ::ev/event {::ev/name "dont-show-team-up-hero"
-                                                      ::ev/origin "dashboard"})))
+        team-id             (:id team)
 
-        close-tutorial      (fn []
-                              (st/emit!
-                               (du/update-profile-props {:viewed-tutorial? true})
-                               (ptk/event ::ev/event {::ev/name "dont-show"
-                                                      ::ev/origin "get-started-hero-block"
-                                                      :type "tutorial"
-                                                      :section "dashboard"})))
+        close-banner
+        (mf/use-fn
+         (fn []
+           (st/emit! (du/update-profile-props {:team-hero? false})
+                     (ptk/event ::ev/event {::ev/name "dont-show-team-up-hero"
+                                            ::ev/origin "dashboard"}))))
+        close-tutorial
+        (mf/use-fn
+         (fn []
+           (st/emit! (du/update-profile-props {:viewed-tutorial? true})
+                     (ptk/event ::ev/event {::ev/name "dont-show"
+                                            ::ev/origin "get-started-hero-block"
+                                            :type "tutorial"
+                                            :section "dashboard"}))))
+        close-walkthrough
+        (mf/use-fn
+         (fn []
+           (st/emit! (du/update-profile-props {:viewed-walkthrough? true})
+                     (ptk/event ::ev/event {::ev/name "dont-show"
+                                            ::ev/origin "get-started-hero-block"
+                                            :type "walkthrough"
+                                            :section "dashboard"}))))]
 
-        close-walkthrough   (fn []
-                              (st/emit!
-                               (du/update-profile-props {:viewed-walkthrough? true})
-                               (ptk/event ::ev/event {::ev/name "dont-show"
-                                                      ::ev/origin "get-started-hero-block"
-                                                      :type "walkthrough"
-                                                      :section "dashboard"})))]
+    (mf/with-effect [team]
+      (let [tname (if (:is-default team)
+                    (tr "dashboard.your-penpot")
+                    (:name team))]
+        (dom/set-html-title (tr "title.dashboard.projects" tname))))
 
-    (mf/use-effect
-     (mf/deps team)
-     (fn []
-       (let [tname (if (:is-default team)
-                     (tr "dashboard.your-penpot")
-                     (:name team))]
-         (dom/set-html-title (tr "title.dashboard.projects" tname)))))
-
-    (mf/use-effect
-     (mf/deps (:id team))
-     (fn []
-       (st/emit! (dd/fetch-recent-files (:id team))
-                 (dd/clear-selected-files))))
+    (mf/with-effect [team-id]
+      (st/emit! (dd/fetch-recent-files team-id)
+                (dd/clear-selected-files)))
 
     (when (seq projects)
       [:*
        [:& header]
-       (when (and team-hero? (not (:is-default team)))
-         [:& team-hero
-          {:team team
-           :close-banner close-banner}])
+
+       (when team-hero?
+         [:& team-hero {:team team :close-banner close-banner}])
+
        (when (or (not tutorial-viewed?) (not walkthrough-viewed?))
          [:div.hero-projects
           (when (and (not tutorial-viewed?) (:is-default team))
@@ -358,5 +372,5 @@
                               :team team
                               :files files
                               :first? (= project (first projects))
-                              :key (:id project)}]))]])))
+                              :key id}]))]])))
 

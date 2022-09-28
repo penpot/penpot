@@ -14,7 +14,7 @@
    [app.main.ui.viewer.handoff.code :refer [code]]
    [app.main.ui.viewer.handoff.selection-feedback :refer [resolve-shapes]]
    [app.util.i18n :refer [tr]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc right-sidebar
   [{:keys [frame page file selected]}]

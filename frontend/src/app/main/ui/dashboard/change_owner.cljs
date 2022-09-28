@@ -14,7 +14,7 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
       [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (s/def ::member-id ::us/uuid)
 (s/def ::leave-modal-form

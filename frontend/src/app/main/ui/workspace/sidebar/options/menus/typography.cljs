@@ -29,7 +29,7 @@
    [app.util.timers :as tm]
    [cuerdas.core :as str]
    [goog.events :as events]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn- attr->string [value]
   (if (= value :multiple)

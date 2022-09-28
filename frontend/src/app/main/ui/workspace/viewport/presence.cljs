@@ -11,7 +11,7 @@
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def pointer-icon-path
   (str "M11.58,-0.47L11.47,-0.35L0.34,10.77L0.30,10.96L-0.46,"

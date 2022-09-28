@@ -19,7 +19,7 @@
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def interactions-ref
   (l/derived #(dm/select-keys % [:editing-interaction-index

@@ -10,7 +10,7 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc editable-label
   [{:keys [value on-change on-cancel editing? disable-dbl-click? class-name] :as props}]

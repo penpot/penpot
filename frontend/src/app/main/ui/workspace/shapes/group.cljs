@@ -13,7 +13,7 @@
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn use-double-click [{:keys [id]}]
   (mf/use-callback

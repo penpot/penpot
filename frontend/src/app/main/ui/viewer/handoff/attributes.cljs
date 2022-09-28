@@ -17,7 +17,7 @@
    [app.main.ui.viewer.handoff.attributes.svg :refer [svg-panel]]
    [app.main.ui.viewer.handoff.attributes.text :refer [text-panel]]
    [app.main.ui.viewer.handoff.exports :refer [exports]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def type->options
   {:multiple [:fill :stroke :image :text :shadow :blur]

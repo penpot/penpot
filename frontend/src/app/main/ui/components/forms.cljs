@@ -17,7 +17,7 @@
    [cljs.core :as c]
    [clojure.string]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def form-ctx (mf/create-context nil))
 (def use-form fm/use-form)

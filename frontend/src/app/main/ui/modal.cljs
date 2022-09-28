@@ -12,7 +12,7 @@
    [app.util.keyboard :as k]
    [goog.events :as events]
    [okulary.core :as l]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (defn- on-esc-clicked

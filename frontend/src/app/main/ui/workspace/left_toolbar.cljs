@@ -21,7 +21,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.timers :as ts]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 
 (mf/defc image-upload

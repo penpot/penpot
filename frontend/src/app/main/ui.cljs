@@ -24,7 +24,7 @@
    [app.main.ui.viewer :as viewer]
    [app.main.ui.workspace :as workspace]
    [app.util.router :as rt]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc on-main-error
   [{:keys [error] :as props}]

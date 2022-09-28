@@ -25,7 +25,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- Layer Name
 
@@ -282,7 +282,8 @@
               :selected selected
               :index index
               :objects objects
-              :key (:id item)}]))])]))
+              :key (:id item)
+              :sortable? sortable?}]))])]))
 
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not

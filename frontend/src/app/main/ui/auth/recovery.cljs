@@ -14,7 +14,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (s/def ::password-1 ::us/not-empty-string)
 (s/def ::password-2 ::us/not-empty-string)

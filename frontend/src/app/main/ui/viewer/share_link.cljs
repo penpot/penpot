@@ -21,7 +21,7 @@
    [app.util.router :as rt]
    [app.util.webapi :as wapi]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (log/set-level! :warn)
 

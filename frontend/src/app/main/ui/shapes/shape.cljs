@@ -18,7 +18,7 @@
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.svg-defs :as defs]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn propagate-wrapper-styles-child
   [child wrapper-props]

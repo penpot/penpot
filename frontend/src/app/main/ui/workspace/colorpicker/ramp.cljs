@@ -11,7 +11,7 @@
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc value-saturation-selector [{:keys [saturation value on-change on-start-drag on-finish-drag]}]
   (let [dragging? (mf/use-state false)

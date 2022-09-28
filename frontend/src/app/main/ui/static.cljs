@@ -12,7 +12,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.router :as rt]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc static-header
   {::mf/wrap-props false}

@@ -13,7 +13,7 @@
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.path.tools :as upt]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn check-enabled [content selected-points]
   (let [segments (upt/get-segments content selected-points)

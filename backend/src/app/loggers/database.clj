@@ -46,6 +46,7 @@
 (defn parse-event
   [event]
   (-> (parse-event-data event)
+      (assoc :hint (or (:hint event) (:message event)))
       (assoc :tenant (cf/get :tenant))
       (assoc :host (cf/get :host))
       (assoc :public-uri (cf/get :public-uri))

@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.common
   (:require
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc advanced-options [{:keys [visible? children]}]
   (let [ref (mf/use-ref nil)]

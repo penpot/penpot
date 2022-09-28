@@ -16,7 +16,7 @@
    [app.util.object :as obj]
    [app.util.svg :as usvg]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def include-metadata-ctx (mf/create-context false))
 

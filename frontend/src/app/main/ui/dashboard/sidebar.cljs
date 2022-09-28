@@ -33,7 +33,7 @@
    [cljs.spec.alpha :as s]
    [goog.functions :as f]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc sidebar-project
   [{:keys [item selected?] :as props}]

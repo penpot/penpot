@@ -6,26 +6,26 @@
   ;; Logging
   org.zeromq/jeromq {:mvn/version "0.5.2"}
 
-  com.github.luben/zstd-jni {:mvn/version "1.5.2-3"}
+  com.github.luben/zstd-jni {:mvn/version "1.5.2-4"}
   org.clojure/data.fressian {:mvn/version "1.0.0"}
 
-  io.prometheus/simpleclient {:mvn/version "0.15.0"}
-  io.prometheus/simpleclient_hotspot {:mvn/version "0.15.0"}
-  io.prometheus/simpleclient_jetty {:mvn/version "0.15.0"
+  io.prometheus/simpleclient {:mvn/version "0.16.0"}
+  io.prometheus/simpleclient_hotspot {:mvn/version "0.16.0"}
+  io.prometheus/simpleclient_jetty {:mvn/version "0.16.0"
                                     :exclusions [org.eclipse.jetty/jetty-server
                                                  org.eclipse.jetty/jetty-servlet]}
-  io.prometheus/simpleclient_httpserver {:mvn/version "0.15.0"}
+  io.prometheus/simpleclient_httpserver {:mvn/version "0.16.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.1.8.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "6.2.0.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/yetti {:git/tag "v9.8" :git/sha "fbe1d7d"
                  :git/url "https://github.com/funcool/yetti.git"
                  :exclusions [org.slf4j/slf4j-api]}
 
-  com.github.seancorfield/next.jdbc {:mvn/version "1.2.780"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.3.828"}
   metosin/reitit-core {:mvn/version "0.5.18"}
-  org.postgresql/postgresql {:mvn/version "42.4.0"}
+  org.postgresql/postgresql {:mvn/version "42.5.0"}
   com.zaxxer/HikariCP {:mvn/version "5.0.1"}
 
   io.whitfin/siphash {:mvn/version "2.0.0"}
@@ -42,14 +42,12 @@
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
   integrant/integrant {:mvn/version "0.8.0"}
 
-  io.sentry/sentry {:mvn/version "5.6.1"}
-
   dawran6/emoji {:mvn/version "0.1.5"}
-  markdown-clj/markdown-clj {:mvn/version "1.11.1"}
+  markdown-clj/markdown-clj {:mvn/version "1.11.3"}
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.17.272"}}
+  software.amazon.awssdk/s3 {:mvn/version "2.17.278"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases
@@ -65,8 +63,7 @@
    :extra-paths ["test" "dev"]}
 
   :build
-  {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.8.2" :git/sha "ba1a2bf"}}
+  {:extra-deps {io.github.clojure/tools.build {:git/tag "v0.8.3" :git/sha "0d20256"}}
    :ns-default build}
 
   :test

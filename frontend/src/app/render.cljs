@@ -23,7 +23,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [garden.core :refer [css]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SETUP

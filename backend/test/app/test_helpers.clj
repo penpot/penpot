@@ -23,9 +23,11 @@
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
    [app.util.blob :as blob]
+   [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
+   [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [environ.core :refer [env]]
@@ -277,8 +279,10 @@
 (defmacro try-on!
   [expr]
   `(try
-     {:error nil
-      :result (deref ~expr)}
+     (let [result# (deref ~expr)
+           result# (cond-> result# (sv/wrapped? result#) deref)]
+       {:error nil
+        :result result#})
      (catch Exception e#
        {:error (handle-error e#)
         :result nil})))
@@ -298,6 +302,14 @@
   [{:keys [::type] :as data}]
   (let [method-fn (get-in *system* [:app.rpc/methods :queries type])]
     (try-on! (method-fn (dissoc data ::type)))))
+
+(defn run-task!
+  ([name]
+   (run-task! name {}))
+  ([name params]
+   (let [tasks (:app.worker/registry *system*)]
+     (let [task-fn (get tasks name)]
+       (task-fn params)))))
 
 ;; --- UTILS
 
@@ -358,6 +370,10 @@
   (let [data (ex-data e)]
     (= code (:code data))))
 
+(defn success?
+  [{:keys [result error]}]
+  (nil? error))
+
 (defn tempfile
   [source]
   (let [rsc (io/resource source)
@@ -365,29 +381,6 @@
     (io/copy (io/file rsc)
              (io/file tmp))
     tmp))
-
-(defn sleep
-  [ms]
-  (Thread/sleep ms))
-
-(defn mock-config-get-with
-  "Helper for mock app.config/get"
-  [data]
-  (fn
-    ([key]
-     (get data key (get cf/config key)))
-    ([key default]
-     (get data key (get cf/config key default)))))
-
-
-(defmacro with-mocks
-  [rebinds & body]
-  `(with-redefs-fn ~rebinds
-     (fn [] ~@body)))
-
-(defn reset-mock!
-  [m]
-  (reset! m @(mk/make-mock {})))
 
 (defn pause
   []
@@ -408,3 +401,18 @@
   [& params]
   (apply db/query *pool* params))
 
+(defn sleep
+  [ms-or-duration]
+  (Thread/sleep (inst-ms (dt/duration ms-or-duration))))
+
+(defn config-get-mock
+  [data]
+  (fn
+    ([key]
+     (get data key (get cf/config key)))
+    ([key default]
+     (get data key (get cf/config key default)))))
+
+(defn reset-mock!
+  [m]
+  (reset! m @(mk/make-mock {})))

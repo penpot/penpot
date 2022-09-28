@@ -20,7 +20,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :refer [rename-keys union]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def measure-attrs
   [:proportion-lock

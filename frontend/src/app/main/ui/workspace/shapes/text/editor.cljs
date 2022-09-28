@@ -23,7 +23,7 @@
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import
    goog.events.EventType))
 

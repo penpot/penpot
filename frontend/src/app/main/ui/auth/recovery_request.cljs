@@ -16,7 +16,7 @@
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (s/def ::email ::us/email)
 (s/def ::recovery-request-form (s/keys :req-un [::email]))

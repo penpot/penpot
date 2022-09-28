@@ -244,6 +244,9 @@
 
    {:name "0078-mod-file-media-object-table-drop-cascade"
     :fn (mg/resource "app/migrations/sql/0078-mod-file-media-object-table-drop-cascade.sql")}
+
+   {:name "0079-mod-profile-table"
+    :fn (mg/resource "app/migrations/sql/0079-mod-profile-table.sql")}
    ])
 
 

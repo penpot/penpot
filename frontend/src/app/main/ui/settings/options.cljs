@@ -15,7 +15,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (s/def ::lang (s/nilable ::us/string))
 (s/def ::theme (s/nilable ::us/not-empty-string))

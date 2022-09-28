@@ -21,7 +21,7 @@
    [app.util.object :as obj]
    [cuerdas.core :as str]
    [goog.events :as events]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- Components
 

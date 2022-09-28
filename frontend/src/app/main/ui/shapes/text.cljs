@@ -11,7 +11,7 @@
    [app.main.ui.shapes.text.fo-text :as fo]
    [app.main.ui.shapes.text.svg-text :as svg]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn- load-fonts!
   [content]

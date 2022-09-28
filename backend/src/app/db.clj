@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.db
+  (:refer-clojure :exclude [get])
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -270,28 +271,55 @@
               (sql/delete table params opts)
               (assoc opts :return-keys true))))
 
-(defn- is-deleted?
+(defn is-row-deleted?
   [{:keys [deleted-at]}]
   (and (dt/instant? deleted-at)
        (< (inst-ms deleted-at)
           (inst-ms (dt/now)))))
 
-(defn get-by-params
+(defn get*
+  "Internal function for retrieve a single row from database that
+  matches a simple filters."
   ([ds table params]
-   (get-by-params ds table params nil))
-  ([ds table params {:keys [check-not-found] :or {check-not-found true} :as opts}]
-   (let [res (exec-one! ds (sql/select table params opts))]
-     (when (and check-not-found (or (not res) (is-deleted? res)))
+   (get* ds table params nil))
+  ([ds table params {:keys [check-deleted?] :or {check-deleted? true} :as opts}]
+   (let [rows (exec! ds (sql/select table params opts))
+         rows (cond->> rows
+                check-deleted?
+                (remove is-row-deleted?))]
+     (first rows))))
+
+(defn get
+  ([ds table params]
+   (get ds table params nil))
+  ([ds table params {:keys [check-deleted?] :or {check-deleted? true} :as opts}]
+   (let [row (get* ds table params opts)]
+     (when (and (not row) check-deleted?)
        (ex/raise :type :not-found
                  :table table
                  :hint "database object not found"))
-     res)))
+     row)))
+
+(defn get-by-params
+  "DEPRECATED"
+  ([ds table params]
+   (get-by-params ds table params nil))
+  ([ds table params {:keys [check-not-found] :or {check-not-found true} :as opts}]
+   (let [row (get* ds table params (assoc opts :check-deleted? check-not-found))]
+     (when (and (not row) check-not-found)
+       (ex/raise :type :not-found
+                 :table table
+                 :hint "database object not found"))
+     row)))
 
 (defn get-by-id
   ([ds table id]
-   (get-by-params ds table {:id id} nil))
+   (get ds table {:id id} nil))
   ([ds table id opts]
-   (get-by-params ds table {:id id} opts)))
+   (let [opts (cond-> opts
+                (contains? opts :check-not-found)
+                (assoc :check-deleted? (:check-not-found opts)))]
+     (get ds table {:id id} opts))))
 
 (defn query
   ([ds table params]

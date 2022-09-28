@@ -13,7 +13,7 @@
    [app.main.ui.shapes.custom-stroke :refer [shape-fills shape-strokes]]
    [app.util.object :as obj]
    [debug :refer [debug?]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn frame-clip-id
   [shape render-id]

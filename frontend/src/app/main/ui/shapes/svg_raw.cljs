@@ -11,7 +11,7 @@
    [app.main.ui.shapes.attrs :as usa]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; Graphic tags
 (defonce graphic-element?

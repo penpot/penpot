@@ -20,7 +20,7 @@
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [goog.functions :as f]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn use-id
   "Get a stable id value across rerenders."
@@ -29,7 +29,7 @@
 
 (defn use-rxsub
   [ob]
-  (let [[state reset-state!] (mf/useState @ob)]
+  (let [[state reset-state!] (mf/useState #(if (satisfies? IDeref ob) @ob nil))]
     (mf/useEffect
      (fn []
        (let [sub (rx/subscribe ob #(reset-state! %))]
@@ -313,3 +313,39 @@
     (use-stream stream (partial reset! state))
 
     state))
+
+(defonce ^:private intersection-subject (rx/subject))
+(defonce ^:private intersection-observer
+  (delay (js/IntersectionObserver.
+          (fn [entries _]
+            (run! (partial rx/push! intersection-subject) (seq entries)))
+          #js {:rootMargin "0px"
+               :threshold 1.0})))
+
+(defn use-visible
+  [ref & {:keys [once?]}]
+  (let [[state update-state!] (mf/useState false)]
+    (mf/with-effect [once?]
+      (let [node   (mf/ref-val ref)
+            stream (->> intersection-subject
+                        (rx/filter (fn [entry]
+                                     (let [target (unchecked-get entry "target")]
+                                       (identical? target node))))
+                        (rx/map (fn [entry]
+                                  (let [ratio (unchecked-get entry "intersectionRatio")
+                                        intersecting? (unchecked-get entry "isIntersecting")]
+                                    (or intersecting? (> ratio 0.5)))))
+                        (rx/dedupe))
+            stream (if once?
+                     (->> stream
+                          (rx/filter identity)
+                          (rx/take 1))
+                     stream)
+            subs (rx/subscribe stream update-state!)]
+        (.observe ^js @intersection-observer node)
+        (fn []
+          (.unobserve ^js @intersection-observer node)
+          (rx/dispose! subs))))
+
+    state))
+

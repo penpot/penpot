@@ -11,7 +11,7 @@
    [app.util.i18n :refer [tr]]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- Handlers Helpers
 

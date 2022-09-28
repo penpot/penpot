@@ -17,7 +17,7 @@
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn generate-markup-code [_type shapes]
   (let [frame (dom/query js/document "#svg-frame")

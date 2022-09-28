@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (log/set-level! :warn)
 

@@ -21,7 +21,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [debug :refer [debug?]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn- draw-thumbnail-canvas!
   [canvas-node img-node]

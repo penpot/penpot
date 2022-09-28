@@ -17,7 +17,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (s/def ::content ::us/not-empty-string)
 (s/def ::subject ::us/not-empty-string)

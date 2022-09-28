@@ -14,7 +14,7 @@
    [goog.events :as gev]
    [potok.core :as ptk]
    [promesa.core :as p]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn load-arengu-sdk
   [container-ref email form-id]

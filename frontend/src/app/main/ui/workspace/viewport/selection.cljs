@@ -20,8 +20,8 @@
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [debug :refer [debug?]]
-   [rumext.alpha :as mf]
-   [rumext.util :refer [map->obj]]))
+   [rumext.v2 :as mf]
+   [rumext.v2.util :refer [map->obj]]))
 
 (def rotation-handler-size 20)
 (def resize-point-radius 4)

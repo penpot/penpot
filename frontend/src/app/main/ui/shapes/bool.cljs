@@ -13,7 +13,7 @@
    [app.main.ui.shapes.export :as use]
    [app.main.ui.shapes.path :refer [path-shape]]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn bool-shape
   [shape-wrapper]

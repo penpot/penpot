@@ -13,7 +13,7 @@
    [app.main.snap :as snap]
    [app.util.geom.snap-points :as sp]
    [beicon.core :as rx]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def ^:private line-color "var(--color-snap)")
 (def ^:private line-opacity 0.6)

@@ -17,7 +17,7 @@
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def fill-attrs [:fill-color :fill-color-gradient :fill-opacity])
 

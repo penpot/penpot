@@ -15,7 +15,7 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc editable-select
   [{:keys [value type options class on-change placeholder on-blur] :as params}]

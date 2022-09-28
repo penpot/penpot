@@ -434,6 +434,10 @@
                      (assoc :path "/#/auth/verify-token")
                      (assoc :query (u/map->query-string params)))]
 
+      (when (:is-blocked profile)
+        (ex/raise :type :restriction
+                  :code :profile-blocked))
+
       (when (fn? audit)
         (audit :cmd :submit
                :type "command"

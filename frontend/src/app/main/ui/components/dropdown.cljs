@@ -12,7 +12,7 @@
    [app.util.keyboard :as kbd]
    [goog.events :as events]
    [goog.object :as gobj]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (mf/defc dropdown'

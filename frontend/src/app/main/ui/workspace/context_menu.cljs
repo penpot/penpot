@@ -31,7 +31,7 @@
    [app.util.i18n :refer [tr] :as i18n]
    [app.util.timers :as timers]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def menu-ref
   (l/derived :context-menu refs/workspace-local))
