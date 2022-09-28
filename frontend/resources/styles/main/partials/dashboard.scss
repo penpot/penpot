@@ -43,9 +43,10 @@
     }
   }
   .invite {
-    width: 180px;
-    height: 40px;
     align-self: flex-end;
+    height: 40px;
+    font-family: "worksans", sans-serif;
+    width: 180px;
   }
   img {
     width: 274px;
@@ -200,7 +201,7 @@
       align-items: center;
       justify-content: flex-start;
       min-height: 32px;
-      margin-left: 13px;
+      margin-left: $size-2;
     }
     .show-more {
       align-items: center;
@@ -245,10 +246,11 @@
     }
 
     .info {
-      font-size: $fs16;
+      font-size: $fs14;
       line-height: 1rem;
-      font-weight: unset;
-      color: $color-gray-30;
+      font-weight: 400;
+      color: $color-gray-60;
+      margin-left: .75rem;
     }
 
     .project-actions {
@@ -256,8 +258,9 @@
       margin-left: $size-6;
 
       .btn-small {
-        padding: $size-2;
+        height: 32px;
         margin: 0 $size-2;
+        width: 32px;
       }
     }
 
@@ -287,9 +290,10 @@
 }
 
 .recent-files-row-title-info {
-  color: $color-gray-30;
+  color: $color-gray-60;
   line-height: 1rem;
-  font-size: $fs16;
+  font-size: $fs14;
+  font-weight: 400;
 }
 
 .dashboard-table {
@@ -453,8 +457,12 @@
         font-size: 18px;
         font-weight: 600;
         color: $color-black;
-        margin-left: 20px;
+        margin-left: 18px;
         margin-right: 10px;
+        &.icon {
+          margin-left: 10px;
+          margin-right: 16px;
+        }
       }
       svg {
         width: 12px;

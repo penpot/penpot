@@ -103,8 +103,8 @@
       h3 {
         border: 1px solid transparent;
         color: $color-gray-60;
-        font-size: $fs16;
-        font-weight: 400;
+        font-size: $fs14;
+        font-weight: 500;
         overflow: hidden;
         padding: 0;
         height: 27px;
@@ -120,7 +120,7 @@
       }
 
       span.date {
-        color: $color-gray-20;
+        color: $color-gray-30;
         font-size: $fs14;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -146,10 +146,10 @@
     .item-badge {
       background-color: $color-white;
       border: 1px solid $color-gray-20;
-      border-radius: 4px;
+      border-radius: 2px;
       position: absolute;
-      top: $size-1;
-      right: $size-1;
+      top: $size-2;
+      right: $size-2;
       height: 32px;
       width: 32px;
       display: flex;
@@ -197,7 +197,7 @@
 
       .project-th-actions {
         align-items: center;
-        bottom: 2px;
+        bottom: 14px;
         opacity: 0;
         display: flex;
         right: 5px;
@@ -444,10 +444,11 @@
   .create-new {
     background-color: white;
     border: 2px solid $color-gray-10;
-    height: 158px;
-    cursor: pointer;
-    color: $color-black;
     border-radius: 3px;
+    color: $color-black;
+    cursor: pointer;
+    height: 158px;
+    font-family: "worksans", sans-serif;
     margin: 0.5rem;
     &:hover {
       border: 2px solid $color-primary;

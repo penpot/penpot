@@ -377,7 +377,7 @@
     span {
       @include text-ellipsis;
       color: $color-black;
-      margin: 10px 5px;
+      margin: 10px;
       font-size: $fs14;
       max-width: 160px;
     }
