@@ -281,7 +281,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "Deskargatu %s Penpot fitxategi (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Esportatu arbelak PDFra…"
+msgstr "Esportatu arbelak PDFra"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

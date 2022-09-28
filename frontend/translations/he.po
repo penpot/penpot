@@ -280,7 +280,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "הורדת %s קובצי Penpot‏ (‎.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "ייצוא לוחות אומנות ל־PDF…"
+msgstr "ייצוא לוחות אומנות ל־PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

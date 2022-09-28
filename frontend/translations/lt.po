@@ -244,7 +244,7 @@ msgstr ""
 "į [Bibliotekos ir šablonai] (https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "Eksportuokite darbalaukius į PDF..."
+msgstr "Eksportuokite darbalaukius į PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

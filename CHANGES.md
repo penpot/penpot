@@ -5,6 +5,9 @@
 ### :boom: Breaking changes & Deprecations
 ### :sparkles: New features
 ### :bug: Bugs fixed
+
+- Fix some texts and a typo [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
+
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
