@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-01 14:17+0000\n"
-"Last-Translator: Youkho <youkho@gmail.com>\n"
+"Last-Translator: Shuaib Zahda <shuaib.zahda@gmail.com>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
 "ar/>\n"
 "Language: ar\n"
@@ -2356,7 +2356,7 @@ msgstr "تضمين أصول المكتبة المشتركة في مكتبات ا
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"
-msgstr "الاشتراك في النشرة الإخبارية"
+msgstr "الإشتراك في"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
