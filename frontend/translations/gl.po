@@ -255,7 +255,7 @@ msgstr ""
 "vai a [Bibliotecas e modelos] (https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "Exportar marcos a PDF…"
+msgstr "Exportar marcos a PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

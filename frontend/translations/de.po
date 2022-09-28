@@ -246,7 +246,7 @@ msgstr ""
 "Vorlagen](https://penpot.app/libraries-templates.html) gehen"
 
 msgid "dashboard.export-frames"
-msgstr "Zeichenflächen als PDF exportieren…"
+msgstr "Zeichenflächen als PDF exportieren"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

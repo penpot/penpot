@@ -240,7 +240,7 @@ msgstr ""
 
 #, fuzzy
 msgid "dashboard.export-frames"
-msgstr "將 artboards 匯出為 PDF..."
+msgstr "將 artboards 匯出為 PDF"
 
 msgid "dashboard.export-multi"
 msgstr "匯出 %s 個檔案"
