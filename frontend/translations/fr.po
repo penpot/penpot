@@ -286,7 +286,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "Télécharger %s fichiers Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Exporter les plans de travail au format PDF…"
+msgstr "Exporter les plans de travail au format PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

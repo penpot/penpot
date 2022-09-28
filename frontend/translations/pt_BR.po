@@ -260,7 +260,7 @@ msgstr ""
 "modelos](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "Exportar pranchetas para PDF…"
+msgstr "Exportar pranchetas para PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

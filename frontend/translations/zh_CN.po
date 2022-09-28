@@ -237,7 +237,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr "现在尚无文件。如果你想尝试一些模板，请点击[库和模板](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "导出画板到PDF…"
+msgstr "导出画板到PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

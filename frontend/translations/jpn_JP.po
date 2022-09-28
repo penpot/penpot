@@ -270,7 +270,7 @@ msgstr ""
 "templates](https://penpot.app/libraries-templates.html) をチェックしてみてください。"
 
 msgid "dashboard.export-frames"
-msgstr "PDFでエクスポート…"
+msgstr "PDFでエクスポート"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

@@ -279,7 +279,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "Unduh %s berkas Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Ekspor papan-papan ke PDF…"
+msgstr "Ekspor papan-papan ke PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
