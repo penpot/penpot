@@ -131,3 +131,15 @@
       (js/performance.clearMeasures end-mark)
       #js {:duration duration
            :avg avg})))
+
+(defn now
+  []
+  (js/performance.now))
+
+(defn tpoint
+  "Create a measurement checkpoint for time measurement of potentially
+  asynchronous flow."
+  []
+  (let [p1 (now)]
+    #(js/Math.floor (- (now) p1))))
+

@@ -565,6 +565,8 @@
   (s/keys :req-un [::profile-id ::file-id ::revn ::data ::props]))
 
 (sv/defmethod ::upsert-file-thumbnail
+  "Creates or updates the file thumbnail. Mainly used for paint the
+  grid thumbnals."
   [{:keys [pool] :as cfg} {:keys [profile-id file-id revn data props]}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
