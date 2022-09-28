@@ -12,7 +12,7 @@
    [app.main.ui.shapes.path :refer [path-shape]]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (declare generic-draw-area)
 (declare path-draw-area)

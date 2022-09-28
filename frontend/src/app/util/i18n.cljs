@@ -16,7 +16,7 @@
    [cuerdas.core :as str]
    [goog.object :as gobj]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (log/set-level! :info)
 

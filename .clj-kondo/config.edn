@@ -2,8 +2,8 @@
  {promesa.core/let clojure.core/let
   promesa.core/->> clojure.core/->>
   promesa.core/-> clojure.core/->
-  rumext.alpha/defc clojure.core/defn
-  rumext.alpha/fnc clojure.core/fn
+  rumext.v2/defc clojure.core/defn
+  rumext.v2/fnc clojure.core/fn
   app.common.data/export clojure.core/def
   app.db/with-atomic clojure.core/with-open
   app.common.data.macros/get-in clojure.core/get-in

@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.auth
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -96,15 +97,19 @@
             (:valid (verify-password password (:password profile))))
 
           (validate-profile [profile]
-            (when-not (:is-active profile)
-              (ex/raise :type :validation
-                        :code :wrong-credentials))
             (when-not profile
               (ex/raise :type :validation
                         :code :wrong-credentials))
+            (when-not (:is-active profile)
+              (ex/raise :type :validation
+                        :code :wrong-credentials))
+            (when (:is-blocked profile)
+              (ex/raise :type :restriction
+                        :code :profile-blocked))
             (when-not (check-password profile password)
               (ex/raise :type :validation
                         :code :wrong-credentials))
+
             profile)]
 
     (db/with-atomic [conn pool]
@@ -184,8 +189,9 @@
 
 ;; ---- COMMAND: Prepare Register
 
-(defn prepare-register
-  [{:keys [pool sprops] :as cfg} params]
+(defn validate-register-attempt!
+  [{:keys [pool sprops]} params]
+
   (when-not (contains? cf/flags :registration)
     (if-not (contains? params :invitation-token)
       (ex/raise :type :restriction
@@ -208,20 +214,50 @@
               :code :email-has-permanent-bounces
               :hint "looks like the email has one or many bounces reported"))
 
-  (check-profile-existence! pool params)
-
+  ;; Perform a basic validation of email & password
   (when (= (str/lower (:email params))
            (str/lower (:password params)))
     (ex/raise :type :validation
               :code :email-as-password
-              :hint "you can't use your email as password"))
+              :hint "you can't use your email as password")))
 
-  (let [params {:email (:email params)
-                :password (:password params)
-                :invitation-token (:invitation-token params)
-                :backend "penpot"
-                :iss :prepared-register
-                :exp (dt/in-future "48h")}
+(def register-retry-threshold
+  (dt/duration "15m"))
+
+(defn- elapsed-register-retry-threshold?
+  [profile]
+  (let [elapsed (dt/diff (:modified-at profile) (dt/now))]
+    (pos? (compare elapsed register-retry-threshold))))
+
+(defn prepare-register
+  [{:keys [pool sprops] :as cfg} params]
+
+  (validate-register-attempt! cfg params)
+
+  (let [profile (when-let [profile (profile/retrieve-profile-data-by-email pool (:email params))]
+                  (cond
+                    (:is-blocked profile)
+                    (ex/raise :type :restriction
+                              :code :profile-blocked)
+
+                    (and (not (:is-active profile))
+                         (elapsed-register-retry-threshold? profile))
+                    profile
+
+                    :else
+                    (ex/raise :type :validation
+                              :code :email-already-exists
+                              :hint "profile already exists")))
+
+        params  {:email (:email params)
+                 :password (:password params)
+                 :invitation-token (:invitation-token params)
+                 :backend "penpot"
+                 :iss :prepared-register
+                 :profile-id (:id profile)
+                 :exp (dt/in-future {:days 7})}
+
+        params (d/without-nils params)
 
         token  (tokens/generate sprops params)]
     (with-meta {:token token}
@@ -240,11 +276,10 @@
 ;; ---- COMMAND: Register Profile
 
 (defn create-profile
-  "Create the profile entry on the database with limited input filling
-  all the other fields with defaults."
+  "Create the profile entry on the database with limited set of input
+  attrs (all the other attrs are filled with default values)."
   [conn params]
   (let [id        (or (:id params) (uuid/next))
-
         props     (-> (audit/extract-utm-params params)
                       (merge (:props params))
                       (merge {:viewed-tutorial? false
@@ -320,62 +355,76 @@
 
 (defn register-profile
   [{:keys [conn sprops session] :as cfg} {:keys [token] :as params}]
-  (let [claims    (tokens/verify sprops {:token token :iss :prepared-register})
-        params    (merge params claims)]
-    (check-profile-existence! conn params)
-    (let [is-active  (or (:is-active params)
-                         (not (contains? cf/flags :email-verification))
+  (let [claims     (tokens/verify sprops {:token token :iss :prepared-register})
+        params     (merge params claims)
 
-                         ;; DEPRECATED: v1.15
-                         (contains? cf/flags :insecure-register))
+        is-active  (or (:is-active params)
+                       (not (contains? cf/flags :email-verification))
 
-          profile    (->> (assoc params :is-active is-active)
+                       ;; DEPRECATED: v1.15
+                       (contains? cf/flags :insecure-register))
+
+        profile    (if-let [profile-id (:profile-id claims)]
+                     (profile/retrieve-profile conn profile-id)
+                     (->> (assoc params :is-active is-active)
                           (create-profile conn)
                           (create-profile-relations conn)
-                          (profile/decode-profile-row))
+                          (profile/decode-profile-row)))
+        audit-fn   (:audit cfg)
 
-          invitation (when-let [token (:invitation-token params)]
-                       (tokens/verify sprops {:token token :iss :team-invitation}))]
-      (cond
-        ;; If invitation token comes in params, this is because the
-        ;; user comes from team-invitation process; in this case,
-        ;; regenerate token and send back to the user a new invitation
-        ;; token (and mark current session as logged). This happens
-        ;; only if the invitation email matches with the register
-        ;; email.
-        (and (some? invitation) (= (:email profile) (:member-email invitation)))
-        (let [claims (assoc invitation :member-id  (:id profile))
-              token  (tokens/generate sprops claims)
-              resp   {:invitation-token token}]
-          (with-meta resp
-            {:transform-response ((:create session) (:id profile))
-             ::audit/replace-props (audit/profile->props profile)
-             ::audit/profile-id (:id profile)}))
+        invitation (when-let [token (:invitation-token params)]
+                     (tokens/verify sprops {:token token :iss :team-invitation}))]
 
-        ;; If auth backend is different from "penpot" means user is
-        ;; registering using third party auth mechanism; in this case
-        ;; we need to mark this session as logged.
-        (not= "penpot" (:auth-backend profile))
-        (with-meta (profile/strip-private-attrs profile)
+    ;; If profile is filled in claims, means it tries to register
+    ;; again, so we proceed to update the modified-at attr
+    ;; accordingly.
+    (when-let [id (:profile-id claims)]
+      (db/update! conn :profile {:modified-at (dt/now)} {:id id})
+      (audit-fn :cmd :submit
+                :type "fact"
+                :name "register-profile-retry"
+                :profile-id id))
+
+    (cond
+      ;; If invitation token comes in params, this is because the
+      ;; user comes from team-invitation process; in this case,
+      ;; regenerate token and send back to the user a new invitation
+      ;; token (and mark current session as logged). This happens
+      ;; only if the invitation email matches with the register
+      ;; email.
+      (and (some? invitation) (= (:email profile) (:member-email invitation)))
+      (let [claims (assoc invitation :member-id  (:id profile))
+            token  (tokens/generate sprops claims)
+            resp   {:invitation-token token}]
+        (with-meta resp
           {:transform-response ((:create session) (:id profile))
            ::audit/replace-props (audit/profile->props profile)
-           ::audit/profile-id (:id profile)})
+           ::audit/profile-id (:id profile)}))
 
-        ;; If the `:enable-insecure-register` flag is set, we proceed
-        ;; to sign in the user directly, without email verification.
-        (true? is-active)
-        (with-meta (profile/strip-private-attrs profile)
-          {:transform-response ((:create session) (:id profile))
-           ::audit/replace-props (audit/profile->props profile)
-           ::audit/profile-id (:id profile)})
+      ;; If auth backend is different from "penpot" means user is
+      ;; registering using third party auth mechanism; in this case
+      ;; we need to mark this session as logged.
+      (not= "penpot" (:auth-backend profile))
+      (with-meta (profile/strip-private-attrs profile)
+        {:transform-response ((:create session) (:id profile))
+         ::audit/replace-props (audit/profile->props profile)
+         ::audit/profile-id (:id profile)})
 
-        ;; In all other cases, send a verification email.
-        :else
-        (do
-          (send-email-verification! conn sprops profile)
-          (with-meta profile
-            {::audit/replace-props (audit/profile->props profile)
-             ::audit/profile-id (:id profile)}))))))
+      ;; If the `:enable-insecure-register` flag is set, we proceed
+      ;; to sign in the user directly, without email verification.
+      (true? is-active)
+      (with-meta (profile/strip-private-attrs profile)
+        {:transform-response ((:create session) (:id profile))
+         ::audit/replace-props (audit/profile->props profile)
+         ::audit/profile-id (:id profile)})
+
+      ;; In all other cases, send a verification email.
+      :else
+      (do
+        (send-email-verification! conn sprops profile)
+        (with-meta profile
+          {::audit/replace-props (audit/profile->props profile)
+           ::audit/profile-id (:id profile)})))))
 
 (s/def ::register-profile
   (s/keys :req-un [::token ::fullname]))

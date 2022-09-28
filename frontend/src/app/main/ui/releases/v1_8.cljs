@@ -7,7 +7,7 @@
 (ns app.main.ui.releases.v1-8
   (:require
    [app.main.ui.releases.common :as c]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defmethod c/render-release-notes "1.8"
   [{:keys [slide klass next finish navigate version]}]

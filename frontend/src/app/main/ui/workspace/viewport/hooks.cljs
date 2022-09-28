@@ -28,7 +28,7 @@
    [beicon.core :as rx]
    [debug :refer [debug?]]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (defn setup-dom-events [viewport-ref overlays-ref zoom disable-paste in-viewport?]

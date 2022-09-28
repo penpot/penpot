@@ -9,7 +9,7 @@
    [app.main.ui.hooks :as hooks]
    [app.util.http :as http]
    [beicon.core :as rx]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def context (mf/create-context false))
 

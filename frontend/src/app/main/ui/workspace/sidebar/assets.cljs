@@ -45,7 +45,7 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; NOTE: TODO: for avoid too many arguments, I think we can use react
 ;; context variables for pass to the down tree all the common

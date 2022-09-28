@@ -13,7 +13,7 @@
    [app.main.ui.comments :as cmt]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc comments-layer
   [{:keys [vbox vport zoom file-id page-id drawing] :as props}]

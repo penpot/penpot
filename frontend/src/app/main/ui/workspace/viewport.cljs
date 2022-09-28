@@ -41,7 +41,7 @@
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [beicon.core :as rx]
    [debug :refer [debug?]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- Viewport
 

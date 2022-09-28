@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc banner
   [{:keys [type position status controls content actions on-close data-test] :as props}]

@@ -14,7 +14,7 @@
    [app.util.color :as uc]
    [app.util.object :as obj]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc render-text
   {::mf/wrap-props false}

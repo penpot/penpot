@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc tab-element
   {::mf/wrap-props false}

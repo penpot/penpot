@@ -16,7 +16,7 @@
    [app.util.simple-math :as sm]
    [cuerdas.core :as str]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (mf/defc numeric-input

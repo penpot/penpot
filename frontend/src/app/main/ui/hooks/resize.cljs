@@ -13,7 +13,7 @@
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.storage :refer [storage]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (log/set-level! :warn)
 

@@ -14,7 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn- transform-no-resize
   "If we apply a scale directly to the texts it will show deformed so we need to create this

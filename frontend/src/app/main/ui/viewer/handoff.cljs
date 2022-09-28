@@ -14,7 +14,7 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (defn handle-select-frame

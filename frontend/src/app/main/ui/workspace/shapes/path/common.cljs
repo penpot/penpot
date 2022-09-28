@@ -8,7 +8,7 @@
   (:require
    [app.main.refs :as refs]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def primary-color "var(--color-select)")
 (def secondary-color "var(--color-distance)")

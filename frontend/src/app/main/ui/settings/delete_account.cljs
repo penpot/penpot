@@ -14,7 +14,7 @@
    [app.main.ui.messages :as msgs]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn on-error
   [{:keys [code] :as error}]

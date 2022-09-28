@@ -8,6 +8,7 @@
   (:refer-clojure :exclude [error-handler])
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -213,7 +214,7 @@
 
           (render-template [report]
             (let [context (dissoc report
-                                  :trace :cause :params :data :spec-problems
+                                  :trace :cause :params :data :spec-problems :message
                                   :spec-explain :spec-value :error :explain :hint)
                   params  {:context       (pp/pprint-str context :width 200)
                            :hint          (:hint report)
@@ -341,8 +342,13 @@
   "Mainly a task that performs a health check."
   [{:keys [pool]} _]
   (db/with-atomic [conn pool]
-    (db/exec-one! conn ["select count(*) as count from server_prop;"])
-    (yrs/response 200 "OK")))
+    (try
+      (db/exec-one! conn ["select count(*) as count from server_prop;"])
+      (yrs/response 200 "OK")
+      (catch Throwable cause
+        (l/warn :hint "unable to execute query on health handler"
+                :cause cause)
+        (yrs/response 503 "KO")))))
 
 (defn changelog-handler
   [_ _]

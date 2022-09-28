@@ -15,7 +15,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc libraries
   [{:keys [on-select-color on-add-library-color disable-gradient disable-opacity]}]

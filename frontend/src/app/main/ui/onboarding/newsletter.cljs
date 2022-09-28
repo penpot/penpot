@@ -11,7 +11,7 @@
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.util.i18n :as i18n :refer [tr]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc onboarding-newsletter-modal
   {::mf/register modal/components

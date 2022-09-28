@@ -15,7 +15,7 @@
    [app.worker.impl :as impl]
    [beicon.core :as rx]
    [debug :refer [debug?]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn- handle-response
   [{:keys [body status] :as response}]

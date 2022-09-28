@@ -20,7 +20,7 @@
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def show-alt-login-buttons?
   (some (partial contains? @cf/flags)
@@ -83,14 +83,24 @@
         form    (fm/use-form :spec ::login-form :initial initial)
 
         on-error
-        (fn [_]
-          (reset! error (tr "errors.wrong-credentials")))
+        (fn [cause]
+          (cond
+            (and (= :restriction (:type cause))
+                 (= :profile-blocked (:code cause)))
+            (reset! error (tr "errors.profile-blocked"))
+
+            (and (= :validation (:type cause))
+                 (= :wrong-credentials (:code cause)))
+            (reset! error (tr "errors.wrong-credentials"))
+
+            :else
+            (reset! error (tr "errors.generic"))))
 
         on-success-default
         (fn [data]
           (when-let [token (:invitation-token data)]
             (st/emit! (rt/nav :auth-verify-token {} {:token token}))))
-        
+
         on-success
         (fn [data]
           (if (nil? on-success-callback)

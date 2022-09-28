@@ -8,7 +8,7 @@
   (:require
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- Component
 

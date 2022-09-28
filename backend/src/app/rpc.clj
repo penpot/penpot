@@ -31,9 +31,10 @@
 
 (defn- handle-response-transformation
   [response request mdata]
-  (if-let [transform-fn (:transform-response mdata)]
-    (p/do (transform-fn request response))
-    (p/resolved response)))
+  (let [response (if (sv/wrapped? response) @response response)]
+    (if-let [transform-fn (:transform-response mdata)]
+      (p/do (transform-fn request response))
+      (p/resolved response))))
 
 (defn- handle-before-comple-hook
   [response mdata]
@@ -222,6 +223,7 @@
     (->> (sv/scan-ns 'app.rpc.commands.binfile
                      'app.rpc.commands.comments
                      'app.rpc.commands.management
+                     'app.rpc.commands.verify-token
                      'app.rpc.commands.auth
                      'app.rpc.commands.ldap
                      'app.rpc.commands.demo

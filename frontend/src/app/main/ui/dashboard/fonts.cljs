@@ -20,7 +20,7 @@
    [app.util.keyboard :as kbd]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn- use-set-page-title
   [team section]

@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.shapes.common
   (:require
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn generic-wrapper-factory
   [component]

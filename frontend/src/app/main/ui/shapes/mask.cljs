@@ -10,7 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn mask-id [render-id mask]
   (str render-id "-" (:id mask) "-mask"))

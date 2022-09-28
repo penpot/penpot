@@ -7,7 +7,7 @@
 (ns app.main.ui.components.code-block
   (:require
    ["highlight.js" :as hljs]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc code-block [{:keys [code type]}]
   (let [block-ref (mf/use-ref)]

@@ -7,7 +7,7 @@
 (ns app.main.ui.releases.v1-10
   (:require
    [app.main.ui.releases.common :as c]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defmethod c/render-release-notes "1.10"
   [{:keys [klass finish version]}]

@@ -25,7 +25,7 @@
    [app.main.ui.viewer.interactions :refer [prepare-objects]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (declare shape-container-factory)
 

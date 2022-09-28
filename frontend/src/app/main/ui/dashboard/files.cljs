@@ -20,7 +20,7 @@
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc header
   [{:keys [project on-create-clicked] :as props}]

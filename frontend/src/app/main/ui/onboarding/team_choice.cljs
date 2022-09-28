@@ -21,7 +21,7 @@
    [app.util.timers :as tm]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (s/def ::name ::us/not-empty-string)
 (s/def ::team-form

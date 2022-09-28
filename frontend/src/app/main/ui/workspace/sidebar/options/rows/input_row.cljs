@@ -10,7 +10,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.components.select :refer [select]]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc input-row [{:keys [label options value class min max on-change type placeholder default nillable]}]
   [:div.row-flex.input-row

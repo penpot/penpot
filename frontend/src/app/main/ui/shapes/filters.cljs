@@ -12,7 +12,7 @@
    [app.common.uuid :as uuid]
    [app.util.color :as color]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn get-filter-id []
   (str "filter_" (uuid/next)))

@@ -7,7 +7,7 @@
 (ns app.main.ui.releases.common
   (:require
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defmulti render-release-notes :version)
 

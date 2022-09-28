@@ -250,9 +250,10 @@
 
 (t/deftest test-allow-send-messages-predicate-with-bounces
   (with-mocks [mock {:target 'app.config/get
-                     :return (th/mock-config-get-with
+                     :return (th/config-get-mock
                               {:profile-bounce-threshold 3
                                :profile-complaint-threshold 2})}]
+
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)]
       (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
@@ -260,7 +261,7 @@
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
 
       (t/is (true? (emails/allow-send-emails? pool profile)))
-      (t/is (= 4 (:call-count (deref mock))))
+      (t/is (= 4 (:call-count @mock)))
 
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
       (t/is (false? (emails/allow-send-emails? pool profile))))))
@@ -268,7 +269,7 @@
 
 (t/deftest test-allow-send-messages-predicate-with-complaints
   (with-mocks [mock {:target 'app.config/get
-                     :return (th/mock-config-get-with
+                     :return (th/config-get-mock
                               {:profile-bounce-threshold 3
                                :profile-complaint-threshold 2})}]
     (let [profile (th/create-profile* 1)
@@ -280,7 +281,7 @@
       (th/create-complaint-for pool {:type :complaint :id (:id profile)})
 
       (t/is (true? (emails/allow-send-emails? pool profile)))
-      (t/is (= 4 (:call-count (deref mock))))
+      (t/is (= 4 (:call-count @mock)))
 
       (th/create-complaint-for pool {:type :complaint :id (:id profile)})
       (t/is (false? (emails/allow-send-emails? pool profile))))))

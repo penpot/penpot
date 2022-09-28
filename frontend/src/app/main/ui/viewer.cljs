@@ -40,7 +40,7 @@
    [cuerdas.core :as str]
    [goog.events :as events]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def current-animations-ref
   (l/derived :viewer-animations st/state))

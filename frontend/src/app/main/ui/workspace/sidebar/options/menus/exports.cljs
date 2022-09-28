@@ -16,7 +16,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer  [tr c]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def exports-attrs
   "Shape attrs that corresponds to exports. Used in other namespaces."

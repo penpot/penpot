@@ -7,7 +7,7 @@
 (ns app.main.ui.icons
   (:refer-clojure :exclude [import mask])
   (:require-macros [app.main.ui.icons :refer [icon-xref]])
-  (:require [rumext.alpha :as mf]))
+  (:require [rumext.v2 :as mf]))
 
 ;; Keep the list of icons sorted
 

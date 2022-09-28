@@ -19,7 +19,7 @@
    [app.util.dom :as dom]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def gradient-line-stroke-width 2)
 (def gradient-line-stroke-color "var(--color-white)")

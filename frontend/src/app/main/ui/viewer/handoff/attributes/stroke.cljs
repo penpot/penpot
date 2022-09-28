@@ -13,7 +13,7 @@
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn shape->color [shape]
   {:color (:stroke-color shape)

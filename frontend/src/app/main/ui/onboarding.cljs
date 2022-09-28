@@ -18,7 +18,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as tm]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; --- ONBOARDING LIGHTBOX
 

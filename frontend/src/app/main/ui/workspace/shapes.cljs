@@ -26,7 +26,7 @@
    [app.main.ui.workspace.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.shapes.text :as text]
    [app.util.object :as obj]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (declare shape-wrapper)
 (declare group-wrapper)

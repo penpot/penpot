@@ -13,7 +13,7 @@
    [app.util.code-gen :as cg]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn has-image? [shape]
   (= (:type shape) :image))

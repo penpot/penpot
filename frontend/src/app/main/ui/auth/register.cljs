@@ -20,7 +20,7 @@
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc demo-warning
   [_]
@@ -48,20 +48,23 @@
           :opt-un [::invitation-token]))
 
 (defn- handle-prepare-register-error
-  [form error]
-  (case (:code error)
-    :registration-disabled
+  [form {:keys [type code] :as cause}]
+  (condp = [type code]
+    [:restriction :registration-disabled]
     (st/emit! (dm/error (tr "errors.registration-disabled")))
 
-    :email-has-permanent-bounces
+    [:restriction :profile-blocked]
+    (st/emit! (dm/error (tr "errors.profile-blocked")))
+
+    [:validation :email-has-permanent-bounces]
     (let [email (get @form [:data :email])]
       (st/emit! (dm/error (tr "errors.email-has-permanent-bounces" email))))
 
-    :email-already-exists
+    [:validation :email-already-exists]
     (swap! form assoc-in [:errors :email]
            {:message "errors.email-already-exists"})
 
-    :email-as-password
+    [:validation :email-as-password]
     (swap! form assoc-in [:errors :password]
            {:message "errors.email-as-password"})
 

@@ -29,7 +29,7 @@
    [beicon.core :as rx]
    [okulary.core :as l]
    [potok.core :as ptk]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (def workspace-persistence-ref
   (l/derived :workspace-persistence st/state))

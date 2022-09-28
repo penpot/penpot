@@ -25,7 +25,7 @@
    [app.util.text-svg-position :as tsp]
    [app.util.timers :as ts]
    [promesa.core :as p]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn strip-position-data [shape]
   (-> shape

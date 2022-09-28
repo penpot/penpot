@@ -8,7 +8,7 @@
   (:require
    [app.util.dom :as dom]
    [app.util.globals :as globals]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (defn use-node-store
   "Hook responsible of storing the rendered DOM node in memory while not being used"

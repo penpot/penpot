@@ -21,7 +21,7 @@
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
    [app.main.ui.workspace.sidebar.options.shapes.multiple :refer [get-attrs]]
-   [rumext.alpha :as mf]))
+   [rumext.v2 :as mf]))
 
 (mf/defc options
   {::mf/wrap [mf/memo]
