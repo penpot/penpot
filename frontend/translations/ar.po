@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-27 15:18+0000\n"
+"PO-Revision-Date: 2022-10-01 14:17+0000\n"
 "Last-Translator: Youkho <youkho@gmail.com>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
 "ar/>\n"
@@ -1110,9 +1110,9 @@ msgstr "عفواً!"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
-msgstr[0] "0"
-msgstr[1] "1"
-msgstr[2] "2"
+msgstr[0] "0 ملف"
+msgstr[1] "ملفين"
+msgstr[2] "3 ملفات"
 msgstr[3] "قليل"
 msgstr[4] "كثير"
 msgstr[5] "غير ذلك"
@@ -2535,3 +2535,242 @@ msgstr "حدثت مشكلة في استيراد النموذج. لم يتم اس
 
 msgid "dashboard.export.options.merge.message"
 msgstr "سيتم تصدير ملفك مع دمج جميع الأصول الخارجية في مكتبة الملفات."
+
+msgid "onboarding.choice.title"
+msgstr "مرحبًا بك في Penpot"
+
+msgid "onboarding.contrib.alt"
+msgstr "مصدر مفتوح"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "هل أنت متأكد أنك تريد مغادرة فريق %s ؟"
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"سوف نرسل لك رسائل البريد الإلكتروني ذات الصلة فقط. يمكنك إلغاء الاشتراك في "
+"أي وقت في ملف تعريف المستخدم الخاص بك أو عبر رابط إلغاء الاشتراك في أي من "
+"رسائلنا الإخبارية."
+
+msgid "onboarding.slide.0.alt"
+msgstr "خلق التصاميم"
+
+msgid "onboarding.slide.0.desc1"
+msgstr "قم بإنشاء واجهات مستخدم جميلة بالتعاون مع جميع أعضاء الفريق."
+
+msgid "onboarding.slide.0.desc2"
+msgstr "الحفاظ على الاتساق على نطاق واسع مع المكونات والمكتبات وأنظمة التصميم."
+
+msgid "onboarding.slide.0.title"
+msgstr "مكتبات التصميم والأنماط والمكونات"
+
+msgid "onboarding.slide.1.alt"
+msgstr "النماذج التفاعلية"
+
+msgid "onboarding.slide.2.alt"
+msgstr "احصل على تعليقات"
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"يعمل جميع أعضاء الفريق في وقت واحد مع تصميمات متعددة اللاعبين في الوقت "
+"الفعلي وتعليقات وأفكار وتعليقات مركزية مباشرة على التصميمات."
+
+msgid "onboarding.slide.2.title"
+msgstr "الحصول على ردود الفعل ، وتقديم ومشاركة عملك"
+
+msgid "onboarding.slide.3.desc1"
+msgstr ""
+"قم بمزامنة التصميم والرمز لجميع المكونات والأنماط الخاصة بك واحصل على "
+"مقتطفات التعليمات البرمجية."
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"احصل على مواصفات التعليمات البرمجية وقدمها مثل الترميز (SVG ، HTML) أو "
+"الأنماط (CSS ، Less ، Stylus…)."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "لم يتم إضافة أي خط"
+msgstr[1] "تمت إضافة خط واحد"
+msgstr[2] "تمت إضافة خطين"
+msgstr[3] "عدد قليل من الخطوط المضافة"
+msgstr[4] "تمت إضافة العديد من الخطوط"
+msgstr[5] ""
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"إذا قمت بنقل الملكية ، فسوف تقوم بتغيير دورك إلى المسؤول ، وستفقد بعض "
+"الأذونات على هذا الفريق. "
+
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot هو برنامج مفتوح المصدر ، تم إنشاؤه بواسطة المجتمع ومن أجله. إذا كنت "
+"ترغب في التعاون ، فأنت أكثر من موضع ترحيب!"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "يمكنك الوصول إلى"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "واتبع تعليمات المساهمة :)"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"تم إرسال طلب الاشتراك الخاص بك ، وسوف نرسل لك بريدًا إلكترونيًا لتأكيده."
+
+msgid "onboarding.newsletter.decline"
+msgstr "لا شكرا"
+
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"اشترك في النشرة الإخبارية لدينا للبقاء على اطلاع دائم بتقدم تطوير المنتج "
+"والأخبار."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "تم استخدام هذا الملف بالفعل مع تمكين المكونات V2."
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "كمية الدفع"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "يمكنك مشاهدة برامجنا التعليمية والبرامج التعليمية التي قدمها مجتمعنا."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "دروس الفيديو"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "قبل ان تبدا"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot هو برنامج مفتوح المصدر وهو من صنع Kaleidos وكذلك المجتمع ، حيث يساعد "
+"الكثير من الناس بعضهم البعض بالفعل. يمكن للجميع التعاون من خلال:"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "المشاركة في المجتمع"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "دفعة صغيرة"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "إلغاء النشر"
+
+msgid "onboarding.newsletter.policy"
+msgstr "سياسة الخصوصية."
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "نظرًا لأننا نهتم بالخصوصية ، فإليك موقعنا "
+
+msgid "onboarding.slide.1.desc1"
+msgstr "أنشئ تفاعلات غنية لتقليد سلوك المنتج."
+
+msgid "onboarding.slide.1.desc2"
+msgstr ""
+"شارك مع أصحاب المصلحة ، وقدم مقترحات إلى فريقك وابدأ في اختبار المستخدم "
+"بتصميماتك ، كل ذلك في مكان واحد."
+
+msgid "onboarding.slide.1.title"
+msgstr "اجعل تصميماتك تنبض بالحياة من خلال التفاعلات"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "أنشئ فريقًا"
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "اسم فريقك"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "بعد تسمية فريقك ، ستتمكن من دعوة الأشخاص للانضمام."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "أدخل اسم الفريق"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "دعوة أعضاء"
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "أنشئ فريقًا وادعُه لاحقًا"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "أنشئ فريقًا وأرسل الدعوات"
+
+msgid "onboarding.newsletter.title"
+msgstr "هل تريد تلقي أخبار Penpot؟"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"أنت على وشك تحديث المكونات في مكتبة مشتركة. قد يؤثر هذا على الملفات الأخرى "
+"التي تستخدمها."
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"يجب أن تعلم أن هناك الكثير من الموارد المتاحة لمساعدتك في بدء استخدام Penpot "
+"، مثل دليل المستخدم وقناة Youtube الخاصة بنا."
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"حيث ستجد كيفية التعاون في الترجمات وطلبات الميزات والمساهمات الأساسية والبحث "
+"عن الأخطاء …"
+
+msgid "onboarding.contrib.title"
+msgstr "مساهم في المصدر المفتوح؟"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "تحديث المكونات في مكتبة مشتركة"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "دليل المستخدم"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "مرحبًا بك في Penpot!"
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"معلومات مفصلة حول كيفية استخدام Penpot. من النماذج الأولية إلى تنظيم أو "
+"مشاركة التصاميم."
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "دليل المساهمة"
+
+msgid "onboarding.contrib.link"
+msgstr "مشروع على github"
+
+msgid "onboarding.newsletter.accept"
+msgstr "نعم ، اشترك"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"مساحة عامة للتعلم والمشاركة والمناقشة حول Penpot وحاضرها ومستقبلها مع "
+"المجتمع بأكمله وفريق Penpot الأساسي."
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "أنشئ فريقًا لاحقًا"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr "تذكر أن تشمل الجميع. المطورين والمصممين والمديرين ... التنوع يضيف :)"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "دعوة مع الدور:"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"يسمح لك الفريق بالتعاون مع مستخدمي Penpot الآخرين الذين يعملون في نفس "
+"الملفات والمشاريع."
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "ملفات ومشاريع غير محدودة"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "إدارة الأدوار"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "مجانا 100٪ !"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "عدد غير محدود من الأعضاء"
