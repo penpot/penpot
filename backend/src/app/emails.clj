@@ -56,7 +56,6 @@
           type    (resolve-recipient-type type)]
       (.addRecipients mmsg type address)
       mmsg)))
-
 (defn- assign-recipients
   [mmsg {:keys [to cc bcc] :as params}]
   (cond-> mmsg
@@ -139,6 +138,7 @@
    (Properties.)
    {"mail.user" username
     "mail.host" host
+    "mail.debug" (contains? cf/flags :smtp-debug)
     "mail.from" default-from
     "mail.smtp.auth" (boolean username)
     "mail.smtp.starttls.enable" tls
@@ -150,17 +150,14 @@
     "mail.smtp.connectiontimeout" timeout}))
 
 (defn- create-smtp-session
-  [{:keys [debug] :or {debug false} :as opts}]
-  (let [props   (opts->props opts)
-        session (Session/getInstance props)]
-    (.setDebug session debug)
-    session))
+  [opts]
+  (let [props (opts->props opts)]
+    (Session/getInstance props)))
 
 (defn- create-smtp-message
   ^MimeMessage
-  [cfg params]
-  (let [session (create-smtp-session cfg)
-        mmsg    (MimeMessage. ^Session session)]
+  [cfg session params]
+  (let [mmsg (MimeMessage. ^Session session)]
     (assign-recipients mmsg params)
     (assign-from mmsg cfg params)
     (assign-reply-to mmsg cfg params)
@@ -304,9 +301,16 @@
   [_ cfg]
   (fn [params]
     (when (contains? cf/flags :smtp)
-      (Transport/send (create-smtp-message cfg params)
-                      (:username cfg)
-                      (:password cfg)))
+      (let [session (create-smtp-session cfg)]
+        (with-open [transport (.getTransport session (if (:ssl cfg) "smtps" "smtp"))]
+          (.connect ^Transport transport
+                    ^String (:username cfg)
+                    ^String (:password cfg))
+
+          (let [^MimeMessage message (create-smtp-message cfg session params)]
+            (.sendMessage ^Transport transport
+                          ^MimeMessage message
+                          (.getAllRecipients message))))))
 
     (when (or (contains? cf/flags :log-emails)
               (not (contains? cf/flags :smtp)))

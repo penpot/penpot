@@ -271,13 +271,13 @@
                    ::public-uri
                    ::redis-uri
                    ::registration-domain-whitelist
+                   ::rpc-rlimit-config
 
                    ::semaphore-process-font
                    ::semaphore-process-image
                    ::semaphore-update-file
                    ::semaphore-auth
 
-                   ::rpc-rlimit-config
                    ::smtp-default-from
                    ::smtp-default-reply-to
                    ::smtp-host
@@ -286,8 +286,10 @@
                    ::smtp-ssl
                    ::smtp-tls
                    ::smtp-username
+
                    ::srepl-host
                    ::srepl-port
+
                    ::assets-storage-backend
                    ::storage-assets-fs-directory
                    ::storage-assets-s3-bucket
