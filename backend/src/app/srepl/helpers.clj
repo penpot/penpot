@@ -89,8 +89,8 @@
 
   The `on-file` parameter should be a function that receives the file
   and the previous state and returns the new state."
-  [system & {:keys [chunk-size max-chunks start-at on-file on-error on-end]
-             :or {chunk-size 10 max-chunks Long/MAX_VALUE}}]
+  [system & {:keys [chunk-size max-items start-at on-file on-error on-end]
+             :or {chunk-size 10 max-items Long/MAX_VALUE}}]
   (letfn [(get-chunk [conn cursor]
             (let [rows (db/exec! conn [sql:retrieve-files-chunk cursor chunk-size])]
               [(some->> rows peek :created-at) (seq rows)]))
@@ -100,8 +100,7 @@
                               :vf second
                               :kf first
                               :initk (or start-at (dt/now)))
-                 (take max-chunks)
-                 (mapcat identity)
+                 (take max-items)
                  (map #(update % :data blob/decode))))
 
           (on-error* [file cause]

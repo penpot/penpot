@@ -284,11 +284,10 @@
                (some->> (seq rows) (d/group-by #(-> % :backend keyword) :id #{}) seq)]))
 
           (retrieve-deleted-objects [conn min-age]
-            (->> (d/iteration (partial retrieve-deleted-objects-chunk conn min-age)
-                              :initk (dt/now)
-                              :vf second
-                              :kf first)
-                 (sequence cat)))
+            (d/iteration (partial retrieve-deleted-objects-chunk conn min-age)
+                         :initk (dt/now)
+                         :vf second
+                         :kf first))
 
           (delete-in-bulk [conn backend-name ids]
             (let [backend (impl/resolve-backend storage backend-name)
@@ -397,12 +396,10 @@
                  (d/group-by get-bucket :id #{} rows)])))
 
           (retrieve-touched [conn]
-            (->> (d/iteration (fn [cursor]
-                                (retrieve-touched-chunk conn cursor))
-                              :initk (dt/now)
-                              :vf second
-                              :kf first)
-                 (sequence cat)))
+            (d/iteration (partial retrieve-touched-chunk conn)
+                         :initk (dt/now)
+                         :vf second
+                         :kf first))
 
           (process-objects! [conn get-fn ids bucket]
             (loop [to-freeze #{}
