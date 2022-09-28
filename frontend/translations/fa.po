@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-19 04:15+0000\n"
+"PO-Revision-Date: 2022-10-01 14:17+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -2872,3 +2872,64 @@ msgstr "آیا مطمئن هستید که می‌خواهید این عضو را
 
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "پس از نامگذاری تیم خود، می‌توانید افراد را برای پیوستن دعوت کنید."
+
+#: src/app/main/ui/auth/login.cljs
+#, fuzzy
+msgid "errors.auth-provider-not-configured"
+msgstr "ارائه دهنده احراز هویت پیکربندی نشده است."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "به انجمن Penpot بروید"
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"ما خوشحالیم که شما اینجا هستید. اگر به کمک نیاز دارید، لطفا قبل از ارسال پست "
+"جستجو کنید."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "انجمن Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "به توییتر بروید"
+
+#: src/app/main/ui/alert.cljs
+#, fuzzy
+msgid "ds.alert-title"
+msgstr "توجه"
+
+#, fuzzy
+msgid "errors.auth.unable-to-login"
+msgstr "به نظر می‌رسد شما احراز هویت نشده‌اید یا جلسه منقضی شده است."
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "feedback.twitter-title"
+msgstr "حساب پشتیبانی در توییتر"
+
+#: src/app/main/data/workspace/persistence.cljs
+#, fuzzy
+msgid "errors.components-v2"
+msgstr "این فایل قبلاً با فعال بودن Components V2 استفاده شده است."
+
+#, fuzzy
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "عضوی که می‌خواهید اختصاص دهید وجود ندارد."
+
+#: src/app/main/ui/dashboard/search.cljs
+#, fuzzy
+msgid "dashboard.type-something"
+msgstr "برای نمایش نتایج جستجو تایپ کنید"
+
+#, fuzzy
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "بیشتر آنها را کاوش کنید و بدانید که چگونه مشارکت کنید"
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "feedback.twitter-subtitle1"
+msgstr "اینجا برای کمک به سوالات فنی شما."
