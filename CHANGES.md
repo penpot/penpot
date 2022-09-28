@@ -27,6 +27,7 @@
 - Fix PDF exportation order [Taiga #4216](https://tree.taiga.io/project/penpot/issue/4216)
 - Fix some typos [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
 - Fix "no boards" message in viewer [Taiga #4243](https://tree.taiga.io/project/penpot/issue/4243)
+- Fix view mode login size [Taiga #4210](https://tree.taiga.io/project/penpot/issue/4210)
 
 ## 1.15.3-beta
 
