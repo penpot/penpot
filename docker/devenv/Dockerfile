@@ -4,7 +4,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v16.17.0 \
-    CLOJURE_VERSION=1.11.1.1149 \
+    CLOJURE_VERSION=1.11.1.1165 \
     CLJKONDO_VERSION=2022.09.08 \
     BABASHKA_VERSION=0.9.162 \
     LANG=en_US.UTF-8 \
@@ -31,6 +31,7 @@ RUN set -ex; \
         fakeroot \
         netcat \
         file \
+        less \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
