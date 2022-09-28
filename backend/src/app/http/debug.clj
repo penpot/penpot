@@ -8,6 +8,7 @@
   (:refer-clojure :exclude [error-handler])
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -341,8 +342,13 @@
   "Mainly a task that performs a health check."
   [{:keys [pool]} _]
   (db/with-atomic [conn pool]
-    (db/exec-one! conn ["select count(*) as count from server_prop;"])
-    (yrs/response 200 "OK")))
+    (try
+      (db/exec-one! conn ["select count(*) as count from server_prop;"])
+      (yrs/response 200 "OK")
+      (catch Throwable cause
+        (l/warn :hint "unable to execute query on health handler"
+                :cause cause)
+        (yrs/response 503 "KO")))))
 
 (defn changelog-handler
   [_ _]
