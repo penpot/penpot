@@ -286,7 +286,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot dosyasını indir (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Çalışma yüzeylerini PDF'ye aktar…"
+msgstr "Çalışma yüzeylerini PDF'ye aktar"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

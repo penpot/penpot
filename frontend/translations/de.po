@@ -287,7 +287,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot-Dateien herunterladen (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Zeichenflächen als PDF exportieren…"
+msgstr "Zeichenflächen als PDF exportieren"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

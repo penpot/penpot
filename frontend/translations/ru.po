@@ -239,7 +239,7 @@ msgstr ""
 "[\"Libraries & templates\"](https://penpot.app/libraries-templates.html)"
 
 msgid "dashboard.export-frames"
-msgstr "Экспорт кадров в PDF..."
+msgstr "Экспорт кадров в PDF"
 
 msgid "dashboard.export-multi"
 msgstr "Экспорт файлов Penpot (%s)"

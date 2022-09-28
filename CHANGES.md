@@ -70,7 +70,10 @@
 - Fix Export bounding box mask [Taiga #950](https://tree.taiga.io/project/penpot/issue/950)
 - Fix delete layers in bulk [Taiga #4160](https://tree.taiga.io/project/penpot/issue/4160)
 - Fix Cannot take out an element from a group at layers panel by drag [Taiga #4209](https://tree.taiga.io/project/penpot/issue/4209)
-
+- Fix Internal error when resending invitation email [Taiga #4212](https://tree.taiga.io/project/penpot/issue/4212)
+- Fix PDF exportation order [Taiga #4216](https://tree.taiga.io/project/penpot/issue/4216)
+- Fix some typos [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
+- Fix "no boards" message in viewer [Taiga #4243](https://tree.taiga.io/project/penpot/issue/4243)
 
 ## 1.15.3-beta
 

@@ -326,7 +326,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "Download %s Penpot files (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Export artboards to PDF…"
+msgstr "Export artboards to PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -2557,7 +2557,7 @@ msgid "shortcuts.toggle-lock-size"
 msgstr "Lock proportions"
 
 msgid "shortcuts.toggle-rules"
-msgstr "Show/hide rules"
+msgstr "Show/hide rulers"
 
 msgid "shortcuts.toggle-scale-text"
 msgstr "Toggle scale text"
@@ -2959,7 +2959,7 @@ msgstr "Hide pixel grid"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-rules"
-msgstr "Hide rules"
+msgstr "Hide rulers"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-textpalette"
@@ -3006,7 +3006,7 @@ msgstr "Show pixel grid"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
-msgstr "Show rules"
+msgstr "Show rulers"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"

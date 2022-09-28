@@ -333,7 +333,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Exportar tableros a PDF..."
+msgstr "Exportar tableros a PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

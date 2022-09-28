@@ -293,7 +293,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "دانلود %s فایل پنپات (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "خروجی آرت‌بوردها به پی‌دی‌اف…"
+msgstr "خروجی آرت‌بوردها به پی‌دی‌اف"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"

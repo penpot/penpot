@@ -283,7 +283,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "Baixa %s fitxers Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Exporta els taulers a PDF…"
+msgstr "Exporta els taulers a PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
