@@ -99,7 +99,6 @@
 (s/def ::file-change-snapshot-timeout ::dt/duration)
 
 (s/def ::default-executor-parallelism ::us/integer)
-(s/def ::blocking-executor-parallelism ::us/integer)
 (s/def ::worker-executor-parallelism ::us/integer)
 
 (s/def ::authenticated-cookie-domain ::us/string)
@@ -169,9 +168,9 @@
 (s/def ::redis-uri ::us/string)
 (s/def ::registration-domain-whitelist ::us/set-of-strings)
 
-(s/def ::semaphore-font-process ::us/integer)
-(s/def ::semaphore-file-update ::us/integer)
-(s/def ::semaphore-image-process ::us/integer)
+(s/def ::semaphore-process-font ::us/integer)
+(s/def ::semaphore-process-image ::us/integer)
+(s/def ::semaphore-update-file ::us/integer)
 (s/def ::semaphore-authentication ::us/integer)
 
 (s/def ::smtp-default-from ::us/string)
@@ -218,7 +217,6 @@
                    ::default-rpc-rlimit
                    ::error-report-webhook
                    ::default-executor-parallelism
-                   ::blocking-executor-parallelism
                    ::worker-executor-parallelism
                    ::file-change-snapshot-every
                    ::file-change-snapshot-timeout
