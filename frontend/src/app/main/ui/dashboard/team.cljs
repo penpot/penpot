@@ -492,7 +492,7 @@
 
         resend-invitation
         (fn []
-          (let [params {:email email
+          (let [params {:emails [email]
                         :team-id (:id team)
                         :resend? true
                         :role invitation-role}
