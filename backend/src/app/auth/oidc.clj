@@ -469,7 +469,7 @@
                                {:iss :oauth
                                 :invitation-token (:invitation-token params)
                                 :props props
-                                :exp (dt/in-future "15m")})
+                                :exp (dt/in-future "4h")})
         uri   (build-auth-uri cfg state)]
     (yrs/response 200 {:redirect-uri uri})))
 
