@@ -230,7 +230,7 @@ msgstr "(نسخة)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ إنشاء فريق جديد"
+msgstr "إنشاء فريق جديد"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -459,10 +459,6 @@ msgstr "تم نقل الملفات بنجاح"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "تم نقل مشروعك بنجاح"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "تبديل الفريق"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"

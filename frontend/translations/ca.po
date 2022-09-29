@@ -240,7 +240,7 @@ msgstr "(còpia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Crea un equip nou"
+msgstr "Crea un equip nou"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -596,10 +596,6 @@ msgstr "S'han mogut els fitxers"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "S'ha mogut el projecte"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Canvieu d'equip"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"

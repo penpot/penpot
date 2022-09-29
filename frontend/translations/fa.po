@@ -247,7 +247,7 @@ msgstr "(کپی)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ ایجاد تیم جدید"
+msgstr "ایجاد تیم جدید"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -613,10 +613,6 @@ msgstr "فایل‌های شما با موفقیت منتقل شدند"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "پروژه شما با موفقیت منتقل شد"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "تغییر تیم"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"

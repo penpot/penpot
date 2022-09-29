@@ -204,7 +204,7 @@
         i/search])]))
 
 (mf/defc teams-selector-dropdown
-  [{:keys [profile] :as props}]
+  [{:keys [team profile] :as props}]
   (let [teams (mf/deref refs/teams)
 
         on-create-clicked
@@ -217,23 +217,25 @@
            (st/emit! (dd/go-to-projects team-id))))]
 
     [:ul.dropdown.teams-dropdown
-     [:li.title (tr "dashboard.switch-team")]
-     [:hr]
      [:li.team-name {:on-click (partial team-selected (:default-team-id profile))}
       [:span.team-icon i/logo-icon]
-      [:span.team-text (tr "dashboard.your-penpot")]]
+      [:span.team-text (tr "dashboard.your-penpot")]
+      (when (= (:default-team-id profile) (:id team))
+        [:span.icon i/tick])]
 
-     (for [team (remove :is-default (vals teams))]
-       [:li.team-name {:on-click (partial team-selected (:id team))
-                       :key (dm/str (:id team))}
+     (for [team-item (remove :is-default (vals teams))]
+       [:li.team-name {:on-click (partial team-selected (:id team-item))
+                       :key (dm/str (:id team-item))}
         [:span.team-icon
-         [:img {:src (cf/resolve-team-photo-url team)
-                :alt (:name team)}]]
-        [:span.team-text {:title (:name team)} (:name team)]])
-
+         [:img {:src (cf/resolve-team-photo-url team-item)
+                :alt (:name team-item)}]]
+        [:span.team-text {:title (:name team-item)} (:name team-item)]
+        (when (= (:id team-item) (:id team))
+          [:span.icon i/tick])])
      [:hr]
-     [:li.action {:on-click on-create-clicked :data-test "create-new-team"}
-      (tr "dashboard.create-new-team")]]))
+     [:li.team-name.action {:on-click on-create-clicked :data-test "create-new-team"}
+      [:span.team-icon.new-team i/close]
+      [:span.team-text (tr "dashboard.create-new-team")]]]))
 
 (s/def ::member-id ::us/uuid)
 (s/def ::leave-modal-form

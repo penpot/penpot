@@ -93,6 +93,10 @@
                  (= :wrong-credentials (:code cause)))
             (reset! error (tr "errors.wrong-credentials"))
 
+            (and (= :validation (:type cause))
+                 (= :account-without-password (:code cause)))
+            (reset! error (tr "errors.wrong-credentials"))
+
             :else
             (reset! error (tr "errors.generic"))))
 
