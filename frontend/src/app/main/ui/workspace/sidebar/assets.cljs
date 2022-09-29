@@ -31,6 +31,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
    [app.util.color :as uc]
@@ -270,9 +271,10 @@
 
 ;; ---- Common blocks ----
 
-(def auto-pos-menu-state {:open? false
-                          :top nil
-                          :left nil})
+(def auto-pos-menu-state
+  {:open? false
+   :top nil
+   :left nil})
 
 (defn- open-auto-pos-menu
   [state event]
@@ -730,8 +732,8 @@
   [{:keys [object renaming listing-thumbs? selected-objects
            on-asset-click on-context-menu on-drag-start do-rename cancel-rename
            selected-graphics-full selected-graphics-paths]}]
-  (let [item-ref       (mf/use-ref)
-
+  (let [item-ref  (mf/use-ref)
+        visible?  (h/use-visible item-ref :once? true)
         dragging? (mf/use-state false)
 
         on-drop
@@ -774,28 +776,31 @@
            :on-drag-leave on-drag-leave
            :on-drag-over on-drag-over
            :on-drop on-drop}
-     [:img {:src (cfg/resolve-file-media object true)
-            :draggable false}] ;; Also need to add css pointer-events: none
 
-     (let [renaming? (= renaming (:id object))]
+     (when visible?
        [:*
-        [:& editable-label
-         {:class-name (dom/classnames
-                        :cell-name @listing-thumbs?
-                        :item-name (not @listing-thumbs?)
-                        :editing renaming?)
-          :value (cph/merge-path-item (:path object) (:name object))
-          :tooltip (cph/merge-path-item (:path object) (:name object))
-          :display-value (if @listing-thumbs?
-                           (:name object)
-                           (cph/compact-name (:path object)
-                                             (:name object)))
-          :editing? renaming?
-          :disable-dbl-click? true
-          :on-change do-rename
-          :on-cancel cancel-rename}]
-        (when @dragging?
-          [:div.dragging])])]))
+        [:img {:src (when visible? (cf/resolve-file-media object true))
+               :draggable false}] ;; Also need to add css pointer-events: none
+
+        (let [renaming? (= renaming (:id object))]
+          [:*
+           [:& editable-label
+            {:class-name (dom/classnames
+                          :cell-name @listing-thumbs?
+                          :item-name (not @listing-thumbs?)
+                          :editing renaming?)
+             :value (cph/merge-path-item (:path object) (:name object))
+             :tooltip (cph/merge-path-item (:path object) (:name object))
+             :display-value (if @listing-thumbs?
+                              (:name object)
+                              (cph/compact-name (:path object)
+                                                (:name object)))
+             :editing? renaming?
+             :disable-dbl-click? true
+             :on-change do-rename
+             :on-cancel cancel-rename}]
+           (when @dragging?
+             [:div.dragging])])])]))
 
 (mf/defc graphics-group
   [{:keys [file-id prefix groups open-groups renaming listing-thumbs? selected-objects on-asset-click
