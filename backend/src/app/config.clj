@@ -171,7 +171,7 @@
 (s/def ::semaphore-process-font ::us/integer)
 (s/def ::semaphore-process-image ::us/integer)
 (s/def ::semaphore-update-file ::us/integer)
-(s/def ::semaphore-authentication ::us/integer)
+(s/def ::semaphore-auth ::us/integer)
 
 (s/def ::smtp-default-from ::us/string)
 (s/def ::smtp-default-reply-to ::us/string)
