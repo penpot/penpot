@@ -460,10 +460,6 @@ msgstr "تم نقل الملفات بنجاح"
 msgid "dashboard.success-move-project"
 msgstr "تم نقل مشروعك بنجاح"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "تبديل الفريق"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "معلومات الفريق"

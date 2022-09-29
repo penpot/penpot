@@ -614,10 +614,6 @@ msgstr "فایل‌های شما با موفقیت منتقل شدند"
 msgid "dashboard.success-move-project"
 msgstr "پروژه شما با موفقیت منتقل شد"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "تغییر تیم"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "اطلاعات تیم"

@@ -462,10 +462,6 @@ msgstr "ファイルを移動しました"
 msgid "dashboard.success-move-project"
 msgstr "ファイルを削除しました"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "チーム切り替え"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "チーム情報"

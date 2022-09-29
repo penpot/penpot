@@ -592,10 +592,6 @@ msgstr "Zure fitxategiak ondo mugitu dira"
 msgid "dashboard.success-move-project"
 msgstr "Zure proiektua ondo mugitu da"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Aldatu taldea"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "Taldearen informazioa"

@@ -322,10 +322,6 @@ msgstr "Το έργο σας μετακινήθηκε με επιτυχία"
 msgid "dashboard.success-move-project"
 msgstr "Το έργο σας μετακινήθηκε με επιτυχία"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Αλλαγή εξοπλισμού"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "Πληροφορίες ομάδας"

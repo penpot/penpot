@@ -587,10 +587,6 @@ msgstr "הקבצים שלך הועברו בהצלחה"
 msgid "dashboard.success-move-project"
 msgstr "המיזם שלך הועבר בהצלחה"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "לעבור צוות"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "פרטי הצוות"

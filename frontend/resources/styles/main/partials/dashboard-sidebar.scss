@@ -88,6 +88,32 @@
       display: flex;
       height: 48px;
       align-items: center;
+      
+      &.action {        
+        .team-icon {
+          border-radius: 50%;
+          background-color: $color-gray-10;
+          height: 24px;
+          margin-right: 10px;
+          padding: 6px;
+          width: 24px;
+          
+          svg {
+            height: 12px;
+            width: 12px;
+          }
+        }
+        
+        &:hover {
+          .team-icon {
+            background-color: $color-primary;
+          }
+        }
+
+        .team-text {
+          width: 150px;
+        }
+      }
 
       .team-icon {
         display: flex;
@@ -112,6 +138,13 @@
         color: $color-gray-60;
         @include text-ellipsis;
         width: 130px;
+      }
+
+      .icon {
+        margin-left: auto;
+        svg {
+          fill: $color-gray-60;
+        }
       }
     }
 

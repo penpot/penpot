@@ -217,8 +217,6 @@
            (st/emit! (dd/go-to-projects team-id))))]
 
     [:ul.dropdown.teams-dropdown
-     [:li.title (tr "dashboard.switch-team")]
-     [:hr]
      [:li.team-name {:on-click (partial team-selected (:default-team-id profile))}
       [:span.team-icon i/logo-icon]
       [:span.team-text (tr "dashboard.your-penpot")]
@@ -236,7 +234,7 @@
 
      [:hr]
      [:li.team-name.action {:on-click on-create-clicked :data-test "create-new-team"}
-      [:span.team-icon i/close]
+      [:span.team-icon.new-team i/close]
       [:span.team-text (tr "dashboard.create-new-team")]]]))
 
 (s/def ::member-id ::us/uuid)

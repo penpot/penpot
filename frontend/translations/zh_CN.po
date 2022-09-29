@@ -530,10 +530,6 @@ msgstr "成功移动了文件"
 msgid "dashboard.success-move-project"
 msgstr "成功移动了项目"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "切换团队"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "团队信息"

@@ -602,10 +602,6 @@ msgstr "Dosyaların başarıyla taşındı"
 msgid "dashboard.success-move-project"
 msgstr "Projen başarıyla taşındı"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Takım değiştir"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "Takım bilgisi"

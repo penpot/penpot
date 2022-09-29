@@ -440,10 +440,6 @@ msgstr "已成功移動您的檔案"
 msgid "dashboard.success-move-project"
 msgstr "已成功移動您的專案"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "切換團隊"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "團隊資訊"
