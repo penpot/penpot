@@ -205,7 +205,7 @@ msgstr "(複製)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ 建立新團隊"
+msgstr "建立新團隊"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -439,10 +439,6 @@ msgstr "已成功移動您的檔案"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "已成功移動您的專案"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "切換團隊"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"

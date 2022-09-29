@@ -231,7 +231,7 @@ msgstr "(コピー)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ チームを新規作成"
+msgstr "チームを新規作成"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -461,10 +461,6 @@ msgstr "ファイルを移動しました"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "ファイルを削除しました"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "チーム切り替え"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"

@@ -211,7 +211,7 @@ msgstr "(kopija)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Sukurti naują komandą"
+msgstr "Sukurti naują komandą"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

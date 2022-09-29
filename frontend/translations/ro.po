@@ -178,7 +178,7 @@ msgstr "(copiază)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Creează o nouă echipă"
+msgstr "Creează o nouă echipă"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -363,10 +363,6 @@ msgstr "Fișerele au fost mutate cu succes"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "Proiectul a fost mutat cu succes"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Schimbă echipa"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"

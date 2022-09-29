@@ -170,10 +170,6 @@ msgstr "Velg drakt"
 msgid "dashboard.show-all-files"
 msgstr "Vis alle filer"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Bytt lag"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "Laginfo"

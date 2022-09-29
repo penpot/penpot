@@ -226,7 +226,7 @@ msgstr "(copiar)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Criar nova equipe"
+msgstr "Criar nova equipe"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -489,10 +489,6 @@ msgstr "Seus arquivos foram movidos com sucesso"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "Seu projeto foi movido com sucesso"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Trocar de equipe"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"

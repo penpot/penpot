@@ -238,7 +238,7 @@ msgstr "(kopia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Sortu talde berria"
+msgstr "Sortu talde berria"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -591,10 +591,6 @@ msgstr "Zure fitxategiak ondo mugitu dira"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "Zure proiektua ondo mugitu da"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Aldatu taldea"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"

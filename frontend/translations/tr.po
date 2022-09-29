@@ -242,7 +242,7 @@ msgstr "(kopya)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Yeni takım oluştur"
+msgstr "Yeni takım oluştur"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -601,10 +601,6 @@ msgstr "Dosyaların başarıyla taşındı"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "Projen başarıyla taşındı"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Takım değiştir"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
