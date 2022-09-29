@@ -29,10 +29,7 @@
 
         width            (mf/use-state nil)
         rowref           (mf/use-ref)
-        itemsize       (if (>= @width 1030)
-                         280
-                         230)
-
+        itemsize       330
         ratio          (if (some? @width) (/ @width itemsize) 0)
         nitems         (mth/floor ratio)
         limit          (min 10 nitems)
@@ -50,27 +47,26 @@
      #(st/emit! (dd/fetch-shared-files)
                 (dd/clear-selected-files)))
     
-    (mf/use-effect
-     (fn []
-       (let [node (mf/ref-val rowref)
-             mnt? (volatile! true)
-             sub  (->> (wapi/observe-resize node)
-                       (rx/observe-on :af)
-                       (rx/subs (fn [entries]
-                                  (let [row (first entries)
-                                        row-rect (.-contentRect ^js row)
-                                        row-width (.-width ^js row-rect)]
-                                    (when @mnt?
-                                      (reset! width row-width))))))]
-         (fn []
-           (vreset! mnt? false)
-           (rx/dispose! sub)))))
+    (mf/with-effect
+      (let [node (mf/ref-val rowref)
+            mnt? (volatile! true)
+            sub  (->> (wapi/observe-resize node)
+                      (rx/observe-on :af)
+                      (rx/subs (fn [entries]
+                                 (let [row (first entries)
+                                       row-rect (.-contentRect ^js row)
+                                       row-width (.-width ^js row-rect)]
+                                   (when @mnt?
+                                     (reset! width row-width))))))]
+        (fn []
+          (vreset! mnt? false)
+          (rx/dispose! sub))))
 
     [:*
-     [:header.dashboard-header
+     [:header.dashboard-header {:ref rowref}
       [:div.dashboard-title
        [:h1 (tr "dashboard.libraries-title")]]]
-     [:section.dashboard-container.no-bg {:ref rowref}
+     [:section.dashboard-container.no-bg.dashboard-shared 
       [:& grid {:files files
                 :project default-project
                 :origin :libraries

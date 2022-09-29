@@ -238,7 +238,7 @@ msgstr "(kopia)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Sortu talde berria"
+msgstr "Sortu talde berria"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

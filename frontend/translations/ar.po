@@ -230,7 +230,7 @@ msgstr "(نسخة)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ إنشاء فريق جديد"
+msgstr "إنشاء فريق جديد"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

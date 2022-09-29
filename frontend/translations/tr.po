@@ -242,7 +242,7 @@ msgstr "(kopya)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Yeni takım oluştur"
+msgstr "Yeni takım oluştur"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

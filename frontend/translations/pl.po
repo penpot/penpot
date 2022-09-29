@@ -209,7 +209,7 @@ msgstr "(skopiuj)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Utwórz nowy zespół"
+msgstr "Utwórz nowy zespół"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

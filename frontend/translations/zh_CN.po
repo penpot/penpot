@@ -206,7 +206,7 @@ msgstr "（拷贝）"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ 创建新团队"
+msgstr "创建新团队"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

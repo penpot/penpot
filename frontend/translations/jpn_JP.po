@@ -231,7 +231,7 @@ msgstr "(コピー)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ チームを新規作成"
+msgstr "チームを新規作成"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

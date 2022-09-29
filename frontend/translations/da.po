@@ -175,7 +175,7 @@ msgstr "(kopi)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Opret nyt team"
+msgstr "Opret nyt team"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

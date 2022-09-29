@@ -244,7 +244,7 @@ msgstr "(Kopie)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Neues Team erstellen"
+msgstr "Neues Team erstellen"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

@@ -247,7 +247,7 @@ msgstr "(کپی)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ ایجاد تیم جدید"
+msgstr "ایجاد تیم جدید"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"

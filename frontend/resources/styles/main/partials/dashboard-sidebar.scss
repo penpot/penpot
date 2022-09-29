@@ -38,7 +38,7 @@
       top: 50px;
       z-index: 12;
       max-height: 30rem;
-      min-width: 230px;
+      min-width: 234px;
       overflow-y: auto;
     }
 
@@ -88,8 +88,8 @@
       display: flex;
       height: 48px;
       align-items: center;
-      
-      &.action {        
+
+      &.action {
         .team-icon {
           border-radius: 50%;
           background-color: $color-gray-10;
@@ -97,13 +97,13 @@
           margin-right: 10px;
           padding: 6px;
           width: 24px;
-          
+
           svg {
             height: 12px;
             width: 12px;
           }
         }
-        
+
         &:hover {
           .team-icon {
             background-color: $color-primary;

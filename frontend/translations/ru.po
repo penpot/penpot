@@ -206,7 +206,7 @@ msgstr "(копия)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
-msgstr "+ Создать новую команду"
+msgstr "Создать новую команду"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
