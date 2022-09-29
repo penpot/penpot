@@ -25,6 +25,7 @@
 - Newsletter Opt-in options for subscription categories [Taiga #3242](https://tree.taiga.io/project/penpot/us/3242)
 - Print emails to console by default if smtp is disabled
 - Add `email-verification` flag for enable/disable email verification
+- Make graphics thumbnails load lazy [Taiga #4252](https://tree.taiga.io/project/penpot/issue/4252)
 
 ### :bug: Bugs fixed
 
