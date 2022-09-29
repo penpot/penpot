@@ -341,7 +341,7 @@
   (let [shape (mf/use-memo
                (mf/deps shapes)
                #(->> shapes
-                     (map gsh/transform-shape)
+                     #_(map gsh/transform-shape)
                      (gsh/selection-rect)
                      (cts/setup-shape)))
         on-resize
@@ -369,7 +369,7 @@
   (let [shape (mf/use-memo
                (mf/deps shapes)
                #(->> shapes
-                     (map gsh/transform-shape)
+                     #_(map gsh/transform-shape)
                      (gsh/selection-rect)
                      (cts/setup-shape)))]
 
@@ -384,7 +384,7 @@
 (mf/defc single-handlers
   [{:keys [shape zoom color disable-handlers] :as props}]
   (let [shape-id (:id shape)
-        shape (gsh/transform-shape shape)
+        ;;shape (gsh/transform-shape shape)
 
         on-resize
         (fn [current-position _initial-position event]
@@ -408,14 +408,13 @@
 
 (mf/defc single-selection
   [{:keys [shape zoom color disable-handlers on-move-selected on-context-menu] :as props}]
-  (let [shape (gsh/transform-shape shape)]
-    [:& controls-selection
-     {:shape shape
-      :zoom zoom
-      :color color
-      :disable-handlers disable-handlers
-      :on-move-selected on-move-selected
-      :on-context-menu on-context-menu}]))
+  [:& controls-selection
+   {:shape shape
+    :zoom zoom
+    :color color
+    :disable-handlers disable-handlers
+    :on-move-selected on-move-selected
+    :on-context-menu on-context-menu}])
 
 (mf/defc selection-area
   {::mf/wrap [mf/memo]}

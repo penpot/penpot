@@ -79,8 +79,7 @@
             build-move-event
             (fn [guide]
               (let [frame (get objects (:frame-id guide))
-                    frame' (-> (merge frame (get object-modifiers (:frame-id guide)))
-                               (gsh/transform-shape))
+                    frame' (gsh/transform-shape (get object-modifiers (:frame-id guide)))
 
                     moved (gpt/to-vec (gpt/point (:x frame) (:y frame))
                                       (gpt/point (:x frame') (:y frame')))

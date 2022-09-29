@@ -102,13 +102,7 @@
               (fix-frames-selrects)
 
               (and (empty? (:points object)) (not= (:id object) uuid/zero))
-              (fix-empty-points)
-
-              ;; Setup an empty transformation to re-calculate selrects
-              ;; and points data
-              :always
-              (-> (assoc :modifiers {:displacement (gmt/matrix)})
-                  (gsh/transform-shape))))
+              (fix-empty-points)))
 
           (update-page [page]
             (update page :objects d/update-vals update-object))]

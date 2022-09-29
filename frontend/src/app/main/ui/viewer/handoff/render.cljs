@@ -88,7 +88,7 @@
       [props]
       (let [shape (unchecked-get props "shape")
             childs (mapv #(get objects %) (:shapes shape))
-            shape  (gsh/transform-shape shape)
+            ;;shape  (gsh/transform-shape shape)
 
             props (-> (obj/create)
                       (obj/merge! props)
@@ -171,8 +171,7 @@
             (mf/use-memo (mf/deps objects)
                          #(svg-raw-container-factory objects))]
         (when (and shape (not (:hidden shape)))
-          (let [shape (-> (gsh/transform-shape shape)
-                          (gsh/translate-to-frame frame))
+          (let [shape (gsh/translate-to-frame shape frame)
                 opts #js {:shape shape
                           :frame frame}]
             (case (:type shape)

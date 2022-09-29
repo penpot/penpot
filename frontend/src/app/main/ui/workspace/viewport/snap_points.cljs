@@ -50,20 +50,14 @@
           :opacity line-opacity}])
 
 (defn get-snap
-  [coord {:keys [shapes page-id remove-snap? zoom modifiers]}]
-  (let [shapes-sr
-        (->> shapes
-             ;; Merge modifiers into shapes
-             (map #(merge % (get modifiers (:id %))))
-             ;; Create the bounding rectangle for the shapes
-             (gsh/selection-rect))
+  [coord {:keys [shapes page-id remove-snap? zoom]}]
+  (let [bounds (gsh/selection-rect shapes)
+        frame-id  (snap/snap-frame-id shapes)]
 
-        frame-id (snap/snap-frame-id shapes)]
-
-    (->> (rx/of shapes-sr)
+    (->> (rx/of bounds)
          (rx/flat-map
-          (fn [selrect]
-            (->> (sp/selrect-snap-points selrect)
+          (fn [bounds]
+            (->> (sp/selrect-snap-points bounds)
                  (map #(vector frame-id %)))))
 
          (rx/flat-map
@@ -159,7 +153,7 @@
 
 (mf/defc snap-points
   {::mf/wrap [mf/memo]}
-  [{:keys [layout zoom objects selected page-id drawing modifiers focus] :as props}]
+  [{:keys [layout zoom objects selected page-id drawing focus] :as props}]
   (us/assert set? selected)
   (let [shapes  (into [] (keep (d/getf objects)) selected)
 
@@ -182,6 +176,5 @@
     [:& snap-feedback {:shapes shapes
                        :page-id page-id
                        :remove-snap? remove-snap?
-                       :zoom zoom
-                       :modifiers modifiers}]))
+                       :zoom zoom}]))
 

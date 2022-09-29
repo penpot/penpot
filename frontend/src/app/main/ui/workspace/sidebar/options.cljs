@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as gsh]
+   [app.common.types.modifiers :as ctm]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -64,7 +64,7 @@
         shared-libs       (mf/deref refs/workspace-libraries)
         modifiers         (mf/deref refs/workspace-modifiers)
         objects-modified  (mf/with-memo [base-objects modifiers]
-                            (gsh/merge-modifiers base-objects modifiers))
+                            (ctm/merge-modifiers base-objects modifiers))
         selected-shapes   (into [] (keep (d/getf objects-modified)) selected)]
     [:div.tool-window
      [:div.tool-window-content

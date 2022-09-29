@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.path.commands :as upc]))
+   [app.common.path.commands :as upc]
+   [app.common.types.modifiers :as ctm]))
 
 (defn lookup-page
   ([state]
@@ -137,5 +137,6 @@
         children     (select-keys objects children-ids)]
 
     (as-> children $
-      (gsh/merge-modifiers $ modifiers)
+      ;; TODO LAYOUT: REVIEW THIS
+      (ctm/merge-modifiers $ modifiers)
       (d/mapm (set-content-modifiers state) $))))

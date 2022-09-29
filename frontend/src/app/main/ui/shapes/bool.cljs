@@ -6,7 +6,6 @@
 
 (ns app.main.ui.shapes.bool
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.hooks :refer [use-equal-memo]]
@@ -15,6 +14,7 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
+;; TODO LAYOUT: REVIEW DYNAMIC CHANGES IN BOOLEANS
 (defn bool-shape
   [shape-wrapper]
   (mf/fnc bool-shape
@@ -35,7 +35,7 @@
 
                      (some? childs)
                      (->> childs
-                          (d/mapm #(gsh/transform-shape %2))
+                          #_(d/mapm #(gsh/transform-shape %2))
                           (gsh/calc-bool-content shape)))))]
 
             [:*

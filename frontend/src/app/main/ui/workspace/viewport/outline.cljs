@@ -72,7 +72,7 @@
                  "var(--color-primary)" "var(--color-component-highlight)")]
     (for [shape shapes]
       [:& outline {:key (str "outline-" (:id shape))
-                   :shape (gsh/transform-shape shape)
+                   :shape shape
                    :zoom zoom
                    :color color}])))
 

@@ -10,6 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -37,9 +38,7 @@
                   scalev)]
     (-> shape
         (assoc :click-draw? false)
-        (assoc-in [:modifiers :resize-vector] scalev)
-        (assoc-in [:modifiers :resize-origin] (gpt/point x y))
-        (assoc-in [:modifiers :resize-rotation] 0))))
+        (gsh/transform-shape (ctm/resize scalev (gpt/point x y))))))
 
 (defn update-drawing [state point lock?]
   (update-in state [:workspace-drawing :object] resize-shape point lock?))

@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dcm]
@@ -31,11 +31,10 @@
   [frame size objects]
   (let [
         frame-id  (:id frame)
-        modifier  (-> (gpt/point (:x size) (:y size))
-                      (gpt/negate)
-                      (gmt/translate-matrix))
+        vector  (-> (gpt/point (:x size) (:y size))
+                    (gpt/negate))
 
-        update-fn #(d/update-when %1 %2 assoc-in [:modifiers :displacement] modifier)]
+        update-fn #(d/update-when %1 %2 ctm/add-move vector)]
 
     (->> (cph/get-children-ids objects frame-id)
          (into [frame-id])

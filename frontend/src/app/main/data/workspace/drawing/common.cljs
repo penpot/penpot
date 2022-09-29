@@ -6,10 +6,10 @@
 
 (ns app.main.data.workspace.drawing.common
   (:require
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -51,8 +51,8 @@
                    
                    (and click-draw? (not text?))
                    (-> (assoc :width min-side :height min-side)
-                       (assoc-in [:modifiers :displacement]
-                                 (gmt/translate-matrix (- (/ min-side 2)) (- (/ min-side 2)))))
+                       (gsh/transform-shape (ctm/move (- (/ min-side 2)) (- (/ min-side 2))))
+                       #_(ctm/add-move (- (/ min-side 2)) (- (/ min-side 2))))
 
                    (and click-draw? text?)
                    (assoc :height 17 :width 4 :grow-type :auto-width)
@@ -61,8 +61,7 @@
                    (cts/setup-rect-selrect)
 
                    :always
-                   (-> (gsh/transform-shape)
-                       (dissoc :initialized? :click-draw?)))]
+                   (dissoc :initialized? :click-draw?))]
              ;; Add & select the created shape to the workspace
              (rx/concat
               (if (= :text (:type shape))

@@ -13,6 +13,7 @@
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -319,17 +320,16 @@
       (letfn [(update-fn [shape]
                 (let [{:keys [selrect grow-type]} shape
                       {shape-width :width shape-height :height} selrect
-                      modifier-width (gsh/resize-modifiers shape :width new-width)
-                      modifier-height (gsh/resize-modifiers shape :height new-height)]
+                      modifier-width (ctm/resize-modifiers shape :width new-width)
+                      modifier-height (ctm/resize-modifiers shape :height new-height)]
+                  ;; TODO LAYOUT: MEZCLAR ESTOS EN UN UNICO MODIFIER
                   (cond-> shape
                     (and (not-changed? shape-width new-width) (= grow-type :auto-width))
-                    (-> (assoc :modifiers modifier-width)
-                        (gsh/transform-shape))
+                    (gsh/transform-shape modifier-width)
 
                     (and (not-changed? shape-height new-height)
                          (or (= grow-type :auto-height) (= grow-type :auto-width)))
-                    (-> (assoc :modifiers modifier-height)
-                        (gsh/transform-shape)))))]
+                    (gsh/transform-shape modifier-height))))]
 
         (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? false}))))))
 
@@ -346,18 +346,17 @@
 (defn apply-text-modifier
   [shape {:keys [width height position-data]}]
 
-  (let [modifier-width (when width (gsh/resize-modifiers shape :width width))
-        modifier-height (when height (gsh/resize-modifiers shape :height height))
+  (let [modifier-width (when width (ctm/resize-modifiers shape :width width))
+        modifier-height (when height (ctm/resize-modifiers shape :height height))
 
+        ;; TODO LAYOUT: MEZCLAR LOS DOS EN UN UNICO MODIFIER
         new-shape
         (cond-> shape
           (some? modifier-width)
-          (-> (assoc :modifiers modifier-width)
-              (gsh/transform-shape))
+          (gsh/transform-shape modifier-width)
 
           (some? modifier-height)
-          (-> (assoc :modifiers modifier-height)
-              (gsh/transform-shape))
+          (gsh/transform-shape modifier-height)
 
           (some? position-data)
           (assoc :position-data position-data))

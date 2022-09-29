@@ -16,6 +16,7 @@
    [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
@@ -154,14 +155,14 @@
              ids
              (->> shapes
                   (remove #(get % :blocked false))
-                  (mapcat #(cph/get-children objects (:id %)))
-                  (concat shapes)
+                  #_(mapcat #(cph/get-children objects (:id %)))
+                  #_(concat shapes)
                   (filter #((cpc/editable-attrs (:type %)) :rotation))
                   (map :id))
 
              get-modifier
              (fn [shape]
-               (gsh/rotation-modifiers shape center angle))
+               (ctm/rotation-modifiers shape center angle))
 
              modif-tree
              (gsh/set-objects-modifiers ids objects get-modifier false false)]
@@ -193,7 +194,7 @@
        (let [objects           (wsh/lookup-page-objects state)
              object-modifiers  (get state :workspace-modifiers)
 
-             ids (keys object-modifiers)
+             ids (or (keys object-modifiers) [])
              ids-with-children (into (vec ids) (mapcat #(cph/get-children-ids objects %)) ids)
 
              shapes            (map (d/getf objects) ids)
@@ -209,11 +210,10 @@
                  (dch/update-shapes
                   ids
                   (fn [shape]
-                    (let [modif (get object-modifiers (:id shape))
+                    (let [modif (get-in object-modifiers [(:id shape) :modifiers])
                           text-shape? (cph/text-shape? shape)]
                       (-> shape
-                          (merge modif)
-                          (gsh/transform-shape)
+                          (gsh/transform-shape modif)
                           (cond-> text-shape?
                             (update-grow-type shape)))))
                   {:reg-objects? true
@@ -295,7 +295,7 @@
    (let [children (map (d/getf objects) (:shapes shape))
 
          shape-id (:id shape)
-         transformed-shape (gsh/transform-shape (merge shape (get modif-tree shape-id)))
+         transformed-shape (gsh/transform-shape shape (get modif-tree shape-id))
 
          [root transformed-root ignore-geometry?]
          (check-delta shape root transformed-shape transformed-root objects modif-tree)
@@ -331,10 +331,10 @@
 
                   rotation (or rotation 0)
 
-                  initial (gsh/transform-point-center initial shape-center shape-transform-inverse)
+                  initial (gmt/transform-point-center initial shape-center shape-transform-inverse)
                   initial (fix-init-point initial handler shape)
 
-                  point (gsh/transform-point-center (if (= rotation 0) point-snap point)
+                  point (gmt/transform-point-center (if (= rotation 0) point-snap point)
                                                     shape-center shape-transform-inverse)
 
                   shapev (-> (gpt/point width height))
@@ -381,14 +381,28 @@
                         (gpt/transform shape-transform)))
 
                   resize-origin
-                  (cond-> (gsh/transform-point-center handler-origin shape-center shape-transform)
+                  (cond-> (gmt/transform-point-center handler-origin shape-center shape-transform)
                     (some? displacement)
-                    (gpt/add displacement))
-
-                  displacement (when (some? displacement)
-                                 (gmt/translate-matrix displacement))]
+                    (gpt/add displacement))]
 
               (rx/of (set-modifiers ids
+                                    {:v2 (-> []
+                                             (cond-> displacement
+                                               (conj {:type :move
+                                                      :vector displacement}))
+                                             (conj {:type :resize
+                                                    :vector scalev
+                                                    :origin resize-origin
+                                                    :transform shape-transform
+                                                    :transform-inverse shape-transform-inverse}))
+                                     ;;:displacement displacement
+                                     ;;:resize-vector scalev
+                                     ;;:resize-origin resize-origin
+                                     ;;:resize-transform shape-transform
+                                     ;;:resize-scale-text scale-text
+                                     ;;:resize-transform-inverse shape-transform-inverse
+                                     }))
+              #_(rx/of (set-modifiers ids
                                     {:displacement displacement
                                      :resize-vector scalev
                                      :resize-origin resize-origin
@@ -444,7 +458,7 @@
             snap-pixel? (and (contains? (:workspace-layout state) :snap-pixel-grid)
                              (int? value))
             get-modifier
-            (fn [shape] (gsh/resize-modifiers shape attr value))
+            (fn [shape] (ctm/resize-modifiers shape attr value))
 
             modif-tree
             (gsh/set-objects-modifiers ids objects get-modifier false snap-pixel?)]
@@ -468,7 +482,7 @@
             snap-pixel? (contains? (get state :workspace-layout) :snap-pixel-grid)
 
             get-modifier
-            (fn [shape] (gsh/change-orientation-modifiers shape orientation))
+            (fn [shape] (ctm/change-orientation-modifiers shape orientation))
 
             modif-tree
             (gsh/set-objects-modifiers ids objects get-modifier false snap-pixel?)]
@@ -655,7 +669,10 @@
                  (rx/with-latest vector snap-delta)
                  ;; We try to use the previous snap so we don't have to wait for the result of the new
                  (rx/map snap/correct-snap-point)
-                 (rx/map #(hash-map :displacement (gmt/translate-matrix %)))
+
+                 #_(rx/map #(hash-map :displacement (gmt/translate-matrix %)))
+                 (rx/map #(array-map :v2 [{:type :move :vector %}]))
+
                  (rx/map (partial set-modifiers ids))
                  (rx/take-until stopper))
 
@@ -704,7 +721,7 @@
              (rx/merge
               (->> move-events
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
-                   (rx/map #(hash-map :displacement (gmt/translate-matrix %)))
+                   (rx/map #(ctm/move %))
                    (rx/map (partial set-modifiers selected))
                    (rx/take-until stopper))
               (rx/of (move-selected direction shift?)))
@@ -735,11 +752,11 @@
             cpos (gpt/point (:x bbox) (:y bbox))
             pos  (gpt/point (or (:x position) (:x bbox))
                             (or (:y position) (:y bbox)))
-            delta (gpt/subtract pos cpos)
-            displ   (gmt/translate-matrix delta)]
+            delta (gpt/subtract pos cpos)]
 
-        (rx/of (set-modifiers [id] {:displacement displ} false true)
-               (apply-modifiers [id]))))))
+        (rx/of
+         (set-modifiers [id] (ctm/move delta))
+         (apply-modifiers [id]))))))
 
 (defn- calculate-frame-for-move
   [ids]
@@ -787,11 +804,16 @@
       (let [objects  (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state {:omit-blocked? true})
             shapes   (map #(get objects %) selected)
-            selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
+            selrect  (gsh/selection-rect shapes)
             origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))]
 
         (rx/of (set-modifiers selected
-                              {:resize-vector (gpt/point -1.0 1.0)
+                              {:v2 [{:type :resize
+                                     :vector (gpt/point -1.0 1.0)
+                                     :origin origin}
+                                    {:type :move
+                                     :vector (gpt/point (:width selrect) 0)}]}
+                              #_{:resize-vector (gpt/point -1.0 1.0)
                                :resize-origin origin
                                :displacement (gmt/translate-matrix (gpt/point (- (:width selrect)) 0))}
                               true)
@@ -804,11 +826,16 @@
       (let [objects  (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state {:omit-blocked? true})
             shapes   (map #(get objects %) selected)
-            selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
+            selrect  (gsh/selection-rect shapes)
             origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))]
 
         (rx/of (set-modifiers selected
-                              {:resize-vector (gpt/point 1.0 -1.0)
+                              {:v2 [{:type :resize
+                                     :vector (gpt/point 1.0 -1.0)
+                                     :origin origin}
+                                    {:type :move
+                                     :vector (gpt/point 0 (:height selrect))}]}
+                              #_{:resize-vector (gpt/point 1.0 -1.0)
                                :resize-origin origin
                                :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))}
                               true)

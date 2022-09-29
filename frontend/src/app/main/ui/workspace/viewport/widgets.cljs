@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
    [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -182,8 +181,8 @@
                           :on-frame-select on-frame-select}]))]))
 
 (mf/defc frame-flow
-  [{:keys [flow frame modifiers selected? zoom on-frame-enter on-frame-leave on-frame-select]}]
-  (let [{:keys [x y]} (gsh/transform-shape frame)
+  [{:keys [flow frame selected? zoom on-frame-enter on-frame-leave on-frame-select]}]
+  (let [{:keys [x y]} frame
         flow-pos (gpt/point x (- y (/ 35 zoom)))
 
         on-mouse-down
@@ -217,9 +216,7 @@
                      :y -15
                      :width 100000
                      :height 24
-                     :transform (str (when (and selected? modifiers)
-                                       (str (:displacement modifiers) " " ))
-                                     (vwu/text-transform flow-pos zoom))}
+                     :transform (vwu/text-transform flow-pos zoom)}
      [:div.flow-badge {:class (dom/classnames :selected selected?)}
       [:div.content {:on-mouse-down on-mouse-down
                      :on-double-click on-double-click
@@ -234,7 +231,6 @@
   (let [flows     (unchecked-get props "flows")
         objects   (unchecked-get props "objects")
         zoom      (unchecked-get props "zoom")
-        modifiers (unchecked-get props "modifiers")
         selected  (or (unchecked-get props "selected") #{})
 
         on-frame-enter  (unchecked-get props "on-frame-enter")
@@ -248,7 +244,6 @@
                          :frame frame
                          :selected? (contains? selected (:id frame))
                          :zoom zoom
-                         :modifiers modifiers
                          :on-frame-enter on-frame-enter
                          :on-frame-leave on-frame-leave
                          :on-frame-select on-frame-select}]))]))

@@ -53,9 +53,7 @@
 (defn text-transform
   [{:keys [x y]} zoom]
   (let [inv-zoom (/ 1 zoom)]
-    (str
-     "scale(" inv-zoom ", " inv-zoom ") "
-     "translate(" (* zoom x) ", " (* zoom y) ")")))
+    (dm/fmt "scale(%, %) translate(%, %)" inv-zoom inv-zoom (* zoom x) (* zoom y))))
 
 (defn title-transform [frame zoom]
   (let [frame-transform (gsh/transform-str frame {:no-flip true})

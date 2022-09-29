@@ -278,7 +278,7 @@
                 frame]} (use-guide handle-change-position get-hover-frame zoom guide)
 
         base-frame (or frame hover-frame)
-        frame (gsh/transform-shape (merge base-frame frame-modifier))
+        frame (gsh/transform-shape base-frame frame-modifier)
 
         move-vec (gpt/to-vec (gpt/point (:x base-frame) (:y base-frame))
                              (gpt/point (:x frame) (:y frame)))

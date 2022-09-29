@@ -348,3 +348,25 @@
        :points
        (every? (partial has-point-rect? rect))))
 
+
+(defn line-line-intersect
+  "Calculates the interesection point for two lines given by the points a-b and b-c"
+  [a b c d]
+
+  (let [;; Line equation representation: ax + by + c = 0
+        a1 (- (:y b) (:y a))
+        b1 (- (:x a) (:x b))
+        c1 (+ (* a1 (:x a)) (* b1 (:y a)))
+
+        a2 (- (:y d) (:y c))
+        b2 (- (:x c) (:x d))
+        c2 (+ (* a2 (:x c)) (* b2 (:y c)))
+
+        ;; Cramer's rule
+        det (- (* a1 b2) (* a2 b1))]
+
+    ;; If almost zero the lines are parallel
+    (when (not (mth/almost-zero? det))
+      (let [x (/ (- (* b2 c1) (* b1 c2)) det)
+            y (/ (- (* c2 a1) (* c1 a2)) det)]
+        (gpt/point x y)))))

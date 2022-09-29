@@ -11,6 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.modifiers :as ctm]
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
@@ -184,6 +185,7 @@
             text? (= type :text)
             transform-text? (and text? (and (nil? (:resize-vector modifiers)) (nil? (:resize-vector-2 modifiers))))]
 
+        ;; TODO LAYOUT: Adapt to new modifiers
         (doseq [node nodes]
           (cond
             ;; Text shapes need special treatment because their resize only change
@@ -197,7 +199,7 @@
 
             (dom/class? node "text-container")
             (let [modifiers (dissoc modifiers :displacement :rotation)]
-              (when (not (gsh/empty-modifiers? modifiers))
+              (when (not (ctm/empty-modifiers? modifiers))
                 (let [mtx (-> shape
                               (assoc :modifiers modifiers)
                               (gsh/transform-shape)
@@ -260,12 +262,15 @@
              (d/mapm (fn [id {modifiers :modifiers}]
                        (let [shape (get objects id)
                              center (gsh/center-shape shape)
+
+                             ;; TODO LAYOUT: Adapt to new modifiers
                              modifiers (cond-> modifiers
                                          ;; For texts we only use the displacement because
                                          ;; resize needs to recalculate the text layout
                                          (= :text (:type shape))
-                                         (select-keys [:displacement :rotation]))]
-                         (gsh/modifiers->transform center modifiers)))
+                                         (select-keys [:displacement :rotation]))
+                             ]
+                         (ctm/modifiers->transform center modifiers)))
                      modifiers))))
 
         shapes

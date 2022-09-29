@@ -13,6 +13,7 @@
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.common.types.modifiers :as ctm]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -33,6 +34,7 @@
         (with-meta (meta (:position-data shape))))
       (dissoc :position-data :transform :transform-inverse)))
 
+;; TODO LAYOUT: Adapt to new modifiers
 (defn strip-modifier
   [modifier]
   (if (or (some? (dm/get-in modifier [:modifiers :resize-vector]))
@@ -43,9 +45,9 @@
 (defn process-shape [modifiers {:keys [id] :as shape}]
   (let [modifier (-> (get modifiers id) strip-modifier)
         shape (cond-> shape
-                (not (gsh/empty-modifiers? (:modifiers modifier)))
+                (not (ctm/empty-modifiers? (:modifiers modifier)))
                 (-> (assoc :grow-type :fixed)
-                    (merge modifier) gsh/transform-shape))]
+                    (gsh/transform-shape modifier)))]
     (-> shape
         (cond-> (nil? (:position-data shape))
           (assoc :migrate true))

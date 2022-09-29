@@ -79,8 +79,7 @@
         modifiers         (mf/deref refs/workspace-modifiers)
 
         objects-modified  (mf/with-memo [base-objects modifiers]
-                            (gsh/merge-modifiers base-objects modifiers))
-
+                            (gsh/apply-objects-modifiers base-objects modifiers))
         background        (get options :background clr/canvas)
 
         ;; STATE
@@ -203,7 +202,7 @@
           {:key (dm/str "texts-" page-id)
            :page-id page-id
            :objects objects
-           :modifiers modifiers
+           ;;:modifiers modifiers
            :edition edition}]]]]
 
       (when show-comments?
@@ -336,10 +335,9 @@
        (when show-prototypes?
          [:& widgets/frame-flows
           {:flows (:flows options)
-           :objects base-objects
+           :objects objects-modified
            :selected selected
            :zoom zoom
-           :modifiers modifiers
            :on-frame-enter on-frame-enter
            :on-frame-leave on-frame-leave
            :on-frame-select on-frame-select}])
@@ -348,8 +346,7 @@
          [:& drawarea/draw-area
           {:shape drawing-obj
            :zoom zoom
-           :tool drawing-tool
-           :modifiers modifiers}])
+           :tool drawing-tool}])
 
        (when show-grids?
          [:& frame-grid/frame-grid
@@ -371,9 +368,8 @@
            :zoom zoom
            :page-id page-id
            :selected selected
-           :objects base-objects
-           :focus focus
-           :modifiers modifiers}])
+           :objects objects-modified
+           :focus focus}])
 
        (when show-snap-distance?
          [:& snap-distances/snap-distances
@@ -416,7 +412,6 @@
           {:zoom zoom
            :vbox vbox
            :hover-frame frame-parent
-           :modifiers modifiers
            :disabled-guides? disabled-guides?}])
 
        (when show-selection-handlers?

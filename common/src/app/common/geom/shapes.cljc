@@ -28,7 +28,7 @@
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
   (->> shapes
-       (map (comp gpr/points->selrect :points gtr/transform-shape))
+       (map (comp gpr/points->selrect :points))
        (gpr/join-selrects)))
 
 (defn translate-to-frame
@@ -166,23 +166,17 @@
 (dm/export gtr/transform-matrix)
 (dm/export gtr/transform-str)
 (dm/export gtr/inverse-transform-matrix)
-(dm/export gtr/transform-point-center)
 (dm/export gtr/transform-rect)
 (dm/export gtr/calculate-adjust-matrix)
 (dm/export gtr/update-group-selrect)
 (dm/export gtr/update-mask-selrect)
-(dm/export gtr/resize-modifiers)
-(dm/export gtr/change-orientation-modifiers)
-(dm/export gtr/rotation-modifiers)
-(dm/export gtr/merge-modifiers)
 (dm/export gtr/transform-shape)
 (dm/export gtr/transform-selrect)
 (dm/export gtr/transform-selrect-matrix)
 (dm/export gtr/transform-bounds)
-(dm/export gtr/modifiers->transform)
-(dm/export gtr/empty-modifiers?)
 (dm/export gtr/move-position-data)
 (dm/export gtr/apply-transform)
+(dm/export gtr/apply-objects-modifiers)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)

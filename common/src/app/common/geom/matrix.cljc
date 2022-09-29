@@ -252,3 +252,14 @@
       (update :d mth/precision 4)
       (update :e mth/precision 4)
       (update :f mth/precision 4)))
+
+(defn transform-point-center
+  "Transform a point around the shape center"
+  [point center matrix]
+  (if (and (some? point) (some? matrix) (some? center))
+    (gpt/transform
+     point
+     (multiply (translate-matrix center)
+               matrix
+               (translate-matrix (gpt/negate center))))
+    point))
