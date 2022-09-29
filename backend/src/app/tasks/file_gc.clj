@@ -90,11 +90,10 @@
           get-chunk (fn [cursor]
                       (let [rows (db/exec! conn [sql:retrieve-candidates-chunk interval cursor])]
                         [(some->> rows peek :modified-at) (seq rows)]))]
-
-      (sequence cat (d/iteration get-chunk
-                                 :vf second
-                                 :kf first
-                                 :initk (dt/now))))))
+      (d/iteration get-chunk
+                   :vf second
+                   :kf first
+                   :initk (dt/now)))))
 
 (defn collect-used-media
   [data]
