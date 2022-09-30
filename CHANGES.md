@@ -11,6 +11,7 @@
 
 ### :sparkles: New features
 
+- Improve interactions with nested boards [Taiga #4054](https://tree.taiga.io/project/penpot/us/4054)
 - Add team hero in projects dashboard [Taiga #3863](https://tree.taiga.io/project/penpot/us/3863)
 - Add zoom style to shared link [Taiga #3874](https://tree.taiga.io/project/penpot/us/3874)
 - Add dashboard creation button as placeholder [Taiga #3861](https://tree.taiga.io/project/penpot/us/3861)

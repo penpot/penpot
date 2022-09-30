@@ -512,6 +512,18 @@
   (assert (has-offset-effect? interaction))
   (update interaction :animation assoc :offset-effect offset-effect))
 
+(defn dest-to?
+  "Check if the interaction has the given frame as destination."
+  [interaction frame-id]
+  (and (has-destination interaction)
+       (= (:destination interaction) frame-id)))
+
+(defn navs-to?
+  "Check if the interaction is a navigation to the given frame."
+  [interaction frame-id]
+  (and (= (:action-type interaction) :navigate)
+       (= (:destination interaction) frame-id)))
+
 ;; -- Helpers for interactions
 
 (defn add-interaction
@@ -542,6 +554,12 @@
                       (map (fn [interaction]
                              (d/update-when interaction :destination #(get ids-map % %)))))]
       (into [] xform interactions))))
+
+(defn remove-interactions
+  "Remove all interactions that the fn returns true."
+  [f interactions]
+  (-> (d/removev f interactions)
+      not-empty))
 
 (defn actionable?
   "Check if there is any interaction that is clickable by the user"
