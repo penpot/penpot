@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
@@ -20,20 +21,25 @@
 
 (mf/defc libraries-page
   [{:keys [team] :as props}]
-  (let [files-map (mf/deref refs/dashboard-shared-files)
-        projects (mf/deref refs/dashboard-projects)
+  (let [files-map       (mf/deref refs/dashboard-shared-files)
+        projects        (mf/deref refs/dashboard-projects)
         default-project (->> projects vals (d/seek :is-default))
-        files     (->> (vals files-map)
-                       (sort-by :modified-at)
-                       (reverse))
+        files           (->> (vals files-map)
+                             (sort-by :modified-at)
+                             (reverse)
+                             (not-empty))
 
-        width            (mf/use-state nil)
-        rowref           (mf/use-ref)
-        itemsize       330
-        ratio          (if (some? @width) (/ @width itemsize) 0)
-        nitems         (mth/floor ratio)
-        limit          (min 10 nitems)
-        limit          (max 1 limit)]
+        components-v2   (features/use-feature :components-v2)
+
+        width           (mf/use-state nil)
+        rowref          (mf/use-ref)
+        itemsize        (if (>= @width 1030)
+                          280
+                          230)
+        ratio           (if (some? @width) (/ @width itemsize) 0)
+        nitems          (mth/floor ratio)
+        limit           (min 10 nitems)
+        limit           (max 1 limit)]
     (mf/use-effect
      (mf/deps team)
      (fn []
@@ -46,7 +52,7 @@
     (mf/use-effect
      #(st/emit! (dd/fetch-shared-files)
                 (dd/clear-selected-files)))
-    
+
     (mf/with-effect
       (let [node (mf/ref-val rowref)
             mnt? (volatile! true)
@@ -71,5 +77,5 @@
                 :project default-project
                 :origin :libraries
                 :limit limit
-                :library-view? true}]]]))
+                :library-view? components-v2}]]]))
 
