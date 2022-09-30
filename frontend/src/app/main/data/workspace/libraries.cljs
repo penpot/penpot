@@ -16,6 +16,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.color :as ctc]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
@@ -29,6 +30,7 @@
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
@@ -402,13 +404,16 @@
   (ptk/reify ::delete-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [data          (get state :workspace-data)
-            components-v2 (features/active-feature? state :components-v2)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (pcb/delete-component id components-v2))]
-
-        (rx/of (dch/commit-changes changes))))))
+      (let [data (get state :workspace-data)]
+        (if (features/active-feature? state :components-v2)
+          (let [component (ctkl/get-component data id)
+                page      (ctpl/get-page data (:main-instance-page component))
+                shape     (ctn/get-shape page (:main-instance-id component))]
+            (rx/of (dwsh/delete-shapes (:id page) #{(:id shape)})))
+          (let [changes (-> (pcb/empty-changes it)
+                            (pcb/with-library-data data)
+                            (pcb/delete-component id false))]
+            (rx/of (dch/commit-changes changes))))))))
 
 (defn restore-component
   "Restore a deleted component, with the given id, on the current file library."
@@ -554,11 +559,14 @@
             page-id   (:current-page-id state)
             container (cph/get-container file :page page-id)
 
+            components-v2
+            (features/active-feature? state :components-v2)
+
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-container container)
                 (pcb/with-objects (:objects container))
-                (dwlh/generate-sync-shape-direct libraries container id true))]
+                (dwlh/generate-sync-shape-direct libraries container id true components-v2))]
 
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
                                                                  (:redo-changes changes)
