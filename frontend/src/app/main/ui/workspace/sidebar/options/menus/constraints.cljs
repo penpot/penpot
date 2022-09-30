@@ -30,7 +30,7 @@
         frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
 
         shapes (as-> old-shapes $
-                 (map gsh/transform-shape $)
+                 #_(map gsh/transform-shape $)
                  (map gsh/translate-to-frame $ frames))
 
         values (let [{:keys [x y]} (-> shapes first :points gsh/points->selrect)]

@@ -254,3 +254,8 @@
              (gmt/multiply (gmt/rotate-matrix rt-modif))
              (gmt/translate (gpt/negate center))))))
    ))
+
+(defn only-move?
+  [modifier]
+  (and (= 1 (-> modifier :v2 count))
+       (= :move (-> modifier :v2 first :type))))

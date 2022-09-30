@@ -91,6 +91,7 @@
 (defn- calculate-height
   "Calculates the height of a parallelogram given by the points"
   [[p1 _ _ p4]]
+
   (-> (gpt/to-vec p4 p1)
       (gpt/length)))
 

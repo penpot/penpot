@@ -202,7 +202,7 @@
           {:key (dm/str "texts-" page-id)
            :page-id page-id
            :objects objects
-           ;;:modifiers modifiers
+           :modifiers modifiers
            :edition edition}]]]]
 
       (when show-comments?

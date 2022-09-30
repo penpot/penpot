@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gsht]
    [app.common.math :as mth]
@@ -34,21 +35,29 @@
         (with-meta (meta (:position-data shape))))
       (dissoc :position-data :transform :transform-inverse)))
 
-;; TODO LAYOUT: Adapt to new modifiers
-(defn strip-modifier
+#_(defn strip-modifier
   [modifier]
   (if (or (some? (dm/get-in modifier [:modifiers :resize-vector]))
           (some? (dm/get-in modifier [:modifiers :resize-vector-2])))
     modifier
     (d/update-when modifier :modifiers dissoc :displacement :rotation)))
 
+(defn fix-position [shape modifier]
+  (let [shape' (-> shape
+                   (assoc :grow-type :fixed)
+                   (gsh/transform-shape modifier))
+
+        deltav (gpt/to-vec (gpt/point (:selrect shape'))
+                           (gpt/point (:selrect shape)))]
+    (gsh/transform-shape shape' (ctm/move deltav))))
+
 (defn process-shape [modifiers {:keys [id] :as shape}]
-  (let [modifier (-> (get modifiers id) strip-modifier)
-        shape (cond-> shape
-                (not (ctm/empty-modifiers? (:modifiers modifier)))
-                (-> (assoc :grow-type :fixed)
-                    (gsh/transform-shape modifier)))]
+  (let [modifier (dm/get-in modifiers [id :modifiers])]
     (-> shape
+        (cond-> (and (some? modifier)
+                     (not (ctm/only-move? modifier)))
+          (fix-position modifier))
+
         (cond-> (nil? (:position-data shape))
           (assoc :migrate true))
         strip-position-data)))
@@ -138,8 +147,8 @@
         (fn [id]
           (let [new-shape (get text-shapes id)
                 old-shape (get prev-text-shapes id)
-                old-modifiers (-> (get prev-modifiers id) strip-modifier)
-                new-modifiers (-> (get modifiers id) strip-modifier)
+                old-modifiers (get prev-modifiers id)
+                new-modifiers (get modifiers id)
 
                 remote? (some? (-> new-shape meta :session-id)) ]
 

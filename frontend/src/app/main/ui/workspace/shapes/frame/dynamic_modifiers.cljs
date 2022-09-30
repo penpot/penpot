@@ -111,8 +111,7 @@
            (dom/query-all shape-defs ".svg-mask-wrapper")))
 
         text?
-        [shape-node
-         (dom/query shape-node ".text-container")]
+        [shape-node]
 
         :else
         [shape-node]))))
@@ -178,12 +177,10 @@
 
 (defn update-transform!
   [base-node shapes transforms modifiers]
-  (doseq [{:keys [id type] :as shape} shapes]
+  (doseq [{:keys [id _type] :as shape} shapes]
     (when-let [nodes (get-nodes base-node shape)]
       (let [transform (get transforms id)
-            modifiers (get-in modifiers [id :modifiers])
-            text? (= type :text)
-            transform-text? (and text? (and (nil? (:resize-vector modifiers)) (nil? (:resize-vector-2 modifiers))))]
+            modifiers (get-in modifiers [id :modifiers])]
 
         ;; TODO LAYOUT: Adapt to new modifiers
         (doseq [node nodes]
@@ -197,19 +194,10 @@
             (dom/class? node "frame-children")
             (set-transform-att! node "transform" (gmt/inverse transform))
 
-            (dom/class? node "text-container")
-            (let [modifiers (dissoc modifiers :displacement :rotation)]
-              (when (not (ctm/empty-modifiers? modifiers))
-                (let [mtx (-> shape
-                              (assoc :modifiers modifiers)
-                              (gsh/transform-shape)
-                              (gsh/transform-matrix {:no-flip true}))]
-                  (override-transform-att! node "transform" mtx))))
-
             (dom/class? node "frame-title")
-            (let [shape (-> shape (assoc :modifiers modifiers) gsh/transform-shape)
-                  zoom (get-in @st/state [:workspace-local :zoom] 1)
-                  mtx  (vwu/title-transform shape zoom)]
+            (let [shape (gsh/transform-shape shape modifiers)
+                  zoom  (get-in @st/state [:workspace-local :zoom] 1)
+                  mtx   (vwu/title-transform shape zoom)]
               (override-transform-att! node "transform" mtx))
 
             (or (= (dom/get-tag-name node) "mask")
@@ -223,7 +211,7 @@
             (= (dom/get-tag-name node) "pattern")
             (set-transform-att! node "patternTransform" transform)
 
-            (and (some? transform) (some? node) (or (not text?) transform-text?))
+            (and (some? transform) (some? node))
             (set-transform-att! node "transform" transform)))))))
 
 (defn remove-transform!
@@ -251,6 +239,20 @@
                 (dom/remove-attribute! node "data-old-transform")
                 (dom/remove-attribute! node "transform")))))))))
 
+(defn adapt-text-modifiers
+  [modifiers shape]
+  (let [shape' (gsh/transform-shape shape modifiers)
+        scalev
+        (gpt/point (/ (:width shape) (:width shape'))
+                   (/ (:height shape) (:height shape')))]
+    ;; Reverse the change in size so we can recalculate the layout
+    (-> modifiers
+        (update :v2 conj {:type :resize
+                          :vector scalev
+                          :transform (:transform shape')
+                          :transform-inverse (:transform-inverse shape')
+                          :origin (-> shape' :points first)}))))
+
 (defn use-dynamic-modifiers
   [objects node modifiers]
 
@@ -262,14 +264,8 @@
              (d/mapm (fn [id {modifiers :modifiers}]
                        (let [shape (get objects id)
                              center (gsh/center-shape shape)
-
-                             ;; TODO LAYOUT: Adapt to new modifiers
-                             modifiers (cond-> modifiers
-                                         ;; For texts we only use the displacement because
-                                         ;; resize needs to recalculate the text layout
-                                         (= :text (:type shape))
-                                         (select-keys [:displacement :rotation]))
-                             ]
+                             text? (= :text (:type shape))
+                             modifiers (cond-> modifiers text? (adapt-text-modifiers shape))]
                          (ctm/modifiers->transform center modifiers)))
                      modifiers))))
 

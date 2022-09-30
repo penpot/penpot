@@ -83,7 +83,7 @@
         ;; the shape with the mouse, generate a copy of the shapes applying
         ;; the transient transformations.
         shapes (as-> old-shapes $
-                 (map gsh/transform-shape $)
+                 #_(map gsh/transform-shape $)
                  (map gsh/translate-to-frame $ frames))
 
         ;; For rotated or stretched shapes, the origin point we show in the menu
