@@ -438,10 +438,14 @@ button.collapse-sidebar {
       margin-top: 4px;
       color: $color-white;
       font-size: $fs12;
+      .command-name {
+        display: flex;
+        align-items: center;
+      }
       .keys {
         flex-grow: 1;
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: flex-end;
       }
       .char-box {
