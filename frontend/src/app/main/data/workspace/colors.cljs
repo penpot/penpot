@@ -498,7 +498,7 @@
       (update state :colorpicker
               (fn [state]
                 (let [state (-> state
-                                (update :current-color merge changes)
+                                (update :current-color merge (split-color-components changes))
                                 (update :current-color materialize-color-components)
                                 ;; current color can be a library one I'm changing via colorpicker
                                 (d/dissoc-in [:current-color :id])

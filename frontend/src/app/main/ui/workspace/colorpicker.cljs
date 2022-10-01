@@ -88,7 +88,8 @@
 
         on-select-library-color
         (mf/use-fn
-         (fn [color]
+         (fn [{:keys [color]}]
+           (handle-change-color { :hex color })
            (on-change color)))
 
         on-add-library-color
