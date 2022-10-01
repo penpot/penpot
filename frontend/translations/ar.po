@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-01 14:17+0000\n"
-"Last-Translator: Shuaib Zahda <shuaib.zahda@gmail.com>\n"
+"PO-Revision-Date: 2022-10-04 18:22+0000\n"
+"Last-Translator: Youkho <youkho@gmail.com>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
 "ar/>\n"
 "Language: ar\n"
@@ -1111,8 +1111,8 @@ msgstr "عفواً!"
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
 msgstr[0] "0 ملف"
-msgstr[1] "ملفين"
-msgstr[2] "3 ملفات"
+msgstr[1] "ملف"
+msgstr[2] "ملفين"
 msgstr[3] "قليل"
 msgstr[4] "كثير"
 msgstr[5] "غير ذلك"
@@ -2774,3 +2774,248 @@ msgstr "مجانا 100٪ !"
 
 msgid "onboarding.team-modal.create-team-feature-4"
 msgstr "عدد غير محدود من الأعضاء"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "محاذاة"
+
+msgid "shortcuts.align-hcenter"
+msgstr "محاذاة المركز أفقيًا"
+
+msgid "shortcut-section.workspace"
+msgstr "مساحة العمل"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "الأساسيات"
+
+msgid "shortcut-section.dashboard"
+msgstr "لوحة القيادة"
+
+msgid "shortcuts.align-bottom"
+msgstr "محاذاة لأسفل"
+
+msgid "shortcuts.align-right"
+msgstr "محاذاة اليمين"
+
+msgid "shortcuts.draw-rect"
+msgstr "مستطيل"
+
+msgid "shortcuts.draw-path"
+msgstr "المسار"
+
+msgid "shortcuts.draw-text"
+msgstr "نص"
+
+msgid "shortcuts.export-shapes"
+msgstr "تصدير الأشكال"
+
+msgid "shortcuts.make-corner"
+msgstr "إصنع زاوية"
+
+msgid "shortcuts.go-to-search"
+msgstr "بحث"
+
+msgid "shortcuts.go-to-libs"
+msgstr "إذهب إلى المكتبات المشتركة"
+
+msgid "shortcuts.hide-ui"
+msgstr "إظهار / إخفاء واجهة المستخدم"
+
+msgid "shortcuts.insert-image"
+msgstr "إدراج صورة"
+
+msgid "shortcuts.join-nodes"
+msgstr "ربط العقد"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+msgid "onboarding.welcome.title"
+msgstr "مرحبًا بك في Penpot"
+
+msgid "shortcut-subsection.edit"
+msgstr "تعديل"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "القائمة الرئيسية"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "تعديل الطبقات"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "التنقل"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "التنقل"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "التنقل"
+
+msgid "shortcut-subsection.panels"
+msgstr "اللوحات"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "مسارات"
+
+msgid "shortcut-subsection.shape"
+msgstr "الأشكال"
+
+msgid "shortcut-subsection.tools"
+msgstr "أدوات"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "تكبير"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "تكبير"
+
+msgid "shortcuts.add-comment"
+msgstr "تعليقات"
+
+msgid "shortcuts.add-node"
+msgstr "إضافة عقدة"
+
+msgid "shortcuts.align-vcenter"
+msgstr "محاذاة المركز عموديًا"
+
+msgid "shortcuts.artboard-selection"
+msgstr "إنشاء لوحة من الاختيار"
+
+msgid "shortcuts.bring-back"
+msgstr "أرسل إلى الخلف"
+
+msgid "shortcuts.bring-backward"
+msgstr "إرسال إلى الوراء"
+
+msgid "shortcuts.bring-forward"
+msgstr "ثابر للأمام"
+
+msgid "shortcuts.bring-front"
+msgstr "أحضر إلى الأمام"
+
+msgid "shortcuts.clear-undo"
+msgstr "مسح التراجع"
+
+msgid "shortcuts.copy"
+msgstr "إنسخ"
+
+msgid "shortcuts.create-component"
+msgstr "تكوين المكون"
+
+msgid "shortcuts.cut"
+msgstr "إقطع"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "تصغير"
+
+msgid "shortcuts.increase-zoom"
+msgstr "تكبير"
+
+msgid "shortcuts.make-curve"
+msgstr "إصنع منحنى"
+
+msgid "shortcuts.mask"
+msgstr "قناع"
+
+msgid "shortcuts.align-left"
+msgstr "محاذاة اليسار"
+
+msgid "shortcuts.align-top"
+msgstr "‌محاذاة الأعلى"
+
+msgid "shortcuts.delete"
+msgstr "حذف"
+
+msgid "shortcuts.delete-node"
+msgstr "حذف العقدة"
+
+msgid "shortcuts.detach-component"
+msgstr "إفصل المكون"
+
+msgid "shortcuts.draw-curve"
+msgstr "منحنى"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "الشكل البيضاوي"
+
+msgid "shortcuts.draw-frame"
+msgstr "لوحة"
+
+msgid "shortcuts.draw-nodes"
+msgstr "أرسم المسار"
+
+msgid "shortcuts.duplicate"
+msgstr "كرر"
+
+msgid "shortcuts.escape"
+msgstr "إلغي"
+
+msgid "shortcuts.fit-all"
+msgstr "تكبير لتناسب الجميع"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "قلب أفقيًا"
+
+msgid "shortcuts.flip-vertical"
+msgstr "قلب عموديًا"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "إنتقل إلى المسودات"
+
+msgid "shortcuts.group"
+msgstr "مجموعة"
+
+msgid "shortcuts.h-distribute"
+msgstr "وزع أفقيًا"
+
+msgid "onboarding.templates.title"
+msgstr "إبدأ التصميم"
+
+msgid "onboarding.templates.subtitle"
+msgstr "فيما يلي بعض القوالب."
+
+msgid "shortcuts.merge-nodes"
+msgstr "دمج العقد"
+
+msgid "shortcuts.move-fast-up"
+msgstr "تحرك للأعلى بسرعة"
+
+msgid "shortcuts.move"
+msgstr "تحرك"
+
+msgid "shortcuts.move-fast-down"
+msgstr "تحرك بسرعة لأسفل"
+
+msgid "shortcuts.move-fast-left"
+msgstr "تحرك يسارا بسرعة"
+
+msgid "shortcuts.move-fast-right"
+msgstr "تحرك يميناً بسرعة"
+
+msgid "shortcuts.move-nodes"
+msgstr "نقل العقدة"
+
+msgid "shortcuts.move-unit-down"
+msgstr "تحرك لأسفل"
+
+msgid "shortcuts.move-unit-right"
+msgstr "تحرك يميناً"
+
+msgid "shortcuts.move-unit-left"
+msgstr "تحرك يساراً"
+
+msgid "shortcuts.move-unit-up"
+msgstr "تحرك للأعلى"
+
+msgid "shortcuts.next-frame"
+msgstr "اللوحة التالية"
+
+msgid "shortcut-section.viewer"
+msgstr "مشاهد"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "عام"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "عام"
