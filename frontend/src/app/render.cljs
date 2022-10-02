@@ -76,7 +76,7 @@
 
   It receives a function to execute for retrieve the stream that will
   be used for creating the subscription. The function should be
-  stable, so is the responsability of the user of this hook to
+  stable, so is the responsibility of the user of this hook to
   properly memoize it.
 
   TODO: this should be placed in some generic hooks namespace but his

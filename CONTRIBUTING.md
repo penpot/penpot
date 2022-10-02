@@ -99,7 +99,7 @@ Each commit should have:
 - An entry on the CHANGES.md file if applicable, referencing the
   github or taiga issue/user-story using the these same rules.
 
-Examples of good commit messags:
+Examples of good commit messages:
 
 - :bug: Fix unexpected error on launching modal
 - :bug: Set proper error message on generic error

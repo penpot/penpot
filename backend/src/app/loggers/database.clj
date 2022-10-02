@@ -82,7 +82,7 @@
     (a/go-loop []
       (let [msg (a/<! output)]
         (if (nil? msg)
-          (l/info :msg "stoping error reporting loop")
+          (l/info :msg "stopping error reporting loop")
           (do
             (a/<! (handle-event cfg msg))
             (recur)))))

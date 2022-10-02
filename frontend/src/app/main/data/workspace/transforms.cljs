@@ -766,7 +766,7 @@
                 (pcb/with-objects objects)
                 (pcb/update-shapes moving-frames
                                    (fn [shape]
-                                     ;; Hide in viwer must be enabled just when a board is moved
+                                     ;; Hide in viewer must be enabled just when a board is moved
                                      ;; inside another artboard an nested to it, we have to avoid
                                      ;; situations like: 1. Moving inside the same frame; 2. Moving
                                      ;; outside the frame

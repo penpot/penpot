@@ -125,7 +125,7 @@
                   (l/error :hint "error on persist-events" :cause cause))))]
 
       (fn [request respond _]
-        ;; Fire and forget, log error in case of errro
+        ;; Fire and forget, log error in case of error
         (-> (px/submit! executor #(handler request))
             (p/catch handle-error))
 

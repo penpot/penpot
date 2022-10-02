@@ -268,7 +268,7 @@
      (when (not= readed# expected#)
        (ex/raise :type :validation
                  :code :unexpected-label
-                 :hint (format "unxpected label found: %s, expected: %s" readed# expected#)))))
+                 :hint (format "unexpected label found: %s, expected: %s" readed# expected#)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
@@ -366,7 +366,7 @@
 (def ^:dynamic *state*)
 (def ^:dynamic *options*)
 
-;; --- EXPORT WRITTER
+;; --- EXPORT WRITER
 
 (defn- embed-file-assets
   [data conn file-id]
@@ -396,8 +396,8 @@
               form))
 
           (process-group-of-assets [data [lib-id items]]
-            ;; NOTE: there are a posibility that shape refers to a not
-            ;; existing file because the file was removed. In this
+            ;; NOTE: there is a possibility that shape refers to an
+            ;; unexistant file because the file was removed. In this
             ;; case we just ignore the asset.
             (if-let [lib (retrieve-file conn lib-id)]
               (reduce (partial process-asset lib) data items)
@@ -433,14 +433,14 @@
           :opt    [::include-libraries? ::embed-assets?]))
 
 (defn write-export!
-  "Do the exportation of a speficied file in custom penpot binary
+  "Do the exportation of a specified file in custom penpot binary
   format. There are some options available for customize the output:
 
-  `::include-libraries?`: additionaly to the specified file, all the
+  `::include-libraries?`: additionally to the specified file, all the
   linked libraries also will be included (including transitive
   dependencies).
 
-  `::embed-assets?`: instead of including the libraryes, embedd in the
+  `::embed-assets?`: instead of including the libraries, embed in the
   same file library all assets used from external libraries."
   [{:keys [::include-libraries? ::embed-assets?] :as options}]
   (us/assert! ::write-export-options options)
@@ -556,7 +556,7 @@
   format. There are some options for customize the importation
   behavior:
 
-  `::overwrite?`: if true, instead of creating new files and remaping id references,
+  `::overwrite?`: if true, instead of creating new files and remapping id references,
   it reuses all ids and updates existing objects; defaults to `false`.
 
   `::migrate?`: if true, applies the migration before persisting the
@@ -621,7 +621,7 @@
       (l/debug :hint "update media references" ::l/async false)
       (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
 
-      (l/debug :hint "procesing file" :file-id file-id ::l/async false)
+      (l/debug :hint "processing file" :file-id file-id ::l/async false)
 
       (let [file-id' (lookup-index file-id)
             data     (-> (:data file)

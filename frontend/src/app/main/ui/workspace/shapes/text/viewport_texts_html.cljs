@@ -241,7 +241,7 @@
 
         editing-shape (get text-shapes edition)
 
-        ;; This memo is necesary so the viewport-text-wrapper memoize its props correctly
+        ;; This memo is necessary so the viewport-text-wrapper memoize its props correctly
         text-shapes-wrapper
         (mf/use-memo
          (mf/deps text-shapes edition)

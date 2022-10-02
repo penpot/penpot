@@ -16,7 +16,7 @@
     (cond
       ;; For rotated or stretched shapes, the origin point we show in the menu
       ;; is not the (:x :y) shape attribute, but the top left coordinate of the
-      ;; wrapping recangle (see measures.cljs). As the :points attribute cannot
+      ;; wrapping rectangle (see measures.cljs). As the :points attribute cannot
       ;; be merged for several objects, we calculate the origin point in two fake
       ;; attributes to be used in the measures menu.
       (#{:ox :oy} attr)

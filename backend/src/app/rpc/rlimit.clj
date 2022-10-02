@@ -84,7 +84,7 @@
    ::rscript/path "app/rpc/rlimit/window.lua"})
 
 (def enabled?
-  "Allows on runtime completly disable rate limiting."
+  "Allows on runtime completely disable rate limiting."
   (atom true))
 
 (def ^:private window-opts-re

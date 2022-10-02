@@ -41,7 +41,7 @@
       :hours   ChronoUnit/HOURS
       :days    ChronoUnit/DAYS
       :weeks   ChronoUnit/WEEKS
-      :monts   ChronoUnit/MONTHS)))
+      :months   ChronoUnit/MONTHS)))
 
 ;; --- DURATION
 

@@ -83,7 +83,7 @@
 
 (defn concat-all
   "A totally lazy implementation of concat with different call
-  signature. It works like a flatten with a single level of neesting."
+  signature. It works like a flatten with a single level of nesting."
   [colls]
   (lazy-seq
    (let [c (seq colls)
@@ -663,7 +663,7 @@
              coll))))
 
 (defn iteration
-  "Creates a toally lazy seqable via repeated calls to step, a
+  "Creates a totally lazy seqable via repeated calls to step, a
   function of some (continuation token) 'k'. The first call to step
   will be passed initk, returning 'ret'. If (somef ret) is true, (vf
   ret) will be included in the iteration, else iteration will

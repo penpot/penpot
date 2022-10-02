@@ -197,7 +197,7 @@
                                    (write-log! ~logger-sym ~level-sym ~cause message#)
                                    (catch Throwable cause#
                                      (write-log! ~logger-sym (get-level :error) cause#
-                                                 "unexpected error on writting log")))))))
+                                                 "unexpected error on writing log")))))))
                  nil)
               `(let [message# (or ~raw (build-message ~(vec props)))]
                  (write-log! ~logger-sym ~level-sym ~cause message#)

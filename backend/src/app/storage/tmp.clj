@@ -6,7 +6,7 @@
 
 (ns app.storage.tmp
   "Temporal files service all created files will be tried to clean after
-  1 hour afrer creation. This is a best effort, if this process fails,
+  1 hour after creation. This is a best effort, if this process fails,
   the operating system cleaning task should be responsible of
   permanently delete these files (look at systemd-tempfiles)."
   (:require
@@ -50,7 +50,7 @@
 
 (defmethod ig/halt-key! ::cleaner
   [_ close-ch]
-  (l/info :hint "stoping tempfile cleaner service")
+  (l/info :hint "stopping tempfile cleaner service")
   (some-> close-ch a/close!))
 
 (defn- remove-temp-file

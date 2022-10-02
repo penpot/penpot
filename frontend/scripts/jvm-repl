@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# A repl usefull for debug macros.
+# A repl useful for debug macros.
 
 export OPTIONS="\
        -J-XX:-OmitStackTraceInFastThrow \

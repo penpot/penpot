@@ -573,7 +573,7 @@
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
 
-            ;; Ignore any shape whose parent is also intented to be moved
+            ;; Ignore any shape whose parent is also intended to be moved
             ids      (cph/clean-loops objects ids)
 
             ;; If we try to move a parent into a child we remove it
@@ -624,7 +624,7 @@
                     ids)
 
             ;; TODO: Probably implementing this using loop/recur will
-            ;; be more efficient than using reduce and continuos data
+            ;; be more efficient than using reduce and continuous data
             ;; desturcturing.
 
             ;; Sets the correct components metadata for the moved shapes

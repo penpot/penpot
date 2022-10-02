@@ -76,7 +76,7 @@
 
 (defmethod ig/halt-key! ::server
   [_ {:keys [server name port] :as cfg}]
-  (l/info :msg "stoping http server" :name name :port port)
+  (l/info :msg "stopping http server" :name name :port port)
   (yt/stop! server))
 
 (defn- not-found-handler

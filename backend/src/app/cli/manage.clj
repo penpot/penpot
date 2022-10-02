@@ -111,7 +111,7 @@
     :id :verbosity
     :default 1
     :update-fn inc]
-   ["-q" nil "Dont' print to console"
+   ["-q" nil "Don't print to console"
     :id :verbosity
     :update-fn (constantly 0)]
    ["-h" "--help"]])

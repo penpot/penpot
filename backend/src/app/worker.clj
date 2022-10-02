@@ -134,7 +134,7 @@
 
               (aa/thread-sleep interval)
               (if (.isShutdown executor)
-                (l/debug :hint "stoping monitor; cause: executor is shutdown")
+                (l/debug :hint "stopping monitor; cause: executor is shutdown")
                 (assoc state skey steals))))
 
           (monitor-fn []
@@ -146,7 +146,7 @@
                     (recur (conj items item) state)
                     (recur items state))))
               (catch InterruptedException _cause
-                (l/debug :hint "stoping monitor; interrupted"))))]
+                (l/debug :hint "stopping monitor; interrupted"))))]
 
     (let [thread (Thread. monitor-fn)]
       (.setDaemon thread true)

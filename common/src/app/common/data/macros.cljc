@@ -17,7 +17,7 @@
    [cljs.analyzer.api :as aapi]))
 
 (defmacro select-keys
-  "A macro version of `select-keys`. Usefull when keys vector is known
+  "A macro version of `select-keys`. Useful when keys vector is known
   at compile time (aprox 600% performance boost).
 
   It is not 100% equivalent, this macro does not removes not existing
@@ -27,7 +27,7 @@
   `{ ~@(mapcat (fn [key] [key (list `c/get target key)]) keys) ~@[] })
 
 (defmacro get-in
-  "A macro version of `get-in`. Usefull when the keys vector is known at
+  "A macro version of `get-in`. Useful when the keys vector is known at
   compile time (20-40% performance improvement)."
   ([target keys]
    (assert (vector? keys) "keys expected to be a vector")

@@ -214,7 +214,7 @@
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
 (defn use-previous
-  "Returns the value from previuous render cycle."
+  "Returns the value from previous render cycle."
   [value]
   (let [ref (mf/use-ref value)]
     (mf/use-effect
@@ -234,7 +234,7 @@
 (defn use-ref-callback
   "Returns a stable callback pointer what calls the interned
   callback. The interned callback will be automatically updated on
-  each reander if the reference changes and works as noop if the
+  each render if the reference changes and works as noop if the
   pointer references to nil value."
   [f]
   (let [ptr (mf/use-ref nil)]

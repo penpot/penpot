@@ -51,13 +51,13 @@
 
    :rpc-mutation-timing
    {::mdef/name "penpot_rpc_mutation_timing"
-    ::mdef/help "RPC mutation method call timming."
+    ::mdef/help "RPC mutation method call timing."
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
    :rpc-command-timing
    {::mdef/name "penpot_rpc_command_timing"
-    ::mdef/help "RPC command method call timming."
+    ::mdef/help "RPC command method call timing."
     ::mdef/labels ["name"]
     ::mdef/type :histogram}
 
@@ -126,7 +126,7 @@
 
    :executors-completed-tasks
    {::mdef/name "penpot_executors_completed_tasks_total"
-    ::mdef/help "Aproximate number of completed tasks by the executor."
+    ::mdef/help "Approximate number of completed tasks by the executor."
     ::mdef/labels ["name"]
     ::mdef/type :counter}
 
