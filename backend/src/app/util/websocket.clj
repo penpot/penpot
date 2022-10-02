@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.transit :as t]
+   [app.common.uuid :as uuid]
    [app.loggers.audit :refer [parse-client-ip]]
    [app.util.time :as dt]
    [clojure.core.async :as a]
@@ -21,9 +22,7 @@
 
 (declare decode-beat)
 (declare encode-beat)
-(declare process-heartbeat)
-(declare process-input)
-(declare process-output)
+(declare start-io-loop)
 (declare ws-ping!)
 (declare ws-send!)
 (declare filter-options)
@@ -51,7 +50,7 @@
              ::idle-timeout]
       :or {input-buff-size 64
            output-buff-size 64
-           idle-timeout 30000
+           idle-timeout 60000
            on-connect noop
            on-snd-message identity-3
            on-rcv-message identity-3}
@@ -64,17 +63,19 @@
   (fn [{:keys [::yws/channel session-id] :as request}]
     (let [input-ch   (a/chan input-buff-size)
           output-ch  (a/chan output-buff-size)
-          pong-ch    (a/chan (a/sliding-buffer 6))
+          hbeat-ch   (a/chan (a/sliding-buffer 6))
           close-ch   (a/chan)
           stop-ch    (a/chan)
 
           ip-addr    (parse-client-ip request)
           uagent     (yr/get-header request "user-agent")
-          id         (inst-ms (dt/now))
+          id         (uuid/next)
 
           options    (-> (filter-options options)
                          (merge {::id id
+                                 ::created-at (dt/now)
                                  ::input-ch input-ch
+                                 ::heartbeat-ch hbeat-ch
                                  ::output-ch output-ch
                                  ::close-ch close-ch
                                  ::stop-ch stop-ch
@@ -99,11 +100,13 @@
 
           on-ws-error
           (fn [_ error]
-            (a/close! close-ch)
             (when-not (or (instance? java.nio.channels.ClosedChannelException error)
                           (instance? java.net.SocketException error)
                           (instance? java.io.IOException error))
-              (l/error :hint (ex-message error) :cause error)))
+              (l/error :fn "on-ws-error" :conn-id id
+                       :hint (ex-message error)
+                       :cause error))
+            (on-ws-terminate nil 8801 "close after error"))
 
           on-ws-message
           (fn [_ message]
@@ -116,23 +119,18 @@
                 (l/warn :hint "error on decoding incoming message from websocket"
                         :wsmsg (pr-str message)
                         :cause e)
-                (a/>! close-ch [8801 "decode error"])
+                (a/>! close-ch [8802 "decode error"])
                 (a/close! close-ch))))
 
           on-ws-pong
           (fn [_ buffers]
-            (a/>!! pong-ch (yu/copy-many buffers)))]
-
-      ;; Launch heartbeat process
-      (-> @options
-          (assoc ::pong-ch pong-ch)
-          (process-heartbeat))
+            (a/>!! hbeat-ch (yu/copy-many buffers)))]
 
       ;; Wait a close signal
       (a/go
         (let [[code reason] (a/<! close-ch)]
           (a/close! stop-ch)
-          (a/close! pong-ch)
+          (a/close! hbeat-ch)
           (a/close! output-ch)
           (a/close! input-ch)
 
@@ -141,19 +139,14 @@
             (yws/close! channel code reason))
 
           (when (fn? on-terminate)
-            (on-terminate))))
+            (on-terminate))
 
-      ;; Forward all messages from output-ch to the websocket
-      ;; connection
-      (a/go-loop []
-        (when-let [val (a/<! output-ch)]
-          (let [val (on-snd-message options val)]
-            (a/<! (ws-send! channel (t/encode-str val)))
-            (recur))))
+          (l/trace :hint "connection terminated")))
 
       ;; React on messages received from the client
-
-      (process-input options handler)
+      (a/go
+        (a/<! (start-io-loop options handler on-snd-message on-ws-terminate))
+        (l/trace :hint "io loop terminated"))
 
       {:on-open on-ws-open
        :on-error on-ws-error
@@ -168,7 +161,7 @@
       (yws/send! channel s (fn [e]
                              (when e (a/offer! ch e))
                              (a/close! ch)))
-      (catch java.io.IOException cause
+      (catch Throwable cause
         (a/offer! ch cause)
         (a/close! ch)))
     ch))
@@ -178,9 +171,9 @@
   (let [ch (a/chan 1)]
     (try
       (yws/ping! channel s (fn [e]
-                          (when e (a/offer! ch e))
-                          (a/close! ch)))
-      (catch java.io.IOException cause
+                             (when e (a/offer! ch e))
+                             (a/close! ch)))
+      (catch Throwable cause
         (a/offer! ch cause)
         (a/close! ch)))
     ch))
@@ -203,50 +196,70 @@
     (locking wsp
       (handler wsp message))))
 
-(defn- process-input
-  [wsp handler]
-  (let [{:keys [::input-ch ::output-ch ::stop-ch]} @wsp
-        handler (wrap-handler handler)]
+(def max-missed-heartbeats 3)
+(def heartbeat-interval 5000)
+
+(defn- start-io-loop
+  [wsp handler on-snd-message on-ws-terminate]
+  (let [input-ch      (::input-ch @wsp)
+        output-ch     (::output-ch @wsp)
+        stop-ch       (::stop-ch @wsp)
+        hbeat-pong-ch (::heartbeat-ch @wsp)
+        channel       (::channel @wsp)
+        conn-id       (::id @wsp)
+        handler       (wrap-handler handler)
+        beats         (atom #{})
+        choices       [stop-ch
+                       input-ch
+                       output-ch
+                       hbeat-pong-ch]]
+
+    ;; Start IO loop
     (a/go
       (a/<! (handler wsp {:type :connect}))
-      (a/<! (a/go-loop []
-              (when-let [message (a/<! input-ch)]
-                (let [[val port] (a/alts! [stop-ch (handler wsp message)] :priority true)]
-                  (when-not (= port stop-ch)
+      (a/<! (a/go-loop [i 0]
+              (let [hbeat-ping-ch (a/timeout heartbeat-interval)
+                    [v p]         (a/alts! (conj choices hbeat-ping-ch))]
+                (cond
+                  (not (yws/connected? channel))
+                  (on-ws-terminate nil 8800 "channel disconnected")
+
+                  (= p hbeat-ping-ch)
+                  (do
+                    (l/trace :hint "ping" :beat i :conn-id conn-id)
+                    (a/<! (ws-ping! channel (encode-beat i)))
+                    (let [issued (swap! beats conj (long i))]
+                      (if (>= (count issued) max-missed-heartbeats)
+                        (on-ws-terminate nil 8802 "heartbeat: timeout")
+                        (recur (inc i)))))
+
+                  (= p hbeat-pong-ch)
+                  (let [beat (decode-beat v)]
+                    (l/trace :hint "pong" :beat beat :conn-id conn-id)
+                    (swap! beats disj beat)
+                    (recur i))
+
+                  (= p input-ch)
+                  (let [result (a/<! (handler wsp v))]
+                    ;; (l/trace :hint "message received" :message v)
                     (cond
-                      (ex/ex-info? val)
-                      (a/>! output-ch {:type :error :error (ex-data val)})
+                      (ex/ex-info? result)
+                      (a/>! output-ch {:type :error :error (ex-data result)})
 
-                      (ex/exception? val)
-                      (a/>! output-ch {:type :error :error {:message (ex-message val)}})
+                      (ex/exception? result)
+                      (a/>! output-ch {:type :error :error {:message (ex-message result)}})
 
-                      (map? val)
-                      (a/>! output-ch (cond-> val (:request-id message) (assoc :request-id (:request-id message)))))
-                    (recur))))))
+                      (map? result)
+                      (a/>! output-ch (cond-> result (:request-id v) (assoc :request-id (:request-id v)))))
+                    (recur i))
+
+                  (= p output-ch)
+                  (let [v (on-snd-message wsp v)]
+                    ;; (l/trace :hint "writing message to output" :message v)
+                    (a/<! (ws-send! channel (t/encode-str v)))
+                    (recur i))))))
+
       (a/<! (handler wsp {:type :disconnect})))))
-
-(defn- process-heartbeat
-  [{:keys [::channel ::stop-ch ::close-ch ::pong-ch
-           ::heartbeat-interval ::max-missed-heartbeats]
-    :or {heartbeat-interval 2000
-         max-missed-heartbeats 4}}]
-  (let [beats (atom #{})]
-    (a/go-loop [i 0]
-      (let [[_ port] (a/alts! [stop-ch (a/timeout heartbeat-interval)] :priority true)]
-        (when (and (yws/connected? channel)
-                   (not= port stop-ch))
-          (a/<! (ws-ping! channel (encode-beat i)))
-          (let [issued (swap! beats conj (long i))]
-            (if (>= (count issued) max-missed-heartbeats)
-              (do
-                (a/>! close-ch [8802 "heart-beat timeout"])
-                (a/close! close-ch))
-              (recur (inc i)))))))
-
-    (a/go-loop []
-      (when-let [buffer (a/<! pong-ch)]
-        (swap! beats disj (decode-beat buffer))
-        (recur)))))
 
 (defn- filter-options
   "Remove from options all namespace qualified keys that matches the

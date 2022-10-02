@@ -89,7 +89,7 @@
   [id]
   (when-let [wsp (get @state id)]
     {:id               id
-     :created-at       (dt/instant id)
+     :created-at       (::created-at @wsp)
      :profile-id       (::profile-id @wsp)
      :session-id       (::session-id @wsp)
      :user-agent       (::ws/user-agent @wsp)

@@ -142,7 +142,6 @@ RUN set -ex; \
     apt-get -qqy install postgresql-client-14; \
     rm -rf /var/lib/apt/lists/*;
 
-
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
