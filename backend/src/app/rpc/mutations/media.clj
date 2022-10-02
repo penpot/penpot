@@ -97,7 +97,7 @@
 ;; something fails, all leaked (already created storage objects) will
 ;; be eventually marked as deleted by the touched-gc task.
 ;;
-;; The touched-gc task, performs periodic analisis of all touched
+;; The touched-gc task, performs periodic analysis of all touched
 ;; storage objects and check references of it. This is the reason why
 ;; `reference` metadata exists: it indicates the name of the table
 ;; witch holds the reference to storage object (it some kind of

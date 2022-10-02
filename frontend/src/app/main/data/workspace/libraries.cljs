@@ -342,7 +342,7 @@
             update-fn
             (fn [component]
               ;; NOTE: we need to ensure the component exists,
-              ;; because there are small posibilities of race
+              ;; because there are small possibilities of race
               ;; conditions with component deletion.
               (when component
                 (-> component

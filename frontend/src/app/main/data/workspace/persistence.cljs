@@ -304,7 +304,7 @@
       (update :workspace-pages dissoc id)))
 
 (defn preload-data-uris
-  "Preloads the image data so it's ready when necesary"
+  "Preloads the image data so it's ready when necessary"
   []
   (ptk/reify ::preload-data-uris
     ptk/WatchEvent

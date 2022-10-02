@@ -479,7 +479,7 @@
                                  (into [id] (cph/get-parent-ids (:objects page) id)))
           need-sync? (fn [operation]
                        ; We need to trigger a sync if the shape has changed any
-                       ; attribute that participates in components syncronization.
+                       ; attribute that participates in components synchronization.
                        (and (= (:type operation) :set)
                             (component-sync-attrs (:attr operation))))
           any-sync? (some need-sync? operations)]

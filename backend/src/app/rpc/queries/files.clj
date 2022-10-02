@@ -318,7 +318,7 @@
                       (assoc frame :page-id (:id page)))))
 
           ;; function responsible to filter objects data structure of
-          ;; all unneded shapes if a concrete frame is provided. If no
+          ;; all unneeded shapes if a concrete frame is provided. If no
           ;; frame, the objects is returned untouched.
           (filter-objects [objects frame-id]
             (d/index-by :id (cph/get-children-with-self objects frame-id)))
@@ -378,7 +378,7 @@
             (update :objects filter-objects frame-id))
 
         ;; Assoc the available thumbnails and prune not visible shapes
-        ;; for avoid transfer unnecesary data.
+        ;; for avoid transfer unnecessary data.
         :always
         (update :objects assoc-thumbnails page-id thumbs)))))
 

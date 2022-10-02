@@ -53,7 +53,7 @@
 
              ;; In other all cases we only allowed to have a single
              ;; shape-id because multiple shape-ids are handled
-             ;; separatelly by the export-modal.
+             ;; separately by the export-modal.
              (let [defaults {:page-id page-id
                              :file-id file-id
                              :name sname

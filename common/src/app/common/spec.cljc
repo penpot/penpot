@@ -259,7 +259,7 @@
   (s/valid? spec value))
 
 (defmacro assert-expr*
-  "Auxiliar macro for expression assertion."
+  "Auxiliary macro for expression assertion."
   [expr hint]
   `(when-not ~expr
      (ex/raise :type :assertion
@@ -267,7 +267,7 @@
                :hint ~hint)))
 
 (defmacro assert-spec*
-  "Auxiliar macro for spec assertion."
+  "Auxiliary macro for spec assertion."
   [spec value hint]
   (let [context (if-let [nsdata (:ns &env)]
                   {:ns (str (:name nsdata))

@@ -26,7 +26,7 @@
        (sort-by ::index)))
 
 (defn- get-empty-groups-after-group-creation
-  "An auxiliar function that finds and returns a set of ids that
+  "An auxiliary function that finds and returns a set of ids that
   corresponds to groups that should be deleted after a group creation.
 
   The corner case happens when you selects two (or more) shapes that

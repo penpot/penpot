@@ -113,7 +113,7 @@
    ::mf/wrap-props false}
   [props]
   (let [;; NOTE: with `use-equal-memo` hook we ensure that all values
-        ;; conserves the reference identity for avoid unnecesary dummy
+        ;; conserves the reference identity for avoid unnecessary dummy
         ;; rerenders.
         mode   (h/use-equal-memo (unchecked-get props "interactions-mode"))
         offset (h/use-equal-memo (unchecked-get props "frame-offset"))

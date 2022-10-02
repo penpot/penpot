@@ -158,7 +158,7 @@
             (recur (rest tables)
                    (+ total (process-table (assoc cfg :table table))))
             (do
-              (l/info :hint "objects gc finished succesfully"
+              (l/info :hint "objects gc finished successfully"
                       :min-age (dt/format-duration min-age)
                       :total total)
 

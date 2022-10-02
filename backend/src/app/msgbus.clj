@@ -138,7 +138,7 @@
 
 (defn- disj-subscription
   "A low level function responsible on removing subscriptions. The
-  subscription is trully removed from redis once no single local
+  subscription is truly removed from redis once no single local
   subscription is look for it. Intended to be executed in agent."
   [nsubs cfg topic chan]
   (let [nsubs (disj nsubs chan)]
@@ -159,7 +159,7 @@
               topics))))
 
 (defn- unsubscribe-single-channel
-  "Auxiliar function responsible on removing a single local
+  "Auxiliary function responsible on removing a single local
   subscription from the state."
   [state cfg chan]
   (let [topics (get-in state [:chans chan])
@@ -211,7 +211,7 @@
       (cond
         (nil? val)
         (do
-          (l/trace :hint "stoping io-loop, nil received")
+          (l/trace :hint "stopping io-loop, nil received")
           (send-via executor state (fn [state]
                                      (->> (vals state)
                                           (mapcat identity)

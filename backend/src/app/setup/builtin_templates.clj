@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.setup.builtin-templates
-  "A service/module that is reponsible for download, load & internally
+  "A service/module that is responsible for download, load & internally
   expose a set of builtin penpot file templates."
   (:require
    [app.common.logging :as l]

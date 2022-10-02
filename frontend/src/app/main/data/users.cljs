@@ -198,7 +198,7 @@
                     :invitation-token invitation-token}]
 
         ;; NOTE: We can't take the profile value from login because
-        ;; there are cases when login is successfull but the cookie is
+        ;; there are cases when login is successful but the cookie is
         ;; not set properly (because of possible misconfiguration).
         ;; So, we proceed to make an additional call to fetch the
         ;; profile, and ensure that cookie is set correctly. If

@@ -37,7 +37,7 @@
         permits (or permits Long/MAX_VALUE)]
 
     (when (>= permits Long/MAX_VALUE)
-      (l/warn :hint "permits value too hight" :permits permits :semaphore name))
+      (l/warn :hint "permits value too high" :permits permits :semaphore name))
 
     ^{::wrk/executor executor
       ::name name}

@@ -79,7 +79,7 @@
 
         ;; To show interactively the measures while the user is manipulating
         ;; the shape with the mouse, generate a copy of the shapes applying
-        ;; the transient tranformations.
+        ;; the transient transformations.
         shapes (as-> old-shapes $
                  (map gsh/transform-shape $)
                  (map gsh/translate-to-frame $ frames))
@@ -256,7 +256,7 @@
 
        ;; FRAME PRESETS
        (when (and (options :presets)
-                  (or (nil? all-types) (= (count all-types) 1))) ;; Dont' show presets if multi selected
+                  (or (nil? all-types) (= (count all-types) 1))) ;; Don't show presets if multi selected
          [:div.row-flex                                          ;; some frames and some non frames
           [:div.presets.custom-select.flex-grow {:on-click #(reset! show-presets-dropdown? true)}
            [:span (tr "workspace.options.size-presets")]
