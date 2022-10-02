@@ -397,7 +397,7 @@
 
           (process-group-of-assets [data [lib-id items]]
             ;; NOTE: there is a possibility that shape refers to an
-            ;; unexistant file because the file was removed. In this
+            ;; non-existant file because the file was removed. In this
             ;; case we just ignore the asset.
             (if-let [lib (retrieve-file conn lib-id)]
               (reduce (partial process-asset lib) data items)
