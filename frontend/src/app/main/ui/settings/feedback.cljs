@@ -93,7 +93,7 @@
      [:p (tr "feedback.twitter-subtitle1")]
 
      [:a.btn-secondary.btn-large
-      {:href "https://twitter.com/PenpotSupport" :target "_blank"}
+      {:href "https://twitter.com/penpotapp" :target "_blank"}
       (tr "feedback.twitter-go-to")]
 
      ]))
