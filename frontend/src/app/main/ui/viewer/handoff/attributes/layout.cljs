@@ -86,7 +86,7 @@
   [{:keys [shapes]}]
   [:div.attributes-block
    [:div.attributes-block-title
-    [:div.attributes-block-title-text (tr "handoff.attributes.layout")]
+    [:div.attributes-block-title-text (tr "handoff.attributes.size")]
     (when (= (count shapes) 1)
       [:& copy-button {:data (copy-data (first shapes))}])]
 

@@ -3894,19 +3894,19 @@ msgid "workspace.options.layout.bottom"
 msgstr "תחתית"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
+msgid "workspace.options.layout.direction.column"
 msgstr "עמודה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
+msgid "workspace.options.layout.direction.row"
 msgstr "שורה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
+msgid "workspace.options.layout.direction.reverse-row"
 msgstr "היפוך שורה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
+msgid "workspace.options.layout.direction.reverse-column"
 msgstr "היפוך עמודה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
@@ -3942,10 +3942,6 @@ msgid "workspace.options.layout.margin-simple"
 msgstr "שול פשוט"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "ללא גלישה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.packed"
 msgstr "אסוף"
 
@@ -3974,14 +3970,6 @@ msgid "workspace.options.layout.space-between"
 msgstr "רווח בין לבין"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "פריסה"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.top"
-msgstr "עליון"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.v.bottom"
 msgstr "תחתית"
 
@@ -3992,10 +3980,6 @@ msgstr "מרכז"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.v.top"
 msgstr "עליון"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "גלישה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"

@@ -1016,6 +1016,10 @@ msgid "handoff.attributes.layout"
 msgstr "Estructura"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.size"
+msgstr "Tamaño y posición"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.height"
 msgstr "Altura"
 
@@ -3901,10 +3905,6 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Ancho.Min"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title"
-msgstr "Redimensionado de elemento"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-max-h"
 msgstr "Altura máxima"
 
@@ -3925,19 +3925,19 @@ msgid "workspace.options.layout.bottom"
 msgstr "Abajo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
+msgid "workspace.options.layout.direction.column"
 msgstr "Columna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
+msgid "workspace.options.layout.direction.row"
 msgstr "Fila"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
+msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Fila invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
+msgid "workspace.options.layout.direction.reverse-column"
 msgstr "Columna invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
@@ -3973,10 +3973,6 @@ msgid "workspace.options.layout.margin-simple"
 msgstr "Margen sencillo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "no agrupar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.packed"
 msgstr "juntar"
 
@@ -4005,10 +4001,6 @@ msgid "workspace.options.layout.space-between"
 msgstr "espaciar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "Layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.top"
 msgstr "Arriba"
 
@@ -4023,10 +4015,6 @@ msgstr "centro"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.v.top"
 msgstr "arriba"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "agrupar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"

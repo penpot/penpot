@@ -3986,19 +3986,19 @@ msgid "workspace.options.layout.bottom"
 msgstr "Unten"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
+msgid "workspace.options.layout.direction.column"
 msgstr "Spalte"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
+msgid "workspace.options.layout.direction.row"
 msgstr "Reihe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
+msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Reihe-umgekehrt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
+msgid "workspace.options.layout.direction.reverse-column"
 msgstr "Spalte-umgekehrt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
@@ -4084,10 +4084,6 @@ msgstr "Mitte"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.v.top"
 msgstr "oben"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "wrap"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
