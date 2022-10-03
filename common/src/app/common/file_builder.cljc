@@ -21,6 +21,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [clojure.spec.alpha :as spec]
    [cuerdas.core :as str]))
 
 (def root-frame uuid/zero)
@@ -52,9 +53,18 @@
      (when fail-on-spec?
        (us/verify ::pcs/change change))
 
-     (let [valid? (us/valid? ::pcs/change change)]
+     (let [valid? (us/valid? ::pcs/change change)
+           explain (spec/explain-str ::pcs/change change)]
        #?(:cljs
-          (when-not valid? (.warn js/console "Invalid shape" (clj->js change))))
+          (when-not valid?
+            (do
+              (.warn js/console "Invalid shape" (clj->js change))
+              (.warn js/console explain)))
+          :clj
+          (when-not valid?
+            (do
+              (prn "Invalid shape" change)
+              (prn explain))))
 
        (cond-> file
          valid?
