@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-05 12:17+0000\n"
-"Last-Translator: Rubén <rubenx@mail.com>\n"
-"Language-Team: Catalan "
-"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
+"PO-Revision-Date: 2022-10-04 18:22+0000\n"
+"Last-Translator: Antonio <antonio@fesomia.cat>\n"
+"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
+"ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4403,3 +4403,87 @@ msgstr "Actualitza"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Feu clic per a tancar el camí"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Aquest fitxer ja s'ha utilitzat amb els Components V2 habilitats."
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr ""
+"Hi ha hagut un problema en importar la plantilla. La plantilla no s'ha "
+"importat."
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Atenció"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Suprimeix el fitxer"
+msgstr[1] "Suprimeix els fitxers"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Esteu segur que voleu suprimir aquest fitxer?"
+msgstr[1] "Esteu segur que voleu suprimir aquests fitxers?"
+
+msgid "common.unpublish"
+msgstr "Despublica"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "D'acord"
+
+msgid "common.publish"
+msgstr "Publica"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Gestió de l'equip"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"El Penpot està pensat per a equips. Convida a membres i treballeu plegats en "
+"projectes i fitxers"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Fes equip!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Aprèn les bases del Penpot mentre et diverteixes amb aquest tutorial pràctic."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Comença el tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutorial pràctic"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Passeja't pel Penpot i coneix-ne les característiques principals."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Comença la visita"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Passeig per la interfície"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Biblioteques i plantilles"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explora'n més i coneix com contribuir-hi"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Despublica la biblioteca"
