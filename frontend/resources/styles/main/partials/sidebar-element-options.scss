@@ -59,6 +59,7 @@
     padding: $size-2 $size-1;
 
     .element-set-title {
+      height: 35px;
       color: $color-gray-20;
       display: flex;
       font-size: $fs14;
@@ -1165,12 +1166,6 @@
       fill: $color-primary;
     }
   }
-
-  svg {
-  }
-
-  .multiple-typography-button:hover svg {
-  }
 }
 
 .font-selector {
@@ -1588,58 +1583,133 @@
   }
 }
 
-.layout-menu {
+.layout-menu,
+.layout-item-menu {
+  font-family: "worksans", sans-serif;
   svg {
     height: 16px;
     width: 16px;
     fill: $color-gray-30;
   }
-  .direction-gap {
-    display: flex;
-    justify-content: space-between;
-    .direction {
+  .layout-row {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    margin-bottom: 5px;
+    .row-title {
+      font-size: $fs12;
       display: flex;
-      .dir {
-        margin-right: 4px;
+      justify-content: start;
+      align-items: center;
+      margin-right: 5px;
+      font-family: "worksans", sans-serif;
+    }
+    .btn-wrapper {
+      display: flex;
+      width: 100%;
+      .direction,
+      .wrap-type,
+      .align-items-style,
+      .align-self-style,
+      .justify-content-style,
+      .align-content-style,
+      .layout-behavior {
         display: flex;
-        justify-content: center;
-        align-items: center;
-        background: none;
-        border: none;
-        cursor: pointer;
-
-        &.right {
-          svg {
-            transform: rotate(180deg);
-          }
-        }
-        &.top {
-          svg {
-            transform: rotate(-90deg);
-          }
-        }
-        &.bottom {
-          svg {
+        border-radius: 4px;
+        border: 1px solid $color-gray-60;
+        height: 26px;
+        margin-right: 5px;
+        flex-grow: 1;
+        &.horizontal {
+          button svg {
             transform: rotate(90deg);
           }
         }
-        &.active,
-        &:hover {
-          svg {
-            fill: $color-primary;
+        button {
+          display: flex;
+          flex-grow: 1;
+          justify-content: center;
+          align-items: center;
+          background: none;
+          border: none;
+          cursor: pointer;
+          border-right: 1px solid $color-gray-60;
+          &.active,
+          &:hover {
+            svg {
+              fill: $color-primary;
+            }
           }
+        }
+        .dir {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: none;
+          border: none;
+          cursor: pointer;
+          border-right: 1px solid $color-gray-60;
+          padding: 4px;
+          &.reverse-row {
+            svg {
+              transform: rotate(180deg);
+            }
+          }
+
+          &.reverse-column {
+            svg {
+              transform: rotate(-90deg);
+            }
+          }
+          &.column {
+            svg {
+              transform: rotate(90deg);
+            }
+          }
+          &.active,
+          &:hover {
+            svg {
+              fill: $color-primary;
+            }
+          }
+        }
+        :last-child {
+          border-right: none;
         }
       }
     }
-    .gap {
+  }
+  .no-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 21px;
+    width: 21px;
+    svg {
+      height: 0.7rem;
+      width: 0.7rem;
+    }
+  }
+
+  .gap-group {
+    display: flex;
+    margin-top: 3px;
+    margin-bottom: 8px;
+    height: 26px;
+    .gap-row,
+    .gap-column {
       display: flex;
       justify-content: center;
       align-items: center;
+      flex-grow: 1;
       .icon {
         display: flex;
         justify-content: center;
         align-items: center;
         margin-right: 7px;
+        svg {
+          height: 14px;
+          width: 14px;
+        }
         &.rotated {
           transform: rotate(90deg);
         }
@@ -1653,9 +1723,77 @@
         font-size: 0.75rem;
         min-width: 0;
         padding: 0.25rem;
-        width: 50px;
+        width: 70px;
         height: 20px;
         margin: 0;
+      }
+    }
+    button {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-radius: $br-small;
+      &.active {
+        svg {
+          fill: $color-primary;
+        }
+      }
+      &:hover {
+        background-color: $color-primary;
+        svg {
+          fill: $color-gray-60;
+        }
+      }
+    }
+  }
+
+  .padding-row,
+  .margin-row {
+    display: grid;
+    grid-template-columns: 65px auto;
+    height: 26px;
+    .padding-icons,
+    .margin-icons {
+      display: flex;
+      padding: 0;
+      border: 1px solid $color-gray-60;
+      border-radius: 3px;
+
+      .padding-icon,
+      .margin-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 6px;
+        flex-grow: 1;
+        border-right: 1px solid $color-gray-60;
+        cursor: pointer;
+
+        &:hover,
+        &.selected {
+          svg {
+            fill: $color-primary;
+          }
+        }
+        svg {
+          height: 14px;
+          width: 14px;
+          fill: $color-gray-30;
+        }
+      }
+      :last-child {
+        border: none;
+      }
+    }
+    .wrapper {
+      display: flex;
+      height: 26px;
+      .input-element {
+        margin: 0;
+        height: 26px;
       }
     }
   }
@@ -1783,69 +1921,40 @@
   }
 }
 
-.layout-item-menu {
-  .layout-behavior {
+.advanced-ops {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: $fs12;
+  color: $color-gray-30;
+  border: none;
+  background-color: transparent;
+  padding: 0;
+  .icon {
     display: flex;
+    justify-content: start;
     align-items: center;
-    margin: 9px 0;
-    .button-wrapper {
-      border: 1px solid $color-gray-60;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      .behavior-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0;
-        .icon {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 26px;
-          width: 26px;
-          svg {
-            height: 16px;
-            width: 16px;
-            fill: $color-gray-30;
-          }
-        }
-        &:hover,
-        &.activated {
-          svg {
-            fill: $color-primary;
-          }
-        }
-      }
-      &.horizontal {
-        margin-right: 8px;
-        svg {
-          transform: rotate(90deg);
-        }
-      }
+    margin-right: 10px;
+    svg {
+      fill: $color-gray-20;
     }
   }
-  .advanced-ops {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: $fs12;
-    color: $color-gray-30;
-    &:hover {
-      svg {
-        fill: $color-primary;
-      }
+
+  &:hover {
+    svg {
+      fill: $color-primary;
     }
   }
-  .advanced-ops-body {
+}
+.advanced-ops-body {
+  .input-wrapper {
     display: grid;
     grid-template-columns: 1fr 1fr;
     .input-element {
       width: 100%;
       &::after {
+        content: attr(alt);
         width: 100px;
       }
     }

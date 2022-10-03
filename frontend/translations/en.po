@@ -900,6 +900,10 @@ msgid "handoff.attributes.layout"
 msgstr "Layout"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.size"
+msgstr "Size and position"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.height"
 msgstr "Height"
 
@@ -3437,10 +3441,6 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Min.Width"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title"
-msgstr "Element resizing"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-max-h"
 msgstr "Maximum height"
 
@@ -3461,19 +3461,19 @@ msgid "workspace.options.layout.bottom"
 msgstr "Bottom"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
+msgid "workspace.options.layout.direction.column"
 msgstr "Column"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
+msgid "workspace.options.layout.direction.row"
 msgstr "Row"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
+msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Reverse row"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
+msgid "workspace.options.layout.direction.reverse-column"
 msgstr "Reverse column"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
@@ -3509,10 +3509,6 @@ msgid "workspace.options.layout.margin-simple"
 msgstr "Simple margin"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "no wrap"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.packed"
 msgstr "packed"
 
@@ -3541,10 +3537,6 @@ msgid "workspace.options.layout.space-between"
 msgstr "space between"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "Layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.top"
 msgstr "Top"
 
@@ -3559,10 +3551,6 @@ msgstr "center"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.v.top"
 msgstr "top"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "wrap"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"

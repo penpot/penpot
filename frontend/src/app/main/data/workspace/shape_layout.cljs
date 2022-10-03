@@ -23,18 +23,30 @@
    :layout-padding-type
    :layout-padding
    :layout-h-orientation
-   :layout-v-orientation])
+   :layout-v-orientation
 
-(def initial-layout
-  {:layout true
-   :layout-dir :left
-   :layout-gap 0
-   :layout-type :packed
-   :layout-wrap-type :wrap
+   :layout-align-content
+   :layout-flex-dir
+   :layout-align-items
+   :layout-justify-content
+   :layout-gap-type
+   ])
+
+
+(def initial-flex-layout
+  {:layout :flex
+   :layout-flex-dir :row
+   :layout-gap-type :simple
+   :layout-gap {:row-gap 0 :column-gap 0}
+   :layout-align-items :start
+   :layout-justify-content :start
+   :layout-align-content :strech
+   :layout-wrap-type :no-wrap
    :layout-padding-type :simple
-   :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0}
-   :layout-h-orientation :left
-   :layout-v-orientation :top})
+   :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0}})
+
+(def initial-grid-layout ;; TODO
+  {:layout :grid})
 
 (defn update-layout-positions
   [ids]
@@ -50,12 +62,16 @@
 
 ;; TODO: Remove constraints from children
 (defn create-layout
-  [ids]
+  [ids type]
   (ptk/reify ::create-layout
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwc/update-shapes ids #(merge % initial-layout))
-             (update-layout-positions ids)))))
+      (if (= type :flex)
+        (rx/of (dwc/update-shapes ids #(merge % initial-flex-layout))
+               (update-layout-positions ids))
+        (rx/of (dwc/update-shapes ids #(merge % initial-grid-layout))
+               (update-layout-positions ids))))))
+
 
 (defn remove-layout
   [ids]
