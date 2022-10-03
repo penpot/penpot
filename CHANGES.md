@@ -6,6 +6,7 @@
 ### :sparkles: New features
 ### :bug: Bugs fixed
 
+- Fix color bullets in library color modal [Taiga #4186](https://tree.taiga.io/project/penpot/issue/4186)
 - Fix shortcut texts alignment [Taiga #4275](https://tree.taiga.io/project/penpot/issue/4275)
 - Fix some texts and a typo [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
 
