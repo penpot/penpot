@@ -18,7 +18,6 @@
 .auth-sidebar {
   grid-column: 1 / span 1;
   height: 100vh;
-
   display: flex;
   padding-top: 7vh;
   flex-direction: column;
@@ -48,14 +47,31 @@
 }
 
 .auth-content {
-  align-items: center;
+  grid-column: 2 / span 1;
   background-color: $color-white;
   display: flex;
-  grid-column: 2 / span 1;
-  height: 100vh;
+  align-items: center;
   justify-content: center;
   position: relative;
-  min-height: 48rem;
+
+  .login-form {
+    margin-bottom: 30px;
+
+    .form-container {
+      width: 412px;
+      flex-direction: column;
+      .auth-buttons {
+        margin: $size-6 0 $size-4 0;
+        display: flex;
+        justify-content: center;
+        column-gap: 17px;
+      }
+
+      form {
+        margin: 2rem 0 0.5rem 0;
+      }
+    }
+  }
 
   input {
     margin-bottom: 0px;
@@ -68,21 +84,6 @@
 
     *:not(:last-child) {
       margin-bottom: $size-4;
-    }
-  }
-
-  .form-container {
-    width: 412px;
-
-    .auth-buttons {
-      margin: $size-6 0 $size-4 0;
-      display: flex;
-      justify-content: center;
-      column-gap: 17px;
-    }
-
-    form {
-      margin: 2rem 0 0.5rem 0;
     }
   }
 
@@ -192,14 +193,14 @@
       }
     }
   }
-}
 
-.terms-login {
-  bottom: $size-5;
-  font-size: $fs14;
-  position: absolute;
+  .terms-login {
+    bottom: $size-5;
+    font-size: $fs14;
+    position: absolute;
 
-  span {
-    margin: 0 $size-2;
+    span {
+      margin: 0 $size-2;
+    }
   }
 }

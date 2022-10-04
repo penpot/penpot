@@ -1855,7 +1855,10 @@
   display: flex;
   font-family: "worksans", sans-serif;
   width: 472px;
-  height: auto;
+  height: 100%;
+  max-height: 700px;
+  position: relative;
+  overflow: auto;
   position: relative;
 
   .title {
@@ -1887,11 +1890,10 @@
     &.auth-content {
       align-items: initial;
       height: auto;
-    }
-
-    .links {
-      margin: 7px 0 0 0;
-      text-align: left;
+      .links {
+        margin: 7px 0 0 0;
+        text-align: left;
+      }
     }
   }
 
