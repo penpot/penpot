@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## :rocket: 1.16.0-beta
+## :rocket: Next (1.17)
 
 ### :boom: Breaking changes & Deprecations
 ### :sparkles: New features
@@ -8,6 +8,8 @@
 
 - Fix shortcut texts alignment [Taiga #4275](https://tree.taiga.io/project/penpot/issue/4275)
 - Fix some texts and a typo [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
+- Fix twitter support account link [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4279)
+
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
