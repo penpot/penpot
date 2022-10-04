@@ -64,7 +64,7 @@
         #(st/emit! (dwl/update-component-sync id library-id))
 
         do-restore-component
-        #(st/emit! (dwl/restore-component component-id))
+        #(st/emit! (dwl/restore-component library-id component-id))
 
         _do-update-remote-component
         #(st/emit! (modal/show
