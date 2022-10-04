@@ -89,6 +89,7 @@
         on-select-library-color
         (mf/use-fn
          (fn [color]
+           (st/emit! (dc/update-colorpicker color))
            (on-change color)))
 
         on-add-library-color
