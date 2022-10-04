@@ -41,13 +41,12 @@
 
 ;; --- MUTATION: Update Profile (own)
 
-(s/def ::newsletter-subscribed ::us/boolean)
 (s/def ::update-profile
   (s/keys :req-un [::fullname ::profile-id]
-          :opt-un [::lang ::theme ::newsletter-subscribed]))
+          :opt-un [::lang ::theme]))
 
 (sv/defmethod ::update-profile
-  [{:keys [pool] :as cfg} {:keys [profile-id fullname lang theme newsletter-subscribed] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id fullname lang theme] :as params}]
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use
     ;; it or not for explicit locking and avoid concurrent updates of
@@ -60,13 +59,7 @@
                       (assoc :fullname fullname)
                       (assoc :lang lang)
                       (assoc :theme theme))
-
-          ;; Update profile props if the indirect prop is coming in
-          ;; the params map and update the profile props data
-          ;; accordingly.
-          profile (cond-> profile
-                    (some? newsletter-subscribed)
-                    (update :props assoc :newsletter-subscribed newsletter-subscribed))]
+          ]
 
       (db/update! conn :profile
                   {:fullname fullname
