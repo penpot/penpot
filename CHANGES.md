@@ -58,6 +58,7 @@
 
 - To @andrewzhurov for many code contributions on this release.
 - UI improvements in Project section (by @Waishnav) [#2285](https://github.com/penpot/penpot/pull/2285)
+- Fix fronted comments (by @lol768) [#2368](https://github.com/penpot/penpot/pull/2368)
 
 ## 1.15.4-beta
 
