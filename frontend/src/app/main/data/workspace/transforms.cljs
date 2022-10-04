@@ -17,7 +17,6 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.shape-tree :as ctst]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.comments :as-alias dwcm]
@@ -243,7 +242,7 @@
 (defn- check-delta
   "If the shape is a component instance, check its relative position respect the
   root of the component, and see if it changes after applying a transformation."
-  [shape root transformed-shape transformed-root objects]
+  [shape root transformed-shape transformed-root objects modif-tree]
   (let [root
         (cond
           (:component-root? shape)
@@ -260,7 +259,8 @@
           transformed-shape
 
           (nil? transformed-root)
-          (cph/get-root-shape objects transformed-shape)
+          (as-> (cph/get-root-shape objects transformed-shape) $
+            (gsh/transform-shape (merge $ (get modif-tree (:id $)))))
 
           :else transformed-root)
 
@@ -298,7 +298,7 @@
          transformed-shape (gsh/transform-shape (merge shape (get modif-tree shape-id)))
 
          [root transformed-root ignore-geometry?]
-         (check-delta shape root transformed-shape transformed-root objects)
+         (check-delta shape root transformed-shape transformed-root objects modif-tree)
 
          ignore-tree (assoc ignore-tree shape-id ignore-geometry?)
 
@@ -757,9 +757,6 @@
                  (cph/clean-loops objects)
                  (keep lookup)
                  (remove #(= (:frame-id %) frame-id)))
-
-            moving-frames
-            (filter #(cph/frame-shape? (lookup %)) ids)
 
             changes
             (-> (pcb/empty-changes it page-id)

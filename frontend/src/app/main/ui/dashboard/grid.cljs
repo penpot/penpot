@@ -355,8 +355,7 @@
                      (dnd/has-type? e "application/x-moz-file"))
              (dom/prevent-default e)
              (reset! dragging? false)
-             (import-files (.-files (.-dataTransfer e))))))
-        ]
+             (import-files (.-files (.-dataTransfer e))))))]
 
     [:section.dashboard-grid
      {:on-drag-enter on-drag-enter

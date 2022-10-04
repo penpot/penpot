@@ -17,6 +17,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.streams :as ms]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -149,6 +150,29 @@
                  (update shape :interactions
                         ctsi/update-interaction index update-fn)))))))
 
+(defn remove-all-interactions-nav-to
+  "Remove all interactions that navigate to the given frame."
+  [frame-id]
+  (ptk/reify ::remove-all-interactions-nav-to
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page-id (:current-page-id state)
+            objects (wsh/lookup-page-objects state page-id)
+
+            remove-interactions-shape
+            (fn [shape]
+              (let [interactions     (:interactions shape)
+                    new-interactions (ctsi/remove-interactions #(ctsi/navs-to? % frame-id)
+                                                               interactions)]
+                (when (not= (count interactions) (count new-interactions))
+                  (dch/update-shapes [(:id shape)]
+                                     (fn [shape]
+                                       (assoc shape :interactions new-interactions))))))]
+
+        (rx/from (->> (vals objects)
+                      (map remove-interactions-shape)
+                      (d/vec-without-nils)))))))
+
 (declare move-edit-interaction)
 (declare finish-edit-interaction)
 
@@ -171,8 +195,7 @@
                  (rx/map #(move-edit-interaction initial-pos %)))
             (rx/of (finish-edit-interaction index initial-pos))))))))
 
-
-(defn get-target-frame
+(defn- get-target-frame
   [state position]
 
   (let [objects (wsh/lookup-page-objects state)
@@ -185,8 +208,7 @@
         target-frame (ctst/frame-by-position objects position)]
 
     (when (and (not= (:id target-frame) uuid/zero)
-               (not= (:id target-frame) from-frame-id)
-               (not (:hide-in-viewer target-frame)))
+               (not= (:id target-frame) from-frame-id))
       target-frame)))
 
 (defn move-edit-interaction
@@ -225,25 +247,34 @@
                 :always
                 (ctsi/set-destination (:id target-frame))))]
 
-        (cond
-          (or (nil? shape)
+        (rx/of
+          (dwu/start-undo-transaction)
 
-              ;; Didn't changed the position for the interaction
-              (= position initial-pos)
+          (when (:hide-in-viewer target-frame)
+            ; If the target frame is hidden, we need to unhide it so
+            ; users can navigate to it.
+            (dch/update-shapes [(:id target-frame)]
+                               #(dissoc % :hide-in-viewer)))
 
-              ;; New interaction but invalid target
-              (and (nil? index) (nil? target-frame)))
-          nil
+          (cond
+            (or (nil? shape)
+                ;; Didn't changed the position for the interaction
+                (= position initial-pos)
+                ;; New interaction but invalid target
+                (and (nil? index) (nil? target-frame)))
+            nil
 
-          ;; Dropped interaction in an invalid target. We remove it
-          (and (some? index) (nil? target-frame))
-          (rx/of (remove-interaction shape index))
+            ;; Dropped interaction in an invalid target. We remove it
+            (and (some? index) (nil? target-frame))
+            (remove-interaction shape index)
 
-          (nil? index)
-          (rx/of (add-new-interaction shape (:id target-frame)))
+            (nil? index)
+            (add-new-interaction shape (:id target-frame))
 
-          :else
-          (rx/of (update-interaction shape index change-interaction)))))))
+            :else
+            (update-interaction shape index change-interaction))
+
+          (dwu/commit-undo-transaction))))))
 
 ;; --- Overlays
 

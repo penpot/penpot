@@ -12,6 +12,8 @@
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.interactions :as dwi]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -236,7 +238,16 @@
          (mf/deps ids)
          (fn [event]
            (let [value (-> event dom/get-target dom/checked?)]
-             (st/emit! (dch/update-shapes ids (fn [shape] (assoc shape :hide-in-viewer (not value))))))))
+             (do
+               (st/emit! (dwu/start-undo-transaction)
+                         (dch/update-shapes ids (fn [shape] (assoc shape :hide-in-viewer (not value)))))
+
+               (when-not value
+                 ;; when a frame is no longer shown in view mode, cannot have
+                 ;; interactions that navigate to it.
+                 (apply st/emit! (map #(dwi/remove-all-interactions-nav-to %) ids)))
+
+               (st/emit! (dwu/commit-undo-transaction))))))
 
         select-all #(-> % (dom/get-target) (.select))]
 

@@ -30,7 +30,8 @@
    [clojure.walk :as walk]
    [cuerdas.core :as str]
    [datoteka.io :as io]
-   [yetti.adapter :as yt])
+   [yetti.adapter :as yt]
+   [yetti.response :as yrs])
   (:import
    com.github.luben.zstd.ZstdInputStream
    com.github.luben.zstd.ZstdOutputStream
@@ -799,26 +800,39 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn export!
-  [cfg]
-  (let [path (tmp/tempfile :prefix "penpot.export.")
-        id   (uuid/next)
-        ts   (dt/now)
-        cs   (volatile! nil)]
+  [cfg output]
+  (let [id (uuid/next)
+        tp (dt/tpoint)
+        ab (volatile! false)
+        cs (volatile! nil)]
     (try
       (l/info :hint "start exportation" :export-id id)
-      (with-open [output (io/output-stream path)]
+      (with-open [output (io/output-stream output)]
         (binding [*position* (atom 0)]
-          (write-export! (assoc cfg ::output output))
-          path))
+          (write-export! (assoc cfg ::output output))))
+
+      (catch java.io.IOException _cause
+        ;; Do nothing, EOF means client closes connection abruptly
+        (vreset! ab true)
+        nil)
 
       (catch Throwable cause
         (vreset! cs cause)
+        (vreset! ab true)
         (throw cause))
 
       (finally
         (l/info :hint "exportation finished" :export-id id
-                :elapsed (str (inst-ms (dt/diff ts (dt/now))) "ms")
+                :elapsed (str (inst-ms (tp)) "ms")
+                :aborted @ab
                 :cause @cs)))))
+
+(defn export-to-tmpfile!
+  [cfg]
+  (let [path (tmp/tempfile :prefix "penpot.export.")]
+    (with-open [output (io/output-stream path)]
+      (export! cfg output)
+      path)))
 
 (defn import!
   [{:keys [::input] :as cfg}]
@@ -855,17 +869,20 @@
   "Export a penpot file in a binary format."
   {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id include-libraries? embed-assets?] :as params}]
-  (db/with-atomic [conn pool]
-    (files/check-read-permissions! conn profile-id file-id)
-    (let [path (export! (assoc cfg
-                               ::file-ids [file-id]
-                               ::embed-assets? embed-assets?
-                               ::include-libraries? include-libraries?))]
-      (with-meta {}
-        {:transform-response (fn [_ response]
-                               (assoc response
-                                      :body (io/input-stream path)
-                                      :headers {"content-type" "application/octet-stream"}))}))))
+  (files/check-read-permissions! pool profile-id file-id)
+  (let [resp (reify yrs/StreamableResponseBody
+               (-write-body-to-stream [_ _ output-stream]
+                 (-> cfg
+                     (assoc ::file-ids [file-id])
+                     (assoc ::embed-assets? embed-assets?)
+                     (assoc ::include-libraries? include-libraries?)
+                     (export! output-stream))))]
+
+    (with-meta (sv/wrap nil)
+      {:transform-response (fn [_ response]
+                             (-> response
+                                 (assoc :body resp)
+                                 (assoc :headers {"content-type" "application/octet-stream"})))})))
 
 (s/def ::file ::media/upload)
 (s/def ::import-binfile

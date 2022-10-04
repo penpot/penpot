@@ -183,7 +183,7 @@
   (let [objects              (deref refs/workspace-page-objects)
         destination          (get objects (:destination interaction))
 
-        frames               (mf/with-memo [objects] (ctt/get-viewer-frames objects {:all-frames? (not= :navigate (:action-type interaction))}))
+        frames               (mf/with-memo [objects] (ctt/get-viewer-frames objects {:all-frames? true}))
 
         overlay-pos-type     (:overlay-pos-type interaction)
         close-click-outside? (:close-click-outside interaction false)

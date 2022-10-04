@@ -6,6 +6,7 @@
 ### :sparkles: New features
 ### :bug: Bugs fixed
 
+- Add title to color bullets [Taiga #4218](https://tree.taiga.io/project/penpot/task/4218)
 - Fix color bullets in library color modal [Taiga #4186](https://tree.taiga.io/project/penpot/issue/4186)
 - Fix shortcut texts alignment [Taiga #4275](https://tree.taiga.io/project/penpot/issue/4275)
 - Fix some texts and a typo [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
@@ -27,7 +28,7 @@
 
 ### :sparkles: New features
 
-- Add title to color bullets [Taiga #4218](https://tree.taiga.io/project/penpot/task/4218)
+- Improve interactions with nested boards [Taiga #4054](https://tree.taiga.io/project/penpot/us/4054)
 - Add team hero in projects dashboard [Taiga #3863](https://tree.taiga.io/project/penpot/us/3863)
 - Add zoom style to shared link [Taiga #3874](https://tree.taiga.io/project/penpot/us/3874)
 - Add dashboard creation button as placeholder [Taiga #3861](https://tree.taiga.io/project/penpot/us/3861)
@@ -42,6 +43,7 @@
 - Newsletter Opt-in options for subscription categories [Taiga #3242](https://tree.taiga.io/project/penpot/us/3242)
 - Print emails to console by default if smtp is disabled
 - Add `email-verification` flag for enable/disable email verification
+- Make graphics thumbnails load lazy [Taiga #4252](https://tree.taiga.io/project/penpot/issue/4252)
 
 ### :bug: Bugs fixed
 
@@ -55,6 +57,7 @@
 - Fix change multiple colors with SVG [Taiga #3889](https://tree.taiga.io/project/penpot/issue/3889)
 - Fix ungroup does not work for typographies [Taiga #4195](https://tree.taiga.io/project/penpot/issue/4195)
 - Fix inviting to non existing users can fail [Taiga #4108](https://tree.taiga.io/project/penpot/issue/4108)
+- Fix components marked as touched when moved [Taiga #4061](https://tree.taiga.io/project/penpot/task/4061)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
