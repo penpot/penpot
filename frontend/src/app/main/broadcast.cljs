@@ -19,24 +19,29 @@
 
 ;; The main broadcast channel instance, used for emit data
 (defonce default-channel
-  (js/BroadcastChannel. default-topic))
+  (when (exists? js/BroadcastChannel)
+    (js/BroadcastChannel. default-topic)))
 
 (defonce stream
-  (->> (rx/create (fn [subs]
-                    (let [chan (js/BroadcastChannel. default-topic)]
-                      (unchecked-set chan "onmessage" #(rx/push! subs (unchecked-get % "data")))
-                      (fn [] (.close ^js chan)))))
-       (rx/map t/decode-str)
-       (rx/map map->BroadcastMessage)
-       (rx/share)))
+  (if (exists? js/BroadcastChannel)
+    (->> (rx/create (fn [subs]
+                      (let [chan (js/BroadcastChannel. default-topic)]
+                        (unchecked-set chan "onmessage" #(rx/push! subs (unchecked-get % "data")))
+                        (fn [] (.close ^js chan)))))
+         (rx/map t/decode-str)
+         (rx/map map->BroadcastMessage)
+         (rx/share))
+    (rx/subject)))
 
 (defn emit!
   ([type data]
-   (.postMessage ^js default-channel (t/encode-str {:id nil :type type :data data}))
-   nil)
+   (when default-channel
+     (.postMessage ^js default-channel (t/encode-str {:id nil :type type :data data}))
+     nil))
   ([id type data]
-   (.postMessage ^js default-channel (t/encode-str {:id id :type type :data data}))
-   nil))
+   (when default-channel
+     (.postMessage ^js default-channel (t/encode-str {:id id :type type :data data}))
+     nil)))
 
 (defn type?
   ([type]
