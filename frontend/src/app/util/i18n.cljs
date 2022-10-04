@@ -69,7 +69,7 @@
                             (autodetect))))
 
 ;; The translations `data` is a javascript object and should be treated
-;; with `goog.object` namespace functions instead of a standart
+;; with `goog.object` namespace functions instead of a standard
 ;; clojure functions. This is for performance reasons because this
 ;; code is executed in the critical part (application bootstrap) and
 ;; used in many parts of the application.

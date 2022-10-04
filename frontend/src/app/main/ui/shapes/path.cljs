@@ -22,7 +22,7 @@
                   (try
                     (upf/format-path content)
                     (catch :default e
-                      (log/error :hint "unexpected error on formating path"
+                      (log/error :hint "unexpected error on formatting path"
                                  :shape-name (:name shape)
                                  :shape-id (:id shape)
                                  :cause e)

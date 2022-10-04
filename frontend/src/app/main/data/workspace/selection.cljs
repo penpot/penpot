@@ -222,7 +222,7 @@
      ptk/UpdateEvent
      (update [_ state]
 
-       ;; Only deselect if there is no modal openned
+       ;; Only deselect if there is no modal opened
        (cond-> state
          (or (not check-modal)
              (not (::md/modal state)))

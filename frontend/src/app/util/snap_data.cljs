@@ -5,8 +5,8 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.util.snap-data
-  "Data structure that holds and retrieves the data to make the snaps. Internaly
-   is implemented with a balanced binary tree that queries by range.
+  "Data structure that holds and retrieves the data to make the snaps.
+   Internally is implemented with a balanced binary tree that queries by range.
    https://en.wikipedia.org/wiki/Range_tree"
   (:require
    [app.common.data :as d]

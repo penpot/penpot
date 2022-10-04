@@ -17,7 +17,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
-;; --- Auxiliar Functions
+;; --- Auxiliary Functions
 
 (s/def ::platform #{:windows :linux :macos :other})
 (s/def ::browser #{:chrome :firefox :safari :edge :other})

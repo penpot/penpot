@@ -53,7 +53,7 @@
         (handle-event cfg msg)
         (recur))))
 
-  (l/info :msg "stoping error reporting loop"))
+  (l/info :msg "stopping error reporting loop"))
 
 (defn- prepare-payload
   [event]

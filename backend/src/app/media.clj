@@ -220,7 +220,7 @@
 
           (ttf-or-otf->woff [data]
             ;; NOTE: foutput is not used directly, it represents the
-            ;; default output of the exection of the underlying
+            ;; default output of the execution of the underlying
             ;; command.
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
                   foutput (fs/path (str finput ".woff"))

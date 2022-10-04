@@ -103,7 +103,7 @@
 
                  (when @show-frame-thumbnail
                    (reset! show-frame-thumbnail false))
-                 ;; If we don't have the thumbnail data saved (normaly the first load) we update the data
+                 ;; If we don't have the thumbnail data saved (normally the first load) we update the data
                  ;; when available
                  (when (not @thumbnail-data-ref)
                    (st/emit! (dwt/update-thumbnail page-id id) ))

@@ -14,7 +14,7 @@
 ;; https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
 ;;
 ;; The API is broken in several ways. Here is some discussion of the problems,
-;; and many uncomplete solutions:
+;; and many incomplete solutions:
 ;; https://github.com/lolmaus/jquery.dragbetter/#what-this-is-all-about
 ;; https://www.w3schools.com/jsref/event_relatedtarget.asp
 ;; https://stackoverflow.com/questions/14194324/firefox-firing-dragleave-when-dragging-over-text?noredirect=1&lq=1

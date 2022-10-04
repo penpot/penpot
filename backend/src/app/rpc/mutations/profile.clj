@@ -63,7 +63,7 @@
 
           ;; Update profile props if the indirect prop is coming in
           ;; the params map and update the profile props data
-          ;; acordingly.
+          ;; accordingly.
           profile (cond-> profile
                     (some? newsletter-subscribed)
                     (update :props assoc :newsletter-subscribed newsletter-subscribed))]

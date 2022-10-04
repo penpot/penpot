@@ -30,7 +30,7 @@
    [::default :app.worker/executor]
    {:parallelism (cf/get :default-executor-parallelism 70)}
 
-   ;; Dedicated thread pool for backround tasks execution.
+   ;; Dedicated thread pool for background tasks execution.
    [::worker :app.worker/executor]
    {:parallelism (cf/get :worker-executor-parallelism 20)}
 

@@ -123,7 +123,7 @@
                          (tokens/verify sprops {:token token :iss :team-invitation}))
 
             ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
-            ;; invitation because invitations matches exactly; and user can't loging with other email and
+            ;; invitation because invitations matches exactly; and user can't login with other email and
             ;; accept invitation with other email
             response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
                          {:invitation-token (:invitation-token params)}

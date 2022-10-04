@@ -27,7 +27,7 @@
   (t/is (= (cph/insert-at-index [:a :b] 10 [:c])
            [:a :b :c]))
 
-  ;; insert existing in a contiguos index
+  ;; insert existing in a contiguous index
   (t/is (= (cph/insert-at-index [:a :b] 1 [:a])
            [:a :b]))
 

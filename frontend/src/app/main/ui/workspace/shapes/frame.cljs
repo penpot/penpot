@@ -116,7 +116,7 @@
 
           (mf/use-effect
            (fn []
-             ;; When a change in the data is received a "force-render" event is emited
+             ;; When a change in the data is received a "force-render" event is emitted
              ;; that will force the component to be mounted in memory
              (let [sub
                    (->> (dwt/force-render-stream (:id shape))

@@ -34,7 +34,7 @@
   ;; an empty line for visual feedback of restart
   (js/console.log "")
 
-  (l/info :msg "stoping")
+  (l/info :msg "stopping")
   (p/do!
    (bwr/stop)
    (redis/stop)

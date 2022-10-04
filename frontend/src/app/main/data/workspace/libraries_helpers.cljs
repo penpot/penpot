@@ -164,7 +164,7 @@
   that use assets of the given type in the given library.
 
   If an asset id is given, only shapes linked to this particular asset will
-  be syncrhonized."
+  be synchronized."
   [it file-id asset-type asset-id library-id state]
   (s/assert #{:colors :components :typographies} asset-type)
   (s/assert (s/nilable ::us/uuid) asset-id)
@@ -198,7 +198,7 @@
   the given library.
 
   If an asset id is given, only shapes linked to this particular asset will
-  be syncrhonized."
+  be synchronized."
   [it file-id asset-type asset-id library-id state]
   (s/assert #{:colors :components :typographies} asset-type)
   (s/assert (s/nilable ::us/uuid) asset-id)

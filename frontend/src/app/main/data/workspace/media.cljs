@@ -244,7 +244,7 @@
 
 
 ;; TODO: it is really need handle SVG here, looks like it already
-;; handled separatelly
+;; handled separately
 (defn upload-media-workspace
   [{:keys [position file-id] :as params}]
   (let [params (assoc params

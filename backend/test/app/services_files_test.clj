@@ -183,7 +183,7 @@
                             :type :image
                             :metadata {:id (:id fmo1)}}}]})]
 
-      ;; Check that reference storage objets on filemediaobjects
+      ;; Check that reference storage objects on filemediaobjects
       ;; are the same because of deduplication feature.
       (t/is (= (:media-id fmo1) (:media-id fmo2)))
       (t/is (= (:thumbnail-id fmo1) (:thumbnail-id fmo2)))
@@ -228,8 +228,8 @@
                                :page-id (first (get-in file [:data :pages]))
                                :id shid}]})
 
-      ;; Now, we have deleted the usag of pointers to the
-      ;; file-media-objects, if we pase file-gc, they should be marked
+      ;; Now, we have deleted the usage of pointers to the
+      ;; file-media-objects, if we paste file-gc, they should be marked
       ;; as deleted.
       (let [task  (:app.tasks.file-gc/handler th/*system*)
             res   (task {:min-age (dt/duration 0)})]

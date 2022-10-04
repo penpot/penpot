@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.handlers.resources
-  "Temporal resouces management."
+  "Temporal resources management."
   (:require
    ["archiver" :as arc]
    ["fs" :as fs]

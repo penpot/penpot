@@ -219,7 +219,7 @@
             (fn [[page-id changes]]
               (dch/update-indices page-id changes))
 
-            ;; We update `position-data` from the incomming message
+            ;; We update `position-data` from the incoming message
             changes (->> changes (mapv update-position-data))
             changes-by-pages (group-by :page-id changes)]
 

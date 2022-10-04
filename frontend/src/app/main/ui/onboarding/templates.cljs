@@ -59,7 +59,7 @@
   {::mf/wrap-props false
    ::mf/register modal/components
    ::mf/register-as :onboarding-templates}
-  ;; NOTE: the project usually comes empty, it only comes fullfilled
+  ;; NOTE: the project usually comes empty, it only comes fulfilled
   ;; when a user creates a new team just after signup.
   [props]
   (let [project-id (unchecked-get props "project-id")

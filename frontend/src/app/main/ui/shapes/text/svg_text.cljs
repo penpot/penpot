@@ -62,7 +62,7 @@
 
         transform (gsh/transform-str shape {:no-flip true})
 
-        ;; These position attributes are not really necesary but they are convenient for for the export
+        ;; These position attributes are not really necessary but they are convenient for for the export
         group-props (-> #js {:transform transform
                              :className "text-container"
                              :x x

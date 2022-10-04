@@ -124,7 +124,7 @@
             (try
               (assoc params :font (ot/parse data))
               (catch :default _e
-                (log/warn :msg (str/fmt "skiping file %s, unsupported format" (:name params)))
+                (log/warn :msg (str/fmt "skipping file %s, unsupported format" (:name params)))
                 nil)))
 
           (read-blob [blob]
@@ -169,7 +169,7 @@
 
 (defn rename-and-regroup
   "Function responsible to rename a font in a local state and properly
-  regroup it to the apropriate `font-id` having in account current
+  regroup it to the appropriate `font-id` having in account current
   fonts and installed fonts."
   [current-fonts id name installed-fonts]
   (let [famdb   (-> (merge current-fonts installed-fonts)

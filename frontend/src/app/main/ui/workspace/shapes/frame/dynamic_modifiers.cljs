@@ -232,7 +232,7 @@
         (when (some? node)
           (cond
             (= (dom/get-tag-name node) "foreignObject")
-            ;; The shape width/height will be automaticaly setup when the modifiers are applied
+            ;; The shape width/height will be automatically setup when the modifiers are applied
             nil
 
             (or (= (dom/get-tag-name node) "mask")

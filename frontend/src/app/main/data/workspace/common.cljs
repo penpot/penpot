@@ -17,7 +17,7 @@
 (log/set-level! :warn)
 
 (defn initialized?
-  "Check if the state is properly intialized in a workspace. This means
+  "Check if the state is properly initialized in a workspace. This means
   it has the `:current-page-id` and `:current-file-id` properly set."
   [state]
   (and (uuid? (:current-file-id state))
