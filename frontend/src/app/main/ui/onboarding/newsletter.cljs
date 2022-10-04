@@ -32,7 +32,7 @@
          (fn []
            (st/emit! (dm/success message)
                        (modal/show {:type :onboarding-team})
-                       (du/update-profile-props {:newsletter-updates true :newsletter-news true}))))]
+                       (du/update-profile-props {:newsletter-updates @newsletter-updates :newsletter-news @newsletter-news}))))]
 
     [:div.modal-overlay
      [:div.modal-container.onboarding.newsletter.animated.fadeInDown
