@@ -66,6 +66,8 @@
 - UI improvements in Project section (by @Waishnav) [#2285](https://github.com/penpot/penpot/pull/2285)
 - Fix fronted comments (by @lol768) [#2368](https://github.com/penpot/penpot/pull/2368)
 
+## 1.15.5-beta
+
 ## 1.15.4-beta
 
 ### :bug: Bugs fixed
@@ -95,6 +97,7 @@
 - Fix PDF exportation order [Taiga #4216](https://tree.taiga.io/project/penpot/issue/4216)
 - Fix some typos [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
 - Fix "no boards" message in viewer [Taiga #4243](https://tree.taiga.io/project/penpot/issue/4243)
+- Fix view mode login size [Taiga #4210](https://tree.taiga.io/project/penpot/issue/4210)
 
 ## 1.15.3-beta
 
