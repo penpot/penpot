@@ -120,7 +120,7 @@
     (cond-> layout-lines (some? line-data) (conj line-data))))
 
 (defn calc-layout-lines-position
-  [{:keys [layout-gap layout-type] :as shape} {:keys [x y width height]} layout-lines]
+  [{:keys [layout-gap layout-type] :as shape} {:keys [x y width height] :as layout-bounds} layout-lines]
 
   (letfn [(get-base-line
             [total-width total-height]
@@ -414,8 +414,9 @@
 
 (defn calc-layout-modifiers
   "Calculates the modifiers for the layout"
-  [parent transform child layout-data]
-  (let [child-bounds    (-> child :points gre/points->selrect)
+  [parent child layout-data]
+  (let [transform (:transform parent)
+        child-bounds    (-> child :points gre/points->selrect)
 
         fill-width  (calc-fill-width-data child-bounds parent child layout-data)
         fill-height (calc-fill-height-data child-bounds parent child layout-data)

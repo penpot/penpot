@@ -24,7 +24,10 @@
    [app.main.ui.workspace.shapes.frame.node-store :as fns]
    [app.main.ui.workspace.shapes.frame.thumbnail-render :as ftr]
    [beicon.core :as rx]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+
+   [app.common.geom.shapes.layout :as gsl]
+   [app.common.geom.point :as gpt]))
 
 (defn frame-shape-factory
   [shape-wrapper]

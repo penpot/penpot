@@ -261,18 +261,8 @@
   "Before aplying constraints we need to remove the deformation caused by the resizing of the parent"
   [constraints-h constraints-v modifiers child parent transformed-child transformed-parent]
 
-  (let [child-bb-before
-        (-> child
-            :points
-            (gco/transform-points (:transform-inverse parent))
-            (gre/points->rect))
-
-        child-bb-after
-        (-> transformed-child
-            :points
-            (gco/transform-points (:transform-inverse transformed-parent))
-            (gre/points->rect))
-
+  (let [child-bb-before (gst/parent-coords-rect child parent)
+        child-bb-after  (gst/parent-coords-rect transformed-child transformed-parent)
         scale-x (/ (:width child-bb-before) (:width child-bb-after))
         scale-y (/ (:height child-bb-before) (:height child-bb-after))]
 
@@ -332,3 +322,5 @@
                                              transformed-parent)]
 
         (update modifiers :v2 d/concat-vec modifiers-h modifiers-v)))))
+
+

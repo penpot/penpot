@@ -11,7 +11,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
-   [app.common.geom.shapes.layout :as gcl]
+   [app.common.geom.shapes.layout :as gclo]
+   [app.common.geom.shapes.layout-new :as gcln]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
@@ -108,40 +109,21 @@
 
 
 (defn set-children-modifiers
-  [modif-tree objects shape ignore-constraints snap-pixel?]
+  [modif-tree objects parent ignore-constraints snap-pixel?]
   ;; TODO LAYOUT: SNAP PIXEL!
   (letfn [(set-child [transformed-parent _snap-pixel? modif-tree child]
-            (let [modifiers (get-in modif-tree [(:id shape) :modifiers])
-
-                  child-modifiers (gct/calc-child-modifiers shape child modifiers ignore-constraints transformed-parent)
-
-                  ;;_ (.log js/console (:name child) (clj->js child-modifiers))
-
+            (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
+                  child-modifiers (gct/calc-child-modifiers parent child modifiers ignore-constraints transformed-parent)
                   ;;child-modifiers (cond-> child-modifiers snap-pixel? (set-pixel-precision child))
-
-                  result
-                  (cond-> modif-tree
-                    (not (ctm/empty-modifiers? child-modifiers))
-                    (update-in [(:id child) :modifiers :v2] #(d/concat-vec % (:v2 child-modifiers)))
-                    #_(update-in [(:id child) :modifiers] #(merge-mod2 child-modifiers %))
-                    #_(update-in [(:id child) :modifiers] #(merge child-modifiers %)))
-
-                  ;;_ (.log js/console ">>>" (:name child))
-                  ;;_ (.log js/console "  >" (clj->js child-modifiers))
-                  ;;_ (.log js/console "  >" (clj->js (get-in modif-tree [(:id child) :modifiers])))
-                  ;;_ (.log js/console "  >" (clj->js (get-in result [(:id child) :modifiers])))
                   ]
-              result
-              ))
-          ]
-    (let [children (map (d/getf objects) (:shapes shape))
-          modifiers (get-in modif-tree [(:id shape) :modifiers])
-          ;; transformed-rect (gtr/transform-selrect (:selrect shape) modifiers)
-          ;; transformed-rect (-> shape (merge {:modifiers modifiers}) gtr/transform-shape :selrect)
-          transformed-parent (-> shape (merge {:modifiers modifiers}) gtr/transform-shape)
+              (cond-> modif-tree
+                (not (ctm/empty-modifiers? child-modifiers))
+                (update-in [(:id child) :modifiers :v2] d/concat-vec (:v2 child-modifiers)))))]
 
-          resize-modif? (or (:resize-vector modifiers) (:resize-vector-2 modifiers))]
-      (reduce (partial set-child transformed-parent (and snap-pixel? resize-modif?)) modif-tree children))))
+    (let [children (map (d/getf objects) (:shapes parent))
+          modifiers (get-in modif-tree [(:id parent) :modifiers])
+          transformed-parent (gtr/transform-shape parent modifiers)]
+      (reduce (partial set-child transformed-parent snap-pixel?) modif-tree children))))
 
 (defn group? [shape]
   (or (= :group (:type shape))
@@ -158,6 +140,68 @@
   ;; TODO LAYOUT: SNAP PIXEL!
   [modif-tree objects parent _snap-pixel?]
 
+  (letfn [(normalize-child [transformed-parent _snap-pixel? modif-tree child]
+            (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
+                  child-modifiers (gcln/normalize-child-modifiers parent child modifiers transformed-parent)]
+              (cond-> modif-tree
+                (not (ctm/empty-modifiers? child-modifiers))
+                (update-in [(:id child) :modifiers :v2] d/concat-vec (:v2 child-modifiers)))))
+
+          (apply-modifiers [modif-tree child]
+            (let [modifiers (get-in modif-tree [(:id child) :modifiers])]
+              (cond-> child
+                (some? modifiers)
+                (gtr/transform-shape modifiers)
+
+                (and (nil? modifiers) (group? child))
+                (gtr/apply-group-modifiers objects modif-tree))))
+
+          (set-layout-modifiers [parent [layout-line modif-tree] child]
+            (let [[modifiers layout-line]
+                  (gcln/calc-layout-modifiers parent child layout-line)
+
+                  modif-tree
+                  (cond-> modif-tree
+                    (d/not-empty? modifiers)
+                    (update-in [(:id child) :modifiers :v2] d/concat-vec modifiers))]
+
+              [layout-line modif-tree]))]
+
+    (let [children (map (d/getf objects) (:shapes parent))
+          modifiers (get-in modif-tree [(:id parent) :modifiers])
+          transformed-parent (gtr/transform-shape parent modifiers)
+
+          modif-tree (reduce (partial normalize-child transformed-parent _snap-pixel?) modif-tree children)
+
+          children (->> children (map (partial apply-modifiers modif-tree)))
+
+          layout-data (gcln/calc-layout-data transformed-parent children)
+
+          children          (into [] (cond-> children (:reverse? layout-data) reverse))
+
+          max-idx           (dec (count children))
+          layout-lines      (:layout-lines layout-data)]
+
+      (loop [modif-tree modif-tree
+             layout-line (first layout-lines)
+             pending (rest layout-lines)
+             from-idx 0]
+
+        
+        (if (and (some? layout-line) (<= from-idx max-idx))
+          (let [to-idx   (+ from-idx (:num-children layout-line))
+                children (subvec children from-idx to-idx)
+
+                [_ modif-tree]
+                (reduce (partial set-layout-modifiers transformed-parent) [layout-line modif-tree] children)]
+            (recur modif-tree (first pending) (rest pending) to-idx))
+
+          modif-tree)))))
+
+#_(defn set-layout-modifiers'
+  ;; TODO LAYOUT: SNAP PIXEL!
+  [modif-tree objects parent _snap-pixel?]
+  
   (letfn [(transform-child [child]
             (let [modifiers (get modif-tree (:id child))
 
@@ -182,8 +226,7 @@
                   modif-tree
                   (cond-> modif-tree
                     (d/not-empty? modifiers)
-                    (update-in [(:id child) :modifiers :v2] d/concat-vec modifiers)
-                    #_(merge-modifiers [(:id child)] modifiers))]
+                    (update-in [(:id child) :modifiers :v2] d/concat-vec modifiers))]
 
               [layout-data modif-tree]))]
 
@@ -218,7 +261,6 @@
 
                 [_ modif-tree]
                 (reduce (partial set-layout-modifiers shape transform) [layout-line modif-tree] children)]
-
             (recur modif-tree (first pending) (rest pending) to-idx))
 
           modif-tree)))))
@@ -316,11 +358,12 @@
                       is-inside-layout? (inside-layout? objects shape)]
 
                   (cond-> modif-tree
+                    (and has-modifiers? is-parent?)
+                    (set-children-modifiers objects shape (or ignore-constraints is-inside-layout?) snap-pixel?)
+                    
                     is-layout?
                     (set-layout-modifiers objects shape snap-pixel?)
-
-                    (and has-modifiers? is-parent?)
-                    (set-children-modifiers objects shape (or ignore-constraints is-inside-layout?) snap-pixel?))))
+                    )))
 
               modif-tree))]
 

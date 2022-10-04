@@ -177,6 +177,8 @@
 (dm/export gtr/move-position-data)
 (dm/export gtr/apply-transform)
 (dm/export gtr/apply-objects-modifiers)
+(dm/export gtr/parent-coords-rect)
+(dm/export gtr/parent-coords-points)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
@@ -210,3 +212,4 @@
 
 ;; Modifiers
 (dm/export gsm/set-objects-modifiers)
+
