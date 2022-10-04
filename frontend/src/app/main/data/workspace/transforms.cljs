@@ -243,7 +243,7 @@
 (defn- check-delta
   "If the shape is a component instance, check its relative position respect the
   root of the component, and see if it changes after applying a transformation."
-  [shape root transformed-shape transformed-root objects]
+  [shape root transformed-shape transformed-root objects modif-tree]
   (let [root
         (cond
           (:component-root? shape)
@@ -260,7 +260,8 @@
           transformed-shape
 
           (nil? transformed-root)
-          (cph/get-root-shape objects transformed-shape)
+          (as-> (cph/get-root-shape objects transformed-shape) $
+            (gsh/transform-shape (merge $ (get modif-tree (:id $)))))
 
           :else transformed-root)
 
@@ -298,7 +299,7 @@
          transformed-shape (gsh/transform-shape (merge shape (get modif-tree shape-id)))
 
          [root transformed-root ignore-geometry?]
-         (check-delta shape root transformed-shape transformed-root objects)
+         (check-delta shape root transformed-shape transformed-root objects modif-tree)
 
          ignore-tree (assoc ignore-tree shape-id ignore-geometry?)
 
