@@ -761,17 +761,6 @@
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
-                (pcb/update-shapes moving-frames
-                                   (fn [shape]
-                                     ;; Hide in viewer must be enabled just when a board is moved
-                                     ;; inside another artboard an nested to it, we have to avoid
-                                     ;; situations like: 1. Moving inside the same frame; 2. Moving
-                                     ;; outside the frame
-                                     (cond-> shape
-                                       (and (not= frame-id (:id shape))
-                                            (not= frame-id (:frame-id shape))
-                                            (not= frame-id uuid/zero))
-                                       (assoc :hide-in-viewer true))))
                 (pcb/change-parent frame-id moving-shapes))]
 
         (when-not (empty? changes)
