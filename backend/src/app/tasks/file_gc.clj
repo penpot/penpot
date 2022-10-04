@@ -43,10 +43,9 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as cfg}]
-  (fn [params]
+  (fn [{:keys [id] :as params}]
     (db/with-atomic [conn pool]
       (let [min-age (or (:min-age params) (:min-age cfg))
-            id      (:id params)
             cfg     (assoc cfg :min-age min-age :conn conn :id id)]
         (loop [total 0
                files (retrieve-candidates cfg)]
@@ -185,7 +184,7 @@
   (let [get-chunk (fn [cursor]
                     (let [rows (db/exec! conn [sql:retrieve-client-files library-id cursor])]
                       [(some-> rows peek :modified-at)
-                       (map #(->> % :data blob/decode) rows)]))]
+                       (map (comp blob/decode :data) rows)]))]
 
     (d/iteration get-chunk
                  :vf second
@@ -197,28 +196,30 @@
   [conn library-id library-data]
   (let [find-used-components-file
         (fn [components file-data]
-          ; Find what of the components are used in the file.
-          (d/filterm #(ctf/used-in? file-data library-id (second %) :component)
-                     components))
+          ; Find which of the components are used in the file.
+          (into #{}
+                (filter #(ctf/used-in? file-data library-id % :component))
+                components))
 
         find-used-components
         (fn [components files-data]
           ; Find what components are used in any of the files.
           (loop [files-data      files-data
                  components      components
-                 used-components {}]
+                 used-components #{}]
             (let [file-data (first files-data)]
               (if (or (nil? file-data) (empty? components))
                 used-components
                 (let [used-components-file (find-used-components-file components file-data)]
                   (recur (rest files-data)
-                         (d/filterm #(not (contains? used-components-file (:id %))) components)
+                         (into #{} (remove used-components-file) components)
                          (into used-components used-components-file)))))))
 
-        deleted-components (:deleted-components library-data)
-        saved-components   (find-used-components deleted-components
-                                                 (cons library-data
-                                                       (retrieve-client-files conn library-id)))
+        deleted-components     (set (vals (:deleted-components library-data)))
+        saved-components       (find-used-components deleted-components
+                                                     (cons library-data
+                                                           (retrieve-client-files conn library-id)))
+        new-deleted-components (d/index-by :id (vec saved-components))
 
         total (- (count deleted-components)
                  (count saved-components))]
@@ -226,7 +227,7 @@
     (when-not (zero? total)
       (l/debug :hint "clean deleted components" :total total)
       (let [new-data (-> library-data
-                         (assoc :deleted-components saved-components)
+                         (assoc :deleted-components new-deleted-components)
                          (blob/encode))]
         (db/update! conn :file
                     {:data new-data}
