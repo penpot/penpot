@@ -13,6 +13,7 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.pages.migrations :as pmg]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
@@ -42,10 +43,10 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as cfg}]
-  (fn [params]
+  (fn [{:keys [id] :as params}]
     (db/with-atomic [conn pool]
       (let [min-age (or (:min-age params) (:min-age cfg))
-            cfg     (assoc cfg :min-age min-age :conn conn)]
+            cfg     (assoc cfg :min-age min-age :conn conn :id id)]
         (loop [total 0
                files (retrieve-candidates cfg)]
           (if-let [file (first files)]
@@ -162,7 +163,75 @@
   (let [sql (str "delete from file_thumbnail "
                  " where file_id=? and revn < ?")
         res (db/exec-one! conn [sql file-id revn])]
-    (l/debug :hint "delete file thumbnails" :file-id file-id :total (:next.jdbc/update-count res))))
+    (when-not (zero? (:next.jdbc/update-count res))
+      (l/debug :hint "delete file thumbnails" :file-id file-id :total (:next.jdbc/update-count res)))))
+
+(def ^:private
+  sql:retrieve-client-files
+  "select f.data, f.modified_at
+     from file as f
+     left join file_library_rel as fl on (fl.file_id = f.id)
+    where fl.library_file_id = ?
+      and f.modified_at < ?
+      and f.deleted_at is null
+    order by f.modified_at desc
+    limit 1")
+
+(defn- retrieve-client-files
+  "search al files that use the given library.
+   Returns a sequence of file-data (only reads database rows one by one)."
+  [conn library-id]
+  (let [get-chunk (fn [cursor]
+                    (let [rows (db/exec! conn [sql:retrieve-client-files library-id cursor])]
+                      [(some-> rows peek :modified-at)
+                       (map (comp blob/decode :data) rows)]))]
+
+    (d/iteration get-chunk
+                 :vf second
+                 :kf first
+                 :initk (dt/now))))
+
+(defn- clean-deleted-components!
+  "Performs the garbage collection of unreferenced deleted components."
+  [conn library-id library-data]
+  (let [find-used-components-file
+        (fn [components file-data]
+          ; Find which of the components are used in the file.
+          (into #{}
+                (filter #(ctf/used-in? file-data library-id % :component))
+                components))
+
+        find-used-components
+        (fn [components files-data]
+          ; Find what components are used in any of the files.
+          (loop [files-data      files-data
+                 components      components
+                 used-components #{}]
+            (let [file-data (first files-data)]
+              (if (or (nil? file-data) (empty? components))
+                used-components
+                (let [used-components-file (find-used-components-file components file-data)]
+                  (recur (rest files-data)
+                         (into #{} (remove used-components-file) components)
+                         (into used-components used-components-file)))))))
+
+        deleted-components     (set (vals (:deleted-components library-data)))
+        saved-components       (find-used-components deleted-components
+                                                     (cons library-data
+                                                           (retrieve-client-files conn library-id)))
+        new-deleted-components (d/index-by :id (vec saved-components))
+
+        total (- (count deleted-components)
+                 (count saved-components))]
+
+    (when-not (zero? total)
+      (l/debug :hint "clean deleted components" :total total)
+      (let [new-data (-> library-data
+                         (assoc :deleted-components new-deleted-components)
+                         (blob/encode))]
+        (db/update! conn :file
+                    {:data new-data}
+                    {:id library-id})))))
 
 (defn- process-file
   [{:keys [conn] :as cfg} {:keys [id data revn modified-at] :as file}]
@@ -175,6 +244,7 @@
     (clean-file-media! conn id data)
     (clean-file-frame-thumbnails! conn id data)
     (clean-file-thumbnails! conn id revn)
+    (clean-deleted-components! conn id data)
 
     ;; Mark file as trimmed
     (db/update! conn :file
