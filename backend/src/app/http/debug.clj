@@ -280,7 +280,7 @@
                    (assoc ::binf/file-ids file-ids)
                    (assoc ::binf/embed-assets? embed?)
                    (assoc ::binf/include-libraries? libs?)
-                   (binf/export!))]
+                   (binf/export-to-tmpfile!))]
       (if clone?
         (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)]
           (binf/import!
