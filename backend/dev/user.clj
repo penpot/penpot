@@ -86,7 +86,7 @@
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
                              nil))
-  :stoped)
+  :stopped)
 
 (defn restart
   []

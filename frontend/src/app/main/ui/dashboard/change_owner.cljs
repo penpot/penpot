@@ -51,7 +51,7 @@
        [:p (tr "modals.leave-and-reassign.hint1" (:name team))]
 
        (if (empty? members)
-         [:p (tr "modals.leave-and-reassign.forbiden")]
+         [:p (tr "modals.leave-and-reassign.forbidden")]
          [:*
           [:& fm/form {:form form}
            [:& fm/select {:name :member-id
