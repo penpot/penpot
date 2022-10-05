@@ -11,8 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
-   [app.common.geom.shapes.layout :as gclo]
-   [app.common.geom.shapes.layout-new :as gcln]
+   [app.common.geom.shapes.layout :as gcl]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
@@ -142,7 +141,7 @@
 
   (letfn [(normalize-child [transformed-parent _snap-pixel? modif-tree child]
             (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
-                  child-modifiers (gcln/normalize-child-modifiers parent child modifiers transformed-parent)]
+                  child-modifiers (gcl/normalize-child-modifiers parent child modifiers transformed-parent)]
               (cond-> modif-tree
                 (not (ctm/empty-modifiers? child-modifiers))
                 (update-in [(:id child) :modifiers :v2] d/concat-vec (:v2 child-modifiers)))))
@@ -153,12 +152,12 @@
                 (some? modifiers)
                 (gtr/transform-shape modifiers)
 
-                (and (nil? modifiers) (group? child))
+                (and (some? modifiers) (group? child))
                 (gtr/apply-group-modifiers objects modif-tree))))
 
           (set-layout-modifiers [parent [layout-line modif-tree] child]
             (let [[modifiers layout-line]
-                  (gcln/calc-layout-modifiers parent child layout-line)
+                  (gcl/calc-layout-modifiers parent child layout-line)
 
                   modif-tree
                   (cond-> modif-tree
@@ -175,7 +174,7 @@
 
           children (->> children (map (partial apply-modifiers modif-tree)))
 
-          layout-data (gcln/calc-layout-data transformed-parent children)
+          layout-data (gcl/calc-layout-data transformed-parent children)
 
           children          (into [] (cond-> children (:reverse? layout-data) reverse))
 
@@ -325,12 +324,13 @@
         :else
         (recur (:parent-id current))))))
 
-#_(defn modif->js
-  [modif-tree objects]
-  (clj->js (into {}
-                 (map (fn [[k v]]
-                        [(get-in objects [k :name]) v]))
-                 modif-tree)))
+;;#?(:cljs
+;;   (defn modif->js
+;;     [modif-tree objects]
+;;     (clj->js (into {}
+;;                    (map (fn [[k v]]
+;;                           [(get-in objects [k :name]) v]))
+;;                    modif-tree))))
 
 (defn set-objects-modifiers
   [ids objects get-modifier ignore-constraints snap-pixel?]
@@ -367,5 +367,6 @@
 
               modif-tree))]
 
-    ;;(.log js/console ">result" (modif->js modif-tree objects))
+    ;; #?(:cljs
+    ;;    (.log js/console ">result" (modif->js modif-tree objects)))
     modif-tree))
