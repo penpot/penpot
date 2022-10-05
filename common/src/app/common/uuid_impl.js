@@ -79,6 +79,28 @@ goog.scope(function() {
     };
   })();
 
+  function getBigUint64(view, byteOffset, le) {
+    const a = view.getUint32(byteOffset, le);
+    const b = view.getUint32(byteOffset + 4, le);
+    const leMask = Number(!!le);
+    const beMask = Number(!le);
+    return ((BigInt(a * beMask + b * leMask) << 32n) |
+            (BigInt(a * leMask + b * beMask)));
+  }
+
+  function setBigUint64(view, byteOffset, value, le) {
+    const hi = Number(value >> 32n);
+    const lo = Number(value & 0xffffffffn);
+    if (le) {
+      view.setUint32(byteOffset + 4, hi, le);
+      view.setUint32(byteOffset, lo, le);
+    }
+    else {
+      view.setUint32(byteOffset, hi, le);
+      view.setUint32(byteOffset + 4, lo, le);
+    }
+  }
+
   self.v8 = (function () {
     const buff  = new ArrayBuffer(16);
     const int8 = new Uint8Array(buff);
@@ -104,7 +126,7 @@ goog.scope(function() {
 
     const nextLong = () => {
       fill(tmpInt8);
-      return tmpView.getBigUint64(0, false);
+      return getBigUint64(tmpView, 0, false);
     };
 
     lastRd = nextLong() & 0xffff_ffff_ffff_f0ffn;
@@ -118,8 +140,9 @@ goog.scope(function() {
                    | ((ts << 14n) & 0x3fff_ffff_ffff_c000n)
                    | lastCs);
 
-      view.setBigUint64(0, msb, false);
-      view.setBigUint64(8, lsb, false);
+      setBigUint64(view, 0, msb, false);
+      setBigUint64(view, 8, lsb, false);
+
       return core.uuid(toHexString(int8));
     };
 
