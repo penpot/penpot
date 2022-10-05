@@ -842,11 +842,11 @@
 
             check-changes
             (fn [[event data]]
-              (let [changes (-> event deref :changes)
+              (let [{:keys [changes save-undo?]} (deref event)
                     components-changed (reduce #(into %1 (ch/components-changed data %2))
                                                #{}
                                                changes)]
-                (when (d/not-empty? components-changed)
+                (when (and (d/not-empty? components-changed) save-undo?)
                   (log/info :msg "DETECTED COMPONENTS CHANGED"
                             :ids (map str components-changed))
                   (run! st/emit!

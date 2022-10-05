@@ -150,7 +150,8 @@
          :hint-origin (ptk/type origin)
          :changes redo-changes
          :page-id page-id
-         :frames frames})
+         :frames frames
+         :save-undo? save-undo?})
 
       ptk/UpdateEvent
       (update [_ state]
