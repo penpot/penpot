@@ -16,6 +16,7 @@
    [app.main.ui.releases.v1-13]
    [app.main.ui.releases.v1-14]
    [app.main.ui.releases.v1-15]
+   [app.main.ui.releases.v1-16]
    [app.main.ui.releases.v1-4]
    [app.main.ui.releases.v1-5]
    [app.main.ui.releases.v1-6]
@@ -85,4 +86,4 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "1.15")))
+  (rc/render-release-notes (assoc params :version "1.16")))
