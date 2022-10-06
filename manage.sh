@@ -12,23 +12,38 @@ export CURRENT_HASH=$(git rev-parse --short HEAD);
 export CURRENT_COMMITS=$(git rev-list --count HEAD)
 
 function print-current-version {
-    if [ $CURRENT_BRANCH != "main" ]; then
-        echo -n "$CURRENT_BRANCH-$CURRENT_VERSION-$CURRENT_COMMITS-g$CURRENT_HASH"
-    else
-        echo -n "$CURRENT_VERSION-$CURRENT_COMMITS-g$CURRENT_HASH"
-    fi
+    echo -n "$CURRENT_VERSION-$CURRENT_COMMITS-g$CURRENT_HASH"
 }
 
 function build-devenv {
     echo "Building development image $DEVENV_IMGNAME:latest..."
 
     pushd docker/devenv;
-    docker build -t $DEVENV_IMGNAME:latest .
+
+    docker run --privileged --rm tonistiigi/binfmt --install all
+    docker buildx inspect penpot > /dev/null 2>&1;
+
+    if [ $? -eq 1 ]; then
+        docker buildx create --name=penpot --use
+        docker buildx inspect --bootstrap > /dev/null 2>&1;
+    else
+        docker buildx use penpot;
+        docker buildx inspect --bootstrap  > /dev/null 2>&1;
+    fi
+
+    # docker build -t $DEVENV_IMGNAME:latest .
+    docker buildx build --platform linux/amd64,linux/arm64 --push -t $DEVENV_IMGNAME:latest .;
+    docker pull $DEVENV_IMGNAME:latest;
+
     popd;
 }
 
-function push-devenv {
-    docker push $DEVENV_IMGNAME:latest
+function build-devenv-local {
+    echo "Building local only development image $DEVENV_IMGNAME:latest..."
+
+    pushd docker/devenv;
+    docker build -t $DEVENV_IMGNAME:latest .;
+    popd;
 }
 
 function pull-devenv {
@@ -95,15 +110,16 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-Copyright (c) UXBOX Labs SL
+Copyright (c) KALEIDOS INC
 EOF
 }
 
 function build-frontend-bundle {
     echo ">> bundle frontend start";
 
+    mkdir -p ./bundles
     local version=$(print-current-version);
-    local bundle_dir="./bundle-frontend";
+    local bundle_dir="./bundles/frontend";
 
     build "frontend";
 
@@ -117,8 +133,9 @@ function build-frontend-bundle {
 function build-backend-bundle {
     echo ">> bundle backend start";
 
+    mkdir -p ./bundles
     local version=$(print-current-version);
-    local bundle_dir="./bundle-backend";
+    local bundle_dir="./bundles/backend";
 
     build "backend";
 
@@ -126,13 +143,15 @@ function build-backend-bundle {
     mv ./backend/target/dist $bundle_dir;
     echo $version > $bundle_dir/version.txt;
     put-license-file $bundle_dir;
-    echo ">> bundle frontend end";
+    echo ">> bundle backend end";
 }
 
 function build-exporter-bundle {
     echo ">> bundle exporter start";
+
+    mkdir -p ./bundles
     local version=$(print-current-version);
-    local bundle_dir="./bundle-exporter";
+    local bundle_dir="./bundles/exporter";
 
     build "exporter";
 
@@ -143,27 +162,6 @@ function build-exporter-bundle {
     put-license-file $bundle_dir;
 
     echo ">> bundle exporter end";
-}
-
-# DEPRECATED: temporary maintained for backward compatibility.
-
-function build-app-bundle {
-    echo ">> bundle app start";
-
-    local version=$(print-current-version);
-    local bundle_dir="./bundle-app";
-
-    build "frontend";
-    build "backend";
-
-    rm -rf $bundle_dir
-    mkdir -p $bundle_dir;
-    mv ./frontend/target/dist $bundle_dir/frontend;
-    mv ./backend/target/dist $bundle_dir/backend;
-
-    echo $version > $bundle_dir/version.txt
-    put-license-file $bundle_dir;
-    echo ">> bundle app end";
 }
 
 function usage {
@@ -193,6 +191,10 @@ case $1 in
         build-devenv ${@:2}
         ;;
 
+    build-devenv-local)
+        build-devenv-local ${@:2}
+        ;;
+
     push-devenv)
         push-devenv ${@:2}
         ;;
@@ -214,10 +216,6 @@ case $1 in
         ;;
 
     # production builds
-    build-app-bundle)
-        build-app-bundle;
-        ;;
-
     build-frontend-bundle)
         build-frontend-bundle;
         ;;
