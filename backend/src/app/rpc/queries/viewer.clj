@@ -23,8 +23,8 @@
   (db/get-by-id pool :project id {:columns [:id :name :team-id]}))
 
 (defn- retrieve-bundle
-  [{:keys [pool] :as cfg} file-id profile-id components-v2]
-  (p/let [file    (files/retrieve-file cfg file-id components-v2)
+  [{:keys [pool] :as cfg} file-id profile-id features]
+  (p/let [file    (files/retrieve-file cfg file-id features)
           project (retrieve-project pool (:project-id file))
           libs    (files/retrieve-file-libraries cfg false file-id)
           users   (comments/get-file-comments-users pool file-id profile-id)
@@ -45,40 +45,49 @@
 (s/def ::file-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
 (s/def ::share-id ::us/uuid)
+(s/def ::features ::us/set-of-strings)
+
+;; TODO: deprecated, should be removed when version >= 1.18
 (s/def ::components-v2 ::us/boolean)
 
 (s/def ::view-only-bundle
-  (s/keys :req-un [::file-id] :opt-un [::profile-id ::share-id ::components-v2]))
+  (s/keys :req-un [::file-id]
+          :opt-un [::profile-id ::share-id ::features ::components-v2]))
 
 (sv/defmethod ::view-only-bundle {:auth false}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id components-v2] :as params}]
-  (p/let [slink  (slnk/retrieve-share-link pool file-id share-id)
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id features components-v2] :as params}]
+  (p/let [;; BACKWARD COMPATIBILTY with the components-v2 parameter
+          features (cond-> (or features #{})
+                     components-v2 (conj features "components/v2"))
+
+          slink  (slnk/retrieve-share-link pool file-id share-id)
           perms  (files/get-permissions pool profile-id file-id share-id)
           thumbs (files/retrieve-object-thumbnails cfg file-id)
-          bundle (p/-> (retrieve-bundle cfg file-id profile-id components-v2)
+          bundle (p/-> (retrieve-bundle cfg file-id profile-id features)
                        (assoc :permissions perms)
                        (assoc-in [:file :thumbnails] thumbs))]
-
     ;; When we have neither profile nor share, we just return a not
     ;; found response to the user.
-    (when (and (not profile-id)
-               (not slink))
-      (ex/raise :type :not-found
-                :code :object-not-found))
+    (do
+      (when (and (not profile-id)
+                 (not slink))
+        (ex/raise :type :not-found
+                  :code :object-not-found))
 
-    ;; When we have only profile, we need to check read permissions
-    ;; on file.
-    (when (and profile-id (not slink))
-      (files/check-read-permissions! pool profile-id file-id))
+      ;; When we have only profile, we need to check read permissions
+      ;; on file.
+      (when (and profile-id (not slink))
+        (files/check-read-permissions! pool profile-id file-id))
 
-    (cond-> bundle
-      (some? slink)
-      (assoc :share slink)
+      (cond-> bundle
+        (some? slink)
+        (assoc :share slink)
 
-      (and (some? slink)
+        (and (some? slink)
            (not (contains? (:flags slink) "view-all-pages")))
-      (update-in [:file :data] (fn [data]
-                                 (let [allowed-pages (:pages slink)]
-                                   (-> data
-                                       (update :pages (fn [pages] (filterv #(contains? allowed-pages %) pages)))
-                                       (update :pages-index (fn [index] (select-keys index allowed-pages))))))))))
+        (update-in [:file :data] (fn [data]
+                                   (let [allowed-pages (:pages slink)]
+                                     (-> data
+                                         (update :pages (fn [pages] (filterv #(contains? allowed-pages %) pages)))
+                                         (update :pages-index (fn [index] (select-keys index allowed-pages)))))))))))
+

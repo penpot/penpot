@@ -765,9 +765,14 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-            name   (name (gensym (str (tr "dashboard.new-file-prefix") " ")))
-            components-v2 (features/active-feature? state :components-v2)
-            params (assoc params :name name :components-v2 components-v2)]
+
+            name     (name (gensym (str (tr "dashboard.new-file-prefix") " ")))
+            features (cond-> #{}
+                       (features/active-feature? state :components-v2)
+                       (conj "components/v2"))
+            params   (-> params
+                         (assoc :name name)
+                         (assoc :features features))]
 
         (->> (rp/mutation! :create-file params)
              (rx/tap on-success)

@@ -9,7 +9,7 @@
 (defn instance-root?
   [shape]
   (some? (:component-id shape)))
- 
+
 (defn instance-of?
   [shape file-id component-id]
   (and (some? (:component-id shape))

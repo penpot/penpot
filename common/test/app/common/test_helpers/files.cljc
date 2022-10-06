@@ -6,16 +6,22 @@
 
 (ns app.common.test-helpers.files
   (:require
-    [app.common.geom.point :as gpt]
-    [app.common.types.components-list :as ctkl]
-    [app.common.types.colors-list :as ctcl]
-    [app.common.types.container :as ctn]
-    [app.common.types.file :as ctf]
-    [app.common.types.pages-list :as ctpl]
-    [app.common.types.shape :as cts]
-    [app.common.types.shape-tree :as ctst]
-    [app.common.types.typographies-list :as ctyl]
-    [app.common.uuid :as uuid]))
+   [app.common.files.features :as ffeat]
+   [app.common.geom.point :as gpt]
+   [app.common.types.colors-list :as ctcl]
+   [app.common.types.components-list :as ctkl]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
+   [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
+   [app.common.types.typographies-list :as ctyl]
+   [app.common.uuid :as uuid]))
+
+(defn- make-file-data
+  [file-id page-id]
+  (binding [ffeat/*current* #{"components/v2"}]
+    (ctf/make-file-data file-id page-id)))
 
 (def ^:private idmap (atom {}))
 
@@ -33,7 +39,7 @@
   ([file-id page-id props]
    (merge {:id file-id
            :name (get props :name "File1")
-           :data (ctf/make-file-data file-id page-id true)}
+           :data (make-file-data file-id page-id)}
           props)))
 
 (defn sample-shape
@@ -81,12 +87,12 @@
                               #(reduce (fn [page shape] (ctst/set-shape page shape))
                                        %
                                        updated-shapes))
-            (ctkl/add-component (:id component-shape)
-                                (:name component-shape)
-                                ""
-                                shape-id
-                                page-id
-                                component-shapes))))))
+            (ctkl/add-component {:id (:id component-shape)
+                                 :name (:name component-shape)
+                                 :path ""
+                                 :main-instance-id shape-id
+                                 :main-instance-page page-id
+                                 :shapes component-shapes}))))))
 
 (defn sample-instance
   [file label page-id library component-id]
