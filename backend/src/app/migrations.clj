@@ -247,6 +247,13 @@
 
    {:name "0079-mod-profile-table"
     :fn (mg/resource "app/migrations/sql/0079-mod-profile-table.sql")}
+
+   {:name "0080-mod-index-names"
+    :fn (mg/resource "app/migrations/sql/0080-mod-index-names.sql")}
+
+   {:name "0081-add-deleted-at-index-to-file-table"
+    :fn (mg/resource "app/migrations/sql/0081-add-deleted-at-index-to-file-table.sql")}
+
    ])
 
 
