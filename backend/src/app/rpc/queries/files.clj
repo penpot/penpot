@@ -227,29 +227,34 @@
             (d/index-by :object-id :data))))))
 
 (defn retrieve-file
-  [{:keys [pool] :as cfg} id components-v2]
+  [{:keys [pool] :as cfg} id features]
   (let [file (->> (db/get-by-id pool :file id)
                   (decode-row)
                   (pmg/migrate-file))]
 
-    (if components-v2
+    (if (contains? features "components/v2")
       (update file :data ctf/migrate-to-components-v2)
-      (if (get-in file [:data :options :components-v2])
+      (if (dm/get-in file [:data :options :components-v2])
         (ex/raise :type :restriction
                   :code :feature-disabled
-                  :hint "tried to open a components-v2 file with feature disabled")
+                  :hint "tried to open a components/v2 file with feature disabled")
         file))))
 
+(s/def ::features ::us/set-of-strings)
 (s/def ::file
   (s/keys :req-un [::profile-id ::id]
-          :opt-un [::components-v2]))
+          :opt-un [::features ::components-v2]))
 
 (sv/defmethod ::file
   "Retrieve a file by its ID. Only authenticated users."
-  [{:keys [pool] :as cfg} {:keys [profile-id id components-v2] :as params}]
-  (let [perms (get-permissions pool profile-id id)]
+  [{:keys [pool] :as cfg} {:keys [profile-id id features components-v2] :as params}]
+  (let [perms    (get-permissions pool profile-id id)
+
+        ;; BACKWARD COMPATIBILTY with the components-v2 parameter
+        features (cond-> (or features #{})
+                   components-v2 (conj features "components/v2"))]
     (check-read-permissions! perms)
-    (let [file   (retrieve-file cfg id components-v2)
+    (let [file   (retrieve-file cfg id features)
           thumbs (retrieve-object-thumbnails cfg id)]
       (-> file
           (assoc :thumbnails thumbs)
@@ -278,7 +283,7 @@
 (s/def ::page
   (s/and
    (s/keys :req-un [::profile-id ::file-id]
-           :opt-un [::page-id ::object-id ::components-v2])
+           :opt-un [::page-id ::object-id ::features ::components-v2])
    (fn [obj]
      (if (contains? obj :object-id)
        (contains? obj :page-id)
@@ -294,11 +299,15 @@
   mandatory.
 
   Mainly used for rendering purposes."
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id page-id object-id components-v2] :as props}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id page-id object-id features components-v2] :as props}]
   (check-read-permissions! pool profile-id file-id)
-  (let [file    (retrieve-file cfg file-id components-v2)
-        page-id (or page-id (-> file :data :pages first))
-        page    (get-in file [:data :pages-index page-id])]
+  (let [;; BACKWARD COMPATIBILTY with the components-v2 parameter
+        features (cond-> (or features #{})
+                   components-v2 (conj features "components/v2"))
+
+        file     (retrieve-file cfg file-id features)
+        page-id  (or page-id (-> file :data :pages first))
+        page     (dm/get-in file [:data :pages-index page-id])]
 
     (cond-> (prune-thumbnails page)
       (uuid? object-id)
@@ -384,14 +393,17 @@
 
 (s/def ::file-data-for-thumbnail
   (s/keys :req-un [::profile-id ::file-id]
-          :opt-un [::components-v2]))
+          :opt-un [::components-v2 ::features]))
 
 (sv/defmethod ::file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
   mainly for render thumbnails on dashboard."
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id components-v2] :as props}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id features components-v2] :as props}]
   (check-read-permissions! pool profile-id file-id)
-  (let [file (retrieve-file cfg file-id components-v2)]
+  (let [;; BACKWARD COMPATIBILTY with the components-v2 parameter
+        features (cond-> (or features #{})
+                   components-v2 (conj features "components/v2"))
+        file     (retrieve-file cfg file-id features)]
     {:file-id file-id
      :revn (:revn file)
      :page (get-file-thumbnail-data cfg file)}))
@@ -567,8 +579,9 @@
 ;; --- Helpers
 
 (defn decode-row
-  [{:keys [data changes] :as row}]
+  [{:keys [data changes features] :as row}]
   (when row
     (cond-> row
-      changes (assoc :changes (blob/decode changes))
-      data    (assoc :data (blob/decode data)))))
+      features (assoc :features (db/decode-pgarray features))
+      changes  (assoc :changes (blob/decode changes))
+      data     (assoc :data (blob/decode data)))))

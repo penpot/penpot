@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.features :as ffeat]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -50,10 +51,12 @@
 
 (defn with-objects
   [changes objects]
-  (let [file-data (-> (ctf/make-file-data (uuid/next) uuid/zero true)
-                      (assoc-in [:pages-index uuid/zero :objects] objects))]
-    (vary-meta changes assoc ::file-data file-data
-                             ::applied-changes-count 0)))
+  (let [fdata (binding [ffeat/*current* #{"components/v2"}]
+                (ctf/make-file-data (uuid/next) uuid/zero))
+        fdata (assoc-in fdata [:pages-index uuid/zero :objects] objects)]
+    (vary-meta changes assoc
+               ::file-data fdata
+               ::applied-changes-count 0)))
 
 (defn with-library-data
   [changes data]
@@ -268,7 +271,7 @@
               :page-id (::page-id (meta changes))
               :parent-id (:parent-id shape)
               :shapes [(:id shape)]
-              :index idx})))] 
+              :index idx})))]
 
      (-> changes
          (update :redo-changes conj set-parent-change)
@@ -592,7 +595,7 @@
                              :main-instance-page main-instance-page
                              :shapes new-shapes})
                       (into (map mk-change) updated-shapes))))
-        (update :undo-changes 
+        (update :undo-changes
                 (fn [undo-changes]
                   (-> undo-changes
                       (d/preconj {:type :del-component

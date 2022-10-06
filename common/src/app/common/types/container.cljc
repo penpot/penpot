@@ -6,6 +6,7 @@
 
 (ns app.common.types.container
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.spec :as us]
@@ -41,8 +42,8 @@
   (us/assert uuid? id)
 
   (-> (if (= type :page)
-        (get-in file [:pages-index id])
-        (get-in file [:components id]))
+        (dm/get-in file [:pages-index id])
+        (dm/get-in file [:components id]))
       (assoc :type type)))
 
 (defn get-shape

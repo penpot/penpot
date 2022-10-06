@@ -347,27 +347,12 @@
 ;; -- Components
 
 (defmethod process-change :add-component
-  [data {:keys [id name path main-instance-id main-instance-page shapes]}]
-  (ctkl/add-component data
-                      id
-                      name
-                      path
-                      main-instance-id
-                      main-instance-page
-                      shapes))
+  [data params]
+  (ctkl/add-component data params))
 
 (defmethod process-change :mod-component
-  [data {:keys [id name path objects]}]
-  (update-in data [:components id]
-             #(cond-> %
-                  (some? name)
-                  (assoc :name name)
-
-                  (some? path)
-                  (assoc :path path)
-
-                  (some? objects)
-                  (assoc :objects objects))))
+  [data params]
+  (ctkl/mod-component data params))
 
 (defmethod process-change :del-component
   [data {:keys [id skip-undelete?]}]

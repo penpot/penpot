@@ -72,4 +72,3 @@
     (doseq [f features-list]
       (when (not= f :components-v2)
         (toggle-feature! f)))))
-

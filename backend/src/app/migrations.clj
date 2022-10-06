@@ -254,6 +254,9 @@
    {:name "0081-add-deleted-at-index-to-file-table"
     :fn (mg/resource "app/migrations/sql/0081-add-deleted-at-index-to-file-table.sql")}
 
+   {:name "0082-add-features-column-to-file-table"
+    :fn (mg/resource "app/migrations/sql/0082-add-features-column-to-file-table.sql")}
+
    ])
 
 

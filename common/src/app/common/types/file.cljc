@@ -7,6 +7,8 @@
 (ns app.common.types.file
   (:require
     [app.common.data :as d]
+    [app.common.data.macros :as dm]
+    [app.common.files.features :as ffeat]
     [app.common.geom.point :as gpt]
     [app.common.geom.shapes :as gsh]
     [app.common.pages.common :refer [file-version]]
@@ -65,16 +67,16 @@
    :pages-index {}})
 
 (defn make-file-data
-  ([file-id components-v2]
-   (make-file-data file-id (uuid/next) components-v2))
+  ([file-id]
+   (make-file-data file-id (uuid/next)))
 
-  ([file-id page-id components-v2]
+  ([file-id page-id]
    (let [page (ctp/make-empty-page page-id "Page-1")]
      (cond-> (-> empty-file-data
                  (assoc :id file-id)
                  (ctpl/add-page page))
 
-       components-v2
+       (contains? ffeat/*current* "components/v2")
        (assoc-in [:options :components-v2] true)))))
 
 ;; Helpers
@@ -108,7 +110,7 @@
   ([libraries component-id]
    (some #(ctkl/get-component (:data %) component-id) (vals libraries)))
   ([libraries library-id component-id]
-   (ctkl/get-component (get-in libraries [library-id :data]) component-id)))
+   (ctkl/get-component (dm/get-in libraries [library-id :data]) component-id)))
 
 (defn delete-component
   "Delete a component and store it to be able to be recovered later.
@@ -118,7 +120,7 @@
    (delete-component file-data component-id false))
 
   ([file-data component-id skip-undelete?]
-   (let [components-v2 (get-in file-data [:options :components-v2])
+   (let [components-v2 (dm/get-in file-data [:options :components-v2])
 
          add-to-deleted-components
          (fn [file-data]
@@ -144,12 +146,12 @@
 (defn get-deleted-component
   "Retrieve a component that has been deleted but still is in the safe store."
   [file-data component-id]
-  (get-in file-data [:deleted-components component-id]))
+  (dm/get-in file-data [:deleted-components component-id]))
 
 (defn restore-component
   "Recover a deleted component and put it again in place."
   [file-data component-id]
-  (let [component (-> (get-in file-data [:deleted-components component-id])
+  (let [component (-> (dm/get-in file-data [:deleted-components component-id])
                       (dissoc :main-instance-x :main-instance-y))]
     (cond-> file-data
       (some? component)
@@ -242,7 +244,7 @@
   [file-data]
   (let [components (ctkl/components-seq file-data)]
     (if (or (empty? components)
-            (get-in file-data [:options :components-v2]))
+            (dm/get-in file-data [:options :components-v2]))
       (assoc-in file-data [:options :components-v2] true)
       (let [grid-gap 50
 
@@ -342,12 +344,12 @@
                 copy-component
                 (fn [file-data]
                   (ctkl/add-component file-data
-                                      (:id component)
-                                      (:name component)
-                                      (:path component)
-                                      (:id main-instance-shape)
-                                      page-id
-                                      (vals (:objects component))))
+                                      {:id (:id component)
+                                       :name (:name component)
+                                       :path (:path component)
+                                       :main-instance-id (:id main-instance-shape)
+                                       :main-instance-page page-id
+                                       :shapes (vals (:objects component))}))
 
                 ; Change all existing instances to point to the local file
                 remap-instances
@@ -500,10 +502,10 @@
                        component-file    (when component-file-id (get libraries component-file-id nil))
                        component         (when component-id
                                            (if component-file
-                                             (get-in component-file [:data :components component-id])
+                                             (dm/get-in component-file [:data :components component-id])
                                              (get components component-id)))
                        component-shape   (when (and component (:shape-ref shape))
-                                           (get-in component [:objects (:shape-ref shape)]))]
+                                           (dm/get-in component [:objects (:shape-ref shape)]))]
                    (str/format " %s--> %s%s%s"
                                (cond (:component-root? shape) "#"
                                      (:component-id shape) "@"
@@ -518,7 +520,7 @@
                                        component-file-id (:component-file shape)
                                        component-file    (when component-file-id (get libraries component-file-id nil))
                                        component         (if component-file
-                                                           (get-in component-file [:data :components component-id])
+                                                           (dm/get-in component-file [:data :components component-id])
                                                            (get components component-id))]
                                    (str/format " (%s%s)"
                                                (when component-file (str/format "<%s> " (:name component-file)))

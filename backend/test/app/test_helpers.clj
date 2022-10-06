@@ -148,38 +148,41 @@
 (defn create-profile*
   ([i] (create-profile* *pool* i {}))
   ([i params] (create-profile* *pool* i params))
-  ([conn i params]
+  ([pool i params]
    (let [params (merge {:id (mk-uuid "profile" i)
                         :fullname (str "Profile " i)
                         :email (str "profile" i ".test@nodomain.com")
                         :password "123123"
                         :is-demo false}
                        params)]
-     (->> params
-          (cmd.auth/create-profile conn)
-          (cmd.auth/create-profile-relations conn)))))
+     (with-open [conn (db/open pool)]
+       (->> params
+            (cmd.auth/create-profile conn)
+            (cmd.auth/create-profile-relations conn))))))
 
 (defn create-project*
   ([i params] (create-project* *pool* i params))
-  ([conn i {:keys [profile-id team-id] :as params}]
+  ([pool i {:keys [profile-id team-id] :as params}]
    (us/assert uuid? profile-id)
    (us/assert uuid? team-id)
-   (->> (merge {:id (mk-uuid "project" i)
-                :name (str "project" i)}
-               params)
-        (#'projects/create-project conn))))
+   (with-open [conn (db/open pool)]
+     (->> (merge {:id (mk-uuid "project" i)
+                  :name (str "project" i)}
+                 params)
+          (#'projects/create-project conn)))))
 
 (defn create-file*
   ([i params]
    (create-file* *pool* i params))
-  ([conn i {:keys [profile-id project-id] :as params}]
+  ([pool i {:keys [profile-id project-id] :as params}]
    (us/assert uuid? profile-id)
    (us/assert uuid? project-id)
-   (#'files/create-file conn
-                        (merge {:id (mk-uuid "file" i)
-                                :name (str "file" i)
-                                :components-v2 true}
-                               params))))
+   (with-open [conn (db/open pool)]
+     (#'files/create-file conn
+                          (merge {:id (mk-uuid "file" i)
+                                  :name (str "file" i)
+                                  :components-v2 true}
+                                 params)))))
 
 (defn mark-file-deleted*
   ([params] (mark-file-deleted* *pool* params))
@@ -188,85 +191,95 @@
 
 (defn create-team*
   ([i params] (create-team* *pool* i params))
-  ([conn i {:keys [profile-id] :as params}]
+  ([pool i {:keys [profile-id] :as params}]
    (us/assert uuid? profile-id)
-   (let [id   (mk-uuid "team" i)]
-     (teams/create-team conn {:id id
-                              :profile-id profile-id
-                              :name (str "team" i)}))))
+   (with-open [conn (db/open pool)]
+     (let [id   (mk-uuid "team" i)]
+       (teams/create-team conn {:id id
+                                :profile-id profile-id
+                                :name (str "team" i)})))))
 
 (defn create-file-media-object*
   ([params] (create-file-media-object* *pool* params))
-  ([conn {:keys [name width height mtype file-id is-local media-id]
+  ([pool {:keys [name width height mtype file-id is-local media-id]
           :or {name "sample" width 100 height 100 mtype "image/svg+xml" is-local true}}]
-   (db/insert! conn :file-media-object
-               {:id (uuid/next)
-                :file-id file-id
-                :is-local is-local
-                :name name
-                :media-id media-id
-                :width  width
-                :height height
-                :mtype  mtype})))
+
+   (with-open [conn (db/open pool)]
+     (db/insert! conn :file-media-object
+                 {:id (uuid/next)
+                  :file-id file-id
+                  :is-local is-local
+                  :name name
+                  :media-id media-id
+                  :width  width
+                  :height height
+                  :mtype  mtype}))))
 
 (defn link-file-to-library*
   ([params] (link-file-to-library* *pool* params))
-  ([conn {:keys [file-id library-id] :as params}]
-   (#'files/link-file-to-library conn {:file-id file-id :library-id library-id})))
+  ([pool {:keys [file-id library-id] :as params}]
+   (with-open [conn (db/open pool)]
+     (#'files/link-file-to-library conn {:file-id file-id :library-id library-id}))))
 
 (defn create-complaint-for
-  [conn {:keys [id created-at type]}]
-  (db/insert! conn :profile-complaint-report
-              {:profile-id id
-               :created-at (or created-at (dt/now))
-               :type (name type)
-               :content (db/tjson {})}))
+  [pool {:keys [id created-at type]}]
+  (with-open [conn (db/open pool)]
+    (db/insert! conn :profile-complaint-report
+                {:profile-id id
+                 :created-at (or created-at (dt/now))
+                 :type (name type)
+                 :content (db/tjson {})})))
 
 (defn create-global-complaint-for
-  [conn {:keys [email type created-at]}]
-  (db/insert! conn :global-complaint-report
-              {:email email
-               :type (name type)
-               :created-at (or created-at (dt/now))
-               :content (db/tjson {})}))
+  [pool {:keys [email type created-at]}]
+  (with-open [conn (db/open pool)]
+    (db/insert! conn :global-complaint-report
+                {:email email
+                 :type (name type)
+                 :created-at (or created-at (dt/now))
+                 :content (db/tjson {})})))
 
 (defn create-team-role*
   ([params] (create-team-role* *pool* params))
-  ([conn {:keys [team-id profile-id role] :or {role :owner}}]
-   (#'teams/create-team-role conn {:team-id team-id
-                                  :profile-id profile-id
-                                  :role role})))
+  ([pool {:keys [team-id profile-id role] :or {role :owner}}]
+   (with-open [conn (db/open pool)]
+     (#'teams/create-team-role conn {:team-id team-id
+                                     :profile-id profile-id
+                                     :role role}))))
 
 (defn create-project-role*
   ([params] (create-project-role* *pool* params))
-  ([conn {:keys [project-id profile-id role] :or {role :owner}}]
-   (#'projects/create-project-role conn {:project-id project-id
-                                         :profile-id profile-id
-                                         :role role})))
+  ([pool {:keys [project-id profile-id role] :or {role :owner}}]
+   (with-open [conn (db/open pool)]
+     (#'projects/create-project-role conn {:project-id project-id
+                                           :profile-id profile-id
+                                           :role role}))))
 
 (defn create-file-role*
   ([params] (create-file-role* *pool* params))
-  ([conn {:keys [file-id profile-id role] :or {role :owner}}]
-   (#'files/create-file-role conn {:file-id file-id
-                                   :profile-id profile-id
-                                   :role role})))
+  ([pool {:keys [file-id profile-id role] :or {role :owner}}]
+   (with-open [conn (db/open pool)]
+     (#'files/create-file-role conn {:file-id file-id
+                                     :profile-id profile-id
+                                     :role role}))))
 
 (defn update-file*
   ([params] (update-file* *pool* params))
-  ([conn {:keys [file-id changes session-id profile-id revn]
+  ([pool {:keys [file-id changes session-id profile-id revn]
           :or {session-id (uuid/next) revn 0}}]
-   (let [file    (db/get-by-id conn :file file-id)
-         msgbus  (:app.msgbus/msgbus *system*)
-         metrics (:app.metrics/metrics *system*)]
-     (#'files/update-file {:conn conn
-                           :msgbus msgbus
-                           :metrics metrics}
-                          {:file file
-                           :revn revn
-                           :components-v2 true
-                           :changes changes
-                           :session-id session-id
-                           :profile-id profile-id}))))
+   (with-open [conn (db/open pool)]
+     (let [file    (db/get-by-id conn :file file-id)
+           msgbus  (:app.msgbus/msgbus *system*)
+           metrics (:app.metrics/metrics *system*)]
+       (#'files/update-file {:conn conn
+                             :msgbus msgbus
+                             :metrics metrics}
+                            {:file file
+                             :revn revn
+                             :components-v2 true
+                             :changes changes
+                             :session-id session-id
+                             :profile-id profile-id})))))
 
 ;; --- RPC HELPERS
 
