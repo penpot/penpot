@@ -36,7 +36,7 @@
       [:div.animated {:class @klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.15-nested-boards.gif" :border "0" :alt "Dashboard refreshed look & feel"}]]
+         [:img {:src "images/features/1.16-dashboard.gif" :border "0" :alt "Dashboard refreshed look & feel"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Dashboard refreshed look & feel"]]
@@ -55,7 +55,7 @@
       [:div.animated {:class @klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.15-share.gif" :border "0" :alt "Libraries & templates module"}]]
+         [:img {:src "images/features/1.16-slider.gif" :border "0" :alt "Libraries & templates module"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Libraries & templates module"]]
@@ -73,7 +73,7 @@
       [:div.animated {:class @klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.15-comments.gif" :border "0" :alt "Improved onboarding"}]]
+         [:img {:src "images/features/1.16-onboarding.gif" :border "0" :alt "Improved onboarding"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Improved onboarding"]]
@@ -92,7 +92,7 @@
       [:div.animated {:class @klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.15-view-mode.gif" :border "0" :alt "Zoom to shape with double click"}]]
+         [:img {:src "images/features/1.16-click-zoom.gif" :border "0" :alt "Zoom to shape with double click"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Zoom to shape with double click"]]
