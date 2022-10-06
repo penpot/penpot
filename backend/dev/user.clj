@@ -13,8 +13,11 @@
    [app.common.perf :as perf]
    [app.common.pprint :as pp]
    [app.common.transit :as t]
+   [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main :as main]
+   [app.srepl.helpers]
+   [app.srepl.main :as srepl]
    [app.srepl.main :as srepl]
    [app.util.blob :as blob]
    [app.util.fressian :as fres]
@@ -30,6 +33,7 @@
    [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
+   [criterium.core  :as crit]
    [datoteka.core]
    [integrant.core :as ig]))
 
@@ -42,19 +46,19 @@
 
 (defmacro run-quick-bench
   [& exprs]
-  `(with-progress-reporting (quick-bench (do ~@exprs) :verbose)))
+  `(crit/with-progress-reporting (crit/quick-bench (do ~@exprs) :verbose)))
 
 (defmacro run-quick-bench'
   [& exprs]
-  `(quick-bench (do ~@exprs)))
+  `(crit/quick-bench (do ~@exprs)))
 
 (defmacro run-bench
   [& exprs]
-  `(with-progress-reporting (bench (do ~@exprs) :verbose)))
+  `(crit/with-progress-reporting (crit/bench (do ~@exprs) :verbose)))
 
 (defmacro run-bench'
   [& exprs]
-  `(bench (do ~@exprs)))
+  `(crit/bench (do ~@exprs)))
 
 ;; --- Development Stuff
 
@@ -100,12 +104,20 @@
 
 (defn compression-bench
   [data]
-  (let [humanize (fn [v] (hum/filesize v :binary true :format " %.4f "))]
+  (let [humanize (fn [v] (hum/filesize v :binary true :format " %.4f "))
+        v1 (time (humanize (alength (blob/encode data {:version 1}))))
+        v3 (time (humanize (alength (blob/encode data {:version 3}))))
+        v4 (time (humanize (alength (blob/encode data {:version 4}))))
+        v5 (time (humanize (alength (blob/encode data {:version 5}))))
+        v6 (time (humanize (alength (blob/encode data {:version 6}))))
+        ]
     (print-table
-     [{:v1 (humanize (alength (blob/encode data {:version 1})))
-       :v2 (humanize (alength (blob/encode data {:version 2})))
-       :v3 (humanize (alength (blob/encode data {:version 3})))
-       :v4 (humanize (alength (blob/encode data {:version 4})))
+     [{
+       :v1 v1
+       :v3 v3
+       :v4 v4
+       :v5 v5
+       :v6 v6
        }])))
 
 (defonce debug-tap
