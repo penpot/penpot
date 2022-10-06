@@ -8,6 +8,7 @@
   (:require
    [app.common.media :as cm]
    [app.main.data.fonts :as df]
+   [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -87,7 +88,8 @@
                 (rx/subs (fn [result]
                            (swap! fonts df/merge-and-group-fonts installed-fonts result))
                          (fn [error]
-                           (js/console.error "error" error))))))
+                           (js/console.error "error" error)
+                           (st/emit! (dm/error (tr "errors.bad-font"))))))))
 
         on-upload
         (mf/use-callback

@@ -11,6 +11,7 @@
 - Fix shortcut texts alignment [Taiga #4275](https://tree.taiga.io/project/penpot/issue/4275)
 - Fix some texts and a typo [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
 - Fix twitter support account link [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4279)
+- Fix custom font upload fails silently for unsupported formats [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4280)
 
 
 ### :arrow_up: Deps updates

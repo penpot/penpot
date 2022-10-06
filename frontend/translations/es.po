@@ -4771,3 +4771,6 @@ msgstr "Pulsar para cerrar la ruta"
 
 msgid "errors.profile-blocked"
 msgstr "El perfil esta blockeado"
+
+msgid "errors.bad-font"
+msgstr "No se ha podido cargar la fuente"
