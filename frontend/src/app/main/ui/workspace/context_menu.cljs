@@ -13,6 +13,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
+   [app.common.uuid :as uuid]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -214,7 +215,7 @@
         single?   (= (count shapes) 1)
         do-create-artboard-from-selection #(st/emit! (dw/create-artboard-from-selection))
 
-        has-frame? (->> shapes (d/seek cph/frame-shape?))
+        has-nested-frame? (->> shapes (d/seek #(and (cph/frame-shape? %) (not= (:frame-id %) uuid/zero))))
         has-group? (->> shapes (d/seek cph/group-shape?))
         has-bool? (->> shapes (d/seek cph/bool-shape?))
         has-mask? (->> shapes (d/seek :masked-group?))
@@ -228,7 +229,7 @@
         do-unmask-group #(st/emit! dw/unmask-group)]
 
     [:*
-     (when (or has-bool? has-group? has-mask? has-frame?)
+     (when (or has-bool? has-group? has-mask? has-nested-frame?)
        [:& menu-entry {:title (tr "workspace.shape.menu.ungroup")
                        :shortcut (sc/get-tooltip :ungroup)
                        :on-click do-remove-group}])

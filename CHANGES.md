@@ -50,6 +50,10 @@
 
 ## 1.15.5-beta
 
+### :bug: Bugs fixed
+
+- Fix ungroup is available for single board & removes the board [Taiga #4246](https://tree.taiga.io/project/penpot/issue/4246)
+
 ## 1.15.4-beta
 
 ### :bug: Bugs fixed

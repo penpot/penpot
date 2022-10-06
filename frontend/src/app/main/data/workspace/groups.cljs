@@ -12,6 +12,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -171,7 +172,7 @@
                   (or (cph/group-shape? shape) (cph/bool-shape? shape))
                   (remove-group-changes it page-id shape objects)
 
-                  (cph/frame-shape? shape)
+                  (and (cph/frame-shape? shape) (not= (:frame-id shape) uuid/zero))
                   (remove-frame-changes it page-id shape objects))))
 
             changes-list (sequence
