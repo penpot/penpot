@@ -1,8 +1,5 @@
 # CHANGELOG
 
-## 1.15.5-beta
-
-
 ## 1.15.4-beta
 
 ### :bug: Bugs fixed
