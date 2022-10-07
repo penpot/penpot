@@ -288,7 +288,7 @@
   ;; (js/console.log "main-shape" (clj->js main-shape))
   ;; (js/console.log "copy-shape" (clj->js copy-shape))
   (if (ctk/touched-group? copy-shape :geometry-group)
-    (gmt/matrix)
+    {}
     (let [main-shape  (reposition-shape main-shape main-root copy-root)
 
           translation (gpt/subtract (gsh/orig-pos main-shape)
@@ -299,41 +299,129 @@
           mult-h      (/ (gsh/height main-shape) (gsh/height copy-shape))
           resize      (gpt/point mult-w mult-h)]
 
-      (cond-> (gmt/matrix)
+      (cond-> {}
         (not (gpt/almost-zero? translation))
-        (gmt/multiply (gmt/translate-matrix translation))
+        (assoc :displacement (gmt/translate-matrix translation))
 
-        (not (gpt/almost-zero? resize))
-        (gmt/multiply (gmt/scale-matrix resize center))))))
+        (not (gpt/close? resize (gpt/point 1 1)))
+        (assoc :resize-vector resize
+               :resize-origin center)))))
 
-(defn- add-copies-transforms
-  "Add transform to all necessary shapes inside the copies"
-  [copies objects modifiers transforms]
+;; (defn- sync-shape
+;;   [main-shape copy-shape copy-root main-root]
+;;   ;; (js/console.log "+++")
+;;   ;; (js/console.log "main-shape" (clj->js main-shape))
+;;   ;; (js/console.log "copy-shape" (clj->js copy-shape))
+;;   (if (ctk/touched-group? copy-shape :geometry-group)
+;;     (gmt/matrix)
+;;     (let [main-shape  (reposition-shape main-shape main-root copy-root)
+;;
+;;           translation (gpt/subtract (gsh/orig-pos main-shape)
+;;                                     (gsh/orig-pos copy-shape))
+;;
+;;           center      (gsh/orig-pos copy-shape)
+;;           mult-w      (/ (gsh/width main-shape) (gsh/width copy-shape))
+;;           mult-h      (/ (gsh/height main-shape) (gsh/height copy-shape))
+;;           resize      (gpt/point mult-w mult-h)]
+;;
+;;       (cond-> (gmt/matrix)
+;;         (not (gpt/almost-zero? translation))
+;;         (gmt/multiply (gmt/translate-matrix translation))
+;;
+;;         (not (gpt/almost-zero? resize))
+;;         (gmt/multiply (gmt/scale-matrix resize center))))))
+
+(defn- process-text-modifiers
+  "For texts we only use the displacement because resize
+  needs to recalculate the text layout"
+  [shape modifiers]
+  (cond-> modifiers
+    (= :text (:type shape))
+    (select-keys [:displacement :rotation])))
+
+(defn- add-copies-modifiers
+  "Add modifiers to all necessary shapes inside the copies"
+  [copies objects modifiers]
   ;; (js/console.log "copies" (clj->js copies))
-  (letfn [(add-copy-transforms-one [transforms copy-shape copy-root main-root main-shapes main-shapes-modif]
-            (update transforms (:id copy-shape)
-                    (fn [transform]
-                      (let [transform (or transform (gmt/matrix))
-                            main-shape-modif (d/seek #(ctk/is-main-of? % copy-shape) main-shapes-modif)]
-                        (gmt/multiply transform (sync-shape main-shape-modif copy-shape copy-root main-root))))))
+  (letfn [(add-copy-modifiers-one [modifiers copy-shape copy-root main-root main-shapes main-shapes-modif]
+            (assert (not (contains? modifiers (:id copy-shape))) "Si peta esto, we have a problem")
+            (let [main-shape-modif (d/seek #(ctk/is-main-of? % copy-shape) main-shapes-modif)
+                  ;; copy-shape       (cond-> copy-shape
+                  ;;                    (some? (:transform-inverse copy-shape))
+                  ;;                    (gsh/apply-transform (:transform-inverse copy-shape)))
+                  modifier         (cond-> (sync-shape main-shape-modif copy-shape copy-root main-root)
+                                     (some? (:rotation (get-in modifiers [(:id main-shape-modif) :modifiers])))
+                                     (assoc :rotation (:rotation (get-in modifiers [(:id main-shape-modif) :modifiers])))
+                                     )]
+              (if (seq modifier)
+                (assoc-in modifiers [(:id copy-shape) :modifiers] modifier)
+                modifiers)))
 
-          (add-copy-transforms [transforms copy-root main-root main-shapes main-shapes-modif]
+          ;; $$$
+          ;; (add-copy-modifiers-one [modifiers copy-shape copy-root main-root main-shapes main-shapes-modif]
+          ;;   (update modifiers (:id copy-shape)
+          ;;           (fn [modifier]
+          ;;             (let [modifier (or modifier (gmt/matrix))
+          ;;                   main-shape-modif (d/seek #(ctk/is-main-of? % copy-shape) main-shapes-modif)]
+          ;;               (gmt/multiply modifier (sync-shape main-shape-modif copy-shape copy-root main-root))))))
+
+          (add-copy-modifiers [modifiers copy-root main-root main-shapes main-shapes-modif]
             (let [copy-shapes (into [copy-root] (cph/get-children objects (:id copy-root)))]
-              (reduce #(add-copy-transforms-one %1 %2 copy-root main-root main-shapes main-shapes-modif)
-                      transforms
+              (reduce #(add-copy-modifiers-one %1 %2 copy-root main-root main-shapes main-shapes-modif)
+                      modifiers
                       copy-shapes)))
 
-          (add-copies-transforms-one [transforms [main-root copy-roots]]
+          (add-copies-modifiers-one [modifiers [main-root copy-roots]]
             (let [main-shapes       (into [main-root] (cph/get-children objects (:id main-root)))
-                  main-shapes-modif (map #(gsh/apply-modifiers % (get-in modifiers [(:id %) :modifiers]))
+                  main-shapes-modif (map (fn [shape]
+                                           (let [; shape (cond-> shape 
+                                                 ;         (some? (:transform-inverse shape))
+                                                 ;         (gsh/apply-transform (:transform-inverse shape)))
+                                                 ]
+                                                 (->> (get-in modifiers [(:id shape) :modifiers])
+                                                      (process-text-modifiers shape)
+                                                      (gsh/apply-modifiers shape))))
                                          main-shapes)]
-              (reduce #(add-copy-transforms %1 %2 main-root main-shapes main-shapes-modif)
-                      transforms
+              (reduce #(add-copy-modifiers %1 %2 main-root main-shapes main-shapes-modif)
+                      modifiers
                       copy-roots)))]
 
-    (reduce add-copies-transforms-one
-            transforms
+    (reduce add-copies-modifiers-one
+            modifiers
             (vals copies))))
+
+;; $$$
+;; (defn- add-copies-transforms
+;;   "Add transform to all necessary shapes inside the copies"
+;;   [copies objects modifiers transforms]
+;;   ;; (js/console.log "copies" (clj->js copies))
+;;   (letfn [(add-copy-transforms-one [transforms copy-shape copy-root main-root main-shapes main-shapes-modif]
+;;             (update transforms (:id copy-shape)
+;;                     (fn [transform]
+;;                       (let [transform (or transform (gmt/matrix))
+;;                             main-shape-modif (d/seek #(ctk/is-main-of? % copy-shape) main-shapes-modif)]
+;;                         (gmt/multiply transform (sync-shape main-shape-modif copy-shape copy-root main-root))))))
+;;
+;;           (add-copy-transforms [transforms copy-root main-root main-shapes main-shapes-modif]
+;;             (let [copy-shapes (into [copy-root] (cph/get-children objects (:id copy-root)))]
+;;               (reduce #(add-copy-transforms-one %1 %2 copy-root main-root main-shapes main-shapes-modif)
+;;                       transforms
+;;                       copy-shapes)))
+;;
+;;           (add-copies-transforms-one [transforms [main-root copy-roots]]
+;;             (let [main-shapes       (into [main-root] (cph/get-children objects (:id main-root)))
+;;                   main-shapes-modif (map (fn [shape]
+;;                                            (->> (get-in modifiers [(:id shape) :modifiers])
+;;                                                 (process-text-modifiers shape)
+;;                                                 (gsh/apply-modifiers shape)))
+;;                                          main-shapes)]
+;;               (reduce #(add-copy-transforms %1 %2 main-root main-shapes main-shapes-modif)
+;;                       transforms
+;;                       copy-roots)))]
+;;
+;;     (reduce add-copies-transforms-one
+;;             transforms
+;;             (vals copies))))
 
 ;; (defn get-copy-shapes
 ;;   "If one or more of the shapes belongs to a component's main instance, find all copies of
@@ -353,12 +441,33 @@
 (defn use-dynamic-modifiers
   [objects node modifiers]
 
-  (let [transforms
+  (let [prev-shapes (mf/use-var nil)
+        prev-modifiers (mf/use-var nil)
+        prev-transforms (mf/use-var nil)
+
+        copies
+        (mf/use-memo   ; TODO: ojo estas deps hay que revisarlas
+          (mf/deps modifiers (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)))
+          (fn []
+            (let [shapes (->> (keys modifiers)
+                              (mapv (d/getf objects)))]
+              (get-copies shapes objects modifiers))))
+
+        modifiers
+        (mf/use-memo
+          (mf/deps objects modifiers copies)
+          (fn []
+            (js/console.log "==================")
+            (js/console.log "modifiers (antes)" (clj->js modifiers))
+            (js/console.log "copies" (clj->js copies))
+            (add-copies-modifiers copies objects modifiers)))
+
+        transforms
         (mf/use-memo
          (mf/deps modifiers)
          (fn []
            (when (some? modifiers)
-             ;; (js/console.log "-----------------")
+             (js/console.log "modifiers (después)" (clj->js modifiers))
              (d/mapm (fn [id {modifiers :modifiers}]
                        (let [shape (get objects id)
                              center (gsh/center-shape shape)
@@ -374,25 +483,17 @@
         (mf/use-memo
          (mf/deps transforms)
          (fn []
+           (js/console.log "transforms" (clj->js transforms))
            (->> (keys transforms)
-                (mapv (d/getf objects)))))
+                (map (d/getf objects)))))
 
-        prev-shapes (mf/use-var nil)
-        prev-modifiers (mf/use-var nil)
-        prev-transforms (mf/use-var nil)
-
-        copies
-        (mf/use-memo   ; TODO: ojo estas deps hay que revisarlas
-          (mf/deps modifiers (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)))
-          (fn []
-            (get-copies shapes objects modifiers)))
-
-        transforms
-        (mf/use-memo
-          (mf/deps objects modifiers transforms copies)
-          (fn []
-            ;; (js/console.log "modifiers" (clj->js modifiers))
-            (add-copies-transforms copies objects modifiers transforms)))
+        ;; $$$
+        ;; transforms
+        ;; (mf/use-memo
+        ;;   (mf/deps objects modifiers transforms copies)
+        ;;   (fn []
+        ;;     ;; (js/console.log "modifiers" (clj->js modifiers))
+        ;;     (add-copies-transforms copies objects modifiers transforms)))
 
         ;; copy-shapes
         ;; (mf/use-memo
@@ -569,13 +670,7 @@
             ;;   (reduce #(assoc %1 (:id (second %2)) (get-copy-transform %2))
             ;;           transforms
             ;;           copy-shapes))))
-
-        shapes
-        (mf/use-memo
-          (mf/deps transforms)
-          (fn []
-            (js/console.log "transforms" (clj->js transforms))
-            (map #(get objects %) (keys transforms))))]
+        ]
 
     (mf/use-layout-effect
      (mf/deps transforms)
