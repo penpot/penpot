@@ -76,9 +76,9 @@
 
        [:*
         #_[:div.modal-wrapper
-           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
-           #_[:& app.main.ui.onboarding/onboarding-modal]
-           #_[:& app.main.ui.onboarding/onboarding-team-modal]]
+         #_[:& app.main.ui.onboarding/onboarding-templates-modal]
+         #_[:& app.main.ui.onboarding/onboarding-modal]
+         #_[:& app.main.ui.onboarding/onboarding-team-modal]]
         (when-let [props (some-> profile (get :props {}))]
           (cond
             (and cf/onboarding-form-id

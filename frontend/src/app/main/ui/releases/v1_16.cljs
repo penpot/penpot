@@ -60,7 +60,8 @@
          [:div.modal-title
           [:h2 "Libraries & templates module"]]
          [:div.modal-content
-          [:p "This new module will allow you to import a curated selection of the files that are available at the Libraries & Templates page directly from your projects dashboard so you no longer need to to download most of them to the computer before importing."]]
+          [:p "This new module will allow you to import a curated selection of the files that are available at the Libraries & Templates page directly from your projects dashboard."] 
+          [:p "You no longer need to to download most of them to the computer before importing."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
