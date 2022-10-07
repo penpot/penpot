@@ -15,9 +15,11 @@
    [app.common.pages.helpers :as cph] ; TODO: move this to ctst
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
+   [app.util.timers :as tm]
    [rumext.v2 :as mf]))
 
 (defn- transform-no-resize
@@ -344,7 +346,7 @@
   [copies objects modifiers]
   ;; (js/console.log "copies" (clj->js copies))
   (letfn [(add-copy-modifiers-one [modifiers copy-shape copy-root main-root main-shapes main-shapes-modif]
-            (assert (not (contains? modifiers (:id copy-shape))) "Si peta esto, we have a problem")
+            ;; (assert (not (contains? modifiers (:id copy-shape))) "Si peta esto, we have a problem")
             (let [main-shape-modif (d/seek #(ctk/is-main-of? % copy-shape) main-shapes-modif)
                   ;; copy-shape       (cond-> copy-shape
                   ;;                    (some? (:transform-inverse copy-shape))
@@ -444,30 +446,41 @@
   (let [prev-shapes (mf/use-var nil)
         prev-modifiers (mf/use-var nil)
         prev-transforms (mf/use-var nil)
+        unflag (mf/use-var false)
 
         copies
         (mf/use-memo   ; TODO: ojo estas deps hay que revisarlas
-          (mf/deps modifiers (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)))
+          (mf/deps modifiers (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)) @unflag)
           (fn []
-            (let [shapes (->> (keys modifiers)
-                              (mapv (d/getf objects)))]
-              (get-copies shapes objects modifiers))))
+            (when-not @unflag
+              (let [shapes (->> (keys modifiers)
+                                (mapv (d/getf objects)))]
+                (get-copies shapes objects modifiers)))))
 
         modifiers
         (mf/use-memo
-          (mf/deps objects modifiers copies)
+          (mf/deps objects modifiers copies @unflag)
           (fn []
-            (js/console.log "==================")
-            (js/console.log "modifiers (antes)" (clj->js modifiers))
-            (js/console.log "copies" (clj->js copies))
-            (add-copies-modifiers copies objects modifiers)))
+            (if @unflag
+              (do
+                (reset! unflag false)
+                modifiers)
+              (let [new-modifiers (add-copies-modifiers copies objects modifiers)]
+                (js/console.log "==================")
+                (js/console.log "modifiers (antes)" (clj->js modifiers))
+                (js/console.log "copies" (clj->js copies))
+                (js/console.log "modifiers (después)" (clj->js new-modifiers))
+                (reset! unflag true)
+                (when (seq new-modifiers)
+                  (tm/schedule #(st/emit! (dwt/set-modifiers-raw new-modifiers))))
+                new-modifiers))))
 
         transforms
         (mf/use-memo
          (mf/deps modifiers)
          (fn []
-           (when (some? modifiers)
-             (js/console.log "modifiers (después)" (clj->js modifiers))
+           (js/console.log "****modifiers" (clj->js modifiers))
+           (when (seq modifiers)
              (d/mapm (fn [id {modifiers :modifiers}]
                        (let [shape (get objects id)
                              center (gsh/center-shape shape)

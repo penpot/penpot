@@ -142,6 +142,13 @@
 
          (update state :workspace-modifiers merge modif-tree))))))
 
+(defn set-modifiers-raw
+  [modifiers]
+  (ptk/reify ::set-modifiers-raw
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-modifiers merge modifiers))))
+
 ;; Rotation use different algorithm to calculate children modifiers (and do not use child constraints).
 (defn- set-rotation-modifiers
   ([angle shapes]
