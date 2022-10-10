@@ -109,6 +109,10 @@
             (when-not (check-password profile password)
               (ex/raise :type :validation
                         :code :wrong-credentials))
+            (when-let [deleted-at (:deleted-at profile)]
+              (when (dt/is-after? (dt/now) deleted-at)
+                (ex/raise :type :validation
+                          :code :wrong-credentials)))
 
             profile)]
 
