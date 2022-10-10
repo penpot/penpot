@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-28 21:15+0000\n"
-"Last-Translator: Amine Gdoura <amine2gdoura@gmail.com>\n"
-"Language-Team: Arabic "
-"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
+"PO-Revision-Date: 2022-10-04 18:22+0000\n"
+"Last-Translator: Youkho <youkho@gmail.com>\n"
+"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
+"ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -312,7 +312,7 @@ msgstr "استيراد ملفات"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "قم بدعوة فريق"
+msgstr "قم بدعوة للفريق"
 
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
@@ -1106,9 +1106,9 @@ msgstr "عفواً!"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
-msgstr[0] "0"
-msgstr[1] "1"
-msgstr[2] "2"
+msgstr[0] "0 ملف"
+msgstr[1] "ملف"
+msgstr[2] "ملفين"
 msgstr[3] "قليل"
 msgstr[4] "كثير"
 msgstr[5] "غير ذلك"
@@ -2059,7 +2059,13 @@ msgstr "تصدير"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "تصدير الشكل"
+msgid_plural ""
+msgstr[0] "تصدير 0 عنصر"
+msgstr[1] "تصدير عنصر واحد"
+msgstr[2] "تصدير عنصرين"
+msgstr[3] "تصدير عناصر"
+msgstr[4] "تصدير عنصر"
+msgstr[5] "تصدير عنصر"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -2183,3 +2189,829 @@ msgstr "تحديث"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لإغلاق المسار"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "حمل الكل"
+
+msgid "dashboard.export.title"
+msgstr "صدر الملفات"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "يتم معالجة العناصر"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr "Penpot تم تصميمه للفرق. أدعُ زملاءك للعمل سوياَ على المشاريع والملفات"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "يتم معالجة الوسائط"
+
+msgid "common.publish"
+msgstr "أنشر"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "دورة تعليمية عملية"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "إبدا الدورة التعليمية"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "إبدا الجولة"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "جولة في الواجهة"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s من %s عناصر مختارة"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "لا يوجد عناصر بإعدادت التصدير."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "إختيار التصدير"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "معلومات عن كيفية إعداد التصدير."
+
+msgid "dashboard.export.options.all.title"
+msgstr "صدر المكتبات المشتركة"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "الغاء الكل"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "يتم معالجة الألوان"
+
+msgid "dashboard.import.import-message"
+msgstr "%s ملف تم ادراجهم بنجاح."
+
+msgid "dashboard.import.import-error"
+msgstr "حصل خلل خلال إدراج الملف. لم يتم إدراج الملف على البرنامج."
+
+msgid "dashboard.import.progress.process-page"
+msgstr "يتم معالجة الصفحة: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "يتم معالجة الخطوط"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "حفظ الإعدادات"
+
+msgid "common.unpublish"
+msgstr "إلغاء النشر"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "حسناَ"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "إنتباه"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.there-are-updates"
+msgstr "يوجد تحديثات في المكتبات المشتركة"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "إدارة الفريق"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "إعمل فريق!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "إذهب في جولة في البرنامج وتعرف على ميزاته."
+
+msgid "dashboard.export-standard-multi"
+msgstr "تحميل %s ملفات أساسية (.svg + .json)"
+
+msgid "dashboard.export.detail"
+msgstr "* ربما يحتوي على عناصر، رسومات، الوان، و/أو خطوط."
+
+msgid "dashboard.import.analyze-error"
+msgstr "لم نستطع استيراد أو إدراج هذا الملف"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "تعلم أساسيات برنامج Penpot بينما تستمع بتجربته في هذه الدورة التعليمية."
+
+msgid "dashboard.libraries-and-templates"
+msgstr "المكتبات & القوالب"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "استعرض المزيد منهم وتعلم كيف تساهم"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "لم يتم مشاركة الصفحة"
+msgstr[1] "مشاركة صفحة واحدة"
+msgstr[2] "مشاركة صفحتين"
+msgstr[3] "مشاركة صفحات"
+msgstr[4] "مشاركة صفحة"
+msgstr[5] "مشاركة صفحة"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "تحميل البيانات للخادم (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "تحميل الملف: %s"
+
+msgid "dashboard.export-frames"
+msgstr "صدر اللوحة الفنية الى ملف PDF…"
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "أعضاء غير كافيين لمغادرة الفريق ، ربما تريد حذفه."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "العضو الذي تحاول تعيينه غير موجود."
+
+msgid "labels.next"
+msgstr "التالي"
+
+msgid "labels.share-prototype"
+msgstr "مشاركة النموذج الأولي"
+
+msgid "dashboard.export.options.detach.title"
+msgstr "عامل أصول المكتبة المشتركة كعناصر بسيطة"
+
+msgid "dashboard.export.options.merge.title"
+msgstr "تضمين أصول المكتبة المشتركة في مكتبات الملفات"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "الإشتراك في"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "موفر المصادقة غير معد ومسجل."
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "تم الإبلاغ عن البريد الإلكتروني «٪ s» كبريد عشوائي أو مرتد بشكل دائم."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr "يسعدنا وجودك هنا. إذا كنت بحاجة إلى مساعدة، يرجى البحث أولا قبل النشر."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "انتقل إلى منتدى Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "مجتمع Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "اذهب إلى Twitter"
+
+msgid "labels.default"
+msgstr "إفتراضي"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "مستودع Github"
+
+msgid "labels.log-or-sign"
+msgstr "تسجيل الدخول أو الاشتراك"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "عضو"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr "أرسل لي الأخبار وتحديثات المنتجات والتوصيات حول Penpot."
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "عناصر سيتم تحديثها:"
+
+msgid "errors.auth.unable-to-login"
+msgstr "يبدوا أنك غير مصرح لك أو أن الجلسة إنتهت."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "إزالة العضو"
+
+msgid "labels.skip"
+msgstr "تخطي"
+
+msgid "labels.start"
+msgstr "ابدأ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "حسابك"
+
+msgid "modals.invite-member.emails"
+msgstr "رسائل البريد الإلكتروني، مفصولة بفواصل"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "المكتبات والقوالب"
+
+msgid "labels.link"
+msgstr "رابط"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "قيد الانتظار"
+
+msgid "labels.show-comments-list"
+msgstr "قائمة التعليقات"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "دفعة كبيرة"
+
+msgid "dashboard.export.explain"
+msgstr ""
+"ملف أو أكثر تريد تصديرهم يستخدمون مكتبات مشتركة. ماذا تريد أن تفعل في "
+"أصولهم*؟"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"سيتم ادراج الملفات التي لها مكتبات مشتركة في التصدير، مع الحفاظ على روابطهم."
+
+msgid "dashboard.import.import-warning"
+msgstr "تحتوي بعض الملفات على كائنات غير صالحة تمت إزالتها."
+
+msgid "errors.email-as-password"
+msgstr "لا يمكنك استخدام بريدك الإلكتروني ككلمة مرور"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "حذف الملف"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "ادعُ الأعضاء إلى الفريق"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "الغاء نشر المكتبة"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "دعوة غير صالحة"
+
+msgid "errors.invite-invalid.info"
+msgstr "هذه الدعوة قد تلغى أو قد تنتهي."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "الحالة"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "لا يمكن للمالك مغادرة الفريق ، يجب إعادة تعيين دور المالك."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "الدروس"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "هنا للمساعدة في استفساراتك التقنية."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "إعادة إرسال الدعوة"
+
+msgid "labels.workspace"
+msgstr "مساحة العمل"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "لا توجد دعوات."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations-hint"
+msgstr ""
+"اضغط على الزر \"دعوة إلى الفريق\" لدعوة المزيد من الأعضاء إلى هذا الفريق."
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(أنت)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"أنت صاحب هذا الفريق. الرجاء تحديد عضو آخر للترقية إلى مالك قبل المغادرة."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"يمكنك إضافة إعدادات التصدير إلى العناصر من خصائص التصميم (أسفل الشريط "
+"الجانبي الأيمن)."
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"لن يتم تضمين المكتبات المشتركة في التصدير ولن يتم إضافة أي أصول إلى المكتبة. "
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"نظرًا لأنك العضو الوحيد في هذا الفريق ، فسيتم حذف الفريق مع مشاريعه وملفاته."
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "حدثت مشكلة في استيراد النموذج. لم يتم استيراد النموذج."
+
+msgid "dashboard.export.options.merge.message"
+msgstr "سيتم تصدير ملفك مع دمج جميع الأصول الخارجية في مكتبة الملفات."
+
+msgid "onboarding.choice.title"
+msgstr "مرحبًا بك في Penpot"
+
+msgid "onboarding.contrib.alt"
+msgstr "مصدر مفتوح"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "هل أنت متأكد أنك تريد مغادرة فريق %s ؟"
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"سوف نرسل لك رسائل البريد الإلكتروني ذات الصلة فقط. يمكنك إلغاء الاشتراك في "
+"أي وقت في ملف تعريف المستخدم الخاص بك أو عبر رابط إلغاء الاشتراك في أي من "
+"رسائلنا الإخبارية."
+
+msgid "onboarding.slide.0.alt"
+msgstr "خلق التصاميم"
+
+msgid "onboarding.slide.0.desc1"
+msgstr "قم بإنشاء واجهات مستخدم جميلة بالتعاون مع جميع أعضاء الفريق."
+
+msgid "onboarding.slide.0.desc2"
+msgstr "الحفاظ على الاتساق على نطاق واسع مع المكونات والمكتبات وأنظمة التصميم."
+
+msgid "onboarding.slide.0.title"
+msgstr "مكتبات التصميم والأنماط والمكونات"
+
+msgid "onboarding.slide.1.alt"
+msgstr "النماذج التفاعلية"
+
+msgid "onboarding.slide.2.alt"
+msgstr "احصل على تعليقات"
+
+msgid "onboarding.slide.2.desc1"
+msgstr ""
+"يعمل جميع أعضاء الفريق في وقت واحد مع تصميمات متعددة اللاعبين في الوقت "
+"الفعلي وتعليقات وأفكار وتعليقات مركزية مباشرة على التصميمات."
+
+msgid "onboarding.slide.2.title"
+msgstr "الحصول على ردود الفعل ، وتقديم ومشاركة عملك"
+
+msgid "onboarding.slide.3.desc1"
+msgstr ""
+"قم بمزامنة التصميم والرمز لجميع المكونات والأنماط الخاصة بك واحصل على "
+"مقتطفات التعليمات البرمجية."
+
+msgid "onboarding.slide.3.desc2"
+msgstr ""
+"احصل على مواصفات التعليمات البرمجية وقدمها مثل الترميز (SVG ، HTML) أو "
+"الأنماط (CSS ، Less ، Stylus…)."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "لم يتم إضافة أي خط"
+msgstr[1] "تمت إضافة خط واحد"
+msgstr[2] "تمت إضافة خطين"
+msgstr[3] "عدد قليل من الخطوط المضافة"
+msgstr[4] "تمت إضافة العديد من الخطوط"
+msgstr[5] ""
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"إذا قمت بنقل الملكية ، فسوف تقوم بتغيير دورك إلى المسؤول ، وستفقد بعض "
+"الأذونات على هذا الفريق. "
+
+msgid "onboarding.contrib.desc1"
+msgstr ""
+"Penpot هو برنامج مفتوح المصدر ، تم إنشاؤه بواسطة المجتمع ومن أجله. إذا كنت "
+"ترغب في التعاون ، فأنت أكثر من موضع ترحيب!"
+
+msgid "onboarding.contrib.desc2.1"
+msgstr "يمكنك الوصول إلى"
+
+msgid "onboarding.contrib.desc2.2"
+msgstr "واتبع تعليمات المساهمة :)"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"تم إرسال طلب الاشتراك الخاص بك ، وسوف نرسل لك بريدًا إلكترونيًا لتأكيده."
+
+msgid "onboarding.newsletter.decline"
+msgstr "لا شكرا"
+
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"اشترك في النشرة الإخبارية لدينا للبقاء على اطلاع دائم بتقدم تطوير المنتج "
+"والأخبار."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "تم استخدام هذا الملف بالفعل مع تمكين المكونات V2."
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "كمية الدفع"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "يمكنك مشاهدة برامجنا التعليمية والبرامج التعليمية التي قدمها مجتمعنا."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "دروس الفيديو"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "قبل ان تبدا"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot هو برنامج مفتوح المصدر وهو من صنع Kaleidos وكذلك المجتمع ، حيث يساعد "
+"الكثير من الناس بعضهم البعض بالفعل. يمكن للجميع التعاون من خلال:"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "المشاركة في المجتمع"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "دفعة صغيرة"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "إلغاء النشر"
+
+msgid "onboarding.newsletter.policy"
+msgstr "سياسة الخصوصية."
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "نظرًا لأننا نهتم بالخصوصية ، فإليك موقعنا "
+
+msgid "onboarding.slide.1.desc1"
+msgstr "أنشئ تفاعلات غنية لتقليد سلوك المنتج."
+
+msgid "onboarding.slide.1.desc2"
+msgstr ""
+"شارك مع أصحاب المصلحة ، وقدم مقترحات إلى فريقك وابدأ في اختبار المستخدم "
+"بتصميماتك ، كل ذلك في مكان واحد."
+
+msgid "onboarding.slide.1.title"
+msgstr "اجعل تصميماتك تنبض بالحياة من خلال التفاعلات"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "أنشئ فريقًا"
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "اسم فريقك"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "بعد تسمية فريقك ، ستتمكن من دعوة الأشخاص للانضمام."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "أدخل اسم الفريق"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "دعوة أعضاء"
+
+msgid "onboarding.choice.team-up.invite-members-skip"
+msgstr "أنشئ فريقًا وادعُه لاحقًا"
+
+msgid "onboarding.choice.team-up.invite-members-submit"
+msgstr "أنشئ فريقًا وأرسل الدعوات"
+
+msgid "onboarding.newsletter.title"
+msgstr "هل تريد تلقي أخبار Penpot؟"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"أنت على وشك تحديث المكونات في مكتبة مشتركة. قد يؤثر هذا على الملفات الأخرى "
+"التي تستخدمها."
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"يجب أن تعلم أن هناك الكثير من الموارد المتاحة لمساعدتك في بدء استخدام Penpot "
+"، مثل دليل المستخدم وقناة Youtube الخاصة بنا."
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"حيث ستجد كيفية التعاون في الترجمات وطلبات الميزات والمساهمات الأساسية والبحث "
+"عن الأخطاء …"
+
+msgid "onboarding.contrib.title"
+msgstr "مساهم في المصدر المفتوح؟"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "تحديث المكونات في مكتبة مشتركة"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "دليل المستخدم"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "مرحبًا بك في Penpot!"
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"معلومات مفصلة حول كيفية استخدام Penpot. من النماذج الأولية إلى تنظيم أو "
+"مشاركة التصاميم."
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "دليل المساهمة"
+
+msgid "onboarding.contrib.link"
+msgstr "مشروع على github"
+
+msgid "onboarding.newsletter.accept"
+msgstr "نعم ، اشترك"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"مساحة عامة للتعلم والمشاركة والمناقشة حول Penpot وحاضرها ومستقبلها مع "
+"المجتمع بأكمله وفريق Penpot الأساسي."
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "أنشئ فريقًا لاحقًا"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr "تذكر أن تشمل الجميع. المطورين والمصممين والمديرين ... التنوع يضيف :)"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "دعوة مع الدور:"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"يسمح لك الفريق بالتعاون مع مستخدمي Penpot الآخرين الذين يعملون في نفس "
+"الملفات والمشاريع."
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "ملفات ومشاريع غير محدودة"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "إدارة الأدوار"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "مجانا 100٪ !"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "عدد غير محدود من الأعضاء"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "محاذاة"
+
+msgid "shortcuts.align-hcenter"
+msgstr "محاذاة المركز أفقيًا"
+
+msgid "shortcut-section.workspace"
+msgstr "مساحة العمل"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "الأساسيات"
+
+msgid "shortcut-section.dashboard"
+msgstr "لوحة القيادة"
+
+msgid "shortcuts.align-bottom"
+msgstr "محاذاة لأسفل"
+
+msgid "shortcuts.align-right"
+msgstr "محاذاة اليمين"
+
+msgid "shortcuts.draw-rect"
+msgstr "مستطيل"
+
+msgid "shortcuts.draw-path"
+msgstr "المسار"
+
+msgid "shortcuts.draw-text"
+msgstr "نص"
+
+msgid "shortcuts.export-shapes"
+msgstr "تصدير الأشكال"
+
+msgid "shortcuts.make-corner"
+msgstr "إصنع زاوية"
+
+msgid "shortcuts.go-to-search"
+msgstr "بحث"
+
+msgid "shortcuts.go-to-libs"
+msgstr "إذهب إلى المكتبات المشتركة"
+
+msgid "shortcuts.hide-ui"
+msgstr "إظهار / إخفاء واجهة المستخدم"
+
+msgid "shortcuts.insert-image"
+msgstr "إدراج صورة"
+
+msgid "shortcuts.join-nodes"
+msgstr "ربط العقد"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+msgid "onboarding.welcome.title"
+msgstr "مرحبًا بك في Penpot"
+
+msgid "shortcut-subsection.edit"
+msgstr "تعديل"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "القائمة الرئيسية"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "تعديل الطبقات"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "التنقل"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "التنقل"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "التنقل"
+
+msgid "shortcut-subsection.panels"
+msgstr "اللوحات"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "مسارات"
+
+msgid "shortcut-subsection.shape"
+msgstr "الأشكال"
+
+msgid "shortcut-subsection.tools"
+msgstr "أدوات"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "تكبير"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "تكبير"
+
+msgid "shortcuts.add-comment"
+msgstr "تعليقات"
+
+msgid "shortcuts.add-node"
+msgstr "إضافة عقدة"
+
+msgid "shortcuts.align-vcenter"
+msgstr "محاذاة المركز عموديًا"
+
+msgid "shortcuts.artboard-selection"
+msgstr "إنشاء لوحة من الاختيار"
+
+msgid "shortcuts.bring-back"
+msgstr "أرسل إلى الخلف"
+
+msgid "shortcuts.bring-backward"
+msgstr "إرسال إلى الوراء"
+
+msgid "shortcuts.bring-forward"
+msgstr "ثابر للأمام"
+
+msgid "shortcuts.bring-front"
+msgstr "أحضر إلى الأمام"
+
+msgid "shortcuts.clear-undo"
+msgstr "مسح التراجع"
+
+msgid "shortcuts.copy"
+msgstr "إنسخ"
+
+msgid "shortcuts.create-component"
+msgstr "تكوين المكون"
+
+msgid "shortcuts.cut"
+msgstr "إقطع"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "تصغير"
+
+msgid "shortcuts.increase-zoom"
+msgstr "تكبير"
+
+msgid "shortcuts.make-curve"
+msgstr "إصنع منحنى"
+
+msgid "shortcuts.mask"
+msgstr "قناع"
+
+msgid "shortcuts.align-left"
+msgstr "محاذاة اليسار"
+
+msgid "shortcuts.align-top"
+msgstr "‌محاذاة الأعلى"
+
+msgid "shortcuts.delete"
+msgstr "حذف"
+
+msgid "shortcuts.delete-node"
+msgstr "حذف العقدة"
+
+msgid "shortcuts.detach-component"
+msgstr "إفصل المكون"
+
+msgid "shortcuts.draw-curve"
+msgstr "منحنى"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "الشكل البيضاوي"
+
+msgid "shortcuts.draw-frame"
+msgstr "لوحة"
+
+msgid "shortcuts.draw-nodes"
+msgstr "أرسم المسار"
+
+msgid "shortcuts.duplicate"
+msgstr "كرر"
+
+msgid "shortcuts.escape"
+msgstr "إلغي"
+
+msgid "shortcuts.fit-all"
+msgstr "تكبير لتناسب الجميع"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "قلب أفقيًا"
+
+msgid "shortcuts.flip-vertical"
+msgstr "قلب عموديًا"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "إنتقل إلى المسودات"
+
+msgid "shortcuts.group"
+msgstr "مجموعة"
+
+msgid "shortcuts.h-distribute"
+msgstr "وزع أفقيًا"
+
+msgid "onboarding.templates.title"
+msgstr "إبدأ التصميم"
+
+msgid "onboarding.templates.subtitle"
+msgstr "فيما يلي بعض القوالب."
+
+msgid "shortcuts.merge-nodes"
+msgstr "دمج العقد"
+
+msgid "shortcuts.move-fast-up"
+msgstr "تحرك للأعلى بسرعة"
+
+msgid "shortcuts.move"
+msgstr "تحرك"
+
+msgid "shortcuts.move-fast-down"
+msgstr "تحرك بسرعة لأسفل"
+
+msgid "shortcuts.move-fast-left"
+msgstr "تحرك يسارا بسرعة"
+
+msgid "shortcuts.move-fast-right"
+msgstr "تحرك يميناً بسرعة"
+
+msgid "shortcuts.move-nodes"
+msgstr "نقل العقدة"
+
+msgid "shortcuts.move-unit-down"
+msgstr "تحرك لأسفل"
+
+msgid "shortcuts.move-unit-right"
+msgstr "تحرك يميناً"
+
+msgid "shortcuts.move-unit-left"
+msgstr "تحرك يساراً"
+
+msgid "shortcuts.move-unit-up"
+msgstr "تحرك للأعلى"
+
+msgid "shortcuts.next-frame"
+msgstr "اللوحة التالية"
+
+msgid "shortcut-section.viewer"
+msgstr "مشاهد"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "عام"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "عام"

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-18 16:16+0000\n"
+"PO-Revision-Date: 2022-09-27 15:18+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3192,7 +3192,9 @@ msgstr "Seçimi dışa aktar"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "1 ögeyi dışa aktar"
+msgid_plural ""
+msgstr[0] "1 ögeyi dışa aktar"
+msgstr[1] "%s ögeyi dışa aktar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -4512,3 +4514,264 @@ msgstr "Güncelle"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+msgid "common.publish"
+msgstr "Yayınla"
+
+msgid "common.unpublish"
+msgstr "Yayından kaldır"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Kütüphaneler ve Şablonlar"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Daha fazlasını keşfedin ve nasıl katkıda bulunacağınızı öğrenin"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Tamam"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Dikkat"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Herkesi dahil etmeyi unutmayın. Geliştiriciler, tasarımcılar, yöneticiler... "
+"çeşitlilik iyidir :)"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "Dosya siliniyor"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Daha sonra bir takım oluştur"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Rol ile davet et:"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Bir takım oluştur"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Takım, aynı dosya ve projelerde çalışan diğer Penpot kullanıcılarıyla "
+"işbirliği yapmanıza olanak tanır."
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Sınırsız dosya ve proje"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Tüm topluluk ve Penpot çekirdek takımı ile Penpot, bugünü ve geleceği "
+"hakkında bilgi edinmek, paylaşmak ve tartışmak için herkese açık bir alan."
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Çeviriler, özellik istekleri, temel katkılar, hata avı ile nasıl işbirliği "
+"yapacağınızı bulacağınız yer…"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot açık kaynaklıdır ve Kaleidos'un yanı sıra birçok insanın birbirine "
+"yardım ettiği topluluk tarafından yapılmıştır. Herkes işbirliğine "
+"katılabilir:"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Topluluğa Katılım"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Kullanıcı Kılavuzu ve Youtube kanalımız gibi Penpot'u kullanmaya başlamanıza "
+"yardımcı olacak birçok kaynak olduğunu bilmelisiniz."
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Penpot'un nasıl kullanılacağı hakkında ayrıntılı bilgi. Prototiplemeden "
+"tasarımları düzenlemeye veya paylaşmaya kadar."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-w"
+msgstr "Asgari Genişlik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-h"
+msgstr "Azami yükseklik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-h"
+msgstr "Asgari yükseklik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-w"
+msgstr "Asgari genişlik"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Takım yönetimi"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot takımlar içindir. Üyeleri projeler ve dosyalar üzerinde birlikte "
+"çalışmaya davet edin"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Takım olun!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Bu uygulamalı öğretici ile biraz eğlenirken Penpot'taki temel bilgileri "
+"öğrenin."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Öğreticiyi başlat"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Uygulamalı Öğretici"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Penpot'ta bir gezintiye çıkın ve temel özelliklerini öğrenin."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Gezintiyi başlat"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Arayüz İncelemesi"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Şablon içe aktarılırken bir sorun oluştu. Şablon içe aktarılmadı."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Bu dosya zaten Bileşenler V2 etkinken kullanıldı."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Dosyayı sil"
+msgstr[1] "Dosyaları sil"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "Üyeleri takıma davet et"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Yayından kaldır"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Yayından kaldırırsanız, içindeki varlıklar bu dosyanın bir kütüphanesi "
+"haline gelir."
+msgstr[1] ""
+"Yayından kaldırırsanız, içindeki varlıklar bu dosyaların bir kütüphanesi "
+"haline gelir."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "Bu kütüphaneyi yayından kaldırmak istediğinizden emin misiniz?"
+msgstr[1] "Bu kütüphaneleri yayından kaldırmak istediğinizden emin misiniz?"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr ""
+"Bizim ve topluluğumuz tarafından hazırlanan öğreticileri izleyebilirsiniz."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Video öğreticiler"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Başlamadan önce"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Katkıda bulunma kılavuzu"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Penpot'a hoş geldiniz!"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Çok oyunculu sürüm"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Rol yönetimi"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Sınırsız üye"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "%100 özgür!"
+
+msgid "workspace.assets.local-library"
+msgstr "yerel kütüphane"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Kütüphaneyi Yayından Kaldır"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Dosya siliniyor"
+msgstr[1] "Dosyalar siliniyor"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Bu dosyada, şu dosyada kullanılmakta olan kütüphaneler var:"
+msgstr[1] "Bu dosyada, şu dosyalarda kullanılmakta olan kütüphaneler var:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Bu dosyayı silmek istediğinizden emin misiniz?"
+msgstr[1] "Bu dosyaları silmek istediğinizden emin misiniz?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "Bu dosyalarda, şu dosyada kullanılmakta olan kütüphaneler var:"
+msgstr[1] "Bu dosyalarda, şu dosyalarda kullanılmakta olan kütüphaneler var:"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Kullanıcı kılavuzu"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Bu dosyada kullanılıyor:"
+msgstr[1] "Bu dosyalarda kullanılıyor:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Kütüphaneyi yayından kaldır"
+msgstr[1] "Kütüphaneleri yayından kaldır"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "Asgari Yükseklik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-w"
+msgstr "Azami Genişlik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-h"
+msgstr "Azami Yükseklik"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "Ana bileşeni geri yükle"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-w"
+msgstr "Azami genişlik"

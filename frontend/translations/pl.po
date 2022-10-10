@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-05-28 21:16+0000\n"
-"Last-Translator: Radek Sawicki <radek@sqrc.pl>\n"
-"Language-Team: Polish "
-"<https://hosted.weblate.org/projects/penpot/frontend/pl/>\n"
+"PO-Revision-Date: 2022-10-04 18:22+0000\n"
+"Last-Translator: Kevin Nowald <kevin@nowald.pl>\n"
+"Language-Team: Polish <https://hosted.weblate.org/projects/penpot/frontend/"
+"pl/>\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4172,3 +4172,241 @@ msgstr "Aktualizuj"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Kliknij, aby zamknąć ścieżkę"
+
+msgid "common.share-link.current-tag"
+msgstr "(aktualne)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Usuń link"
+
+msgid "common.share-link.view-all"
+msgstr "Wybierz wszystko"
+
+msgid "common.share-link.all-users"
+msgstr "Wszyscy użytkownicy Penpot"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Może komentować"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Może sprawdzać kod"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Udostępnione strony"
+
+msgid "common.share-link.team-members"
+msgstr "Tylko członkowie zespołu"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Cieszymy się, że tu jesteś. Jeśli potrzebujesz pomocy, poszukaj jej zanim "
+"napiszesz."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Społeczność"
+
+msgid "labels.log-or-sign"
+msgstr "Zaloguj się lub zarejestruj"
+
+msgid "labels.show-comments-list"
+msgstr "Pokaż listę komentarzy"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Prawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Góra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "środek"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Pobierz %s plików Penpot (.penpot)"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Biblioteki i szablony"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Wystąpił problem z importem szablonu. Szablon nie został zaimportowany."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Służymy pomocą w kwestiach technicznych."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot jest przeznaczony dla zespołów. Zaproś członków do wspólnej pracy nad "
+"projektami i plikami"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Pobierz %s plików standardowych (.svg + .json)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Pobierz plik standardowy (.svg + .json)"
+
+msgid "common.share-link.manage-ops"
+msgstr "Zarządzaj uprawnieniami"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Społeczność Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Przejdź do Twittera"
+
+msgid "labels.continue-with-penpot"
+msgstr "Możesz kontynuować z kontem Penpot"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Czy na pewno chcesz usunąć ten plik?"
+msgstr[1] "Czy na pewno chcesz usunąć te pliki?"
+msgstr[2] "Czy na pewno chcesz usunąć te pliki?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "Te pliki mają biblioteki, które są używane w tym pliku:"
+msgstr[1] "Te pliki mają biblioteki, które są używane w tych plikach:"
+msgstr[2] "Te pliki mają biblioteki, które są używane w tych plikach:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Ten plik ma biblioteki używane w tym pliku:"
+msgstr[1] "Ten plik ma biblioteki używane w tych plikach:"
+msgstr[2] "Ten plik ma biblioteki używane w tych plikach:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Dół"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "Kolumna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "Wiersz"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "dół"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "góra"
+
+msgid "common.unpublish"
+msgstr "Cofnij publikację"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Przewodnik po interfejsie"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Uwaga"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Przejdź do forum Penpot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "Min.Wysokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-w"
+msgstr "Min.Szerokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-h"
+msgstr "Maksymalna wysokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-w"
+msgstr "Maksymalna szerokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-h"
+msgstr "Minimalna wysokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-w"
+msgstr "Minimalna szerokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Margines"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Wybierz się na spacer po Penpot i poznaj jego główne funkcje."
+
+msgid "dashboard.download-binary-file"
+msgstr "Pobierz plik Penpot (.penpot)"
+
+msgid "common.publish"
+msgstr "Opublikuj"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Zarządzanie zespołem"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Połącz siły!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Naucz się podstaw obsługi Penpot, bawiąc się tym praktycznym tutorialem."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Zacznij tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Praktyczny Tutorial"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Poznaj więcej z nich i dowiedz się, jak pomóc"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Cofnij publikację biblioteki"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Usuń plik"
+msgstr[1] "Usuń pliki"
+msgstr[2] "Usuń pliki"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "Przywróć główny komponent"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 udostępniona strona"
+msgstr[1] "%s udostępnione strony"
+msgstr[2] "%s udostępnionych stron"
