@@ -225,7 +225,7 @@
     (mf/use-layout-effect
      (mf/deps handle-mouse-wheel)
      (fn []
-       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:pasive false})]]
+       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:passive false})]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
@@ -240,7 +240,7 @@
     (mf/use-layout-effect
      (mf/deps handle-mouse-wheel)
      (fn []
-       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:pasive false})]]
+       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:passive false})]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
@@ -248,7 +248,7 @@
     (mf/use-layout-effect
      (mf/deps handle-mouse-wheel)
      (fn []
-       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:pasive false})]]
+       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:passive false})]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 

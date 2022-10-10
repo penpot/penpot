@@ -1312,7 +1312,7 @@ msgstr "Excluir membro da equipe"
 msgid "modals.invite-member-confirm.accept"
 msgstr "Enviar convite"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "Você não pode deixar a equipe se não houver outro membro para promover a "
 "proprietário. Você pode excluir a equipe."

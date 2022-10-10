@@ -1759,7 +1759,7 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Êtes-vous sûr de vouloir quitter l'équipe %s ?"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "Vous ne pouvez pas quitter l'équipe si il n'y a aucun membre à promouvoir "
 "comme propriétaire. Vous pourriez plutôt supprimer l'équipe."

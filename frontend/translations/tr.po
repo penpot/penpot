@@ -1736,7 +1736,7 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "%s takımından ayrılmak istediğinizden emin misiniz?"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "Birisini takımın sahibi yapmadan takımı bırakamazsın. Takımı silmek "
 "isteyebilirsin."

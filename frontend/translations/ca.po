@@ -1706,7 +1706,7 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Segur que vols deixar l'equip %s?"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "No es pot abandonar l'equip si no hi ha cap altre membre capaç d'ascendir a "
 "propietari. És possible que vulgueu eliminar l'equip."

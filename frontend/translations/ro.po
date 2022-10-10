@@ -1226,7 +1226,7 @@ msgstr "Elimină un membru al echipei"
 msgid "modals.invite-member-confirm.accept"
 msgstr "Trimite invitație"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "Nu puteţi părăsi echipa dacă nu există un alt membru care să devină "
 "administrator. Aţi putea şterge echipa."

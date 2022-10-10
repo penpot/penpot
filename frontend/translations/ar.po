@@ -1413,7 +1413,7 @@ msgstr "حذف العضو"
 msgid "modals.invite-member-confirm.accept"
 msgstr "إرسال دعوة"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "لا يمكنك مغادرة الفريق إذا لم يكن هناك عضو آخر للترقية إلى المالك. قد ترغب "
 "في حذف الفريق."
