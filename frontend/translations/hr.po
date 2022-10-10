@@ -2,208 +2,93 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-04 18:22+0000\n"
 "Last-Translator: Zvonimir Juranko <zjuranko@gmail.com>\n"
-"Language-Team: Croatian <https://hosted.weblate.org/projects/penpot/frontend/"
-"hr/>\n"
+"Language-Team: Croatian "
+"<https://hosted.weblate.org/projects/penpot/frontend/hr/>\n"
 "Language: hr\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Weblate 4.14.1\n"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-push"
-msgstr "Gurni"
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Već imaš račun?"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-ms"
-msgstr "ms"
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr "Provjeri svoj e-mail i klikni na vezu da potvrdiš i počneš koristiti Penpot."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-easing-ease"
-msgstr "Ease"
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Potvrdi lozinku"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-navigate-to"
-msgstr "Idi do"
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Kreiraj demo račun"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-#, fuzzy
-msgid "workspace.options.interaction-mouse-enter"
-msgstr "Ulaz mišem"
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Samo želiš isprobati?"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-#, fuzzy
-msgid "workspace.options.interaction-out"
-msgstr "Vani"
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Ovo je DEMO usluga. NEMOJ KORISTITI za pravi rad. Projekti će se povremeno "
+"brisati."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-close-overlay-dest"
-msgstr "Zatvori preklapanje: %s"
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "E-mail"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-on-click"
-msgstr "Na klik"
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Zaboravljena lozinka?"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-open-overlay"
-msgstr "Otvoreno preklapanje"
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Puno ime"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-bottom-left"
-msgstr "Dolje lijevo"
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Prijavi se ovdje"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-bottom-right"
-msgstr "Dolje desno"
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Prijava"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-bottom-center"
-msgstr "Dolje sredina"
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Drago nam je vidjeti te opet!"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-top-center"
-msgstr "Gore sredina"
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-top-right"
-msgstr "Gore desno"
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-position"
-msgstr "Pozicija"
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-close-overlay"
-msgstr "Zatvori preklapanje"
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-trigger"
-msgstr "Okidač"
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-url"
-msgstr "URL"
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Unesi novu lozinku"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-center"
-msgstr "Sredina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-preserve-scroll"
-msgstr "Sačuvaj položaj scrolanja"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-manual"
-msgstr "Priručnik"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.select-layer"
-msgstr "Označi layer"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-#, fuzzy
-msgid "workspace.sidebar.layers"
-msgstr "Layeri"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "sredina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.all-corners"
-msgstr "Svi kutevi"
-
-msgid "workspace.sidebar.layers.components"
-msgstr "Komponente"
-
-msgid "workspace.sidebar.layers.images"
-msgstr "Slike"
-
-msgid "workspace.sidebar.layers.masks"
-msgstr "Maske"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-simple"
-msgstr "Jednostavna margina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-#, fuzzy
-msgid "workspace.options.layout.padding"
-msgstr "Padding"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-#, fuzzy
-msgid "workspace.options.layout.no-wrap"
-msgstr "bez omota"
-
-msgid "workspace.options.opacity"
-msgstr "Neprozirnost"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-#, fuzzy
-msgid "workspace.options.layout.packed"
-msgstr "upakiran"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.top"
-msgstr "Vrh"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
-msgid "workspace.options.more-lib-colors"
-msgstr "Više boja iz biblioteke"
-
-#: src/app/main/ui/workspace/sidebar/options.cljs
-msgid "workspace.options.prototype"
-msgstr "Prototip"
-
-msgid "workspace.options.radius"
-msgstr "Radius"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "dno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "vrh"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-#, fuzzy
-msgid "workspace.options.layout.wrap"
-msgstr "omotaj"
-
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.position"
-msgstr "Pozicija"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
-msgid "workspace.options.more-colors"
-msgstr "Više boja"
-
-msgid "workspace.options.stroke-width"
-msgstr "Širina poteza"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.title.group"
-msgstr "Grupiraj sjenu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.inner-shadow"
-msgstr "Unutarnja sjena"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke.outer"
-msgstr "Vani"
-
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.size"
-msgstr "Veličina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.title"
-msgstr "Sjena"
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Želim se pretplatiti se na Penpot mailing listu."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
@@ -217,12 +102,28 @@ msgstr "Lozinka uspješno promijenjena"
 msgid "auth.notifications.profile-not-verified"
 msgstr "Profil nije potvrđen, potvrdi profil prije nastavka."
 
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Veza za oporavak lozinke poslana je u tvoj inbox."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Uspješno pridružen/a timu"
+
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"
 msgstr "Lozinka"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Najmanje 8 znamenki"
+
 msgid "auth.privacy-policy"
 msgstr "Pravila privatnosti"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Obnovi lozinku"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-subtitle"
@@ -231,6 +132,22 @@ msgstr "Poslat ćemo ti e-mail sa uputama"
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-title"
 msgstr "Zaboravljena lozinka?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Promjeni lozinku"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Još nemaš račun?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Stvori račun"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Besplatno je, Open Source"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -276,8 +193,38 @@ msgstr "Izradi poveznicu"
 msgid "common.share-link.link-copied-success"
 msgstr "Poveznica uspješno kopirana"
 
+msgid "common.share-link.link-deleted-success"
+msgstr "Poveznica uspješno izbrisana"
+
+msgid "common.share-link.manage-ops"
+msgstr "Upravljanje dopuštenjima"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 stranica podijeljena"
+msgstr[1] "%s stranica podijeljeno"
+msgstr[2] "%s stranica podijeljeno"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Dopušten komentar"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Dopušteno provjeriti kod"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Svatko sa poveznicom imat će pristup"
+
 msgid "common.share-link.permissions-pages"
 msgstr "Stranice podijeljene"
+
+msgid "common.share-link.placeholder"
+msgstr "Ovdje će se pojaviti poveznica za dijeljenje"
+
+msgid "common.share-link.team-members"
+msgstr "Samo članovi tima"
+
+msgid "common.share-link.title"
+msgstr "Podijeli prototip"
 
 msgid "common.share-link.view-all"
 msgstr "Označi sve"
@@ -286,32 +233,66 @@ msgid "common.unpublish"
 msgstr "Poništi objavu"
 
 #: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Upravljanje timom"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot je namijenjen timovima. Pozovi članove da zajedno rade na projektima "
+"i datotekama"
+
+#: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
 msgstr "Udruži se!"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.add-shared"
-msgstr "Dodaj kao zajedničku biblioteku"
-
 #: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.title"
-msgstr "Praktični vodič"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.change-email"
-msgstr "Promijeni e-mail"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.title"
-msgstr "Pregledaj sučelje"
+msgid "dasboard.tutorial-hero.info"
+msgstr "Nauči osnove na Penpotu dok se zabavljaš uz ovaj praktični vodič."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
 msgstr "Pokreni praktični vodič"
 
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Praktični vodič"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Prošeći Penpotom i upoznaj glavne karakteristike."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Započni obilazak"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Pregledaj sučelje"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Dodaj kao zajedničku biblioteku"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Promijeni e-mail"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(kopiraj)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ Kreiraj novi tim"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
 msgstr "Tvoj Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Obriši tim"
 
 msgid "dashboard.download-binary-file"
 msgstr "Preuzmi Penpot datoteku (.penpot)"
@@ -326,6 +307,10 @@ msgstr "Skica"
 msgid "dashboard.duplicate"
 msgstr "Kopija"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Kopiraj %s datoteka"
+
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-files"
 msgstr "Ovdje još uvijek nemaš datoteka"
@@ -334,19 +319,44 @@ msgstr "Ovdje još uvijek nemaš datoteka"
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"O ne! Još nemaš datoteka! Ako želiš isprobati neke predloške, idi na ["
-"Biblioteke i predlošci](https://penpot.app/libraries-templates.html)"
+"O ne! Još nemaš datoteka! Ako želiš isprobati neke predloške, idi na "
+"[Biblioteke i predlošci](https://penpot.app/libraries-templates.html)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.duplicate-multi"
-msgstr "Kopiraj %s datoteka"
+msgid "dashboard.export-binary-multi"
+msgstr "Preuzmi %s Penpot datoteke (.penpot)"
+
+msgid "dashboard.export-frames"
+msgstr "Izvezi artboard u PDF…"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Izvezi u PDF"
+
+msgid "dashboard.export-multi"
+msgstr "Izvezi Penpot %s datoteka"
+
+#: src/app/main/ui/export.cljs
+#, fuzzy
+msgid "dashboard.export-multiple.selected"
+msgstr "%s - %s elementa označeno"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
 msgstr "Izvezi"
 
-msgid "dashboard.export-multi"
-msgstr "Izvezi Penpot %s datoteka"
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Postavke izvoza možeš dodati elementima iz svojstava dizajna (na dnu desne "
+"bočne trake)."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Informacije kako postaviti izvoz na Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Nema elemenata s postavkama izvoza."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
@@ -355,19 +365,50 @@ msgstr "Izvezi odabir"
 msgid "dashboard.export-single"
 msgstr "Izvezi Penpot datoteku"
 
+msgid "dashboard.export-standard-multi"
+msgstr "Preuzmi %s standardne datoteke (.svg + .json)"
+
 msgid "dashboard.export.detail"
 msgstr "* Može uključivati komponente, grafike, boje i/ili tipografije."
-
-msgid "dashboard.export.options.all.title"
-msgstr "Izvezi zajedničke biblioteke"
 
 msgid "dashboard.export.explain"
 msgstr ""
 "Jedna ili više datoteka koju želiš izvesti koristi zajedničke biblioteke. "
 "Što želiš učiniti s njihovim stavkama*?"
 
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"datoteke sa zajedničkim bibliotekama bit će uključene u izvoz, održavajući "
+"njihovu poveznicu."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Izvezi zajedničke biblioteke"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Zajedničke biblioteke neće biti uključene u izvoz i nikakve stavke neće "
+"biti dodani u biblioteku. "
+
 msgid "dashboard.export.options.detach.title"
 msgstr "Tretiraj stavke zajedničke biblioteke kao osnovne objekte"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Tvoja će datoteka biti izvezena sa svim vanjskim stavkama spojenim u "
+"biblioteku datoteka."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Uključi stavke zajedničke biblioteke u biblioteke datoteka"
+
+msgid "dashboard.export.title"
+msgstr "Izvezi datoteke"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Font izbrisan"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Odbaci sve"
 
 #, fuzzy
 msgid "dashboard.fonts.empty-placeholder"
@@ -380,6 +421,22 @@ msgstr[0] "1 font dodan"
 msgstr[1] "%s fontova dodano"
 msgstr[2] "%s fontova dodano"
 
+#, fuzzy, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Svaki web-font koji ovdje preneseš biti će dodan na popis fontova koji je "
+"dostupan u tekstualnim svojstvima datoteka ovog tima. Fontovi s istim "
+"nazivom fontova biti će grupirani kao **jedan font**. Možeš učitati fontove "
+"sa sljedećim formatima: **TTF, OTF i WOFF** (biti će potreban samo jedan)."
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Možeš učitavati samo fontove koje posjeduješ ili imaš licencu za korištenje "
+"u Penpotu. Saznaj više u odjeljku Prava na sadržaj [Penpotovih uvjeta "
+"pružanja usluge](https://penpot.app/terms.html). Također možeš pročitati o "
+"[licenciranju fontova](https://www.typography.com/faq)."
+
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
 msgstr "Učitaj sve"
@@ -389,6 +446,27 @@ msgstr "Uvezi Penpot datoteke"
 
 msgid "dashboard.import.analyze-error"
 msgstr "Ups! Nismo mogli uvesti ovu datoteku"
+
+msgid "dashboard.import.import-error"
+msgstr "Došlo je do problema pri uvozu datoteke. Datoteka nije uvezena."
+
+msgid "dashboard.import.import-message"
+msgstr "%s datoteka je uspješno uvezeno."
+
+msgid "dashboard.import.import-warning"
+msgstr "Neke su datoteke sadržavale nevažeće objekte koji su uklonjeni."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Obrada boja"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Obrada komponenti"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Obrada medija"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Obrada stranice: %s"
 
 msgid "dashboard.import.progress.process-typographies"
 msgstr "Obrada tipografija"
@@ -427,6 +505,10 @@ msgstr "učitavanje tvojih datoteka…"
 msgid "dashboard.loading-fonts"
 msgstr "učitavanje tvojih fontova…"
 
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Premijesti u"
+
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to-multi"
 msgstr "Premijesti %s datoteke u"
@@ -443,9 +525,37 @@ msgstr "+ Nova datoteka"
 msgid "dashboard.new-file-prefix"
 msgstr "Nova datoteka"
 
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Novi projekt"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Novi projekt"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr "Šaljite mi vijesti, ažuriranja proizvoda i preporuke o Penpotu."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Pretplata na newsletter"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "Nisu pronađeni rezultati za “%s”"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Prikvačeni projekti pojavit će se ovdje"
+
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "Tvoja e-mail adresa je uspješno ažurirana"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Tvoja e-mail adresa je uspješno potvrđena"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.notifications.password-saved"
@@ -482,6 +592,22 @@ msgstr "Promakni u vlasnika"
 msgid "dashboard.remove-account"
 msgstr "Želiš li ukloniti svoj račun?"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "Ukloni kao zajedničku biblioteku"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Spremi postavke"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "Pretraži…"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "Pretraga \"%s\"…"
+
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.select-ui-language"
 msgstr "Odaberite jezik korisničkog sučelja"
@@ -499,6 +625,14 @@ msgid "dashboard.success-delete-file"
 msgstr "Tvoja datoteka je uspješno izbrisana"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "Tvoj projekt je uspješno izbrisan"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "Tvoja datoteka je uspješno duplicirana"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
 msgstr "Tvoj projekt je uspješno dupliciran"
 
@@ -509,6 +643,10 @@ msgstr "Tvoja datoteka je uspješno premještena"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-files"
 msgstr "Tvoje datoteke su uspješno premještene"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "Tvoj projekt je uspješno premješten"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.switch-team"
@@ -537,6 +675,74 @@ msgstr "Pretraži rezultate"
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.type-something"
 msgstr "Upiši za rezultate pretraživanja"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Poništi objavu biblioteke"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+msgid "dashboard.update-settings"
+msgstr "Ažuriraj postavke"
+
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "Tvoj korisnički račun"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "E-mail"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "Ime"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "Tvoj Penpot"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "U redu"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Pažnja"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Komponente za ažuriranje:"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "Poništi"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-ok"
+msgstr "U redu"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "Jesi li siguran/na?"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "ds.updated-at"
+msgstr "Ažurirano: %s"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Pružatelj autentifikacije nije konfiguriran."
+
+#, fuzzy
+msgid "errors.auth.unable-to-login"
+msgstr "Čini se da nisi autentificiran/a ili je sesija istekla."
+
+#: src/app/main/data/workspace.cljs
+msgid "errors.clipboard-not-implemented"
+msgstr "Tvoj preglednik ne može izvršiti ovu operaciju"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Ova datoteka je već korištena s omogućenim komponentama V2."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
@@ -576,12 +782,19 @@ msgstr "Pogrešna boja"
 msgid "errors.invite-invalid"
 msgstr "Pogrešna pozivnica"
 
+msgid "errors.invite-invalid.info"
+msgstr "Ova pozivnica je možda otkazana ili je istekla."
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "Onemogućena je LDAP provjera autentičnosti."
 
 msgid "errors.media-format-unsupported"
 msgstr "Format slike nije podržan (mora biti svg, jpg ili png)."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "Slika je prevelika za umetanje."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
@@ -604,6 +817,10 @@ msgstr "Nije moguće povezati se s backend poslužiteljem."
 msgid "errors.password-invalid-confirmation"
 msgstr "Lozinka za potvrdu mora odgovarati"
 
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-too-short"
+msgstr "Lozinka mora sadržavati najmanje 8 znakova"
+
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr ""
@@ -619,6 +836,9 @@ msgstr "Nedovoljno članova za napuštanje tima, vjerojatno ga želiš izbrisati
 
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "Član kojeg pokušavaš dodijeliti ne postoji."
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "Vlasnik ne može napustiti tim, moraš ponovno dodijeliti ulogu vlasnika."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Moraš prihvatiti naše uvjete pružanja usluge i politiku privatnosti."
@@ -644,6 +864,26 @@ msgid "feedback.chat-start"
 msgstr "Pridruži se chatu"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-subtitle"
+msgstr "Imaš želju za razgovorom? Razgovaraj s nama na Gitteru"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "Opis"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Idi na Penpot forum"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr "Sretni smo što si ovdje. Ako trebaš pomoć, pretraži prije objavljivanja."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Penpot zajednica"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
 msgstr "Tema"
 
@@ -662,8 +902,16 @@ msgid "feedback.twitter-go-to"
 msgstr "Idi na Twitter"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Ovdje za pomoć za tvoje tehničke upite."
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
 msgstr "Twitter korisnički račun za podršku"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "generic.error"
+msgstr "Došlo je do pogreške"
 
 #: src/app/main/ui/handoff/attributes/blur.cljs
 msgid "handoff.attributes.blur"
@@ -722,6 +970,10 @@ msgid "handoff.attributes.layout.rotation"
 msgstr "Rotacija"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "Vrh"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.width"
 msgstr "Širina"
 
@@ -750,16 +1002,22 @@ msgid "handoff.attributes.stroke"
 msgstr "Potez"
 
 #, permanent
-msgid "handoff.attributes.stroke.alignment.outer"
-msgstr "Vani"
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "Sredina"
 
 #, permanent
 msgid "handoff.attributes.stroke.alignment.inner"
 msgstr "Unutra"
 
 #, permanent
-msgid "handoff.attributes.stroke.alignment.center"
-msgstr "Sredina"
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "Vani"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Točkasto"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Miksano"
 
 msgid "handoff.attributes.stroke.style.none"
 msgstr "Nikakav"
@@ -770,6 +1028,10 @@ msgstr "Solidan"
 #: src/app/main/ui/handoff/attributes/stroke.cljs
 msgid "handoff.attributes.stroke.width"
 msgstr "Širina"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Tipografija"
 
 #: src/app/main/ui/handoff/attributes/text.cljs
 #, fuzzy
@@ -810,6 +1072,23 @@ msgstr "Podcrtano"
 msgid "handoff.attributes.typography.text-transform"
 msgstr "Transformiraj tekst"
 
+msgid "handoff.attributes.typography.text-transform.lowercase"
+msgstr "Mala slova"
+
+#, fuzzy
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "Nikakav"
+
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "Velika i mala slova"
+
+msgid "handoff.attributes.typography.text-transform.uppercase"
+msgstr "Velika slova"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Kod"
+
 msgid "handoff.tabs.code.selected.circle"
 msgstr "Krug"
 
@@ -825,6 +1104,20 @@ msgstr "Ploča"
 msgid "handoff.tabs.code.selected.group"
 msgstr "Grupa"
 
+msgid "handoff.tabs.code.selected.image"
+msgstr "Slika"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Maska"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code.selected.multiple"
+msgstr "%s Označeno"
+
+#, fuzzy
+msgid "handoff.tabs.code.selected.path"
+msgstr "Path"
+
 msgid "handoff.tabs.code.selected.rect"
 msgstr "Pravokutnik"
 
@@ -834,8 +1127,20 @@ msgstr "SVG"
 msgid "handoff.tabs.code.selected.text"
 msgstr "Tekst"
 
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Informacija"
+
 msgid "history.alert-message"
 msgstr "Vidiš verziju %s"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Prečaci"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "O Penpotu"
 
 msgid "labels.accept"
 msgstr "Prihvati"
@@ -864,9 +1169,16 @@ msgstr ""
 "Čini se da moraš malo pričekati i pokušati ponovno; vršimo mala održavanja "
 "naših servera."
 
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "Loš Gateway"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.cancel"
 msgstr "Odbaci"
+
+msgid "labels.centered"
+msgstr "Sredina"
 
 msgid "labels.close"
 msgstr "Zatvori"
@@ -875,14 +1187,29 @@ msgstr "Zatvori"
 msgid "labels.comments"
 msgstr "Komentari"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Zajenica"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "Potvrdi lozinku"
+
 msgid "labels.content"
 msgstr "Sadržaj"
+
+msgid "labels.continue"
+msgstr "Nastavi"
 
 msgid "labels.continue-with"
 msgstr "Nastavi sa"
 
 msgid "labels.continue-with-penpot"
 msgstr "Možeš nastaviti s Penpot računom"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Kreiraj"
 
 #: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
@@ -937,6 +1264,10 @@ msgstr "Uredi datoteku"
 msgid "labels.editor"
 msgstr "Urednik"
 
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.email"
+msgstr "E-mail"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.expired-invitation"
 msgstr "Isteklo"
@@ -980,6 +1311,13 @@ msgstr "Povratak"
 msgid "labels.help-center"
 msgstr "Centar za pomoć"
 
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.hide-resolved-comments"
+msgstr "Sakrij riješene komentare"
+
+msgid "labels.icons"
+msgstr "Ikone"
+
 msgid "labels.images"
 msgstr "Slike"
 
@@ -1011,17 +1349,35 @@ msgstr "Biblioteke i predlošci"
 msgid "labels.link"
 msgstr "Poveznica"
 
+msgid "labels.log-or-sign"
+msgstr "Prijava ili registracija"
+
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Odjava"
+
+msgid "labels.manage-fonts"
+msgstr "Uredi fontove"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
 msgstr "Član"
 
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "Članovi"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.name"
 msgstr "Ime"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "Nova lozinka"
+
+#, fuzzy
+msgid "labels.next"
+msgstr "Slijedeće"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
@@ -1082,6 +1438,18 @@ msgstr "ili"
 msgid "labels.owner"
 msgstr "Vlasnik"
 
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "Lozinka"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "U tijeku"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.permissions"
+msgstr "Dozvole"
+
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
 msgstr "Profil"
@@ -1106,16 +1474,31 @@ msgstr "Ukloni"
 msgid "labels.remove-member"
 msgstr "Ukloni člana"
 
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "Preimenuj"
+
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.rename-team"
 msgstr "Preimenuj tim"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "Ponovno pošalji pozivnicu"
 
 #: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "Pokušaj ponovo"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.role"
+msgstr "Uloga"
+
 msgid "labels.save"
 msgstr "Spremi"
+
+msgid "labels.search-font"
+msgstr "Pretraži font"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.send"
@@ -1126,8 +1509,16 @@ msgid "labels.sending"
 msgstr "Slanje…"
 
 #: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.desc-message"
+msgstr "U programiranom smo održavanju naših sustava."
+
+#: src/app/main/ui/static.cljs
 msgid "labels.service-unavailable.main-message"
 msgstr "Usluga je nedostupna"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "Postavke"
 
 msgid "labels.share-prototype"
 msgstr "Podijeli prototip"
@@ -1165,19 +1556,19 @@ msgstr "Status"
 msgid "labels.tutorials"
 msgstr "Upute"
 
-#: src/app/main/ui/dashboard/team_form.cljs
-msgid "labels.update-team"
-msgstr "Ažuriraj tim"
-
-msgid "labels.upload-custom-fonts"
-msgstr "Prenesi custom fontove"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
 msgstr "Ažuriraj"
 
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.update-team"
+msgstr "Ažuriraj tim"
+
 msgid "labels.upload"
 msgstr "Prenesi"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Prenesi custom fontove"
 
 msgid "labels.uploading"
 msgstr "Prijenos…"
@@ -1193,19 +1584,17 @@ msgstr "Radni prostor"
 msgid "labels.write-new-comment"
 msgstr "Napiši novi komentar"
 
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(ti)"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.your-account"
 msgstr "Tvoj korisnički račun"
 
-#: src/app/main/ui/settings/change_email.cljs
-msgid "modals.change-email.confirm-email"
-msgstr "Potvrdite novi e-mail"
-
-#: src/app/main/ui/settings/change_email.cljs
-msgid "modals.change-email.info"
-msgstr ""
-"Poslat ćemo e-mail na tvoj trenutni e-mail \"%s\" kako bismo potvrdili tvoj "
-"identitet."
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "media.loading"
+msgstr "Učitavanje slike…"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
@@ -1225,6 +1614,24 @@ msgstr "Dodajte “%s” kao zajedničku biblioteku"
 #, fuzzy
 msgid "modals.big-nudge"
 msgstr "Big nudge"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.confirm-email"
+msgstr "Potvrdite novi e-mail"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.info"
+msgstr ""
+"Poslat ćemo e-mail na tvoj trenutni e-mail \"%s\" kako bismo potvrdili tvoj "
+"identitet."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.new-email"
+msgstr "Novi e-mail"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.submit"
+msgstr "Promijeni e-mail"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
@@ -1282,6 +1689,19 @@ msgstr "Brisanje datoteke"
 msgid "modals.delete-file-multi-confirm.accept"
 msgstr "Izbriši datoteke"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "Jesi li siguran/na da želiš izbrisati %s datoteke?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "Brisanje %s datoteka"
+
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"Jesi li siguran/na da želiš izbrisati ovaj stil fonta? Neće se učitati ako "
+"se koristi u datoteci."
+
 msgid "modals.delete-font-variant.title"
 msgstr "Brisanje fonta"
 
@@ -1297,6 +1717,14 @@ msgstr "Brisanje fonta"
 msgid "modals.delete-page.body"
 msgstr "Jesi li siguran/na da želiš izbrisati ovu stranicu?"
 
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.title"
+msgstr "Brisanje stranice"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.accept"
+msgstr "Brisanje projekta"
+
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "modals.delete-project-confirm.message"
 msgstr "Jesi li siguran/na da želiš izbrisati ovaj projekt?"
@@ -1311,6 +1739,13 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Izbriši datoteku"
 msgstr[1] "Izbriši datoteke"
 msgstr[2] "Izbriši datoteke"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Jesi li siguran/na da želiš izbrisati ovu datoteku?"
+msgstr[1] "Jesi li siguran/na da želiš izbrisati ove datoteke?"
+msgstr[2] "Jesi li siguran/na da želiš izbrisati ove datoteke?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
@@ -1363,6 +1798,10 @@ msgstr "Jesi li siguran/na da želiš izbrisati ovog člana iz tima?"
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Brisanje člana tima"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-member-confirm.accept"
+msgstr "Pošalji pozivnicu"
+
 msgid "modals.invite-member.emails"
 msgstr "E-mail, odvojeno zarezom"
 
@@ -1371,8 +1810,19 @@ msgid "modals.invite-team-member.title"
 msgstr "Pozovi članove u tim"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Budući da si jedini član ovog tima, tim će biti izbrisan zajedno sa svojim "
+"projektima i datotekama."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Jesi li siguran/na da želiš napustiti tim %s?"
+
+msgid "modals.leave-and-reassign.forbiden"
+msgstr ""
+"Ne možeš napustiti tim ako nema drugog člana kojeg možeš promovirati u "
+"vlasnika. Možda želiš izbrisati tim."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
@@ -1404,9 +1854,20 @@ msgstr "Jesi li siguran/na da želiš napustiti ovaj tim?"
 msgid "modals.leave-confirm.title"
 msgstr "Napuštanje tima"
 
+#: src/app/main/ui/workspace/nudge.cljs
+#, fuzzy
+msgid "modals.nudge-title"
+msgstr "Nudge amount"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
 msgstr "Prenesi vlasništvo"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Ako preneseš vlasništvo, promijenit ćeš svoju ulogu u Administrator, čime "
+"ćeš izgubiti neka dopuštenja za ovaj tim. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
@@ -1418,22 +1879,36 @@ msgstr ""
 msgid "modals.promote-owner-confirm.title"
 msgstr "Novi vlasnik tima"
 
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.small-nudge"
-msgstr "Mali pomak"
-
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
 msgstr "Ukloni kao zajedničku biblioteku"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "modals.remove-shared-confirm.hint"
+msgstr ""
+"Nakon uklanjanja kao zajedničke biblioteke, biblioteka datoteka ove "
+"datoteke više neće biti dostupna za korištenje među tvojim ostalim "
+"datotekama."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr "Ukloni “%s” kao zajedničku biblioteku"
 
 #: src/app/main/ui/workspace/nudge.cljs
-#, fuzzy
-msgid "modals.nudge-title"
-msgstr "Nudge amount"
+msgid "modals.small-nudge"
+msgstr "Mali pomak"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Poništi objavu"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] "Ako poništiš objavu, stavke u njoj postaju biblioteka ove datoteke."
+msgstr[1] "Ako poništiš objavu, stavke u njoj postaju biblioteka ovih datoteka."
+msgstr[2] "Ako poništiš objavu, stavke u njoj postaju biblioteka ovih datoteka."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1471,6 +1946,10 @@ msgid "modals.update-remote-component.accept"
 msgstr "Ažuriraj"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.cancel"
+msgstr "Poništi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Upravo ćeš ažurirati komponentu u zajedničkoj biblioteci. To može utjecati "
@@ -1480,10 +1959,15 @@ msgstr ""
 msgid "modals.update-remote-component.message"
 msgstr "Ažuriraj komponentu u zajedničkoj biblioteci"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-email-sent"
+msgstr "Pozivnica je uspješno poslana"
+
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
 msgstr ""
-"Ne možeš izbrisati svoj profil. Ponovno dodijeli svoje timove prije nastavka."
+"Ne možeš izbrisati svoj profil. Ponovno dodijeli svoje timove prije "
+"nastavka."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -1497,6 +1981,14 @@ msgid "onboarding-v2.before-start.desc1"
 msgstr ""
 "Postoji mnogo dostupnih resursa koji će ti pomoći da počneš koristiti "
 "Penpot, poput korisničkog vodiča i našeg Youtube kanala."
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Detaljne informacije o tome kako koristiti Penpot. Od izrade prototipova do "
+"organiziranja ili dijeljenja dizajna."
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Korisnički priručnik"
 
 msgid "onboarding-v2.before-start.desc3"
 msgstr "Možeš gledati naše upute i upute koje je izradila naša zajednica."
@@ -1512,8 +2004,44 @@ msgstr ""
 "Penpot je Open Source i izradio ga je Kaleidos kao i zajednica, gdje mnogi "
 "ljudi već pomažu jedni drugima. Svi mogu surađivati na:"
 
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Javni prostor za učenje, dijeljenje i raspravu o Penpotu, njegovoj "
+"sadašnjosti i budućnosti s cijelom zajednicom i glavnim timom Penpota."
+
 msgid "onboarding-v2.welcome.desc2.title"
 msgstr "Sudjelovanje u Community-u"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Gdje ćete pronaći kako surađivati s prijevodima, zahtjevima za unapređenje, "
+"temeljnim doprinosima, potragom za bugovima…"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Vodič za doprinos"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Dobrodošli u Penpot!"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Stvori tim kasnije"
+
+msgid "onboarding.choice.team-up.create-team"
+msgstr "Ime tvojeg tima"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "Nakon što imenuješ svoj tim, moći ćeš pozvati ljude da se pridruže."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Unesi naziv tima"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Pozovi članove"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Ne zaboravi uključiti sve. Programere, dizajnere, menadžere... raznolikost "
+"se isplati :)"
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Stvori tim i pozovi kasnije"
@@ -1546,6 +2074,35 @@ msgstr "projekt na githubu"
 
 msgid "onboarding.contrib.title"
 msgstr "Open Source suradnik?"
+
+msgid "onboarding.newsletter.accept"
+msgstr "Da, pretplati se"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr "Tvoj zahtjev za pretplatu je poslan, poslat ćemo ti e-mail da ga potvrdiš."
+
+msgid "onboarding.newsletter.decline"
+msgstr "Ne, hvala"
+
+msgid "onboarding.newsletter.desc"
+msgstr ""
+"Pretplati se na naš newsletter kako bi bio/la u toku s razvojem proizvoda i "
+"novostima."
+
+msgid "onboarding.newsletter.policy"
+msgstr "Politika privatnosti."
+
+msgid "onboarding.newsletter.privacy1"
+msgstr "Budući da brinemo o privatnosti, evo našeg "
+
+msgid "onboarding.newsletter.privacy2"
+msgstr ""
+"Poslat ćemo ti samo relevantne e-mailove. Pretplatu možeš odjaviti u bilo "
+"kojem trenutku u svom korisničkom profilu ili putem linka za odjavu u bilo "
+"kojem od naših newslettera."
+
+msgid "onboarding.newsletter.title"
+msgstr "Želiš primati Penpot novostii?"
 
 #, fuzzy
 msgid "onboarding.slide.0.alt"
@@ -1586,6 +2143,9 @@ msgstr ""
 "i centraliziranim komentarima, idejama i povratnim informacijama izravno "
 "preko dizajna."
 
+msgid "onboarding.slide.2.title"
+msgstr "Sakupi povratne informacije, predstavi i podijeli svoj rad"
+
 msgid "onboarding.slide.3.alt"
 msgstr "Handoff i lowcode"
 
@@ -1597,14 +2157,19 @@ msgstr ""
 
 msgid "onboarding.slide.3.desc2"
 msgstr ""
-"Dobij i pruži specifikacije koda kao što su oznake (SVG, HTML) ili stilovi ("
-"CSS, Less, Stylus…)."
+"Dobij i pruži specifikacije koda kao što su oznake (SVG, HTML) ili stilovi "
+"(CSS, Less, Stylus…)."
 
 msgid "onboarding.slide.3.title"
 msgstr "Jedan zajednički izvor istine"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Kreiraj tim"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Tim ti omogućuje suradnju s drugim Penpot korisnicima koji rade na istim "
+"datotekama i projektima."
 
 msgid "onboarding.team-modal.create-team-feature-1"
 msgstr "Neograničen broj datoteka i projekata"
@@ -1614,6 +2179,12 @@ msgstr "Izdanje za više igrača"
 
 msgid "onboarding.team-modal.create-team-feature-3"
 msgstr "Upravljanje ulogama"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Neograničen broj članova"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100% besplatno!"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Evo nekoliko predložaka."
@@ -1626,6 +2197,53 @@ msgstr "Penpot"
 
 msgid "onboarding.welcome.title"
 msgstr "Dobrodošli u Penpot"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "profile.recovery.go-to-login"
+msgstr "Idi na prijavu"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "settings.multiple"
+msgstr "Izmješano"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Osnove"
+
+msgid "shortcut-section.dashboard"
+msgstr "Nadzorna ploča"
+
+msgid "shortcut-section.viewer"
+msgstr "Gledatelj"
+
+msgid "shortcut-section.workspace"
+msgstr "Radni prostor"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Poravnanje"
+
+msgid "shortcut-subsection.edit"
+msgstr "Uredi"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Generičko"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Generičko"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Glavni meni"
+
+#, fuzzy
+msgid "shortcut-subsection.modify-layers"
+msgstr "Izmijeni layere"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navigacija"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navigacija"
 
 msgid "shortcut-subsection.navigation-workspace"
 msgstr "Navigacija"
@@ -1670,6 +2288,9 @@ msgstr "Poravnaj desno"
 msgid "shortcuts.align-top"
 msgstr "Poravnaj vrh"
 
+msgid "shortcuts.align-vcenter"
+msgstr "Poravnaj sredinu okomito"
+
 msgid "shortcuts.artboard-selection"
 msgstr "Kreiraj ploču iz odabira"
 
@@ -1685,14 +2306,14 @@ msgstr "Boolean presijek"
 msgid "shortcuts.bool-union"
 msgstr "Boolean unija"
 
-msgid "shortcuts.bring-forward"
-msgstr "Premijesti naprijed"
+msgid "shortcuts.bring-back"
+msgstr "Premijesti u pozadinu"
 
 msgid "shortcuts.bring-backward"
 msgstr "Premiijesti nazad"
 
-msgid "shortcuts.bring-back"
-msgstr "Premijesti u pozadinu"
+msgid "shortcuts.bring-forward"
+msgstr "Premijesti naprijed"
 
 #, fuzzy
 msgid "shortcuts.bring-front"
@@ -1713,9 +2334,6 @@ msgstr "Kreiraj novo"
 
 msgid "shortcuts.cut"
 msgstr "Izreži"
-
-msgid "shortcuts.align-vcenter"
-msgstr "Poravnaj sredinu okomito"
 
 msgid "shortcuts.decrease-zoom"
 msgstr "Zoom out"
@@ -1738,11 +2356,14 @@ msgstr "Elipsa"
 msgid "shortcuts.draw-frame"
 msgstr "Panel"
 
+msgid "shortcuts.draw-nodes"
+msgstr "Ucrtaj put"
+
 msgid "shortcuts.draw-path"
 msgstr "Put"
 
-msgid "shortcuts.draw-nodes"
-msgstr "Ucrtaj put"
+msgid "shortcuts.draw-rect"
+msgstr "Pravokutnik"
 
 msgid "shortcuts.draw-text"
 msgstr "Tekst"
@@ -1752,6 +2373,33 @@ msgstr "Dupliciraj"
 
 msgid "shortcuts.escape"
 msgstr "Poništi"
+
+msgid "shortcuts.export-shapes"
+msgstr "Izvezi oblike"
+
+msgid "shortcuts.fit-all"
+msgstr "Zumiraj da stane sve"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Okreni vodoravno"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Okreni okomito"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Idi na nacrte"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Idi na zajedničke biblioteke"
+
+msgid "shortcuts.go-to-search"
+msgstr "Traži"
+
+msgid "shortcuts.group"
+msgstr "Grupiraj"
+
+msgid "shortcuts.h-distribute"
+msgstr "Distribuiraj vodoravno"
 
 msgid "shortcuts.hide-ui"
 msgstr "Prikaži/sakrij UI"
@@ -1807,17 +2455,62 @@ msgstr "Premijesti desno"
 msgid "shortcuts.move-unit-up"
 msgstr "Premijesti gore"
 
-msgid "shortcuts.h-distribute"
-msgstr "Distribuiraj vodoravno"
+msgid "shortcuts.next-frame"
+msgstr "Slijedeća ploča"
 
-msgid "shortcuts.fit-all"
-msgstr "Zumiraj da stane sve"
+msgid "shortcuts.not-found"
+msgstr "Nema pronađenih prečaca"
+
+msgid "shortcuts.opacity-0"
+msgstr "Postavi neprozirnost na 100%"
+
+msgid "shortcuts.opacity-1"
+msgstr "Postavi neprozirnost na 10%"
+
+msgid "shortcuts.opacity-2"
+msgstr "Postavi neprozirnost na 20%"
+
+msgid "shortcuts.opacity-3"
+msgstr "Postavi neprozirnost na 30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "Postavi neprozirnost na 40%"
+
+msgid "shortcuts.opacity-5"
+msgstr "Postavi neprozirnost na 50%"
+
+msgid "shortcuts.opacity-6"
+msgstr "Postavi neprozirnost na 60%"
+
+msgid "shortcuts.opacity-7"
+msgstr "Postavi neprozirnost na 70%"
+
+msgid "shortcuts.opacity-8"
+msgstr "Postavi neprozirnost na 80%"
+
+msgid "shortcuts.opacity-9"
+msgstr "Postavi neprozirnost na 90%"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Birač boja"
+
+msgid "shortcuts.open-comments"
+msgstr "Idi na odjeljak s komentarima"
 
 msgid "shortcuts.open-dashboard"
 msgstr "Idi na nadzornu ploču"
 
 msgid "shortcuts.open-handoff"
 msgstr "Idi na odjeljak primopredaje"
+
+msgid "shortcuts.open-interactions"
+msgstr "Idi na odjeljak interakcija"
+
+msgid "shortcuts.open-viewer"
+msgstr "Idi na odjeljak interakcija gledatelja"
+
+msgid "shortcuts.open-workspace"
+msgstr "Idi na radni prostor"
 
 msgid "shortcuts.or"
 msgstr " ili "
@@ -1843,25 +2536,25 @@ msgstr "Označi sve"
 msgid "shortcuts.separate-nodes"
 msgstr "Posebni čvorovi"
 
+#, fuzzy
+msgid "shortcuts.show-pixel-grid"
+msgstr "Prikaži/sakrij \"pixel grid\""
+
 msgid "shortcuts.show-shortcuts"
 msgstr "Prikaži/sakrij prečace"
 
 msgid "shortcuts.snap-nodes"
 msgstr "Priključi na čvorove"
 
+#, fuzzy
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Priključi na \"pixel grid\""
+
 msgid "shortcuts.start-editing"
 msgstr "Počni uređivanje"
 
 msgid "shortcuts.start-measure"
 msgstr "Počni mjerenje"
-
-#, fuzzy
-msgid "shortcuts.show-pixel-grid"
-msgstr "Prikaži/sakrij \"pixel grid\""
-
-#, fuzzy
-msgid "shortcuts.snap-pixel-grid"
-msgstr "Priključi na \"pixel grid\""
 
 msgid "shortcuts.stop-measure"
 msgstr "Zaustavi mjerenje"
@@ -1879,36 +2572,54 @@ msgstr "Promijena dinamičkog poravnanja"
 msgid "shortcuts.toggle-assets"
 msgstr "Promijena stavaka"
 
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Promijena palete boja"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Promijena fokus moda"
+
+#, fuzzy
+msgid "shortcuts.toggle-grid"
+msgstr "Promijena \"grida\""
+
+msgid "shortcuts.toggle-history"
+msgstr "Promijena povijesti"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Promijena layera"
+
 msgid "shortcuts.toggle-lock"
 msgstr "Zaključaj odabrano"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Zaključaj proporcije"
 
-msgid "shortcuts.toggle-layers"
-msgstr "Promijena layera"
-
-msgid "shortcuts.toggle-history"
-msgstr "Promijena povijesti"
-
-msgid "shortcuts.toggle-focus-mode"
-msgstr "Promijena fokus moda"
-
-msgid "shortcuts.toggle-colorpalette"
-msgstr "Promijena palete boja"
-
 #, fuzzy
-msgid "shortcuts.toggle-grid"
-msgstr "Promijena \"grida\""
+msgid "shortcuts.toggle-rules"
+msgstr "Prikaži/sakrij \"rules\""
 
 msgid "shortcuts.toggle-scale-text"
 msgstr "Promjena mjerila teksta"
+
+#, fuzzy
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Poravnanje s \"gridom\""
+
+#, fuzzy
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Pričvrsti na guides"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Promijeni paletu teksta"
 
 msgid "shortcuts.toggle-visibility"
 msgstr "Promijeni vidljivost"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Promijeni stil zooma"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Promijeni cijeli zaslon"
 
 #, fuzzy
 msgid "shortcuts.undo"
@@ -1920,8 +2631,19 @@ msgstr "Razgrupiraj"
 msgid "shortcuts.unmask"
 msgstr "Makni masku"
 
+msgid "shortcuts.v-distribute"
+msgstr "Distribuiraj okomito"
+
 msgid "shortcuts.zoom-selected"
 msgstr "Zoomiraj na selektirano"
+
+#: src/app/main/ui/dashboard/files.cljs
+msgid "title.dashboard.files"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "Dobavljači fontova - %s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.fonts"
@@ -1935,29 +2657,54 @@ msgstr "Projekti - %s - Penpot"
 msgid "title.dashboard.search"
 msgstr "Traži - %s - Penpot"
 
-msgid "shortcuts.v-distribute"
-msgstr "Distribuiraj okomito"
-
-#, fuzzy
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Poravnanje s \"gridom\""
-
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "title.dashboard.shared-libraries"
 msgstr "Zajedničke biblioteke - %s - Penpot"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
+msgid "title.default"
+msgstr "Penpot - Sloboda dizajna za timove"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "title.settings.feedback"
 msgstr "Pošalji povratnu informaciju - Penpot"
 
+#: src/app/main/ui/settings/options.cljs
+msgid "title.settings.options"
+msgstr "Postavke - Penpot"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "title.settings.password"
+msgstr "Lozinka - Penpot"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "title.settings.profile"
+msgstr "Profil - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Pozivnice - %s - Penpot"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-members"
 msgstr "Članovi - %s - Penpot"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-settings"
+msgstr "Postavke - %s - Penpot"
+
+#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+msgid "title.viewer"
+msgstr "%s - Način prikaza - Penpot"
+
+#: src/app/main/ui/workspace.cljs
+msgid "title.workspace"
+msgstr "%s - Penpot"
+
 msgid "viewer.breaking-change.description"
 msgstr ""
-"Ova poveznica za dijeljenje više nije važeća. Napravi novu ili traži novu od "
-"vlasnika."
+"Ova poveznica za dijeljenje više nije važeća. Napravi novu ili traži novu "
+"od vlasnika."
 
 msgid "viewer.breaking-change.message"
 msgstr "Oprosti!"
@@ -1996,6 +2743,10 @@ msgid "viewer.header.share.copy-link"
 msgstr "Kopiraj poveznicu"
 
 #: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.create-link"
+msgstr "Kreiraj poveznicu"
+
+#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.placeholder"
 msgstr "Ovdje će se pojaviti poveznica za dijeljenje"
 
@@ -2024,6 +2775,10 @@ msgid "workspace.align.hcenter"
 msgstr "Poravnaj vodoravno u sredinu (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hdistribute"
+msgstr "Distribuiraj vodoravni razmak (%s)"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hleft"
 msgstr "Poravnaj lijevo (%s)"
 
@@ -2036,20 +2791,24 @@ msgid "workspace.align.vbottom"
 msgstr "Poravnaj dolje (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
-msgid "workspace.align.vdistribute"
-msgstr "Distribuiraj okomiti razmak (%s)"
-
-#: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vcenter"
 msgstr "Poravnaj okomito u sredinu (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
-msgid "workspace.align.hdistribute"
-msgstr "Distribuiraj vodoravni razmak (%s)"
+msgid "workspace.align.vdistribute"
+msgstr "Distribuiraj okomiti razmak (%s)"
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.vtop"
 msgstr "Poravnaj gore (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.assets"
+msgstr "Stavke"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.box-filter-all"
+msgstr "Sve stavke"
 
 msgid "workspace.assets.box-filter-graphics"
 msgstr "Grafika"
@@ -2063,21 +2822,12 @@ msgid "workspace.assets.components"
 msgstr "Komponente"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.assets"
-msgstr "Stavke"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.box-filter-all"
-msgstr "Sve stavke"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group"
 msgstr "Kreiraj grupu"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group-hint"
-msgstr ""
-"Tvoje stavke će se automatski imenovati kao \"naziv grupe / naziv stavke\""
+msgstr "Tvoje stavke će se automatski imenovati kao \"naziv grupe / naziv stavke\""
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.delete"
@@ -2103,6 +2853,17 @@ msgstr "Grupa"
 msgid "workspace.assets.group-name"
 msgstr "Ime grupe"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.libraries"
+msgstr "Biblioteke"
+
+msgid "workspace.assets.local-library"
+msgstr "lokalna biblioteka"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.not-found"
+msgstr "Nisu pronađene stavke"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename"
 msgstr "Preimenuj"
@@ -2115,15 +2876,65 @@ msgstr "Preimenuj grupu"
 msgid "workspace.assets.search"
 msgstr "Pretraži stavke"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s odabrana stavka"
+msgstr[1] "%s odabranih stavki"
+msgstr[2] "%s odabranih stavki"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared"
+msgstr "PODIJELJENO"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.typography"
+msgstr "Tipografija"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-id"
+msgstr "Font"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-size"
+msgstr "Veličina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-variant-id"
+msgstr "Varijanta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.go-to-edit"
+msgstr "Idi na datoteku biblioteke stilova za uređivanje"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.letter-spacing"
+msgstr "Razmak između slova"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.line-height"
 msgstr "Visina linije"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/handoff/attributes/text.cljs, src/app/main/ui/handoff/attributes/text.cljs
+msgid "workspace.assets.typography.sample"
+msgstr "Ag"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.text-transform"
+msgstr "Transformiraj tekst"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Razgrupiraj"
 
 msgid "workspace.focus.focus-mode"
 msgstr "Fokus mode"
 
 msgid "workspace.focus.focus-off"
 msgstr "Fokus isključen"
+
+msgid "workspace.focus.focus-on"
+msgstr "Fokus uključen"
 
 msgid "workspace.focus.selection"
 msgstr "Odabir"
@@ -2145,6 +2956,32 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Onemogući skaliranje teksta"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-grid"
+msgstr "Onemogući \"snap to grid\""
+
+#: src/app/main/ui/workspace/header.cljs
+#, fuzzy
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Onemogući \"snap to guides\""
+
+#, fuzzy
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Onemogući \"snap to pixel\""
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-dynamic-alignment"
+msgstr "Omogući dinamičko poravnanje"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Omogući skaliranje teksta"
+
+#: src/app/main/ui/workspace/header.cljs
+#, fuzzy
+msgid "workspace.header.menu.enable-snap-grid"
+msgstr "Poravnanje s \"gridom\""
+
+#: src/app/main/ui/workspace/header.cljs
 #, fuzzy
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Snap to guides"
@@ -2156,6 +2993,11 @@ msgstr "Omogući \"snap to pixel\""
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Sakrij nazive ploča"
+
+#: src/app/main/ui/workspace/header.cljs
+#, fuzzy
+msgid "workspace.header.menu.hide-grid"
+msgstr "Sakrij \"grid\""
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2182,11 +3024,6 @@ msgid "workspace.header.menu.option.file"
 msgstr "Datoteka"
 
 #: src/app/main/ui/workspace/header.cljs
-#, fuzzy
-msgid "workspace.header.menu.hide-grid"
-msgstr "Sakrij \"grid\""
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.help-info"
 msgstr "Pomoć i informacije"
 
@@ -2210,13 +3047,22 @@ msgstr "Prikaži nazive ploča"
 msgid "workspace.header.menu.show-grid"
 msgstr "Prikaži \"grid\""
 
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-palette"
+msgstr "Prikaži paletu boja"
+
 #, fuzzy
 msgid "workspace.header.menu.show-pixel-grid"
 msgstr "Prikaži \"pixel grid\""
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-palette"
-msgstr "Prikaži paletu boja"
+#, fuzzy
+msgid "workspace.header.menu.show-rules"
+msgstr "Prikaži \"rules\""
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Prikaži paletu fontova"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -2225,6 +3071,10 @@ msgstr "Resetiraj"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.save-error"
 msgstr "Greška kod spremanja"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saved"
+msgstr "Spremljeno"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.saving"
@@ -2278,6 +3128,10 @@ msgstr "Biblioteka datoteka"
 msgid "workspace.libraries.colors.hsv"
 msgstr "HSV"
 
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.recent-colors"
+msgstr "Nedavno korištene boje"
+
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.rgb-complementary"
 msgstr "RGB komplementarno"
@@ -2319,20 +3173,20 @@ msgid "workspace.libraries.library"
 msgstr "BIBLIOTEKA"
 
 #: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.no-matches-for"
-msgstr "Nisu pronađeni rezultati za “%s”"
-
-#: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Ne postoje zajedničke biblioteke koje je potrebno ažurirati"
 
 #: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.search-shared-libraries"
-msgstr "Pretraži zajedničke biblioteke"
+msgid "workspace.libraries.no-matches-for"
+msgstr "Nisu pronađeni rezultati za “%s”"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-shared-libraries-available"
 msgstr "Nema dostupnih zajedničkih biblioteka"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.search-shared-libraries"
+msgstr "Pretraži zajedničke biblioteke"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.shared-libraries"
@@ -2377,13 +3231,17 @@ msgstr "Klikni gumb + za dodavanje interakcija."
 msgid "workspace.options.blur-options.background-blur"
 msgstr "Pozadina"
 
+#, fuzzy
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Layer"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
 msgstr "Zamuti"
 
-#, fuzzy
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Layer"
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title.group"
+msgstr "Grupiraj zamućenje"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title.multiple"
@@ -2396,29 +3254,6 @@ msgstr "Pozadina canvasa"
 msgid "workspace.options.clip-content"
 msgstr "Isjeci sadržaj"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.column"
-msgstr "Kolumne"
-
-msgid "workspace.options.grid.params.color"
-msgstr "Boja"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.columns"
-msgstr "Kolumne"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.height"
-msgstr "Visina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.margin"
-msgstr "Margina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.rows"
-msgstr "Redovi"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "Komponenta"
@@ -2426,6 +3261,10 @@ msgstr "Komponenta"
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Ograničenja"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.bottom"
+msgstr "Dno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.center"
@@ -2438,6 +3277,18 @@ msgstr "Popravi prilikom scrolanja"
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.left"
 msgstr "Lijevo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.leftright"
+msgstr "Lijevo i desno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.right"
+msgstr "Desno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.scale"
+msgstr "Skala"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.top"
@@ -2506,9 +3357,41 @@ msgid "workspace.options.flows.flow-starts"
 msgstr "Flow započinje"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.auto"
+msgstr "Auto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.column"
+msgstr "Kolumne"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, fuzzy
+msgid "workspace.options.grid.grid-title"
+msgstr "Grid"
+
+msgid "workspace.options.grid.params.color"
+msgstr "Boja"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.columns"
+msgstr "Kolumne"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 #, fuzzy
 msgid "workspace.options.grid.params.gutter"
 msgstr "Gutter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.height"
+msgstr "Visina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.margin"
+msgstr "Margina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.rows"
+msgstr "Redovi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.set-default"
@@ -2519,8 +3402,20 @@ msgid "workspace.options.grid.params.size"
 msgstr "Veličina"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type"
+msgstr "Tip"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.bottom"
 msgstr "Dno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.center"
+msgstr "Sredina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.left"
+msgstr "Lijevo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.right"
@@ -2580,17 +3475,33 @@ msgid "workspace.options.interaction-animation-dissolve"
 msgstr "Razriješi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "Nijedan"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "Gurni"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 #, fuzzy
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Slide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-background"
+msgstr "Dodajte pozadinsko preklapanje"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-close-outside"
 msgstr "Zatvori kada klikneš izvana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-background"
-msgstr "Dodajte pozadinsko preklapanje"
+msgid "workspace.options.interaction-close-overlay"
+msgstr "Zatvori preklapanje"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "Zatvori preklapanje: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-delay"
@@ -2607,6 +3518,10 @@ msgstr "Trajanje"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-easing"
 msgstr "Easing"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease"
+msgstr "Ease"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 #, fuzzy
@@ -2632,8 +3547,21 @@ msgid "workspace.options.interaction-in"
 msgstr "U"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "Ulaz mišem"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-mouse-leave"
 msgstr "Izlaz mišem"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to"
+msgstr "Idi do"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-navigate-to-dest"
@@ -2649,16 +3577,65 @@ msgid "workspace.options.interaction-offset-effect"
 msgstr "Offset učinak"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-open-url"
-msgstr "Otvoreni url"
+msgid "workspace.options.interaction-on-click"
+msgstr "Na klik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay"
+msgstr "Otvoreno preklapanje"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-overlay-dest"
 msgstr "Otvoreno preklapanje: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "Otvoreni url"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.interaction-out"
+msgstr "Vani"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "Dolje sredina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "Dolje lijevo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "Dolje desno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-center"
+msgstr "Sredina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-manual"
+msgstr "Priručnik"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "Gore sredina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-top-left"
 msgstr "Gore lijevo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "Gore desno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-position"
+msgstr "Pozicija"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "Sačuvaj položaj scrolanja"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-prev-screen"
@@ -2676,6 +3653,14 @@ msgstr "Uključi/isključi preklapanje"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-toggle-overlay-dest"
 msgstr "Uključi/isključi preklapanje: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-trigger"
+msgstr "Okidač"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-while-hovering"
@@ -2734,12 +3719,12 @@ msgid "workspace.options.layer-options.blend-mode.multiply"
 msgstr "Umnoži"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-msgid "workspace.options.layer-options.blend-mode.overlay"
-msgstr "Preklapanje"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.normal"
 msgstr "Normalno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.overlay"
+msgstr "Preklapanje"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.saturation"
@@ -2773,24 +3758,24 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Napredne opcije"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-h"
-msgstr "Min.visina"
+msgid "workspace.options.layout-item.layout-max-h"
+msgstr "Max.visina"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-max-w"
 msgstr "Max.širina"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-max-h"
-msgstr "Max.visina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title"
-msgstr "Promjena veličine elementa"
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "Min.visina"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Min.širina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "Promjena veličine elementa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-max-h"
@@ -2856,6 +3841,25 @@ msgstr "Margina"
 msgid "workspace.options.layout.margin-all"
 msgstr "Sve strane"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Jednostavna margina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy
+msgid "workspace.options.layout.no-wrap"
+msgstr "bez omota"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy
+msgid "workspace.options.layout.packed"
+msgstr "upakiran"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy
+msgid "workspace.options.layout.padding"
+msgstr "Padding"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding-all"
 msgstr "Sve strane"
@@ -2879,6 +3883,53 @@ msgstr "prostor između"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.title"
 msgstr "Layout"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Vrh"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "dno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "sredina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "vrh"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy
+msgid "workspace.options.layout.wrap"
+msgstr "omotaj"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "Više boja"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Više boja iz biblioteke"
+
+msgid "workspace.options.opacity"
+msgstr "Neprozirnost"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.position"
+msgstr "Pozicija"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.prototype"
+msgstr "Prototip"
+
+msgid "workspace.options.radius"
+msgstr "Radius"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.all-corners"
+msgstr "Svi kutevi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 #, fuzzy
@@ -2932,6 +3983,10 @@ msgid "workspace.options.shadow-options.drop-shadow"
 msgstr "Spusti sjenu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.inner-shadow"
+msgstr "Unutarnja sjena"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
@@ -2942,6 +3997,29 @@ msgstr "Y"
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.spread"
 msgstr "Proširi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title"
+msgstr "Sjena"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.group"
+msgstr "Grupiraj sjenu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.multiple"
+msgstr "Odabir sjena"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "Prikaži u izvozu"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "Prikaži u načinu pregleda"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.size"
+msgstr "Veličina"
 
 #: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs
 #, fuzzy
@@ -2988,9 +4066,40 @@ msgstr "Trokutna strelica"
 msgid "workspace.options.stroke-color"
 msgstr "Boja poteza"
 
+msgid "workspace.options.stroke-width"
+msgstr "Širina poteza"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.center"
+msgstr "Sredina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dashed"
+msgstr "Crtkano"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dotted"
+msgstr "Točkasto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.inner"
+msgstr "Unutra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.mixed"
+msgstr "Miješano"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.outer"
+msgstr "Vani"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.solid"
 msgstr "Čvrsto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-bottom"
+msgstr "Poravnaj dno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-center"
@@ -3004,6 +4113,10 @@ msgstr "Složi u blok"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
 msgstr "Poravnaj lijevo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-middle"
+msgstr "Poravnaj sredinu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
@@ -3066,6 +4179,9 @@ msgstr "Unaprijed postavljeno"
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Precrtanko"
 
+msgid "workspace.options.text-options.text-case"
+msgstr "Slučaj"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
 msgstr "Tekst"
@@ -3103,1325 +4219,8 @@ msgstr "Širina"
 msgid "workspace.options.x"
 msgstr "X"
 
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.flip-horizontal"
-msgstr "Okreni vodoravno"
-
-msgid "workspace.sidebar.layers.frames"
-msgstr "Ploče"
-
-msgid "workspace.sidebar.layers.groups"
-msgstr "Grupe"
-
-#, fuzzy
-msgid "workspace.sidebar.layers.search"
-msgstr "Traži layere"
-
-msgid "workspace.sidebar.layers.shapes"
-msgstr "Oblici"
-
-msgid "workspace.sidebar.layers.texts"
-msgstr "Tekstovi"
-
-msgid "workspace.undo.entry.multiple.color"
-msgstr "stavke boja"
-
-msgid "workspace.undo.entry.multiple.media"
-msgstr "grafičke stavke"
-
-msgid "workspace.undo.entry.multiple.typography"
-msgstr "tipografske stavke"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.title.multiple"
-msgstr "Odabir sjena"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
-msgid "workspace.options.show-fill-on-export"
-msgstr "Prikaži u izvozu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke.dashed"
-msgstr "Crtkano"
-
-msgid "workspace.options.show-in-viewer"
-msgstr "Prikaži u načinu pregleda"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke.center"
-msgstr "Sredina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke.dotted"
-msgstr "Točkasto"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke.inner"
-msgstr "Unutra"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke.mixed"
-msgstr "Miješano"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-bottom"
-msgstr "Poravnaj dno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.align-middle"
-msgstr "Poravnaj sredinu"
-
 msgid "workspace.options.y"
 msgstr "Y"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.register-submit"
-msgstr "Stvori račun"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.register"
-msgstr "Još nemaš račun?"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.login-here"
-msgstr "Prijavi se ovdje"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.confirm-password"
-msgstr "Potvrdi lozinku"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.already-have-account"
-msgstr "Već imaš račun?"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.create-demo-account"
-msgstr "Kreiraj demo račun"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.check-your-email"
-msgstr ""
-"Provjeri svoj e-mail i klikni na vezu da potvrdiš i počneš koristiti Penpot."
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.notifications.recovery-token-sent"
-msgstr "Veza za oporavak lozinke poslana je u tvoj inbox."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.create-demo-profile"
-msgstr "Samo želiš isprobati?"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Drago nam je vidjeti te opet!"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-github-submit"
-msgstr "GitHub"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-google-submit"
-msgstr "Google"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.new-password"
-msgstr "Unesi novu lozinku"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.demo-warning"
-msgstr ""
-"Ovo je DEMO usluga. NEMOJ KORISTITI za pravi rad. Projekti će se povremeno "
-"brisati."
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.forgot-password"
-msgstr "Zaboravljena lozinka?"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.fullname"
-msgstr "Puno ime"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "E-mail"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-submit"
-msgstr "Prijava"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-gitlab-submit"
-msgstr "GitLab"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-ldap-submit"
-msgstr "LDAP"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-oidc-submit"
-msgstr "OpenID"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Želim se pretplatiti se na Penpot mailing listu."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "auth.notifications.team-invitation-accepted"
-msgstr "Uspješno pridružen/a timu"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-submit"
-msgstr "Obnovi lozinku"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-length-hint"
-msgstr "Najmanje 8 znamenki"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.recovery-submit"
-msgstr "Promjeni lozinku"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Besplatno je, Open Source"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "Poveznica uspješno izbrisana"
-
-msgid "common.share-link.manage-ops"
-msgstr "Upravljanje dopuštenjima"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.start"
-msgstr "Započni obilazak"
-
-msgid "common.share-link.permissions-can-comment"
-msgstr "Dopušten komentar"
-
-msgid "common.share-link.page-shared"
-msgid_plural "common.share-link.page-shared"
-msgstr[0] "1 stranica podijeljena"
-msgstr[1] "%s stranica podijeljeno"
-msgstr[2] "%s stranica podijeljeno"
-
-msgid "common.share-link.permissions-can-inspect"
-msgstr "Dopušteno provjeriti kod"
-
-msgid "common.share-link.permissions-hint"
-msgstr "Svatko sa poveznicom imat će pristup"
-
-msgid "common.share-link.placeholder"
-msgstr "Ovdje će se pojaviti poveznica za dijeljenje"
-
-msgid "common.share-link.title"
-msgstr "Podijeli prototip"
-
-msgid "common.share-link.team-members"
-msgstr "Samo članovi tima"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.management"
-msgstr "Upravljanje timom"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.text"
-msgstr ""
-"Penpot je namijenjen timovima. Pozovi članove da zajedno rade na projektima "
-"i datotekama"
-
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-msgid "dashboard.copy-suffix"
-msgstr "(kopiraj)"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.create-new-team"
-msgstr "+ Kreiraj novi tim"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.delete-team"
-msgstr "Obriši tim"
-
-msgid "dashboard.export-binary-multi"
-msgstr "Preuzmi %s Penpot datoteke (.penpot)"
-
-msgid "dashboard.export-frames"
-msgstr "Izvezi artboard u PDF…"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-frames.title"
-msgstr "Izvezi u PDF"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.how-to"
-msgstr ""
-"Postavke izvoza možeš dodati elementima iz svojstava dizajna (na dnu desne "
-"bočne trake)."
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.how-to-link"
-msgstr "Informacije kako postaviti izvoz na Penpot."
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.no-elements"
-msgstr "Nema elemenata s postavkama izvoza."
-
-msgid "dashboard.export.options.merge.message"
-msgstr ""
-"Tvoja će datoteka biti izvezena sa svim vanjskim stavkama spojenim u "
-"biblioteku datoteka."
-
-msgid "dashboard.export.options.all.message"
-msgstr ""
-"datoteke sa zajedničkim bibliotekama bit će uključene u izvoz, održavajući "
-"njihovu poveznicu."
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.dismiss-all"
-msgstr "Odbaci sve"
-
-msgid "dashboard.export.title"
-msgstr "Izvezi datoteke"
-
-msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Font izbrisan"
-
-#, fuzzy, markdown
-msgid "dashboard.fonts.hero-text1"
-msgstr ""
-"Svaki web-font koji ovdje preneseš biti će dodan na popis fontova koji je "
-"dostupan u tekstualnim svojstvima datoteka ovog tima. Fontovi s istim "
-"nazivom fontova biti će grupirani kao **jedan font**. Možeš učitati fontove "
-"sa sljedećim formatima: **TTF, OTF i WOFF** (biti će potreban samo jedan)."
-
-#, markdown
-msgid "dashboard.fonts.hero-text2"
-msgstr ""
-"Možeš učitavati samo fontove koje posjeduješ ili imaš licencu za korištenje "
-"u Penpotu. Saznaj više u odjeljku Prava na sadržaj [Penpotovih uvjeta "
-"pružanja usluge](https://penpot.app/terms.html). Također možeš pročitati o ["
-"licenciranju fontova](https://www.typography.com/faq)."
-
-msgid "dashboard.import.progress.process-page"
-msgstr "Obrada stranice: %s"
-
-msgid "dashboard.import.import-error"
-msgstr "Došlo je do problema pri uvozu datoteke. Datoteka nije uvezena."
-
-msgid "dashboard.import.import-message"
-msgstr "%s datoteka je uspješno uvezeno."
-
-msgid "dashboard.import.progress.process-colors"
-msgstr "Obrada boja"
-
-msgid "dashboard.import.import-warning"
-msgstr "Neke su datoteke sadržavale nevažeće objekte koji su uklonjeni."
-
-#: src/app/main/ui/export.cljs
-#, fuzzy
-msgid "dashboard.export-multiple.selected"
-msgstr "%s - %s elementa označeno"
-
-msgid "dashboard.import.progress.process-components"
-msgstr "Obrada komponenti"
-
-msgid "dashboard.import.progress.process-media"
-msgstr "Obrada medija"
-
-msgid "dashboard.export-standard-multi"
-msgstr "Preuzmi %s standardne datoteke (.svg + .json)"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.info"
-msgstr "Nauči osnove na Penpotu dok se zabavljaš uz ovaj praktični vodič."
-
-#: src/app/main/data/dashboard.cljs
-msgid "dashboard.new-project-prefix"
-msgstr "Novi projekt"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-msg"
-msgstr "Šaljite mi vijesti, ažuriranja proizvoda i preporuke o Penpotu."
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Pretplata na newsletter"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.info"
-msgstr "Prošeći Penpotom i upoznaj glavne karakteristike."
-
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.move-to"
-msgstr "Premijesti u"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dashboard.new-project"
-msgstr "+ Novi projekt"
-
-#: src/app/main/ui/dashboard/search.cljs
-msgid "dashboard.no-matches-for"
-msgstr "Nisu pronađeni rezultati za “%s”"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.no-projects-placeholder"
-msgstr "Prikvačeni projekti pojavit će se ovdje"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.search-placeholder"
-msgstr "Pretraži…"
-
-#: src/app/main/ui/confirm.cljs
-msgid "ds.confirm-ok"
-msgstr "U redu"
-
-#: src/app/main/ui/dashboard/search.cljs
-msgid "dashboard.searching-for"
-msgstr "Pretraga \"%s\"…"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-delete-project"
-msgstr "Tvoj projekt je uspješno izbrisan"
-
-#: src/app/main/ui/alert.cljs
-msgid "ds.alert-title"
-msgstr "Pažnja"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "ds.updated-at"
-msgstr "Ažurirano: %s"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.your-email"
-msgstr "E-mail"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "dashboard.notifications.email-verified-successfully"
-msgstr "Tvoja e-mail adresa je uspješno potvrđena"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.save-settings"
-msgstr "Spremi postavke"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgstr "Tvoja datoteka je uspješno duplicirana"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-move-project"
-msgstr "Tvoj projekt je uspješno premješten"
-
-#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
-msgid "dashboard.update-settings"
-msgstr "Ažuriraj postavke"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.unpublish-shared"
-msgstr "Poništi objavu biblioteke"
-
-#: src/app/main/ui/settings.cljs
-msgid "dashboard.your-account-title"
-msgstr "Tvoj korisnički račun"
-
-#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
-msgid "ds.confirm-title"
-msgstr "Jesi li siguran/na?"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.your-name"
-msgstr "Ime"
-
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.your-penpot"
-msgstr "Tvoj Penpot"
-
-#: src/app/main/ui/alert.cljs
-msgid "ds.alert-ok"
-msgstr "U redu"
-
-#: src/app/main/ui/confirm.cljs
-msgid "ds.confirm-cancel"
-msgstr "Poništi"
-
-#: src/app/main/data/workspace/persistence.cljs
-msgid "errors.media-too-large"
-msgstr "Slika je prevelika za umetanje."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.description"
-msgstr "Opis"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography"
-msgstr "Tipografija"
-
-#: src/app/main/ui/confirm.cljs
-msgid "ds.component-subtitle"
-msgstr "Komponente za ažuriranje:"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.auth-provider-not-configured"
-msgstr "Pružatelj autentifikacije nije konfiguriran."
-
-msgid "errors.invite-invalid.info"
-msgstr "Ova pozivnica je možda otkazana ili je istekla."
-
-#, fuzzy
-msgid "errors.auth.unable-to-login"
-msgstr "Čini se da nisi autentificiran/a ili je sesija istekla."
-
-#: src/app/main/data/workspace.cljs
-msgid "errors.clipboard-not-implemented"
-msgstr "Tvoj preglednik ne može izvršiti ovu operaciju"
-
-#: src/app/main/data/workspace/persistence.cljs
-msgid "errors.components-v2"
-msgstr "Ova datoteka je već korištena s omogućenim komponentama V2."
-
-#: src/app/main/ui/settings/password.cljs
-msgid "generic.error"
-msgstr "Došlo je do pogreške"
-
-#: src/app/main/ui/settings/password.cljs
-msgid "errors.password-too-short"
-msgstr "Lozinka mora sadržavati najmanje 8 znakova"
-
-msgid "errors.team-leave.owner-cant-leave"
-msgstr "Vlasnik ne može napustiti tim, moraš ponovno dodijeliti ulogu vlasnika."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Imaš želju za razgovorom? Razgovaraj s nama na Gitteru"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-go-to"
-msgstr "Idi na Penpot forum"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-subtitle1"
-msgstr ""
-"Sretni smo što si ovdje. Ako trebaš pomoć, pretraži prije objavljivanja."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-title"
-msgstr "Penpot zajednica"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-subtitle1"
-msgstr "Ovdje za pomoć za tvoje tehničke upite."
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.top"
-msgstr "Vrh"
-
-msgid "handoff.attributes.stroke.style.dotted"
-msgstr "Točkasto"
-
-#, fuzzy
-msgid "handoff.attributes.typography.text-transform.none"
-msgstr "Nikakav"
-
-msgid "handoff.attributes.stroke.style.mixed"
-msgstr "Miksano"
-
-msgid "handoff.attributes.typography.text-transform.lowercase"
-msgstr "Mala slova"
-
-msgid "handoff.attributes.typography.text-transform.uppercase"
-msgstr "Velika slova"
-
-msgid "handoff.tabs.code.selected.image"
-msgstr "Slika"
-
-msgid "handoff.tabs.code.selected.mask"
-msgstr "Maska"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code.selected.multiple"
-msgstr "%s Označeno"
-
-msgid "handoff.attributes.typography.text-transform.titlecase"
-msgstr "Velika i mala slova"
-
-msgid "labels.centered"
-msgstr "Sredina"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code"
-msgstr "Kod"
-
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.info"
-msgstr "Informacija"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.about-penpot"
-msgstr "O Penpotu"
-
-#, fuzzy
-msgid "handoff.tabs.code.selected.path"
-msgstr "Path"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "label.shortcuts"
-msgstr "Prečaci"
-
-msgid "onboarding.team-modal.create-team-desc"
-msgstr ""
-"Tim ti omogućuje suradnju s drugim Penpot korisnicima koji rade na istim "
-"datotekama i projektima."
-
-#: src/app/main/ui/static.cljs
-msgid "labels.bad-gateway.main-message"
-msgstr "Loš Gateway"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.community"
-msgstr "Zajenica"
-
-msgid "labels.continue"
-msgstr "Nastavi"
-
-#: src/app/main/ui/settings/password.cljs
-msgid "labels.confirm-password"
-msgstr "Potvrdi lozinku"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "labels.create"
-msgstr "Kreiraj"
-
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
-msgid "labels.hide-resolved-comments"
-msgstr "Sakrij riješene komentare"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.members"
-msgstr "Članovi"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.email"
-msgstr "E-mail"
-
-msgid "labels.icons"
-msgstr "Ikone"
-
-#: src/app/main/ui/settings/password.cljs
-msgid "labels.new-password"
-msgstr "Nova lozinka"
-
-msgid "labels.log-or-sign"
-msgstr "Prijava ili registracija"
-
-msgid "labels.manage-fonts"
-msgstr "Uredi fontove"
-
-#, fuzzy
-msgid "labels.next"
-msgstr "Slijedeće"
-
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "labels.rename"
-msgstr "Preimenuj"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "Dozvole"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.resend-invitation"
-msgstr "Ponovno pošalji pozivnicu"
-
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.password"
-msgstr "Lozinka"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.pending-invitation"
-msgstr "U tijeku"
-
-#: src/app/main/ui/settings/change_email.cljs
-msgid "modals.change-email.new-email"
-msgstr "Novi e-mail"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.role"
-msgstr "Uloga"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.service-unavailable.desc-message"
-msgstr "U programiranom smo održavanju naših sustava."
-
-msgid "labels.search-font"
-msgstr "Pretraži font"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-multi-confirm.message"
-msgstr "Jesi li siguran/na da želiš izbrisati %s datoteke?"
-
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.settings"
-msgstr "Postavke"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.you"
-msgstr "(ti)"
-
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
-msgid "media.loading"
-msgstr "Učitavanje slike…"
-
-#: src/app/main/ui/settings/change_email.cljs
-msgid "modals.change-email.submit"
-msgstr "Promijeni e-mail"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-multi-confirm.title"
-msgstr "Brisanje %s datoteka"
-
-msgid "modals.delete-font-variant.message"
-msgstr ""
-"Jesi li siguran/na da želiš izbrisati ovaj stil fonta? Neće se učitati ako "
-"se koristi u datoteci."
-
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs
-msgid "modals.delete-page.title"
-msgstr "Brisanje stranice"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "modals.delete-project-confirm.accept"
-msgstr "Brisanje projekta"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.message"
-msgid_plural "modals.delete-shared-confirm.message"
-msgstr[0] "Jesi li siguran/na da želiš izbrisati ovu datoteku?"
-msgstr[1] "Jesi li siguran/na da želiš izbrisati ove datoteke?"
-msgstr[2] "Jesi li siguran/na da želiš izbrisati ove datoteke?"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.constraints.leftright"
-msgstr "Lijevo i desno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
-msgid "workspace.options.blur-options.title.group"
-msgstr "Grupiraj zamućenje"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.constraints.bottom"
-msgstr "Dno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.constraints.right"
-msgstr "Desno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.constraints.scale"
-msgstr "Skala"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member-confirm.accept"
-msgstr "Pošalji pozivnicu"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-close-confirm.hint"
-msgstr ""
-"Budući da si jedini član ovog tima, tim će biti izbrisan zajedno sa svojim "
-"projektima i datotekama."
-
-msgid "modals.leave-and-reassign.forbiden"
-msgstr ""
-"Ne možeš napustiti tim ako nema drugog člana kojeg možeš promovirati u "
-"vlasnika. Možda želiš izbrisati tim."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "Ako poništiš objavu, stavke u njoj postaju biblioteka ove datoteke."
-msgstr[1] "Ako poništiš objavu, stavke u njoj postaju biblioteka ovih datoteka."
-msgstr[2] "Ako poništiš objavu, stavke u njoj postaju biblioteka ovih datoteka."
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.promote-owner-confirm.hint"
-msgstr ""
-"Ako preneseš vlasništvo, promijenit ćeš svoju ulogu u Administrator, čime "
-"ćeš izgubiti neka dopuštenja za ovaj tim. "
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Poništi objavu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "modals.update-remote-component.cancel"
-msgstr "Poništi"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "notifications.invitation-email-sent"
-msgstr "Pozivnica je uspješno poslana"
-
-msgid "onboarding-v2.before-start.desc2"
-msgstr ""
-"Detaljne informacije o tome kako koristiti Penpot. Od izrade prototipova do "
-"organiziranja ili dijeljenja dizajna."
-
-msgid "onboarding-v2.before-start.desc2.title"
-msgstr "Korisnički priručnik"
-
-msgid "onboarding-v2.welcome.title"
-msgstr "Dobrodošli u Penpot!"
-
-msgid "onboarding-v2.welcome.desc2"
-msgstr ""
-"Javni prostor za učenje, dijeljenje i raspravu o Penpotu, njegovoj "
-"sadašnjosti i budućnosti s cijelom zajednicom i glavnim timom Penpota."
-
-msgid "onboarding-v2.welcome.desc3"
-msgstr ""
-"Gdje ćete pronaći kako surađivati s prijevodima, zahtjevima za unapređenje, "
-"temeljnim doprinosima, potragom za bugovima…"
-
-msgid "onboarding-v2.welcome.desc3.title"
-msgstr "Vodič za doprinos"
-
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Stvori tim kasnije"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Ime tvojeg tima"
-
-msgid "onboarding.choice.team-up.invite-members-info"
-msgstr ""
-"Ne zaboravi uključiti sve. Programere, dizajnere, menadžere... raznolikost "
-"se isplati :)"
-
-msgid "onboarding.choice.team-up.create-team-desc"
-msgstr "Nakon što imenuješ svoj tim, moći ćeš pozvati ljude da se pridruže."
-
-msgid "onboarding.choice.team-up.create-team-placeholder"
-msgstr "Unesi naziv tima"
-
-msgid "onboarding.choice.team-up.invite-members"
-msgstr "Pozovi članove"
-
-msgid "onboarding.newsletter.acceptance-message"
-msgstr ""
-"Tvoj zahtjev za pretplatu je poslan, poslat ćemo ti e-mail da ga potvrdiš."
-
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Pretplati se na naš newsletter kako bi bio/la u toku s razvojem proizvoda i "
-"novostima."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Budući da brinemo o privatnosti, evo našeg "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Poslat ćemo ti samo relevantne e-mailove. Pretplatu možeš odjaviti u bilo "
-"kojem trenutku u svom korisničkom profilu ili putem linka za odjavu u bilo "
-"kojem od naših newslettera."
-
-msgid "onboarding.newsletter.title"
-msgstr "Želiš primati Penpot novostii?"
-
-msgid "onboarding.newsletter.policy"
-msgstr "Politika privatnosti."
-
-msgid "onboarding.newsletter.accept"
-msgstr "Da, pretplati se"
-
-msgid "onboarding.newsletter.decline"
-msgstr "Ne, hvala"
-
-msgid "onboarding.slide.2.title"
-msgstr "Sakupi povratne informacije, predstavi i podijeli svoj rad"
-
-msgid "shortcut-section.dashboard"
-msgstr "Nadzorna ploča"
-
-msgid "shortcut-section.viewer"
-msgstr "Gledatelj"
-
-# SECTIONS
-msgid "shortcut-section.basics"
-msgstr "Osnove"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "profile.recovery.go-to-login"
-msgstr "Idi na prijavu"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
-msgid "settings.multiple"
-msgstr "Izmješano"
-
-msgid "shortcut-subsection.main-menu"
-msgstr "Glavni meni"
-
-msgid "onboarding.team-modal.create-team-feature-4"
-msgstr "Neograničen broj članova"
-
-msgid "onboarding.team-modal.create-team-feature-5"
-msgstr "100% besplatno!"
-
-# SUBSECTIONS
-msgid "shortcut-subsection.alignment"
-msgstr "Poravnanje"
-
-msgid "shortcut-section.workspace"
-msgstr "Radni prostor"
-
-msgid "shortcut-subsection.edit"
-msgstr "Uredi"
-
-msgid "shortcuts.opacity-6"
-msgstr "Postavi neprozirnost na 60%"
-
-msgid "shortcut-subsection.general-dashboard"
-msgstr "Generičko"
-
-msgid "shortcut-subsection.general-viewer"
-msgstr "Generičko"
-
-#, fuzzy
-msgid "shortcut-subsection.modify-layers"
-msgstr "Izmijeni layere"
-
-msgid "shortcut-subsection.navigation-dashboard"
-msgstr "Navigacija"
-
-msgid "shortcut-subsection.navigation-viewer"
-msgstr "Navigacija"
-
-msgid "shortcuts.open-comments"
-msgstr "Idi na odjeljak s komentarima"
-
-msgid "shortcuts.opacity-7"
-msgstr "Postavi neprozirnost na 70%"
-
-msgid "shortcuts.export-shapes"
-msgstr "Izvezi oblike"
-
-msgid "shortcuts.go-to-drafts"
-msgstr "Idi na nacrte"
-
-msgid "shortcuts.flip-vertical"
-msgstr "Okreni okomito"
-
-msgid "shortcuts.flip-horizontal"
-msgstr "Okreni vodoravno"
-
-msgid "shortcuts.draw-rect"
-msgstr "Pravokutnik"
-
-msgid "shortcuts.next-frame"
-msgstr "Slijedeća ploča"
-
-msgid "shortcuts.opacity-3"
-msgstr "Postavi neprozirnost na 30%"
-
-msgid "shortcuts.opacity-4"
-msgstr "Postavi neprozirnost na 40%"
-
-msgid "shortcuts.opacity-5"
-msgstr "Postavi neprozirnost na 50%"
-
-msgid "shortcuts.opacity-8"
-msgstr "Postavi neprozirnost na 80%"
-
-msgid "shortcuts.opacity-9"
-msgstr "Postavi neprozirnost na 90%"
-
-msgid "shortcuts.group"
-msgstr "Grupiraj"
-
-msgid "shortcuts.go-to-libs"
-msgstr "Idi na zajedničke biblioteke"
-
-msgid "shortcuts.go-to-search"
-msgstr "Traži"
-
-msgid "shortcuts.not-found"
-msgstr "Nema pronađenih prečaca"
-
-msgid "shortcuts.opacity-0"
-msgstr "Postavi neprozirnost na 100%"
-
-msgid "shortcuts.opacity-1"
-msgstr "Postavi neprozirnost na 10%"
-
-msgid "shortcuts.opacity-2"
-msgstr "Postavi neprozirnost na 20%"
-
-msgid "shortcuts.open-color-picker"
-msgstr "Birač boja"
-
-msgid "shortcuts.open-interactions"
-msgstr "Idi na odjeljak interakcija"
-
-msgid "shortcuts.open-workspace"
-msgstr "Idi na radni prostor"
-
-msgid "shortcuts.open-viewer"
-msgstr "Idi na odjeljak interakcija gledatelja"
-
-#, fuzzy
-msgid "shortcuts.toggle-rules"
-msgstr "Prikaži/sakrij \"rules\""
-
-msgid "shortcuts.toggle-zoom-style"
-msgstr "Promijeni stil zooma"
-
-#, fuzzy
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Pričvrsti na guides"
-
-msgid "shortcuts.toogle-fullscreen"
-msgstr "Promijeni cijeli zaslon"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-animation-none"
-msgstr "Nijedan"
-
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
-msgid "title.default"
-msgstr "Penpot - Sloboda dizajna za timove"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Varijanta"
-
-#: src/app/main/ui/settings/options.cljs
-msgid "title.settings.options"
-msgstr "Postavke - Penpot"
-
-#: src/app/main/ui/settings/password.cljs
-msgid "title.settings.password"
-msgstr "Lozinka - Penpot"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "title.settings.profile"
-msgstr "Profil - Penpot"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "title.team-settings"
-msgstr "Postavke - %s - Penpot"
-
-#: src/app/main/ui/dashboard/files.cljs
-msgid "title.dashboard.files"
-msgstr "%s - Penpot"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "title.dashboard.font-providers"
-msgstr "Dobavljači fontova - %s - Penpot"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "title.team-invitations"
-msgstr "Pozivnice - %s - Penpot"
-
-#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
-msgid "title.viewer"
-msgstr "%s - Način prikaza - Penpot"
-
-#: src/app/main/ui/workspace.cljs
-msgid "title.workspace"
-msgstr "%s - Penpot"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.create-link"
-msgstr "Kreiraj poveznicu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/handoff/attributes/text.cljs, src/app/main/ui/handoff/attributes/text.cljs
-msgid "workspace.assets.typography.sample"
-msgstr "Ag"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.selected-count"
-msgid_plural "workspace.assets.selected-count"
-msgstr[0] "%s odabrana stavka"
-msgstr[1] "%s odabranih stavki"
-msgstr[2] "%s odabranih stavki"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.typography"
-msgstr "Tipografija"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.libraries"
-msgstr "Biblioteke"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.letter-spacing"
-msgstr "Razmak između slova"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.not-found"
-msgstr "Nisu pronađene stavke"
-
-msgid "workspace.assets.local-library"
-msgstr "lokalna biblioteka"
-
-msgid "dashboard.export.options.merge.title"
-msgstr "Uključi stavke zajedničke biblioteke u biblioteke datoteka"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "PODIJELJENO"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.font-id"
-msgstr "Font"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.font-size"
-msgstr "Veličina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.go-to-edit"
-msgstr "Idi na datoteku biblioteke stilova za uređivanje"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.assets.typography.text-transform"
-msgstr "Transformiraj tekst"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.ungroup"
-msgstr "Razgrupiraj"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.assets"
-msgstr "Stavke"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-scale-text"
-msgstr "Omogući skaliranje teksta"
-
-msgid "workspace.focus.focus-on"
-msgstr "Fokus uključen"
-
-msgid "workspace.undo.entry.single.color"
-msgstr "stavka boja"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-dynamic-alignment"
-msgstr "Omogući dinamičko poravnanje"
-
-msgid "workspace.undo.entry.single.media"
-msgstr "grafička stavka"
-
-msgid "workspace.undo.entry.single.typography"
-msgstr "tipografska stavka"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Onemogući \"snap to grid\""
-
-#, fuzzy
-msgid "workspace.header.menu.disable-snap-pixel-grid"
-msgstr "Onemogući \"snap to pixel\""
-
-#: src/app/main/ui/workspace/header.cljs
-#, fuzzy
-msgid "workspace.header.menu.disable-snap-guides"
-msgstr "Onemogući \"snap to guides\""
-
-#: src/app/main/ui/workspace/header.cljs
-#, fuzzy
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Poravnanje s \"gridom\""
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.auto"
-msgstr "Auto"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.type"
-msgstr "Tip"
-
-#: src/app/main/ui/workspace/header.cljs
-#, fuzzy
-msgid "workspace.header.menu.show-rules"
-msgstr "Prikaži \"rules\""
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-#, fuzzy
-msgid "workspace.options.grid.grid-title"
-msgstr "Grid"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-textpalette"
-msgstr "Prikaži paletu fontova"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.type.center"
-msgstr "Sredina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.type.left"
-msgstr "Lijevo"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.saved"
-msgstr "Spremljeno"
-
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
-msgid "workspace.libraries.colors.recent-colors"
-msgstr "Nedavno korištene boje"
-
-msgid "dashboard.export.options.detach.message"
-msgstr ""
-"Zajedničke biblioteke neće biti uključene u izvoz i nikakve stavke neće biti "
-"dodani u biblioteku. "
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.remove-shared"
-msgstr "Ukloni kao zajedničku biblioteku"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
-msgid "modals.remove-shared-confirm.hint"
-msgstr ""
-"Nakon uklanjanja kao zajedničke biblioteke, biblioteka datoteka ove datoteke "
-"više neće biti dostupna za korištenje među tvojim ostalim datotekama."
-
-#, fuzzy
-msgid "workspace.shape.menu.path"
-msgstr "Path"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.shortcuts"
-msgstr "Prečaci (%s)"
-
-#: src/app/main/ui/workspace/sidebar/history.cljs
-msgid "workspace.undo.empty"
-msgstr "Do sada nema promjena povijesti"
-
-msgid "workspace.path.actions.move-nodes"
-msgstr "Premijesti čvorove (%s)"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.create-component"
-msgstr "Kreiraj komponentu"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.delete"
-msgstr "Izbriši"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.detach-instance"
-msgstr "Odvoji instancu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.detach-instances-in-bulk"
-msgstr "Odvoji instance"
-
-#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.paste"
-msgstr "Zalijepi"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.show-main"
-msgstr "Prikaži glavnu komponentu"
-
-msgid "workspace.shape.menu.union"
-msgstr "Unija"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.cut"
-msgstr "Izreži"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.comments"
-msgstr "Komentari (%s)"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.show"
-msgstr "Prikaži"
-
-msgid "workspace.shape.menu.thumbnail-remove"
-msgstr "Ukloni sličicu"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.sitemap"
-msgstr "Sitemap"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.text-palette"
-msgstr "Tipografija (%s)"
-
-#: src/app/main/ui/workspace/sidebar/history.cljs
-msgid "workspace.undo.entry.delete"
-msgstr "Izbrisano %s"
-
-#, fuzzy
-msgid "workspace.shape.menu.transform-to-path"
-msgstr "Transformiraj u path"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.update-components-in-bulk"
-msgstr "Ažuriraj glavne komponente"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.update-main"
-msgstr "Ažuriraj glavnu komponentu"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.sidebar.history"
-msgstr "Povijest (%s)"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.color-palette"
-msgstr "Paleta boja (%s)"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.ungroup"
-msgstr "Razgrupiraj"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.move"
-msgstr "Premijesti (%s)"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-#, fuzzy
-msgid "workspace.toolbar.path"
-msgstr "Path (%s)"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.rect"
-msgstr "Pravokutnik (%s)"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.text"
-msgstr "Tekst (%s)"
-
-#: src/app/main/ui/workspace/sidebar/history.cljs
-msgid "workspace.undo.entry.modify"
-msgstr "Izmijenjeno %s"
-
-#, fuzzy
-msgid "workspace.undo.entry.multiple.path"
-msgstr "paths"
-
-msgid "workspace.undo.entry.single.shape"
-msgstr "oblik"
-
-msgid "workspace.undo.entry.single.text"
-msgstr "tekst"
-
-#: src/app/main/data/workspace/libraries.cljs
-msgid "workspace.updates.there-are-updates"
-msgstr "Postoje ažuriranja u zajedničkim bibliotekama"
-
-msgid "workspace.undo.entry.single.image"
-msgstr "slika"
-
-#: src/app/main/data/workspace/libraries.cljs
-msgid "workspace.updates.dismiss"
-msgstr "Odbaci"
-
-#: src/app/main/data/workspace/libraries.cljs
-msgid "workspace.updates.update"
-msgstr "Ažuriraj"
-
-msgid "workspace.options.text-options.text-case"
-msgstr "Slučaj"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Dodaj čvor (%s)"
@@ -4444,6 +4243,9 @@ msgstr "Do krivulje (%s)"
 
 msgid "workspace.path.actions.merge-nodes"
 msgstr "Spoji čvorove (%s)"
+
+msgid "workspace.path.actions.move-nodes"
+msgstr "Premijesti čvorove (%s)"
 
 msgid "workspace.path.actions.separate-nodes"
 msgstr "Odvoji čvorove(%s)"
@@ -4470,9 +4272,29 @@ msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Odabir na ploču"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-component"
+msgstr "Kreiraj komponentu"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.cut"
+msgstr "Izreži"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete"
+msgstr "Izbriši"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 #, fuzzy
 msgid "workspace.shape.menu.delete-flow-start"
 msgstr "Izbriši početak flowa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instance"
+msgstr "Odvoji instancu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Odvoji instance"
 
 msgid "workspace.shape.menu.difference"
 msgstr "Razlika"
@@ -4492,6 +4314,10 @@ msgid "workspace.shape.menu.flatten"
 msgstr "Spljošti"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "Okreni vodoravno"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Okreni okomito"
 
@@ -4502,13 +4328,13 @@ msgstr "Početak flowa"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 #, fuzzy
-msgid "workspace.shape.menu.front"
-msgstr "Postavi naprijed"
+msgid "workspace.shape.menu.forward"
+msgstr "Postavi ispred"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 #, fuzzy
-msgid "workspace.shape.menu.forward"
-msgstr "Postavi ispred"
+msgid "workspace.shape.menu.front"
+msgstr "Postavi naprijed"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.go-main"
@@ -4536,6 +4362,14 @@ msgstr "Zaključaj"
 msgid "workspace.shape.menu.mask"
 msgstr "Maskiraj"
 
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.paste"
+msgstr "Zalijepi"
+
+#, fuzzy
+msgid "workspace.shape.menu.path"
+msgstr "Path"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 #, fuzzy
 msgid "workspace.shape.menu.reset-overrides"
@@ -4544,8 +4378,34 @@ msgstr "Poništi overrides"
 msgid "workspace.shape.menu.restore-main"
 msgstr "Vrati glavnu komponentu"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "Označi layer"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show"
+msgstr "Prikaži"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-main"
+msgstr "Prikaži glavnu komponentu"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Ukloni sličicu"
+
 msgid "workspace.shape.menu.thumbnail-set"
 msgstr "Postavi kao sličicu"
+
+#, fuzzy
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Transformiraj u path"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.ungroup"
+msgstr "Razgrupiraj"
+
+msgid "workspace.shape.menu.union"
+msgstr "Unija"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.unlock"
@@ -4555,6 +4415,48 @@ msgstr "Otključaj"
 msgid "workspace.shape.menu.unmask"
 msgstr "Ukloni masku"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Ažuriraj glavne komponente"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-main"
+msgstr "Ažuriraj glavnu komponentu"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.history"
+msgstr "Povijest (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+#, fuzzy
+msgid "workspace.sidebar.layers"
+msgstr "Layeri"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "Komponente"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Ploče"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "Grupe"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "Slike"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "Maske"
+
+#, fuzzy
+msgid "workspace.sidebar.layers.search"
+msgstr "Traži layere"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Oblici"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "Tekstovi"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Uvezeni SVG atributi"
@@ -4562,6 +4464,22 @@ msgstr "Uvezeni SVG atributi"
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "workspace.sidebar.sitemap"
 msgstr "Stranice"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.sitemap"
+msgstr "Sitemap"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.assets"
+msgstr "Stavke"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.color-palette"
+msgstr "Paleta boja (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.comments"
+msgstr "Komentari (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.curve"
@@ -4579,12 +4497,52 @@ msgstr "Ploča (%s)"
 msgid "workspace.toolbar.image"
 msgstr "Slika (%s)"
 
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.move"
+msgstr "Premijesti (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+#, fuzzy
+msgid "workspace.toolbar.path"
+msgstr "Path (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.rect"
+msgstr "Pravokutnik (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Prečaci (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text"
+msgstr "Tekst (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "Tipografija (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.empty"
+msgstr "Do sada nema promjena povijesti"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.delete"
+msgstr "Izbrisano %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.modify"
+msgstr "Izmijenjeno %s"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.move"
 msgstr "Premiješteni objekti"
 
 msgid "workspace.undo.entry.multiple.circle"
 msgstr "krugovi"
+
+msgid "workspace.undo.entry.multiple.color"
+msgstr "stavke boja"
 
 msgid "workspace.undo.entry.multiple.component"
 msgstr "komponente"
@@ -4598,11 +4556,18 @@ msgstr "ploča"
 msgid "workspace.undo.entry.multiple.group"
 msgstr "grupe"
 
+msgid "workspace.undo.entry.multiple.media"
+msgstr "grafičke stavke"
+
 msgid "workspace.undo.entry.multiple.multiple"
 msgstr "objekti"
 
 msgid "workspace.undo.entry.multiple.page"
 msgstr "stranice"
+
+#, fuzzy
+msgid "workspace.undo.entry.multiple.path"
+msgstr "paths"
 
 msgid "workspace.undo.entry.multiple.rect"
 msgstr "pravokutnici"
@@ -4613,8 +4578,8 @@ msgstr "oblici"
 msgid "workspace.undo.entry.multiple.text"
 msgstr "tekstovi"
 
-msgid "workspace.undo.entry.single.curve"
-msgstr "krivulja"
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "tipografske stavke"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.new"
@@ -4623,14 +4588,26 @@ msgstr "Novo %s"
 msgid "workspace.undo.entry.single.circle"
 msgstr "krug"
 
+msgid "workspace.undo.entry.single.color"
+msgstr "stavka boja"
+
 msgid "workspace.undo.entry.single.component"
 msgstr "komponenta"
+
+msgid "workspace.undo.entry.single.curve"
+msgstr "krivulja"
 
 msgid "workspace.undo.entry.single.frame"
 msgstr "ploča"
 
 msgid "workspace.undo.entry.single.group"
 msgstr "grupa"
+
+msgid "workspace.undo.entry.single.image"
+msgstr "slika"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "grafička stavka"
 
 msgid "workspace.undo.entry.single.multiple"
 msgstr "objekt"
@@ -4645,6 +4622,15 @@ msgstr "path"
 msgid "workspace.undo.entry.single.rect"
 msgstr "pravokutnik"
 
+msgid "workspace.undo.entry.single.shape"
+msgstr "oblik"
+
+msgid "workspace.undo.entry.single.text"
+msgstr "tekst"
+
+msgid "workspace.undo.entry.single.typography"
+msgstr "tipografska stavka"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.unknown"
 msgstr "Operacija izvršena %s"
@@ -4652,6 +4638,18 @@ msgstr "Operacija izvršena %s"
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.title"
 msgstr "Povijest"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.dismiss"
+msgstr "Odbaci"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.there-are-updates"
+msgstr "Postoje ažuriranja u zajedničkim bibliotekama"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.update"
+msgstr "Ažuriraj"
 
 #, fuzzy
 msgid "workspace.viewport.click-to-close-path"

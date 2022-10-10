@@ -2,14 +2,24 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-07 02:17+0000\n"
 "Last-Translator: K.B.Dharun Krishna <kbdharunkrishna@gmail.com>\n"
-"Language-Team: Tamil <https://hosted.weblate.org/projects/penpot/frontend/ta/"
-">\n"
+"Language-Team: Tamil "
+"<https://hosted.weblate.org/projects/penpot/frontend/ta/>\n"
 "Language: ta\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 4.14.1\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "ஏற்கனவே ஒரு கணக்கு உள்ளதா?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"உங்கள் மின்னஞ்சலைச் சரிபார்த்து, இணைப்பைக் கிளிக் செய்து சரிபார்த்து, "
+"Penpot ஐப் பயன்படுத்தத் தொடங்குங்கள்."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -23,25 +33,15 @@ msgstr "டெமோ கணக்கை உருவாக்கவும்"
 msgid "auth.create-demo-profile"
 msgstr "அதை முயற்சி செய்ய வேண்டுமா?"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "மின்னஞ்சல்"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
 msgstr ""
 "இது ஒரு டெமோ சேவை, உண்மையான வேலைக்கு பயன்படுத்த வேண்டாம், திட்டங்கள் "
 "அவ்வப்போது அழிக்கப்படும்."
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.check-your-email"
-msgstr ""
-"உங்கள் மின்னஞ்சலைச் சரிபார்த்து, இணைப்பைக் கிளிக் செய்து சரிபார்த்து, Penpot "
-"ஐப் பயன்படுத்தத் தொடங்குங்கள்."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.already-have-account"
-msgstr "ஏற்கனவே ஒரு கணக்கு உள்ளதா?"
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "மின்னஞ்சல்"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
@@ -87,6 +87,18 @@ msgstr "ஓப்பன் ஐடி"
 msgid "auth.new-password"
 msgstr "புதிய கடவுச்சொல்லை உள்ளிடவும்"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "பென்பாட் அஞ்சல் பட்டியலில் குழுசேர ஒப்புக்கொள்கிறேன்."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "மீட்பு டோக்கன் செல்லுபடியாகாது."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "கடவுச்சொல் வெற்றிகரமாக மாற்றப்பட்டது"
+
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
 msgstr ""
@@ -101,18 +113,6 @@ msgstr "கடவுச்சொல் மீட்பு இணைப்பு 
 #, fuzzy
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "அணியில் வெற்றிகரமாக இணைந்தார்"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "பென்பாட் அஞ்சல் பட்டியலில் குழுசேர ஒப்புக்கொள்கிறேன்."
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
-msgstr "மீட்பு டோக்கன் செல்லுபடியாகாது."
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-successfully"
-msgstr "கடவுச்சொல் வெற்றிகரமாக மாற்றப்பட்டது"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"

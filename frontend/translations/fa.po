@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-01 14:17+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
-"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
-"fa/>\n"
+"Language-Team: Persian "
+"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -175,6 +175,9 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "ما یک ایمیل تأیید ارسال کردیم به"
 
+msgid "common.publish"
+msgstr "انتشار"
+
 msgid "common.share-link.all-users"
 msgstr "همه کاربران Penpot"
 
@@ -232,6 +235,36 @@ msgstr "اشتراک‌گذاری پروتوتایپ‌ها"
 
 msgid "common.share-link.view-all"
 msgstr "انتخاب همه"
+
+msgid "common.unpublish"
+msgstr "لغو انتشار"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "مدیریت تیم"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot برای تیم‌ها در نظر گرفته شده است. از اعضا دعوت کنید تا روی پروژه‌ها "
+"و فایل‌ها با هم کار کنند"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "در حالی که با این آموزش سرگرم می‌شوید، اصول اولیه را در Penpot بیاموزید."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "شروع آموزش"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "در پنپات قدم بزنید و با ویژگی‌های اصلی آن آشنا شوید."
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.walkthrough-hero.start"
+msgstr "شروع تور"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -452,6 +485,13 @@ msgstr "دعوت به تیم"
 msgid "dashboard.leave-team"
 msgstr "خروج از تیم"
 
+msgid "dashboard.libraries-and-templates"
+msgstr "کتابخانه‌ها و قالب‌ها"
+
+#, fuzzy
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "بیشتر آنها را کاوش کنید و بدانید که چگونه مشارکت کنید"
+
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
 msgstr "کتابخانه‌های مشترک"
@@ -634,6 +674,15 @@ msgstr "تم رابط کاربری"
 msgid "dashboard.title-search"
 msgstr "نتایج جستجو"
 
+#: src/app/main/ui/dashboard/search.cljs
+#, fuzzy
+msgid "dashboard.type-something"
+msgstr "برای نمایش نتایج جستجو تایپ کنید"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "لغو انتشار کتابخانه"
+
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "به‌روزرسانی تنظیمات"
@@ -653,6 +702,15 @@ msgstr "نام شما"
 #: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "پن‌پات شما"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "خیلی خوب"
+
+#: src/app/main/ui/alert.cljs
+#, fuzzy
+msgid "ds.alert-title"
+msgstr "توجه"
 
 #: src/app/main/ui/confirm.cljs
 #, fuzzy
@@ -676,9 +734,23 @@ msgstr "مطمئنی؟"
 msgid "ds.updated-at"
 msgstr "به‌روزشده: %s"
 
+#: src/app/main/ui/auth/login.cljs
+#, fuzzy
+msgid "errors.auth-provider-not-configured"
+msgstr "ارائه دهنده احراز هویت پیکربندی نشده است."
+
+#, fuzzy
+msgid "errors.auth.unable-to-login"
+msgstr "به نظر می‌رسد شما احراز هویت نشده‌اید یا جلسه منقضی شده است."
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "مرورگر شما نمی‌تواند این عملیات را انجام دهد"
+
+#: src/app/main/data/workspace/persistence.cljs
+#, fuzzy
+msgid "errors.components-v2"
+msgstr "این فایل قبلاً با فعال بودن Components V2 استفاده شده است."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 #, fuzzy
@@ -754,6 +826,10 @@ msgstr "ثبت‌نام در حال حاضر غیرفعال است."
 msgid "errors.team-leave.insufficient-members"
 msgstr "اعضای کافی برای ترک تیم وجود ندارد، احتمالاً می‌خواهید آن را حذف کنید."
 
+#, fuzzy
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "عضوی که می‌خواهید اختصاص دهید وجود ندارد."
+
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "مالک نمی‌تواند تیم را ترک کند، شما باید نقش مالک را مجدداً اختصاص دهید."
 
@@ -785,6 +861,21 @@ msgid "feedback.description"
 msgstr "شرح"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "به انجمن Penpot بروید"
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"ما خوشحالیم که شما اینجا هستید. اگر به کمک نیاز دارید، لطفا قبل از ارسال "
+"پست جستجو کنید."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "انجمن Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-go-to"
 msgstr "برو سراغ بحث‌ها"
 
@@ -805,6 +896,20 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "ایمیل"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "به توییتر بروید"
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "feedback.twitter-subtitle1"
+msgstr "اینجا برای کمک به سوالات فنی شما."
+
+#: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
+msgid "feedback.twitter-title"
+msgstr "حساب پشتیبانی در توییتر"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1532,6 +1637,10 @@ msgstr ""
 "آیا مطمئنید که می‌خواهید این تیم را حذف کنید؟ تمام پروژه‌ها و فایل‌های "
 "مرتبط با تیم به طور دائم حذف خواهند شد."
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.message"
+msgstr "آیا مطمئن هستید که می‌خواهید این عضو را از تیم حذف کنید؟"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
 msgstr "به‌روزرسانی"
@@ -1543,6 +1652,21 @@ msgstr "لغو"
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
 msgstr "پروفایل با موفقیت ذخیره شد!"
+
+#, fuzzy
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"اطلاعات دقیق در مورد نحوه استفاده از Penpot. از نمونه‌سازی تا سازماندهی یا "
+"به اشتراک‌گذاری طرح‌ها."
+
+#, fuzzy
+msgid "onboarding-v2.before-start.desc3"
+msgstr ""
+"شما می‌توانید آموزش‌های ما و آموزش‌های ساخته شده توسط انجمن ما را تماشا "
+"کنید."
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "پس از نامگذاری تیم خود، می‌توانید افراد را برای پیوستن دعوت کنید."
 
 msgid "onboarding.newsletter.privacy2"
 msgstr ""
@@ -2157,6 +2281,11 @@ msgid "workspace.options.interaction-animation"
 msgstr "انیمیشن"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "حل کردن"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-none"
 msgstr "هیچ‌یک"
 
@@ -2242,6 +2371,26 @@ msgid "workspace.options.layer-options.blend-mode.difference"
 msgstr "تفاوت"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, fuzzy
+msgid "workspace.options.layer-options.blend-mode.hue"
+msgstr "رنگ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, fuzzy
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "روشن کردن"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, fuzzy
+msgid "workspace.options.layer-options.blend-mode.luminosity"
+msgstr "درخشندگی"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, fuzzy
+msgid "workspace.options.layer-options.blend-mode.multiply"
+msgstr "تکثیر"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.normal"
 msgstr "معمولی"
 
@@ -2279,6 +2428,11 @@ msgstr "تلاش دوباره"
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.rotation"
 msgstr "چرخش"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.select-a-shape"
+msgstr "یک شکل، برد یا گروه را برای کشیدن اتصال به تابلوی دیگر انتخاب کنید."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.blur"
@@ -2775,157 +2929,3 @@ msgstr "به‌روزرسانی"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "برای بستن مسیر کلیک کنید"
-
-msgid "common.unpublish"
-msgstr "لغو انتشار"
-
-#: src/app/main/ui/alert.cljs
-msgid "ds.alert-ok"
-msgstr "خیلی خوب"
-
-msgid "common.publish"
-msgstr "انتشار"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.start"
-msgstr "شروع آموزش"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.info"
-msgstr "در پنپات قدم بزنید و با ویژگی‌های اصلی آن آشنا شوید."
-
-#: src/app/main/ui/dashboard/projects.cljs
-#, fuzzy
-msgid "dasboard.walkthrough-hero.start"
-msgstr "شروع تور"
-
-msgid "dashboard.libraries-and-templates"
-msgstr "کتابخانه‌ها و قالب‌ها"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.management"
-msgstr "مدیریت تیم"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.info"
-msgstr ""
-"در حالی که با این آموزش سرگرم می‌شوید، اصول اولیه را در Penpot بیاموزید."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.unpublish-shared"
-msgstr "لغو انتشار کتابخانه"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-#, fuzzy
-msgid "workspace.options.layer-options.blend-mode.hue"
-msgstr "رنگ"
-
-#, fuzzy
-msgid "onboarding-v2.before-start.desc2"
-msgstr ""
-"اطلاعات دقیق در مورد نحوه استفاده از Penpot. از نمونه‌سازی تا سازماندهی یا "
-"به اشتراک‌گذاری طرح‌ها."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-#, fuzzy
-msgid "workspace.options.select-a-shape"
-msgstr "یک شکل، برد یا گروه را برای کشیدن اتصال به تابلوی دیگر انتخاب کنید."
-
-#, fuzzy
-msgid "onboarding-v2.before-start.desc3"
-msgstr ""
-"شما می‌توانید آموزش‌های ما و آموزش‌های ساخته شده توسط انجمن ما را تماشا کنید."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-#, fuzzy
-msgid "workspace.options.layer-options.blend-mode.lighten"
-msgstr "روشن کردن"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-#, fuzzy
-msgid "workspace.options.layer-options.blend-mode.luminosity"
-msgstr "درخشندگی"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-#, fuzzy
-msgid "workspace.options.layer-options.blend-mode.multiply"
-msgstr "تکثیر"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-#, fuzzy
-msgid "workspace.options.interaction-animation-dissolve"
-msgstr "حل کردن"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.text"
-msgstr ""
-"Penpot برای تیم‌ها در نظر گرفته شده است. از اعضا دعوت کنید تا روی پروژه‌ها و "
-"فایل‌ها با هم کار کنند"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.delete-team-member-confirm.message"
-msgstr "آیا مطمئن هستید که می‌خواهید این عضو را از تیم حذف کنید؟"
-
-msgid "onboarding.choice.team-up.create-team-desc"
-msgstr "پس از نامگذاری تیم خود، می‌توانید افراد را برای پیوستن دعوت کنید."
-
-#: src/app/main/ui/auth/login.cljs
-#, fuzzy
-msgid "errors.auth-provider-not-configured"
-msgstr "ارائه دهنده احراز هویت پیکربندی نشده است."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-go-to"
-msgstr "به انجمن Penpot بروید"
-
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
-msgid "feedback.discourse-subtitle1"
-msgstr ""
-"ما خوشحالیم که شما اینجا هستید. اگر به کمک نیاز دارید، لطفا قبل از ارسال پست "
-"جستجو کنید."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-title"
-msgstr "انجمن Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.twitter-go-to"
-msgstr "به توییتر بروید"
-
-#: src/app/main/ui/alert.cljs
-#, fuzzy
-msgid "ds.alert-title"
-msgstr "توجه"
-
-#, fuzzy
-msgid "errors.auth.unable-to-login"
-msgstr "به نظر می‌رسد شما احراز هویت نشده‌اید یا جلسه منقضی شده است."
-
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
-msgid "feedback.twitter-title"
-msgstr "حساب پشتیبانی در توییتر"
-
-#: src/app/main/data/workspace/persistence.cljs
-#, fuzzy
-msgid "errors.components-v2"
-msgstr "این فایل قبلاً با فعال بودن Components V2 استفاده شده است."
-
-#, fuzzy
-msgid "errors.team-leave.member-does-not-exists"
-msgstr "عضوی که می‌خواهید اختصاص دهید وجود ندارد."
-
-#: src/app/main/ui/dashboard/search.cljs
-#, fuzzy
-msgid "dashboard.type-something"
-msgstr "برای نمایش نتایج جستجو تایپ کنید"
-
-#, fuzzy
-msgid "dashboard.libraries-and-templates.explore"
-msgstr "بیشتر آنها را کاوش کنید و بدانید که چگونه مشارکت کنید"
-
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
-msgid "feedback.twitter-subtitle1"
-msgstr "اینجا برای کمک به سوالات فنی شما."

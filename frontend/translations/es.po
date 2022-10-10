@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-09-23 20:54+0000\n"
 "Last-Translator: Dário <dariogomes@gmail.com>\n"
-"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
-"es/>\n"
+"Language-Team: Spanish "
+"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -742,6 +742,10 @@ msgstr "¿Seguro?"
 msgid "ds.updated-at"
 msgstr "Actualizado: %s"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Proveedor de autenticación no configurado."
+
 msgid "errors.auth.unable-to-login"
 msgstr "Parece que no has iniciado sesión, o la sesión ha expirado."
 
@@ -836,6 +840,9 @@ msgstr "La contraseña de confirmación debe coincidir"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "La contraseña debe tener 8 caracteres como mínimo"
+
+msgid "errors.profile-blocked"
+msgstr "El perfil esta blockeado"
 
 #: src/app/main/ui/auth/recovery_request.cljs,
 #: src/app/main/ui/settings/change_email.cljs,
@@ -2057,6 +2064,30 @@ msgstr "Tutoriales de video"
 msgid "onboarding-v2.before-start.title"
 msgstr "Antes de comenzar"
 
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Suscríbete a la newsletter de Penpot para estar al día de los progresos del "
+"producto y noticias."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Quiero recibir noticias sobre Penpot (artículos del blog, vídeo tutoriales, "
+"directos...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Nos importa la privacidad, aquí puedes leer nuestra "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en "
+"cualquier momento usando el vínculo de desuscripción en cualquiera de "
+"nuestras newsletters."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Quiero recibir información sobre actualizaciones del producto (nuevas "
+"funcionalidades, releases, mejoras...)."
+
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "Penpot es Código Abierto y está hecho por Kaleidos y la comunidad, donde ya "
@@ -2143,26 +2174,6 @@ msgstr ""
 
 msgid "onboarding.newsletter.decline"
 msgstr "No, gracias"
-
-msgid "onboarding-v2.newsletter.desc"
-msgstr ""
-"Suscríbete a la newsletter de Penpot para estar al día de los progresos del "
-"producto y noticias."
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr "Quiero recibir información sobre actualizaciones del producto (nuevas funcionalidades, releases, mejoras...)."
-
-msgid "onboarding-v2.newsletter.news"
-msgstr "Quiero recibir noticias sobre Penpot (artículos del blog, vídeo tutoriales, directos...)."
-
-msgid "onboarding-v2.newsletter.privacy1"
-msgstr "Nos importa la privacidad, aquí puedes leer nuestra "
-
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en "
-"cualquier momento usando el vínculo de desuscripción en "
-"cualquiera de nuestras newsletters."
 
 msgid "onboarding.newsletter.policy"
 msgstr "Política de Privacidad."
@@ -4536,6 +4547,12 @@ msgstr "Actualizar componentes"
 msgid "workspace.shape.menu.update-main"
 msgstr "Actualizar componente principal"
 
+msgid "workspace.sidebar.collapse"
+msgstr "Cerrar barra lateral"
+
+msgid "workspace.sidebar.expand"
+msgstr "Abrir barra lateral"
+
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
 msgstr "Historial (%s)"
@@ -4576,12 +4593,6 @@ msgstr "Atributos del SVG Importado"
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "workspace.sidebar.sitemap"
 msgstr "Páginas"
-
-msgid "workspace.sidebar.collapse"
-msgstr "Cerrar barra lateral"
-
-msgid "workspace.sidebar.expand"
-msgstr "Abrir barra lateral"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.sitemap"
@@ -4768,10 +4779,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-msgid "errors.profile-blocked"
-msgstr "El perfil esta blockeado"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.auth-provider-not-configured"
-msgstr "Proveedor de autenticación no configurado."
