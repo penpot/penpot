@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.rect :as gsr]
    [app.common.geom.shapes.transforms :as gst]))
 
 ;; :layout                 ;; true if active, false if not
@@ -571,3 +572,136 @@
             (conj {:type :move :vector move-vec}))]
 
     [modifiers layout-line]))
+
+
+(defn drop-areas
+  [{:keys [margin-x margin-y] :as frame} layout-data children]
+
+  (let [col? (col? frame)
+        row? (row? frame)
+        h-center? (and row? (h-center? frame))
+        h-end? (and row? (h-end? frame))
+        v-center? (and col? (v-center? frame))
+        v-end? (and row? (v-end? frame))
+        layout-gap (:layout-gap frame 0)
+
+        children (vec (cond->> children
+                        (:reverse? layout-data) reverse))
+
+        redfn-child
+        (fn [[result parent-rect prev-x prev-y] [child next]]
+          (let [prev-x (or prev-x (:x parent-rect))
+                prev-y (or prev-y (:y parent-rect))
+                last? (nil? next)
+
+                box-x (-> child :selrect :x)
+                box-y (-> child :selrect :y)
+                box-width (-> child :selrect :width)
+                box-height(-> child :selrect :height)
+
+                
+                x (if row? (:x parent-rect) prev-x)
+                y (if col? (:y parent-rect) prev-y)
+
+                width (cond
+                        (and col? last?)
+                        (- (+ (:x parent-rect) (:width parent-rect)) x)
+                        
+                        row?
+                        (:width parent-rect)
+
+                        :else
+                        (+ box-width (- box-x prev-x) (/ layout-gap 2)))
+
+                height (cond
+                         (and row? last?)
+                         (- (+ (:y parent-rect) (:height parent-rect)) y)
+                         
+                         col?
+                         (:height parent-rect)
+
+                         :else
+                         (+ box-height (- box-y prev-y) (/ layout-gap 2)))
+                
+                line-area (gsr/make-rect x y width height)
+                result (conj result line-area)]
+
+            [result parent-rect (+ x width) (+ y height)]))
+        
+        redfn-lines
+        (fn [[result from-idx prev-x prev-y] [{:keys [start-p layout-gap num-children line-width line-height]} next]]
+          (let [prev-x (or prev-x (:x frame))
+                prev-y (or prev-y (:y frame))
+                last? (nil? next)
+
+                line-width
+                (if col?
+                  (:width frame)
+                  (+ line-width margin-x
+                     (if col? (* layout-gap (dec num-children)) 0)))
+
+                line-height
+                (if row?
+                  (:height frame)
+                  (+ line-height margin-y
+                     (if row?
+                       (* layout-gap (dec num-children))
+                       0)))
+
+                box-x
+                (- (:x start-p)
+                   (cond
+                     h-center? (/ line-width 2)
+                     h-end? line-width
+                     :else 0))
+
+                box-y
+                (- (:y start-p)
+                   (cond
+                     v-center? (/ line-height 2)
+                     v-end? line-height
+                     :else 0))
+
+                x (if col? (:x frame) prev-x)
+                y (if row? (:y frame) prev-y)
+
+                width (cond
+                        (and row? last?)
+                        (- (+ (:x frame) (:width frame)) x)
+                        
+                        col?
+                        (:width frame)
+
+                        :else
+                        (+ line-width (- box-x prev-x) (/ layout-gap 2)))
+
+                height (cond
+                         (and col? last?)
+                         (- (+ (:y frame) (:height frame)) y)
+                         
+                         row?
+                         (:height frame)
+
+                         :else
+                         (+ line-height (- box-y prev-y) (/ layout-gap 2)))
+
+                line-area (gsr/make-rect x y width height)
+
+                children (subvec children from-idx (+ from-idx num-children))
+
+
+                ;; To debug the lines
+                ;;result (conj result line-area)
+
+                result (first (reduce redfn-child [result line-area] (d/with-next children)))]
+
+            [result (+ from-idx num-children) (+ x width) (+ y height)]))
+
+        ret (first (reduce redfn-lines [[] 0] (d/with-next (:layout-lines layout-data))))
+        ]
+
+
+    ;;(.log js/console "RET" (clj->js ret))
+    ret
+
+    ))

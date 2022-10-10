@@ -28,8 +28,10 @@
        (= frame-id uuid/zero)))
 
 (defn frame-shape?
-  [{:keys [type]}]
-  (= type :frame))
+  ([objects id]
+   (= (get-in objects [id :type]) id))
+  ([{:keys [type]}]
+   (= type :frame)))
 
 (defn group-shape?
   [{:keys [type]}]

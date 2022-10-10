@@ -28,7 +28,8 @@
    [beicon.core :as rx]
    [debug :refer [debug?]]
    [goog.events :as events]
-   [rumext.v2 :as mf])
+   [rumext.v2 :as mf]
+   [app.common.types.shape-tree :as ctst])
   (:import goog.events.EventType))
 
 (defn setup-dom-events [viewport-ref zoom disable-paste in-viewport?]
@@ -104,7 +105,8 @@
             (some #(cph/is-parent? objects % group-id))
             (not))))
 
-(defn setup-hover-shapes [page-id move-stream objects transform selected mod? hover hover-ids hover-disabled? focus zoom]
+(defn setup-hover-shapes
+  [page-id move-stream objects transform selected mod? hover hover-ids hover-top-frame-id hover-disabled? focus zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         mod-ref (mf/use-ref @mod?)
@@ -143,9 +145,10 @@
                   (rx/map #(deref last-point-ref)))
 
              (->> move-stream
+                  (rx/tap #(reset! last-point-ref %))
                   ;; When transforming shapes we stop querying the worker
                   (rx/merge-map query-point)
-                  (rx/tap #(reset! last-point-ref %))))))]
+                  ))))]
 
     ;; Refresh the refs on a value change
     (mf/use-effect
@@ -213,7 +216,8 @@
                   (first)
                   (get objects))]
          (reset! hover hover-shape)
-         (reset! hover-ids ids))))))
+         (reset! hover-ids ids)
+         (reset! hover-top-frame-id (ctst/top-nested-frame objects (deref last-point-ref))))))))
 
 (defn setup-viewport-modifiers
   [modifiers objects]

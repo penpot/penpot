@@ -234,6 +234,20 @@
         (if (nil? child-frame-id)
           (or current-id uuid/zero)
           (recur child-frame-id))))))
+(defn top-nested-frame-ids
+  "Search the top nested frame in a list of ids"
+  [objects ids]
+  
+  (let [frame-ids (->> ids (filter #(cph/frame-shape? objects %)))
+        frame-set (set frame-ids)]
+    (loop [current-id (first frame-ids)]
+      (let [current-shape (get objects current-id)
+            child-frame-id (d/seek #(contains? frame-set %)
+                                   (-> (:shapes current-shape) reverse))]
+        (if (nil? child-frame-id)
+          (or current-id uuid/zero)
+          (recur child-frame-id)))))
+  )
 
 (defn get-viewer-frames
   ([objects]
