@@ -15,7 +15,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [rumext.v2 :as mf]))
@@ -29,7 +29,7 @@
 
         stroke-values (select-keys shape stroke-attrs)
         layer-values (select-keys shape layer-attrs)
-        measure-values (select-keys shape measure-attrs)
+        measure-values (select-measure-keys shape)
         constraint-values (select-keys shape constraint-attrs)
         layout-container-values (select-keys shape layout-container-attrs)
         layout-item-values (select-keys shape layout-item-attrs)
