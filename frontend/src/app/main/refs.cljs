@@ -300,7 +300,6 @@
   [ids]
   (l/derived #(select-keys % ids) workspace-modifiers))
 
-
 (def workspace-modifiers-with-objects
   (l/derived
    (fn [state]

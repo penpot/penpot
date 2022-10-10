@@ -446,31 +446,27 @@
   (let [prev-shapes (mf/use-var nil)
         prev-modifiers (mf/use-var nil)
         prev-transforms (mf/use-var nil)
-        unflag (mf/use-var false)
+        prev-copies (mf/use-var nil)
 
         copies
         (mf/use-memo   ; TODO: ojo estas deps hay que revisarlas
-          (mf/deps modifiers (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)) @unflag)
+          (mf/deps modifiers (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)))
           (fn []
-            (when-not @unflag
-              (let [shapes (->> (keys modifiers)
-                                (mapv (d/getf objects)))]
-                (get-copies shapes objects modifiers)))))
+            (let [shapes (->> (keys modifiers)
+                              (mapv (d/getf objects)))]
+              (get-copies shapes objects modifiers))))
 
         modifiers
         (mf/use-memo
-          (mf/deps objects modifiers copies @unflag)
+          (mf/deps objects modifiers copies @prev-copies)
           (fn []
-            (if @unflag
-              (do
-                (reset! unflag false)
-                modifiers)
+            (if (= (count copies) (count @prev-copies))
+              modifiers
               (let [new-modifiers (add-copies-modifiers copies objects modifiers)]
                 (js/console.log "==================")
                 (js/console.log "modifiers (antes)" (clj->js modifiers))
                 (js/console.log "copies" (clj->js copies))
                 (js/console.log "modifiers (después)" (clj->js new-modifiers))
-                (reset! unflag true)
                 (when (seq new-modifiers)
                   (tm/schedule #(st/emit! (dwt/set-modifiers-raw new-modifiers))))
                 new-modifiers))))
@@ -702,4 +698,5 @@
 
          (reset! prev-modifiers modifiers)
          (reset! prev-transforms transforms)
-         (reset! prev-shapes shapes))))))
+         (reset! prev-shapes shapes)
+         (reset! prev-copies copies))))))
