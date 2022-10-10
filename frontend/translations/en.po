@@ -1313,7 +1313,7 @@ msgstr "Installed fonts"
 msgid "labels.internal-error.desc-message"
 msgstr ""
 "Something bad happened. Please retry the operation and if the problem "
-"persists, contact with support."
+"persists, contact support."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
