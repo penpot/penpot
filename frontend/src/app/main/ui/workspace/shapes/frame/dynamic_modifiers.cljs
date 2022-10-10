@@ -446,38 +446,33 @@
   (let [prev-shapes (mf/use-var nil)
         prev-modifiers (mf/use-var nil)
         prev-transforms (mf/use-var nil)
-        changed-modifiers (mf/use-var nil)
-
-        ignore?
-        (mf/use-memo
-          (mf/deps modifiers)
-          (fn []
-            (= modifiers @changed-modifiers)))
+        unflag (mf/use-var false)
 
         copies
         (mf/use-memo   ; TODO: ojo estas deps hay que revisarlas
-          (mf/deps modifiers (and (d/not-empty? @prev-modifiers)
-                                  (d/not-empty? modifiers)))
+          (mf/deps modifiers (and (d/not-empty? @prev-modifiers) (d/not-empty? modifiers)) @unflag)
           (fn []
-            (if ignore?
-              {}
+            (when-not @unflag
               (let [shapes (->> (keys modifiers)
                                 (mapv (d/getf objects)))]
                 (get-copies shapes objects modifiers)))))
 
         modifiers
         (mf/use-memo
-          (mf/deps objects modifiers copies)
+          (mf/deps objects modifiers copies @unflag)
           (fn []
-            (if ignore?
-              modifiers
+            (if @unflag
+              (do
+                (reset! unflag false)
+                modifiers)
               (let [new-modifiers (add-copies-modifiers copies objects modifiers)]
                 (js/console.log "==================")
                 (js/console.log "modifiers (antes)" (clj->js modifiers))
                 (js/console.log "copies" (clj->js copies))
                 (js/console.log "modifiers (después)" (clj->js new-modifiers))
-                (reset! changed-modifiers new-modifiers)
-                (tm/schedule #(st/emit! (dwt/set-modifiers-raw new-modifiers)))
+                (reset! unflag true)
+                (when (seq new-modifiers)
+                  (tm/schedule #(st/emit! (dwt/set-modifiers-raw new-modifiers))))
                 new-modifiers))))
 
         transforms
@@ -485,7 +480,7 @@
          (mf/deps modifiers)
          (fn []
            (js/console.log "****modifiers" (clj->js modifiers))
-           (when (and (seq modifiers) (not ignore?))
+           (when (seq modifiers)
              (d/mapm (fn [id {modifiers :modifiers}]
                        (let [shape (get objects id)
                              center (gsh/center-shape shape)
@@ -696,16 +691,15 @@
        (let [is-prev-val? (d/not-empty? @prev-modifiers)
              is-cur-val? (d/not-empty? modifiers)]
 
-         (when (and (not is-prev-val?) is-cur-val? (not ignore?))
+         (when (and (not is-prev-val?) is-cur-val?)
            (start-transform! node shapes))
 
-         (when (and is-cur-val? (not ignore?))
+         (when is-cur-val?
            (update-transform! node shapes transforms modifiers))
 
-         (when (and is-prev-val? (not is-cur-val?) (not ignore?))
+         (when (and is-prev-val? (not is-cur-val?))
            (remove-transform! node @prev-shapes))
 
          (reset! prev-modifiers modifiers)
          (reset! prev-transforms transforms)
-         (reset! prev-shapes shapes)
-         (reset! changed-modifiers nil))))))
+         (reset! prev-shapes shapes))))))
