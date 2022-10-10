@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-03 08:15+0000\n"
-"Last-Translator: liimee <alt3753.7@gmail.com>\n"
+"PO-Revision-Date: 2022-09-23 20:54+0000\n"
+"Last-Translator: Dário <dariogomes@gmail.com>\n"
 "Language-Team: Indonesian "
 "<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
 "Language: id\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -223,6 +223,18 @@ msgstr "Bagikan prototipe"
 msgid "common.share-link.view-all"
 msgstr "Pilih Semua"
 
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Mulai tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Mulai tur"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Panduan Antarmuka"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Tambahkan sebagai Pustaka Bersama"
@@ -311,7 +323,7 @@ msgstr ""
 "Apa yang ingin kamu lakukan dengan asetnya*?"
 
 msgid "dashboard.export.options.all.message"
-msgstr "berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor"
+msgstr "berkas dengan pustaka bersama akan dimasukkan dalam hasil ekspor."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Ekspor pustaka bersama"
@@ -320,3 +332,108 @@ msgid "dashboard.export.options.detach.message"
 msgstr ""
 "Pustaka bersama tidak akan dimasukkan dalam hasil ekspor dan tidak ada aset "
 "yang akan ditambahkan ke pustaka. "
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Fon dihapus"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Tak ada fon khusus yang terpasang."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "%s fon ditambahkan"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Unggah semua"
+
+msgid "dashboard.import"
+msgstr "Impor berkas Penpot"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Aduh! Kami tidak dapat mengimpor berkas ini"
+
+msgid "dashboard.import.import-error"
+msgstr "Terdapat masalah saat mengimpor berkas. Berkasnya tidak terimpor."
+
+msgid "dashboard.import.import-message"
+msgstr "%s berkas telah berhasil diimpor."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Memproses warna"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Memproses komponen"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Memproses media"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Memproses halaman: %s"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Mengunggah data ke server (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Mengunggah berkas: %s"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Undang ke tim"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Tinggalkan tim"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Pustaka & Template"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Jelajahi lebih banyak dan pelajari cara berkontribusi"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Terjadi masalah saat mengimpor template. Template tidak diimpor."
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Pustaka"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "memuat berkas-berkasmu …"
+
+msgid "dashboard.loading-fonts"
+msgstr "memuat fon-fon kamu …"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Pindahkan ke"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Pindahkan %s berkas ke"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Pindahkan ke tim lain"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ Buat Berkas"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Berkas Baru"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Buat Proyek"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Proyek Baru"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr "Kirimkan saya berita, pembaruan produk dan rekomendasi tentang Penpot."

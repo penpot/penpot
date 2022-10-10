@@ -812,6 +812,9 @@ msgstr "Confirmation password must match"
 msgid "errors.password-too-short"
 msgstr "Password should at least be 8 characters"
 
+msgid "errors.profile-blocked"
+msgstr "The profile is blocked"
+
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr "Your profile has emails muted (spam reports or high bounces)."
@@ -1962,6 +1965,25 @@ msgstr "Video tutorials"
 msgid "onboarding-v2.before-start.title"
 msgstr "Before you start"
 
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Subscribe to the Penpot newsletter to stay up to date with the product "
+"development progress and news."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr "Send me news about Penpot (blog posts, video tutorials, streamings...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "We care about privacy, here you can read our "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"We will only send relevant emails to you. You can unsubscribe at any time "
+"via the unsubscribe link in any of our newsletters."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr "Send me product updates (new features, releases, fixes...)."
+
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "Penpot is Open Source and it is made by Kaleidos as well as the community, "
@@ -2049,25 +2071,6 @@ msgstr ""
 
 msgid "onboarding.newsletter.decline"
 msgstr "No, thanks"
-
-msgid "onboarding-v2.newsletter.desc"
-msgstr ""
-"Subscribe to the Penpot newsletter to stay up to date with the product "
-"development progress and news."
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr "Send me product updates (new features, releases, fixes...)."
-
-msgid "onboarding-v2.newsletter.news"
-msgstr "Send me news about Penpot (blog posts, video tutorials, streamings...)."
-
-msgid "onboarding-v2.newsletter.privacy1"
-msgstr "We care about privacy, here you can read our "
-
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"We will only send relevant emails to you. You can unsubscribe at any time "
-"via the unsubscribe link in any of our newsletters."
 
 msgid "onboarding.newsletter.policy"
 msgstr "Privacy Policy."
@@ -4330,6 +4333,12 @@ msgstr "Update main components"
 msgid "workspace.shape.menu.update-main"
 msgstr "Update main component"
 
+msgid "workspace.sidebar.collapse"
+msgstr "Collapse sidebar"
+
+msgid "workspace.sidebar.expand"
+msgstr "Expand sidebar"
+
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
 msgstr "History (%s)"
@@ -4369,12 +4378,6 @@ msgstr "Imported SVG Attributes"
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "workspace.sidebar.sitemap"
 msgstr "Pages"
-
-msgid "workspace.sidebar.collapse"
-msgstr "Collapse sidebar"
-
-msgid "workspace.sidebar.expand"
-msgstr "Expand sidebar"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.sitemap"
@@ -4561,6 +4564,3 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
-
-msgid "errors.profile-blocked"
-msgstr "The profile is blocked"

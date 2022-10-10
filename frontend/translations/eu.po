@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-28 21:15+0000\n"
+"PO-Revision-Date: 2022-09-16 21:18+0000\n"
 "Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
 "Language-Team: Basque "
 "<https://hosted.weblate.org/projects/penpot/frontend/eu/>\n"
@@ -171,6 +171,9 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Egiaztapen mezu bat bidali dugu helbide honetara"
 
+msgid "common.publish"
+msgstr "Argitaratu"
+
 msgid "common.share-link.all-users"
 msgstr "Penpoten erabiltzaile guztiak"
 
@@ -223,6 +226,49 @@ msgstr "Partekatu prototipoak"
 
 msgid "common.share-link.view-all"
 msgstr "Aukeratu guztiak"
+
+msgid "common.unpublish"
+msgstr "Argitaraketa atzera bota"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Taldearen kudeaketa"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot taldeentzat sortuta dago. Gonbidatu beste pertsona batzuk proiektu "
+"eta fitxategietan batera lan egiteko."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Egin taldea!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Ikasi Penpoten oinarriak tutorial atsegin honekin."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Hasi tutoriala"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutorial atsegina"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr ""
+"Eman begirada bat Penpoti bere oinarrizko funtzionalitateak zein diren "
+"ezagutzeko."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Hasi"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Interfazea ezagutu"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -438,6 +484,15 @@ msgstr "Gonbidatu taldera"
 msgid "dashboard.leave-team"
 msgstr "Utzi taldea"
 
+msgid "dashboard.libraries-and-templates"
+msgstr "Liburutegi eta txantiloiak"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Gehiago ikusi eta ikasi nola lagundu"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Arazo bat egon da txantiloia inportatzean. Ezin izan da inportatu."
+
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
 msgstr "Partekatutako liburutegiak"
@@ -616,6 +671,10 @@ msgstr "Bilaketaren emaitzak"
 msgid "dashboard.type-something"
 msgstr "Idatzi bilaktzeko zerbaitu"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Atzera bota liburutegia argitaratzea"
+
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Eguneratu aukerak"
@@ -635,6 +694,14 @@ msgstr "Izena"
 #: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "Zure Penpot"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Oharra"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.component-subtitle"
@@ -666,6 +733,10 @@ msgstr "Badirudi ez zarela sartu edo zure saioa iraungi egin dela."
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Zure nabigatzaileak ezin du hori egin"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Fitxategi hau V2 Osagaiak aktibatuta erabili da."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
@@ -1648,6 +1719,48 @@ msgstr "Benetan proiektu hau ezabatu egin nahi duzu?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Ezabatu proiektua"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Ezabatu fitxategia"
+msgstr[1] "Ezabatu fitxategiak"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Benetan fitxategi hau ezabatu nahi duzu?"
+msgstr[1] "Benetan fitxategi hauek ezabatu nahi dituzu?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] ""
+"Ezabatu nahi duzun fitxategiak, fitxategi honetan erabiltzen den liburutegi "
+"bat du:"
+msgstr[1] ""
+"Ezabatu nahi duzuen fitxategiak, fitxategi hauetan erabiltzen den "
+"liburutegi bat du:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] ""
+"Ezabatu nahi dituzun fitxategiek, fitxategi honetan erabiltzen den "
+"liburutegi bat dute:"
+msgstr[1] ""
+"Ezabatu nahi dituzun fitxategiek, fitxategi hauetan erabiltzen den "
+"liburutegi bat dute:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Ezabatu fitxategia"
+msgstr[1] "Ezabatu fitxategiak"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "Ezabatu fitxategia"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"
 msgstr "Ezabatu taldea"
@@ -1684,6 +1797,10 @@ msgstr "Posta elektronikoak, komarekin banatuta"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member.title"
 msgstr "Gonbidatu taldera sartzeko"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "Gonbidatu kideak taldera"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
@@ -1768,6 +1885,38 @@ msgstr "Gehitu \"%s\" partekatutako liburutegi bezala"
 msgid "modals.small-nudge"
 msgstr "Gutxienekoa"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Argitaratzea atzera bota"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Argitaratzea atzera botatzen baduzu, elementuak fitxategiaren liburutegira "
+"pasatuko dira."
+msgstr[1] ""
+"Argitaratzea atzera botatzen baduzu, elementuak fitxategien liburutegietara "
+"pasatuko dira."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "Benetan liburutegi honen argitaratzea atzera bota nahi duzu?"
+msgstr[1] "Benetan liburutegi hauen argitaratzea atzera bota nahi duzu?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Fitxategi honetan erabiltzen ari da:"
+msgstr[1] "Fitxategi hauetan erabiltzen ari da:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Liburutegiaren argitaratzea atzera bota"
+msgstr[1] "Liburutegian argitaratzea atzera bota"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
@@ -1814,6 +1963,52 @@ msgstr ""
 "Posta elektronikoa egiaztatzeko mezua ondo bidali da %s helbidera. "
 "Egiaztatu zure eposta."
 
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Penpotekin lanean hasteko hainbat eta hainbat baliabide daude, adibidez "
+"erabiltzailearen gida eta gure Youtube kanala."
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Penpot erabiltzeari buruko informazioa. Prototipoak egitetik, diseinuak "
+"antolatu eta partekatzera."
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Erabiltzailearen gida"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "Gure eta komunitateak egindako tutorialak ikusi ditzakezu."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Bideo tutorialak"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Hasi aurretik"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot Kode Irekikoa da eta Kaleidos eta komunitateak egindakoa da. "
+"Laguntzeko erak:"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Penpoten oraina eta etorkizunari buruz ikasi, partekatu eta eztabaidatzeko "
+"tokia."
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Komunitatean parte hartzen"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Hemen izango duzu itzulpenekin laguntzeko informazioa, funtzionalitateak "
+"eskatzeko modua, erroreak bilatzekoa…"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Laguntzeko gida"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Ongi etorri Penpotera!"
+
 msgid "onboarding.choice.desc"
 msgstr "Nola hasi nahi duzu?"
 
@@ -1830,6 +2025,9 @@ msgid "onboarding.choice.team-up-desc"
 msgstr ""
 "Norbaitekin lan egiten duzu? Sortu talde bat eta gonbidatu elkarrekin lan "
 "egin eta baliabideak partekatzeko."
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Sortu taldea beranduago"
 
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Zure taldearen izena"
@@ -1848,11 +2046,19 @@ msgstr ""
 "Geroago ere gonbidatu ditzakezu eta bakoitzaren baimenak ezarri taldearen "
 "ezarpenetatik."
 
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Ez ahaztu garapeneko, diseinuko, kudeaketako... pertsonak sartzea, "
+"dibertsitatea ona da :)"
+
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Sortu taldea eta ondoren gonbidatu"
 
 msgid "onboarding.choice.team-up.invite-members-submit"
 msgstr "Sortu taldea eta bidali gonbidapenak"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Gonbidatu rol honekin:"
 
 msgid "onboarding.choice.title"
 msgstr "Ongi etorri Penpotera"
@@ -1960,6 +2166,29 @@ msgstr ""
 
 msgid "onboarding.slide.3.title"
 msgstr "\"Egiaren iturri\" partekatua"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Sortu talde bat"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Talde batek Penpoten fitxategi eta proiektuetan elkarrekin lan egiteko "
+"aukera ematen du."
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Mugarik gabeko fitxategi eta proiektu kopurua"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Jokalari anitzeko edizioa"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Rolen kudeaketa"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Partehartzaile muga gabe"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "%100 doan!"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Hemen dituzu txantiloi batzuk."
@@ -2639,6 +2868,9 @@ msgstr "Taldearen izena"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.libraries"
 msgstr "Liburutegiak"
+
+msgid "workspace.assets.local-library"
+msgstr "liburutegi lokala"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.not-found"
@@ -3508,6 +3740,22 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Aukera aurreratuak"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-h"
+msgstr "Gehieneko altuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-w"
+msgstr "Gehieneko zabalera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "Gutxieneko altuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-w"
+msgstr "Gutxieneko zabalera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.max-h"
 msgstr "Gehienezko altuera"
 
@@ -3526,6 +3774,22 @@ msgstr "Gutxieneko zabalera"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title"
 msgstr "Elementuaren tamaina aldatzea"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-h"
+msgstr "Gehieneko altuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-w"
+msgstr "Gehieneko zabalaera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-h"
+msgstr "Gutxieneko altuera"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-w"
+msgstr "Gutxieneko zabalera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.max-h"
@@ -4106,6 +4370,9 @@ msgstr "Bidea"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Berrezarri gainidazketak"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "Berrezarri osagai nagusia"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.select-layer"

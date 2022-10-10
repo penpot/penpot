@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-05-28 21:16+0000\n"
-"Last-Translator: Radek Sawicki <radek@sqrc.pl>\n"
+"PO-Revision-Date: 2022-10-04 18:22+0000\n"
+"Last-Translator: Kevin Nowald <kevin@nowald.pl>\n"
 "Language-Team: Polish "
 "<https://hosted.weblate.org/projects/penpot/frontend/pl/>\n"
 "Language: pl\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -172,10 +172,22 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "Wysłaliśmy email weryfikacyjny na adres"
 
+msgid "common.publish"
+msgstr "Opublikuj"
+
+msgid "common.share-link.all-users"
+msgstr "Wszyscy użytkownicy Penpot"
+
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "Czy na pewno chcesz usunąć ten link? Jeśli to zrobisz, nie będzie już "
 "dostępny dla nikogo"
+
+msgid "common.share-link.current-tag"
+msgstr "(aktualne)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Usuń link"
 
 msgid "common.share-link.get-link"
 msgstr "Uzyskaj link"
@@ -186,14 +198,76 @@ msgstr "Link skopiowano pomyślnie"
 msgid "common.share-link.link-deleted-success"
 msgstr "Link usunięto pomyślnie"
 
+msgid "common.share-link.manage-ops"
+msgstr "Zarządzaj uprawnieniami"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 udostępniona strona"
+msgstr[1] "%s udostępnione strony"
+msgstr[2] "%s udostępnionych stron"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Może komentować"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Może sprawdzać kod"
+
 msgid "common.share-link.permissions-hint"
 msgstr "Każdy, kto ma link, będzie miał dostęp"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Udostępnione strony"
 
 msgid "common.share-link.placeholder"
 msgstr "Tutaj pojawi się link do udostępniania"
 
+msgid "common.share-link.team-members"
+msgstr "Tylko członkowie zespołu"
+
 msgid "common.share-link.title"
 msgstr "Udostępnij prototypy"
+
+msgid "common.share-link.view-all"
+msgstr "Wybierz wszystko"
+
+msgid "common.unpublish"
+msgstr "Cofnij publikację"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Zarządzanie zespołem"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot jest przeznaczony dla zespołów. Zaproś członków do wspólnej pracy "
+"nad projektami i plikami"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Połącz siły!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Naucz się podstaw obsługi Penpot, bawiąc się tym praktycznym tutorialem."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Zacznij tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Praktyczny Tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Wybierz się na spacer po Penpot i poznaj jego główne funkcje."
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Przewodnik po interfejsie"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -219,6 +293,12 @@ msgstr "Twój Penpot"
 msgid "dashboard.delete-team"
 msgstr "Usuń zespół"
 
+msgid "dashboard.download-binary-file"
+msgstr "Pobierz plik Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Pobierz plik standardowy (.svg + .json)"
+
 msgid "dashboard.draft-title"
 msgstr "Szkic"
 
@@ -241,6 +321,9 @@ msgstr ""
 "O nie! Nie masz jeszcze plików! Jeśli chcesz wypróbować niektóre szablony, "
 "przejdź do [Biblioteki i "
 "szablony](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Pobierz %s plików Penpot (.penpot)"
 
 msgid "dashboard.export-frames"
 msgstr "Eksportuj obszary kompozycji do PDF"
@@ -280,6 +363,9 @@ msgstr "Eksportuj wybrane"
 
 msgid "dashboard.export-single"
 msgstr "Eksportuj plik Penpot"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Pobierz %s plików standardowych (.svg + .json)"
 
 msgid "dashboard.export.detail"
 msgstr "* Może zawierać komponenty, grafikę, kolory i/lub typografię."
@@ -398,6 +484,15 @@ msgstr "Zaproś do zespołu"
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
 msgstr "Opuść zespół"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Biblioteki i szablony"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Poznaj więcej z nich i dowiedz się, jak pomóc"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Wystąpił problem z importem szablonu. Szablon nie został zaimportowany."
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
@@ -579,6 +674,10 @@ msgstr "Wyniki wyszukiwania"
 msgid "dashboard.type-something"
 msgstr "Wpisz, aby wyszukać wyniki"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Cofnij publikację biblioteki"
+
 #: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Aktualizuj ustawienia"
@@ -598,6 +697,14 @@ msgstr "Twoje imię"
 #: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "Twój Penpot"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Uwaga"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.component-subtitle"
@@ -764,6 +871,20 @@ msgid "feedback.description"
 msgstr "Opis"
 
 #: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Przejdź do forum Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Cieszymy się, że tu jesteś. Jeśli potrzebujesz pomocy, poszukaj jej zanim "
+"napiszesz."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Społeczność Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-go-to"
 msgstr "Przejdź do dyskusji"
 
@@ -794,6 +915,14 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "Email"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Przejdź do Twittera"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Służymy pomocą w kwestiach technicznych."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1068,6 +1197,10 @@ msgstr "Zamknij"
 msgid "labels.comments"
 msgstr "Komentarze"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Społeczność"
+
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Potwierdź hasło"
@@ -1080,6 +1213,9 @@ msgstr "Kontynuuj"
 
 msgid "labels.continue-with"
 msgstr "Kontynuuj z"
+
+msgid "labels.continue-with-penpot"
+msgstr "Możesz kontynuować z kontem Penpot"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -1221,6 +1357,9 @@ msgstr "Biblioteki i szablony"
 
 msgid "labels.link"
 msgstr "Link"
+
+msgid "labels.log-or-sign"
+msgstr "Zaloguj się lub zarejestruj"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -1400,6 +1539,9 @@ msgstr "Biblioteki Współdzielone"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"
 msgstr "Pokaż wszystkie komentarze"
+
+msgid "labels.show-comments-list"
+msgstr "Pokaż listę komentarzy"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
@@ -1598,6 +1740,34 @@ msgstr "Czy na pewno chcesz usunąć ten projekt?"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "modals.delete-project-confirm.title"
 msgstr "Usuń projekt"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Usuń plik"
+msgstr[1] "Usuń pliki"
+msgstr[2] "Usuń pliki"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Czy na pewno chcesz usunąć ten plik?"
+msgstr[1] "Czy na pewno chcesz usunąć te pliki?"
+msgstr[2] "Czy na pewno chcesz usunąć te pliki?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Ten plik ma biblioteki używane w tym pliku:"
+msgstr[1] "Ten plik ma biblioteki używane w tych plikach:"
+msgstr[2] "Ten plik ma biblioteki używane w tych plikach:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "Te pliki mają biblioteki, które są używane w tym pliku:"
+msgstr[1] "Te pliki mają biblioteki, które są używane w tych plikach:"
+msgstr[2] "Te pliki mają biblioteki, które są używane w tych plikach:"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"
@@ -3450,6 +3620,70 @@ msgstr "Zgrupowane warstwy"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Wybrane warstwy"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "Min.Wysokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-w"
+msgstr "Min.Szerokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-h"
+msgstr "Maksymalna wysokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-w"
+msgstr "Maksymalna szerokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-h"
+msgstr "Minimalna wysokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-w"
+msgstr "Minimalna szerokość"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Dół"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "Kolumna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "Wiersz"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Margines"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Prawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Góra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "dół"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "środek"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "góra"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
 msgstr "Więcej kolorów"
@@ -3902,6 +4136,9 @@ msgstr "Ścieżka"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Zresetuj nadpisania"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "Przywróć główny komponent"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.select-layer"

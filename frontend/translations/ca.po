@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-05 12:17+0000\n"
-"Last-Translator: Rubén <rubenx@mail.com>\n"
+"PO-Revision-Date: 2022-10-04 18:22+0000\n"
+"Last-Translator: Antonio <antonio@fesomia.cat>\n"
 "Language-Team: Catalan "
 "<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
 "Language: ca\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -171,6 +171,9 @@ msgstr ""
 msgid "auth.verification-email-sent"
 msgstr "S'ha enviat un correu de verificació a"
 
+msgid "common.publish"
+msgstr "Publica"
+
 msgid "common.share-link.all-users"
 msgstr "Tots els usuaris de Penpot"
 
@@ -225,6 +228,49 @@ msgstr "Compartiu prototips"
 
 msgid "common.share-link.view-all"
 msgstr "Selecciona-ho tot"
+
+msgid "common.unpublish"
+msgstr "Despublica"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Gestió de l'equip"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"El Penpot està pensat per a equips. Convida a membres i treballeu plegats "
+"en projectes i fitxers"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Fes equip!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Aprèn les bases del Penpot mentre et diverteixes amb aquest tutorial "
+"pràctic."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Comença el tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutorial pràctic"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Passeja't pel Penpot i coneix-ne les característiques principals."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Comença la visita"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Passeig per la interfície"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
@@ -443,6 +489,17 @@ msgstr "Convida a l'equip"
 msgid "dashboard.leave-team"
 msgstr "Abandona l'equip"
 
+msgid "dashboard.libraries-and-templates"
+msgstr "Biblioteques i plantilles"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explora'n més i coneix com contribuir-hi"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr ""
+"Hi ha hagut un problema en importar la plantilla. La plantilla no s'ha "
+"importat."
+
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
 msgstr "Biblioteques compartides"
@@ -621,6 +678,10 @@ msgstr "Resultats de la cerca"
 msgid "dashboard.type-something"
 msgstr "Escriviu per cercar resultats"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Despublica la biblioteca"
+
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Actualitza la configuració"
@@ -640,6 +701,14 @@ msgstr "Nom"
 #: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "El meu Penpot"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "D'acord"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Atenció"
 
 #: src/app/main/ui/confirm.cljs
 msgid "ds.component-subtitle"
@@ -671,6 +740,10 @@ msgstr "Sembla que no esteu autenticat o que la sessió ha caducat."
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "El vostre navegador no pot fer aquesta operació"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Aquest fitxer ja s'ha utilitzat amb els Components V2 habilitats."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
@@ -1662,6 +1735,18 @@ msgstr "Segur que voleu eliminar el projecte?"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "modals.delete-project-confirm.title"
 msgstr "Elimina el projecte"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Suprimeix el fitxer"
+msgstr[1] "Suprimeix els fitxers"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Esteu segur que voleu suprimir aquest fitxer?"
+msgstr[1] "Esteu segur que voleu suprimir aquests fitxers?"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"

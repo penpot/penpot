@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-23 12:19+0000\n"
-"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"PO-Revision-Date: 2022-09-23 20:54+0000\n"
+"Last-Translator: Dário <dariogomes@gmail.com>\n"
 "Language-Team: Spanish "
 "<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -242,8 +242,8 @@ msgstr "Gestión del equipo"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
 msgstr ""
-" Penpot está dirigido a equipos. Invita a personas para trabajar "
-"conjuntamente en proyectos y archivos."
+"Penpot está dirigido a equipos. Invita a personas para trabajar "
+"conjuntamente en proyectos y archivos"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
@@ -265,7 +265,7 @@ msgstr "Tutorial práctico"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.info"
-msgstr " Da un paseo por Penpot para conocer sus principales funcionalidades."
+msgstr "Da un paseo por Penpot para conocer sus principales funcionalidades."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
@@ -742,6 +742,10 @@ msgstr "¿Seguro?"
 msgid "ds.updated-at"
 msgstr "Actualizado: %s"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Proveedor de autenticación no configurado."
+
 msgid "errors.auth.unable-to-login"
 msgstr "Parece que no has iniciado sesión, o la sesión ha expirado."
 
@@ -836,6 +840,9 @@ msgstr "La contraseña de confirmación debe coincidir"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "La contraseña debe tener 8 caracteres como mínimo"
+
+msgid "errors.profile-blocked"
+msgstr "El perfil esta blockeado"
 
 #: src/app/main/ui/auth/recovery_request.cljs,
 #: src/app/main/ui/settings/change_email.cljs,
@@ -2057,6 +2064,30 @@ msgstr "Tutoriales de video"
 msgid "onboarding-v2.before-start.title"
 msgstr "Antes de comenzar"
 
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Suscríbete a la newsletter de Penpot para estar al día de los progresos del "
+"producto y noticias."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Quiero recibir noticias sobre Penpot (artículos del blog, vídeo tutoriales, "
+"directos...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Nos importa la privacidad, aquí puedes leer nuestra "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en "
+"cualquier momento usando el vínculo de desuscripción en cualquiera de "
+"nuestras newsletters."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Quiero recibir información sobre actualizaciones del producto (nuevas "
+"funcionalidades, releases, mejoras...)."
+
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "Penpot es Código Abierto y está hecho por Kaleidos y la comunidad, donde ya "
@@ -2065,7 +2096,7 @@ msgstr ""
 msgid "onboarding-v2.welcome.desc2"
 msgstr ""
 "Un espacio público donde aprender, compatir y discutir sobre el presente y "
-"futuro de Penpot con toda la Comunidad y el el equipo de Penpot."
+"futuro con toda la Comunidad y el equipo de Penpot."
 
 msgid "onboarding-v2.welcome.desc2.title"
 msgstr "Participantdo en la Comunidad"
@@ -2143,26 +2174,6 @@ msgstr ""
 
 msgid "onboarding.newsletter.decline"
 msgstr "No, gracias"
-
-msgid "onboarding-v2.newsletter.desc"
-msgstr ""
-"Suscríbete a la newsletter de Penpot para estar al día de los progresos del "
-"producto y noticias."
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr "Quiero recibir información sobre actualizaciones del producto (nuevas funcionalidades, releases, mejoras...)."
-
-msgid "onboarding-v2.newsletter.news"
-msgstr "Quiero recibir noticias sobre Penpot (artículos del blog, vídeo tutoriales, directos...)."
-
-msgid "onboarding-v2.newsletter.privacy1"
-msgstr "Nos importa la privacidad, aquí puedes leer nuestra "
-
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en "
-"cualquier momento usando el vínculo de desuscripción en "
-"cualquiera de nuestras newsletters."
 
 msgid "onboarding.newsletter.policy"
 msgstr "Política de Privacidad."
@@ -3869,19 +3880,19 @@ msgstr "Opciones avanzadas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-max-h"
-msgstr "AlturaMax."
+msgstr "Altura.Max"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-max-w"
-msgstr "AnchoMax."
+msgstr "Ancho.Max"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-min-h"
-msgstr "AlturaMin."
+msgstr "Altura.Min"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.layout-min-w"
-msgstr "AnchoMin."
+msgstr "Ancho.Min"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title"
@@ -3965,7 +3976,7 @@ msgstr "juntar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding"
-msgstr "Padding"
+msgstr "Distancia interna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding-all"
@@ -4536,6 +4547,12 @@ msgstr "Actualizar componentes"
 msgid "workspace.shape.menu.update-main"
 msgstr "Actualizar componente principal"
 
+msgid "workspace.sidebar.collapse"
+msgstr "Cerrar barra lateral"
+
+msgid "workspace.sidebar.expand"
+msgstr "Abrir barra lateral"
+
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
 msgstr "Historial (%s)"
@@ -4576,12 +4593,6 @@ msgstr "Atributos del SVG Importado"
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "workspace.sidebar.sitemap"
 msgstr "Páginas"
-
-msgid "workspace.sidebar.collapse"
-msgstr "Cerrar barra lateral"
-
-msgid "workspace.sidebar.expand"
-msgstr "Abrir barra lateral"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.sitemap"
@@ -4768,6 +4779,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-msgid "errors.profile-blocked"
-msgstr "El perfil esta blockeado"
