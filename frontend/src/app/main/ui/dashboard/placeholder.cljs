@@ -11,21 +11,27 @@
    [rumext.v2 :as mf]))
 
 (mf/defc empty-placeholder
-  [{:keys [dragging? on-create-clicked project limit origin] :as props}]
-  (cond
-    (true? dragging?)
-    [:div.grid-row.no-wrap
-     {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
-     [:div.grid-item]]
-    (= :libraries origin) 
-    [:div.grid-empty-placeholder.libs {:data-test "empty-placeholder"}
-     [:div.text
-      [:& i18n/tr-html {:label "dashboard.empty-placeholder-drafts"}]]]
-    :else
-    [:div.grid-empty-placeholder
-     {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
-     [:button.create-new {:on-click (partial on-create-clicked project "dashboard:empty-folder-placeholder")}
-      (tr "dashboard.new-file")]]))
+  [{:keys [dragging? limit origin create-fn] :as props}]
+  (let [on-click
+        (mf/use-fn
+         (mf/deps create-fn)
+         (fn [_]
+           (create-fn "dashboard:empty-folder-placeholder")))]
+    (cond
+      (true? dragging?)
+      [:div.grid-row.no-wrap
+       {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
+       [:div.grid-item]]
+
+      (= :libraries origin)
+      [:div.grid-empty-placeholder.libs {:data-test "empty-placeholder"}
+       [:div.text
+        [:& i18n/tr-html {:label "dashboard.empty-placeholder-drafts"}]]]
+
+      :else
+      [:div.grid-empty-placeholder
+       {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
+       [:button.create-new {:on-click on-click} (tr "dashboard.new-file")]])))
 
 (mf/defc loading-placeholder
   []
