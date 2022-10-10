@@ -1695,7 +1695,7 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Benetan %s taldea utzi egin nahi duzu?"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "Ezin duzu taldea utzi ez badago jabe berria izateko hautagairik. Agian "
 "taldea ezabatu egin nahi duzu."

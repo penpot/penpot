@@ -1873,7 +1873,7 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "¿Seguro que quieres abandonar el equipo %s?"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "No puede abandonar el equipo si no hay otro miembro al que promocionar a "
 "dueño. Quizás quiere borrar el equipo."

@@ -1642,7 +1642,7 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Czy na pewno chcesz opuścić zespół %s?"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "Nie możesz opuścić zespołu, jeśli nie ma innego członka, którego można by "
 "awansować na właściciela. Możesz chcieć usunąć zespół."

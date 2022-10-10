@@ -1791,7 +1791,7 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Are you sure you want to leave the %s team?"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "You can not leave the team if there is no other member to promote to owner. "
 "You might want to delete the team."

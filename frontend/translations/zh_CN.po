@@ -1558,7 +1558,7 @@ msgstr "由于你是这个团队的唯一成员，这个团队将连同其项目
 msgid "modals.leave-and-close-confirm.message"
 msgstr "您确定要离开 %s 团队吗？"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr "如果不能推选另一个成员作为团队所有者，你就无法离开团队。你或许想要删除该团队。"
 
 #: src/app/main/ui/dashboard/sidebar.cljs

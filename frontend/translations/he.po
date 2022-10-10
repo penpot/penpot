@@ -1703,7 +1703,7 @@ msgstr "כיוון שאין עוד חברים בצוות הזה מלבדך, הצ
 msgid "modals.leave-and-close-confirm.message"
 msgstr "ברצונך לעזוב את הצוות %s?"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "אי אפשר לעזוב צוות אם אין חברים שאפשר לקדם לבעלות עליה. אולי עדיף למחוק את "
 "הצוות."
