@@ -202,9 +202,9 @@
 
     [:header.viewer-header
      [:div.nav-zone
-      [:div.main-icon
+      ;; If the user doesn't have permission we disable the link
+      [:div.main-icon {:style {:cursor (when-not (:can-edit permissions) "auto")}}
        [:a {:on-click go-to-dashboard
-            ;; If the user doesn't have permission we disable the link
             :style {:pointer-events (when-not (:can-edit permissions) "none")}} i/logo-icon]]
 
       [:& header-sitemap {:project project :file file :page page :frame frame :index index}]]

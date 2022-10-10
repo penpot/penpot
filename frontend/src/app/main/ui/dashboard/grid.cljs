@@ -177,8 +177,8 @@
   [{:keys [file navigate? origin library-view?] :as props}]
   (let [file-id         (:id file)
         local           (mf/use-state {:menu-open false
-                                        :menu-pos nil
-                                        :edition false})
+                                       :menu-pos nil
+                                       :edition false})
         selected-files  (mf/deref refs/dashboard-selected-files)
         dashboard-local (mf/deref refs/dashboard-local)
         node-ref        (mf/use-ref)
@@ -313,7 +313,7 @@
 
 
 (mf/defc grid
-  [{:keys [files project on-create-clicked origin limit library-view?] :as props}]
+  [{:keys [files project origin limit library-view? create-fn] :as props}]
   (let [dragging?  (mf/use-state false)
         project-id (:id project)
         node-ref   (mf/use-var nil)
@@ -384,10 +384,8 @@
 
        :else
        [:& empty-placeholder
-        {:default? (:is-default project)
-         :on-create-clicked on-create-clicked
-         :project project
-         :limit limit
+        {:limit limit
+         :create-fn create-fn
          :origin origin}])]))
 
 (mf/defc line-grid-row
@@ -407,7 +405,7 @@
          :navigate? false}])]))
 
 (mf/defc line-grid
-  [{:keys [project team files limit on-create-clicked] :as props}]
+  [{:keys [project team files limit create-fn] :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
@@ -494,8 +492,8 @@
                           :limit limit}]
 
        :else
-       [:& empty-placeholder {:dragging? @dragging?
-                              :default? (:is-default project)
-                              :on-create-clicked on-create-clicked
-                              :limit limit}])]))
+       [:& empty-placeholder
+        {:dragging? @dragging?
+         :limit limit
+         :create-fn create-fn}])]))
 

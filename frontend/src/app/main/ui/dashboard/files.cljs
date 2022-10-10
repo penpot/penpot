@@ -23,29 +23,38 @@
    [rumext.v2 :as mf]))
 
 (mf/defc header
-  [{:keys [project on-create-clicked] :as props}]
-  (let [local      (mf/use-state {:menu-open false
-                                  :edition false})
+  [{:keys [project create-fn] :as props}]
+  (let [local (mf/use-state
+               {:menu-open false
+                :edition false})
+
+        on-create-click
+        (mf/use-fn
+         (mf/deps create-fn)
+         (fn [event]
+           (dom/prevent-default event)
+           (create-fn "dashboard:header")))
+
         on-menu-click
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [position (dom/get-client-position event)]
              (dom/prevent-default event)
              (swap! local assoc :menu-open true :menu-pos position))))
 
         on-menu-close
-        (mf/use-callback #(swap! local assoc :menu-open false))
+        (mf/use-fn #(swap! local assoc :menu-open false))
 
         on-edit
-        (mf/use-callback #(swap! local assoc :edition true :menu-open false))
+        (mf/use-fn #(swap! local assoc :edition true :menu-open false))
 
         toggle-pin
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps project)
          #(st/emit! (dd/toggle-project-pin project)))
 
         on-import
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id project))
          (fn []
            (st/emit! (dd/fetch-files {:project-id (:id project)})
@@ -78,7 +87,7 @@
                        :on-import on-import}]
 
      [:div.dashboard-header-actions
-      [:a.btn-secondary.btn-small {:on-click (partial on-create-clicked project "dashboard:header") :data-test "new-file"}
+      [:a.btn-secondary.btn-small {:on-click on-create-click :data-test "new-file"}
        (tr "dashboard.new-file")]
 
       (when-not (:is-default project)
@@ -95,69 +104,65 @@
 
 (mf/defc files-section
   [{:keys [project team] :as props}]
-  (let [files-map (mf/deref refs/dashboard-files)
-        width            (mf/use-state nil)
-        rowref           (mf/use-ref)
-        itemsize       (if (>= @width 1030)
-                         280
-                         230)
+  (let [files-map  (mf/deref refs/dashboard-files)
+        project-id (:id project)
+        width      (mf/use-state nil)
+        rowref     (mf/use-ref)
+        itemsize   (if (>= @width 1030)
+                     280
+                     230)
 
-        ratio          (if (some? @width) (/ @width itemsize) 0)
-        nitems         (mth/floor ratio)
-        limit          (min 10 nitems)
-        limit          (max 1 limit)
+        ratio     (if (some? @width) (/ @width itemsize) 0)
+        nitems    (mth/floor ratio)
+        limit     (min 10 nitems)
+        limit     (max 1 limit)
 
-        files     (->> (vals files-map)
-                       (filter #(= (:id project) (:project-id %)))
-                       (sort-by :modified-at)
-                       (reverse))
+        files     (mf/with-memo [project-id files-map]
+                    (->> (vals files-map)
+                         (filter #(= project-id (:project-id %)))
+                         (sort-by :modified-at)
+                         (reverse)))
 
-        on-create-clicked
-        (mf/use-callback
-         (fn [project origin event]
-           (dom/prevent-default event)
+        create-file
+        (mf/use-fn
+         (fn [origin]
            (st/emit! (with-meta (dd/create-file {:project-id (:id project)})
                        {::ev/origin origin}))))]
 
-    (mf/use-effect
-     (fn []
-       (let [node (mf/ref-val rowref)
-             mnt? (volatile! true)
-             sub  (->> (wapi/observe-resize node)
-                       (rx/observe-on :af)
-                       (rx/subs (fn [entries]
-                                  (let [row (first entries)
-                                        row-rect (.-contentRect ^js row)
-                                        row-width (.-width ^js row-rect)]
-                                    (when @mnt?
-                                      (reset! width row-width))))))]
-         (fn []
-           (vreset! mnt? false)
-           (rx/dispose! sub)))))
+    (mf/with-effect []
+      (let [node (mf/ref-val rowref)
+            mnt? (volatile! true)
+            sub  (->> (wapi/observe-resize node)
+                      (rx/observe-on :af)
+                      (rx/subs (fn [entries]
+                                 (let [row (first entries)
+                                       row-rect (.-contentRect ^js row)
+                                       row-width (.-width ^js row-rect)]
+                                   (when @mnt?
+                                     (reset! width row-width))))))]
+        (fn []
+          (vreset! mnt? false)
+          (rx/dispose! sub))))
 
+    (mf/with-effect [project]
+      (when project
+        (let [pname (if (:is-default project)
+                      (tr "labels.drafts")
+                      (:name project))]
+          (dom/set-html-title (tr "title.dashboard.files" pname)))))
 
-    (mf/use-effect
-     (mf/deps project)
-     (fn []
-       (when project
-         (let [pname (if (:is-default project)
-                       (tr "labels.drafts")
-                       (:name project))]
-           (dom/set-html-title (tr "title.dashboard.files" pname))))))
-
-    (mf/use-effect
-     (mf/deps project)
-     (fn []
-       (st/emit! (dd/fetch-files {:project-id (:id project)})
-                 (dd/clear-selected-files))))
+    (mf/with-effect [project-id]
+      (st/emit! (dd/fetch-files {:project-id project-id})
+                (dd/clear-selected-files)))
 
     [:*
-     [:& header {:team team :project project
-                 :on-create-clicked on-create-clicked}]
+     [:& header {:team team
+                 :project project
+                 :create-fn create-file}]
      [:section.dashboard-container.no-bg {:ref rowref}
       [:& grid {:project project
                 :files files
-                :on-create-clicked on-create-clicked
                 :origin :files
+                :create-fn create-file
                 :limit limit}]]]))
 

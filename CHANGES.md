@@ -68,6 +68,10 @@
 
 ## 1.15.5-beta
 
+### :bug: Bugs fixed
+
+- Fix artboard border radius [Taiga #4291](https://tree.taiga.io/project/penpot/issue/4291)
+
 ## 1.15.4-beta
 
 ### :bug: Bugs fixed
