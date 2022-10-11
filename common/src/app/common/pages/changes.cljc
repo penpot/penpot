@@ -225,8 +225,8 @@
                 (-> (update :touched cph/set-touched-group :shapes-group)
                     (dissoc :remote-synced?)))))
 
-          (remove-from-old-parent [cpindex objects shape-id]
-            (let [prev-parent-id (get cpindex shape-id)]
+          (remove-from-old-parent [old-objects objects shape-id]
+            (let [prev-parent-id (dm/get-in old-objects [shape-id :parent-id])]
               ;; Do nothing if the parent id of the shape is the same as
               ;; the new destination target parent id.
               (if (= prev-parent-id parent-id)
@@ -263,17 +263,6 @@
 
           (move-objects [objects]
             (let [valid?   (every? (partial is-valid-move? objects) shapes)
-
-                  ;; Create a index of shape ids pointing to the
-                  ;; corresponding parents; used mainly for update old
-                  ;; parents after move operation.
-                  cpindex  (reduce (fn [index id]
-                                     (let [obj (get objects id)]
-                                       (assoc! index id (:parent-id obj))))
-                                   (transient {})
-                                   (keys objects))
-                  cpindex  (persistent! cpindex)
-
                   parent   (get objects parent-id)
                   frame-id (if (= :frame (:type parent))
                              (:id parent)
@@ -290,7 +279,7 @@
                   ;; Analyze the old parents and clear the old links
                   ;; only if the new parent is different form old
                   ;; parent.
-                  (reduce (partial remove-from-old-parent cpindex) $ shapes)
+                  (reduce (partial remove-from-old-parent objects) $ shapes)
 
                   ;; Ensure that all shapes of the new parent has a
                   ;; correct link to the topside frame.
