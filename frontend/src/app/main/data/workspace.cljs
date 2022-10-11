@@ -1162,13 +1162,14 @@
                 res)))
 
           (maybe-translate [shape objects selected+children]
-            (if (and (not= (:type shape) :frame)
-                     (not (contains? selected+children (:frame-id shape))))
-              ;; When the parent frame is not selected we change to relative
-              ;; coordinates
-              (let [frame (get objects (:frame-id shape))]
-                (gsh/translate-to-frame shape frame))
-              shape))
+            (let [root-frame-id (cph/get-shape-id-root-frame objects (:id shape))]
+              (if (and (not (cph/root-frame? shape))
+                       (not (contains? selected+children root-frame-id)))
+                ;; When the parent frame is not selected we change to relative
+                ;; coordinates
+                (let [frame (get objects root-frame-id)]
+                  (gsh/translate-to-frame shape frame))
+                shape)))
 
           (on-copy-error [error]
             (js/console.error "Clipboard blocked:" error)
@@ -1188,7 +1189,6 @@
                         :selected selected
                         :objects {}
                         :images #{}}]
-
 
           (->> (rx/from (seq (vals pdata)))
                (rx/merge-map (partial prepare-object objects selected+children))
@@ -1286,6 +1286,7 @@
 (defn selected-frame? [state]
   (let [selected (wsh/lookup-selected state)
         objects  (wsh/lookup-page-objects state)]
+
     (and (= 1 (count selected))
          (= :frame (get-in objects [(first selected) :type])))))
 
@@ -1329,16 +1330,12 @@
           (calculate-paste-position [state mouse-pos in-viewport?]
             (let [page-objects  (wsh/lookup-page-objects state)
                   selected-objs (map #(get paste-objects %) selected)
-                  has-frame?    (d/seek #(= (:type %) :frame) selected-objs)
                   page-selected (wsh/lookup-selected state)
                   wrapper       (gsh/selection-rect selected-objs)
                   orig-pos      (gpt/point (:x1 wrapper) (:y1 wrapper))]
-              (cond
-                has-frame?
-                (let [index     (cph/get-position-on-parent page-objects uuid/zero)
-                      delta     (gpt/subtract mouse-pos orig-pos)]
-                  [uuid/zero uuid/zero delta index])
 
+              (cond
+                ;; Pasting inside a frame
                 (selected-frame? state)
                 (let [frame-id (first page-selected)
                       frame-object (get page-objects frame-id)
@@ -1346,18 +1343,11 @@
                       origin-frame-id (:frame-id (first selected-objs))
                       origin-frame-object (get page-objects origin-frame-id)
 
-                      ;; - The pasted object position must be limited to container boundaries. If the pasted object doesn't fit we try to:
-                      ;;    - Align it to the limits on the x and y axis
-                      ;;    - Respect the distance of the object to the right and bottom in the original frame
-                      margin-x (if origin-frame-object
-                                 (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
-                                 0)
-                      margin-x (min margin-x (- (:width frame-object) (:width wrapper)))
+                      margin-x (-> (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
+                                   (min (- (:width frame-object) (:width wrapper))))
 
-                      margin-y  (if origin-frame-object
-                                  (- (:height origin-frame-object) (+ (:y wrapper) (:height wrapper)))
-                                  0)
-                      margin-y (min margin-y (- (:height frame-object) (:height wrapper)))
+                      margin-y  (-> (- (:height origin-frame-object) (+ (:y wrapper) (:height wrapper)))
+                                    (min (- (:height frame-object) (:height wrapper))))
 
                       ;; Pasted objects mustn't exceed the selected frame x limit
                       paste-x (if (> (+ (:width wrapper) (:x1 wrapper)) (:width frame-object))
@@ -1369,8 +1359,13 @@
                                 (+ (- (:y frame-object) (:y orig-pos)) (- (:height frame-object) (:height wrapper) margin-y))
                                 (:y frame-object))
 
-                      delta    (gpt/point paste-x paste-y)]
-
+                      delta (if (= origin-frame-id uuid/zero)
+                              ;; When the origin isn't in a frame the result is pasted in the center.
+                              (gpt/subtract (gsh/center-shape frame-object) (gsh/center-selrect wrapper))
+                              ;; When pasting from one frame to another frame the object position must be limited to container boundaries. If the pasted object doesn't fit we try to:
+                              ;;    - Align it to the limits on the x and y axis
+                              ;;    - Respect the distance of the object to the right and bottom in the original frame
+                              (gpt/point paste-x paste-y))]
                   [frame-id frame-id delta])
 
                 (empty? page-selected)

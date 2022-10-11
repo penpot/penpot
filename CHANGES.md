@@ -53,6 +53,7 @@
 ### :bug: Bugs fixed
 
 - Fix artboard border radius [Taiga #4291](https://tree.taiga.io/project/penpot/issue/4291)
+- Fix copied & pasted layer is not visible [Taiga #4283](https://tree.taiga.io/project/penpot/issue/4283)
 
 ## 1.15.4-beta
 
