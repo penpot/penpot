@@ -20,6 +20,8 @@
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
+   [app.rpc :as-alias rpc]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
@@ -54,6 +56,7 @@
           :opt-un [::id ::is-shared ::features ::components-v2]))
 
 (sv/defmethod ::create-file
+  {::doc/added "1.0"}
   [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (let [team-id (retrieve-team-id conn project-id)]
@@ -112,6 +115,7 @@
   (s/keys :req-un [::profile-id ::name ::id]))
 
 (sv/defmethod ::rename-file
+  {::doc/added "1.0"}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
@@ -135,6 +139,7 @@
   (s/keys :req-un [::profile-id ::id ::is-shared]))
 
 (sv/defmethod ::set-file-shared
+  {::doc/added "1.2"}
   [{:keys [pool] :as cfg} {:keys [id profile-id is-shared] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
@@ -161,6 +166,7 @@
   (s/keys :req-un [::id ::profile-id]))
 
 (sv/defmethod ::delete-file
+  {::doc/added "1.0"}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
@@ -339,7 +345,8 @@
       FOR KEY SHARE")
 
 (sv/defmethod ::update-file
-  {::rsem/queue :update-file}
+  {::rsem/queue :update-file
+   ::doc/added "1.0"}
   [{:keys [pool] :as cfg} {:keys [id profile-id components-v2] :as params}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn id)
@@ -351,7 +358,8 @@
           features  (cond-> features
                       components-v2 (conj "components/v2"))
 
-          file      (assoc file :features features)]
+          file      (assoc file :features features)
+          tpoint    (dt/tpoint)]
 
       (when-not file
         (ex/raise :type :not-found
@@ -375,8 +383,15 @@
         (with-meta
           (update-file (assoc cfg :conn conn)
                        (assoc params :file file))
-          {::audit/props {:project-id (:project-id file)
-                          :team-id    (:team-id file)}})))))
+          {::audit/props
+           {:project-id (:project-id file)
+            :team-id    (:team-id file)}
+
+           ::rpc/before-complete
+           (fn []
+             (let [elapsed (tpoint)]
+               (l/trace :hint "update-file" :time (dt/format-duration elapsed))))})))))
+
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
@@ -539,6 +554,7 @@
   (s/keys :req-un [::changes ::revn ::session-id ::id]))
 
 (sv/defmethod ::update-temp-file
+  {::doc/added "1.7"}
   [{:keys [pool] :as cfg} {:keys [profile-id session-id id revn changes] :as params}]
   (db/with-atomic [conn pool]
     (db/insert! conn :file-change
@@ -556,6 +572,7 @@
   (s/keys :req-un [::id ::profile-id]))
 
 (sv/defmethod ::persist-temp-file
+  {::doc/added "1.7"}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
