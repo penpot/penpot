@@ -1678,6 +1678,9 @@
     .terms-login {
       position: relative;
       bottom: 0;
+      span {
+        margin: 0 $size-2;
+      }
     }
   }
 
