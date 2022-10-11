@@ -8,8 +8,8 @@
   (:require
    [app.common.spec :as us]
    [app.common.types.color :as ctc]
+   [app.common.types.shape.shadow.color :as-alias shadow-color]
    [clojure.spec.alpha :as s]))
-
 
 ;;; SHADOW EFFECT
 
@@ -27,7 +27,7 @@
 (s/def ::file-id (s/nilable uuid?))
 (s/def ::ref-id (s/nilable uuid?))
 
-(s/def :shadow/color
+(s/def ::shadow-color/color
   (s/keys :opt-un [::color
                    ::opacity
                    ::gradient
@@ -37,7 +37,7 @@
 (s/def ::shadow-props
   (s/keys :req-un [::id
                    ::style
-                   ::color
+                   ::shadow-color/color
                    ::offset-x
                    ::offset-y
                    ::blur
