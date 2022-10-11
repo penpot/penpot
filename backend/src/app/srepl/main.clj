@@ -16,6 +16,7 @@
    [app.rpc.queries.profile :as profile]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
+   [app.util.objects-map :as omap]
    [app.util.time :as dt]
    [clojure.pprint :refer [pprint]]
    [cuerdas.core :as str]))
@@ -101,3 +102,20 @@
         (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
         (db/delete! conn :http-session {:profile-id (:id profile)})
         :blocked))))
+
+(defn enable-objects-map-on-file
+  [system & {:keys [save? id]}]
+  (letfn [(update-file [{:keys [features] :as file}]
+            (if (contains? features "storage/objects-map")
+              file
+              (update file :data migrate-to-omap)))
+
+          (migrate-to-omap [data]
+            (-> data
+                (update :pages-index update-vals #(update % :objects omap/wrap))
+                (update :components update-vals #(update % :objects omap/wrap))))]
+
+    (h/update-file! system
+                    :id id
+                    :update-fn update-file
+                    :save? save?)))
