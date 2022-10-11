@@ -212,7 +212,7 @@
                     ::strokes
                     ::stroke-color         ;; TODO: same thing
                     ::stroke-color-ref-file ;;
-                    ::stroke-color-ref-i    ;;
+                    ::stroke-color-ref-id   ;;
                     ::stroke-opacity        ;;
                     ::stroke-style
                     ::stroke-width

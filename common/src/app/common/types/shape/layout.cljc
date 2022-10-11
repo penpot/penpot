@@ -39,6 +39,11 @@
                    ::layout-h-orientation
                    ::layout-v-orientation]))
 
+(s/def ::m1 ::us/safe-number)
+(s/def ::m2 ::us/safe-number)
+(s/def ::m3 ::us/safe-number)
+(s/def ::m4 ::us/safe-number)
+
 (s/def ::layout-margin (s/keys :req-un [::m1]
                                :opt-un [::m2 ::m3 ::m4]))
 
