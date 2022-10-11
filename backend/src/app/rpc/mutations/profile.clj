@@ -14,6 +14,7 @@
    [app.emails :as eml]
    [app.loggers.audit :as audit]
    [app.media :as media]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.doc :as-alias doc]
    [app.rpc.mutations.teams :as teams]
@@ -277,7 +278,7 @@
                   {:id profile-id})
 
       (with-meta {}
-        {:transform-response (:delete session)}))))
+        {::rpc/transform-response (:delete session)}))))
 
 (def sql:owned-teams
   "with owner_teams as (
@@ -323,7 +324,7 @@
    ::doc/deprecated "1.15"}
   [{:keys [session] :as cfg} _]
   (with-meta {}
-    {:transform-response (:delete session)}))
+    {::rpc/transform-response (:delete session)}))
 
 ;; --- MUTATION: Recover Profile
 

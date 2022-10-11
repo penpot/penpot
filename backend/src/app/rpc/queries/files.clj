@@ -17,6 +17,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.rpc :as-alias rpc]
    [app.rpc.helpers :as rpch]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as projects]
@@ -569,12 +570,11 @@
       (ex/raise :type :not-found
                 :code :file-thumbnail-not-found))
 
-    (with-meta
-      {:data (:data row)
-       :props (some-> (:props row) db/decode-transit-pgobject)
-       :revn (:revn row)
-       :file-id (:file-id row)}
-      {:transform-response (rpch/http-cache {:max-age (* 1000 60 60)})})))
+    (with-meta {:data (:data row)
+                :props (some-> (:props row) db/decode-transit-pgobject)
+                :revn (:revn row)
+                :file-id (:file-id row)}
+      {::rpc/transform-response (rpch/http-cache {:max-age (* 1000 60 60)})})))
 
 ;; --- Helpers
 

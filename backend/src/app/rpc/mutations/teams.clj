@@ -16,6 +16,7 @@
    [app.emails :as eml]
    [app.loggers.audit :as audit]
    [app.media :as media]
+   [app.rpc :as-alias rpc]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.profile :as profile]
@@ -490,7 +491,7 @@
       (with-meta team
         {::audit/props {:invitations (count emails)}
 
-         :before-complete
+         ::rpc/before-complete
          #(audit-fn :cmd :submit
                     :type "mutation"
                     :name "invite-team-member"

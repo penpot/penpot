@@ -32,13 +32,13 @@
 (defn- handle-response-transformation
   [response request mdata]
   (let [response (if (sv/wrapped? response) @response response)]
-    (if-let [transform-fn (:transform-response mdata)]
+    (if-let [transform-fn (::transform-response mdata)]
       (p/do (transform-fn request response))
       (p/resolved response))))
 
 (defn- handle-before-comple-hook
   [response mdata]
-  (when-let [hook-fn (:before-complete mdata)]
+  (when-let [hook-fn (::before-complete mdata)]
     (ex/ignoring (hook-fn)))
   response)
 
