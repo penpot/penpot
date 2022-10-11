@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-11 09:14+0000\n"
+"PO-Revision-Date: 2022-10-16 13:49+0000\n"
 "Last-Translator: ascarida <ascarida@proton.me>\n"
 "Language-Team: Galician <https://hosted.weblate.org/projects/penpot/frontend/"
 "gl/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1429,3 +1429,23 @@ msgstr "Penpot"
 
 msgid "shortcuts.cut"
 msgstr "Cortar"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Non hai elementos con configuración de exportación."
+
+msgid "dashboard.export-standard-multi"
+msgstr "Descargar %s ficheiros estándar (.svg + .json)"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Bibliotecas e Modelos"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explora máis e descubre como contribuír"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Ocorreu un problema ao importar o modelo. Non se importou o modelo."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Subscrición ao boletín"
