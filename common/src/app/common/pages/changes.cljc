@@ -8,6 +8,7 @@
   #_:clj-kondo/ignore
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bool :as gshb]
@@ -39,7 +40,27 @@
 ;; Page Transformation Changes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; === Changes Processing Impl
+;; Changes Processing Impl
+
+(defn validate-shapes!
+  [data objects items]
+  (letfn [(validate-shape! [[page-id {:keys [id] :as shape}]]
+            (when-not (= shape (dm/get-in data [:pages-index page-id :objects id]))
+              ;; If object has change verify is correct
+              (us/verify ::cts/shape shape)))]
+    (let [lookup (d/getf objects)]
+      (->> (into #{} (map :page-id) items)
+           (mapcat (fn [page-id]
+                     (filter #(= page-id (:page-id %)) items)))
+           (mapcat (fn [{:keys [type id page-id] :as item}]
+                     (sequence
+                      (comp (keep lookup)
+                            (map (partial vector page-id)))
+                      (case type
+                        (:add-obj :mod-obj :del-obj) (cons id nil)
+                        (:mov-objects :reg-objects)  (:shapes item)
+                        nil))))
+           (run! validate-shape!)))))
 
 (defmulti process-change (fn [_ change] (:type change)))
 (defmulti process-operation (fn [_ op] (:type op)))
@@ -56,14 +77,7 @@
 
    (let [result (reduce #(or (process-change %1 %2) %1) data items)]
      ;; Validate result shapes (only on the backend)
-     #?(:clj
-        (doseq [page-id (into #{} (map :page-id) items)]
-          (let [page (get-in result [:pages-index page-id])]
-            (doseq [[id shape] (:objects page)]
-              (when-not (= shape (get-in data [:pages-index page-id :objects id]))
-                ;; If object has change verify is correct
-                (us/verify ::cts/shape shape))))))
-
+     #?(:clj (validate-shapes! data result items))
      result)))
 
 (defmethod process-change :set-option
