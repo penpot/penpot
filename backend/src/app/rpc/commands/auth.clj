@@ -14,6 +14,7 @@
    [app.db :as db]
    [app.emails :as eml]
    [app.loggers.audit :as audit]
+   [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias doc]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
@@ -134,7 +135,7 @@
                          profile)]
 
         (with-meta response
-          {:transform-response ((:create session) (:id profile))
+          {::rpc/transform-response ((:create session) (:id profile))
            ::audit/props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})))))
 
@@ -161,7 +162,7 @@
    ::doc/added "1.15"}
   [{:keys [session] :as cfg} _]
   (with-meta {}
-    {:transform-response (:delete session)}))
+    {::rpc/transform-response (:delete session)}))
 
 ;; ---- COMMAND: Recover Profile
 
@@ -401,7 +402,7 @@
             token  (tokens/generate sprops claims)
             resp   {:invitation-token token}]
         (with-meta resp
-          {:transform-response ((:create session) (:id profile))
+          {::rpc/transform-response ((:create session) (:id profile))
            ::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)}))
 
@@ -410,7 +411,7 @@
       ;; we need to mark this session as logged.
       (not= "penpot" (:auth-backend profile))
       (with-meta (profile/strip-private-attrs profile)
-        {:transform-response ((:create session) (:id profile))
+        {::rpc/transform-response ((:create session) (:id profile))
          ::audit/replace-props (audit/profile->props profile)
          ::audit/profile-id (:id profile)})
 
@@ -418,7 +419,7 @@
       ;; to sign in the user directly, without email verification.
       (true? is-active)
       (with-meta (profile/strip-private-attrs profile)
-        {:transform-response ((:create session) (:id profile))
+        {::rpc/transform-response ((:create session) (:id profile))
          ::audit/replace-props (audit/profile->props profile)
          ::audit/profile-id (:id profile)})
 

@@ -16,6 +16,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
+   [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias doc]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as projects]
@@ -879,10 +880,11 @@
                      (export! output-stream))))]
 
     (with-meta (sv/wrap nil)
-      {:transform-response (fn [_ response]
-                             (-> response
-                                 (assoc :body resp)
-                                 (assoc :headers {"content-type" "application/octet-stream"})))})))
+      {::rpc/transform-response
+       (fn [_ response]
+         (-> response
+             (assoc :body resp)
+             (assoc :headers {"content-type" "application/octet-stream"})))})))
 
 (s/def ::file ::media/upload)
 (s/def ::import-binfile
