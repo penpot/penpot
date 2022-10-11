@@ -420,6 +420,14 @@
   background-color: rgba(227, 227, 227, 0.3);
   padding: 13px;
   margin-right: 13px;
+  &.loader {
+    justify-items: center;
+  }
+  .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
   &.libs {
     background-image: url(/images/ph-left.svg), url(/images/ph-right.svg);
     background-position: 15% bottom, 85% top;

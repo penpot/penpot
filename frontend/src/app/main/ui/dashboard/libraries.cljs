@@ -24,10 +24,11 @@
   (let [files-map       (mf/deref refs/dashboard-shared-files)
         projects        (mf/deref refs/dashboard-projects)
         default-project (->> projects vals (d/seek :is-default))
-        files           (->> (vals files-map)
+        files           (if (nil? files-map)
+                          nil
+                          (->> (vals files-map)
                              (sort-by :modified-at)
-                             (reverse)
-                             (not-empty))
+                             (reverse)))
 
         components-v2   (features/use-feature :components-v2)
 

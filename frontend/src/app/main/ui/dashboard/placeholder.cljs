@@ -35,7 +35,7 @@
 
 (mf/defc loading-placeholder
   []
-  [:div.grid-empty-placeholder
+  [:div.grid-empty-placeholder.loader
    [:div.icon i/loader]
    [:div.text (tr "dashboard.loading-files")]])
 
