@@ -54,22 +54,19 @@
   justify-content: center;
   position: relative;
 
-  .login-form {
+  .form-container {
+    width: 412px;
+    flex-direction: column;
     margin-bottom: 30px;
+    .auth-buttons {
+      margin: $size-6 0 $size-4 0;
+      display: flex;
+      justify-content: center;
+      column-gap: 17px;
+    }
 
-    .form-container {
-      width: 412px;
-      flex-direction: column;
-      .auth-buttons {
-        margin: $size-6 0 $size-4 0;
-        display: flex;
-        justify-content: center;
-        column-gap: 17px;
-      }
-
-      form {
-        margin: 2rem 0 0.5rem 0;
-      }
+    form {
+      margin: 2rem 0 0.5rem 0;
     }
   }
 

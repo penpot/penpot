@@ -71,11 +71,13 @@
 ### :bug: Bugs fixed
 
 - Fix artboard border radius [Taiga #4291](https://tree.taiga.io/project/penpot/issue/4291)
+- Fix copied & pasted layer is not visible [Taiga #4283](https://tree.taiga.io/project/penpot/issue/4283)
 
 ## 1.15.4-beta
 
 ### :bug: Bugs fixed
 
+- Fix social buttons in register form [Taiga #4320](https://tree.taiga.io/project/penpot/issue/4320)
 - Remove gitter information from feedback page [Taiga #4157](https://tree.taiga.io/project/penpot/issue/4157)
 - Fix overlay remains open on frame change [Taiga #4066](https://tree.taiga.io/project/penpot/issue/4066)
 - Fix toggle overlay position [Taiga #4091](https://tree.taiga.io/project/penpot/issue/4091)

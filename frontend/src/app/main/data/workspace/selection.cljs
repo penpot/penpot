@@ -333,7 +333,6 @@
         new-frame  (-> obj
                        (assoc :id new-id
                               :name frame-name
-                              :frame-id uuid/zero
                               :shapes [])
                        (dissoc :use-for-thumbnail?)
                        (gsh/move delta)
