@@ -808,7 +808,7 @@
         cs (volatile! nil)]
     (try
       (l/info :hint "start exportation" :export-id id)
-      (with-open [output (io/output-stream output)]
+      (with-open [^AutoCloseable output (io/output-stream output)]
         (binding [*position* (atom 0)]
           (write-export! (assoc cfg ::output output))))
 
@@ -831,7 +831,7 @@
 (defn export-to-tmpfile!
   [cfg]
   (let [path (tmp/tempfile :prefix "penpot.export.")]
-    (with-open [output (io/output-stream path)]
+    (with-open [^AutoCloseable output (io/output-stream path)]
       (export! cfg output)
       path)))
 
@@ -843,7 +843,7 @@
     (try
       (l/info :hint "start importation" :import-id id)
       (binding [*position* (atom 0)]
-        (with-open [input (io/input-stream input)]
+        (with-open [^AutoCloseable input (io/input-stream input)]
           (read-import! (assoc cfg ::input input))))
 
       (catch Throwable cause
