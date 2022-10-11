@@ -43,6 +43,13 @@
       text-align: initial;
     }
 
+    &.dragged {
+      border-radius: $br-small;
+      border: 2px solid lighten($color-gray-20, 15%);
+      text-align: initial;
+      max-height: 160px;
+    }
+
     &.placeholder {
       min-width: 115px;
       max-width: 115px;
