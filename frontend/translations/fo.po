@@ -1,6 +1,52 @@
 msgid ""
 msgstr ""
-"X-Generator: Weblate\n"
+"PO-Revision-Date: 2022-10-16 13:49+0000\n"
+"Last-Translator: Tummas Jóhan Sigvardsen <tummas@tummas.me>\n"
+"Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
+"fo/>\n"
+"Language: fo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.15-dev\n"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Hevur tú longu ein brúkara?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Rita inn"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Innrita her"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Gott at síggja teg aftur!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Teldupostur"
