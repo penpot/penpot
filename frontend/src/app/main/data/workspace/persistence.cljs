@@ -12,6 +12,7 @@
    [app.common.pages.changes-spec :as pcs]
    [app.common.spec :as us]
    [app.common.types.file :as ctf]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
@@ -219,14 +220,23 @@
   (ptk/reify ::changes-persisted
     ptk/UpdateEvent
     (update [_ state]
-      (if (= file-id (:current-file-id state))
-        (-> state
-            (update-in [:workspace-file :revn] max revn)
-            (update :workspace-data cp/process-changes changes))
-        (-> state
-            (update-in [:workspace-libraries file-id :revn] max revn)
-            (update-in [:workspace-libraries file-id :data]
-                       cp/process-changes changes))))))
+      (let [changes (group-by :page-id changes)]
+        (if (= file-id (:current-file-id state))
+          (-> state
+              (update-in [:workspace-file :revn] max revn)
+              (update :workspace-data (fn [file]
+                                        (loop [fdata file
+                                               entries (seq changes)]
+                                          (if-let [[page-id changes] (first entries)]
+                                            (recur (-> fdata
+                                                       (cp/process-changes changes)
+                                                       (ctst/update-object-indices page-id))
+                                                   (rest entries))
+                                            fdata)))))
+          (-> state
+              (update-in [:workspace-libraries file-id :revn] max revn)
+              (update-in [:workspace-libraries file-id :data]
+                         cp/process-changes changes)))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
