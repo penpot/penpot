@@ -167,7 +167,7 @@
 
     [:g.frame-titles
      (for [frame frames]
-       (when (= (:frame-id frame) uuid/zero)
+       (when (= (:parent-id frame) uuid/zero)
          [:& frame-title {:key (dm/str "frame-title-" (:id frame))
                           :frame frame
                           :selected? (contains? selected (:id frame))
