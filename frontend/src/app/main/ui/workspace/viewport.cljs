@@ -337,11 +337,6 @@
            :on-frame-leave on-frame-leave
            :on-frame-select on-frame-select}])
 
-       (when show-gradient-handlers?
-         [:& gradients/gradient-handlers
-          {:id (first selected)
-           :zoom zoom}])
-
        (when show-draw-area?
          [:& drawarea/draw-area
           {:shape drawing-obj
@@ -441,4 +436,9 @@
               :zoom zoom
               :objects objects-modified
               :current-transform transform
-              :hover-disabled? hover-disabled?}])])]]]))
+              :hover-disabled? hover-disabled?}])])
+
+       (when show-gradient-handlers?
+         [:& gradients/gradient-handlers
+          {:id (first selected)
+           :zoom zoom}])]]]))
