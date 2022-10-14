@@ -14,6 +14,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.middleware :as mw]
+   [app.http.session :as session]
    [app.rpc.commands.binfile :as binf]
    [app.rpc.mutations.files :refer [create-file]]
    [app.rpc.queries.profile :as profile]
@@ -377,17 +378,15 @@
                             :code :only-admins-allowed))))))})
 
 
-(s/def ::session map?)
-
 (defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req-un [::db/pool ::wrk/executor ::session]))
+  (s/keys :req-un [::db/pool ::wrk/executor ::session/session]))
 
 (defmethod ig/init-key ::routes
   [_ {:keys [session pool executor] :as cfg}]
   [["/readyz" {:middleware [[mw/with-dispatch executor]
                             [mw/with-config cfg]]
                :handler health-handler}]
-   ["/dbg" {:middleware [[(:middleware session)]
+   ["/dbg" {:middleware [[session/middleware-2 session]
                          [with-authorization pool]
                          [mw/with-dispatch executor]
                          [mw/with-config cfg]]}

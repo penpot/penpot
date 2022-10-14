@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cmd.auth]
@@ -63,12 +64,12 @@
                             :member-email (:email profile))
               token  (tokens :generate claims)]
           (with-meta {:invitation-token token}
-            {::rpc/transform-response ((:create session) (:id profile))
+            {::rpc/transform-response (session/create-fn session (:id profile))
              ::audit/props (:props profile)
              ::audit/profile-id (:id profile)}))
 
         (with-meta profile
-          {::rpc/transform-response ((:create session) (:id profile))
+          {::rpc/transform-response (session/create-fn session (:id profile))
            ::audit/props (:props profile)
            ::audit/profile-id (:id profile)})))))
 

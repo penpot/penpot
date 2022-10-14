@@ -79,10 +79,7 @@
    :app.http/client
    {:executor (ig/ref [::default :app.worker/executor])}
 
-   :app.http/session
-   {:store (ig/ref :app.http.session/store)}
-
-   :app.http.session/store
+   :app.http.session/manager
    {:pool     (ig/ref :app.db/pool)
     :sprops   (ig/ref :app.setup/props)
     :executor (ig/ref [::default :app.worker/executor])}
@@ -163,7 +160,7 @@
     :sprops      (ig/ref :app.setup/props)
     :http-client (ig/ref :app.http/client)
     :pool        (ig/ref :app.db/pool)
-    :session     (ig/ref :app.http/session)
+    :session     (ig/ref :app.http.session/manager)
     :public-uri  (cf/get :public-uri)
     :executor    (ig/ref [::default :app.worker/executor])}
 
@@ -171,7 +168,7 @@
    :app.http/router
    {:assets        (ig/ref :app.http.assets/handlers)
     :feedback      (ig/ref :app.http.feedback/handler)
-    :session       (ig/ref :app.http/session)
+    :session       (ig/ref :app.http.session/manager)
     :awsns-handler (ig/ref :app.http.awsns/handler)
     :debug-routes  (ig/ref :app.http.debug/routes)
     :oidc-routes   (ig/ref :app.auth.oidc/routes)
@@ -188,7 +185,7 @@
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref [::worker :app.worker/executor])
     :storage  (ig/ref :app.storage/storage)
-    :session  (ig/ref :app.http/session)}
+    :session  (ig/ref :app.http.session/manager)}
 
    :app.http.websocket/handler
    {:pool     (ig/ref :app.db/pool)
@@ -217,7 +214,7 @@
 
    :app.rpc/methods
    {:pool        (ig/ref :app.db/pool)
-    :session     (ig/ref :app.http/session)
+    :session     (ig/ref :app.http.session/manager)
     :sprops      (ig/ref :app.setup/props)
     :metrics     (ig/ref :app.metrics/metrics)
     :storage     (ig/ref :app.storage/storage)

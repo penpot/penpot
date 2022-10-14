@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
+   [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.media :as media]
    [app.rpc :as-alias rpc]
@@ -278,7 +279,7 @@
                   {:id profile-id})
 
       (with-meta {}
-        {::rpc/transform-response (:delete session)}))))
+        {::rpc/transform-response (session/delete-fn session)}))))
 
 (def sql:owned-teams
   "with owner_teams as (
@@ -324,7 +325,7 @@
    ::doc/deprecated "1.15"}
   [{:keys [session] :as cfg} _]
   (with-meta {}
-    {::rpc/transform-response (:delete session)}))
+    {::rpc/transform-response (session/delete-fn session)}))
 
 ;; --- MUTATION: Recover Profile
 

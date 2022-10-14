@@ -9,6 +9,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias doc]
@@ -68,7 +69,7 @@
                   {:id (:id profile)}))
 
     (with-meta claims
-      {::rpc/transform-response ((:create session) profile-id)
+      {::rpc/transform-response (session/create-fn session profile-id)
        ::audit/name "verify-profile-email"
        ::audit/props (audit/profile->props profile)
        ::audit/profile-id (:id profile)})))
@@ -172,7 +173,7 @@
         (let [profile (accept-invitation cfg claims invitation member)]
           (with-meta
             (assoc claims :state :created)
-            {::rpc/transform-response ((:create session) (:id profile))
+            {::rpc/transform-response (session/create-fn session (:id profile))
              ::audit/name "accept-team-invitation"
              ::audit/props (merge
                             (audit/profile->props profile)

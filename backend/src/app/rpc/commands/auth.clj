@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
+   [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias doc]
@@ -135,7 +136,7 @@
                          profile)]
 
         (with-meta response
-          {::rpc/transform-response ((:create session) (:id profile))
+          {::rpc/transform-response (session/create-fn session (:id profile))
            ::audit/props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})))))
 
@@ -162,7 +163,7 @@
    ::doc/added "1.15"}
   [{:keys [session] :as cfg} _]
   (with-meta {}
-    {::rpc/transform-response (:delete session)}))
+    {::rpc/transform-response (session/delete-fn session)}))
 
 ;; ---- COMMAND: Recover Profile
 
@@ -403,7 +404,7 @@
             token  (tokens/generate sprops claims)
             resp   {:invitation-token token}]
         (with-meta resp
-          {::rpc/transform-response ((:create session) (:id profile))
+          {::rpc/transform-response (session/create-fn session (:id profile))
            ::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)}))
 
@@ -412,7 +413,7 @@
       ;; we need to mark this session as logged.
       (not= "penpot" (:auth-backend profile))
       (with-meta (profile/strip-private-attrs profile)
-        {::rpc/transform-response ((:create session) (:id profile))
+        {::rpc/transform-response (session/create-fn session (:id profile))
          ::audit/replace-props (audit/profile->props profile)
          ::audit/profile-id (:id profile)})
 
@@ -420,7 +421,7 @@
       ;; to sign in the user directly, without email verification.
       (true? is-active)
       (with-meta (profile/strip-private-attrs profile)
-        {::rpc/transform-response ((:create session) (:id profile))
+        {::rpc/transform-response (session/create-fn session (:id profile))
          ::audit/replace-props (audit/profile->props profile)
          ::audit/profile-id (:id profile)})
 
