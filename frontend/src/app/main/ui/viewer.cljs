@@ -534,9 +534,11 @@
      (fn []
        (st/emit! (dv/finalize props)))))
 
-  (when-let [data (mf/deref refs/viewer-data)]
+  (if-let [data (mf/deref refs/viewer-data)]
     (let [key (str (get-in data [:file :id]))]
-      [:& viewer {:params props :data data :key key}])))
+      [:& viewer {:params props :data data :key key}])
+    [:div.loader-content.viewer-loader
+     i/loader-pencil]))
 
 (mf/defc breaking-change-notice
   []

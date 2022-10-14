@@ -25,6 +25,12 @@
   }
 }
 
+.viewer-loader {
+  svg#loader-pencil {
+    fill: $color-gray-50;
+  }
+}
+
 .viewer-section {
   height: calc(100vh - 48px);
   grid-row: 1 / span 2;
