@@ -204,7 +204,8 @@
       (watch [_ state stream]
         (let [id (get-in state [:workspace-local :edition])
               current-move (get-in state [:workspace-local :edit-path id :current-move])]
-          (if (= same-event current-move)
+          ;; id can be null if we just selected the tool but we didn't start drawing
+          (if (and id (= same-event current-move))
             (let [points (get-in state [:workspace-local :edit-path id :selected-points] #{})
 
                   move-events (->> stream
