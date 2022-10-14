@@ -337,7 +337,7 @@ msgstr "Export Penpot %s files"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-multiple.selected"
-msgstr "%s de %s elements selected"
+msgstr "%s of %s elements selected"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
