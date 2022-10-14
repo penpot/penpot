@@ -416,28 +416,29 @@
             (rx/of (dch/commit-changes changes))))))))
 
 (defn restore-component
-  "Restore a deleted component, with the given id, on the current file library."
-  [id]
-  (us/assert ::us/uuid id)
+  "Restore a deleted component, with the given id, in the given file library."
+  [library-id component-id]
+  (us/assert ::us/uuid library-id)
+  (us/assert ::us/uuid component-id)
   (ptk/reify ::restore-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [data          (get state :workspace-data)
-            component     (ctf/get-deleted-component data id)
-            page          (ctpl/get-page data (:main-instance-page component))
+      (let [file-data (wsh/get-file state library-id)
+            component (ctf/get-deleted-component file-data component-id)
+            page      (ctpl/get-page file-data (:main-instance-page component))
 
             ; Make a new main instance, with the same id of the original
             [_main-instance shapes]
             (ctn/make-component-instance page
                                          component
-                                         (:id data)
+                                         (:id file-data)
                                          (gpt/point (:main-instance-x component)
                                                     (:main-instance-y component))
                                          {:main-instance? true
                                           :force-id (:main-instance-id component)})
 
             changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
+                        (pcb/with-library-data file-data)
                         (pcb/with-page page))
 
             changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
@@ -446,9 +447,9 @@
 
             ; restore-component change needs to be done after add main instance
             ; because when undo changes, the orden is inverse
-            changes (pcb/restore-component changes id)]
+            changes (pcb/restore-component changes component-id)]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes (assoc changes :file-id library-id)))))))
 
 
 (defn instantiate-component

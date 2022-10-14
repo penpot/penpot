@@ -372,10 +372,10 @@
         has-component?      (some true? (map #(contains? % :component-id) shapes))
         is-component?       (and single? (-> shapes first :component-id some?))
 
-        shape-id            (->> shapes first :id)
-        component-id        (->> shapes first :component-id)
+        shape-id            (-> shapes first :id)
+        component-id        (-> shapes first :component-id)
         component-file      (-> shapes first :component-file)
-        main-component?     (->> shapes first :main-instance?)
+        main-component?     (-> shapes first :main-instance?)
         component-shapes    (filter #(contains? % :component-id) shapes)
 
         components-v2       (features/use-feature :components-v2)
@@ -397,7 +397,7 @@
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file component-file))
         do-update-component #(st/emit! (dwl/update-component-sync shape-id component-file))
         do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
-        do-restore-component #(st/emit! (dwl/restore-component component-id))
+        do-restore-component #(st/emit! (dwl/restore-component component-file component-id))
 
         _do-update-remote-component
         #(st/emit! (modal/show
