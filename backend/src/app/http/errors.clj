@@ -7,6 +7,7 @@
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
@@ -26,16 +27,18 @@
 
 (defn get-context
   [request]
-  (merge
-   *context*
-   {:path          (:path request)
-    :method        (:method request)
-    :params        (:params request)
-    :ip-addr       (parse-client-ip request)
-    :profile-id    (:profile-id request)}
-   (let [headers (:headers request)]
-     {:user-agent (get headers "user-agent")
-      :frontend-version (get headers "x-frontend-version" "unknown")})))
+  (let [claims (:session-token-claims request)]
+    (merge
+     *context*
+     {:path          (:path request)
+      :method        (:method request)
+      :params        (:params request)
+      :ip-addr       (parse-client-ip request)}
+     (d/without-nils
+      {:user-agent (yrq/get-header request "user-agent")
+       :frontend-version (or (yrq/get-header request "x-frontend-version")
+                             "unknown")
+       :profile-id   (:uid claims)}))))
 
 (defmulti handle-exception
   (fn [err & _rest]
