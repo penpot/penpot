@@ -359,18 +359,16 @@
            pt     (utils/translate-point-to-viewport viewport zoom raw-pt)]
        (rx/push! move-stream pt)))))
 
-(defn on-mouse-wheel [viewport-ref overlays-ref zoom]
+(defn on-mouse-wheel [viewport-ref zoom]
   (mf/use-callback
    (mf/deps zoom)
    (fn [event]
      (let [viewport (mf/ref-val viewport-ref)
-           overlays (mf/ref-val overlays-ref)
            event  (.getBrowserEvent ^js event)
            target (dom/get-target event)
            mod? (kbd/mod? event)]
 
-       (when (or (dom/is-child? viewport target)
-                 (dom/is-child? overlays target))
+       (when (dom/is-child? viewport target)
          (dom/prevent-default event)
          (dom/stop-propagation event)
          (let [pt     (->> (dom/get-client-position event)
