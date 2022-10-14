@@ -244,15 +244,19 @@
         (yrs/response 404 "not found")))))
 
 (def sql:error-reports
-  "select id, created_at from server_error_report order by created_at desc limit 100")
+  "SELECT id, created_at,
+          content->>'~:hint' AS hint
+     FROM server_error_report
+    ORDER BY created_at DESC
+    LIMIT 100")
 
 (defn error-list-handler
   [{:keys [pool]} request]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
-  (let [items (db/exec! pool [sql:error-reports])
-        items (map #(update % :created-at dt/format-instant :rfc1123) items)]
+  (let [items (->> (db/exec! pool [sql:error-reports])
+                   (map #(update % :created-at dt/format-instant :rfc1123)))]
     (yrs/response :status 200
                   :body (-> (io/resource "app/templates/error-list.tmpl")
                             (tmpl/render {:items items}))
