@@ -57,7 +57,7 @@
 - Fix artboard border radius [Taiga #4291](https://tree.taiga.io/project/penpot/issue/4291)
 - Fix copied & pasted layer is not visible [Taiga #4283](https://tree.taiga.io/project/penpot/issue/4283)
 - Fix notification to newsletter is shown in all cases [Taiga #4367](https://tree.taiga.io/project/penpot/issue/4367)
-
+- Fix comments section is not scrolling by mouse wheel [Taiga #4305](https://tree.taiga.io/project/penpot/issue/4305)
 ## 1.15.4-beta
 
 ### :bug: Bugs fixed
