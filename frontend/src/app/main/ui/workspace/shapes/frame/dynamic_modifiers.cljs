@@ -13,8 +13,10 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.modifiers :as ctm]
    [app.main.store :as st]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [rumext.v2 :as mf]))
 
 (defn- transform-no-resize
@@ -78,13 +80,20 @@
 
     [result width height]))
 
+(defn get-shape-node
+  ([id]
+   (get-shape-node js/document id))
+
+  ([base-node id]
+   (if (= (.-id base-node) (dm/str "shape-" id))
+     base-node
+     (dom/query base-node (dm/str "#shape-" id)))))
+
 (defn get-nodes
   "Retrieve the DOM nodes to apply the matrix transformation"
   [base-node {:keys [id type masked-group?] :as shape}]
   (when (some? base-node)
-    (let [shape-node (if (= (.-id base-node) (dm/str "shape-" id))
-                       base-node
-                       (dom/query base-node (dm/str "#shape-" id)))
+    (let [shape-node (get-shape-node base-node id)
 
           frame? (= :frame type)
           group? (= :group type)
@@ -164,7 +173,7 @@
 
 (defn set-transform-att!
   [node att value]
-  
+
   (let [old-att (dom/get-attribute node (dm/str "data-old-" att))
         new-value (if (some? old-att)
                     (dm/str value " " old-att)
@@ -269,6 +278,33 @@
                          (ctm/modifiers->transform center modifiers)))
                      modifiers))))
 
+        structure-changes
+        (mf/use-memo
+         (mf/deps modifiers)
+         (fn []
+           (into {}
+                 (comp (filter (fn [[_ val]] (-> val :modifiers :v3 some?)))
+                       (map (fn [[key val]]
+                              [key (-> val :modifiers :v3)])))
+
+                 modifiers)))
+
+        structure-changes (hooks/use-equal-memo structure-changes)
+
+        add-children
+        (mf/use-memo
+         (mf/deps structure-changes)
+         (fn []
+           (into []
+                 (mapcat (fn [[frame-id changes]]
+                           (->> changes
+                                (filter (fn [{:keys [type]}] (= type :add-children)))
+                                (mapcat (fn [{:keys [value]}]
+                                          (->> value (map (fn [id] {:frame frame-id :shape id}))))))))
+                 structure-changes)))
+
+        add-children-prev (hooks/use-previous add-children)
+
         shapes
         (mf/use-memo
          (mf/deps transforms)
@@ -279,6 +315,31 @@
         prev-shapes (mf/use-var nil)
         prev-modifiers (mf/use-var nil)
         prev-transforms (mf/use-var nil)]
+
+    (mf/use-effect
+     (mf/deps add-children)
+     (fn []
+       (doseq [{:keys [frame shape]} add-children-prev]
+         (let [frame-node (get-shape-node node frame)
+               shape-node (get-shape-node shape)
+               mirror-node (dom/query frame-node (dm/fmt ".mirror-shape[href='#shape-%'" shape))]
+           (when mirror-node (.remove mirror-node))
+           (dom/remove-attribute! (dom/get-parent shape-node) "display")))
+
+       (doseq [{:keys [frame shape]} add-children]
+         (let [frame-node (get-shape-node node frame)
+               shape-node (get-shape-node shape)
+
+               use-node
+               (.createElementNS globals/document "http://www.w3.org/2000/svg" "use")
+
+               contents-node
+               (or (dom/query frame-node ".frame-children") frame-node)]
+
+           (dom/set-attribute! use-node "href" (dm/fmt "#shape-%" shape))
+           (dom/add-class! use-node "mirror-shape")
+           (dom/append-child! contents-node use-node)
+           (dom/set-attribute! (dom/get-parent shape-node) "display" "none")))))
 
     (mf/use-layout-effect
      (mf/deps transforms)

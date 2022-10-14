@@ -11,14 +11,21 @@
    [app.common.math :as mth]))
 
 (defn make-rect
-  [x y width height]
-  (when (d/num? x y width height)
-    (let [width (max width 0.01)
-          height (max height 0.01)]
-      {:x x
-       :y y
-       :width width
-       :height height})))
+  ([p1 p2]
+   (let [x1 (min (:x p1) (:x p2))
+         y1 (min (:y p1) (:y p2))
+         x2 (max (:x p1) (:x p2))
+         y2 (max (:y p1) (:y p2))]
+     (make-rect x1 y1 (- x2 x1) (- y2 y1))))
+
+  ([x y width height]
+   (when (d/num? x y width height)
+     (let [width (max width 0.01)
+           height (max height 0.01)]
+       {:x x
+        :y y
+        :width width
+        :height height}))))
 
 (defn make-selrect
   [x y width height]

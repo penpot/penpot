@@ -166,9 +166,9 @@
 
               [layout-line modif-tree]))]
 
-    (let [children (map (d/getf objects) (:shapes parent))
-          modifiers (get-in modif-tree [(:id parent) :modifiers])
+    (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
           transformed-parent (gtr/transform-shape parent modifiers)
+          children (map (d/getf objects) (:shapes transformed-parent))
 
           modif-tree (reduce (partial normalize-child transformed-parent _snap-pixel?) modif-tree children)
 
@@ -343,27 +343,26 @@
                 (assoc id {:modifiers modifiers}))))
 
         modif-tree (reduce set-modifiers {} ids)
-
         shapes-tree (resolve-tree-sequence ids objects)
 
         modif-tree
         (->> shapes-tree
              (reduce
               (fn [modif-tree shape]
-                (let [has-modifiers? (some? (get-in modif-tree [(:id shape) :modifiers]))
+                (let [modifiers (get-in modif-tree [(:id shape) :modifiers])
+                      has-modifiers? (some? modifiers)
                       is-layout? (layout? shape)
                       is-parent? (or (group? shape) (and (frame? shape) (not (layout? shape))))
-
+                      root? (= uuid/zero (:id shape))
                       ;; If the current child is inside the layout we ignore the constraints
                       is-inside-layout? (inside-layout? objects shape)]
 
                   (cond-> modif-tree
-                    (and has-modifiers? is-parent?)
+                    (and has-modifiers? is-parent? (not root?))
                     (set-children-modifiers objects shape (or ignore-constraints is-inside-layout?) snap-pixel?)
-                    
+
                     is-layout?
-                    (set-layout-modifiers objects shape snap-pixel?)
-                    )))
+                    (set-layout-modifiers objects shape snap-pixel?))))
 
               modif-tree))]
 

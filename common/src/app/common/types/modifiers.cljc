@@ -162,9 +162,6 @@
               :move
               (gmt/multiply (gmt/translate-matrix vector) matrix)
 
-              ;;:transform
-              ;;(gmt/multiply transform matrix)
-
               :resize
               (gmt/multiply
                (-> (gmt/matrix)
@@ -178,7 +175,7 @@
                matrix)
 
               :rotation
-              ;; TODO LAYOUT: Comprobar que pasa si no hay centro
+              ;; TODO LAYOUT: Maybe an issue when no center data
               (gmt/multiply
                (-> (gmt/matrix)
                    (gmt/translate center)

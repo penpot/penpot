@@ -21,27 +21,37 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
-(defn truncate-zero [num default]
-  (if (mth/almost-zero? num) default num))
+(defn adjust-ratio
+  [point initial]
+  (let [v (gpt/to-vec point initial)
+        dx (mth/abs (:x v))
+        dy (mth/abs (:y v))
+        sx (mth/sign (:x v))
+        sy (mth/sign (:y v))]
 
-(defn resize-shape [{:keys [x y width height] :as shape} point lock?]
-  (let [;; The new shape behaves like a resize on the bottom-right corner
-        initial (gpt/point (+ x width) (+ y height))
-        shapev  (gpt/point width height)
-        deltav  (gpt/to-vec initial point)
-        scalev  (-> (gpt/divide (gpt/add shapev deltav) shapev)
-                    (update :x truncate-zero 0.01)
-                    (update :y truncate-zero 0.01))
-        scalev  (if lock?
-                  (let [v (max (:x scalev) (:y scalev))]
-                    (gpt/point v v))
-                  scalev)]
+    (cond-> point
+      (> dx dy)
+      (assoc :y (- (:y point) (* sy (- dx dy))))
+
+      (> dy dx)
+      (assoc :x (- (:x point) (* sx (- dy dx)))))))
+
+(defn resize-shape [{:keys [x y width height] :as shape} initial point lock?]
+  (let [draw-rect (gsh/make-rect initial (cond-> point lock? (adjust-ratio initial)))
+        shape-rect (gsh/make-rect x y width height)
+
+        scalev (gpt/point (/ (:width draw-rect) (:width shape-rect))
+                          (/ (:height draw-rect) (:height shape-rect)))
+
+        movev (gpt/to-vec (gpt/point shape-rect) (gpt/point draw-rect))]
+
     (-> shape
         (assoc :click-draw? false)
-        (gsh/transform-shape (ctm/resize scalev (gpt/point x y))))))
+        (gsh/transform-shape (ctm/resize scalev (gpt/point x y)))
+        (gsh/transform-shape (ctm/move movev)))))
 
-(defn update-drawing [state point lock?]
-  (update-in state [:workspace-drawing :object] resize-shape point lock?))
+(defn update-drawing [state initial point lock?]
+  (update-in state [:workspace-drawing :object] resize-shape initial point lock?))
 
 (defn move-drawing
   [{:keys [x y]}]
@@ -57,8 +67,7 @@
             layout  (get state :workspace-layout)
             snap-pixel? (contains? layout :snap-pixel-grid)
 
-            initial (cond-> @ms/mouse-position
-                      snap-pixel? gpt/round)
+            initial (cond-> @ms/mouse-position snap-pixel? gpt/round)
 
             page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
@@ -96,7 +105,7 @@
                       (rx/map #(conj current %)))))
               (rx/map
                (fn [[_ shift? point]]
-                 #(update-drawing % (cond-> point snap-pixel? gpt/round) shift?)))
+                 #(update-drawing % initial (cond-> point snap-pixel? gpt/round) shift?)))
 
               (rx/take-until stoper))
          (rx/of (common/handle-finish-drawing)))))))

@@ -22,6 +22,7 @@
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.features :as features]
    [app.main.streams :as ms]
@@ -146,6 +147,10 @@
              ids     (cph/clean-loops objects ids)
              lookup  (d/getf objects)
 
+             layout-ids (->> ids
+                             (mapcat (partial cph/get-parent-ids objects))
+                             (filter (partial cph/layout-shape? objects)))
+
              components-v2 (features/active-feature? state :components-v2)
 
              groups-to-unmask
@@ -266,7 +271,8 @@
 
          (rx/of (dc/detach-comment-thread ids)
                 (dwsl/update-layout-positions all-parents)
-                (dch/commit-changes changes)))))))
+                (dch/commit-changes changes)
+                (dwsl/update-layout-positions layout-ids)))))))
 
 (defn- viewport-center
   [state]

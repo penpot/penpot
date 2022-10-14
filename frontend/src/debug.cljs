@@ -67,6 +67,9 @@
 
     ;; Disable frame thumbnails
     :disable-frame-thumbnails
+
+    ;; Enable a widget to show the auto-layout drop-zones
+    :layout-drop-zones
     })
 
 ;; These events are excluded when we activate the :events flag
@@ -294,9 +297,16 @@
         num-nodes (->> (dom/seq-nodes root-node) count)]
     #js {:number num-nodes}))
 
-#_(defn modif->js
+(defn modif->js
   [modif-tree objects]
   (clj->js (into {}
                  (map (fn [[k v]]
                         [(get-in objects [k :name]) v]))
                  modif-tree)))
+
+(defn ^:export dump-modifiers
+  []
+  (let [page-id (get @st/state :current-page-id)
+        objects (get-in @st/state [:workspace-data :pages-index page-id :objects])]
+    (.log js/console (modif->js (:workspace-modifiers @st/state) objects)))
+  nil)

@@ -33,6 +33,12 @@
   ([{:keys [type]}]
    (= type :frame)))
 
+(defn layout-shape?
+  ([objects id]
+   (layout-shape? (get objects id)))
+  ([{:keys [type layout]}]
+   (and (= type :frame) layout)))
+
 (defn group-shape?
   [{:keys [type]}]
   (= type :group))

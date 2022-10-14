@@ -174,3 +174,8 @@
 (defn max-abs
   [a b]
   (max (abs a) (abs b)))
+
+(defn sign
+  "Get the sign (+1 / -1) for the number"
+  [n]
+  (if (neg? n) -1 1))

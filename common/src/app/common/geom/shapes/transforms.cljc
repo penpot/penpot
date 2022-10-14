@@ -14,8 +14,10 @@
    [app.common.geom.shapes.path :as gpa]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
+   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
-   [app.common.types.modifiers :as ctm]))
+   [app.common.types.modifiers :as ctm]
+   [app.common.uuid :as uuid]))
 
 (def ^:dynamic *skip-adjust* false)
 
@@ -436,13 +438,46 @@
                                 %)))
     shape))
 
+(defn- apply-structure-modifiers
+  [shape modifiers]
+
+  (let [remove-children
+        (fn [shapes children-to-remove]
+          (let [remove? (set children-to-remove)]
+            (d/removev remove? shapes)))
+
+        apply-modifier
+        (fn [shape {:keys [type value index]}]
+          (cond-> shape
+            (and (= type :add-children) (some? index))
+            (update :shapes
+                    (fn [shapes]
+                      (if (vector? shapes)
+                        (cph/insert-at-index shapes index value)
+                        (d/concat-vec shapes value))))
+
+            (and (= type :add-children) (nil? index))
+            (update :shapes d/concat-vec value)
+
+            (= type :remove-children)
+            (update :shapes remove-children value)))]
+
+    (reduce apply-modifier shape (:v3 modifiers))))
+
 (defn apply-modifiers
   [shape modifiers]
   (let [center (gco/center-shape shape)
         transform (ctm/modifiers->transform center modifiers)]
-    (-> shape
-        #_(set-flip-2 transform)
-        (apply-transform transform))))
+
+    (cond-> shape
+      #_(set-flip-2 transform)
+      (and (some? transform)
+           ;; Never transform the root frame
+           (not= uuid/zero (:id shape)))
+      (apply-transform transform)
+
+      :always
+      (apply-structure-modifiers modifiers))))
 
 (defn apply-objects-modifiers
   [objects modifiers]

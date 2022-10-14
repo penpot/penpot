@@ -160,6 +160,7 @@
 (dm/export gpr/join-rects)
 (dm/export gpr/join-selrects)
 (dm/export gpr/contains-selrect?)
+(dm/export gpr/contains-point?)
 
 (dm/export gtr/move)
 (dm/export gtr/absolute-move)

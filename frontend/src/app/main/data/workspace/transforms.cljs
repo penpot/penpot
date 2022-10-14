@@ -11,6 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.layout :as gsl]
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.common :as cpc]
@@ -137,8 +138,20 @@
              snap-pixel? (and (not ignore-snap-pixel)
                               (contains? (:workspace-layout state) :snap-pixel-grid))
 
+             workspace-modifiers (:workspace-modifiers state)
+
              modif-tree
-             (gsh/set-objects-modifiers ids objects (constantly modifiers) ignore-constraints snap-pixel?)]
+             (gsh/set-objects-modifiers
+              ;; TODO LAYOUT: I don't like this
+              (concat (keys workspace-modifiers) ids)
+              objects
+              (fn [shape]
+                (let [modifiers (if (contains? ids (:id shape)) modifiers {})
+                      old-modifiers-v3 (get-in state [:workspace-modifiers (:id shape) :modifiers :v3])]
+                  (cond-> modifiers
+                    (some? old-modifiers-v3)
+                    (assoc :v3 old-modifiers-v3))))
+              ignore-constraints snap-pixel?)]
 
          (update state :workspace-modifiers merge modif-tree))))))
 
@@ -619,6 +632,40 @@
            (rx/take 1)
            (rx/map #(start-move from-position))))))
 
+(defn set-change-frame-modifiers
+  [selected target-frame position]
+
+  (ptk/reify ::set-change-frame-modifiers
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (wsh/lookup-page-objects state)
+
+            origin-frame-ids (->> selected (group-by #(get-in objects [% :frame-id])))
+
+            layout? (get-in objects [target-frame :layout])
+
+            drop-index
+            (when layout? (gsl/get-drop-index target-frame objects position))
+
+            modif-tree
+            (into {}
+                  (mapcat
+                   (fn [original-frame]
+                     (let [shapes (->> (get origin-frame-ids original-frame)
+                                       (d/removev #(= target-frame %)))]
+                       (cond
+                         (not= original-frame target-frame)
+                         [[original-frame {:modifiers {:v3 [{:type :remove-children :value shapes}]}}]
+                          [target-frame {:modifiers {:v3 [{:type :add-children
+                                                           :value shapes
+                                                           :index drop-index}]}}]]
+                         layout?
+                         [[target-frame {:modifiers {:v3 [{:type :add-children
+                                                           :value shapes
+                                                           :index drop-index}]}}]]))))
+                  (keys origin-frame-ids))]
+        (assoc state :workspace-modifiers modif-tree)))))
+
 (defn- start-move
   ([from-position] (start-move from-position nil))
   ([from-position ids]
@@ -664,17 +711,25 @@
          (if (empty? shapes)
            (rx/of (finish-transform))
            (rx/concat
-            (->> position
-                 ;; We ask for the snap position but we continue even if the result is not available
-                 (rx/with-latest vector snap-delta)
-                 ;; We try to use the previous snap so we don't have to wait for the result of the new
-                 (rx/map snap/correct-snap-point)
+            (rx/merge
+             (->> position
+                  (rx/map (fn [delta]
+                            (let [position (gpt/add from-position delta)
+                                  target-frame (ctst/top-nested-frame objects position)]
+                              (set-change-frame-modifiers selected target-frame position))))
+                  (rx/take-until stopper))
 
-                 #_(rx/map #(hash-map :displacement (gmt/translate-matrix %)))
-                 (rx/map #(array-map :v2 [{:type :move :vector %}]))
+             (->> position
+                  ;; We ask for the snap position but we continue even if the result is not available
+                  (rx/with-latest vector snap-delta)
 
-                 (rx/map (partial set-modifiers ids))
-                 (rx/take-until stopper))
+                  ;; We try to use the previous snap so we don't have to wait for the result of the new
+                  (rx/map snap/correct-snap-point)
+
+                  (rx/map (fn [move-vec] {:v2 [{:type :move :vector move-vec}]}))
+
+                  (rx/map (partial set-modifiers ids))
+                  (rx/take-until stopper)))
 
             (rx/of (dwu/start-undo-transaction)
                    (calculate-frame-for-move ids)
@@ -767,18 +822,22 @@
             page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
             frame-id (ctst/top-nested-frame objects position)
+            layout?  (get-in objects [frame-id :layout])
             lookup   (d/getf objects)
 
+            shapes (->> ids (cph/clean-loops objects) (keep lookup))
+
             moving-shapes
-            (->> ids
-                 (cph/clean-loops objects)
-                 (keep lookup)
-                 (remove #(= (:frame-id %) frame-id)))
+            (cond->> shapes
+              (not layout?)
+              (remove #(= (:frame-id %) frame-id)))
+
+            drop-index (when layout? (gsl/get-drop-index frame-id objects position))
 
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
-                (pcb/change-parent frame-id moving-shapes))]
+                (pcb/change-parent frame-id moving-shapes drop-index))]
 
         (when-not (empty? changes)
           (rx/of (dch/commit-changes changes)

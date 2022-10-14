@@ -234,6 +234,7 @@
         (if (nil? child-frame-id)
           (or current-id uuid/zero)
           (recur child-frame-id))))))
+
 (defn top-nested-frame-ids
   "Search the top nested frame in a list of ids"
   [objects ids]
@@ -246,8 +247,7 @@
                                    (-> (:shapes current-shape) reverse))]
         (if (nil? child-frame-id)
           (or current-id uuid/zero)
-          (recur child-frame-id)))))
-  )
+          (recur child-frame-id))))))
 
 (defn get-viewer-frames
   ([objects]

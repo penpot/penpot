@@ -7,9 +7,12 @@
 (ns app.common.geom.shapes.layout
   (:require
    [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.rect :as gsr]
-   [app.common.geom.shapes.transforms :as gst]))
+   [app.common.geom.shapes.transforms :as gst]
+   [app.common.pages.helpers :as cph]))
 
 ;; :layout                 ;; true if active, false if not
 ;; :layout-dir             ;; :right, :left, :top, :bottom
@@ -213,6 +216,8 @@
         layout-height  (height-points layout-bounds)
         row?           (row? parent)
         col?           (col? parent)
+        space-between? (= :space-between (:layout-type parent))
+        space-around?  (= :space-around (:layout-type parent))
         h-center?      (h-center? parent)
         h-end?         (h-end? parent)
         v-center?      (v-center? parent)
@@ -258,11 +263,11 @@
                     start-p
                     (cond-> base-p
                       ;; X AXIS
-                      (and col? h-center?)
+                      (and col? h-center? (not space-around?) (not space-between?))
                       (-> (gpt/add (xv (/ layout-width 2)))
                           (gpt/subtract (xv (/ (+ line-width children-gap) 2))))
 
-                      (and col? h-end?)
+                      (and col? h-end? (not space-around?) (not space-between?))
                       (-> (gpt/add (xv layout-width))
                           (gpt/subtract (xv (+ line-width children-gap))))
 
@@ -273,11 +278,11 @@
                       (gpt/add (xv line-width))
 
                       ;; Y AXIS
-                      (and row? v-center?)
+                      (and row? v-center? (not space-around?) (not space-between?))
                       (-> (gpt/add (yv (/ layout-height 2)))
                           (gpt/subtract (yv (/ (+ line-height children-gap) 2))))
 
-                      (and row? v-end?)
+                      (and row? v-end? (not space-around?) (not space-between?))
                       (-> (gpt/add (yv layout-height))
                           (gpt/subtract (yv (+ line-height children-gap))))
 
@@ -385,17 +390,10 @@
   (let [row?      (row? parent)
         col?      (col? parent)
 
-        layout-type (:layout-type parent)
-        space-around? (= :space-around layout-type)
-        space-between? (= :space-between layout-type)
-
-        stretch-h? (and row? (or space-around? space-between?))
-        stretch-v? (and col? (or space-around? space-between?))
-
-        h-center? (and (h-center? parent) (not stretch-h?))
-        h-end?    (and (h-end? parent) (not stretch-h?))
-        v-center? (and (v-center? parent) (not stretch-v?))
-        v-end?    (and (v-end? parent) (not stretch-v?))
+        h-center? (h-center? parent)
+        h-end?    (h-end? parent)
+        v-center? (v-center? parent)
+        v-end?    (v-end? parent)
         points    (:points parent)
 
         xv (partial start-hv points)
@@ -409,10 +407,10 @@
           (and row? h-end?)
           (gpt/add (xv (- child-width)))
 
-          (and col? v-center? (not space-around?))
+          (and col? v-center?)
           (gpt/add (yv (- (/ child-height 2))))
 
-          (and col? v-end? (not space-around?))
+          (and col? v-end?)
           (gpt/add (yv (- child-height)))
 
           (some? margin-x)
@@ -584,29 +582,35 @@
         v-center? (and col? (v-center? frame))
         v-end? (and row? (v-end? frame))
         layout-gap (:layout-gap frame 0)
+        reverse? (:reverse? layout-data)
 
-        children (vec (cond->> children
-                        (:reverse? layout-data) reverse))
+        children (vec (cond->> (d/enumerate children)
+                        reverse? reverse))
 
         redfn-child
-        (fn [[result parent-rect prev-x prev-y] [child next]]
+        (fn [[result parent-rect prev-x prev-y] [[index child] next]]
           (let [prev-x (or prev-x (:x parent-rect))
                 prev-y (or prev-y (:y parent-rect))
+
                 last? (nil? next)
 
-                box-x (-> child :selrect :x)
-                box-y (-> child :selrect :y)
-                box-width (-> child :selrect :width)
-                box-height(-> child :selrect :height)
+                start-p    (gpt/point (:selrect child))
+                start-p    (-> start-p
+                               (gmt/transform-point-center (gco/center-shape child) (:transform frame))
+                               (gmt/transform-point-center (gco/center-shape frame) (:transform-inverse frame)))
 
-                
+                box-x      (:x start-p)
+                box-y      (:y start-p)
+                box-width  (-> child :selrect :width)
+                box-height (-> child :selrect :height)
+
                 x (if row? (:x parent-rect) prev-x)
                 y (if col? (:y parent-rect) prev-y)
 
                 width (cond
                         (and col? last?)
                         (- (+ (:x parent-rect) (:width parent-rect)) x)
-                        
+
                         row?
                         (:width parent-rect)
 
@@ -616,21 +620,42 @@
                 height (cond
                          (and row? last?)
                          (- (+ (:y parent-rect) (:height parent-rect)) y)
-                         
+
                          col?
                          (:height parent-rect)
 
                          :else
                          (+ box-height (- box-y prev-y) (/ layout-gap 2)))
-                
-                line-area (gsr/make-rect x y width height)
-                result (conj result line-area)]
+
+                [line-area-1 line-area-2]
+                (if col?
+                  (let [half-point-width (+ (- box-x x) (/ box-width 2))]
+                    [(-> (gsr/make-rect x y half-point-width height)
+                         (assoc :index (if reverse? (inc index) index)))
+                     (-> (gsr/make-rect (+ x half-point-width) y (- width half-point-width) height)
+                         (assoc :index (if reverse? index (inc index))))])
+                  (let [half-point-height (+ (- box-y y) (/ box-height 2))]
+                    [(-> (gsr/make-rect x y width half-point-height)
+                         (assoc :index (if reverse? (inc index) index)))
+                     (-> (gsr/make-rect x (+ y half-point-height) width (- height half-point-height))
+                         (assoc :index (if reverse? index (inc index))))]))
+
+                result (conj result line-area-1 line-area-2)
+
+                ;;line-area
+                ;;(-> (gsr/make-rect x y width height)
+                ;;    (assoc :index (if reverse? (inc index) index)))
+                ;;result (conj result line-area)
+                ;;result (conj result (gsr/make-rect box-x box-y box-width box-height))
+                ]
 
             [result parent-rect (+ x width) (+ y height)]))
-        
+
         redfn-lines
         (fn [[result from-idx prev-x prev-y] [{:keys [start-p layout-gap num-children line-width line-height]} next]]
-          (let [prev-x (or prev-x (:x frame))
+          (let [start-p (gmt/transform-point-center start-p (gco/center-shape frame) (:transform-inverse frame))
+
+                prev-x (or prev-x (:x frame))
                 prev-y (or prev-y (:y frame))
                 last? (nil? next)
 
@@ -668,7 +693,7 @@
                 width (cond
                         (and row? last?)
                         (- (+ (:x frame) (:width frame)) x)
-                        
+
                         col?
                         (:width frame)
 
@@ -678,7 +703,7 @@
                 height (cond
                          (and col? last?)
                          (- (+ (:y frame) (:height frame)) y)
-                         
+
                          row?
                          (:height frame)
 
@@ -695,13 +720,16 @@
 
                 result (first (reduce redfn-child [result line-area] (d/with-next children)))]
 
-            [result (+ from-idx num-children) (+ x width) (+ y height)]))
+            [result (+ from-idx num-children) (+ x width) (+ y height)]))]
 
-        ret (first (reduce redfn-lines [[] 0] (d/with-next (:layout-lines layout-data))))
-        ]
+    (first (reduce redfn-lines [[] 0] (d/with-next (:layout-lines layout-data))))))
 
-
-    ;;(.log js/console "RET" (clj->js ret))
-    ret
-
-    ))
+(defn get-drop-index
+  [frame-id objects position]
+  (let [frame       (get objects frame-id)
+        position    (gmt/transform-point-center position (gco/center-shape frame) (:transform-inverse frame))
+        children    (cph/get-immediate-children objects frame-id)
+        layout-data (calc-layout-data frame children)
+        drop-areas  (drop-areas frame layout-data children)
+        area        (d/seek #(gsr/contains-point? % position) drop-areas)]
+    (:index area)))

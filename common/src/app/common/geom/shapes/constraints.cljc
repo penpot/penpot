@@ -288,7 +288,9 @@
 (defn calc-child-modifiers
   [parent child modifiers ignore-constraints transformed-parent]
 
-  (let [constraints-h
+  (let [modifiers (select-keys modifiers [:v2])
+
+        constraints-h
         (if-not ignore-constraints
           (:constraints-h child (default-constraints-h child))
           :scale)

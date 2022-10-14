@@ -24,87 +24,7 @@
    [app.main.ui.workspace.shapes.frame.node-store :as fns]
    [app.main.ui.workspace.shapes.frame.thumbnail-render :as ftr]
    [beicon.core :as rx]
-   [rumext.v2 :as mf]
-
-   [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.layout :as gsl]
-   [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.store :as st]))
-
-(mf/defc debug-layout
-  {::mf/wrap-props false}
-  [props]
-
-  (let [shape (unchecked-get props "shape")
-        children (-> (wsh/lookup-page-objects @st/state)
-                     (cph/get-immediate-children (:id shape)))
-        
-        layout-data (gsl/calc-layout-data shape children)
-
-        drop-areas
-        (gsl/drop-areas shape layout-data children)
-
-        ]
-    
-    [:g.debug-layout {:pointer-events "none"}
-     (for [[idx drop-area] (d/enumerate drop-areas)]
-       [:rect {:x (:x drop-area)
-               :y (:y drop-area)
-               :width (:width drop-area)
-               :height (:height drop-area)
-               :style {:fill "blue"
-                       :fill-opacity 0.3
-                       :stroke "red"
-                       :stroke-width 1
-                       :stroke-dasharray "3 6"}}])
-
-     
-     #_(for [[idx layout-line] (d/enumerate (:layout-lines layout-data))]
-       (let [col? (gsl/col? shape)
-             row? (gsl/row? shape)
-             h-center? (and row? (gsl/h-center? shape))
-             h-end? (and row? (gsl/h-end? shape))
-             v-center? (and col? (gsl/v-center? shape))
-             v-end? (and row? (gsl/v-end? shape))
-             
-             line-width
-             (+ (-> layout-line :line-width)
-                (:margin-x shape)
-                (if col?
-                  (* (:layout-gap layout-line) (dec (-> layout-line :num-children)))
-                  0))
-
-             line-height
-             (+ (-> layout-line :line-height)
-                (:margin-y shape)
-                (if row?
-                  (* (:layout-gap layout-line) (dec (-> layout-line :num-children)))
-                  0))
-             ]
-         [:g {:key (dm/str "line-" idx)}
-          [:rect {:x (- (-> layout-line :start-p :x)
-                        (cond
-                          h-center? (/ line-width 2)
-                          h-end? line-width
-                          :else 0))
-                  :y (- (-> layout-line :start-p :y)
-                        (cond
-                          v-center? (/ line-height 2)
-                          v-end? line-height
-                          :else 0))
-                  :width line-width
-                  :height line-height
-                  :style {:fill "blue"
-                          :fill-opacity 0.3}
-                  }]
-          #_[:line {:x1 (-> layout-line :start-p :x)
-                  :y1 (-> layout-line :start-p :y)
-                  :x2 (+ (-> layout-line :start-p :x) (if col? line-width 0))
-                  :y2 (+ (-> layout-line :start-p :y) (if row? line-height 0))
-                  :transform (gsh/transform-str shape)
-                  :style {:fill "none"
-                          :stroke "red"
-                          :stroke-width 2}}]]))]))
+   [rumext.v2 :as mf]))
 
 (defn frame-shape-factory
   [shape-wrapper]
@@ -119,12 +39,9 @@
             childs-ref (mf/use-memo (mf/deps (:id shape)) #(refs/children-objects (:id shape)))
             childs     (mf/deref childs-ref)]
 
-        [:*
-         [:& (mf/provider embed/context) {:value true}
-          [:& shape-container {:shape shape :ref ref :disable-shadows? (cph/root-frame? shape)}
-           [:& frame-shape {:shape shape :childs childs} ]]]
-
-         #_[:& debug-layout {:shape shape}]]))))
+        [:& (mf/provider embed/context) {:value true}
+         [:& shape-container {:shape shape :ref ref :disable-shadows? (cph/root-frame? shape)}
+          [:& frame-shape {:shape shape :childs childs} ]]]))))
 
 (defn check-props
   [new-props old-props]

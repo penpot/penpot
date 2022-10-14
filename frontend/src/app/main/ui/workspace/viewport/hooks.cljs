@@ -11,6 +11,7 @@
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
+   [app.common.uuid :as uuid]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
@@ -28,8 +29,7 @@
    [beicon.core :as rx]
    [debug :refer [debug?]]
    [goog.events :as events]
-   [rumext.v2 :as mf]
-   [app.common.types.shape-tree :as ctst])
+   [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (defn setup-dom-events [viewport-ref zoom disable-paste in-viewport?]
@@ -217,7 +217,7 @@
                   (get objects))]
          (reset! hover hover-shape)
          (reset! hover-ids ids)
-         (reset! hover-top-frame-id (ctst/top-nested-frame objects (deref last-point-ref))))))))
+         (reset! hover-top-frame-id (ctt/top-nested-frame objects (deref last-point-ref))))))))
 
 (defn setup-viewport-modifiers
   [modifiers objects]
@@ -225,7 +225,7 @@
         (mf/use-memo
          (mf/deps objects)
          #(ctt/get-root-shapes-ids objects))
-        modifiers (select-keys modifiers root-frame-ids)]
+        modifiers (select-keys modifiers (conj root-frame-ids uuid/zero))]
     (sfd/use-dynamic-modifiers objects globals/document modifiers)))
 
 (defn inside-vbox [vbox objects frame-id]
