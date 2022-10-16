@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-16 13:49+0000\n"
-"Last-Translator: Tummas Jóhan Sigvardsen <tummas@tummas.me>\n"
+"Last-Translator: Bogi Napoleon Wennerstrøm <bogi.wennerstrom@gmail.com>\n"
 "Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
 "fo/>\n"
 "Language: fo\n"
@@ -50,3 +50,15 @@ msgstr "GitHub"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
 msgstr "Teldupostur"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Vátta loyniorðið"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Vilt tú royna tað?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Gloymt loyniorðið?"
