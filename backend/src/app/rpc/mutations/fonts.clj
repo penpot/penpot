@@ -12,14 +12,15 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.media :as media]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.queries.teams :as teams]
-   [app.rpc.semaphore :as rsem]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [promesa.exec :as px]))
 
 (declare create-font-variant)
 
@@ -46,15 +47,15 @@
     (create-font-variant cfg params)))
 
 (defn create-font-variant
-  [{:keys [storage pool executor semaphores] :as cfg} {:keys [data] :as params}]
+  [{:keys [storage pool executor climit] :as cfg} {:keys [data] :as params}]
   (letfn [(generate-fonts [data]
-            (rsem/with-dispatch (:process-font semaphores)
+            (climit/with-dispatch (:process-font climit)
               (media/run {:cmd :generate-fonts :input data})))
 
           ;; Function responsible of calculating cryptographyc hash of
           ;; the provided data.
           (calculate-hash [data]
-            (rsem/with-dispatch (:process-font semaphores)
+            (px/with-dispatch executor
               (sto/calculate-hash data)))
 
           (validate-data [data]
@@ -120,6 +121,7 @@
       and font_id = ?")
 
 (sv/defmethod ::update-font
+  {::climit/queue :process-font}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id id name] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)

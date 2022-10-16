@@ -16,10 +16,10 @@
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
-   [app.rpc.semaphore :as rsem]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -147,7 +147,7 @@
 (sv/defmethod ::login-with-password
   "Performs authentication using penpot password."
   {:auth false
-   ::rsem/queue :auth
+   ::climit/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (login-with-password cfg params))
@@ -188,7 +188,7 @@
 
 (sv/defmethod ::recover-profile
   {:auth false
-   ::rsem/queue :auth
+   ::climit/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (recover-profile cfg params))
@@ -438,7 +438,7 @@
 
 (sv/defmethod ::register-profile
   {:auth false
-   ::rsem/queue :auth
+   ::climit/queue :auth
    ::doc/added "1.15"}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]

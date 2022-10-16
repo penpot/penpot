@@ -204,7 +204,7 @@
    {:pool     (ig/ref :app.db/pool)
     :executor (ig/ref [::default :app.worker/executor])}
 
-   :app.rpc/semaphores
+   :app.rpc/climit
    {:metrics (ig/ref :app.metrics/metrics)
     :executor (ig/ref [::default :app.worker/executor])}
 
@@ -224,11 +224,11 @@
     :audit       (ig/ref :app.loggers.audit/collector)
     :ldap        (ig/ref :app.auth.ldap/provider)
     :http-client (ig/ref :app.http/client)
+    :climit      (ig/ref :app.rpc/climit)
     :rlimit      (ig/ref :app.rpc/rlimit)
     :executors   (ig/ref :app.worker/executors)
     :executor    (ig/ref [::default :app.worker/executor])
     :templates   (ig/ref :app.setup/builtin-templates)
-    :semaphores  (ig/ref :app.rpc/semaphores)
     }
 
    :app.rpc.doc/routes

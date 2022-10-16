@@ -100,21 +100,21 @@
     ::mdef/labels ["name"]
     ::mdef/type :summary}
 
-   :semaphore-queued-submissions
-   {::mdef/name "penpot_semaphore_queued_submissions"
-    ::mdef/help "Current number of queued submissions on SEMAPHORE."
+   :rpc-climit-queue-size
+   {::mdef/name "penpot_rpc_climit_queue_size"
+    ::mdef/help "Current number of queued submissions on the CLIMIT."
     ::mdef/labels ["name"]
     ::mdef/type :gauge}
 
-   :semaphore-used-permits
-   {::mdef/name "penpot_semaphore_used_permits"
-    ::mdef/help "Current number of used permits on SEMAPHORE."
+   :rpc-climit-concurrency
+   {::mdef/name "penpot_rpc_climit_concurrency"
+    ::mdef/help "Current number of used concurrency capacity on the CLIMIT"
     ::mdef/labels ["name"]
     ::mdef/type :gauge}
 
-   :semaphore-timing
-   {::mdef/name "penpot_semaphore_timing"
-    ::mdef/help "Total timing of SEMAPHORE."
+   :rpc-climit-timing
+   {::mdef/name "penpot_rpc_climit_timing"
+    ::mdef/help "Summary of the time between queuing and executing on the CLIMIT"
     ::mdef/labels ["name"]
     ::mdef/type :summary}
 

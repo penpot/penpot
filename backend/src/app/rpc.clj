@@ -15,9 +15,9 @@
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
    [app.msgbus :as-alias mbus]
+   [app.rpc.climit :as climit]
    [app.rpc.retry :as retry]
    [app.rpc.rlimit :as rlimit]
-   [app.rpc.semaphore :as-alias rsem]
    [app.storage :as-alias sto]
    [app.util.services :as sv]
    [app.util.time :as ts]
@@ -163,7 +163,7 @@
                 (wrap-dispatch cfg $ mdata)
                 (wrap-metrics cfg $ mdata)
                 (retry/wrap-retry cfg $ mdata)
-                (rsem/wrap cfg $ mdata)
+                (climit/wrap cfg $ mdata)
                 (rlimit/wrap cfg $ mdata)
                 (wrap-audit cfg $ mdata))
 
@@ -175,6 +175,7 @@
       (fn [{:keys [::request] :as params}]
         ;; Raise authentication error when rpc method requires auth but
         ;; no profile-id is found in the request.
+
         (p/do!
          (if (and auth? (not (uuid? (:profile-id params))))
            (ex/raise :type :authentication
@@ -182,7 +183,6 @@
                      :hint "authentication required for this endpoint")
            (let [params (us/conform spec (dissoc params ::request))]
              (f cfg (assoc params ::request request))))))
-
       mdata)))
 
 (defn- process-method
@@ -238,6 +238,7 @@
 (s/def ::http-client fn?)
 (s/def ::ldap (s/nilable map?))
 (s/def ::msgbus ::mbus/msgbus)
+(s/def ::climit (s/nilable ::climit/climit))
 (s/def ::rlimit (s/nilable ::rlimit/rlimit))
 
 (s/def ::public-uri ::us/not-empty-string)
@@ -251,7 +252,7 @@
                    ::public-uri
                    ::msgbus
                    ::http-client
-                   ::rsem/semaphores
+                   ::climit
                    ::rlimit
                    ::mtx/metrics
                    ::db/pool

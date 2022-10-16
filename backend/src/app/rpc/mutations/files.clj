@@ -22,10 +22,10 @@
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.climit :as climit]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
-   [app.rpc.semaphore :as rsem]
    [app.storage.impl :as simpl]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
@@ -346,8 +346,8 @@
       FOR KEY SHARE")
 
 (sv/defmethod ::update-file
-  {::rsem/queue :update-file
-   ::doc/added "1.0"}
+  {::climit/queue :update-file
+   ::climit/key-fn :id}
   [{:keys [pool] :as cfg} {:keys [id profile-id components-v2] :as params}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn id)

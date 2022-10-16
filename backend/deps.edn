@@ -37,6 +37,8 @@
   buddy/buddy-hashers {:mvn/version "1.8.158"}
   buddy/buddy-sign {:mvn/version "3.4.333"}
 
+  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.1"}
+
   org.jsoup/jsoup {:mvn/version "1.15.1"}
   org.im4java/im4java
   {:git/tag "1.4.0-penpot-2"

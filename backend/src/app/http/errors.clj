@@ -94,6 +94,23 @@
   [err _]
   (yrs/response 404 (ex-data err)))
 
+(defmethod handle-exception :internal
+  [error request]
+  (let [{:keys [code] :as edata} (ex-data error)]
+    (cond
+      (= :concurrency-limit-reached code)
+      (yrs/response 429)
+
+      :else
+      (do
+        (l/error ::l/raw (ex-message error)
+                 ::l/context (get-context request)
+                 :cause error)
+        (yrs/response 500 {:type :server-error
+                           :code :unhandled
+                           :hint (ex-message error)
+                           :data edata})))))
+
 (defmethod handle-exception org.postgresql.util.PSQLException
   [error request]
   (let [state (.getSQLState ^java.sql.SQLException error)]

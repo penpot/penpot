@@ -16,11 +16,11 @@
    [app.loggers.audit :as audit]
    [app.media :as media]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.doc :as-alias doc]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
-   [app.rpc.semaphore :as rsem]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
@@ -83,11 +83,11 @@
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
 (sv/defmethod ::update-profile-password
-  {::rsem/queue :auth}
+  {::climit/queue :auth}
   [{:keys [pool] :as cfg} {:keys [password] :as params}]
   (db/with-atomic [conn pool]
     (let [profile    (validate-password! conn params)
-          session-id (:app.rpc/session-id params)]
+          session-id (::rpc/session-id params)]
       (when (= (str/lower (:email profile))
                (str/lower (:password params)))
         (ex/raise :type :validation
@@ -309,7 +309,7 @@
 
 (sv/defmethod ::login
   {:auth false
-   ::rsem/queue :auth
+   ::climit/queue :auth
    ::doc/added "1.0"
    ::doc/deprecated "1.15"}
   [cfg params]
@@ -354,7 +354,7 @@
 
 (sv/defmethod ::register-profile
   {:auth false
-   ::rsem/queue :auth
+   ::climit/queue :auth
    ::doc/added "1.0"
    ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} params]
