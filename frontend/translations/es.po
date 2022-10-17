@@ -2185,7 +2185,7 @@ msgid "onboarding.slide.0.alt"
 msgstr "Crea diseños"
 
 msgid "onboarding.slide.0.desc1"
-msgstr "Crea bellos interfaces en colaboración con todas las personas del equipo."
+msgstr "Crea bellas interfaces en colaboración con todas las personas del equipo."
 
 msgid "onboarding.slide.0.desc2"
 msgstr ""
