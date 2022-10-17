@@ -28,14 +28,6 @@
 
 ;; Specs
 
-(s/def ::media-object
-  (s/keys :req-un [::id
-                   ::name
-                   ::ctfm/width
-                   ::ctfm/height
-                   ::ctfm/mtype]
-          :opt-un [::ctfm/path]))
-
 (s/def ::colors
   (s/map-of uuid? ::ctc/color))
 
@@ -49,7 +41,7 @@
   (s/coll-of uuid? :kind vector?))
 
 (s/def ::media
-  (s/map-of uuid? ::media-object))
+  (s/map-of uuid? ::ctfm/media-object))
 
 (s/def ::pages-index
   (s/map-of uuid? ::ctp/page))

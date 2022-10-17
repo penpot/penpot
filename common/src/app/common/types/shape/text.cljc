@@ -8,6 +8,7 @@
   (:require
    [app.common.spec :as us]
    [app.common.types.color :as ctc]
+   [app.common.types.shape.text.position-data :as-alias position-data]
    [clojure.spec.alpha :as s]))
 
 (s/def ::type #{"root" "paragraph-set" "paragraph"})
@@ -37,36 +38,36 @@
              :min-count 1))
 
 (s/def ::position-data-element
-  (s/keys :req-un [:position-data/x
-                   :position-data/y
-                   :position-data/width
-                   :position-data/height]
-          :opt-un [:position-data/fill-color
-                   :position-data/fill-opacity
-                   :position-data/font-family
-                   :position-data/font-size
-                   :position-data/font-style
-                   :position-data/font-weight
-                   :position-data/rtl
-                   :position-data/text
-                   :position-data/text-decoration
-                   :position-data/text-transform]))
+  (s/keys :req-un [::position-data/x
+                   ::position-data/y
+                   ::position-data/width
+                   ::position-data/height]
+          :opt-un [::position-data/fill-color
+                   ::position-data/fill-opacity
+                   ::position-data/font-family
+                   ::position-data/font-size
+                   ::position-data/font-style
+                   ::position-data/font-weight
+                   ::position-data/rtl
+                   ::position-data/text
+                   ::position-data/text-decoration
+                   ::position-data/text-transform]))
 
-(s/def :position-data/x ::us/safe-number)
-(s/def :position-data/y ::us/safe-number)
-(s/def :position-data/width ::us/safe-number)
-(s/def :position-data/height ::us/safe-number)
+(s/def ::position-data/x ::us/safe-number)
+(s/def ::position-data/y ::us/safe-number)
+(s/def ::position-data/width ::us/safe-number)
+(s/def ::position-data/height ::us/safe-number)
 
-(s/def :position-data/fill-color ::fill-color)
-(s/def :position-data/fill-opacity ::fill-opacity)
-(s/def :position-data/fill-color-gradient ::fill-color-gradient)
+(s/def ::position-data/fill-color ::fill-color)
+(s/def ::position-data/fill-opacity ::fill-opacity)
+(s/def ::position-data/fill-color-gradient ::fill-color-gradient)
 
-(s/def :position-data/font-family string?)
-(s/def :position-data/font-size string?)
-(s/def :position-data/font-style string?)
-(s/def :position-data/font-weight string?)
-(s/def :position-data/rtl boolean?)
-(s/def :position-data/text string?)
-(s/def :position-data/text-decoration string?)
-(s/def :position-data/text-transform string?)
+(s/def ::position-data/font-family string?)
+(s/def ::position-data/font-size string?)
+(s/def ::position-data/font-style string?)
+(s/def ::position-data/font-weight string?)
+(s/def ::position-data/rtl boolean?)
+(s/def ::position-data/text string?)
+(s/def ::position-data/text-decoration string?)
+(s/def ::position-data/text-transform string?)
 

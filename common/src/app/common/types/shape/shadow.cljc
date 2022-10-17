@@ -21,7 +21,6 @@
 (s/def ::spread ::us/safe-number)
 (s/def ::hidden boolean?)
 
-
 (s/def ::color string?)
 (s/def ::opacity ::us/safe-number)
 (s/def ::gradient (s/nilable ::ctc/gradient))
@@ -36,14 +35,14 @@
                    ::id]))
 
 (s/def ::shadow-props
-  (s/keys :req-un [:internal.shadow/id
-                   :internal.shadow/style
-                   :shadow/color
-                   :internal.shadow/offset-x
-                   :internal.shadow/offset-y
-                   :internal.shadow/blur
-                   :internal.shadow/spread
-                   :internal.shadow/hidden]))
+  (s/keys :req-un [::id
+                   ::style
+                   ::color
+                   ::offset-x
+                   ::offset-y
+                   ::blur
+                   ::spread
+                   ::hidden]))
 
 (s/def ::shadow
   (s/coll-of ::shadow-props :kind vector?))

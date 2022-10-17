@@ -8,7 +8,7 @@
   (:require
    [app.common.spec :as us]
    [app.common.types.color :as ctc]
-   [app.common.types.file :as ctf]
+   [app.common.types.file.media-object :as ctfm]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.typography :as ctt]
@@ -126,7 +126,7 @@
   (s/keys :req-un [:internal.changes.add-recent-color/color]))
 
 
-(s/def :internal.changes.add-media/object ::ctf/media-object)
+(s/def :internal.changes.add-media/object ::ctfm/media-object)
 (defmethod change-spec :add-media [_]
   (s/keys :req-un [:internal.changes.add-media/object]))
 

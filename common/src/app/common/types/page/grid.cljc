@@ -7,18 +7,20 @@
 (ns app.common.types.page.grid
   (:require
    [app.common.spec :as us]
+   [app.common.types.page.grid.color :as-alias grid-color]
    [clojure.spec.alpha :as s]))
 
 ;; --- Board grids
 
-(s/def :grid/color string?)
-(s/def :grid/opacity ::us/safe-number)
+
+(s/def ::grid-color/color string?)
+(s/def ::grid-color/opacity ::us/safe-number)
 
 (s/def ::size (s/nilable ::us/safe-integer))
 (s/def ::item-length (s/nilable ::us/safe-number))
 
-(s/def ::color (s/keys :req-un [:grid/color
-                                :grid/opacity]))
+(s/def ::color (s/keys :req-un [::grid-color/color
+                                ::grid-color/opacity]))
 (s/def ::type #{:stretch :left :center :right})
 (s/def ::gutter (s/nilable ::us/safe-integer))
 (s/def ::margin (s/nilable ::us/safe-integer))

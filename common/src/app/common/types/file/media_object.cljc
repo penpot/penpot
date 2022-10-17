@@ -9,6 +9,7 @@
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
+(s/def ::id uuid?)
 (s/def ::name string?)
 (s/def ::width ::us/safe-integer)
 (s/def ::height ::us/safe-integer)
@@ -18,4 +19,12 @@
 ;; right now is just exists or not exists. We can thin in a gradual
 ;; migration and then mark it as not nilable.
 (s/def ::path (s/nilable string?))
+
+(s/def ::media-object
+  (s/keys :req-un [::id
+                   ::name
+                   ::width
+                   ::height
+                   ::mtype]
+          :opt-un [::path]))
 
