@@ -337,7 +337,7 @@ msgstr "Export Penpot %s files"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-multiple.selected"
-msgstr "%s de %s elements selected"
+msgstr "%s of %s elements selected"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
@@ -4564,3 +4564,12 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "errors.profile-blocked"
+msgstr "The profile is blocked"
+
+msgid "errors.bad-font"
+msgstr "The font %s could not be loaded"
+
+msgid "errors.bad-font-plural"
+msgstr "The fonts %s could not be loaded"

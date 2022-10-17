@@ -31,11 +31,11 @@
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
-(defn setup-dom-events [viewport-ref overlays-ref zoom disable-paste in-viewport?]
+(defn setup-dom-events [viewport-ref zoom disable-paste in-viewport?]
   (let [on-key-down       (actions/on-key-down)
         on-key-up         (actions/on-key-up)
         on-mouse-move     (actions/on-mouse-move viewport-ref zoom)
-        on-mouse-wheel    (actions/on-mouse-wheel viewport-ref overlays-ref zoom)
+        on-mouse-wheel    (actions/on-mouse-wheel viewport-ref zoom)
         on-paste          (actions/on-paste disable-paste in-viewport?)]
     (mf/use-layout-effect
      (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-paste)

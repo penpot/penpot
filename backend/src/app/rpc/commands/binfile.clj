@@ -634,7 +634,7 @@
 
             params  {:id file-id'
                      :project-id project-id
-                     :name (str "Imported: " (:name file))
+                     :name (:name file)
                      :revn (:revn file)
                      :is-shared (:is-shared file)
                      :data (blob/encode data)

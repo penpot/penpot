@@ -58,6 +58,10 @@
 - Fix ungroup does not work for typographies [Taiga #4195](https://tree.taiga.io/project/penpot/issue/4195)
 - Fix inviting to non existing users can fail [Taiga #4108](https://tree.taiga.io/project/penpot/issue/4108)
 - Fix components marked as touched when moved [Taiga #4061](https://tree.taiga.io/project/penpot/task/4061)
+- Fix boards grouped shouldn't show the title [Taiga #4251](https://tree.taiga.io/project/penpot/issue/4251)
+- Fix gradient handlers are under resize handlers[Taiga #4298](https://tree.taiga.io/project/penpot/issue/4298)
+- Fix grid not syncing immediately in multiuser [Taiga #4339](https://tree.taiga.io/project/penpot/issue/4339)
+- Fix custom font upload fails silently for unsupported formats [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4280)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
@@ -72,6 +76,8 @@
 
 - Fix artboard border radius [Taiga #4291](https://tree.taiga.io/project/penpot/issue/4291)
 - Fix copied & pasted layer is not visible [Taiga #4283](https://tree.taiga.io/project/penpot/issue/4283)
+- Fix notification to newsletter is shown in all cases [Taiga #4367](https://tree.taiga.io/project/penpot/issue/4367)
+- Fix comments section is not scrolling by mouse wheel [Taiga #4305](https://tree.taiga.io/project/penpot/issue/4305)
 
 ## 1.15.4-beta
 

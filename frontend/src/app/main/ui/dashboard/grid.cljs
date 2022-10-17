@@ -163,7 +163,7 @@
   (let [locale (mf/deref i18n/locale)
         time   (dt/timeago modified-at {:locale locale})]
     [:span.date
-     (str (tr "ds.updated-at" time))]))
+     time]))
 
 (defn create-counter-element
   [_element file-count]
@@ -390,12 +390,13 @@
 
 (mf/defc line-grid-row
   [{:keys [files selected-files dragging? limit] :as props}]
-  (let [limit (if dragging? (dec limit) limit)]
+  (let [elements limit
+        limit (if dragging? (dec limit) limit)]
     [:div.grid-row.no-wrap
-     {:style {:grid-template-columns (dm/str "repeat(" limit ", 1fr)")}}
+     {:style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
 
      (when dragging?
-       [:div.grid-item])
+       [:div.grid-item.dragged])
      (for [item (take limit files)]
        [:& grid-item
         {:id (:id item)
