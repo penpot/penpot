@@ -44,7 +44,6 @@
 - Fix boards grouped shouldn't show the title [Taiga #4251](https://tree.taiga.io/project/penpot/issue/4251)
 - Fix gradient handlers are under resize handlers[Taiga #4298](https://tree.taiga.io/project/penpot/issue/4298)
 - Fix grid not syncing immediately in multiuser [Taiga #4339](https://tree.taiga.io/project/penpot/issue/4339)
-- Fix assertions error when trying to move board if Path tool selected [Taiga #4248](https://tree.taiga.io/project/penpot/issue/4248)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
