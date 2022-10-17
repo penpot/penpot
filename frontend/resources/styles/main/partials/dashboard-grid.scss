@@ -127,6 +127,9 @@
         width: 100%;
         white-space: nowrap;
         max-width: 260px;
+        &::first-letter {
+          text-transform: capitalize;
+        }
         @media #{$bp-max-1366} {
           max-width: 230px;
         }
