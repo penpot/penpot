@@ -12,8 +12,11 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.main.data.messages :as dm]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
+   [app.main.store :as st]
+   [app.util.i18n :refer [tr]]
    [app.util.storage :refer [storage]]
    [app.util.webapi :as wa]
    [beicon.core :as rx]
@@ -133,17 +136,35 @@
                            {:data data
                             :name (.-name blob)
                             :type (parse-mtype data)}))
-                 (rx/mapcat (fn [{:keys [type] :as font}]
-                              (if type
+                 (rx/catch (fn []
+                             (rx/of {:error (.-name blob)})))
+                 (rx/mapcat (fn [{:keys [type, error] :as font}]
+                              (if (or type error)
                                 (rx/of font)
                                 (rx/empty))))))]
 
-    (->> (rx/from blobs)
-         (rx/mapcat read-blob)
-         (rx/map parse-font)
-         (rx/filter some?)
-         (rx/map prepare)
-         (rx/reduce join {}))))
+    (let [fonts (->> (rx/from blobs)
+                     (rx/mapcat read-blob))
+          errors (->> fonts
+                      (rx/filter #(some? (:error %)))
+                      (rx/reduce (fn [acc font]
+                                   (conj acc (str "'" (:error font) "'")))
+                                 []))]
+
+      (rx/subscribe errors
+                    #(when
+                      (not-empty %)
+                       (st/emit!
+                        (dm/error
+                         (if (> (count %) 1)
+                           (tr "errors.bad-font-plural" (str/join ", " %))
+                           (tr "errors.bad-font" (first %)))))))
+      (->> fonts
+           (rx/filter #(nil? (:error %)))
+           (rx/map parse-font)
+           (rx/filter some?)
+           (rx/map prepare)
+           (rx/reduce join {})))))
 
 (defn- calculate-family-to-id-mapping
   [existing]

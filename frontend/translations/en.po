@@ -4558,3 +4558,10 @@ msgstr "Click to close the path"
 
 msgid "errors.profile-blocked"
 msgstr "The profile is blocked"
+
+msgid "errors.bad-font"
+msgstr "The font %s could not be loaded"
+
+msgid "errors.bad-font-plural"
+msgstr "The fonts %s could not be loaded"
+

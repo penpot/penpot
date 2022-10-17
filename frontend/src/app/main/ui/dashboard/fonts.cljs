@@ -303,8 +303,7 @@
       [:div.table-field.search-input
        [:input {:placeholder (tr "labels.search-font")
                 :default-value ""
-                :on-change on-change
-                }]]]
+                :on-change on-change}]]]
 
      (cond
        (seq fonts)

@@ -44,6 +44,7 @@
 - Fix boards grouped shouldn't show the title [Taiga #4251](https://tree.taiga.io/project/penpot/issue/4251)
 - Fix gradient handlers are under resize handlers[Taiga #4298](https://tree.taiga.io/project/penpot/issue/4298)
 - Fix grid not syncing immediately in multiuser [Taiga #4339](https://tree.taiga.io/project/penpot/issue/4339)
+- Fix custom font upload fails silently for unsupported formats [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4280)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
