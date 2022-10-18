@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-18 08:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -18,8 +18,8 @@ msgstr "Sie haben schon ein Konto?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
 msgstr ""
-"Überprüfen Sie Ihre E-Mail, klicken Sie auf den Link um sich zu "
-"verifizieren und Penpot zu nutzen."
+"Überprüfen Sie Ihre E-Mail, klicken Sie auf den Link um sich zu verifizieren "
+"und Penpot zu nutzen."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -36,8 +36,8 @@ msgstr "Einfach testen?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
 msgstr ""
-"Das ist eine DEMO-VERSION, verwenden Sie es NICHT zum Arbeiten, die "
-"Projekte werden regelmäßig gelöscht."
+"Das ist eine DEMO-VERSION, verwenden Sie es NICHT zum Arbeiten, die Projekte "
+"werden regelmäßig gelöscht."
 
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
@@ -108,7 +108,8 @@ msgstr ""
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
-msgstr "Der Link zur Wiederherstellung des Passworts wurde an Ihre E-Mail gesendet."
+msgstr ""
+"Der Link zur Wiederherstellung des Passworts wurde an Ihre E-Mail gesendet."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
@@ -265,7 +266,8 @@ msgstr "Praktisches Tutorial"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.info"
-msgstr "Erkunden Sie Penpot um mehr über die wichtigsten Funktionen zu erfahren."
+msgstr ""
+"Erkunden Sie Penpot um mehr über die wichtigsten Funktionen zu erfahren."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
@@ -326,8 +328,8 @@ msgstr "Sie haben hier noch keine Dateien"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Hier gibt es noch keine Dateien. Wenn Sie einige Vorlagen ausprobieren "
-"möchten, können Sie zum Abschnitt [Bibliotheken & "
-"Vorlagen](https://penpot.app/libraries-templates.html) gehen"
+"möchten, können Sie zum Abschnitt [Bibliotheken & Vorlagen](https://penpot."
+"app/libraries-templates.html) gehen"
 
 msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot-Dateien herunterladen (.penpot)"
@@ -380,13 +382,12 @@ msgstr "* kann Komponenten, Grafiken, Farben und/oder Textstile enthalten."
 msgid "dashboard.export.explain"
 msgstr ""
 "Eine oder mehrere Dateien, die Sie exportieren möchten, verwenden geteilte "
-"Bibliotheken. Was möchten Sie mit den Assets* aus diesen Bibliotheken "
-"machen?"
+"Bibliotheken. Was möchten Sie mit den Assets* aus diesen Bibliotheken machen?"
 
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"Dateien mit geteilten Bibliotheken werden exportiert, und ihre "
-"Verknüpfungen bleiben erhalten."
+"Dateien mit geteilten Bibliotheken werden exportiert, und ihre Verknüpfungen "
+"bleiben erhalten."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Geteilte Bibliotheken exportieren"
@@ -429,18 +430,17 @@ msgstr[1] "%s Schriftarten hinzugefügt"
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Jede Webschriftart, die Sie hier hochladen, wird der Liste der Schriftarten "
-"hinzugefügt, die in den Texteigenschaften der Dateien dieses Teams "
-"verfügbar ist. Schriftarten mit dem gleichen Schriftfamilien-Namen werden "
-"als **eine einzige Schriftfamilie** gruppiert. Sie können Schriftarten in "
-"den folgenden Formaten hochladen: **TTF, OTF und WOFF** (nur eine wird "
-"benötigt)."
+"hinzugefügt, die in den Texteigenschaften der Dateien dieses Teams verfügbar "
+"ist. Schriftarten mit dem gleichen Schriftfamilien-Namen werden als **eine "
+"einzige Schriftfamilie** gruppiert. Sie können Schriftarten in den folgenden "
+"Formaten hochladen: **TTF, OTF und WOFF** (nur eine wird benötigt)."
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sie sollten nur Schriftarten hochladen, die Sie besitzen oder für die Sie "
 "eine Lizenz zur Verwendung in Penpot verfügen. Weitere Informationen finden "
-"Sie im Abschnitt über Inhaltsrechte in den [Nutzungsbedingungen von "
-"Penpot](https://penpot.app/terms.html). Mehr über die [Lizenzierung von "
+"Sie im Abschnitt über Inhaltsrechte in den [Nutzungsbedingungen von Penpot]"
+"(https://penpot.app/terms.html). Mehr über die [Lizenzierung von "
 "Schriftarten erfahren Sie hier](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
@@ -455,8 +455,8 @@ msgstr "Huch! Wir konnten diese Datei nicht importieren"
 
 msgid "dashboard.import.import-error"
 msgstr ""
-"Beim Importieren der Datei ist ein Fehler aufgetreten. Die Datei wurde "
-"nicht importiert."
+"Beim Importieren der Datei ist ein Fehler aufgetreten. Die Datei wurde nicht "
+"importiert."
 
 msgid "dashboard.import.import-message"
 msgstr "%s Dateien wurden erfolgreich importiert."
@@ -689,7 +689,8 @@ msgstr "Suchergebnisse"
 msgid "dashboard.type-something"
 msgstr "Zum Suchen etwas eingeben"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "Veröffentlichung der Bibliothek aufheben"
 
@@ -752,7 +753,8 @@ msgid "errors.auth-provider-not-configured"
 msgstr "Authentifizierungsanbieter ist nicht konfiguriert."
 
 msgid "errors.auth.unable-to-login"
-msgstr "Anscheinend sind Sie nicht authentifiziert oder die Sitzung ist abgelaufen."
+msgstr ""
+"Anscheinend sind Sie nicht authentifiziert oder die Sitzung ist abgelaufen."
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
@@ -779,7 +781,8 @@ msgstr "Sie können Ihre E-Mail-Adresse nicht als Passwort verwenden"
 #: src/app/main/ui/settings/change_email.cljs,
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
-msgstr "Die E-Mail-Adresse «%s» hat viele permanente Unzustellbarkeitsberichte."
+msgstr ""
+"Die E-Mail-Adresse «%s» hat viele permanente Unzustellbarkeitsberichte."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
@@ -813,7 +816,8 @@ msgid "errors.ldap-disabled"
 msgstr "Die LDAP-Authentifizierung ist deaktiviert."
 
 msgid "errors.media-format-unsupported"
-msgstr "Das Bildformat wird nicht unterstützt (es muss ein SVG, JPG oder PNG sein)."
+msgstr ""
+"Das Bildformat wird nicht unterstützt (es muss ein SVG, JPG oder PNG sein)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -822,8 +826,7 @@ msgstr "Das Bild ist zu groß, um eingefügt zu werden."
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
 msgstr ""
-"Es scheint, dass der Bildinhalt nicht mit der Dateierweiterung "
-"übereinstimmt."
+"Es scheint, dass der Bildinhalt nicht mit der Dateierweiterung übereinstimmt."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
@@ -832,8 +835,8 @@ msgstr "Es scheint, dass dies kein gültiges Bild ist."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
 msgstr ""
-"In dem von Ihnen eingeladenen Profil sind E-Mails stummgeschaltet "
-"(Spam-Berichte oder hohe Unzustellbarkeitsberichte)."
+"In dem von Ihnen eingeladenen Profil sind E-Mails stummgeschaltet (Spam-"
+"Berichte oder hohe Unzustellbarkeitsberichte)."
 
 msgid "errors.network"
 msgstr "Es kann keine Verbindung zum Server hergestellt werden."
@@ -871,13 +874,12 @@ msgstr "Das Mitglied, das Sie zuzuordnen möchten, existiert nicht."
 
 msgid "errors.team-leave.owner-cant-leave"
 msgstr ""
-"Der Besitzer kann das Team nicht verlassen, Sie müssen die Besitzerrolle "
-"neu zuweisen."
+"Der Besitzer kann das Team nicht verlassen, Sie müssen die Besitzerrolle neu "
+"zuweisen."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr ""
-"Sie müssen unsere Nutzungsbedingungen und Datenschutzrichtlinien "
-"akzeptieren."
+"Sie müssen unsere Nutzungsbedingungen und Datenschutzrichtlinien akzeptieren."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.token-expired"
@@ -934,8 +936,8 @@ msgstr "Betreff"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Bitte beschreiben Sie den Grund Ihrer E-Mail und geben Sie an, ob es sich "
-"um ein Problem, eine Idee oder einem Bedenken handelt. Ein Mitglied unseres "
+"Bitte beschreiben Sie den Grund Ihrer E-Mail und geben Sie an, ob es sich um "
+"ein Problem, eine Idee oder einem Bedenken handelt. Ein Mitglied unseres "
 "Teams wird Ihnen so schnell wie möglich antworten."
 
 #: src/app/main/ui/settings/feedback.cljs
@@ -1435,8 +1437,8 @@ msgstr "Es gibt keine Einladungen."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr ""
-"Drücken Sie die Schaltfläche \"Zum Team einladen\", um weitere Mitglieder "
-"in dieses Team einzuladen."
+"Drücken Sie die Schaltfläche \"Zum Team einladen\", um weitere Mitglieder in "
+"dieses Team einzuladen."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.auth-info"
@@ -1789,33 +1791,40 @@ msgstr "Sind Sie sicher, dass Sie dieses Projekt löschen möchten?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Projekt löschen"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Datei löschen"
 msgstr[1] "Dateien löschen"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Möchten Sie diese Datei wirklich löschen?"
 msgstr[1] "Möchten Sie diese Dateien wirklich löschen?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Diese Datei enthält Bibliotheken, die in dieser Datei verwendet werden:"
-msgstr[1] "Diese Datei enthält Bibliotheken, die in diesen Dateien verwendet werden:"
+msgstr[0] ""
+"Diese Datei enthält Bibliotheken, die in dieser Datei verwendet werden:"
+msgstr[1] ""
+"Diese Datei enthält Bibliotheken, die in diesen Dateien verwendet werden:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message-plural"
 msgid_plural "modals.delete-shared-confirm.scd-message-plural"
-msgstr[0] "Diese Dateien enthalten Bibliotheken, die in dieser Datei verwendet werden:"
+msgstr[0] ""
+"Diese Dateien enthalten Bibliotheken, die in dieser Datei verwendet werden:"
 msgstr[1] ""
-"Diese Dateien enthalten Bibliotheken, die in diesen Dateien verwendet "
-"werden:"
+"Diese Dateien enthalten Bibliotheken, die in diesen Dateien verwendet werden:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Datei löschen"
@@ -1845,7 +1854,8 @@ msgstr "Mitglied löschen"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.message"
-msgstr "Sind Sie sicher, dass Sie dieses Mitglied aus dem Team löschen möchten?"
+msgstr ""
+"Sind Sie sicher, dass Sie dieses Mitglied aus dem Team löschen möchten?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
@@ -1874,8 +1884,8 @@ msgstr "Sind Sie sicher, dass Sie das %s-Team verlassen wollen?"
 
 msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
-"Sie können das Team nicht verlassen, wenn es kein anderes Mitglied gibt, "
-"das Sie zum Besitzer ernennen können. Sie können das Team jedoch löschen."
+"Sie können das Team nicht verlassen, wenn es kein anderes Mitglied gibt, das "
+"Sie zum Besitzer ernennen können. Sie können das Team jedoch löschen."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
@@ -1922,12 +1932,13 @@ msgstr "Befördern"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
-"Wenn Sie die Eigentümerschaft übertragen, ändern Sie Ihre Rolle in Admin "
-"und verlieren einige Berechtigungen für dieses Team. "
+"Wenn Sie die Eigentümerschaft übertragen, ändern Sie Ihre Rolle in Admin und "
+"verlieren einige Berechtigungen für dieses Team. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
-msgstr "Sind Sie sicher, dass Sie diesen Benutzer zum Eigentümer befördern wollen?"
+msgstr ""
+"Sind Sie sicher, dass Sie diesen Benutzer zum Eigentümer befördern wollen?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
@@ -1954,11 +1965,13 @@ msgstr "Entfernen Sie “%s” als gemeinsam genutzte Bibliothek"
 msgid "modals.small-nudge"
 msgstr "Minimal"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Veröffentlichung aufheben"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
@@ -1968,19 +1981,24 @@ msgstr[1] ""
 "Wenn Sie die Veröffentlichung aufheben, werden die darin enthaltenen "
 "Elemente zu einer Bibliothek dieser Dateien."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
-msgstr[0] "Möchten Sie die Veröffentlichung dieser Bibliothek wirklich aufheben?"
-msgstr[1] "Möchten Sie die Veröffentlichung dieser Bibliotheken wirklich aufheben?"
+msgstr[0] ""
+"Möchten Sie die Veröffentlichung dieser Bibliothek wirklich aufheben?"
+msgstr[1] ""
+"Möchten Sie die Veröffentlichung dieser Bibliotheken wirklich aufheben?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
 msgstr[0] "Es wird in dieser Datei verwendet:"
 msgstr[1] "Es wird in diesen Dateien verwendet:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "Veröffentlichung der Bibliothek aufheben"
@@ -2014,8 +2032,7 @@ msgstr "Abbrechen"
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Sie sind dabei, eine Komponente in einer gemeinsam genutzten Bibliothek zu "
-"aktualisieren. Dies kann sich auf andere Dateien auswirken, die es "
-"verwenden."
+"aktualisieren. Dies kann sich auf andere Dateien auswirken, die es verwenden."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -2029,8 +2046,8 @@ msgstr "Einladung erfolgreich gesendet"
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
 msgstr ""
-"Sie können Ihr Profil nicht löschen. Weisen Sie Ihre Teams neu zu, bevor "
-"Sie fortfahren."
+"Sie können Ihr Profil nicht löschen. Weisen Sie Ihre Teams neu zu, bevor Sie "
+"fortfahren."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -2042,9 +2059,8 @@ msgstr "Verifizierungs-E-Mail an %s gesendet. Prüfen Sie Ihren Posteingang!"
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"Sie sollten wissen, dass es viele Ressourcen gibt, die Ihnen den Einstieg "
-"in Penpot erleichtern, wie z. B. das Benutzerhandbuch und unseren "
-"Youtube-Kanal."
+"Sie sollten wissen, dass es viele Ressourcen gibt, die Ihnen den Einstieg in "
+"Penpot erleichtern, wie z. B. das Benutzerhandbuch und unseren Youtube-Kanal."
 
 msgid "onboarding-v2.before-start.desc2"
 msgstr ""
@@ -2104,8 +2120,8 @@ msgstr "In der Community mitmachen"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"Hier erfahren Sie, wie Sie bei Übersetzungen, Feature Requests, "
-"Core-Entwicklung und der Fehlersuche helfen können…"
+"Hier erfahren Sie, wie Sie bei Übersetzungen, Feature Requests, Core-"
+"Entwicklung und der Fehlersuche helfen können…"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "Leitfaden für Mitwirkende"
@@ -2155,9 +2171,8 @@ msgstr "Open Source"
 
 msgid "onboarding.contrib.desc1"
 msgstr ""
-"Penpot ist Open Source Software, die von und für die Gemeinschaft "
-"entwickelt wurde. Wenn Sie mitarbeiten möchten, sind Sie mehr als "
-"willkommen!"
+"Penpot ist Open Source Software, die von und für die Gemeinschaft entwickelt "
+"wurde. Wenn Sie mitarbeiten möchten, sind Sie mehr als willkommen!"
 
 msgid "onboarding.contrib.desc2.1"
 msgstr "Sie können das Projekt"
@@ -2269,8 +2284,8 @@ msgstr "Ein Team erstellen"
 
 msgid "onboarding.team-modal.create-team-desc"
 msgstr ""
-"In einem Team können Sie mit anderen Penpot-Nutzern zusammenarbeiten, die "
-"an denselben Dateien und Projekten arbeiten."
+"In einem Team können Sie mit anderen Penpot-Nutzern zusammenarbeiten, die an "
+"denselben Dateien und Projekten arbeiten."
 
 msgid "onboarding.team-modal.create-team-feature-1"
 msgstr "Unbegrenzte Anzahl von Dateien und Projekten"
@@ -2971,8 +2986,8 @@ msgstr "Gruppe erstellen"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group-hint"
 msgstr ""
-"Ihre Elemente werden automatisch nach diesem Schema benannt: \"Gruppenname "
-"/ Elementname\""
+"Ihre Elemente werden automatisch nach diesem Schema benannt: \"Gruppenname / "
+"Elementname\""
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
@@ -3344,8 +3359,7 @@ msgstr "BIBLIOTHEK"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr ""
-"Es gibt keine gemeinsam genutzte Bibliotheken, die aktualisiert werden "
-"müssen"
+"Es gibt keine gemeinsam genutzte Bibliotheken, die aktualisiert werden müssen"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-matches-for"
@@ -3484,6 +3498,7 @@ msgstr "Auswahl exportieren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
+#, fuzzy
 msgid "workspace.options.export-object"
 msgstr "1 Element exportieren"
 
@@ -4571,7 +4586,8 @@ msgstr "Ebene auswählen"
 msgid "workspace.shape.menu.show"
 msgstr "Anzeigen"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "Im Assets-Panel anzeigen"
 
