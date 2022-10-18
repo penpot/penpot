@@ -3596,18 +3596,6 @@ msgstr "Prawa"
 msgid "workspace.options.layout.top"
 msgstr "Góra"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "dół"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "środek"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "góra"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
 msgstr "Więcej kolorów"

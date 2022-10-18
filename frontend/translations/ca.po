@@ -3586,18 +3586,6 @@ msgid "workspace.options.layout.gap"
 msgstr "Espaiat"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.center"
-msgstr "centre"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "esquerra"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.right"
-msgstr "dreta"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.left"
 msgstr "Esquerra"
 
@@ -3636,18 +3624,6 @@ msgstr "espaiat"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.top"
 msgstr "Dalt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "baix"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "centre"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "dalt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"

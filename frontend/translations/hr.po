@@ -3791,18 +3791,6 @@ msgid "workspace.options.layout.gap"
 msgstr "Razmak"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.center"
-msgstr "sredina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "lijevo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.right"
-msgstr "desno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.left"
 msgstr "Lijevo"
 
@@ -3860,18 +3848,6 @@ msgstr "Layout"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.top"
 msgstr "Vrh"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "dno"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "sredina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "vrh"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, fuzzy

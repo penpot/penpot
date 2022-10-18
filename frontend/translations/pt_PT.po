@@ -3738,18 +3738,6 @@ msgid "workspace.options.layout.gap"
 msgstr "Espaço"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.center"
-msgstr "centro"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "esquerda"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.right"
-msgstr "direita"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.left"
 msgstr "Esquerda"
 
@@ -3804,18 +3792,6 @@ msgstr "Layout"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.top"
 msgstr "Topo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "abaixo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "centro"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "topo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.wrap"
