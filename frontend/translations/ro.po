@@ -304,10 +304,6 @@ msgstr "Pin/Unpin"
 msgid "dashboard.projects-title"
 msgstr "Proiecte"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promovează la administrator"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Doriți să vă ștergeți contul?"

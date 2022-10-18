@@ -584,10 +584,6 @@ msgstr "Prikvači/Otkvači"
 msgid "dashboard.projects-title"
 msgstr "Projekti"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promakni u vlasnika"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Želiš li ukloniti svoj račun?"
@@ -2077,12 +2073,6 @@ msgstr "Ne, hvala"
 
 msgid "onboarding.newsletter.policy"
 msgstr "Politika privatnosti."
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Poslat ćemo ti samo relevantne e-mailove. Pretplatu možeš odjaviti u bilo "
-"kojem trenutku u svom korisničkom profilu ili putem linka za odjavu u bilo "
-"kojem od naših newslettera."
 
 msgid "onboarding.newsletter.title"
 msgstr "Želiš primati Penpot novostii?"

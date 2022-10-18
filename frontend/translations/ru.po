@@ -581,10 +581,6 @@ msgstr "Закрепить/Открепить"
 msgid "dashboard.projects-title"
 msgstr "Проекты"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Сделать владельцем"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Хотите удалить свой аккаунт?"

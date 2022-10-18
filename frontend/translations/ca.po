@@ -590,10 +590,6 @@ msgstr "Fixa/Deixa de fixar"
 msgid "dashboard.projects-title"
 msgstr "Projectes"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promoure a propietari"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Voleu eliminar el vostre compte?"
@@ -1967,12 +1963,6 @@ msgstr "No, gràcies"
 msgid "onboarding.newsletter.policy"
 msgstr "Política de privacitat."
 
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Només us enviarem correus rellevants. Podeu anul·lar la subscripció sempre "
-"que vulgueu des del perfil d'usuari o amb l'enllaç que trobareu a qualsevol "
-"dels nostres butlletins."
-
 msgid "onboarding.newsletter.title"
 msgstr "Voleu rebre les novetats de Penpot?"
 
@@ -2033,14 +2023,8 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Una font compartida de veritat"
 
-msgid "onboarding.team.create.input-placeholder"
-msgstr "Introduïu el nom de l'equip nou"
-
 msgid "onboarding.team.start.button"
 msgstr "Comenceu de seguida"
-
-msgid "onboarding.team.start.title"
-msgstr "Comenceu a dissenyar"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Aquí teniu algunes plantilles."
@@ -2050,12 +2034,6 @@ msgstr "Comenceu a dissenyar"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot es troba en la primera versió beta gràcies a la combinació de "
-"característiques bàsiques, maduresa, estabilitat i la increïble validació "
-"de la comunitat en el seu conjunt, a la qual sou més que benvinguts."
 
 msgid "onboarding.welcome.title"
 msgstr "Et donem la benvinguda a Penpot"
@@ -3576,20 +3554,12 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Opcions avançades"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "Amplada màx."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.min-w"
 msgstr "Amplada mín."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title"
 msgstr "Redimensió de l'element"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "Amplada màxima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.min-w"

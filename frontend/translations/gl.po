@@ -207,17 +207,11 @@ msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 páxina compartida"
 msgstr[1] "% páxinas compartidas"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "Pode acceder a"
-
 msgid "common.share-link.permissions-can-comment"
 msgstr "Poden comentar"
 
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Poden ver o código"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Pode ver"
 
 msgid "common.share-link.permissions-hint"
 msgstr "Calquera persoa ca ligazón terá acceso"
@@ -228,9 +222,6 @@ msgstr "Páxinas compartidas"
 msgid "common.share-link.placeholder"
 msgstr "A ligazón para compartir aparecerá aquí"
 
-msgid "common.share-link.remove-link"
-msgstr "Eliminar ligazón"
-
 msgid "common.share-link.team-members"
 msgstr "Só membros do equipo"
 
@@ -240,14 +231,8 @@ msgstr "Compartir prototipos"
 msgid "common.share-link.view-all"
 msgstr "Seleccionar todas"
 
-msgid "common.share-link.view-all-pages"
-msgstr "Todas as páxinas"
-
 msgid "common.share-link.view-current-page"
 msgstr "Só esta páxina"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Páxinas seleccionadas"
 
 msgid "common.unpublish"
 msgstr "Cancelar publicación"

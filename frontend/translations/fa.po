@@ -581,11 +581,6 @@ msgstr "پین/برداشتن پین"
 msgid "dashboard.projects-title"
 msgstr "پروژه‌ها"
 
-#: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
-msgid "dashboard.promote-to-owner"
-msgstr "ارتقا به مالک"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "آیا می‌خواهید حساب خود را حذف کنید؟"
@@ -870,10 +865,6 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
 msgstr "انجمن Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "بحث‌های تیمی"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
@@ -1662,13 +1653,6 @@ msgstr "پس از نامگذاری تیم خود، می‌توانید افرا�
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-#, fuzzy
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot به لطف ترکیبی از ویژگی‌های اصلی، بلوغ، پایداری و اعتبارسنجی "
-"شگفت‌انگیز جامعه به‌عنوان یک کل، در اولین نسخه بتا خود قرار دارد، که از آن "
-"استقبال می‌کنید."
 
 #, fuzzy
 msgid "onboarding.welcome.title"

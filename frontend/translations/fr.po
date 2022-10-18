@@ -600,10 +600,6 @@ msgstr "Épingler/Désépingler"
 msgid "dashboard.projects-title"
 msgstr "Projets"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promouvoir propriétaire"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Vous souhaitez supprimer votre compte ?"
@@ -2023,9 +2019,6 @@ msgstr "Avant de démarrer"
 msgid "onboarding-v2.welcome.title"
 msgstr "Bienvenu sur Penpot !"
 
-msgid "onboarding.choice.fly-solo"
-msgstr "Commencer seul"
-
 msgid "onboarding.choice.team-up"
 msgstr "Faites équipe"
 
@@ -2083,12 +2076,6 @@ msgstr "Non, merci"
 
 msgid "onboarding.newsletter.policy"
 msgstr "Politique de confidentialité."
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Nous ne vous enverrons que des e-mails pertinents. Vous pouvez vous "
-"désabonner à tout moment via votre profil d’utilisateur ou via le lien de "
-"désabonnement dans l’une de nos newsletters."
 
 msgid "onboarding.newsletter.title"
 msgstr "Vous souhaitez recevoir les actualités de Penpot ?"
@@ -2172,12 +2159,6 @@ msgstr "Commencer à concevoir"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot en est à sa première version bêta grâce à son ensemble de "
-"fonctionnalités de base, sa maturité, sa stabilité et aux retours très "
-"positifs de la communauté, à laquelle vous êtes plus que bienvenu."
 
 msgid "onboarding.welcome.title"
 msgstr "Bienvenue chez Penpot"
@@ -2647,10 +2628,6 @@ msgstr "Plan de travail introuvable."
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
 msgstr "Ne pas afficher les interactions"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Modifier la page"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"

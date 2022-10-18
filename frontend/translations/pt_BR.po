@@ -229,9 +229,6 @@ msgstr "Compartilhar protótipos"
 msgid "common.share-link.view-all"
 msgstr "Selecionar todos"
 
-msgid "common.share-link.view-current-page"
-msgstr "Somente esta página"
-
 msgid "common.unpublish"
 msgstr "Cancelar publicação"
 
@@ -585,10 +582,6 @@ msgstr "Fixar/Desafixar"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
 msgstr "Projetos"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promover a proprietário"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
@@ -2072,12 +2065,6 @@ msgstr "Não, obrigado"
 
 msgid "onboarding.newsletter.policy"
 msgstr "Politica de privacidade."
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Enviaremos apenas e-mails relevantes para você. Você pode cancelar a "
-"inscrição a qualquer momento em seu perfil de usuário ou por meio do link "
-"de cancelamento de inscrição em qualquer um de nossos boletins informativos."
 
 msgid "onboarding.newsletter.title"
 msgstr "Deseja receber novidades sobre o Penpot?"

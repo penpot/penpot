@@ -589,10 +589,6 @@ msgstr "Sabitle/Sabitleme"
 msgid "dashboard.projects-title"
 msgstr "Projeler"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Sahibi olarak belirle"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Hesabınızı kaldırmak mı istiyorsunuz?"
@@ -861,10 +857,6 @@ msgstr "Sahip takımdan ayrılamaz, sahip rolünü yeniden atamanız gerekir."
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Hizmet şartlarımızı ve gizlilik politikamızı kabul etmelisin."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Jetonun süresi geçti"
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -1313,9 +1305,6 @@ msgstr "Yazı Tipi Ailesi"
 
 msgid "labels.font-providers"
 msgstr "Yazı tipi sağlayıcıları"
-
-msgid "labels.font-variant"
-msgstr "Stil"
 
 msgid "labels.font-variants"
 msgstr "Biçimler"
@@ -1866,10 +1855,6 @@ msgstr ""
 "için başka bir üye seçin."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "Ayrılmadan önce terfi ettirmek için başka bir üye seçin"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Terfi ettir ve ayrıl"
 
@@ -2159,16 +2144,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "Hayır, teşekkürler"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Ürün geliştirmedeki ilerleme ve haberlerden haberdar olmak için bültenimize "
-"abone olun."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Gizlilik Politikası."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Gizliliğe önem verdiğimiz için, işte bizim "
 
 msgid "onboarding.newsletter.privacy2"
 msgstr ""
@@ -2235,9 +2212,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Paylaşılan bir doğruluk kaynağı"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Yeni takım adı gir"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "Bir takım oluştur"
 
@@ -2261,30 +2235,16 @@ msgstr "Sınırsız üye"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "%100 özgür!"
 
-msgid "onboarding.team.create.button"
-msgstr "Takım oluştur"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "Biriyle mi çalışıyorsunuz? Projelerde birlikte çalışmak ve tasarım "
 "varlıklarını paylaşmak için bir takım oluşturun."
 
-msgid "onboarding.team.create.input-placeholder"
-msgstr "Yeni takım adı gir"
-
 msgid "onboarding.team.create.title"
 msgstr "Takım oluştur"
 
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Atla ve daha sonra davet et"
-
 msgid "onboarding.team.start.button"
 msgstr "Hemen başla"
-
-msgid "onboarding.team.start.desc1"
-msgstr ""
-"Hemen Penpot'a atlayın ve kendi başınıza tasarlamaya başlayın. Daha sonra "
-"takımlar oluşturma şansınız olacak."
 
 msgid "onboarding.team.start.title"
 msgstr "Tasarlamaya başla"
@@ -2298,19 +2258,11 @@ msgstr "Tasarlamaya başla"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "Yaşasın! Artık bir Penpot kullanıcısısınız :)"
-
 msgid "onboarding.welcome.desc2"
 msgstr ""
 "Penpot temel özelliklerin, olgunluğun, kararlılığın ve bir bütün olarak "
 "topluluktan gelen muhteşem doğrulamanın birleşimi sayesinde ilk beta "
 "sürümündedir ve sizi memnuniyetle karşılıyoruz."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Siz Penpot'un tadını çıkarırken, biz onu geliştirmeye devam edeceğiz ve "
-"umutlu planlarımızın tekrarlarını yayınlayacağız."
 
 msgid "onboarding.welcome.title"
 msgstr "Penpot'a Hoş Geldiniz"
@@ -2836,10 +2788,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "Etkileşimleri gösterme"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-file"
-msgstr "Dosyayı düzenle"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.edit-page"
 msgstr "Sayfayı düzenle"
 
@@ -2966,10 +2914,6 @@ msgstr "Çoğalt"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Düzenle"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Dosya kütüphanesi"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -3127,16 +3071,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Çalışma yüzeyi adlarını gizle"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Varlıkları gizle"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Izgaraları gizle"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Katmanları gizle"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3182,16 +3118,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Çalışma yüzeylerinin adlarını göster"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Varlıkları göster"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Izgarayı göster"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Katmanları göster"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3905,16 +3833,8 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Asgari Genişlik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "Azami Yükseklik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.max-w"
 msgstr "Azami Genişlik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "Asgari Yükseklik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.min-w"
@@ -3941,16 +3861,8 @@ msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "Asgari genişlik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "Azami yükseklik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.max-w"
 msgstr "Azami genişlik"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "Asgari yükseklik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.min-w"
@@ -4071,10 +3983,6 @@ msgstr "Daha fazla renk"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-lib-colors"
 msgstr "Daha fazla kütüphane rengi"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.navigate-to"
-msgstr "Git"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.none"

@@ -380,10 +380,6 @@ msgstr "釘選/取消釘選"
 msgid "dashboard.projects-title"
 msgstr "專案"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "提升為擁有者"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "想要移除您的帳號嗎？"
@@ -891,9 +887,6 @@ msgstr "開放原始碼"
 
 msgid "onboarding.contrib.desc2.1"
 msgstr "您能夠存取"
-
-msgid "onboarding.team.create.input-placeholder"
-msgstr "輸入新團隊名稱"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"

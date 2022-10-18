@@ -586,10 +586,6 @@ msgstr "Przypnij/Odepnij"
 msgid "dashboard.projects-title"
 msgstr "Projekty"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Awansuj na właściciela"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Czy chesz usunąć swoje konto?"
@@ -879,10 +875,6 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
 msgstr "Społeczność Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Dołącz do forum komunikacji zespołowej Penpot."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-title"
@@ -1976,12 +1968,6 @@ msgstr "Nie, dziękuję"
 msgid "onboarding.newsletter.policy"
 msgstr "Polityka prywatności."
 
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Wyślemy Ci tylko zasadne emaile. Możesz zrezygnować z subskrypcji w "
-"dowolnym momencie w swoim profilu użytkownika lub za pośrednictwem linku "
-"rezygnacji z subskrypcji w dowolnym z naszych newsletterów."
-
 msgid "onboarding.newsletter.title"
 msgstr "Chcesz otrzymywać informacje o Penpot?"
 
@@ -2044,9 +2030,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Jedno wspólne źródło prawdy"
 
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Pomiń i zaproś później"
-
 msgid "onboarding.templates.subtitle"
 msgstr "Oto kilka szablonów."
 
@@ -2055,12 +2038,6 @@ msgstr "Zacznij projektować"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot jest w swojej pierwszej wersji beta dzięki połączeniu podstawowych "
-"funkcji, dojrzałości, stabilności i niesamowitej walidacji ze strony "
-"społeczności jako całości, w której jesteś mile widziany."
 
 msgid "onboarding.welcome.title"
 msgstr "Witamy w Penpot"

@@ -555,10 +555,6 @@ msgstr "钉到侧边栏/取消钉住"
 msgid "dashboard.projects-title"
 msgstr "项目"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "晋级为所有者"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "希望注销您的账号？"
@@ -1973,9 +1969,6 @@ msgstr "不，谢谢"
 msgid "onboarding.newsletter.policy"
 msgstr "隐私策略。"
 
-msgid "onboarding.newsletter.privacy2"
-msgstr "我们只会向您发送相关电子邮件。您可以随时在您的用户个人资料中取消订阅，也可以通过我们任何新闻通讯中的取消订阅链接取消订阅。"
-
 msgid "onboarding.newsletter.title"
 msgstr "想要接收 Penpot 新闻？"
 
@@ -2053,9 +2046,6 @@ msgstr "开始设计"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc2"
-msgstr "Penpot处于第一个测试版，这要归功于核心功能，成熟度，稳定性和整个社区的惊人验证的组合，我们非常欢迎您。"
 
 msgid "onboarding.welcome.title"
 msgstr "欢迎来到Penpot"
@@ -2572,10 +2562,6 @@ msgstr "注释 （%s）"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
 msgstr "不显示交互"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "编辑页面"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"

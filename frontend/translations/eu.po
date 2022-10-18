@@ -583,10 +583,6 @@ msgstr "Ainguratu/Desainguratu"
 msgid "dashboard.projects-title"
 msgstr "Proiektuak"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Bihurtu jabe"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Kontua ezabatu nahi duzu?"
@@ -2005,9 +2001,6 @@ msgstr "Laguntzeko gida"
 msgid "onboarding-v2.welcome.title"
 msgstr "Ongi etorri Penpotera!"
 
-msgid "onboarding.choice.fly-solo"
-msgstr "Bakarrik hasi"
-
 msgid "onboarding.choice.team-up"
 msgstr "Osatu taldea"
 
@@ -2076,12 +2069,6 @@ msgstr "Ez, eskerrik asko"
 
 msgid "onboarding.newsletter.policy"
 msgstr "Pribatutasun politika."
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Benetan baliozkoak diren mezuak bakarrik bidaliko dizkizugu. Edonoiz eten "
-"dezakezu harpidetza zure profiletik edo buletinean bertan datorren esteka "
-"erabiliz."
 
 msgid "onboarding.newsletter.title"
 msgstr "Penpoti buruzko albisteak jaso nahi dituzu?"
@@ -2170,11 +2157,6 @@ msgstr "Hasi diseinatzen"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot bere lehenengo beta bertsioan dago, hainbat funtzionalitate, "
-"egonkortasun eta komunitatearen onarpena jaso ostean, ongi etorri."
 
 msgid "onboarding.welcome.title"
 msgstr "Ongi etorri Penpotera"
@@ -3716,10 +3698,6 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Gutxieneko zabalera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "Gehienezko zabalera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.min-w"
 msgstr "Gutxieneko zabalera"
 
@@ -3742,10 +3720,6 @@ msgstr "Gutxieneko altuera"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "Gutxieneko zabalera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "Gehieneko zabalera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.min-w"

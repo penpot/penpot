@@ -575,10 +575,6 @@ msgstr "נעיצה/שחרור"
 msgid "dashboard.projects-title"
 msgstr "מיזמים"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "קידום לבעלות"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "להסיר את החשבון שלך?"
@@ -844,10 +840,6 @@ msgstr "הבעלים לא יכולים לעזוב את הקבוצה, עליך ל
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "עליך לקבל את תנאי השירות ואת מדיניות הפרטיות."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "תוקף האסימון פג"
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -1847,10 +1839,6 @@ msgstr ""
 "הבעלות על הצוות הזה בידיך. נא לבחור מישהו כדי לקידום לבעלות בטרם עזיבתך."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "נא לבחור חבר אחר לקידום לבעלות בטרם עזיבתך"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "קידום ועזיבה"
 
@@ -2132,16 +2120,8 @@ msgstr "בקשת המינוי שלך נשלחה, נשלח לך הודעה בדו
 msgid "onboarding.newsletter.decline"
 msgstr "לא, תודה"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"ניתן להירשם לרשימת הדיוור שלנו כדי לשמור על קשר עם תהליך פיתוח המוצר והחדשות "
-"העדכניות."
-
 msgid "onboarding.newsletter.policy"
 msgstr "מדיניות פרטיות."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "בגלל שאכפת לנו מפרטיות, הנה "
 
 msgid "onboarding.newsletter.privacy2"
 msgstr ""
@@ -2203,9 +2183,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "מקור משותף יחיד לאמת"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "נא למלא שם חדש לצוות"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "יצירת צוות"
 
@@ -2229,30 +2206,16 @@ msgstr "ללא הגבלת משתמשים"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% בחינם!"
 
-msgid "onboarding.team.create.button"
-msgstr "יצירת צוות"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "יש לך עבודה בשיתוף עם גורם נוסף? ניתן ליצור צוות כדי לעבוד יחד על מיזמים "
 "ולשתף משאבי עיצוב."
 
-msgid "onboarding.team.create.input-placeholder"
-msgstr "נא למלא שם לצוות"
-
 msgid "onboarding.team.create.title"
 msgstr "יצירת צוות"
 
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "לדלג ולהזמין מאוחר יותר"
-
 msgid "onboarding.team.start.button"
 msgstr "להתחיל כבר עכשיו"
-
-msgid "onboarding.team.start.desc1"
-msgstr ""
-"אפשר לצלול עמוק ישירות אל Penpot ולהתחיל לעצב בעצמך. עדיין תהיה לך הזדמנות "
-"ליצור צוותים בהמשך."
 
 msgid "onboarding.team.start.title"
 msgstr "מתחילים לעצב"
@@ -2266,18 +2229,10 @@ msgstr "להתחיל לעצב"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "יאי! כבר יש לך משתמש ב־Penpot :)"
-
 msgid "onboarding.welcome.desc2"
 msgstr ""
 "Penpot נמצא בשלבי בטא ראשונית תודות לשילוב בין יכולות ליבה, בשלות, יציבות "
 "ואימות מדהים מכלל הקהילה, שתשמח לקבל אותך אליה."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"בזמן השימוש המהנה ב־Penpot באשר הוא, אנו נמשיך לשפר אותו, נפיץ מחזורים של "
-"התכניות השאפתניות שלנו."
 
 msgid "onboarding.welcome.title"
 msgstr "ברוך בואך ל־Penpot"
@@ -2924,10 +2879,6 @@ msgstr "שכפול"
 msgid "workspace.assets.edit"
 msgstr "עריכה"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "ספריית קבצים"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
@@ -3086,16 +3037,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "הסתרת שמות לוחות"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "הסתרת משאבים"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "הסתרת רשתות"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "הסתרת שכבות"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3141,16 +3084,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "הצגת שמות לוחות"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "הצגת משאבים"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "הצגת רשת"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "הצגת שכבות"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3864,16 +3799,8 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "רוחב מז.‏"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "גובה מרבי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.max-w"
 msgstr "רוחב מרבי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "גובה מזערי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.min-w"
@@ -3900,16 +3827,8 @@ msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "רוחב מזערי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "גובה מרבי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.max-w"
 msgstr "רוחב מרבי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "גובה מזערי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.min-w"
@@ -4030,10 +3949,6 @@ msgstr "צבעים נוספים"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-lib-colors"
 msgstr "צבעי ספרייה נוספים"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.navigate-to"
-msgstr "ניווט אל"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.none"

@@ -266,10 +266,6 @@ msgstr "Καρφίτσωμα / ξεκαρφίτσωμα"
 msgid "dashboard.projects-title"
 msgstr "Εργα"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Προώθηση σε κάτοχο"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Θέλετε να καταργήσετε τον λογαριασμό σας;"

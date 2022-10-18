@@ -599,10 +599,6 @@ msgstr "Anheften/Lösen"
 msgid "dashboard.projects-title"
 msgstr "Projekte"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Zum Eigentümer befördern"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Möchten Sie Ihr Konto entfernen?"
@@ -880,10 +876,6 @@ msgstr ""
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr ""
 "Sie müssen unsere Nutzungsbedingungen und Datenschutzrichtlinien akzeptieren."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Token abgelaufen"
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -1892,12 +1884,6 @@ msgid "modals.leave-and-reassign.hint1"
 msgstr "Sie sind der Eigentümer von %s."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr ""
-"Befördern Sie ein anderes Mitglied zum Eigentümer, bevor Sie das Team "
-"verlassen"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Befördern und verlassen"
 
@@ -2144,11 +2130,6 @@ msgstr "Geben Sie den Namen des Teams ein"
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Mitglieder einladen"
 
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"Im Teambereich können Sie auch später Mitglieder einladen und die Rollen "
-"ändern."
-
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Denken Sie daran, alle einzubeziehen. Entwickler, Designer, Manager... die "
@@ -2197,16 +2178,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "Nein, danke"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Abonnieren Sie unseren Newsletter, um über Fortschritte in der "
-"Produktentwicklung und Neuigkeiten auf dem Laufenden zu bleiben."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Datenschutzbestimmungen."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Weil uns die Privatsphäre wichtig ist, hier ist unsere "
 
 msgid "onboarding.newsletter.privacy2"
 msgstr ""
@@ -2276,9 +2249,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Eine zentrale Anlaufstelle für alle"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Neuen Teamnamen eingeben"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "Ein Team erstellen"
 
@@ -2302,30 +2272,16 @@ msgstr "Unbegrenzte Anzahl von Mitgliedern"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% kostenlos!"
 
-msgid "onboarding.team.create.button"
-msgstr "Team erstellen"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "Arbeiten Sie mit jemandem zusammen? Erstellen Sie ein Team, um gemeinsam an "
 "Projekten zu arbeiten und Design-Assets zu teilen."
 
-msgid "onboarding.team.create.input-placeholder"
-msgstr "Neuen Teamnamen eingeben"
-
 msgid "onboarding.team.create.title"
 msgstr "Team erstellen"
 
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Überspringen und später einladen"
-
 msgid "onboarding.team.start.button"
 msgstr "Gleich loslegen"
-
-msgid "onboarding.team.start.desc1"
-msgstr ""
-"Legen Sie gleich los und gestalten Sie erstmal alleine. Sie können später "
-"immer noch Teams erstellen."
 
 msgid "onboarding.team.start.title"
 msgstr "Mit der Gestaltung beginnen"
@@ -2339,19 +2295,11 @@ msgstr "Beginnen Sie mit dem Entwerfen"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "Hurra! Sie sind bereits ein Penpot-Benutzer :)"
-
 msgid "onboarding.welcome.desc2"
 msgstr ""
 "Penpot ist in seiner ersten Beta-Version dank der Kombination von "
 "Kernfunktionen, Reife, Stabilität und der erstaunlichen Validierung durch "
 "die gesamte Community, zu der Sie mehr als willkommen sind."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Während Sie Penpot als das genießen, was es ist, werden wir es weiter "
-"verbessern und neue Versionen unserer hoffnungsvollen Pläne veröffentlichen."
 
 msgid "onboarding.welcome.title"
 msgstr "Willkommen bei Penpot"
@@ -2877,10 +2825,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "Interaktionen nicht anzeigen"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Seite bearbeiten"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Vollbildmodus"
 
@@ -3004,10 +2948,6 @@ msgstr "Duplizieren"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Bearbeiten"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Dateibibliothek"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -3165,16 +3105,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Namen von Zeichenflächen ausblenden"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Assets ausblenden"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Raster ausblenden"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Ebenen ausblenden"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3220,16 +3152,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Namen der Zeichenflächen anzeigen"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Assets einblenden"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Raster einblenden"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Ebenen einblenden"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3945,16 +3869,8 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Min.Breite"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "Max. Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.max-w"
 msgstr "Max. Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "Min. Höhe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.min-w"
@@ -3981,16 +3897,8 @@ msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "Mindestbreite"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "Maximale Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.max-w"
 msgstr "Maximale Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "Minimale Höhe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.min-w"

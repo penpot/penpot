@@ -592,10 +592,6 @@ msgstr "Anclar/Desanclar"
 msgid "dashboard.projects-title"
 msgstr "Proyectos"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promover a dueño"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "¿Quieres borrar tu cuenta?"
@@ -876,10 +872,6 @@ msgstr ""
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Debes aceptar nuestros términos de servicio y política de privacidad."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Token expirado"
-
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
@@ -925,18 +917,8 @@ msgid "feedback.discourse-title"
 msgstr "Comunidad de Penpot"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Ir a las discusiones"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-subtitle1"
 msgstr "Entra al foro colaborativo de Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Puedes hacer preguntas y dar respuestas, participar en conversaciones "
-"abiertas y hacer seguimiento de decisones que afectan al proyecto."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-title"
@@ -2256,9 +2238,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Una \"fuente de la verdad\" compartida"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Introduce el nuevo nombre del equipo"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "Crea un equipo"
 
@@ -2282,30 +2261,16 @@ msgstr "Sin límite de integrantes"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "¡100% gratis!"
 
-msgid "onboarding.team.create.button"
-msgstr "Crea un equipo"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "¿Trabajando con alguien más? Crea un equipo donde compartir proyectos y "
 "elementos de diseño."
 
-msgid "onboarding.team.create.input-placeholder"
-msgstr "Introduce el nombre del equipo"
-
 msgid "onboarding.team.create.title"
 msgstr "Crear equipo"
 
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Saltar e invitar más tarde"
-
 msgid "onboarding.team.start.button"
 msgstr "Comenzar directamente"
-
-msgid "onboarding.team.start.desc1"
-msgstr ""
-"Entra directamente a Penpot y comienza a diseñar individualmente. Siempre "
-"tendrás la opción de crear equipos más adelante."
 
 msgid "onboarding.team.start.title"
 msgstr "Comienza a diseñar"
@@ -2319,19 +2284,11 @@ msgstr "Empezar a diseñar"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "¡Hurra! Ya tienes tu cuenta en Penpot :)"
-
 msgid "onboarding.welcome.desc2"
 msgstr ""
 "Penpot está en su primera versión beta gracias a una combinación de "
 "funcionalidades, madurez, estabilidad y la fantástica validación de su "
 "comunidad, a la que te damos la bienvenida."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Mientras disfrutas de Penpot seguiremos haciendo mejoras, lanzando "
-"iteraciones de nuestros esperanzadores planes."
 
 msgid "onboarding.welcome.title"
 msgstr "Te damos la bienvenida a Penpot"
@@ -3137,16 +3094,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Ocultar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Ocultar recursos"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Ocultar rejillas"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Ocultar capas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3192,16 +3141,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Mostrar recursos"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Mostrar rejilla"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Mostrar capas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

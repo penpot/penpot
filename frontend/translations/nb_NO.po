@@ -135,10 +135,6 @@ msgstr "Fest/løsne"
 msgid "dashboard.projects-title"
 msgstr "Prosjekter"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promoter til eier"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Ønsker du å fjerne kontoen din?"
