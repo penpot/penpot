@@ -189,16 +189,12 @@
                 (some? editor-state)
                 (update-with-editor-state editor-state))
 
-        ;; When we have a text with grow-type :auto-height we need to check the correct height
+        ;; When we have a text with grow-type :auto-height or :auto-height we need to check the correct height
         ;; otherwise the center alignment will break
-        shape
-        (if (or (not= :auto-height (:grow-type shape)) (empty? text-modifier))
-          shape
-          (let [tr-shape (dwt/apply-text-modifier shape text-modifier)]
-            (cond-> shape
-              ;; we only change the height otherwise could cause problems with the other fields
-              (some? text-modifier)
-              (assoc  :height (:height tr-shape)))))
+        tr-shape (when text-modifier (dwt/apply-text-modifier shape text-modifier))
+        shape (cond-> shape
+                (and (some? text-modifier) (#{:auto-height :auto-width} (:grow-type shape)))
+                (assoc :width (:width tr-shape) :height (:height tr-shape)))
 
         shape (hooks/use-equal-memo shape)
 

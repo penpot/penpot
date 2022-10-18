@@ -61,6 +61,7 @@
 - Fix notification to newsletter is shown in all cases [Taiga #4367](https://tree.taiga.io/project/penpot/issue/4367)
 - Fix comments section is not scrolling by mouse wheel [Taiga #4305](https://tree.taiga.io/project/penpot/issue/4305)
 - Fix justify alignes text left [Taiga #4322](https://tree.taiga.io/project/penpot/issue/4322)
+- Fix text out of borders with "auto width" and center align [Taiga #4308](https://tree.taiga.io/project/penpot/issue/4308)
 
 ## 1.15.4-beta
 
