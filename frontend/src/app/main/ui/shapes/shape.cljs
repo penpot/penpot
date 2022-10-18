@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.main.ui.context :as muc]
-   [app.main.ui.hooks :as h]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.fills :as fills]
@@ -56,7 +55,7 @@
         disable-shadows? (unchecked-get props "disable-shadows?")
 
         type             (:type shape)
-        render-id        (h/use-id)
+        render-id        (mf/use-id)
         filter-id        (dm/str "filter_" render-id)
         styles           (-> (obj/create)
                              (obj/set! "pointerEvents" pointer-events)

@@ -7,9 +7,7 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [app.common.data.macros :as dm]
    [app.common.pages :as cp]
-   [app.common.uuid :as uuid]
    [app.main.broadcast :as mbc]
    [app.main.data.shortcuts :as dsc]
    [app.main.refs :as refs]
@@ -21,11 +19,6 @@
    [beicon.core :as rx]
    [goog.functions :as f]
    [rumext.v2 :as mf]))
-
-(defn use-id
-  "Get a stable id value across rerenders."
-  []
-  (mf/use-memo #(dm/str (uuid/next))))
 
 (defn use-rxsub
   [ob]
@@ -253,24 +246,6 @@
       (mf/set-ref-val! ref val))
     (mf/ref-val ref)))
 
-(defn- ssr?
-  "Checks if the current environment is run under a SSR context"
-  []
-  (try
-    (not js/window)
-    (catch :default _e
-      ;; When exception accessing window we're in ssr
-      true)))
-
-(defn use-effect-ssr
-  "Use effect that handles SSR"
-  [deps effect-fn]
-
-  (if (ssr?)
-    (let [ret (effect-fn)]
-      (when (fn? ret) (ret)))
-    (mf/use-effect deps effect-fn)))
-
 (defn with-focus-objects
   ([objects]
    (let [focus (mf/deref refs/workspace-focus-selected)]
@@ -298,7 +273,7 @@
   localStorage. And it will keep watching events with type equals to
   `key` for new values."
   [key default]
-  (let [id     (use-id)
+  (let [id     (mf/use-id)
         state  (mf/use-state (get @storage key default))
         stream (mf/with-memo [id]
                  (->> mbc/stream
@@ -311,7 +286,6 @@
       (swap! storage assoc key @state))
 
     (use-stream stream (partial reset! state))
-
     state))
 
 (defonce ^:private intersection-subject (rx/subject))

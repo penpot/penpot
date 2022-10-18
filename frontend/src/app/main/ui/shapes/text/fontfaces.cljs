@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
    [app.main.fonts :as fonts]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.embed :as embed]
    [app.util.object :as obj]
    [beicon.core :as rx]
@@ -32,7 +31,7 @@
   (let [fonts-css-ref (mf/use-ref "")
         redraw (mf/use-state 0)]
 
-    (hooks/use-effect-ssr
+    (mf/use-ssr-effect
      (mf/deps fonts)
      (fn []
        (let [sub

@@ -80,7 +80,7 @@
                                (obj/set! "height" height))])
 
                (when has-image?
-                 [:image {:href (get embed uri uri)
+                 [:image {:href (or (:data-uri shape) (get embed uri uri))
                           :preserveAspectRatio "none"
                           :width width
                           :height height}])]])])))))

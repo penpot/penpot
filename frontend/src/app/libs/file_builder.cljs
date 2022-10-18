@@ -8,6 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.file-builder :as fb]
+   [app.common.uuid :as uuid]
+   [app.util.dom :as dom]
+   [app.util.zip :as uz]
+   [app.worker.export :as e]
+   [beicon.core :as rx]
    [cuerdas.core :as str]))
 
 (defn parse-data [data]
@@ -21,6 +26,50 @@
                      value)
              key (-> key d/name str/kebab keyword)]
          [key value])) $)))
+
+
+(defn export-file
+  [file]
+  (let [file (assoc file
+                    :name (:name file)
+                    :file-name (:name file)
+                    :is-shared false)
+
+        files-stream (->> (rx/of {(:id file) file})
+                          (rx/share))
+
+        manifest-stream
+        (->> files-stream
+             (rx/map #(e/create-manifest (uuid/next) (:id file) :all %))
+             (rx/map (fn [a]
+                       (vector "manifest.json" a))))
+
+        render-stream
+        (->> files-stream
+             (rx/flat-map vals)
+             (rx/flat-map e/process-pages)
+             (rx/observe-on :async)
+             (rx/flat-map e/get-page-data)
+             (rx/share))
+        pages-stream
+        (->> render-stream
+             (rx/map e/collect-page))]
+
+    (rx/merge
+     (->> render-stream
+          (rx/map #(hash-map
+                    :type :progress
+                    :file (:id file)
+                    :data (str "Render " (:file-name %) " - " (:name %)))))
+
+     (->> (rx/merge
+           manifest-stream
+           pages-stream)
+          (rx/reduce conj [])
+          (rx/with-latest-from files-stream)
+          (rx/flat-map (fn [[data _]]
+                         (->> (uz/compress-files data)
+                              (rx/map #(vector file %)))))))))
 
 (deftype File [^:mutable file]
   Object
@@ -50,6 +99,13 @@
   (closeGroup [_]
     (set! file (fb/close-group file)))
 
+  (addBool [_ data]
+    (set! file (fb/add-bool file (parse-data data)))
+    (str (:last-id file)))
+
+  (closeBool [_]
+    (set! file (fb/close-bool file)))
+
   (createRect [_ data]
     (set! file (fb/create-rect file (parse-data data)))
     (str (:last-id file)))
@@ -78,7 +134,15 @@
     (set! file (fb/close-svg-raw file)))
 
   (asMap [_]
-    (clj->js file)))
+    (clj->js file))
+
+  (export [_]
+     (->> (export-file file)
+          (rx/subs
+           (fn [value]
+             (when  (not (contains? value :type))
+               (let [[file export-blob] value]
+                 (dom/trigger-download (:name file) export-blob))))))))
 
 (defn create-file-export [^string name]
   (File. (fb/create-file name)))
