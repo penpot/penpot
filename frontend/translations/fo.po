@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-18 08:01+0000\n"
 "Last-Translator: Bogi Napoleon Wennerstrøm <bogi.wennerstrom@gmail.com>\n"
-"Language-Team: Faroese "
-"<https://hosted.weblate.org/projects/penpot/frontend/fo/>\n"
+"Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
+"fo/>\n"
 "Language: fo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -27,7 +27,8 @@ msgstr "Stovna royndarkonto"
 msgid "auth.create-demo-profile"
 msgstr "Vilt tú royna tað?"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
 msgstr "Teldupostur"
 
@@ -133,7 +134,8 @@ msgstr "Toymisleiðsla"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
-msgstr "Penpot er fyri toymum. Bjóða limir at arbeiða saman á verkætlanir og fílur"
+msgstr ""
+"Penpot er fyri toymum. Bjóða limir at arbeiða saman á verkætlanir og fílur"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
@@ -169,11 +171,13 @@ msgstr "Heinta %s Penpot fílur (.penpot)"
 msgid "dashboard.invite-profile"
 msgstr "Bjóða við í toymi"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
 msgstr "Far úr toymu"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
 msgstr "Flyt til"
 
@@ -185,7 +189,8 @@ msgstr "Flyt %s fílur til"
 msgid "dashboard.move-to-other-team"
 msgstr "Flyt til eitt annað toymi"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
 msgstr "+ Nýggja fílu"
 
@@ -219,3 +224,15 @@ msgstr "Broyt loyniorð"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
 msgstr "Verkætlanir"
+
+msgid "auth.privacy-policy"
+msgstr "Privat politikkur"
+
+msgid "common.publish"
+msgstr "Gev út"
+
+msgid "common.share-link.all-users"
+msgstr "Allir Penpot brúkarar"
+
+msgid "common.share-link.view-all"
+msgstr "Vel alt"
