@@ -45,6 +45,18 @@
             [:*
              [:span.tool-window-bar-icon
               [:& si/element-icon {:shape first-shape}]]
+             ;; Execution time translation strings:
+             ;;   handoff.tabs.code.selected.circle
+             ;;   handoff.tabs.code.selected.component
+             ;;   handoff.tabs.code.selected.curve
+             ;;   handoff.tabs.code.selected.frame
+             ;;   handoff.tabs.code.selected.group
+             ;;   handoff.tabs.code.selected.image
+             ;;   handoff.tabs.code.selected.mask
+             ;;   handoff.tabs.code.selected.path
+             ;;   handoff.tabs.code.selected.rect
+             ;;   handoff.tabs.code.selected.svg-raw
+             ;;   handoff.tabs.code.selected.text
              [:span.tool-window-bar-title (->> selected-type d/name (str "handoff.tabs.code.selected.") (tr))]])]
          [:div.tool-window-content
           [:& tab-container {:on-change-tab #(do

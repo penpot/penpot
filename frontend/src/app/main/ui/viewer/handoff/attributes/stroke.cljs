@@ -67,7 +67,16 @@
        [:div.attributes-stroke-row
         [:div.attributes-label (tr "handoff.attributes.stroke.width")]
         [:div.attributes-value (:stroke-width shape) "px"]
+        ;; Execution time translation strings:
+        ;;   handoff.attributes.stroke.style.dotted
+        ;;   handoff.attributes.stroke.style.mixed
+        ;;   handoff.attributes.stroke.style.none
+        ;;   handoff.attributes.stroke.style.solid
         [:div.attributes-value (->> stroke-style d/name (str "handoff.attributes.stroke.style.") (tr))]
+        ;; Execution time translation strings:
+        ;;   handoff.attributes.stroke.alignment.center
+        ;;   handoff.attributes.stroke.alignment.inner
+        ;;   handoff.attributes.stroke.alignment.outer
         [:div.attributes-label (->> stroke-alignment d/name (str "handoff.attributes.stroke.alignment.") (tr))]
         [:& copy-button {:data (copy-stroke-data shape)}]])]))
 
