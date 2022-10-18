@@ -135,7 +135,7 @@ msgstr "Toymisleiðsla"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
 msgstr ""
-"Penpot er fyri toymum. Bjóða limir at arbeiða saman á verkætlanir og fílur"
+"Penpot er fyri toymum. Bjóða limum at arbeiða saman á verkætlanir og fílur"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
@@ -236,3 +236,42 @@ msgstr "Allir Penpot brúkarar"
 
 msgid "common.share-link.view-all"
 msgstr "Vel alt"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Hetta er ein ROYNDAR tænasta, IKKI BRÚKA til veruligt arbeiði, "
+"verkætlanirnar verða slettaðar regluliga."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Eg góðtakið skrásetingina á tíðindalistanum hjá Penpot."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr ""
+"Vangamyndin er ikki váttað, vinarliga vátta vangamyndina áðrenn tú heldur "
+"áfram."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Endurstovna loyniorð"
+
+msgid "auth.terms-of-service"
+msgstr "Treytir"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Byrja undirvísingina"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Byrja rundferð"
+
+msgid "dashboard.draft-title"
+msgstr "Kladda"
+
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Tvítøka"
