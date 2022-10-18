@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-16 13:49+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -18,7 +18,8 @@ msgstr "כבר יש לך חשבון?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
-msgstr "נא לחפש בדוא״ל הנכנס שלך וללחוץ על הקישור כדי לאמת ולהתחיל להשתמש ב־Penpot."
+msgstr ""
+"נא לחפש בדוא״ל הנכנס שלך וללחוץ על הקישור כדי לאמת ולהתחיל להשתמש ב־Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -34,7 +35,8 @@ msgstr "מעניין אותך רק להתנסות?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
-msgstr "זה שירות ניסיוני, לא להשתמש בו לעבודה אמתית, המיזמים יימחקו מדי פעם בפעם."
+msgstr ""
+"זה שירות ניסיוני, לא להשתמש בו לעבודה אמתית, המיזמים יימחקו מדי פעם בפעם."
 
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
@@ -234,7 +236,8 @@ msgstr "ניהול צוות"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
-msgstr "Penpot מיועד לצוותים. אפשר להזמין חברים כדי לעבוד ביחד על מיזמים וקבצים"
+msgstr ""
+"Penpot מיועד לצוותים. אפשר להזמין חברים כדי לעבוד ביחד על מיזמים וקבצים"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
@@ -312,7 +315,6 @@ msgid "dashboard.empty-files"
 msgstr "עדיין אין לך כאן קבצים"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "אבוי! עדיין אין לך קבצים! כדי להתנסות עם כמה מהתבניות ניתן לגשת אל [הספריות "
@@ -341,7 +343,8 @@ msgstr "ייצוא"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
-msgstr "אפשר להוסיף הגדרות ייצוא לרכיבים ממאפייני העיצוב (מתחתית הסרגל שמשמאל)."
+msgstr ""
+"אפשר להוסיף הגדרות ייצוא לרכיבים ממאפייני העיצוב (מתחתית הסרגל שמשמאל)."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
@@ -410,17 +413,17 @@ msgstr[3] "נוספו %s גופנים"
 
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"כל גופן דפדפן שיועלה כאן יתווסף לרשימת משפחת הגופנים שזמין במאפייני הטקסט "
-"של הקבצים של הצוות הזה. גופנים מאותו שם של משפחת גופנים יקובצו תחת **משפחת "
+"כל גופן דפדפן שיועלה כאן יתווסף לרשימת משפחת הגופנים שזמין במאפייני הטקסט של "
+"הקבצים של הצוות הזה. גופנים מאותו שם של משפחת גופנים יקובצו תחת **משפחת "
 "גופנים יחידה**. ניתן להעלות גופנים מהסוגים הבאים: **TTF,‏ OTF ו־WOFF** (אחד "
 "הסוגים יספיק)."
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "עליך להעלות גופנים בבעלותך או שיש לך רישיון להשתמש בהם ב־Penpot. ניתן למצוא "
-"על כך מידע נוסף בסעיף זכויות התוכן של [תנאי השירות של "
-"Penpot](https://penpot.app/terms.html). אפשר גם לקרוא גם על [רישוי "
-"גופנים](https://www.typography.com/faq)."
+"על כך מידע נוסף בסעיף זכויות התוכן של [תנאי השירות של Penpot](https://penpot."
+"app/terms.html). אפשר גם לקרוא גם על [רישוי גופנים](https://www.typography."
+"com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -662,7 +665,8 @@ msgstr "תוצאות חיפוש"
 msgid "dashboard.type-something"
 msgstr "נא להקליד כדי לחפש"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "ביטול פרסום ספרייה"
 
@@ -761,7 +765,8 @@ msgstr "כתובת הדוא״ל לאימות חייבת להיות תואמת"
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "כתובת הדוא״ל „%s” דווחה כספאם או שההודעות תוקפצנה לצמיתות."
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/verify_token.cljs,
+#: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
 msgstr "קרה משהו לא טוב."
 
@@ -801,7 +806,8 @@ msgstr "נראה כי זאת תמונה שגויה."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
-msgstr "הודעות הדוא״ל לפרופיל שהזמנת מושתקות (דיווחים על דואר זבל או הרבה החזרות)."
+msgstr ""
+"הודעות הדוא״ל לפרופיל שהזמנת מושתקות (דיווחים על דואר זבל או הרבה החזרות)."
 
 msgid "errors.network"
 msgstr "לא ניתן ליצור קשר עם שרת המנגנון."
@@ -1335,7 +1341,8 @@ msgstr ""
 msgid "labels.internal-error.main-message"
 msgstr "שגיאה פנימית"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
 msgstr "הזמנות"
 
@@ -1360,11 +1367,11 @@ msgstr "יציאה"
 msgid "labels.manage-fonts"
 msgstr "ניהול גופנים"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
 msgstr "חבר"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "חברים"
 
@@ -1480,7 +1487,9 @@ msgstr "הסרה"
 msgid "labels.remove-member"
 msgstr "הסרת חבר"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
 msgstr "שינוי שם"
 
@@ -1492,7 +1501,7 @@ msgstr "שינוי שם לצוות"
 msgid "labels.resend-invitation"
 msgstr "שליחת ההזמנה מחדש"
 
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "ניסיון חוזר"
 
@@ -1591,7 +1600,7 @@ msgstr "סביבת עבודה"
 msgid "labels.write-new-comment"
 msgstr "כתיבת הערה חדשה"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
 msgstr "(אני)"
 
@@ -1647,8 +1656,8 @@ msgstr "החלפת כתובת הדוא״ל שלך"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.change-owner-and-leave-confirm.message"
 msgstr ""
-"הבעלות של הצוות הזה בידיך. נא לבחור מישהו מהרשימה כדי לקדם אותו לבעלי "
-"הקבוצה בטרם עזיבתך."
+"הבעלות של הצוות הזה בידיך. נא לבחור מישהו מהרשימה כדי לקדם אותו לבעלי הקבוצה "
+"בטרם עזיבתך."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1734,7 +1743,8 @@ msgstr "למחוק את המיזם הזה?"
 msgid "modals.delete-project-confirm.title"
 msgstr "מחיקת מיזם"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "מחיקת קובץ"
@@ -1742,7 +1752,8 @@ msgstr[1] "מחיקת קבצים"
 msgstr[2] "מחיקת קבצים"
 msgstr[3] "מחיקת קבצים"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "למחוק את הקובץ?"
@@ -1750,7 +1761,8 @@ msgstr[1] "למחוק את הקבצים?"
 msgstr[2] "למחוק את הקבצים?"
 msgstr[3] "למחוק את הקבצים?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
 msgstr[0] "לקובץ זה יש ספריות שנעשה בהן שימוש בקובץ הזה:"
@@ -1758,7 +1770,8 @@ msgstr[1] "לקובץ זה יש ספריות שנעשה בהן שימוש בקב
 msgstr[2] "לקובץ זה יש ספריות שנעשה בהן שימוש בקבצים האלה:"
 msgstr[3] "לקובץ זה יש ספריות שנעשה בהן שימוש בקבצים האלה:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message-plural"
 msgid_plural "modals.delete-shared-confirm.scd-message-plural"
 msgstr[0] "לקבצים אלו יש ספריות שנעשה בהן שימוש בקובץ הזה:"
@@ -1766,7 +1779,8 @@ msgstr[1] "לקבצים אלו יש ספריות שנעשה בהן שימוש ב
 msgstr[2] "לקבצים אלו יש ספריות שנעשה בהן שימוש בקבצים אלה:"
 msgstr[3] "לקבצים אלו יש ספריות שנעשה בהן שימוש בקבצים אלה:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "מחיקת קובץ"
@@ -1815,7 +1829,8 @@ msgstr "הזמנת חברים לצוות"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
-msgstr "כיוון שאין עוד חברים בצוות הזה מלבדך, הצוות יימחק על כל המיזמים והקבצים שלו."
+msgstr ""
+"כיוון שאין עוד חברים בצוות הזה מלבדך, הצוות יימחק על כל המיזמים והקבצים שלו."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
@@ -1828,7 +1843,8 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
-msgstr "הבעלות על הצוות הזה בידיך. נא לבחור מישהו כדי לקידום לבעלות בטרם עזיבתך."
+msgstr ""
+"הבעלות על הצוות הזה בידיך. נא לבחור מישהו כדי לקידום לבעלות בטרם עזיבתך."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint2"
@@ -1889,8 +1905,8 @@ msgstr "הסרה כספריה משותפת"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"לאחר הסרה כספריה משותפת, ספריית הקבצים של הקובץ הזה לא תהיה זמינה עוד "
-"לשימוש בקרב שאר הקבצים שלך."
+"לאחר הסרה כספריה משותפת, ספריית הקבצים של הקובץ הזה לא תהיה זמינה עוד לשימוש "
+"בקרב שאר הקבצים שלך."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1901,11 +1917,13 @@ msgstr "הסרת „%s” כספריה משותפת"
 msgid "modals.small-nudge"
 msgstr "הינד קטן"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.accept"
 msgstr "ביטול פרסום"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] "ביטול הפרסום הופך את המשאבים לספרייה של הקובץ הזה."
@@ -1913,7 +1931,8 @@ msgstr[1] "ביטול הפרסום הופך את המשאבים לספרייה �
 msgstr[2] "ביטול הפרסום הופך את המשאבים לספרייה של הקבצים האלה."
 msgstr[3] "ביטול הפרסום הופך את המשאבים לספרייה של הקבצים האלה."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "לבטל את פרסום הספרייה הזאת?"
@@ -1921,7 +1940,8 @@ msgstr[1] "לבטל את פרסום הספריות האלו?"
 msgstr[2] "לבטל את פרסום הספריות האלו?"
 msgstr[3] "לבטל את פרסום הספריות האלו?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
 msgstr[0] "בשימוש בקובץ הזה:"
@@ -1929,7 +1949,8 @@ msgstr[1] "בשימוש בקבצים האלה:"
 msgstr[2] "בשימוש בקבצים האלה:"
 msgstr[3] "בשימוש בקבצים האלה:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "ביטול פרסום ספרייה"
@@ -1941,8 +1962,7 @@ msgstr[3] "ביטול פרסום ספריות"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
-"פעולה זו תעדכן רכיבים בספרייה משותפת. עשוי להשפיע על קבצים אחרים שמשתמשים "
-"בה."
+"פעולה זו תעדכן רכיבים בספרייה משותפת. עשוי להשפיע על קבצים אחרים שמשתמשים בה."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -1991,11 +2011,12 @@ msgstr "הודעת האימות נשלחה בדוא״ל אל %s. נא לבדוק
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"רצוי לדעת שיש מגוון משאבים זמינים לך כדי לסייע לך להתחיל להשתמש ב־Penpot "
-"כמו המדריך למשתמשים וערוץ ה־YouTube שלנו."
+"רצוי לדעת שיש מגוון משאבים זמינים לך כדי לסייע לך להתחיל להשתמש ב־Penpot כמו "
+"המדריך למשתמשים וערוץ ה־YouTube שלנו."
 
 msgid "onboarding-v2.before-start.desc2"
-msgstr "מידע מפורט על אופן השימוש ב־Penpot. החל מתכנון אבטיפוס ועד שיתוף עיצובים."
+msgstr ""
+"מידע מפורט על אופן השימוש ב־Penpot. החל מתכנון אבטיפוס ועד שיתוף עיצובים."
 
 msgid "onboarding-v2.before-start.desc2.title"
 msgstr "מדריך למשתמשים"
@@ -2113,8 +2134,8 @@ msgstr "לא, תודה"
 
 msgid "onboarding.newsletter.desc"
 msgstr ""
-"ניתן להירשם לרשימת הדיוור שלנו כדי לשמור על קשר עם תהליך פיתוח המוצר "
-"והחדשות העדכניות."
+"ניתן להירשם לרשימת הדיוור שלנו כדי לשמור על קשר עם תהליך פיתוח המוצר והחדשות "
+"העדכניות."
 
 msgid "onboarding.newsletter.policy"
 msgstr "מדיניות פרטיות."
@@ -2171,7 +2192,8 @@ msgid "onboarding.slide.3.alt"
 msgstr "הגשה וקוד מקור"
 
 msgid "onboarding.slide.3.desc1"
-msgstr "ניתן לסנכרן את העיצוב ואת הקוד של כל הרכיבים והעיצובים שלך ולקבל מקטעי קוד."
+msgstr ""
+"ניתן לסנכרן את העיצוב ואת הקוד של כל הרכיבים והעיצובים שלך ולקבל מקטעי קוד."
 
 msgid "onboarding.slide.3.desc2"
 msgstr ""
@@ -2759,8 +2781,7 @@ msgstr "%s‏ - Penpot"
 
 msgid "viewer.breaking-change.description"
 msgstr ""
-"קישור זה לשיתוף אינו תקף עוד. נא ליצור אחד חדש או לבקש מהבעלים ליצור אחד "
-"חדש."
+"קישור זה לשיתוף אינו תקף עוד. נא ליצור אחד חדש או לבקש מהבעלים ליצור אחד חדש."
 
 msgid "viewer.breaking-change.message"
 msgstr "מתנצלים!"
@@ -3012,7 +3033,8 @@ msgstr "מיקוד פעיל"
 msgid "workspace.focus.selection"
 msgstr "בחירה"
 
-#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+#: src/app/main/data/workspace/libraries.cljs,
+#: src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.linear"
 msgstr "מדרג קווי"
 
@@ -3389,7 +3411,8 @@ msgstr "עיצוב"
 msgid "workspace.options.export"
 msgstr "ייצוא"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "ייצוא הבחירה"
 
@@ -3407,15 +3430,18 @@ msgstr "סיומת"
 msgid "workspace.options.exporting-complete"
 msgstr "הייצוא הושלם"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.exporting-object"
 msgstr "מתבצע ייצוא…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "הייצוא נכשל"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-slow"
 msgstr "הייצוא אטי בהגזמה"
 
@@ -4039,7 +4065,8 @@ msgstr "פינות בודדות"
 msgid "workspace.options.recent-fonts"
 msgstr "אחרונים"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.retry"
 msgstr "לנסות שוב"
 
@@ -4482,7 +4509,8 @@ msgstr "בחירת שכבה"
 msgid "workspace.shape.menu.show"
 msgstr "הצגה"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "הצגה בלוח משאבים"
 
@@ -4565,7 +4593,8 @@ msgstr "צורות"
 msgid "workspace.sidebar.layers.texts"
 msgstr "טקסטים"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs,
+#: src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "מאפייני SVG יובאו"
 
@@ -4758,3 +4787,9 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+msgid "errors.bad-font-plural"
+msgstr "לא ניתן לטעון את הגופנים %s"
+
+msgid "errors.bad-font"
+msgstr "לא ניתן לטעון את הגופן %s"
