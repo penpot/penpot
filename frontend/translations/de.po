@@ -4864,3 +4864,9 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+msgid "errors.bad-font"
+msgstr "Die Schriftart %s konnte nicht geladen werden"
+
+msgid "errors.bad-font-plural"
+msgstr "Die Schriftarten %s konnten nicht geladen werden"
