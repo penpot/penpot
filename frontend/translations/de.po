@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-18 08:01+0000\n"
-"Last-Translator: Stas Haas <stas@girafic.de>\n"
+"PO-Revision-Date: 2022-10-19 22:02+0000\n"
+"Last-Translator: nautilusx <translate@disroot.org>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.15-dev\n"
+"X-Generator: Weblate 4.14.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2181,12 +2181,6 @@ msgstr "Nein, danke"
 msgid "onboarding.newsletter.policy"
 msgstr "Datenschutzbestimmungen."
 
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Wir werden Ihnen nur relevante E-Mails schicken. Sie können sich jederzeit "
-"in Ihrem Benutzerprofil oder über den Abmeldelink in jedem unserer "
-"Newsletter abmelden."
-
 msgid "onboarding.newsletter.title"
 msgstr "Möchten Sie die Penpot-Nachrichten erhalten?"
 
@@ -2272,16 +2266,8 @@ msgstr "Unbegrenzte Anzahl von Mitgliedern"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% kostenlos!"
 
-msgid "onboarding.team.create.desc1"
-msgstr ""
-"Arbeiten Sie mit jemandem zusammen? Erstellen Sie ein Team, um gemeinsam an "
-"Projekten zu arbeiten und Design-Assets zu teilen."
-
 msgid "onboarding.team.create.title"
 msgstr "Team erstellen"
-
-msgid "onboarding.team.start.button"
-msgstr "Gleich loslegen"
 
 msgid "onboarding.team.start.title"
 msgstr "Mit der Gestaltung beginnen"
@@ -2294,12 +2280,6 @@ msgstr "Beginnen Sie mit dem Entwerfen"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot ist in seiner ersten Beta-Version dank der Kombination von "
-"Kernfunktionen, Reife, Stabilität und der erstaunlichen Validierung durch "
-"die gesamte Community, zu der Sie mehr als willkommen sind."
 
 msgid "onboarding.welcome.title"
 msgstr "Willkommen bei Penpot"
@@ -3420,12 +3400,6 @@ msgstr "Exportieren"
 msgid "workspace.options.export-multiple"
 msgstr "Auswahl exportieren"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs
-#, fuzzy
-msgid "workspace.options.export-object"
-msgstr "1 Element exportieren"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
 msgstr "Suffix"
@@ -3869,10 +3843,6 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Min.Breite"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "Max. Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.min-w"
 msgstr "Min. Breite"
 
@@ -3895,10 +3865,6 @@ msgstr "Mindesthöhe"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "Mindestbreite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "Maximale Breite"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.min-w"
