@@ -1,6 +1,10 @@
+;; Example rlimit.edn file
 ^{:refresh "30s"}
 {:default
  [[:default :window "200000/h"]]
+
+ #{:query/teams}
+ [[:burst :bucket "5/1/5s"]]
 
  #{:query/profile}
  [[:burst :bucket "100/60/1m"]]}

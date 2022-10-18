@@ -126,7 +126,8 @@
   (with-meta
     (fn [cfg params]
       (-> (px/submit! executor #(f cfg params))
-          (p/bind p/wrap)))
+          (p/bind p/wrap)
+          (p/then' sv/wrap)))
     mdata))
 
 (defn- wrap-audit
@@ -237,6 +238,8 @@
 (s/def ::http-client fn?)
 (s/def ::ldap (s/nilable map?))
 (s/def ::msgbus ::mbus/msgbus)
+(s/def ::rlimit (s/nilable ::rlimit/rlimit))
+
 (s/def ::public-uri ::us/not-empty-string)
 (s/def ::sprops map?)
 
@@ -249,7 +252,7 @@
                    ::msgbus
                    ::http-client
                    ::rsem/semaphores
-                   ::rlimit/rlimit
+                   ::rlimit
                    ::mtx/metrics
                    ::db/pool
                    ::ldap]))
