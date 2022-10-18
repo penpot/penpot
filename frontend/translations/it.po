@@ -39,7 +39,8 @@ msgstr ""
 "Questo è un servizio di prova, non utilizzare per il lavoro reale, i "
 "progetti verranno eliminati periodicamente."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
 msgstr "Indirizzo e-mail"
 
@@ -225,6 +226,9 @@ msgstr "Condividi i prototipi"
 msgid "common.share-link.view-all"
 msgstr "Seleziona tutto"
 
+msgid "common.unpublish"
+msgstr "Spubblica"
+
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.management"
 msgstr "Gestisci team"
@@ -234,6 +238,10 @@ msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot è studiato per i team. Invita membri per lavorare insieme a file e "
 "progetti"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Fai squadra!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
@@ -259,7 +267,8 @@ msgstr "Inizia il tour"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Spiegazione dell'interfaccia passo per passo"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Aggiungi una libreria condivisa"
 
@@ -292,7 +301,8 @@ msgstr "Scarica il file standard (.svg + .json)"
 msgid "dashboard.draft-title"
 msgstr "Bozza"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "Duplica"
 
@@ -305,7 +315,6 @@ msgid "dashboard.empty-files"
 msgstr "Qui non c'è ancora nessun file"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh no! Non hai ancora nessun file! Se desideri provare alcuni template vai "
@@ -331,6 +340,12 @@ msgstr "%s di %s elementi selezionati"
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
 msgstr "Esporta"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Puoi aggiungere dei parametri di esportazione agli elementi accedendo alle "
+"proprietà del design (in fondo alla barra laterale destra)."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
@@ -373,6 +388,9 @@ msgstr ""
 "Le librerie condivise non saranno incluse nell'esportazione e nessuna "
 "risorsa verrà aggiunta alla libreria. "
 
+msgid "dashboard.export.options.detach.title"
+msgstr "Considera le risorse delle librerie condivise come oggetti di base"
+
 msgid "dashboard.export.options.merge.message"
 msgstr ""
 "Il tuo file verrà esportato con tutte le risorse esterne riunite nella "
@@ -397,7 +415,6 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 font aggiunto"
 msgstr[1] "%s font aggiunti"
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Qualsiasi font web caricato qui verrà aggiunto alla lista dei font family "
@@ -406,7 +423,6 @@ msgstr ""
 "**singolo font family**. È possibile caricare font con i seguenti "
 "formati:**TTF, OTF e WOFF**(uno solo di questi è necessario)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "È consigliabile caricare unicamente font di cui si è proprietari o dei "
@@ -461,7 +477,8 @@ msgstr "Caricamento file: %s"
 msgid "dashboard.invite-profile"
 msgstr "Invita nel team"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
 msgstr "Abbandona il team"
 
@@ -487,7 +504,8 @@ msgstr "caricamento dei file …"
 msgid "dashboard.loading-fonts"
 msgstr "caricamento dei font …"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
 msgstr "Sposta verso"
 
@@ -499,7 +517,8 @@ msgstr "Sposta %s file verso"
 msgid "dashboard.move-to-other-team"
 msgstr "Sposta verso un altro team"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
 msgstr "+ Nuovo File"
 
@@ -576,7 +595,8 @@ msgstr "Promuovi a proprietario"
 msgid "dashboard.remove-account"
 msgstr "Desideri eliminare il tuo account?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Elimina come Libreria Condivisa"
 
@@ -620,7 +640,8 @@ msgstr "Il tuo file è stato duplicato con successo"
 msgid "dashboard.success-duplicate-project"
 msgstr "Il tuo progetto è stato duplicato con successo"
 
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-file"
 msgstr "Il tuo file è stato spostato con successo"
 
@@ -631,6 +652,10 @@ msgstr "I tuoi file sono stati spostati con successo"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "Il tuo progetto è stato spostato con successo"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.switch-team"
+msgstr "Cambia team"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
@@ -656,11 +681,13 @@ msgstr "Risultati della ricerca"
 msgid "dashboard.type-something"
 msgstr "Scrivi per cercare"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "Spubblicare la libreria"
 
-#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/password.cljs,
+#: src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Aggiorna le impostazioni"
 
@@ -676,7 +703,11 @@ msgstr "E-mail"
 msgid "dashboard.your-name"
 msgstr "Il tuo nome"
 
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/libraries.cljs,
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "Il tuo Penpot"
 
@@ -719,7 +750,8 @@ msgstr "Sembra che tu non ti sia autenticato o che la sessione sia scaduta."
 msgid "errors.clipboard-not-implemented"
 msgstr "Il tuo browser non può effettuare questa operazione"
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/auth/verify_token.cljs,
+#: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
 msgstr "Indirizzo e-mail già utilizzato"
 
@@ -737,7 +769,8 @@ msgstr "L'indirizzo e-mail di conferma deve corrispondere"
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "L'e-mail \"%s\" è stata riportata come spam o respinta in modo permanente."
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/verify_token.cljs,
+#: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
 msgstr "Si è verificato un problema."
 
@@ -773,7 +806,7 @@ msgstr ""
 "Sembra che il contenuto dell'immagine non corrisponda all'estensione del "
 "file."
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
 msgstr "L'immagine non sembra valida."
 
@@ -808,7 +841,9 @@ msgstr ""
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "È necessario accettare i termini di servizio e l'informativa sulla privacy."
 
-#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/data/media.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Si è verificato un errore inaspettato."
 
@@ -929,7 +964,8 @@ msgstr "Altezza"
 msgid "handoff.attributes.layout.left"
 msgstr "Sinistra"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+#: src/app/main/ui/handoff/attributes/layout.cljs,
+#: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.radius"
 msgstr "Raggio"
 
@@ -969,15 +1005,12 @@ msgstr "S"
 msgid "handoff.attributes.stroke"
 msgstr "Contorno"
 
-#, permanent
 msgid "handoff.attributes.stroke.alignment.center"
 msgstr "Centro"
 
-#, permanent
 msgid "handoff.attributes.stroke.alignment.inner"
 msgstr "Interno"
 
-#, permanent
 msgid "handoff.attributes.stroke.alignment.outer"
 msgstr "Esterno"
 
@@ -1021,6 +1054,10 @@ msgstr "Spaziatura delle lettere"
 msgid "handoff.attributes.typography.line-height"
 msgstr "Altezza Linea"
 
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "Decorazioni testo"
+
 msgid "handoff.attributes.typography.text-decoration.none"
 msgstr "Nessuno"
 
@@ -1039,6 +1076,9 @@ msgstr "Minuscolo"
 
 msgid "handoff.attributes.typography.text-transform.none"
 msgstr "Nessuno"
+
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "Prime lettere maiuscole"
 
 msgid "handoff.attributes.typography.text-transform.uppercase"
 msgstr "Maiuscolo"
@@ -1102,7 +1142,7 @@ msgstr "Accettare"
 msgid "labels.add-custom-font"
 msgstr "Aggiungere un carattere personalizzato"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
 msgstr "Amministratore"
 
@@ -1164,7 +1204,8 @@ msgstr "Puoi continuare con un account Penpot"
 msgid "labels.create"
 msgstr "Crea"
 
-#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+#: src/app/main/ui/dashboard/team_form.cljs,
+#: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Crea un nuovo team"
 
@@ -1182,7 +1223,8 @@ msgstr "Dashboard"
 msgid "labels.default"
 msgstr "predefinito"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
 msgstr "Eliminare"
 
@@ -1202,7 +1244,10 @@ msgstr "Eliminare l'invito"
 msgid "labels.delete-multi-files"
 msgstr "Eliminare %s file"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/files.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.drafts"
 msgstr "Bozze"
 
@@ -1213,7 +1258,7 @@ msgstr "Modificare"
 msgid "labels.edit-file"
 msgstr "Modificare il file"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "Redattore"
 
@@ -1252,7 +1297,9 @@ msgstr "Font"
 msgid "labels.github-repo"
 msgstr "Repository Github"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Dai la tua opinione"
 
@@ -1286,7 +1333,8 @@ msgstr ""
 msgid "labels.internal-error.main-message"
 msgstr "Errore interno"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
 msgstr "Inviti"
 
@@ -1311,11 +1359,11 @@ msgstr "Disconnetti"
 msgid "labels.manage-fonts"
 msgstr "Gestisci i font"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
 msgstr "Membro"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "Membri"
 
@@ -1330,7 +1378,8 @@ msgstr "Nuova password"
 msgid "labels.next"
 msgstr "Prossimo"
 
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+#: src/app/main/ui/workspace/comments.cljs,
+#: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
 msgstr "Non ci sono notifiche di commenti in attesa"
 
@@ -1383,7 +1432,8 @@ msgstr "oppure"
 msgid "labels.owner"
 msgstr "Proprietario"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
 msgstr "Password"
 
@@ -1410,7 +1460,8 @@ msgstr "Recenti"
 msgid "labels.release-notes"
 msgstr "Note di versione"
 
-#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/workspace/libraries.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
 msgstr "Rimuovere"
 
@@ -1418,7 +1469,9 @@ msgstr "Rimuovere"
 msgid "labels.remove-member"
 msgstr "Rimuovi membro"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
 msgstr "Rinominare"
 
@@ -1430,7 +1483,7 @@ msgstr "Rinominare il team"
 msgid "labels.resend-invitation"
 msgstr "Invia di nuovo l'invito"
 
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "Riprova"
 
@@ -1460,7 +1513,8 @@ msgstr "Stiamo effettuando la manutenzione programmata dei nostri sistemi."
 msgid "labels.service-unavailable.main-message"
 msgstr "Servizio non disponibile"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Configurazione"
 
@@ -1528,7 +1582,7 @@ msgstr "Spazio di lavoro"
 msgid "labels.write-new-comment"
 msgstr "Scrivere un nuovo commento"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
 msgstr "(tu)"
 
@@ -1536,21 +1590,24 @@ msgstr "(tu)"
 msgid "labels.your-account"
 msgstr "Il tuo account"
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Caricamento dell'immagine…"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
 msgstr "Aggiungere come libreria condivisa"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
 "Una volta aggiunta come libreria condivisa, le risorse di questa libreria "
 "saranno disponibili per essere utilizzate nel resto dei tuoi file."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
 msgstr "Aggiungere \"%s\" come libreria condivisa"
 
@@ -1676,31 +1733,36 @@ msgstr "Eliminare questo progetto?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Elimina progetto"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Elimina file"
 msgstr[1] "Elimina i file"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Eliminare questo file?"
 msgstr[1] "Eliminare questi file?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
 msgstr[0] "Questo file contiene librerie usate nel file:"
 msgstr[1] "Questo file contiene librerie usate nei file:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message-plural"
 msgid_plural "modals.delete-shared-confirm.scd-message-plural"
 msgstr[0] "Questi file contengono librerie usate nel file:"
 msgstr[1] "Questi file contengono librerie usate nei file:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Eliminazione del file"
@@ -1812,18 +1874,21 @@ msgstr ""
 msgid "modals.promote-owner-confirm.title"
 msgstr "Nuovo proprietario del team"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
 msgstr "Elimina come Libreria Condivisa"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
 "Una volta eliminata come Libreria Condivisa, la Libreria dei File di questo "
 "file smetterà di essere a disposizione per essere usata con il resto dei "
 "tuoi file."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr "Elimina \"%s\" come Libreria Condivisa"
 
@@ -1831,11 +1896,13 @@ msgstr "Elimina \"%s\" come Libreria Condivisa"
 msgid "modals.small-nudge"
 msgstr "Piccolo scatto"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Annulla pubblicazione"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
@@ -1845,49 +1912,58 @@ msgstr[1] ""
 "Se annulli la pubblicazione, gli elementi diventeranno parte della libreria "
 "di questi file."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Annullare la pubblicazione di questa libreria?"
 msgstr[1] "Annullare la pubblicazione di queste librerie?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
 msgstr[0] "È utilizzata in questo file:"
 msgstr[1] "È utilizzata in questi file:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "Annulla pubblicazione libreria"
 msgstr[1] "Annulla pubblicazione librerie"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
 "Stai per aggiornare i componenti in una libreria condivisa. Questo potrebbe "
 "causare modifiche nei file che la utilizzano."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Aggiorna componenti in una libreria condivisa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
 msgstr "Aggiorna"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
 msgstr "Cancella"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Stai per aggiornare un componente in una libreria condivisa. Questo "
 "potrebbe causare modifiche nei file che la utilizzano."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Aggiorna un componente in una libreria condivisa"
 

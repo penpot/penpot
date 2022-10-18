@@ -749,6 +749,12 @@ msgstr "Proveedor de autenticación no configurado."
 msgid "errors.auth.unable-to-login"
 msgstr "Parece que no has iniciado sesión, o la sesión ha expirado."
 
+msgid "errors.bad-font"
+msgstr "No se ha podido cargar la fuente %s"
+
+msgid "errors.bad-font-plural"
+msgstr "No se han podido cargar las fuentes %s"
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Tu navegador no puede realizar esta operación"
@@ -4779,12 +4785,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-msgid "errors.profile-blocked"
-msgstr "El perfil esta blockeado"
-
-msgid "errors.bad-font"
-msgstr "No se ha podido cargar la fuente %s"
-
-msgid "errors.bad-font-plural"
-msgstr "No se han podido cargar las fuentes %s"

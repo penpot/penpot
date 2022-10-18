@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-10 17:20+0000\n"
+"PO-Revision-Date: 2022-10-16 13:49+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew "
 "<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -813,6 +813,9 @@ msgstr "סיסמת האימות חייבת להיות תואמת"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "הסיסמה חייבת להיות באורך 8 תווים לפחות"
+
+msgid "errors.profile-blocked"
+msgstr "הפרופיל חסום"
 
 #: src/app/main/ui/auth/recovery_request.cljs,
 #: src/app/main/ui/settings/change_email.cljs,
@@ -2006,6 +2009,25 @@ msgstr "מדריכים מצולמים"
 msgid "onboarding-v2.before-start.title"
 msgstr "לפני שמתחילים"
 
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"ניתן להירשם לרשימת הדיוור של Penpot כדי להתעדכן בתהליך פיתוח המוצר ובחדשות "
+"נוספות."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr "נא לשלוח לי חדשות על Penpot (בלוגים, מדריכים מצולמים, שידורים…)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "אכפת לנו מפרטיות, כאן ניתן לקרוא את "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"אנו נשלח לך בדוא״ל רק הודעות שרלוונטיות לך. אפשר לבטל את המינוי דרך כפתור "
+"ביטול המינוי בכל אחת מהודעות הדיוור שלנו."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr "נא לשלוח לי עדכונים על המוצר (יכולות חדשות, מהדורות, תיקונים…)."
+
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "Penpot הוא בקוד פתוח והוא נוצר על ידי Kaleidos וגם על ידי הקהילה בה מגוון "
@@ -3062,7 +3084,7 @@ msgstr "הסתרת רשת פיקסלים"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-rules"
-msgstr "הסתרת כללים"
+msgstr "הסתרת סרגלים"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-textpalette"
@@ -3117,7 +3139,7 @@ msgstr "הצגת רשת פיקסלים"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
-msgstr "הצגת כללים"
+msgstr "הצגת סרגלים"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
@@ -4460,6 +4482,10 @@ msgstr "בחירת שכבה"
 msgid "workspace.shape.menu.show"
 msgstr "הצגה"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "הצגה בלוח משאבים"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
@@ -4500,6 +4526,12 @@ msgstr "עדכון הרכיבים הראשיים"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "עדכון הרכיב הראשי"
+
+msgid "workspace.sidebar.collapse"
+msgstr "צמצום סרגל צד"
+
+msgid "workspace.sidebar.expand"
+msgstr "הרחבת סרגל צד"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
