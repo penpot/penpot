@@ -94,6 +94,8 @@
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
                              :x (if rtl? (+ (:x data) (:width data)) (:x data))
                              :y (- (:y data) (:height data))
+                             :textLength (:width data)
+                             :lengthAdjust "spacingAndGlyphs"
                              :transform (position-data-transform shape data)
                              :alignmentBaseline alignment-bl
                              :dominantBaseline dominant-bl
@@ -104,8 +106,7 @@
                                              :textDecoration (:text-decoration data)
                                              :letterSpacing (:letter-spacing data)
                                              :fontStyle (:font-style data)
-                                             :direction (:direction data)
-                                             :whiteSpace "pre"}
+                                             :direction (:direction data)}
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
 
