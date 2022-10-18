@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-27 15:18+0000\n"
+"PO-Revision-Date: 2022-10-10 17:34+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -2669,7 +2669,7 @@ msgid "shortcuts.toggle-lock-size"
 msgstr "Oranları kilitle"
 
 msgid "shortcuts.toggle-rules"
-msgstr "Kuralları göster/gizle"
+msgstr "Cetvelleri göster/gizle"
 
 msgid "shortcuts.toggle-scale-text"
 msgstr "Ölçek metnini değiştir"
@@ -3104,7 +3104,7 @@ msgstr "Piksel ızgarasını gizle"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-rules"
-msgstr "Cetveli gizle"
+msgstr "Cetvelleri gizle"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-textpalette"
@@ -3159,7 +3159,7 @@ msgstr "Piksel ızgarasını göster"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
-msgstr "Cetveli göster"
+msgstr "Cetvelleri göster"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
@@ -3417,7 +3417,9 @@ msgstr "Seçimi dışa aktar"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "1 ögeyi dışa aktar"
+msgid_plural ""
+msgstr[0] "1 ögeyi dışa aktar"
+msgstr[1] "%s ögeyi dışa aktar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -4772,3 +4774,39 @@ msgstr "Güncelle"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Yolu kapatmak için tıklayın"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Varlıklar panelinde göster"
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Gizliliğe önem veriyoruz, buradan okuyabilirsiniz. "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Size yalnızca ilgili e-postaları göndereceğiz. Bültenlerimizden herhangi "
+"birindeki abonelikten çıkma bağlantısını kullanarak istediğiniz zaman "
+"aboneliğinizi iptal edebilirsiniz."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Bana ürün güncellemeleri gönder (yeni özellikler, sürümler, düzeltmeler...)."
+
+msgid "workspace.sidebar.collapse"
+msgstr "Kenar çubuğunu daralt"
+
+msgid "workspace.sidebar.expand"
+msgstr "Kenar çubuğunu genişlet"
+
+msgid "errors.profile-blocked"
+msgstr "Profil engellendi"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Ürün geliştirme sürecinden ve haberlerden haberdar olmak için Penpot "
+"bültenine abone olun."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Bana Penpot hakkında haberler gönder (blog gönderileri, video öğreticiler, "
+"yayınlar...)."

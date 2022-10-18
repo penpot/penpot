@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-11 09:14+0000\n"
+"PO-Revision-Date: 2022-10-16 13:49+0000\n"
 "Last-Translator: ascarida <ascarida@proton.me>\n"
-"Language-Team: Galician "
-"<https://hosted.weblate.org/projects/penpot/frontend/gl/>\n"
+"Language-Team: Galician <https://hosted.weblate.org/projects/penpot/frontend/"
+"gl/>\n"
 "Language: gl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13-dev\n"
+"X-Generator: Weblate 4.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -36,10 +36,11 @@ msgstr "Queres probar?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
 msgstr ""
-"Este é un servizo de DEMOSTRACIÓN. NON USAR para traballo real, os "
-"proxectos borraranse."
+"Este é un servizo de DEMOSTRACIÓN. NON O UTILICES para traballos reais, os "
+"proxectos eliminanse periódicamente."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
 msgstr "Correo electrónico"
 
@@ -101,7 +102,8 @@ msgstr "Perfil sen verificar, valida o perfil antes de continuar."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
-msgstr "Enviouse ó teu correo electrónico un enlace co que recuperar o contrasinal."
+msgstr ""
+"Enviouse ó teu correo electrónico un enlace co que recuperar o contrasinal."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
@@ -208,7 +210,8 @@ msgstr "Só esta páxina"
 msgid "common.share-link.view-selected-pages"
 msgstr "Páxinas seleccionadas"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Engadir como Biblioteca Compartida"
 
@@ -235,7 +238,8 @@ msgstr "Eliminar equipo"
 msgid "dashboard.draft-title"
 msgstr "Borrador"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "Duplicar"
 
@@ -248,7 +252,6 @@ msgid "dashboard.empty-files"
 msgstr "Aínda non tes ficheiros"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Ai non! Ainda non tes ficheiros! Se queres facer a proba con algún modelo "
@@ -299,8 +302,8 @@ msgstr ""
 
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"os ficheiros con bibliotecas compartidas incluiranse na exportación "
-"mantendo os vínculos."
+"os ficheiros con bibliotecas compartidas incluiranse na exportación mantendo "
+"os vínculos."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Exportar bibliotecas compartidas"
@@ -319,7 +322,8 @@ msgstr ""
 "biblioteca do ficheiro."
 
 msgid "dashboard.export.options.merge.title"
-msgstr "Incluir os recursos de bibliotecas compartidas na biblioteca do ficheiro"
+msgstr ""
+"Incluir os recursos de bibliotecas compartidas na biblioteca do ficheiro"
 
 msgid "dashboard.export.title"
 msgstr "Exportar ficheiros"
@@ -340,7 +344,6 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "Engadiuse 1 fonte"
 msgstr[1] "Engadíronse % fontes"
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Calquera fonte que cargues aquí engadirase na listaxe de familias de fontes "
@@ -349,7 +352,6 @@ msgstr ""
 "Podes cargar fontes cos seguintes formatos: **TTF, OFT e WOFF** (só se "
 "precisa un)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Só debes cargar fontes da túa propiedade ou das que teñas licenza para usar "
@@ -368,7 +370,8 @@ msgid "dashboard.import.analyze-error"
 msgstr "Vaia! Non se puido importar o ficheiro"
 
 msgid "dashboard.import.import-error"
-msgstr "Houbo un problema ao importar o ficheiro. Non se puido importar o ficheiro."
+msgstr ""
+"Houbo un problema ao importar o ficheiro. Non se puido importar o ficheiro."
 
 msgid "dashboard.import.import-message"
 msgstr "% ficheiros importáronse correctamente."
@@ -401,7 +404,8 @@ msgstr "Enviando ficheiro: %s"
 msgid "dashboard.invite-profile"
 msgstr "Invitar ao equipo"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
 msgstr "Abandonar o equipo"
 
@@ -416,7 +420,8 @@ msgstr "cargando os teus ficheiros …"
 msgid "dashboard.loading-fonts"
 msgstr "cargando as túas fontes …"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
 msgstr "Mover a"
 
@@ -428,7 +433,8 @@ msgstr "Mover % ficheiros a"
 msgid "dashboard.move-to-other-team"
 msgstr "Mover a outro equipo"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
 msgstr "+ Novo ficheiro"
 
@@ -446,7 +452,8 @@ msgstr "Novo proxecto"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-msg"
-msgstr "Envíame noticias, actualizacións do produto e recomendacións sobre Penpot."
+msgstr ""
+"Envíame noticias, actualizacións do produto e recomendacións sobre Penpot."
 
 msgid "dashboard.options"
 msgstr "Opcións"
@@ -527,7 +534,8 @@ msgstr "Altura"
 msgid "handoff.attributes.layout.left"
 msgstr "Esquerda"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+#: src/app/main/ui/handoff/attributes/layout.cljs,
+#: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.radius"
 msgstr "Radio"
 
@@ -563,6 +571,881 @@ msgstr "Y"
 msgid "handoff.attributes.shadow.shorthand.spread"
 msgstr "S"
 
-#, permanent
 msgid "handoff.attributes.stroke.alignment.center"
 msgstr "Centro"
+
+msgid "shortcuts.ungroup"
+msgstr "Dispersar"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "Editar"
+
+msgid "shortcuts.duplicate"
+msgstr "Duplicar"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "Ficheiro"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Preferencias"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.components"
+msgstr "Compoñentes"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.colors"
+msgstr "Cores"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group"
+msgstr "Agrupar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Esquerda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Marxe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Dereita"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Enriba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "Ningún"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.center"
+msgstr "Centro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.none"
+msgstr "Nada"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.edit"
+msgstr "Editar"
+
+msgid "common.share-link.all-users"
+msgstr "Todas as persoas usuarias de Penpot"
+
+msgid "common.share-link.current-tag"
+msgstr "(actual)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Eliminar ligazón"
+
+msgid "common.share-link.manage-ops"
+msgstr "Xestionar permisos"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Poden comentar"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Poden ver o código"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Páxinas compartidas"
+
+msgid "common.share-link.view-all"
+msgstr "Seleccionar todas"
+
+msgid "common.share-link.team-members"
+msgstr "Só membros do equipo"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Descargar %s ficheiros Penpot (.penpot)"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "Riscar"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "Suliñar"
+
+msgid "handoff.attributes.typography.text-decoration.none"
+msgstr "Ningunha"
+
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "Ningunha"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "Curva"
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "Compoñente"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Código"
+
+msgid "handoff.tabs.code.selected.frame"
+msgstr "taboleiro"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "Círculo"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "Grupo"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "Imaxe"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "Trazado"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Máscara"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "Rectángulo"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "Texto"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Información"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Atallos do teclado"
+
+msgid "labels.accept"
+msgstr "Aceptar"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "Administración"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "Todo"
+
+msgid "labels.and"
+msgstr "e"
+
+msgid "labels.back"
+msgstr "Volver"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "Cancelar"
+
+msgid "labels.centered"
+msgstr "Centrado"
+
+msgid "labels.close"
+msgstr "Pechar"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "Comentarios"
+
+msgid "labels.content"
+msgstr "Contido"
+
+msgid "labels.continue"
+msgstr "Continuar"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Crear"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "Panel"
+
+msgid "labels.default"
+msgstr "por defecto"
+
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "Eliminar"
+
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/files.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "Borradores"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "Editar"
+
+msgid "labels.font-variants"
+msgstr "Estilos"
+
+msgid "labels.fonts"
+msgstr "Fontes"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "Pechar sesión"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "Lingua"
+
+msgid "labels.link"
+msgstr "Ligazón"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Integrante"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "Integrantes"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.name"
+msgstr "Nome"
+
+msgid "labels.next"
+msgstr "Seguinte"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "Vaia!"
+
+msgid "labels.or"
+msgstr "ou"
+
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "Contrasinal"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.profile"
+msgstr "Perfil"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "Pendente"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.permissions"
+msgstr "Permisos"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "Proxectos"
+
+msgid "labels.recent"
+msgstr "Recente"
+
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+msgid "labels.retry"
+msgstr "Volver tentar"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.role"
+msgstr "Rol"
+
+msgid "labels.save"
+msgstr "Gardar"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.send"
+msgstr "Enviar"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.sending"
+msgstr "Enviando…"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "Configuración"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shared-libraries"
+msgstr "Bibliotecas"
+
+msgid "labels.start"
+msgstr "Comezar"
+
+msgid "labels.skip"
+msgstr "Pasar"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Estado"
+
+msgid "labels.uploading"
+msgstr "Cargando…"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Titoriales"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "labels.update"
+msgstr "Actualizar"
+
+msgid "labels.upload"
+msgstr "Cargar"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.viewer"
+msgstr "Visor"
+
+msgid "labels.workspace"
+msgstr "Espazo de traballo"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(ti)"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Básicos"
+
+msgid "shortcut-section.dashboard"
+msgstr "Panel"
+
+msgid "shortcut-section.viewer"
+msgstr "Visor"
+
+msgid "shortcut-section.workspace"
+msgstr "Espazo de traballo"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Aliñamento"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Xenérico"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Xenérico"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zoom"
+
+msgid "shortcuts.add-comment"
+msgstr "Comentarios"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zoom"
+
+msgid "shortcuts.copy"
+msgstr "Copiar"
+
+msgid "shortcuts.delete"
+msgstr "Eliminar"
+
+msgid "shortcuts.draw-curve"
+msgstr "Curva"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "Elipse"
+
+msgid "shortcuts.escape"
+msgstr "Cancelar"
+
+msgid "shortcuts.mask"
+msgstr "Máscara"
+
+msgid "shortcuts.move"
+msgstr "Mover"
+
+msgid "shortcuts.paste"
+msgstr "Pegar"
+
+msgid "shortcuts.redo"
+msgstr "Refacer"
+
+msgid "shortcuts.undo"
+msgstr "Desfacer"
+
+msgid "viewer.breaking-change.message"
+msgstr "Sentímolo!"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Interaccións"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.sitemap"
+msgstr "Mapa do sitio"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.duplicate"
+msgstr "Duplicar"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.graphics"
+msgstr "Gráficos"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.edit"
+msgstr "Editar"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.libraries"
+msgstr "Bibliotecas"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared"
+msgstr "COMPARTIDA"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.typography"
+msgstr "Tipografías"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-id"
+msgstr "Fonte"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-variant-id"
+msgstr "Variante"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
+#: src/app/main/ui/handoff/attributes/text.cljs,
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "workspace.assets.typography.sample"
+msgstr "Ag"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Dispersar"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Restablecer"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saved"
+msgstr "Gardado"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saving"
+msgstr "Gardando"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.add"
+msgstr "Engadir"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library"
+msgstr "BIBLIOTECA"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.libraries"
+msgstr "BIBLIOTECAS"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.updates"
+msgstr "Actualizacións"
+
+msgid "workspace.library.libraries"
+msgstr "Bibliotecas"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.update"
+msgstr "Actualizar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title"
+msgstr "Desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.center"
+msgstr "Centro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "Restricións"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.bottom"
+msgstr "Embaixo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.left"
+msgstr "Esquerda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.leftright"
+msgstr "Esquerda e Dereita"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.right"
+msgstr "Dereita"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.top"
+msgstr "Enriba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.topbottom"
+msgstr "Enriba e Embaixo"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.design"
+msgstr "Deseño"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export"
+msgstr "Exportar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Exportar selección"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-complete"
+msgstr "Exportación completada"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "workspace.options.export.suffix"
+msgstr "Sufixo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object"
+msgstr "Exportando…"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-error"
+msgstr "Erro na exportación"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.fill"
+msgstr "Recheo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "Grade"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.bottom"
+msgstr "Embaixo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.center"
+msgstr "Centro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.top"
+msgstr "Enriba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.left"
+msgstr "Esquerda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "Ningún"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-center"
+msgstr "Centro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Embaixo"
+
+msgid "common.publish"
+msgstr "Publicar"
+
+msgid "common.unpublish"
+msgstr "Cancelar publicación"
+
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "Exterior"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Punteado"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Mixto"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "Ningún"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Sólido"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Tipografía"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "Editor"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.email"
+msgstr "Correo electrónico"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Caducada"
+
+msgid "labels.export"
+msgstr "Exportar"
+
+msgid "labels.icons"
+msgstr "Iconas"
+
+msgid "labels.images"
+msgstr "Imaxes"
+
+#: src/app/main/ui/workspace/libraries.cljs,
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove"
+msgstr "Retirar"
+
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "Mudar o nome"
+
+msgid "shortcut-subsection.edit"
+msgstr "Editar"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navegación"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Navegación"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Navegación"
+
+msgid "shortcut-subsection.panels"
+msgstr "Paneis"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Ruta"
+
+msgid "shortcut-subsection.shape"
+msgstr "Formas"
+
+msgid "shortcut-subsection.tools"
+msgstr "Ferramentas"
+
+msgid "shortcuts.draw-frame"
+msgstr "Taboleiro"
+
+msgid "shortcuts.draw-path"
+msgstr "Ruta"
+
+msgid "shortcuts.draw-rect"
+msgstr "Rectángulo"
+
+msgid "shortcuts.draw-text"
+msgstr "Texto"
+
+msgid "shortcuts.go-to-search"
+msgstr "Buscar"
+
+msgid "shortcuts.group"
+msgstr "Agrupar"
+
+msgid "shortcuts.unmask"
+msgstr "Quitar máscara"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.assets"
+msgstr "Recursos"
+
+msgid "workspace.assets.box-filter-graphics"
+msgstr "Gráficos"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.delete"
+msgstr "Eliminar"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename"
+msgstr "Mudar o nome"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-size"
+msgstr "Tamaño"
+
+msgid "workspace.focus.selection"
+msgstr "Selección"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Fondo"
+
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Capa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.options.component"
+msgstr "Compoñente"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.auto"
+msgstr "Automático"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.column"
+msgstr "Columna"
+
+msgid "workspace.options.grid.params.color"
+msgstr "Cor"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.columns"
+msgstr "Columnas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.margin"
+msgstr "Marxe"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 páxina compartida"
+msgstr[1] "% páxinas compartidas"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Xestión do equipo"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Aprende os conceptos básicos de Penpot mentres te divirtes con este titorial "
+"práctico."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Da unha volta por Penpot e coñece as súas características principais."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Comeza a visita"
+
+msgid "dashboard.download-binary-file"
+msgstr "Descargar ficheiro Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Descargar ficheiro estándar (.svg + .json)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Exportar 1 elemento"
+msgstr[1] "Exportar %s elementos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.right"
+msgstr "Dereita"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Un pracer volverte ver!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot está deseñado para equipos. Convida a persoas coas que trallar en "
+"proxectos e ficheiros"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Titorial práctico"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Comeza o titorial"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke"
+msgstr "Bordo"
+
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "Interior"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Ancho"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Invitacións"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.accept"
+msgstr "Actualizar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.cancel"
+msgstr "Cancelar"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+msgid "shortcuts.cut"
+msgstr "Cortar"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Non hai elementos con configuración de exportación."
+
+msgid "dashboard.export-standard-multi"
+msgstr "Descargar %s ficheiros estándar (.svg + .json)"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Bibliotecas e Modelos"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explora máis e descubre como contribuír"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Ocorreu un problema ao importar o modelo. Non se importou o modelo."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Subscrición ao boletín"

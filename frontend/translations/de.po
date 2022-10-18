@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-23 20:54+0000\n"
+"PO-Revision-Date: 2022-10-18 08:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4812,3 +4812,39 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+msgid "errors.profile-blocked"
+msgstr "Das Profil ist gesperrt"
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Senden Sie mir Neuigkeiten über Penpot (Blogbeiträge, Video-Tutorials, "
+"Streamings, ...)."
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Um über den Fortschritt der Produktentwicklung und Neuigkeiten auf dem "
+"Laufenden zu bleiben, abonnieren Sie den Penpot-Newsletter."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Datenschutz ist uns wichtig, hier können Sie das nachlesen "
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Ich möchte Informationen über Produktaktualisierungen erhalten (neue "
+"Funktionen, Veröffentlichung neuer Versionen, Verbesserungen...)."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Im Assets-Panel anzeigen"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Seitenleiste ausblenden"
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Wir werden nur relevante E-Mails an Sie senden. Sie können sich jederzeit "
+"über den Abmeldelink in jedem unserer Newsletter abmelden."
+
+msgid "workspace.sidebar.expand"
+msgstr "Seitenleiste einblenden"

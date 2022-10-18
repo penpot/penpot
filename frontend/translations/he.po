@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-10 17:20+0000\n"
+"PO-Revision-Date: 2022-10-16 13:49+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3062,7 +3062,7 @@ msgstr "הסתרת רשת פיקסלים"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-rules"
-msgstr "הסתרת כללים"
+msgstr "הסתרת סרגלים"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-textpalette"
@@ -3117,7 +3117,7 @@ msgstr "הצגת רשת פיקסלים"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
-msgstr "הצגת כללים"
+msgstr "הצגת סרגלים"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
@@ -3374,7 +3374,11 @@ msgstr "ייצוא הבחירה"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgstr "ייצוא רכיב"
+msgid_plural ""
+msgstr[0] "ייצוא רכיב"
+msgstr[1] "ייצוא %s רכיבים"
+msgstr[2] "ייצוא %s רכיבים"
+msgstr[3] "ייצוא %s רכיבים"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -4726,3 +4730,35 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+msgid "onboarding-v2.newsletter.news"
+msgstr "נא לשלוח לי חדשות על Penpot (בלוגים, מדריכים מצולמים, שידורים…)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "אכפת לנו מפרטיות, כאן ניתן לקרוא את "
+
+msgid "workspace.sidebar.collapse"
+msgstr "צמצום סרגל צד"
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"אנו נשלח לך בדוא״ל רק הודעות שרלוונטיות לך. אפשר לבטל את המינוי דרך כפתור "
+"ביטול המינוי בכל אחת מהודעות הדיוור שלנו."
+
+msgid "errors.profile-blocked"
+msgstr "הפרופיל חסום"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"ניתן להירשם לרשימת הדיוור של Penpot כדי להתעדכן בתהליך פיתוח המוצר ובחדשות "
+"נוספות."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr "נא לשלוח לי עדכונים על המוצר (יכולות חדשות, מהדורות, תיקונים…)."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "הצגה בלוח משאבים"
+
+msgid "workspace.sidebar.expand"
+msgstr "הרחבת סרגל צד"
