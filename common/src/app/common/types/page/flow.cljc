@@ -4,16 +4,21 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.shape.blur
+(ns app.common.types.page.flow
   (:require
-   [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
-(s/def ::id uuid?)
-(s/def ::type #{:layer-blur})
-(s/def ::value ::us/safe-number)
-(s/def ::hidden boolean?)
+;; --- Interaction Flows
 
-(s/def ::blur
-  (s/keys :req-un [::id ::type ::value ::hidden]))
+(s/def ::id uuid?)
+(s/def ::name string?)
+(s/def ::starting-frame uuid?)
+
+(s/def ::flow
+  (s/keys :req-un [::id
+                   ::name
+                   ::starting-frame]))
+
+(s/def ::flows
+  (s/coll-of ::flow :kind vector?))
 

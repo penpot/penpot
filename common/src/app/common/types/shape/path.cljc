@@ -4,17 +4,17 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.shape.export
+(ns app.common.types.shape.path
   (:require
-   [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
-(s/def ::suffix string?)
-(s/def ::scale ::us/safe-number)
-(s/def ::type keyword?)
+(s/def ::command keyword?)
+(s/def ::params (s/nilable (s/map-of keyword? any?)))
 
-(s/def ::export
-  (s/keys :req-un [::type
-                   ::suffix
-                   ::scale]))
+(s/def ::command-item
+  (s/keys :req-un [::command]
+          :opt-un [::params]))
+
+(s/def ::content
+  (s/coll-of ::command-item :kind vector?))
 

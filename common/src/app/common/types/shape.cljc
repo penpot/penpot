@@ -19,8 +19,10 @@
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
+   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]))
@@ -229,74 +231,6 @@
                     ::opacity
                     ::blend-mode])))
 
-(s/def :internal.shape.text/type #{"root" "paragraph-set" "paragraph"})
-(s/def :internal.shape.text/children
-  (s/coll-of :internal.shape.text/content
-             :kind vector?
-             :min-count 1))
-
-(s/def :internal.shape.text/text string?)
-(s/def :internal.shape.text/key string?)
-
-(s/def :internal.shape.text/content
-  (s/nilable
-   (s/or :text-container
-         (s/keys :req-un [:internal.shape.text/type]
-                 :opt-un [:internal.shape.text/key
-                          :internal.shape.text/children])
-         :text-content
-         (s/keys :req-un [:internal.shape.text/text]))))
-
-(s/def :internal.shape.text/position-data
-  (s/coll-of :internal.shape.text/position-data-element
-             :kind vector?
-             :min-count 1))
-
-(s/def :internal.shape.text/position-data-element
-  (s/keys :req-un [:internal.shape.text.position-data/x
-                   :internal.shape.text.position-data/y
-                   :internal.shape.text.position-data/width
-                   :internal.shape.text.position-data/height]
-          :opt-un [:internal.shape.text.position-data/fill-color
-                   :internal.shape.text.position-data/fill-opacity
-                   :internal.shape.text.position-data/font-family
-                   :internal.shape.text.position-data/font-size
-                   :internal.shape.text.position-data/font-style
-                   :internal.shape.text.position-data/font-weight
-                   :internal.shape.text.position-data/rtl
-                   :internal.shape.text.position-data/text
-                   :internal.shape.text.position-data/text-decoration
-                   :internal.shape.text.position-data/text-transform]))
-
-(s/def :internal.shape.text.position-data/x ::us/safe-number)
-(s/def :internal.shape.text.position-data/y ::us/safe-number)
-(s/def :internal.shape.text.position-data/width ::us/safe-number)
-(s/def :internal.shape.text.position-data/height ::us/safe-number)
-
-(s/def :internal.shape.text.position-data/fill-color ::fill-color)
-(s/def :internal.shape.text.position-data/fill-opacity ::fill-opacity)
-(s/def :internal.shape.text.position-data/fill-color-gradient ::fill-color-gradient)
-
-(s/def :internal.shape.text.position-data/font-family string?)
-(s/def :internal.shape.text.position-data/font-size string?)
-(s/def :internal.shape.text.position-data/font-style string?)
-(s/def :internal.shape.text.position-data/font-weight string?)
-(s/def :internal.shape.text.position-data/rtl boolean?)
-(s/def :internal.shape.text.position-data/text string?)
-(s/def :internal.shape.text.position-data/text-decoration string?)
-(s/def :internal.shape.text.position-data/text-transform string?)
-
-(s/def :internal.shape.path/command keyword?)
-(s/def :internal.shape.path/params
-  (s/nilable (s/map-of keyword? any?)))
-
-(s/def :internal.shape.path/command-item
-  (s/keys :req-un [:internal.shape.path/command]
-          :opt-un [:internal.shape.path/params]))
-
-(s/def :internal.shape.path/content
-  (s/coll-of :internal.shape.path/command-item :kind vector?))
-
 (defmulti shape-spec :type)
 
 (defmethod shape-spec :default [_]
@@ -304,12 +238,12 @@
 
 (defmethod shape-spec :text [_]
   (s/and ::shape-attrs
-         (s/keys :opt-un [:internal.shape.text/content
-                          :internal.shape.text/position-data])))
+         (s/keys :opt-un [::ctsx/content
+                          ::ctsx/position-data])))
 
 (defmethod shape-spec :path [_]
   (s/and ::shape-attrs
-         (s/keys :opt-un [:internal.shape.path/content])))
+         (s/keys :opt-un [::ctsp/content])))
 
 (defmethod shape-spec :frame [_]
   (s/and ::shape-attrs

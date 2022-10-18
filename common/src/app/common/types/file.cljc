@@ -11,12 +11,12 @@
     [app.common.geom.shapes :as gsh]
     [app.common.pages.common :refer [file-version]]
     [app.common.pages.helpers :as cph]
-    [app.common.spec :as us]
     [app.common.types.color :as ctc]
     [app.common.types.colors-list :as ctcl]
     [app.common.types.component :as ctk]
     [app.common.types.components-list :as ctkl]
     [app.common.types.container :as ctn]
+    [app.common.types.file.media-object :as ctfm]
     [app.common.types.page :as ctp]
     [app.common.types.pages-list :as ctpl]
     [app.common.types.shape-tree :as ctst]
@@ -27,24 +27,6 @@
     [cuerdas.core :as str]))
 
 ;; Specs
-
-(s/def :internal.media-object/name string?)
-(s/def :internal.media-object/width ::us/safe-integer)
-(s/def :internal.media-object/height ::us/safe-integer)
-(s/def :internal.media-object/mtype string?)
-
-;; NOTE: This is marked as nilable for backward compatibility, but
-;; right now is just exists or not exists. We can thin in a gradual
-;; migration and then mark it as not nilable.
-(s/def :internal.media-object/path (s/nilable string?))
-
-(s/def ::media-object
-  (s/keys :req-un [::id
-                   ::name
-                   :internal.media-object/width
-                   :internal.media-object/height
-                   :internal.media-object/mtype]
-          :opt-un [:internal.media-object/path]))
 
 (s/def ::colors
   (s/map-of uuid? ::ctc/color))
@@ -59,7 +41,7 @@
   (s/coll-of uuid? :kind vector?))
 
 (s/def ::media
-  (s/map-of uuid? ::media-object))
+  (s/map-of uuid? ::ctfm/media-object))
 
 (s/def ::pages-index
   (s/map-of uuid? ::ctp/page))

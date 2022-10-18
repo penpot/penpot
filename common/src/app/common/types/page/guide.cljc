@@ -4,16 +4,24 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.shape.blur
+(ns app.common.types.page.guide
   (:require
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
-(s/def ::id uuid?)
-(s/def ::type #{:layer-blur})
-(s/def ::value ::us/safe-number)
-(s/def ::hidden boolean?)
+;; --- Page guides
 
-(s/def ::blur
-  (s/keys :req-un [::id ::type ::value ::hidden]))
+(s/def ::id uuid?)
+(s/def ::axis #{:x :y})
+(s/def ::position ::us/safe-number)
+(s/def ::frame-id (s/nilable uuid?))
+
+(s/def ::guide
+  (s/keys :req-un [::id
+                   ::axis
+                   ::position]
+          :opt-un [::frame-id]))
+
+(s/def ::guides
+  (s/map-of uuid? ::guide))
 
