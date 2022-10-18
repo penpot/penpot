@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-16 13:49+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
-"he/>\n"
+"Language-Team: Hebrew "
+"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -813,6 +813,9 @@ msgstr "סיסמת האימות חייבת להיות תואמת"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "הסיסמה חייבת להיות באורך 8 תווים לפחות"
+
+msgid "errors.profile-blocked"
+msgstr "הפרופיל חסום"
 
 #: src/app/main/ui/auth/recovery_request.cljs,
 #: src/app/main/ui/settings/change_email.cljs,
@@ -2005,6 +2008,25 @@ msgstr "מדריכים מצולמים"
 
 msgid "onboarding-v2.before-start.title"
 msgstr "לפני שמתחילים"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"ניתן להירשם לרשימת הדיוור של Penpot כדי להתעדכן בתהליך פיתוח המוצר ובחדשות "
+"נוספות."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr "נא לשלוח לי חדשות על Penpot (בלוגים, מדריכים מצולמים, שידורים…)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "אכפת לנו מפרטיות, כאן ניתן לקרוא את "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"אנו נשלח לך בדוא״ל רק הודעות שרלוונטיות לך. אפשר לבטל את המינוי דרך כפתור "
+"ביטול המינוי בכל אחת מהודעות הדיוור שלנו."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr "נא לשלוח לי עדכונים על המוצר (יכולות חדשות, מהדורות, תיקונים…)."
 
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
@@ -3374,11 +3396,7 @@ msgstr "ייצוא הבחירה"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
-msgid_plural ""
-msgstr[0] "ייצוא רכיב"
-msgstr[1] "ייצוא %s רכיבים"
-msgstr[2] "ייצוא %s רכיבים"
-msgstr[3] "ייצוא %s רכיבים"
+msgstr "ייצוא רכיב"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -4464,6 +4482,10 @@ msgstr "בחירת שכבה"
 msgid "workspace.shape.menu.show"
 msgstr "הצגה"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "הצגה בלוח משאבים"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
@@ -4504,6 +4526,12 @@ msgstr "עדכון הרכיבים הראשיים"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "עדכון הרכיב הראשי"
+
+msgid "workspace.sidebar.collapse"
+msgstr "צמצום סרגל צד"
+
+msgid "workspace.sidebar.expand"
+msgstr "הרחבת סרגל צד"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
@@ -4730,35 +4758,3 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
-
-msgid "onboarding-v2.newsletter.news"
-msgstr "נא לשלוח לי חדשות על Penpot (בלוגים, מדריכים מצולמים, שידורים…)."
-
-msgid "onboarding-v2.newsletter.privacy1"
-msgstr "אכפת לנו מפרטיות, כאן ניתן לקרוא את "
-
-msgid "workspace.sidebar.collapse"
-msgstr "צמצום סרגל צד"
-
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"אנו נשלח לך בדוא״ל רק הודעות שרלוונטיות לך. אפשר לבטל את המינוי דרך כפתור "
-"ביטול המינוי בכל אחת מהודעות הדיוור שלנו."
-
-msgid "errors.profile-blocked"
-msgstr "הפרופיל חסום"
-
-msgid "onboarding-v2.newsletter.desc"
-msgstr ""
-"ניתן להירשם לרשימת הדיוור של Penpot כדי להתעדכן בתהליך פיתוח המוצר ובחדשות "
-"נוספות."
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr "נא לשלוח לי עדכונים על המוצר (יכולות חדשות, מהדורות, תיקונים…)."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.show-in-assets"
-msgstr "הצגה בלוח משאבים"
-
-msgid "workspace.sidebar.expand"
-msgstr "הרחבת סרגל צד"

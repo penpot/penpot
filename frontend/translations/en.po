@@ -729,6 +729,12 @@ msgstr "Authentication provider not configured."
 msgid "errors.auth.unable-to-login"
 msgstr "Looks like you are not authenticated or session expired."
 
+msgid "errors.bad-font"
+msgstr "The font %s could not be loaded"
+
+msgid "errors.bad-font-plural"
+msgstr "The fonts %s could not be loaded"
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Your browser cannot do this operation"
@@ -4564,12 +4570,3 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
-
-msgid "errors.profile-blocked"
-msgstr "The profile is blocked"
-
-msgid "errors.bad-font"
-msgstr "The font %s could not be loaded"
-
-msgid "errors.bad-font-plural"
-msgstr "The fonts %s could not be loaded"

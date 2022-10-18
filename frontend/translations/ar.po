@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-04 18:22+0000\n"
 "Last-Translator: Youkho <youkho@gmail.com>\n"
-"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
-"ar/>\n"
+"Language-Team: Arabic "
+"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -18,8 +18,7 @@ msgstr "هل لديك حساب؟"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
-msgstr ""
-"تحقق من بريدك الإلكتروني وانقر على الرابط للتحقق والبدء في استخدام Penpot."
+msgstr "تحقق من بريدك الإلكتروني وانقر على الرابط للتحقق والبدء في استخدام Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -35,8 +34,7 @@ msgstr "ترغب في التجربة فحسب؟"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
-msgstr ""
-"هذه خدمة تجريبية ، لا تستخدمها للعمل الحقيقي ، سيتم مسح المشاريع بشكل دوري."
+msgstr "هذه خدمة تجريبية ، لا تستخدمها للعمل الحقيقي ، سيتم مسح المشاريع بشكل دوري."
 
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
@@ -163,8 +161,7 @@ msgstr "شروط الخدمة"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
-msgstr ""
-"عند إنشاء حساب جديد ، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا."
+msgstr "عند إنشاء حساب جديد ، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -178,7 +175,8 @@ msgstr "جميع مستخدمي Penpot"
 
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي شخص"
+"هل أنت متأكد أنك تريد إزالة هذا الرابط؟ إذا قمت بذلك ، فلن يكون متاحًا لأي "
+"شخص"
 
 msgid "common.share-link.current-tag"
 msgstr "(الحالي)"
@@ -248,8 +246,7 @@ msgstr "إعمل فريق!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
-msgstr ""
-"تعلم أساسيات برنامج Penpot بينما تستمع بتجربته في هذه الدورة التعليمية."
+msgstr "تعلم أساسيات برنامج Penpot بينما تستمع بتجربته في هذه الدورة التعليمية."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -378,15 +375,15 @@ msgstr ""
 "أصولهم*؟"
 
 msgid "dashboard.export.options.all.message"
-msgstr ""
-"سيتم ادراج الملفات التي لها مكتبات مشتركة في التصدير، مع الحفاظ على روابطهم."
+msgstr "سيتم ادراج الملفات التي لها مكتبات مشتركة في التصدير، مع الحفاظ على روابطهم."
 
 msgid "dashboard.export.options.all.title"
 msgstr "صدر المكتبات المشتركة"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"لن يتم تضمين المكتبات المشتركة في التصدير ولن يتم إضافة أي أصول إلى المكتبة. "
+"لن يتم تضمين المكتبات المشتركة في التصدير ولن يتم إضافة أي أصول إلى "
+"المكتبة. "
 
 msgid "dashboard.export.options.detach.title"
 msgstr "عامل أصول المكتبة المشتركة كعناصر بسيطة"
@@ -430,8 +427,9 @@ msgstr ""
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "يجب عليك فقط تحميل الخطوط التي تمتلكها أو لديك ترخيص لاستخدامها في Penpot. "
-"اكتشف المزيد في قسم حقوق المحتوى في [شروط خدمة Penpot] (https://penpot.app/"
-"terms.html). قد ترغب أيضًا في القراءة عن [ترخيص الخطوط] (2)."
+"اكتشف المزيد في قسم حقوق المحتوى في [شروط خدمة Penpot] "
+"(https://penpot.app/terms.html). قد ترغب أيضًا في القراءة عن [ترخيص الخطوط] "
+"(2)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -648,6 +646,10 @@ msgstr "تم نقل الملفات بنجاح"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "تم نقل مشروعك بنجاح"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.switch-team"
+msgstr "تبديل الفريق"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
@@ -902,8 +904,8 @@ msgstr "موضوع"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"يرجى وصف سبب بريدك الإلكتروني ، وتحديد ما إذا كانت مشكلة أم فكرة أم شك. سيرد "
-"أحد أعضاء فريقنا في أسرع وقت ممكن."
+"يرجى وصف سبب بريدك الإلكتروني ، وتحديد ما إذا كانت مشكلة أم فكرة أم شك. "
+"سيرد أحد أعضاء فريقنا في أسرع وقت ممكن."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -1340,8 +1342,7 @@ msgstr "الخطوط المتوفرة"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
-msgstr ""
-"شيء سيء حدث الرجاء إعادة محاولة العملية وإذا استمرت المشكلة، اتصل بالدعم."
+msgstr "شيء سيء حدث الرجاء إعادة محاولة العملية وإذا استمرت المشكلة، اتصل بالدعم."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
@@ -1403,8 +1404,7 @@ msgstr "لا توجد دعوات."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
-msgstr ""
-"اضغط على الزر \"دعوة إلى الفريق\" لدعوة المزيد من الأعضاء إلى هذا الفريق."
+msgstr "اضغط على الزر \"دعوة إلى الفريق\" لدعوة المزيد من الأعضاء إلى هذا الفريق."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.auth-info"
@@ -1668,8 +1668,7 @@ msgstr "تغيير بريدك الإلكتروني"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.change-owner-and-leave-confirm.message"
-msgstr ""
-"أنت صاحب هذا الفريق. الرجاء تحديد عضو آخر للترقية إلى مالك قبل المغادرة."
+msgstr "أنت صاحب هذا الفريق. الرجاء تحديد عضو آخر للترقية إلى مالك قبل المغادرة."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1727,14 +1726,14 @@ msgstr "حذف %s الملفات"
 
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"هل أنت متأكد أنك تريد حذف نمط هذا الخط؟ لن يتم تحميله إذا تم استخدامه في ملف."
+"هل أنت متأكد أنك تريد حذف نمط هذا الخط؟ لن يتم تحميله إذا تم استخدامه في "
+"ملف."
 
 msgid "modals.delete-font-variant.title"
 msgstr "حذف نمط الخط"
 
 msgid "modals.delete-font.message"
-msgstr ""
-"هل أنت متأكد أنك تريد حذف هذا الخط؟ لن يتم تحميله إذا تم استخدامه في ملف."
+msgstr "هل أنت متأكد أنك تريد حذف هذا الخط؟ لن يتم تحميله إذا تم استخدامه في ملف."
 
 msgid "modals.delete-font.title"
 msgstr "حذف الخط"
@@ -1802,14 +1801,18 @@ msgstr "ادعُ الأعضاء إلى الفريق"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
-msgstr ""
-"نظرًا لأنك العضو الوحيد في هذا الفريق ، فسيتم حذف الفريق مع مشاريعه وملفاته."
+msgstr "نظرًا لأنك العضو الوحيد في هذا الفريق ، فسيتم حذف الفريق مع مشاريعه وملفاته."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
 msgstr "هل أنت متأكد أنك تريد مغادرة فريق %s ؟"
 
 msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"لا يمكنك مغادرة الفريق إذا لم يكن هناك عضو آخر للترقية إلى المالك. قد ترغب "
+"في حذف الفريق."
+
+msgid "modals.leave-and-reassign.forbiden"
 msgstr ""
 "لا يمكنك مغادرة الفريق إذا لم يكن هناك عضو آخر للترقية إلى المالك. قد ترغب "
 "في حذف الفريق."
@@ -1877,8 +1880,8 @@ msgstr "إزالة كمكتبة مشتركة"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"بمجرد إزالتها كمكتبة مشتركة ، ستتوقف مكتبة الملفات لهذا الملف عن كونها متاحة "
-"للاستخدام بين بقية ملفاتك."
+"بمجرد إزالتها كمكتبة مشتركة ، ستتوقف مكتبة الملفات لهذا الملف عن كونها "
+"متاحة للاستخدام بين بقية ملفاتك."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1981,8 +1984,8 @@ msgstr "المشاركة في المجتمع"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"حيث ستجد كيفية التعاون في الترجمات وطلبات الميزات والمساهمات الأساسية والبحث "
-"عن الأخطاء …"
+"حيث ستجد كيفية التعاون في الترجمات وطلبات الميزات والمساهمات الأساسية "
+"والبحث عن الأخطاء …"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "دليل المساهمة"
@@ -2127,6 +2130,9 @@ msgstr ""
 msgid "onboarding.team-modal.create-team-feature-1"
 msgstr "ملفات ومشاريع غير محدودة"
 
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "إصدار متعدد اللاعبين"
+
 msgid "onboarding.team-modal.create-team-feature-3"
 msgstr "إدارة الأدوار"
 
@@ -2247,6 +2253,18 @@ msgstr "محاذاة المركز عموديًا"
 msgid "shortcuts.artboard-selection"
 msgstr "إنشاء لوحة من الاختيار"
 
+msgid "shortcuts.bool-difference"
+msgstr "فرق منطقي"
+
+msgid "shortcuts.bool-exclude"
+msgstr "استبعاد منطقي"
+
+msgid "shortcuts.bool-intersection"
+msgstr "تقاطع منطقي"
+
+msgid "shortcuts.bool-union"
+msgstr "الاتحاد المنطقي"
+
 msgid "shortcuts.bring-back"
 msgstr "أرسل إلى الخلف"
 
@@ -2267,6 +2285,9 @@ msgstr "إنسخ"
 
 msgid "shortcuts.create-component"
 msgstr "تكوين المكون"
+
+msgid "shortcuts.create-new-project"
+msgstr "أضف جديد"
 
 msgid "shortcuts.cut"
 msgstr "إقطع"
@@ -2393,6 +2414,45 @@ msgstr "تحرك للأعلى"
 
 msgid "shortcuts.next-frame"
 msgstr "اللوحة التالية"
+
+msgid "shortcuts.not-found"
+msgstr "لا يوجد إختصارات"
+
+msgid "shortcuts.opacity-0"
+msgstr "ضبط التعتيم على 100٪"
+
+msgid "shortcuts.opacity-1"
+msgstr "اضبط التعتيم على 10٪"
+
+msgid "shortcuts.opacity-2"
+msgstr "اضبط التعتيم على 20٪"
+
+msgid "shortcuts.opacity-3"
+msgstr "اضبط التعتيم على 30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "اضبط التعتيم على 40%"
+
+msgid "shortcuts.opacity-5"
+msgstr "اضبط التعتيم على 50%"
+
+msgid "shortcuts.opacity-6"
+msgstr "اضبط التعتيم على 60%"
+
+msgid "shortcuts.opacity-7"
+msgstr "اضبط التعتيم على 70%"
+
+msgid "shortcuts.opacity-8"
+msgstr "اضبط التعتيم على 80%"
+
+msgid "shortcuts.opacity-9"
+msgstr "اضبط التعتيم على 90%"
+
+msgid "shortcuts.open-color-picker"
+msgstr "أداة انتقاء اللون"
+
+msgid "shortcuts.open-dashboard"
+msgstr "إذهب إلى لوحة المعلومات"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -3082,69 +3142,3 @@ msgstr "تحديث"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لإغلاق المسار"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "تبديل الفريق"
-
-msgid "modals.leave-and-reassign.forbiden"
-msgstr ""
-"لا يمكنك مغادرة الفريق إذا لم يكن هناك عضو آخر للترقية إلى المالك. قد ترغب "
-"في حذف الفريق."
-
-msgid "shortcuts.bool-union"
-msgstr "الاتحاد المنطقي"
-
-msgid "shortcuts.create-new-project"
-msgstr "أضف جديد"
-
-msgid "shortcuts.not-found"
-msgstr "لا يوجد إختصارات"
-
-msgid "shortcuts.opacity-4"
-msgstr "اضبط التعتيم على 40%"
-
-msgid "shortcuts.opacity-5"
-msgstr "اضبط التعتيم على 50%"
-
-msgid "shortcuts.bool-intersection"
-msgstr "تقاطع منطقي"
-
-msgid "shortcuts.opacity-9"
-msgstr "اضبط التعتيم على 90%"
-
-msgid "shortcuts.open-color-picker"
-msgstr "أداة انتقاء اللون"
-
-msgid "onboarding.team-modal.create-team-feature-2"
-msgstr "إصدار متعدد اللاعبين"
-
-msgid "shortcuts.bool-difference"
-msgstr "فرق منطقي"
-
-msgid "shortcuts.opacity-1"
-msgstr "اضبط التعتيم على 10٪"
-
-msgid "shortcuts.opacity-0"
-msgstr "ضبط التعتيم على 100٪"
-
-msgid "shortcuts.open-dashboard"
-msgstr "إذهب إلى لوحة المعلومات"
-
-msgid "shortcuts.bool-exclude"
-msgstr "استبعاد منطقي"
-
-msgid "shortcuts.opacity-2"
-msgstr "اضبط التعتيم على 20٪"
-
-msgid "shortcuts.opacity-6"
-msgstr "اضبط التعتيم على 60%"
-
-msgid "shortcuts.opacity-3"
-msgstr "اضبط التعتيم على 30%"
-
-msgid "shortcuts.opacity-8"
-msgstr "اضبط التعتيم على 80%"
-
-msgid "shortcuts.opacity-7"
-msgstr "اضبط التعتيم على 70%"

@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-18 08:01+0000\n"
 "Last-Translator: Bogi Napoleon Wennerstrøm <bogi.wennerstrom@gmail.com>\n"
-"Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
-"fo/>\n"
+"Language-Team: Faroese "
+"<https://hosted.weblate.org/projects/penpot/frontend/fo/>\n"
 "Language: fo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -11,82 +11,85 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 4.15-dev\n"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-google-submit"
-msgstr "Google"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-gitlab-submit"
-msgstr "GitLab"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "Hevur tú longu ein brúkara?"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-submit"
-msgstr "Rita inn"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.login-here"
-msgstr "Innrita her"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-oidc-submit"
-msgstr "OpenID"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Gott at síggja teg aftur!"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-ldap-submit"
-msgstr "LDAP"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-github-submit"
-msgstr "GitHub"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Teldupostur"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
 msgstr "Vátta loyniorðið"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Stovna royndarkonto"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
 msgstr "Vilt tú royna tað?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Teldupostur"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Gloymt loyniorðið?"
 
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.management"
-msgstr "Toymisleiðsla"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.title"
-msgstr "Toyma upp!"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.create-demo-account"
-msgstr "Stovna royndarkonto"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.fullname"
 msgstr "Fullfíggja navn"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Innrita her"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Rita inn"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Gott at síggja teg aftur!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Skriva eitt nýtt loyniorð"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Loyniorðið er broytt"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Sameinadan í toymið var væleydnað"
 
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.text"
-msgstr ""
-"Penpot er fyri toymum. Bjóða limir at arbeiða saman á verkætlanir og fílur"
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Loyniorð"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Minst 8 stavir"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-subtitle"
@@ -99,41 +102,6 @@ msgstr "Gloymt loyniorð?"
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.recovery-submit"
 msgstr "Broyt títt loyniorð"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.invite-profile"
-msgstr "Bjóða við í toymi"
-
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.leave-team"
-msgstr "Far úr toymu"
-
-#: src/app/main/data/dashboard.cljs
-msgid "dashboard.new-project-prefix"
-msgstr "Nýggj verkætlan"
-
-msgid "dashboard.options"
-msgstr "Valmøguleikar"
-
-#: src/app/main/ui/settings/password.cljs
-msgid "dashboard.password-change"
-msgstr "Broyt loyniorð"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.new-password"
-msgstr "Skriva eitt nýtt loyniorð"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-successfully"
-msgstr "Loyniorðið er broytt"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.password"
-msgstr "Loyniorð"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-length-hint"
-msgstr "Minst 8 stavir"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.register"
@@ -158,6 +126,18 @@ msgstr "Ein og hvør við leinkjuni hevur atgongd"
 
 msgid "common.share-link.team-members"
 msgstr "Einans limir í toymi"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Toymisleiðsla"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr "Penpot er fyri toymum. Bjóða limir at arbeiða saman á verkætlanir og fílur"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Toyma upp!"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.change-email"
@@ -185,6 +165,14 @@ msgstr "Heinta Penpot fílu (.penpot)"
 msgid "dashboard.export-binary-multi"
 msgstr "Heinta %s Penpot fílur (.penpot)"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Bjóða við í toymi"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Far úr toymu"
+
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
 msgstr "Flyt til"
@@ -209,6 +197,10 @@ msgstr "Nýggja fílu"
 msgid "dashboard.new-project"
 msgstr "+ Nýggj verkætlan"
 
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Nýggj verkætlan"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.num-of-members"
 msgstr "%s limir"
@@ -216,6 +208,13 @@ msgstr "%s limir"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.open-in-new-tab"
 msgstr "Lat fílu upp í nýggjum skiljiblaði"
+
+msgid "dashboard.options"
+msgstr "Valmøguleikar"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Broyt loyniorð"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"

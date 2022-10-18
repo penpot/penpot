@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-18 08:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
-"de/>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -845,6 +845,9 @@ msgstr "Bestätigungspasswort muss übereinstimmen"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "Das Passwort sollte mindestens 8 Zeichen lang sein"
+
+msgid "errors.profile-blocked"
+msgstr "Das Profil ist gesperrt"
 
 #: src/app/main/ui/auth/recovery_request.cljs,
 #: src/app/main/ui/settings/change_email.cljs,
@@ -2061,6 +2064,29 @@ msgstr "Video-Tutorials"
 
 msgid "onboarding-v2.before-start.title"
 msgstr "Bevor Sie beginnen"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Um über den Fortschritt der Produktentwicklung und Neuigkeiten auf dem "
+"Laufenden zu bleiben, abonnieren Sie den Penpot-Newsletter."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Senden Sie mir Neuigkeiten über Penpot (Blogbeiträge, Video-Tutorials, "
+"Streamings, ...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Datenschutz ist uns wichtig, hier können Sie das nachlesen "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Wir werden nur relevante E-Mails an Sie senden. Sie können sich jederzeit "
+"über den Abmeldelink in jedem unserer Newsletter abmelden."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Ich möchte Informationen über Produktaktualisierungen erhalten (neue "
+"Funktionen, Veröffentlichung neuer Versionen, Verbesserungen...)."
 
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
@@ -4545,6 +4571,10 @@ msgstr "Ebene auswählen"
 msgid "workspace.shape.menu.show"
 msgstr "Anzeigen"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Im Assets-Panel anzeigen"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
@@ -4585,6 +4615,12 @@ msgstr "Hauptkomponenten aktualisieren"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "Hauptkomponente aktualisieren"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Seitenleiste ausblenden"
+
+msgid "workspace.sidebar.expand"
+msgstr "Seitenleiste einblenden"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
@@ -4812,39 +4848,3 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
-
-msgid "errors.profile-blocked"
-msgstr "Das Profil ist gesperrt"
-
-msgid "onboarding-v2.newsletter.news"
-msgstr ""
-"Senden Sie mir Neuigkeiten über Penpot (Blogbeiträge, Video-Tutorials, "
-"Streamings, ...)."
-
-msgid "onboarding-v2.newsletter.desc"
-msgstr ""
-"Um über den Fortschritt der Produktentwicklung und Neuigkeiten auf dem "
-"Laufenden zu bleiben, abonnieren Sie den Penpot-Newsletter."
-
-msgid "onboarding-v2.newsletter.privacy1"
-msgstr "Datenschutz ist uns wichtig, hier können Sie das nachlesen "
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr ""
-"Ich möchte Informationen über Produktaktualisierungen erhalten (neue "
-"Funktionen, Veröffentlichung neuer Versionen, Verbesserungen...)."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.show-in-assets"
-msgstr "Im Assets-Panel anzeigen"
-
-msgid "workspace.sidebar.collapse"
-msgstr "Seitenleiste ausblenden"
-
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"Wir werden nur relevante E-Mails an Sie senden. Sie können sich jederzeit "
-"über den Abmeldelink in jedem unserer Newsletter abmelden."
-
-msgid "workspace.sidebar.expand"
-msgstr "Seitenleiste einblenden"
