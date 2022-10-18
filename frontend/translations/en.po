@@ -582,10 +582,6 @@ msgstr "Pin/Unpin"
 msgid "dashboard.projects-title"
 msgstr "Projects"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promote to owner"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Want to remove your account?"
