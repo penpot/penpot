@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-16 13:49+0000\n"
-"Last-Translator: Bogi Napoleon Wennerstrøm <bogi.wennerstrom@gmail.com>\n"
+"PO-Revision-Date: 2022-10-18 08:01+0000\n"
+"Last-Translator: Tummas Jóhan Sigvardsen <tummas@tummas.me>\n"
 "Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
 "fo/>\n"
 "Language: fo\n"
@@ -62,3 +62,28 @@ msgstr "Vilt tú royna tað?"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Gloymt loyniorðið?"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Toymisleiðsla"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Toyma upp!"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Stovna royndarkonto"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Fullfíggja navn"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Sameinadan í toymið var væleydnað"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot er fyri toymum. Bjóða limir at arbeiða saman á verkætlanir og fílur"
