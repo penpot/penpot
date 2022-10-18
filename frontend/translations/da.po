@@ -434,9 +434,6 @@ msgstr "Skrifttypefamilie"
 msgid "labels.font-providers"
 msgstr "Skrifttype udbydere"
 
-msgid "labels.font-variant"
-msgstr "Stil"
-
 msgid "labels.fonts"
 msgstr "Skrifttyper"
 

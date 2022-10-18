@@ -649,10 +649,6 @@ msgstr "Os teus ficheiros foram movidos com sucesso"
 msgid "dashboard.success-move-project"
 msgstr "O teu projeto foi movido com sucesso"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Trocar de equipa"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
 msgstr "Informação da equipa"
@@ -1809,11 +1805,6 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Tens a certeza de que pretendes sair da equipa %s?"
 
-msgid "modals.leave-and-reassign.forbiden"
-msgstr ""
-"Não podes sair da equipa se não tiveres outros membros para promover para "
-"proprietário. Poderás querer eliminar a equipa."
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
@@ -2074,16 +2065,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "Não, obrigado"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Subscreve a nossa newsletter para estares atualizado com o progresso e as "
-"novidades do desenvolvimento de produto."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Política de Privacidade."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Porque nos preocupamos com a privacidade, aqui está o nosso "
 
 msgid "onboarding.newsletter.privacy2"
 msgstr ""

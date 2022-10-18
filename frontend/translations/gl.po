@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-16 13:49+0000\n"
 "Last-Translator: ascarida <ascarida@proton.me>\n"
-"Language-Team: Galician "
-"<https://hosted.weblate.org/projects/penpot/frontend/gl/>\n"
+"Language-Team: Galician <https://hosted.weblate.org/projects/penpot/frontend/"
+"gl/>\n"
 "Language: gl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -106,7 +106,8 @@ msgstr "Perfil sen verificar, valida o perfil antes de continuar."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
-msgstr "Enviouse ó teu correo electrónico un enlace co que recuperar o contrasinal."
+msgstr ""
+"Enviouse ó teu correo electrónico un enlace co que recuperar o contrasinal."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
@@ -264,8 +265,8 @@ msgstr ""
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
 msgstr ""
-"Aprende os conceptos básicos de Penpot mentres te divirtes con este "
-"titorial práctico."
+"Aprende os conceptos básicos de Penpot mentres te divirtes con este titorial "
+"práctico."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -391,8 +392,8 @@ msgstr ""
 
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"os ficheiros con bibliotecas compartidas incluiranse na exportación "
-"mantendo os vínculos."
+"os ficheiros con bibliotecas compartidas incluiranse na exportación mantendo "
+"os vínculos."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Exportar bibliotecas compartidas"
@@ -411,7 +412,8 @@ msgstr ""
 "biblioteca do ficheiro."
 
 msgid "dashboard.export.options.merge.title"
-msgstr "Incluir os recursos de bibliotecas compartidas na biblioteca do ficheiro"
+msgstr ""
+"Incluir os recursos de bibliotecas compartidas na biblioteca do ficheiro"
 
 msgid "dashboard.export.title"
 msgstr "Exportar ficheiros"
@@ -458,7 +460,8 @@ msgid "dashboard.import.analyze-error"
 msgstr "Vaia! Non se puido importar o ficheiro"
 
 msgid "dashboard.import.import-error"
-msgstr "Houbo un problema ao importar o ficheiro. Non se puido importar o ficheiro."
+msgstr ""
+"Houbo un problema ao importar o ficheiro. Non se puido importar o ficheiro."
 
 msgid "dashboard.import.import-message"
 msgstr "% ficheiros importáronse correctamente."
@@ -548,7 +551,8 @@ msgstr "Novo proxecto"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-msg"
-msgstr "Envíame noticias, actualizacións do produto e recomendacións sobre Penpot."
+msgstr ""
+"Envíame noticias, actualizacións do produto e recomendacións sobre Penpot."
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"

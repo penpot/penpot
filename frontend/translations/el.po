@@ -1125,10 +1125,6 @@ msgid "modals.leave-and-reassign.hint1"
 msgstr "Είστε ο ιδιοκτήτης του %s"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "Επιλέξτε άλλο μέλος για προώθηση πριν από την αναχώρηση"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Προώθηση και αφήστε"
 
@@ -1235,10 +1231,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "Μην εμφανίζετε αλληλεπιδράσεις"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Επεξεργασία σελίδας"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Πλήρης οθόνη"
 
@@ -1336,10 +1328,6 @@ msgstr "Αντιγραφή"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Επεξεργασία"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Βιβλιοθήκη αρχείων"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
@@ -2067,9 +2055,6 @@ msgstr "Φέρτε μπροστά"
 msgid "workspace.shape.menu.front"
 msgstr "Φέρτε μπροστά"
 
-msgid "workspace.shape.menu.go-master"
-msgstr "Μεταβείτε στο κύριο αρχείο συστατικών"
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.group"
 msgstr "Ομάδα"
@@ -2098,9 +2083,6 @@ msgstr "Επαναφορά παρακάμψεων"
 msgid "workspace.shape.menu.show"
 msgstr "προβολή"
 
-msgid "workspace.shape.menu.show-master"
-msgstr "Εμφάνιση κύριου στοιχείου"
-
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.ungroup"
 msgstr "Κατάργηση ομάδας"
@@ -2112,9 +2094,6 @@ msgstr "Ξεκλείδωμα"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.unmask"
 msgstr "Ανακάλυψη"
-
-msgid "workspace.shape.menu.update-master"
-msgstr "23 / 5000 Resultados de traducción Ενημέρωση κύριου στοιχείου"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"

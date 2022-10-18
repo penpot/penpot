@@ -197,17 +197,11 @@ msgid_plural "common.share-link.page-shared"
 msgstr[0] "1页已共享"
 msgstr[1] "%s页已共享"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "可访问"
-
 msgid "common.share-link.permissions-can-comment"
 msgstr "可评论"
 
 msgid "common.share-link.permissions-can-inspect"
 msgstr "可审查代码"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "可浏览"
 
 msgid "common.share-link.permissions-hint"
 msgstr "任何人通过此链接都可访问"
@@ -1756,10 +1750,6 @@ msgid "modals.leave-and-reassign.hint1"
 msgstr "你是此团队的所有者。在你离开团队之前，请选择其他成员晋升为所有者。"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "请在退出前，从其他成员中选择一位晋升"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "晋升并退出"
 
@@ -1980,14 +1970,8 @@ msgstr "您的订阅请求已发送，我们将向您发送一封电子邮件进
 msgid "onboarding.newsletter.decline"
 msgstr "不，谢谢"
 
-msgid "onboarding.newsletter.desc"
-msgstr "订阅我们的时事通讯，随时了解产品开发进度和新闻。"
-
 msgid "onboarding.newsletter.policy"
 msgstr "隐私策略。"
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "我们关注个人隐私，这里是我们的 "
 
 msgid "onboarding.newsletter.privacy2"
 msgstr "我们只会向您发送相关电子邮件。您可以随时在您的用户个人资料中取消订阅，也可以通过我们任何新闻通讯中的取消订阅链接取消订阅。"
@@ -2070,14 +2054,8 @@ msgstr "开始设计"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "Hooray!你已经是Penpot的用户了 :)"
-
 msgid "onboarding.welcome.desc2"
 msgstr "Penpot处于第一个测试版，这要归功于核心功能，成熟度，稳定性和整个社区的惊人验证的组合，我们非常欢迎您。"
-
-msgid "onboarding.welcome.desc3"
-msgstr "当你享受Penpot的时候，我们将不断改进它，发布我们希望的计划的迭代。"
 
 msgid "onboarding.welcome.title"
 msgstr "欢迎来到Penpot"
@@ -2596,10 +2574,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "不显示交互"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-file"
-msgstr "编辑文件"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.edit-page"
 msgstr "编辑页面"
 
@@ -2719,10 +2693,6 @@ msgstr "创建副本"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "编辑"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "文档库"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"

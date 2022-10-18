@@ -1874,12 +1874,6 @@ msgstr ""
 msgid "onboarding.contrib.link"
 msgstr "проект на Github"
 
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Мы будем отправлять только акутальные эл. письма. Вы можете отказаться от "
-"подписки в любое время в своём профиле пользователя или по ссылке отказа от "
-"подписки в любом из наших писем информационной рассылки."
-
 msgid "onboarding.slide.1.alt"
 msgstr "Интерактивные прототипы"
 
@@ -2124,20 +2118,12 @@ msgstr "На странице не найдено ни одного кадра."
 msgid "viewer.frame-not-found"
 msgstr "Кадр не найден."
 
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header-interactions"
-msgstr "взаимодействия"
-
 msgid "viewer.header.comments-section"
 msgstr "Комментарии (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
 msgstr "Не показывать взаимодействия"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Редактировать страницу"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
@@ -2248,10 +2234,6 @@ msgstr "Дублировать"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Редактировать"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Библиотека файлов"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"

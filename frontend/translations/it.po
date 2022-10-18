@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-01 14:17+0000\n"
 "Last-Translator: Jacopo Lodovico Trabia <jacopo.trabia@gmail.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -377,8 +377,8 @@ msgstr ""
 
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"I file con librerie condivise verranno inclusi nell'esportazione, "
-"mantenendo il loro collegamento."
+"I file con librerie condivise verranno inclusi nell'esportazione, mantenendo "
+"il loro collegamento."
 
 msgid "dashboard.export.options.all.title"
 msgstr "Esporta le librerie condivise"
@@ -420,16 +420,16 @@ msgstr ""
 "Qualsiasi font web caricato qui verrà aggiunto alla lista dei font family "
 "disponibile nelle impostazioni testo dei file di questo team. I font che "
 "arrecano lo stesso nome di font family verranno raggruppati come un "
-"**singolo font family**. È possibile caricare font con i seguenti "
-"formati:**TTF, OTF e WOFF**(uno solo di questi è necessario)."
+"**singolo font family**. È possibile caricare font con i seguenti formati:"
+"**TTF, OTF e WOFF**(uno solo di questi è necessario)."
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"È consigliabile caricare unicamente font di cui si è proprietari o dei "
-"quali si possiede la licenza d'uso in Penpot. Ulteriori informazioni sui "
-"diritti dei contenuti sono disponibili nella sezione [Termini di Servizio "
-"di Penpot](https://penpot.app/terms.html). Potresti anche voler "
-"approfondire le [licenze per i font](https://www.typography.com/faq)."
+"È consigliabile caricare unicamente font di cui si è proprietari o dei quali "
+"si possiede la licenza d'uso in Penpot. Ulteriori informazioni sui diritti "
+"dei contenuti sono disponibili nella sezione [Termini di Servizio di Penpot]"
+"(https://penpot.app/terms.html). Potresti anche voler approfondire le "
+"[licenze per i font](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -767,7 +767,8 @@ msgid "errors.email-invalid-confirmation"
 msgstr "L'indirizzo e-mail di conferma deve corrispondere"
 
 msgid "errors.email-spam-or-permanent-bounces"
-msgstr "L'e-mail \"%s\" è stata riportata come spam o respinta in modo permanente."
+msgstr ""
+"L'e-mail \"%s\" è stata riportata come spam o respinta in modo permanente."
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
@@ -839,7 +840,8 @@ msgstr ""
 "proprietario."
 
 msgid "errors.terms-privacy-agreement-invalid"
-msgstr "È necessario accettare i termini di servizio e l'informativa sulla privacy."
+msgstr ""
+"È necessario accettare i termini di servizio e l'informativa sulla privacy."
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -892,9 +894,9 @@ msgstr "Soggetto"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Descrivi per favore il motivo della tua e-mail, specificando se si tratta "
-"di un problema, di un'idea oppure di un dubbio. Un membro del nostro team "
-"ti risponderà il prima possibile."
+"Descrivi per favore il motivo della tua e-mail, specificando se si tratta di "
+"un problema, di un'idea oppure di un dubbio. Un membro del nostro team ti "
+"risponderà il prima possibile."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -1399,7 +1401,8 @@ msgstr "Sei connesso come"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
-msgstr "Questa pagina non esiste oppure non hai i permessi necessari per accedervi."
+msgstr ""
+"Questa pagina non esiste oppure non hai i permessi necessari per accedervi."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
@@ -1622,8 +1625,8 @@ msgstr "Verificare il nuovo indirizzo e-mail"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"Ti invieremo un'e-mail al tuo attuale indirizzo e-mail \"%s\" per "
-"verificare la tua identità."
+"Ti invieremo un'e-mail al tuo attuale indirizzo e-mail \"%s\" per verificare "
+"la tua identità."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1654,8 +1657,7 @@ msgstr "Sì, cancellare il mio account"
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
 msgstr ""
-"Cancellando il tuo account, perderai tutti i tuoi archivi e progetti "
-"attuali."
+"Cancellando il tuo account, perderai tutti i tuoi archivi e progetti attuali."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.title"
@@ -1812,8 +1814,8 @@ msgstr "Invita membri al team"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
-"Poiché sei il solo membro di questo team, il team verrà eliminato insieme "
-"ai sui file e progetti."
+"Poiché sei il solo membro di questo team, il team verrà eliminato insieme ai "
+"sui file e progetti."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
@@ -1959,8 +1961,8 @@ msgstr "Cancella"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
-"Stai per aggiornare un componente in una libreria condivisa. Questo "
-"potrebbe causare modifiche nei file che la utilizzano."
+"Stai per aggiornare un componente in una libreria condivisa. Questo potrebbe "
+"causare modifiche nei file che la utilizzano."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -1973,7 +1975,8 @@ msgstr "Invito inviato con successo"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
-msgstr "Non puoi eliminare il tuo profilo. Riassegna i tuoi team prima di procedere."
+msgstr ""
+"Non puoi eliminare il tuo profilo. Riassegna i tuoi team prima di procedere."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -2013,8 +2016,8 @@ msgstr ""
 
 msgid "onboarding-v2.welcome.desc2"
 msgstr ""
-"Uno spazio pubblico dove imparare, condividere e discutere su Penpot, il "
-"suo presente e futuro con l'intera Comunità e con il team di Penpot."
+"Uno spazio pubblico dove imparare, condividere e discutere su Penpot, il suo "
+"presente e futuro con l'intera Comunità e con il team di Penpot."
 
 msgid "onboarding-v2.welcome.desc2.title"
 msgstr "Partecipando nella Comunità"
@@ -2037,7 +2040,8 @@ msgid "onboarding.choice.team-up.create-team"
 msgstr "Il nome del tuo team"
 
 msgid "onboarding.choice.team-up.create-team-desc"
-msgstr "Dopo aver nominato il tuo team, potrai invitare persone ad unirsi ad esso."
+msgstr ""
+"Dopo aver nominato il tuo team, potrai invitare persone ad unirsi ad esso."
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Inserisci il nome del team"
