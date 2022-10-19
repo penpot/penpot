@@ -359,4 +359,5 @@
 
 (defmethod ig/init-key ::gc-task
   [_ cfg]
-  (partial clean-archived cfg))
+  (fn [_]
+    (clean-archived cfg)))
