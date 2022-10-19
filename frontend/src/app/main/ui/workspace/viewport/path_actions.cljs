@@ -17,15 +17,22 @@
 
 (defn check-enabled [content selected-points]
   (let [segments (upt/get-segments content selected-points)
+        num-segments (count segments)
         num-points (count selected-points)
         points-selected? (seq selected-points)
-        segments-selected? (seq segments)]
-    {:make-corner points-selected?
-     :make-curve points-selected?
+        segments-selected? (seq segments)
+        ;; max segments for n points is (n × (n -1)) / 2
+        max-segments (-> num-points
+                         (* (- num-points 1))
+                         (/ 2))
+        is-curve? (some #(upt/is-curve? content %) selected-points)]
+
+    {:make-corner (and points-selected? is-curve?)
+     :make-curve (and points-selected? (not is-curve?))
      :add-node segments-selected?
      :remove-node points-selected?
      :merge-nodes segments-selected?
-     :join-nodes (and points-selected? (>= num-points 2))
+     :join-nodes (and points-selected? (>= num-points 2) (< num-segments max-segments))
      :separate-nodes segments-selected?}))
 
 (mf/defc path-actions [{:keys [shape]}]
