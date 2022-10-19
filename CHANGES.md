@@ -11,6 +11,9 @@
 - Fix auto-width for texts can make text appear stretched [Github #2482](https://github.com/penpot/penpot/issues/2482)
 - Fix boards name do not disappear in focus mode [#4272](https://tree.taiga.io/project/penpot/issue/4272)
 - Fix wrong email in the info message at change email [Taiga #4274](https://tree.taiga.io/project/penpot/issue/4274)
+- Fix transform to path RMB menu item is not relevant if shape is already path [Taiga #4302](https://tree.taiga.io/project/penpot/issue/4302)
+- Fix join nodes icon is active when 2 already joined nodes are selected [Taiga #4370](https://tree.taiga.io/project/penpot/issue/4370)
+- Fix path nodes panel. "To curve" and "To corner" icons are active if node is already curved/cornered [Taiga #4371](https://tree.taiga.io/project/penpot/issue/4371)
 
 ## 1.16.0-beta
 
