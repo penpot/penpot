@@ -17,7 +17,7 @@
 ### :heart: Community contributions by (Thank you!)
 
 
-## :rocket: 1.16.0-beta
+## 1.16.0-beta
 
 ### :boom: Breaking changes & Deprecations
 
