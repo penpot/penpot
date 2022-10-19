@@ -44,11 +44,23 @@ marked.use({renderer});
 // Templates
 
 function readLocales() {
-  const langs = ["ar", "ca", "de", "el", "en", "eu", "it", "es", "fa", "fr", "he", "nb_NO", "pl", "pt_BR", "ro", "ru", "tr", "zh_CN", "zh_Hant"];
+  const langs = ["ar", "ca", "de", "el", "en", "eu", "it", "es",
+                 "fa", "fr", "he", "nb_NO", "pl", "pt_BR", "ro",
+                 "ru", "tr", "zh_CN", "zh_Hant", "hr", "gl", "pt_PT",
+                 // this happens when file does not matches correct
+                 // iso code for the language.
+                 ["ja_jp", "jpn_JP"]
+                ];
   const result = {};
 
   for (let lang of langs) {
-    const content = fs.readFileSync(`./translations/${lang}.po`, {encoding:"utf-8"});
+    let filename = `${lang}.po`;
+    if (l.isArray(lang)) {
+      filename = `${lang[1]}.po`;
+      lang = lang[0]
+    }
+
+    const content = fs.readFileSync(`./translations/${filename}`, {encoding:"utf-8"});
 
     lang = lang.toLowerCase();
 
