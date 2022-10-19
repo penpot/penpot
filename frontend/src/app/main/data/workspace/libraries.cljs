@@ -19,6 +19,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+    [app.common.types.file.media-object :as ctfm]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.typography :as ctt]
@@ -192,7 +193,7 @@
 
 (defn add-media
   [media]
-  (us/assert ::ctf/media-object media)
+  (us/assert ::ctfm/media-object media)
   (ptk/reify ::add-media
     ptk/WatchEvent
     (watch [it _ _]
