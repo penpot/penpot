@@ -240,6 +240,13 @@
       (when (debug? :show-export-metadata)
         [:& use/export-page {:options options}])
 
+      ;; We need a "real" background shape so layer transforms work properly in firefox
+      [:rect {:width (:width vbox 0)
+              :height (:height vbox 0)
+              :x (:x vbox 0)
+              :y (:y vbox 0)
+              :fill background}]
+
       [:& (mf/provider use/include-metadata-ctx) {:value (debug? :show-export-metadata)}
        [:& (mf/provider embed/context) {:value true}
         ;; Render root shape
