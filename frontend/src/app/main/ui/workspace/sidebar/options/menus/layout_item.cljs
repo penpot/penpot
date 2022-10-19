@@ -170,6 +170,15 @@
          (for  [item [:layout-max-h :layout-min-h :layout-max-w :layout-min-w]]
            [:div.input-element
             {:key (d/name item)
+             ;; Execution time translation strings:
+             ;;   workspace.options.layout-item.layout-max-h
+             ;;   workspace.options.layout-item.layout-max-w
+             ;;   workspace.options.layout-item.layout-min-h
+             ;;   workspace.options.layout-item.layout-min-w
+             ;;   workspace.options.layout-item.title.layout-max-h
+             ;;   workspace.options.layout-item.title.layout-max-w
+             ;;   workspace.options.layout-item.title.layout-min-h
+             ;;   workspace.options.layout-item.title.layout-min-w
              :alt   (tr (dm/str "workspace.options.layout-item." (d/name item)))
              :title (tr (dm/str "workspace.options.layout-item." (d/name item)))
              :class (dom/classnames "maxH" (= item :layout-max-h)

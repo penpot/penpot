@@ -122,6 +122,13 @@
             (let [selected? (= @selected-option type)]
               [:div.export-option {:class (when selected? "selected")}
                [:label.option-container
+                ;; Execution time translation strings:
+                ;;   dashboard.export.options.all.message
+                ;;   dashboard.export.options.all.title
+                ;;   dashboard.export.options.detach.message
+                ;;   dashboard.export.options.detach.title
+                ;;   dashboard.export.options.merge.message
+                ;;   dashboard.export.options.merge.title
                 [:h3 (tr (str "dashboard.export.options." (d/name type) ".title"))]
                 [:p  (tr (str "dashboard.export.options." (d/name type) ".message"))]
                 [:input {:type "radio"

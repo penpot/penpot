@@ -77,6 +77,11 @@
                               :top    (= :top dir)
                               :bottom (= :bottom dir))
       :key    (dm/str  "direction-" dir)
+      ;; Execution time translation strings:
+      ;;   workspace.options.layout.direction.bottom
+      ;;   workspace.options.layout.direction.left
+      ;;   workspace.options.layout.direction.right
+      ;;   workspace.options.layout.direction.top
       :alt    (tr (dm/str "workspace.options.layout.direction." (d/name dir)))
       :on-click handle-on-click}
      i/auto-direction]))
@@ -220,7 +225,7 @@
         set-gap
         (fn [gap]
           (st/emit! (dwsl/update-layout ids {:layout-gap gap})))
-        
+
         change-padding-style
         (fn [type]
           (st/emit! (dwsl/update-layout ids {:layout-padding-type type})))
@@ -267,6 +272,13 @@
 
                 orientation
                 (if (= type :packed)
+                  ;; Execution time translation strings:
+                  ;;   workspace.options.layout.h.center
+                  ;;   workspace.options.layout.h.left
+                  ;;   workspace.options.layout.h.right
+                  ;;   workspace.options.layout.v.bottom
+                  ;;   workspace.options.layout.v.center
+                  ;;   workspace.options.layout.v.top
                   (dm/str (tr (dm/str "workspace.options.layout.v." (d/name v))) ", "
                           (tr (dm/str "workspace.options.layout.h." (d/name h))) ", ")
 

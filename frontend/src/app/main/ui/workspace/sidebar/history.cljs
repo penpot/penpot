@@ -103,6 +103,36 @@
   [locale type multiple?]
   (let [arity (if multiple? "multiple" "single")
         attribute (name (or type :multiple))]
+    ;; Execution time translation strings:
+    ;;   workspace.undo.entry.multiple.circle
+    ;;   workspace.undo.entry.multiple.color
+    ;;   workspace.undo.entry.multiple.component
+    ;;   workspace.undo.entry.multiple.curve
+    ;;   workspace.undo.entry.multiple.frame
+    ;;   workspace.undo.entry.multiple.group
+    ;;   workspace.undo.entry.multiple.media
+    ;;   workspace.undo.entry.multiple.multiple
+    ;;   workspace.undo.entry.multiple.page
+    ;;   workspace.undo.entry.multiple.path
+    ;;   workspace.undo.entry.multiple.rect
+    ;;   workspace.undo.entry.multiple.shape
+    ;;   workspace.undo.entry.multiple.text
+    ;;   workspace.undo.entry.multiple.typography
+    ;;   workspace.undo.entry.single.circle
+    ;;   workspace.undo.entry.single.color
+    ;;   workspace.undo.entry.single.component
+    ;;   workspace.undo.entry.single.curve
+    ;;   workspace.undo.entry.single.frame
+    ;;   workspace.undo.entry.single.group
+    ;;   workspace.undo.entry.single.image
+    ;;   workspace.undo.entry.single.media
+    ;;   workspace.undo.entry.single.multiple
+    ;;   workspace.undo.entry.single.page
+    ;;   workspace.undo.entry.single.path
+    ;;   workspace.undo.entry.single.rect
+    ;;   workspace.undo.entry.single.shape
+    ;;   workspace.undo.entry.single.text
+    ;;   workspace.undo.entry.single.typography
     (t locale (str/format "workspace.undo.entry.%s.%s" arity attribute))))
 
 (defn entry->message [locale entry]

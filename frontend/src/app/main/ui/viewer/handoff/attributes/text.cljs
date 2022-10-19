@@ -142,12 +142,21 @@
      (when (:text-decoration style)
        [:div.attributes-unit-row
         [:div.attributes-label (tr "handoff.attributes.typography.text-decoration")]
+        ;; Execution time translation strings:
+        ;;   handoff.attributes.typography.text-decoration.none
+        ;;   handoff.attributes.typography.text-decoration.strikethrough
+        ;;   handoff.attributes.typography.text-decoration.underline
         [:div.attributes-value (->> style :text-decoration (str "handoff.attributes.typography.text-decoration.") (tr))]
         [:& copy-button {:data (copy-style-data style :text-decoration)}]])
 
      (when (:text-transform style)
        [:div.attributes-unit-row
         [:div.attributes-label (tr "handoff.attributes.typography.text-transform")]
+        ;; Execution time translation strings:
+        ;;   handoff.attributes.typography.text-transform.lowercase
+        ;;   handoff.attributes.typography.text-transform.none
+        ;;   handoff.attributes.typography.text-transform.titlecase
+        ;;   handoff.attributes.typography.text-transform.uppercase
         [:div.attributes-value (->> style :text-transform (str "handoff.attributes.typography.text-transform.") (tr))]
         [:& copy-button {:data (copy-style-data style :text-transform)}]])]))
 
