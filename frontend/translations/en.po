@@ -620,7 +620,9 @@ msgstr "Show all files"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-delete-file"
-msgstr "Your file has been deleted successfully"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Your file has been deleted successfully"
+msgstr[1] "Your files have been deleted successfully"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
@@ -628,7 +630,9 @@ msgstr "Your project has been deleted successfully"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-duplicate-file"
-msgstr "Your file has been duplicated successfully"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Your file has been duplicated successfully"
+msgstr[1] "Your files have been duplicated successfully"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -4564,4 +4568,3 @@ msgstr "The font %s could not be loaded"
 
 msgid "errors.bad-font-plural"
 msgstr "The fonts %s could not be loaded"
-
