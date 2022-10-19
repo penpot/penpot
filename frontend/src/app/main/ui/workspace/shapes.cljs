@@ -103,7 +103,7 @@
 
         opts  #js {:shape shape :thumbnail? thumbnail?}]
     (when (and (some? shape) (not (:hidden shape)))
-      [:g.ws-shape-wrapper
+      [:g.workspace-shape-wrapper
        (case (:type shape)
          :path    [:> path/path-wrapper opts]
          :text    [:> text/text-wrapper opts]

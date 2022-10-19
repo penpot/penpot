@@ -14,8 +14,6 @@
    [app.common.geom.shapes.path :as gpa]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
-   [app.common.text :as txt]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
 
@@ -312,6 +310,8 @@
           (dissoc :transform :transform-inverse))
         (cond-> (some? selrect)
           (assoc :selrect selrect))
+
+        ;; TODO LAYOUT: Make sure the order of points is alright
         (cond-> (d/not-empty? points)
           (assoc :points points))
         (assoc :rotation rotation))))
@@ -376,113 +376,22 @@
         (assoc :flip-x  (-> mask :flip-x))
         (assoc :flip-y  (-> mask :flip-y)))))
 
-
-#_(defn- set-flip [shape modifiers]
-  (let [rv1x (or (get-in modifiers [:resize-vector :x]) 1)
-        rv1y (or (get-in modifiers [:resize-vector :y]) 1)
-        rv2x (or (get-in modifiers [:resize-vector-2 :x]) 1)
-        rv2y (or (get-in modifiers [:resize-vector-2 :y]) 1)]
-    (cond-> shape
-      (or (neg? rv1x) (neg? rv2x))
-      (-> (update :flip-x not)
-          (update :rotation -))
-      (or (neg? rv1y) (neg? rv2y))
-      (-> (update :flip-y not)
-          (update :rotation -)))))
-
-#_(defn- set-flip-2 [shape transform]
-  (let [pt-a (gpt/point (:selrect shape))
-        pt-b (gpt/point (-> shape :selrect :x2) (-> shape :selrect :y2))
-
-        shape-transform (:transform shape (gmt/matrix))
-        pt-a' (gpt/transform pt-a (gmt/multiply shape-transform transform ))
-        pt-b' (gpt/transform pt-b (gmt/multiply shape-transform transform ))
-
-        {:keys [x y]} (gpt/to-vec pt-a' pt-b')]
-
-    (cond-> shape
-      (neg? x)
-      (-> (update :flip-x not)
-          (update :rotation -))
-      (neg? y)
-      (-> (update :flip-y not)
-          (update :rotation -)))))
-
-#_(defn- apply-displacement [shape]
-  (let [modifiers (:modifiers shape)]
-    (if (contains? modifiers :displacement)
-      (let [mov-vec (-> (gpt/point 0 0)
-                        (gpt/transform (:displacement modifiers)))
-            shape (move shape mov-vec)
-            modifiers (dissoc modifiers :displacement)]
-        (-> shape
-            (assoc :modifiers modifiers)
-            (cond-> (empty-modifiers? modifiers)
-              (dissoc :modifiers))))
-      shape)))
-
-(defn- apply-text-resize
-  [shape modifiers]
-  (if (and (= (:type shape) :text)
-           (:resize-scale-text modifiers))
-    (let [merge-attrs (fn [attrs]
-                        (let [font-size (-> (get attrs :font-size 14)
-                                            (d/parse-double)
-                                            (* (get-in modifiers [:resize-vector :x] 1))
-                                            (* (get-in modifiers [:resize-vector-2 :x] 1))
-                                            (str))]
-                          (d/txt-merge attrs {:font-size font-size})))]
-      (update shape :content #(txt/transform-nodes
-                                txt/is-text-node?
-                                merge-attrs
-                                %)))
-    shape))
-
-(defn- apply-structure-modifiers
-  [shape modifiers]
-
-  (let [remove-children
-        (fn [shapes children-to-remove]
-          (let [remove? (set children-to-remove)]
-            (d/removev remove? shapes)))
-
-        apply-modifier
-        (fn [shape {:keys [type value index]}]
-          (cond-> shape
-            (and (= type :add-children) (some? index))
-            (update :shapes
-                    (fn [shapes]
-                      (if (vector? shapes)
-                        (cph/insert-at-index shapes index value)
-                        (d/concat-vec shapes value))))
-
-            (and (= type :add-children) (nil? index))
-            (update :shapes d/concat-vec value)
-
-            (= type :remove-children)
-            (update :shapes remove-children value)))]
-
-    (reduce apply-modifier shape (:v3 modifiers))))
-
 (defn apply-modifiers
   [shape modifiers]
-  (let [center (gco/center-shape shape)
-        transform (ctm/modifiers->transform center modifiers)]
-
+  (let [transform (ctm/modifiers->transform modifiers)]
     (cond-> shape
-      #_(set-flip-2 transform)
       (and (some? transform)
            ;; Never transform the root frame
            (not= uuid/zero (:id shape)))
       (apply-transform transform)
 
       :always
-      (apply-structure-modifiers modifiers))))
+      (ctm/apply-structure-modifiers modifiers))))
 
 (defn apply-objects-modifiers
   [objects modifiers]
   (letfn [(process-shape [objects [id modifier]]
-            (update objects id apply-modifiers (:modifiers modifier)))]
+            (d/update-when objects id apply-modifiers (:modifiers modifier)))]
     (reduce process-shape objects modifiers)))
 
 (defn transform-shape
@@ -495,66 +404,12 @@
   ([shape modifiers]
    (cond-> shape
      (and (some? modifiers) (not (ctm/empty-modifiers? modifiers)))
-     (-> (apply-modifiers modifiers)
-         (apply-text-resize modifiers)))))
-
-(defn transform-bounds-v2
-  [points center modifiers]
-  (let [transform (ctm/modifiers->transform center {:v2 modifiers})
-        result (gco/transform-points points center transform)]
-
-    ;;(.log js/console "??" (str transform) (clj->js result))
-    result)
-
-  #_(letfn [(apply-modifier [points {:keys [type vector origin]}]
-            (case type
-              :move
-              (let [displacement (gmt/translate-matrix vector)]
-                (gco/transform-points points displacement))
-
-              :resize
-              (gco/transform-points points origin (gmt/scale-matrix vector))
-
-              points))]
-    (->> modifiers
-         (reduce apply-modifier points))))
+     (apply-modifiers modifiers))))
 
 (defn transform-bounds
-  [points center {:keys [v2 displacement displacement-after resize-transform-inverse resize-vector resize-origin resize-vector-2 resize-origin-2]}]
-
-  ;; FIXME: Improve Performance
-  (if (some? v2)
-    (transform-bounds-v2 points center v2)
-    (let [resize-transform-inverse (or resize-transform-inverse (gmt/matrix))
-
-          displacement
-          (when (some? displacement)
-            (gmt/multiply resize-transform-inverse displacement))
-
-          resize-origin
-          (when (some? resize-origin)
-            (gmt/transform-point-center resize-origin center resize-transform-inverse))
-
-          resize-origin-2
-          (when (some? resize-origin-2)
-            (gmt/transform-point-center resize-origin-2 center resize-transform-inverse))
-          ]
-
-      (if (and (nil? displacement) (nil? resize-origin) (nil? resize-origin-2) (nil? displacement-after))
-        points
-
-        (cond-> points
-          (some? displacement)
-          (gco/transform-points displacement)
-
-          (some? resize-origin)
-          (gco/transform-points resize-origin (gmt/scale-matrix resize-vector))
-
-          (some? resize-origin-2)
-          (gco/transform-points resize-origin-2 (gmt/scale-matrix resize-vector-2))
-
-          (some? displacement-after)
-          (gco/transform-points displacement-after))))))
+  [points center modifiers]
+  (let [transform (ctm/modifiers->transform modifiers)]
+    (gco/transform-points points center transform)))
 
 (defn transform-selrect
   [selrect modifiers]

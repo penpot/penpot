@@ -146,11 +146,14 @@
               (concat (keys workspace-modifiers) ids)
               objects
               (fn [shape]
-                (let [modifiers (if (contains? ids (:id shape)) modifiers {})
-                      old-modifiers-v3 (get-in state [:workspace-modifiers (:id shape) :modifiers :v3])]
+                (let [
+                      modifiers (if (contains? ids (:id shape)) modifiers (ctm/empty-modifiers))
+
+                      structure-modifiers (ctm/select-structure
+                                           (get-in state [:workspace-modifiers (:id shape) :modifiers]))]
                   (cond-> modifiers
-                    (some? old-modifiers-v3)
-                    (assoc :v3 old-modifiers-v3))))
+                    (some? structure-modifiers)
+                    (ctm/add-modifiers structure-modifiers))))
               ignore-constraints snap-pixel?)]
 
          (update state :workspace-modifiers merge modif-tree))))))
@@ -175,7 +178,7 @@
 
              get-modifier
              (fn [shape]
-               (ctm/rotation-modifiers shape center angle))
+               (ctm/rotation shape center angle))
 
              modif-tree
              (gsh/set-objects-modifiers ids objects get-modifier false false)]
@@ -396,32 +399,18 @@
                   resize-origin
                   (cond-> (gmt/transform-point-center handler-origin shape-center shape-transform)
                     (some? displacement)
-                    (gpt/add displacement))]
+                    (gpt/add displacement))
 
-              (rx/of (set-modifiers ids
-                                    {:v2 (-> []
-                                             (cond-> displacement
-                                               (conj {:type :move
-                                                      :vector displacement}))
-                                             (conj {:type :resize
-                                                    :vector scalev
-                                                    :origin resize-origin
-                                                    :transform shape-transform
-                                                    :transform-inverse shape-transform-inverse}))
-                                     ;;:displacement displacement
-                                     ;;:resize-vector scalev
-                                     ;;:resize-origin resize-origin
-                                     ;;:resize-transform shape-transform
-                                     ;;:resize-scale-text scale-text
-                                     ;;:resize-transform-inverse shape-transform-inverse
-                                     }))
-              #_(rx/of (set-modifiers ids
-                                    {:displacement displacement
-                                     :resize-vector scalev
-                                     :resize-origin resize-origin
-                                     :resize-transform shape-transform
-                                     :resize-scale-text scale-text
-                                     :resize-transform-inverse shape-transform-inverse}))))
+                  modifiers
+                  (-> (ctm/empty-modifiers)
+                      (cond-> displacement
+                        (ctm/set-move displacement))
+                      (ctm/set-resize scalev resize-origin shape-transform shape-transform-inverse)
+
+                      (cond-> scale-text
+                        (ctm/set-scale-content (:x scalev))))]
+
+              (rx/of (set-modifiers ids modifiers))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
@@ -471,7 +460,7 @@
             snap-pixel? (and (contains? (:workspace-layout state) :snap-pixel-grid)
                              (int? value))
             get-modifier
-            (fn [shape] (ctm/resize-modifiers shape attr value))
+            (fn [shape] (ctm/change-dimensions shape attr value))
 
             modif-tree
             (gsh/set-objects-modifiers ids objects get-modifier false snap-pixel?)]
@@ -655,15 +644,13 @@
                                        (d/removev #(= target-frame %)))]
                        (cond
                          (not= original-frame target-frame)
-                         [[original-frame {:modifiers {:v3 [{:type :remove-children :value shapes}]}}]
-                          [target-frame {:modifiers {:v3 [{:type :add-children
-                                                           :value shapes
-                                                           :index drop-index}]}}]]
+                         [[original-frame {:modifiers (ctm/remove-children shapes)}]
+                          [target-frame {:modifiers (ctm/add-children shapes drop-index)}]]
+
                          layout?
-                         [[target-frame {:modifiers {:v3 [{:type :add-children
-                                                           :value shapes
-                                                           :index drop-index}]}}]]))))
+                         [[target-frame {:modifiers (ctm/add-children shapes drop-index)}]]))))
                   (keys origin-frame-ids))]
+
         (assoc state :workspace-modifiers modif-tree)))))
 
 (defn- start-move
@@ -725,8 +712,7 @@
 
                   ;; We try to use the previous snap so we don't have to wait for the result of the new
                   (rx/map snap/correct-snap-point)
-
-                  (rx/map (fn [move-vec] {:v2 [{:type :move :vector move-vec}]}))
+                  (rx/map ctm/move)
 
                   (rx/map (partial set-modifiers ids))
                   (rx/take-until stopper)))
@@ -867,14 +853,9 @@
             origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))]
 
         (rx/of (set-modifiers selected
-                              {:v2 [{:type :resize
-                                     :vector (gpt/point -1.0 1.0)
-                                     :origin origin}
-                                    {:type :move
-                                     :vector (gpt/point (:width selrect) 0)}]}
-                              #_{:resize-vector (gpt/point -1.0 1.0)
-                               :resize-origin origin
-                               :displacement (gmt/translate-matrix (gpt/point (- (:width selrect)) 0))}
+                              (-> (ctm/empty-modifiers)
+                                  (ctm/set-resize (gpt/point -1.0 1.0) origin)
+                                  (ctm/move (gpt/point (:width selrect) 0)))
                               true)
                (apply-modifiers))))))
 
@@ -889,13 +870,8 @@
             origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))]
 
         (rx/of (set-modifiers selected
-                              {:v2 [{:type :resize
-                                     :vector (gpt/point 1.0 -1.0)
-                                     :origin origin}
-                                    {:type :move
-                                     :vector (gpt/point 0 (:height selrect))}]}
-                              #_{:resize-vector (gpt/point 1.0 -1.0)
-                               :resize-origin origin
-                               :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))}
+                              (-> (ctm/empty-modifiers)
+                                  (ctm/set-resize (gpt/point 1.0 -1.0) origin)
+                                  (ctm/move (gpt/point 0 (:height selrect))))
                               true)
                (apply-modifiers))))))

@@ -31,7 +31,7 @@
     (when (and shape (:layout shape))
       (let [children (cph/get-immediate-children objects (:id shape))
             layout-data (gsl/calc-layout-data shape children)
-            drop-areas (gsl/drop-areas shape layout-data children)]
+            drop-areas (gsl/layout-drop-areas shape layout-data children)]
         [:g.debug-layout {:pointer-events "none"
                           :transform (gsh/transform-str shape)}
          (for [[idx drop-area] (d/enumerate drop-areas)]

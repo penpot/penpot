@@ -19,67 +19,6 @@
    [app.util.globals :as globals]
    [rumext.v2 :as mf]))
 
-(defn- transform-no-resize
-  "If we apply a scale directly to the texts it will show deformed so we need to create this
-  correction matrix to \"undo\" the resize but keep the other transformations."
-  [{:keys [x y width height points transform transform-inverse] :as shape} current-transform modifiers]
-
-  (let [corner-pt (first points)
-        corner-pt (cond-> corner-pt (some? transform-inverse) (gpt/transform transform-inverse))
-
-        resize-x? (some? (:resize-vector modifiers))
-        resize-y? (some? (:resize-vector-2 modifiers))
-
-        flip-x? (neg? (get-in modifiers [:resize-vector :x]))
-        flip-y? (or (neg? (get-in modifiers [:resize-vector :y]))
-                    (neg? (get-in modifiers [:resize-vector-2 :y])))
-
-        result (cond-> (gmt/matrix)
-                 (and (some? transform) (or resize-x? resize-y?))
-                 (gmt/multiply transform)
-
-                 resize-x?
-                 (gmt/scale (gpt/inverse (:resize-vector modifiers)) corner-pt)
-
-                 resize-y?
-                 (gmt/scale (gpt/inverse (:resize-vector-2 modifiers)) corner-pt)
-
-                 flip-x?
-                 (gmt/scale (gpt/point -1 1) corner-pt)
-
-                 flip-y?
-                 (gmt/scale (gpt/point 1 -1) corner-pt)
-
-                 (and (some? transform) (or resize-x? resize-y?))
-                 (gmt/multiply transform-inverse))
-
-        [width height]
-        (if (or resize-x? resize-y?)
-          (let [pc (cond-> (gpt/point x y)
-                     (some? transform)
-                     (gpt/transform transform)
-
-                     (some? current-transform)
-                     (gpt/transform current-transform))
-
-                pw (cond-> (gpt/point (+ x width) y)
-                     (some? transform)
-                     (gpt/transform transform)
-
-                     (some? current-transform)
-                     (gpt/transform current-transform))
-
-                ph (cond-> (gpt/point x (+ y height))
-                     (some? transform)
-                     (gpt/transform transform)
-
-                     (some? current-transform)
-                     (gpt/transform current-transform))]
-            [(gpt/distance pc pw) (gpt/distance pc ph)])
-          [width height])]
-
-    [result width height]))
-
 (defn get-shape-node
   ([id]
    (get-shape-node js/document id))
@@ -191,15 +130,8 @@
       (let [transform (get transforms id)
             modifiers (get-in modifiers [id :modifiers])]
 
-        ;; TODO LAYOUT: Adapt to new modifiers
         (doseq [node nodes]
           (cond
-            ;; Text shapes need special treatment because their resize only change
-            ;; the text area, not the change size/position
-            (dom/class? node "frame-thumbnail")
-            (let [[transform] (transform-no-resize shape transform modifiers)]
-              (set-transform-att! node "transform" transform))
-
             (dom/class? node "frame-children")
             (set-transform-att! node "transform" (gmt/inverse transform))
 
@@ -256,11 +188,7 @@
                    (/ (:height shape) (:height shape')))]
     ;; Reverse the change in size so we can recalculate the layout
     (-> modifiers
-        (update :v2 conj {:type :resize
-                          :vector scalev
-                          :transform (:transform shape')
-                          :transform-inverse (:transform-inverse shape')
-                          :origin (-> shape' :points first)}))))
+        (ctm/set-resize scalev (-> shape' :points first) (:transform shape') (:transform-inverse shape')))))
 
 (defn use-dynamic-modifiers
   [objects node modifiers]
@@ -272,37 +200,13 @@
            (when (some? modifiers)
              (d/mapm (fn [id {modifiers :modifiers}]
                        (let [shape (get objects id)
-                             center (gsh/center-shape shape)
                              text? (= :text (:type shape))
                              modifiers (cond-> modifiers text? (adapt-text-modifiers shape))]
-                         (ctm/modifiers->transform center modifiers)))
+                         (ctm/modifiers->transform modifiers)))
                      modifiers))))
 
-        structure-changes
-        (mf/use-memo
-         (mf/deps modifiers)
-         (fn []
-           (into {}
-                 (comp (filter (fn [[_ val]] (-> val :modifiers :v3 some?)))
-                       (map (fn [[key val]]
-                              [key (-> val :modifiers :v3)])))
-
-                 modifiers)))
-
-        structure-changes (hooks/use-equal-memo structure-changes)
-
-        add-children
-        (mf/use-memo
-         (mf/deps structure-changes)
-         (fn []
-           (into []
-                 (mapcat (fn [[frame-id changes]]
-                           (->> changes
-                                (filter (fn [{:keys [type]}] (= type :add-children)))
-                                (mapcat (fn [{:keys [value]}]
-                                          (->> value (map (fn [id] {:frame frame-id :shape id}))))))))
-                 structure-changes)))
-
+        add-children (mf/use-memo (mf/deps modifiers) #(ctm/get-frame-add-children modifiers))
+        add-children (hooks/use-equal-memo add-children)
         add-children-prev (hooks/use-previous add-children)
 
         shapes

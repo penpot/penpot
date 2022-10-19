@@ -7,118 +7,22 @@
 (ns app.common.geom.shapes.modifiers
   (:require
    [app.common.data :as d]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.layout :as gcl]
-   [app.common.geom.shapes.rect :as gpr]
+   [app.common.geom.shapes.pixel-precision :as gpp]
    [app.common.geom.shapes.transforms :as gtr]
-   [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
 
-;; TODO LAYOUT: ADAPT TO NEW MODIFIERS
-(defn set-pixel-precision
-  "Adjust modifiers so they adjust to the pixel grid"
-  [modifiers shape]
-
-  (if (and (some? (:resize-transform modifiers))
-           (not (gmt/unit? (:resize-transform modifiers))))
-    ;; If we're working with a rotation we don't handle pixel precision because
-    ;; the transformation won't have the precision anyway
-    modifiers
-
-    (let [center (gco/center-shape shape)
-          base-bounds (-> (:points shape) (gpr/points->rect))
-
-          raw-bounds
-          (-> (gtr/transform-bounds (:points shape) center modifiers)
-              (gpr/points->rect))
-
-          flip-x? (neg? (get-in modifiers [:resize-vector :x]))
-          flip-y? (or (neg? (get-in modifiers [:resize-vector :y]))
-                      (neg? (get-in modifiers [:resize-vector-2 :y])))
-
-          path? (= :path (:type shape))
-          vertical-line? (and path? (<= (:width raw-bounds) 0.01))
-          horizontal-line? (and path? (<= (:height raw-bounds) 0.01))
-
-          target-width (if vertical-line?
-                         (:width raw-bounds)
-                         (max 1 (mth/round (:width raw-bounds))))
-
-          target-height (if horizontal-line?
-                          (:height raw-bounds)
-                          (max 1 (mth/round (:height raw-bounds))))
-
-          target-p (cond-> (gpt/round (gpt/point raw-bounds))
-                     flip-x?
-                     (update :x + target-width)
-
-                     flip-y?
-                     (update :y + target-height))
-
-          ratio-width (/ target-width (:width raw-bounds))
-          ratio-height (/ target-height (:height raw-bounds))
-
-          modifiers
-          (-> modifiers
-              (d/without-nils)
-              (d/update-in-when
-               [:resize-vector :x] #(* % ratio-width))
-
-              ;; If the resize-vector-2 modifier arrives means the resize-vector
-              ;; will only resize on the x axis
-              (cond-> (nil? (:resize-vector-2 modifiers))
-                (d/update-in-when
-                 [:resize-vector :y] #(* % ratio-height)))
-
-              (d/update-in-when
-               [:resize-vector-2 :y] #(* % ratio-height)))
-
-          origin (get modifiers :resize-origin)
-          origin-2 (get modifiers :resize-origin-2)
-
-          resize-v  (get modifiers :resize-vector)
-          resize-v-2  (get modifiers :resize-vector-2)
-          displacement  (get modifiers :displacement)
-
-          target-p-inv
-          (-> target-p
-              (gpt/transform
-               (cond-> (gmt/matrix)
-                 (some? displacement)
-                 (gmt/multiply (gmt/inverse displacement))
-
-                 (and (some? resize-v) (some? origin))
-                 (gmt/scale (gpt/inverse resize-v) origin)
-
-                 (and (some? resize-v-2) (some? origin-2))
-                 (gmt/scale (gpt/inverse resize-v-2) origin-2))))
-
-          delta-v (gpt/subtract target-p-inv (gpt/point base-bounds))
-
-          modifiers
-          (-> modifiers
-              (d/update-when :displacement #(gmt/multiply (gmt/translate-matrix delta-v) %))
-              (cond-> (nil? (:displacement modifiers))
-                (assoc :displacement (gmt/translate-matrix delta-v))))]
-      modifiers)))
-
-
 (defn set-children-modifiers
   [modif-tree objects parent ignore-constraints snap-pixel?]
-  ;; TODO LAYOUT: SNAP PIXEL!
   (letfn [(set-child [transformed-parent _snap-pixel? modif-tree child]
             (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
                   child-modifiers (gct/calc-child-modifiers parent child modifiers ignore-constraints transformed-parent)
-                  ;;child-modifiers (cond-> child-modifiers snap-pixel? (set-pixel-precision child))
-                  ]
+                  child-modifiers (cond-> child-modifiers snap-pixel? (gpp/set-pixel-precision child))]
               (cond-> modif-tree
                 (not (ctm/empty-modifiers? child-modifiers))
-                (update-in [(:id child) :modifiers :v2] d/concat-vec (:v2 child-modifiers)))))]
-
+                (update-in [(:id child) :modifiers] ctm/add-modifiers child-modifiers))))]
     (let [children (map (d/getf objects) (:shapes parent))
           modifiers (get-in modif-tree [(:id parent) :modifiers])
           transformed-parent (gtr/transform-shape parent modifiers)]
@@ -144,7 +48,7 @@
                   child-modifiers (gcl/normalize-child-modifiers parent child modifiers transformed-parent)]
               (cond-> modif-tree
                 (not (ctm/empty-modifiers? child-modifiers))
-                (update-in [(:id child) :modifiers :v2] d/concat-vec (:v2 child-modifiers)))))
+                (update-in [(:id child) :modifiers] ctm/add-modifiers child-modifiers))))
 
           (apply-modifiers [modif-tree child]
             (let [modifiers (get-in modif-tree [(:id child) :modifiers])]
@@ -162,7 +66,7 @@
                   modif-tree
                   (cond-> modif-tree
                     (d/not-empty? modifiers)
-                    (update-in [(:id child) :modifiers :v2] d/concat-vec modifiers))]
+                    (update-in [(:id child) :modifiers] ctm/add-modifiers modifiers))]
 
               [layout-line modif-tree]))]
 
@@ -186,80 +90,13 @@
              pending (rest layout-lines)
              from-idx 0]
 
-        
+
         (if (and (some? layout-line) (<= from-idx max-idx))
           (let [to-idx   (+ from-idx (:num-children layout-line))
                 children (subvec children from-idx to-idx)
 
                 [_ modif-tree]
                 (reduce (partial set-layout-modifiers transformed-parent) [layout-line modif-tree] children)]
-            (recur modif-tree (first pending) (rest pending) to-idx))
-
-          modif-tree)))))
-
-#_(defn set-layout-modifiers'
-  ;; TODO LAYOUT: SNAP PIXEL!
-  [modif-tree objects parent _snap-pixel?]
-  
-  (letfn [(transform-child [child]
-            (let [modifiers (get modif-tree (:id child))
-
-                  child
-                  (cond-> child
-                    (some? modifiers)
-                    (-> (merge modifiers) gtr/transform-shape)
-
-                    (and (nil? modifiers) (group? child))
-                    (gtr/apply-group-modifiers objects modif-tree))
-
-                  child
-                  (-> child
-                      (gtr/apply-transform (gmt/transform-in (gco/center-shape parent) (:transform-inverse parent))))]
-
-              child))
-
-          (set-layout-modifiers [parent transform [layout-data modif-tree] child]
-            (let [[modifiers layout-data]
-                  (gcl/calc-layout-modifiers parent transform child layout-data)
-
-                  modif-tree
-                  (cond-> modif-tree
-                    (d/not-empty? modifiers)
-                    (update-in [(:id child) :modifiers :v2] d/concat-vec modifiers))]
-
-              [layout-data modif-tree]))]
-
-    (let [modifiers         (get modif-tree (:id parent))
-          shape             (-> parent (merge modifiers) gtr/transform-shape)
-          children          (->> (:shapes shape)
-                                 (map (d/getf objects))
-                                 (map transform-child))
-
-          center (gco/center-shape shape)
-          {:keys [transform transform-inverse]} shape
-
-          shape
-          (-> shape
-              (gtr/apply-transform (gmt/transform-in center transform-inverse)))
-
-          transformed-rect (:selrect shape)
-
-          layout-data       (gcl/calc-layout-data shape children transformed-rect)
-          children          (into [] (cond-> children (:reverse? layout-data) reverse))
-
-          max-idx           (dec (count children))
-          layout-lines      (:layout-lines layout-data)]
-
-      (loop [modif-tree modif-tree
-             layout-line (first layout-lines)
-             pending (rest layout-lines)
-             from-idx 0]
-        (if (and (some? layout-line) (<= from-idx max-idx))
-          (let [to-idx   (+ from-idx (:num-children layout-line))
-                children (subvec children from-idx to-idx)
-
-                [_ modif-tree]
-                (reduce (partial set-layout-modifiers shape transform) [layout-line modif-tree] children)]
             (recur modif-tree (first pending) (rest pending) to-idx))
 
           modif-tree)))))
@@ -337,8 +174,11 @@
 
   (let [set-modifiers
         (fn [modif-tree id]
-          (let [shape (get objects id)
-                modifiers (cond-> (get-modifier shape) snap-pixel? (set-pixel-precision shape))]
+          (let [root? (= uuid/zero id)
+                shape (get objects id)
+                modifiers (cond-> (get-modifier shape)
+                            (and (not root?) snap-pixel?)
+                            (gpp/set-pixel-precision shape))]
             (-> modif-tree
                 (assoc id {:modifiers modifiers}))))
 
@@ -349,11 +189,12 @@
         (->> shapes-tree
              (reduce
               (fn [modif-tree shape]
-                (let [modifiers (get-in modif-tree [(:id shape) :modifiers])
+                (let [root? (= uuid/zero (:id shape))
+                      modifiers (get-in modif-tree [(:id shape) :modifiers])
                       has-modifiers? (some? modifiers)
                       is-layout? (layout? shape)
                       is-parent? (or (group? shape) (and (frame? shape) (not (layout? shape))))
-                      root? (= uuid/zero (:id shape))
+
                       ;; If the current child is inside the layout we ignore the constraints
                       is-inside-layout? (inside-layout? objects shape)]
 

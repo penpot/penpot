@@ -10,9 +10,11 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
+   [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.rect :as gsr]
    [app.common.geom.shapes.transforms :as gst]
-   [app.common.pages.helpers :as cph]))
+   [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]))
 
 ;; :layout                 ;; true if active, false if not
 ;; :layout-dir             ;; :right, :left, :top, :bottom
@@ -56,107 +58,18 @@
   [{:keys [layout-v-orientation]}]
   (= layout-v-orientation :bottom))
 
-(defn add-padding [transformed-rect {:keys [layout-padding-type layout-padding]}]
-  (let [{:keys [p1 p2 p3 p4]} layout-padding
-        [p1 p2 p3 p4]
-        (if (= layout-padding-type :multiple)
-          [p1 p2 p3 p4]
-          [p1 p1 p1 p1])]
-
-    (-> transformed-rect
-        (update :y + p1)
-        (update :width - p2 p3)
-        (update :x + p3)
-        (update :height - p1 p4))))
-
-;; FUNCTIONS TO WORK WITH POINTS SQUARES
-
-(defn origin
-  [points]
-  (nth points 0))
-
-(defn start-hv
-  "Horizontal vector from the origin with a magnitude `val`"
-  [[p0 p1 _ _] val]
-  (-> (gpt/to-vec p0 p1)
-      (gpt/unit)
-      (gpt/scale val)))
-
-(defn end-hv
-  "Horizontal vector from the oposite to the origin in the x axis with a magnitude `val`"
-  [[p0 p1 _ _] val]
-  (-> (gpt/to-vec p1 p0)
-      (gpt/unit)
-      (gpt/scale val)))
-
-(defn start-vv
-  "Vertical vector from the oposite to the origin in the x axis with a magnitude `val`"
-  [[p0 _ _ p3] val]
-  (-> (gpt/to-vec p0 p3)
-      (gpt/unit)
-      (gpt/scale val)))
-
-(defn end-vv
-  "Vertical vector from the oposite to the origin in the x axis with a magnitude `val`"
-  [[p0 _ _ p3] val]
-  (-> (gpt/to-vec p3 p0)
-      (gpt/unit)
-      (gpt/scale val)))
-
-;;(defn start-hp
-;;  [[p0 _ _ _ :as points] val]
-;;  (gpt/add p0 (start-hv points val)))
-;;
-;;(defn end-hp
-;;  "Horizontal Vector from the oposite to the origin in the x axis with a magnitude `val`"
-;;  [[_ p1 _ _ :as points] val]
-;;  (gpt/add p1 (end-hv points val)))
-;;
-;;(defn start-vp
-;;  "Vertical Vector from the oposite to the origin in the x axis with a magnitude `val`"
-;;  [[p0 _ _ _ :as points] val]
-;;  (gpt/add p0 (start-vv points val)))
-;;
-;;(defn end-vp
-;;  "Vertical Vector from the oposite to the origin in the x axis with a magnitude `val`"
-;;  [[_ _ p3 _ :as points] val]
-;;  (gpt/add p3 (end-vv points val)))
-
-(defn width-points
-  [[p0 p1 _ _]]
-  (gpt/length (gpt/to-vec p0 p1)))
-
-(defn height-points
-  [[p0 _ _ p3]]
-  (gpt/length (gpt/to-vec p0 p3)))
-
-(defn pad-points
-  [[p0 p1 p2 p3 :as points] pad-top pad-right pad-bottom pad-left]
-  (let [top-v    (start-vv points pad-top)
-        right-v  (end-hv points pad-right)
-        bottom-v (end-vv points pad-bottom)
-        left-v   (start-hv points pad-left)]
-
-    [(-> p0 (gpt/add left-v)  (gpt/add top-v))
-     (-> p1 (gpt/add right-v) (gpt/add top-v))
-     (-> p2 (gpt/add right-v) (gpt/add bottom-v))
-     (-> p3 (gpt/add left-v)  (gpt/add bottom-v))]))
-
-;;;;
-
-
 (defn calc-layout-lines
   [{:keys [layout-gap layout-wrap-type] :as parent} children layout-bounds]
 
   (let [wrap? (= layout-wrap-type :wrap)
-        layout-width (width-points layout-bounds)
-        layout-height (height-points layout-bounds)
+        layout-width (gpo/width-points layout-bounds)
+        layout-height (gpo/height-points layout-bounds)
 
         reduce-fn
         (fn [[{:keys [line-width line-height num-children line-fill? child-fill? num-child-fill] :as line-data} result] child]
           (let [child-bounds (gst/parent-coords-points child parent)
-                child-width  (width-points child-bounds)
-                child-height (height-points child-bounds)
+                child-width  (gpo/width-points child-bounds)
+                child-height (gpo/height-points child-bounds)
 
                 col? (col? parent)
                 row? (row? parent)
@@ -212,8 +125,8 @@
 (defn calc-layout-lines-position
   [{:keys [layout-gap] :as parent} layout-bounds layout-lines]
 
-  (let [layout-width   (width-points layout-bounds)
-        layout-height  (height-points layout-bounds)
+  (let [layout-width   (gpo/width-points layout-bounds)
+        layout-height  (gpo/height-points layout-bounds)
         row?           (row? parent)
         col?           (col? parent)
         space-between? (= :space-between (:layout-type parent))
@@ -225,16 +138,16 @@
 
     (letfn [;; short version to not repeat always with all arguments
             (xv [val]
-              (start-hv layout-bounds val))
+              (gpo/start-hv layout-bounds val))
 
             ;; short version to not repeat always with all arguments
             (yv [val]
-              (start-vv layout-bounds val))
+              (gpo/start-vv layout-bounds val))
 
             (get-base-line
               [total-width total-height]
 
-              (cond-> (origin layout-bounds)
+              (cond-> (gpo/origin layout-bounds)
                 (and row? h-center?)
                 (gpt/add (xv (/ (- layout-width total-width) 2)))
 
@@ -348,8 +261,8 @@
    layout-bounds
    {:keys [num-children line-width line-height child-fill?] :as line-data}]
 
-  (let [width (width-points layout-bounds)
-        height (height-points layout-bounds)
+  (let [width (gpo/width-points layout-bounds)
+        height (gpo/height-points layout-bounds)
 
         layout-gap
         (cond
@@ -396,8 +309,8 @@
         v-end?    (v-end? parent)
         points    (:points parent)
 
-        xv (partial start-hv points)
-        yv (partial start-vv points)
+        xv (partial gpo/start-hv points)
+        yv (partial gpo/start-vv points)
 
         corner-p
         (cond-> start-p
@@ -447,26 +360,18 @@
 
   (cond
     (and (col? parent) (= :fill layout-h-behavior) child-fill?)
-    (let [layout-width (width-points layout-bounds)
+    (let [layout-width (gpo/width-points layout-bounds)
           fill-space (- layout-width line-width (* layout-gap (dec num-children)))
           fill-width (/ fill-space (:num-child-fill layout-data))
           fill-scale (/ fill-width child-width)]
+
       {:width fill-width
-       :modifiers [{:type :resize
-                    :origin child-origin
-                    :transform transform
-                    :transform-inverse transform-inverse
-                    :vector (gpt/point fill-scale 1)}]})
+       :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})
 
     (and (row? parent) (= :fill layout-h-behavior) line-fill?)
     (let [fill-scale (/ line-width child-width)]
       {:width line-width
-       :modifiers [{:type :resize
-                    :origin child-origin
-                    :transform transform
-                    :transform-inverse transform-inverse
-                    :vector (gpt/point fill-scale 1)}]})
-    ))
+       :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})))
 
 (defn calc-fill-height-data
   "Calculates the size and modifiers for the height of an auto-fill child"
@@ -477,43 +382,33 @@
 
   (cond
     (and (row? parent) (= :fill layout-v-behavior) child-fill?)
-    (let [layout-height (height-points layout-bounds)
+    (let [layout-height (gpo/height-points layout-bounds)
           fill-space (- layout-height line-height (* layout-gap (dec num-children)))
           fill-height (/ fill-space (:num-child-fill layout-data))
           fill-scale (/ fill-height child-height)]
       {:height fill-height
-       :modifiers [{:type :resize
-                    :origin child-origin
-                    :transform transform
-                    :transform-inverse transform-inverse
-                    :vector (gpt/point 1 fill-scale)}]})
+       :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
 
     (and (col? parent) (= :fill layout-v-behavior) line-fill?)
     (let [fill-scale (/ line-height child-height)]
       {:height line-height
-       :modifiers [{:type :resize
-                    :origin child-origin
-                    :transform transform
-                    :transform-inverse transform-inverse
-                    :vector (gpt/point 1 fill-scale)}]})
-    ))
+       :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})))
 
 (defn normalize-child-modifiers
   "Apply the modifiers and then normalized them against the parent coordinates"
-  [parent child modifiers transformed-parent]
+  [parent child modifiers {:keys [transform transform-inverse] :as transformed-parent}]
 
   (let [transformed-child (gst/transform-shape child modifiers)
         child-bb-before (gst/parent-coords-rect child parent)
         child-bb-after  (gst/parent-coords-rect transformed-child transformed-parent)
         scale-x (/ (:width child-bb-before) (:width child-bb-after))
-        scale-y (/ (:height child-bb-before) (:height child-bb-after))]
+        scale-y (/ (:height child-bb-before) (:height child-bb-after))
+
+        resize-origin (-> transformed-parent :points first) ;; TODO LAYOUT: IS always the origin?n
+        resize-vector (gpt/point scale-x scale-y)]
     (-> modifiers
-        (update :v2 #(conj %
-                           {:type :resize
-                            :transform (:transform transformed-parent)
-                            :transform-inverse (:transform-inverse transformed-parent)
-                            :origin (-> transformed-parent :points (nth 0))
-                            :vector (gpt/point scale-x scale-y)})))))
+        (ctm/select-child-modifiers)
+        (ctm/set-resize resize-vector resize-origin transform transform-inverse))))
 
 (defn calc-layout-data
   "Digest the layout data to pass it to the constrains"
@@ -529,7 +424,7 @@
         ;; Normalize the points to remove flips
         points (gst/parent-coords-points parent parent)
 
-        layout-bounds (pad-points points pad-top pad-right pad-bottom pad-left)
+        layout-bounds (gpo/pad-points points pad-top pad-right pad-bottom pad-left)
 
         ;; Reverse
         reverse? (or (= :left layout-dir) (= :bottom layout-dir))
@@ -549,9 +444,9 @@
   [parent child layout-line]
   (let [child-bounds (gst/parent-coords-points child parent)
 
-        child-origin (origin child-bounds)
-        child-width  (width-points child-bounds)
-        child-height (height-points child-bounds)
+        child-origin (gpo/origin child-bounds)
+        child-width  (gpo/width-points child-bounds)
+        child-height (gpo/height-points child-bounds)
 
         fill-width   (calc-fill-width-data parent child child-origin child-width layout-line)
         fill-height  (calc-fill-height-data parent child child-origin child-height layout-line)
@@ -564,15 +459,15 @@
         move-vec (gpt/to-vec child-origin corner-p)
 
         modifiers
-        (-> []
-            (cond-> fill-width (d/concat-vec (:modifiers fill-width)))
-            (cond-> fill-height (d/concat-vec (:modifiers fill-height)))
-            (conj {:type :move :vector move-vec}))]
+        (-> (ctm/empty-modifiers)
+            (cond-> fill-width (ctm/add-modifiers (:modifiers fill-width)))
+            (cond-> fill-height (ctm/add-modifiers (:modifiers fill-height)))
+            (ctm/set-move move-vec))]
 
     [modifiers layout-line]))
 
 
-(defn drop-areas
+(defn layout-drop-areas
   [{:keys [margin-x margin-y] :as frame} layout-data children]
 
   (let [col? (col? frame)
@@ -730,6 +625,6 @@
         position    (gmt/transform-point-center position (gco/center-shape frame) (:transform-inverse frame))
         children    (cph/get-immediate-children objects frame-id)
         layout-data (calc-layout-data frame children)
-        drop-areas  (drop-areas frame layout-data children)
+        drop-areas  (layout-drop-areas frame layout-data children)
         area        (d/seek #(gsr/contains-point? % position) drop-areas)]
     (:index area)))

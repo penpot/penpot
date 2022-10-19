@@ -6,13 +6,13 @@
 
 (ns app.common.geom.shapes.constraints
   (:require
-   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gsi]
    [app.common.geom.shapes.rect :as gre]
    [app.common.geom.shapes.transforms :as gst]
    [app.common.math :as mth]
+   [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
 
 ;; Auxiliary methods to work in an specifica axis
@@ -152,8 +152,7 @@
         end-angl (gpt/angle-with-other end-before end-after)
         target-end (if (mth/close? end-angl 180) (- (gpt/length end-before)) (gpt/length end-before))
         disp-vector-end (gpt/subtract end-after (gpt/scale (gpt/unit end-after) target-end))]
-    [{:type :move
-      :vector disp-vector-end}]))
+    (ctm/move disp-vector-end)))
 
 (defmethod constraint-modifier :fixed
   [_ axis child-points-before parent-points-before child-points-after parent-points-after transformed-parent]
@@ -177,11 +176,7 @@
 
         scale (* resize-sign (/  (gpt/length after-vec) (gpt/length before-vec)))
         ]
-    [{:type :resize
-      :vector (get-scale axis scale)
-      :origin c0
-      :transform (:transform transformed-parent)
-      :transform-inverse  (:transform-inverse transformed-parent)}]))
+    (ctm/resize (get-scale axis scale) c0 (:transform transformed-parent) (:transform-inverse transformed-parent))))
 
 (defmethod constraint-modifier :center
   [_ axis child-points-before parent-points-before child-points-after parent-points-after]
@@ -190,8 +185,7 @@
         center-angl (gpt/angle-with-other center-before center-after)
         target-center (if (mth/close? center-angl 180) (- (gpt/length center-before)) (gpt/length center-before))
         disp-vector-center (gpt/subtract center-after (gpt/scale (gpt/unit center-after) target-center))]
-    [{:type :move
-      :vector disp-vector-center}]))
+    (ctm/move disp-vector-center)))
 
 (defmethod constraint-modifier :default [_ _ _ _ _]
   [])
@@ -222,29 +216,6 @@
       :top
       :scale)))
 
-#_(defn clean-modifiers
-  "Remove redundant modifiers"
-  [{:keys [displacement resize-vector resize-vector-2] :as modifiers}]
-
-  (cond-> modifiers
-    ;; Displacement with value 0. We don't move in any direction
-    (and (some? displacement)
-         (mth/almost-zero? (:e displacement))
-         (mth/almost-zero? (:f displacement)))
-    (dissoc :displacement)
-
-    ;; Resize with value very close to 1 means no resize
-    (and (some? resize-vector)
-         (mth/almost-zero? (- 1.0 (:x resize-vector)))
-         (mth/almost-zero? (- 1.0 (:y resize-vector))))
-    (dissoc :resize-origin :resize-vector)
-
-    (and (some? resize-vector)
-         (mth/almost-zero? (- 1.0 (:x resize-vector-2)))
-         (mth/almost-zero? (- 1.0 (:y resize-vector-2))))
-    (dissoc :resize-origin-2 :resize-vector-2)))
-
-
 (defn bounding-box-parent-transform
   "Returns a bounding box for the child in the same coordinate system
   as the parent.
@@ -259,36 +230,27 @@
 
 (defn normalize-modifiers
   "Before aplying constraints we need to remove the deformation caused by the resizing of the parent"
-  [constraints-h constraints-v modifiers child parent transformed-child transformed-parent]
+  [constraints-h constraints-v modifiers child parent transformed-child {:keys [transform transform-inverse] :as transformed-parent}]
 
   (let [child-bb-before (gst/parent-coords-rect child parent)
         child-bb-after  (gst/parent-coords-rect transformed-child transformed-parent)
         scale-x (/ (:width child-bb-before) (:width child-bb-after))
-        scale-y (/ (:height child-bb-before) (:height child-bb-after))]
+        scale-y (/ (:height child-bb-before) (:height child-bb-after))
 
-    (-> modifiers
-        (update :v2 #(cond-> %
-                       (not= :scale constraints-h)
-                       (conj
-                        ;; This resize will leave the shape in its original position relative to the parent
-                        {:type :resize
-                         :transform (:transform transformed-parent)
-                         :transform-inverse (:transform-inverse transformed-parent)
-                         :origin (-> transformed-parent :points (nth 0))
-                         :vector (gpt/point scale-x 1)})
+        ;; TODO LAYOUT: Is the first always the origin?
+        resize-origin (-> transformed-parent :points first)]
 
-                       (not= :scale constraints-v)
-                       (conj
-                        {:type :resize
-                         :transform (:transform transformed-parent)
-                         :transform-inverse (:transform-inverse transformed-parent)
-                         :origin (-> transformed-parent :points (nth 0))
-                         :vector (gpt/point 1 scale-y)}))))))
+    (cond-> modifiers
+      (not= :scale constraints-h)
+      (ctm/set-resize (gpt/point scale-x 1) resize-origin transform transform-inverse)
+
+      (not= :scale constraints-v)
+      (ctm/set-resize (gpt/point 1 scale-y) resize-origin transform transform-inverse))))
 
 (defn calc-child-modifiers
   [parent child modifiers ignore-constraints transformed-parent]
 
-  (let [modifiers (select-keys modifiers [:v2])
+  (let [modifiers (ctm/select-child-modifiers modifiers)
 
         constraints-h
         (if-not ignore-constraints
@@ -306,12 +268,12 @@
       (let [transformed-child (gst/transform-shape child modifiers)
             modifiers (normalize-modifiers constraints-h constraints-v modifiers child parent transformed-child transformed-parent)
 
-            tranformed-child-2 (gst/transform-shape child modifiers)
+            transformed-child (gst/transform-shape child modifiers)
             parent-points-before (:points parent)
             child-points-before (bounding-box-parent-transform child parent)
 
             parent-points-after (:points transformed-parent)
-            child-points-after (bounding-box-parent-transform tranformed-child-2 transformed-parent)
+            child-points-after (bounding-box-parent-transform transformed-child transformed-parent)
 
             modifiers-h (constraint-modifier (constraints-h const->type+axis) :x
                                              child-points-before parent-points-before
@@ -323,6 +285,6 @@
                                              child-points-after parent-points-after
                                              transformed-parent)]
 
-        (update modifiers :v2 d/concat-vec modifiers-h modifiers-v)))))
-
-
+        (-> modifiers
+            (ctm/add-modifiers modifiers-h)
+            (ctm/add-modifiers modifiers-v))))))

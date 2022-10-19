@@ -47,8 +47,9 @@
 
     (-> shape
         (assoc :click-draw? false)
-        (gsh/transform-shape (ctm/resize scalev (gpt/point x y)))
-        (gsh/transform-shape (ctm/move movev)))))
+        (gsh/transform-shape (-> (ctm/empty-modifiers)
+                                 (ctm/set-resize scalev (gpt/point x y))
+                                 (ctm/set-move movev))))))
 
 (defn update-drawing [state initial point lock?]
   (update-in state [:workspace-drawing :object] resize-shape initial point lock?))

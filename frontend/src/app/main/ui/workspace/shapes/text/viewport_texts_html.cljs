@@ -35,13 +35,6 @@
         (with-meta (meta (:position-data shape))))
       (dissoc :position-data :transform :transform-inverse)))
 
-#_(defn strip-modifier
-  [modifier]
-  (if (or (some? (dm/get-in modifier [:modifiers :resize-vector]))
-          (some? (dm/get-in modifier [:modifiers :resize-vector-2])))
-    modifier
-    (d/update-when modifier :modifiers dissoc :displacement :rotation)))
-
 (defn fix-position [shape modifier]
   (let [shape' (-> shape
                    (assoc :grow-type :fixed)

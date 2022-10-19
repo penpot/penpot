@@ -320,8 +320,8 @@
       (letfn [(update-fn [shape]
                 (let [{:keys [selrect grow-type]} shape
                       {shape-width :width shape-height :height} selrect
-                      modifier-width (ctm/resize-modifiers shape :width new-width)
-                      modifier-height (ctm/resize-modifiers shape :height new-height)]
+                      modifier-width (ctm/change-dimensions shape :width new-width)
+                      modifier-height (ctm/change-dimensions shape :height new-height)]
                   ;; TODO LAYOUT: MEZCLAR ESTOS EN UN UNICO MODIFIER
                   (cond-> shape
                     (and (not-changed? shape-width new-width) (= grow-type :auto-width))
@@ -346,8 +346,8 @@
 (defn apply-text-modifier
   [shape {:keys [width height position-data]}]
 
-  (let [modifier-width (when width (ctm/resize-modifiers shape :width width))
-        modifier-height (when height (ctm/resize-modifiers shape :height height))
+  (let [modifier-width (when width (ctm/change-dimensions shape :width width))
+        modifier-height (when height (ctm/change-dimensions shape :height height))
 
         ;; TODO LAYOUT: MEZCLAR LOS DOS EN UN UNICO MODIFIER
         new-shape
