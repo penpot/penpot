@@ -105,7 +105,7 @@
   (swap! storage dissoc ::locale)
   (reset! locale (autodetect)))
 
-(add-watch locale ::browser-font
+(add-watch locale "browser-font"
            (fn [_ _ _ locale]
              (log/info :hint "locale changed" :locale locale)
              (dom/set-html-lang! locale)
