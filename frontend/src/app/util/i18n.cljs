@@ -68,19 +68,22 @@
 (defonce locale (l/atom (or (get @storage ::locale)
                             (autodetect))))
 
-;; The translations `data` is a javascript object and should be treated
-;; with `goog.object` namespace functions instead of a standart
-;; clojure functions. This is for performance reasons because this
-;; code is executed in the critical part (application bootstrap) and
-;; used in many parts of the application.
-
 (defn init!
+  "Initialize the i18n module with translations.
+
+  The `data` is a javascript object for performance reasons. This code
+  is executed in the critical part (application bootstrap) and used in
+  many parts of the application."
   [data]
   (set! translations data))
 
 (defn set-locale!
   [lname]
-  (if lname
+  (if (or (nil? lname)
+          (str/empty? lname))
+    (let [lname (autodetect)]
+      (swap! storage dissoc ::locale)
+      (reset! locale lname))
     (let [supported (into #{} (map :value supported-locales))
           lname     (loop [locales (seq (parse-locale lname))]
                       (if-let [locale (first locales)]
@@ -88,11 +91,7 @@
                           locale
                           (recur (rest locales)))
                         cfg/default-language))]
-
       (swap! storage assoc ::locale lname)
-      (reset! locale lname))
-    (let [lname (autodetect)]
-      (swap! storage dissoc ::locale)
       (reset! locale lname))))
 
 (defn reset-locale

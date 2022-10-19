@@ -17,6 +17,8 @@
 - Fix path nodes panel. "To curve" and "To corner" icons are active if node is already curved/cornered [Taiga #4371](https://tree.taiga.io/project/penpot/issue/4371)
 - Fix displaying comments settings are not applied via "Comments" menu drop-down on the top navbar on view mode [Taiga #4389](https://tree.taiga.io/project/penpot/issue/4389)
 - Fix bad behaviour on hovering and click nested artboards[Taiga #4018](https://tree.taiga.io/project/penpot/issue/4018) and [Taiga #4269](https://tree.taiga.io/project/penpot/us/4269)
+- Fix lang autodetect issue [Taiga #4277](https://tree.taiga.io/project/penpot/issue/4277)
+
 
 ## 1.16.0-beta
 
