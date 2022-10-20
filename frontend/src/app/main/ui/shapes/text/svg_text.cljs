@@ -94,6 +94,8 @@
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
                              :x (if rtl? (+ (:x data) (:width data)) (:x data))
                              :y (- (:y data) (:height data))
+                             :textLength (:width data)
+                             :lengthAdjust "spacingAndGlyphs"
                              :transform (position-data-transform shape data)
                              :alignmentBaseline alignment-bl
                              :dominantBaseline dominant-bl

@@ -12,10 +12,17 @@
 - Fix some texts and a typo [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
 - Fix twitter support account link [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4279)
 
-
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
+## 1.16.1-beta
+
+### :bug: Bugs fixed
+
+- Fix firefox changing layer color type is not applied [Taiga #4292](https://tree.taiga.io/project/penpot/issue/4292)
+- Fix justify alignes text left [Taiga #4322](https://tree.taiga.io/project/penpot/issue/4322)
+- Fix text out of borders with "auto width" and center align [Taiga #4308](https://tree.taiga.io/project/penpot/issue/4308)
+- Fix auto-width for texts can make text appear stretched [Github #2482](https://github.com/penpot/penpot/issues/2482)
 
 ## 1.16.0-beta
 
@@ -78,6 +85,8 @@
 - Fix copied & pasted layer is not visible [Taiga #4283](https://tree.taiga.io/project/penpot/issue/4283)
 - Fix notification to newsletter is shown in all cases [Taiga #4367](https://tree.taiga.io/project/penpot/issue/4367)
 - Fix comments section is not scrolling by mouse wheel [Taiga #4305](https://tree.taiga.io/project/penpot/issue/4305)
+- Fix justify alignes text left [Taiga #4322](https://tree.taiga.io/project/penpot/issue/4322)
+- Fix text out of borders with "auto width" and center align [Taiga #4308](https://tree.taiga.io/project/penpot/issue/4308)
 
 ## 1.15.4-beta
 
