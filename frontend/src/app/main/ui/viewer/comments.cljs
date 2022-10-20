@@ -41,6 +41,10 @@
                            (let [target (dom/get-current-target event)
                                  key    (d/read-string (dom/get-attribute target "data-key"))
                                  val    (d/read-string (dom/get-attribute target "data-val"))]
+                             (when (= key :owner-filter)
+                               (st/emit! (dcm/update-filters {:mode val})))
+                             (when (= key :status-filter)
+                               (st/emit! (dcm/update-filters {:show val})))
                              (st/emit! (dcm/update-options {key val})))))]
 
     [:div.view-options {:on-click toggle-dropdown}

@@ -11,6 +11,7 @@
 - Fix shortcut texts alignment [Taiga #4275](https://tree.taiga.io/project/penpot/issue/4275)
 - Fix some texts and a typo [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
 - Fix twitter support account link [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4279)
+- Fix displaying comments settings are not applied via "Comments" menu drop-down on the top navbar on view mode [Taiga #4389](https://tree.taiga.io/project/penpot/issue/4389)
 
 
 ### :arrow_up: Deps updates
