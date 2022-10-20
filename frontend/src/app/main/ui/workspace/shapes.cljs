@@ -68,24 +68,21 @@
 
       [:g.frame-children
        (for [shape shapes]
-         [:g.ws-shape-wrapper
+         [:g.ws-shape-wrapper {:key (:id shape)}
           (cond
             (not (cph/frame-shape? shape))
             [:& shape-wrapper
-             {:shape shape
-              :key (:id shape)}]
+             {:shape shape}]
 
             (cph/root-frame? shape)
             [:& root-frame-wrapper
              {:shape shape
-              :key (:id shape)
               :objects (get frame-objects (:id shape))
               :thumbnail? (not (contains? active-frames (:id shape)))}]
 
             :else
             [:& nested-frame-wrapper
              {:shape shape
-              :key (:id shape)
               :objects (get frame-objects (:id shape))}])])]]]))
 
 (mf/defc shape-wrapper

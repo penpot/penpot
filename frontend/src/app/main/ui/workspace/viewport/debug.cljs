@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.layout :as gsl]
+   [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.pages.helpers :as cph]
    [rumext.v2 :as mf]))
 

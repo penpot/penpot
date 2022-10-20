@@ -10,6 +10,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth :refer [close?]]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [clojure.test :as t]))
 
@@ -59,7 +60,7 @@
 
   (t/testing "Transform shape with translation modifiers"
     (t/are [type]
-        (let [modifiers {:displacement (gmt/translate-matrix (gpt/point 10 -10))}]
+        (let [modifiers (ctm/move (gpt/point 10 -10))]
           (let [shape-before (create-test-shape type {:modifiers modifiers})
                 shape-after  (gsh/transform-shape shape-before)]
             (t/is (not= shape-before shape-after))
@@ -91,9 +92,7 @@
 
   (t/testing "Transform shape with resize modifiers"
     (t/are [type]
-        (let [modifiers {:resize-origin (gpt/point 0 0)
-                         :resize-vector (gpt/point 2 2)
-                         :resize-transform (gmt/matrix)}
+        (let [modifiers (ctm/resize (gpt/point 2 2) (gpt/point 0 0))
               shape-before (create-test-shape type {:modifiers modifiers})
               shape-after  (gsh/transform-shape shape-before)]
           (t/is (not= shape-before shape-after))
@@ -113,9 +112,7 @@
 
   (t/testing "Transform with empty resize"
     (t/are [type]
-        (let [modifiers {:resize-origin (gpt/point 0 0)
-                         :resize-vector (gpt/point 1 1)
-                         :resize-transform (gmt/matrix)}
+        (let [modifiers (ctm/resize (gpt/point 1 1) (gpt/point 0 0))
               shape-before (create-test-shape type {:modifiers modifiers})
               shape-after  (gsh/transform-shape shape-before)]
           (t/are [prop]
@@ -126,9 +123,7 @@
 
   (t/testing "Transform with resize=0"
     (t/are [type]
-        (let [modifiers {:resize-origin (gpt/point 0 0)
-                         :resize-vector (gpt/point 0 0)
-                         :resize-transform (gmt/matrix)}
+        (let [modifiers (ctm/resize (gpt/point 0 0) (gpt/point 0 0))
               shape-before (create-test-shape type {:modifiers modifiers})
               shape-after  (gsh/transform-shape shape-before)]
           (t/is (> (get-in shape-before [:selrect :width])
@@ -142,13 +137,13 @@
 
   (t/testing "Transform shape with rotation modifiers"
     (t/are [type]
-        (let [modifiers {:rotation 30}
-              shape-before (create-test-shape type {:modifiers modifiers})
+        (let [shape-before (create-test-shape type)
+              modifiers (ctm/rotation shape-before (gsh/center-shape shape-before) 30 )
+              shape-before (assoc shape-before :modifiers modifiers)
               shape-after  (gsh/transform-shape shape-before)]
 
-          (t/is (not= shape-before shape-after))
+          (t/is (not= (:selrect shape-before) (:selrect shape-after)))
 
-          ;; Selrect won't change with a rotation, but points will
           (t/is (close? (get-in shape-before [:selrect :x])
                         (get-in shape-after  [:selrect :x])))
 
@@ -166,9 +161,9 @@
 
   (t/testing "Transform shape with rotation = 0 should leave equal selrect"
     (t/are [type]
-        (let [modifiers {:rotation 0}
-              shape-before (create-test-shape type {:modifiers modifiers})
-              shape-after  (gsh/transform-shape shape-before)]
+        (let [shape-before (create-test-shape type)
+              modifiers (ctm/rotation shape-before (gsh/center-shape shape-before) 0)
+              shape-after  (gsh/transform-shape (assoc shape-before :modifiers modifiers))]
           (t/are [prop]
               (t/is (close? (get-in shape-before [:selrect prop])
                             (get-in shape-after [:selrect prop])))
@@ -177,12 +172,13 @@
 
   (t/testing "Transform shape with invalid selrect fails gracefully"
     (t/are [type selrect]
-        (let [modifiers {:displacement (gmt/matrix)}
+        (let [modifiers (ctm/move 0 0)
               shape-before (-> (create-test-shape type {:modifiers modifiers})
                                (assoc :selrect selrect))
               shape-after  (gsh/transform-shape shape-before)]
-          (= (:selrect shape-before)
-             (:selrect shape-after)))
+          
+          (t/is (not= (:selrect shape-before)
+                      (:selrect shape-after))))
 
       :rect {:x 0.0 :y 0.0 :x1 0.0 :y1 0.0 :x2 ##Inf :y2 ##Inf :width ##Inf :height ##Inf}
       :path {:x 0.0 :y 0.0 :x1 0.0 :y1 0.0 :x2 ##Inf :y2 ##Inf :width ##Inf :height ##Inf}

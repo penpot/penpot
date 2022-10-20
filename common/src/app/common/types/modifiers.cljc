@@ -24,7 +24,8 @@
 ;;  - structure-parent: Structure non recursive
 ;;     * add-children
 ;;     * remove-children
-;;  - structure-child: Structre recursive
+;;     * reflow
+;;  - structure-child: Structure recursive
 ;;     * scale-content
 ;;
 
@@ -47,43 +48,47 @@
   ([modifiers vector origin]
    (-> modifiers
        (update :geometry conjv {:type :resize
-                          :vector vector
-                          :origin origin})))
+                                :vector vector
+                                :origin origin})))
 
   ([modifiers vector origin transform transform-inverse]
    (-> modifiers
        (update :geometry conjv {:type :resize
-                          :vector vector
-                          :origin origin
-                          :transform transform
-                          :transform-inverse transform-inverse}))))
+                                :vector vector
+                                :origin origin
+                                :transform transform
+                                :transform-inverse transform-inverse}))))
 
 (defn set-rotation
   [modifiers center angle]
   (-> modifiers
       (update :geometry conjv {:type :rotation
-                         :center center
-                         :rotation angle})))
+                               :center center
+                               :rotation angle})))
 
 (defn set-remove-children
   [modifiers shapes]
   (-> modifiers
       (update :structure-parent conjv {:type :remove-children
-                         :value shapes}))
+                                       :value shapes}))
   )
 
 (defn set-add-children
   [modifiers shapes index]
   (-> modifiers
       (update :structure-parent conjv {:type :add-children
-                         :value shapes
-                         :index index})))
+                                       :value shapes
+                                       :index index})))
+
+(defn set-reflow
+  [modifiers]
+  (-> modifiers
+      (update :structure-parent conjv {:type :reflow})))
 
 (defn set-scale-content
   [modifiers value]
   (-> modifiers
       (update :structure-child conjv {:type :scale-content :value value})))
-
 
 (defn add-modifiers
   [modifiers new-modifiers]
@@ -124,7 +129,7 @@
 
     (-> (empty-modifiers)
         (set-rotation shape-center angle)
-        (set-move (gpt/transform (gpt/point 1 1) rotation)))))
+        (set-move (gpt/transform (gpt/point 0 0) rotation)))))
 
 (defn remove-children
   [shapes]
@@ -136,10 +141,20 @@
   (-> (empty-modifiers)
       (set-add-children shapes index)))
 
+(defn reflow
+  []
+  (-> (empty-modifiers)
+      (set-reflow)))
+
 (defn scale-content
   [value]
   (-> (empty-modifiers)
       (set-scale-content value)))
+
+(defn child-modifiers?
+  [{:keys [geometry structure-child]}]
+  (or (d/not-empty? geometry)
+      (d/not-empty? structure-child)))
 
 (defn select-child-modifiers
   [modifiers]
@@ -337,3 +352,7 @@
     (as-> shape $
       (reduce apply-modifier $ (:structure-parent modifiers))
       (reduce apply-modifier $ (:structure-child modifiers)))))
+
+(defn has-geometry?
+  [{:keys [geometry]}]
+  (d/not-empty? geometry))

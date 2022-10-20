@@ -8,9 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes.constraints :as gct]
-   [app.common.geom.shapes.layout :as gcl]
+   [app.common.geom.shapes.flex-layout :as gcl]
    [app.common.geom.shapes.pixel-precision :as gpp]
    [app.common.geom.shapes.transforms :as gtr]
+   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
 
@@ -101,7 +102,7 @@
 
           modif-tree)))))
 
-(defn get-first-layout
+(defn get-tree-root
   [id objects]
 
   (loop [current id
@@ -127,24 +128,40 @@
         (recur (:id parent) result)))))
 
 (defn resolve-tree-sequence
-  ;; TODO LAYOUT: Esta ahora puesto al zero pero tiene que mirar todas las raices
   "Given the ids that have changed search for layout roots to recalculate"
-  [_ids objects]
-  (->> (tree-seq
-        #(d/not-empty? (get-in objects [% :shapes]))
-        #(get-in objects [% :shapes])
-        uuid/zero)
+  [modif-tree objects]
 
-       (map #(get objects %))))
+  (let [redfn
+        (fn [result id]
+          (if (= id uuid/zero)
+            result
+            (let [root (get-tree-root id objects)
 
-(defn resolve-layout-ids
-  "Given a list of ids, resolve the parent layouts that will need to update. This will go upwards
-  in the tree while a layout is found"
-  [ids objects]
+                  ;; Remove the children from the current root
+                  result
+                  (into #{} (remove #(cph/is-child? objects root %)) result)
 
-  (into (d/ordered-set)
-        (map #(get-first-layout % objects))
-        ids))
+                  contains-parent?
+                  (some #(cph/is-child? objects % root) result)]
+
+              (cond-> result
+                (not contains-parent?)
+                (conj root)))))
+
+        generate-tree
+        (fn [id]
+          (->> (tree-seq
+                #(d/not-empty? (get-in objects [% :shapes]))
+                #(get-in objects [% :shapes])
+                id)
+
+               (map #(get objects %))))
+
+        roots (->> modif-tree keys (reduce redfn #{}))]
+
+    (concat
+     (when (contains? modif-tree uuid/zero) [(get objects uuid/zero)])
+     (mapcat generate-tree roots))))
 
 (defn inside-layout?
   [objects shape]
@@ -170,34 +187,31 @@
 ;;                    modif-tree))))
 
 (defn set-objects-modifiers
-  [ids objects get-modifier ignore-constraints snap-pixel?]
+  [modif-tree objects ignore-constraints snap-pixel?]
 
-  (let [set-modifiers
-        (fn [modif-tree id]
-          (let [root? (= uuid/zero id)
-                shape (get objects id)
-                modifiers (cond-> (get-modifier shape)
-                            (and (not root?) snap-pixel?)
-                            (gpp/set-pixel-precision shape))]
-            (-> modif-tree
-                (assoc id {:modifiers modifiers}))))
-
-        modif-tree (reduce set-modifiers {} ids)
-        shapes-tree (resolve-tree-sequence ids objects)
+  (let [shapes-tree (resolve-tree-sequence modif-tree objects)
 
         modif-tree
         (->> shapes-tree
              (reduce
               (fn [modif-tree shape]
+                
                 (let [root? (= uuid/zero (:id shape))
+
                       modifiers (get-in modif-tree [(:id shape) :modifiers])
-                      has-modifiers? (some? modifiers)
+                      modifiers (cond-> modifiers
+                                  (and (not root?) (ctm/has-geometry? modifiers) snap-pixel?)
+                                  (gpp/set-pixel-precision shape))
+
+                      modif-tree (-> modif-tree (assoc-in [(:id shape) :modifiers] modifiers))
+                      
+                      has-modifiers? (ctm/child-modifiers? modifiers)
                       is-layout? (layout? shape)
                       is-parent? (or (group? shape) (and (frame? shape) (not (layout? shape))))
 
                       ;; If the current child is inside the layout we ignore the constraints
                       is-inside-layout? (inside-layout? objects shape)]
-
+                  
                   (cond-> modif-tree
                     (and has-modifiers? is-parent? (not root?))
                     (set-children-modifiers objects shape (or ignore-constraints is-inside-layout?) snap-pixel?)
@@ -207,6 +221,6 @@
 
               modif-tree))]
 
-    ;; #?(:cljs
-    ;;    (.log js/console ">result" (modif->js modif-tree objects)))
+    ;;#?(:cljs
+    ;;   (.log js/console ">result" (modif->js modif-tree objects)))
     modif-tree))

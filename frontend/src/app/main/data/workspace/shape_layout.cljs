@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
@@ -25,8 +26,7 @@
    :layout-wrap-type
    :layout-padding-type
    :layout-padding
-   ])
-
+   :layout-gap-type])
 
 (def initial-flex-layout
   {:layout                 :flex
@@ -51,8 +51,9 @@
       (let [objects (wsh/lookup-page-objects state)
             ids     (->> ids (filter #(get-in objects [% :layout])))]
         (if (d/not-empty? ids)
-          (rx/of (dwt/set-modifiers ids)
-                 (dwt/apply-modifiers))
+          (let [modif-tree (dwt/create-modif-tree ids (ctm/reflow))]
+            (rx/of (dwt/set-modifiers modif-tree)
+                   (dwt/apply-modifiers)))
           (rx/empty))))))
 
 ;; TODO LAYOUT: Remove constraints from children

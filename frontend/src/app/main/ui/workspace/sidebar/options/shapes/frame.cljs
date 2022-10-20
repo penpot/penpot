@@ -47,7 +47,7 @@
        [:*
         [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}]
 
-        (when (or (:layout shape) is-layout-child?)
+        (when is-layout-child?
           [:& layout-item-menu
            {:ids ids
             :type type

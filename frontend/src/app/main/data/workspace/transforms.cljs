@@ -11,7 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.layout :as gsl]
+   [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.common :as cpc]
@@ -117,46 +117,69 @@
 
 (declare get-ignore-tree)
 
+(defn create-modif-tree
+  [ids modifiers]
+  (us/verify (s/coll-of uuid?) ids)
+  (into {} (map #(vector % {:modifiers modifiers})) ids))
+
+(defn build-modif-tree
+  [ids objects get-modifier]
+  (us/verify (s/coll-of uuid?) ids)
+  (into {} (map #(vector % {:modifiers (get-modifier (get objects %))})) ids))
+
+(defn build-change-frame-modifiers
+  [modif-tree objects selected target-frame position]
+
+  (let [origin-frame-ids (->> selected (group-by #(get-in objects [% :frame-id])))
+        layout? (get-in objects [target-frame :layout])
+        child-set (set (get-in objects [target-frame :shapes]))
+        drop-index (when layout? (gsl/get-drop-index target-frame objects position))
+
+        update-frame-modifiers
+        (fn [modif-tree [original-frame shapes]]
+          (let [shapes (->> shapes (d/removev #(= target-frame %)))
+                shapes (cond->> shapes
+                         (and layout? (= original-frame target-frame))
+                         ;; When movining inside a layout frame remove the shapes that are not immediate children
+                         (filterv #(contains? child-set %)))]
+            (cond-> modif-tree
+              (not= original-frame target-frame)
+              (-> (update-in [original-frame :modifiers] ctm/set-remove-children shapes)
+                  (update-in [target-frame :modifiers] ctm/set-add-children shapes drop-index))
+
+              (and layout? (= original-frame target-frame))
+              (update-in [target-frame :modifiers] ctm/set-add-children shapes drop-index))))]
+
+    (reduce update-frame-modifiers modif-tree origin-frame-ids)))
+
+(defn modif->js
+     [modif-tree objects]
+     (clj->js (into {}
+                    (map (fn [[k v]]
+                           [(get-in objects [k :name]) v]))
+                    modif-tree)))
+
 (defn set-modifiers
-  ([ids]
-   (set-modifiers ids nil false))
+  ([modif-tree]
+   (set-modifiers modif-tree false))
 
-  ([ids modifiers]
-   (set-modifiers ids modifiers false))
+  ([modif-tree ignore-constraints]
+   (set-modifiers modif-tree ignore-constraints false))
 
-  ([ids modifiers ignore-constraints]
-   (set-modifiers ids modifiers ignore-constraints false))
-
-  ([ids modifiers ignore-constraints ignore-snap-pixel]
-   (us/verify (s/coll-of uuid?) ids)
+  ([modif-tree ignore-constraints ignore-snap-pixel]
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [objects     (wsh/lookup-page-objects state)
-             ids         (into #{} (remove #(get-in objects [% :blocked] false)) ids)
+       (let [objects
+             (wsh/lookup-page-objects state)
 
-             snap-pixel? (and (not ignore-snap-pixel)
-                              (contains? (:workspace-layout state) :snap-pixel-grid))
-
-             workspace-modifiers (:workspace-modifiers state)
+             snap-pixel?
+             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
              modif-tree
-             (gsh/set-objects-modifiers
-              ;; TODO LAYOUT: I don't like this
-              (concat (keys workspace-modifiers) ids)
-              objects
-              (fn [shape]
-                (let [
-                      modifiers (if (contains? ids (:id shape)) modifiers (ctm/empty-modifiers))
+             (gsh/set-objects-modifiers modif-tree objects ignore-constraints snap-pixel?)]
 
-                      structure-modifiers (ctm/select-structure
-                                           (get-in state [:workspace-modifiers (:id shape) :modifiers]))]
-                  (cond-> modifiers
-                    (some? structure-modifiers)
-                    (ctm/add-modifiers structure-modifiers))))
-              ignore-constraints snap-pixel?)]
-
-         (update state :workspace-modifiers merge modif-tree))))))
+         (assoc state :workspace-modifiers modif-tree))))))
 
 ;; Rotation use different algorithm to calculate children modifiers (and do not use child constraints).
 (defn- set-rotation-modifiers
@@ -171,8 +194,6 @@
              ids
              (->> shapes
                   (remove #(get % :blocked false))
-                  #_(mapcat #(cph/get-children objects (:id %)))
-                  #_(concat shapes)
                   (filter #((cpc/editable-attrs (:type %)) :rotation))
                   (map :id))
 
@@ -181,9 +202,10 @@
                (ctm/rotation shape center angle))
 
              modif-tree
-             (gsh/set-objects-modifiers ids objects get-modifier false false)]
+             (-> (build-modif-tree ids objects get-modifier)
+                 (gsh/set-objects-modifiers objects false false))]
 
-         (update state :workspace-modifiers merge modif-tree))))))
+         (assoc state :workspace-modifiers modif-tree))))))
 
 (defn- update-grow-type
   [shape old-shape]
@@ -408,9 +430,11 @@
                       (ctm/set-resize scalev resize-origin shape-transform shape-transform-inverse)
 
                       (cond-> scale-text
-                        (ctm/set-scale-content (:x scalev))))]
+                        (ctm/set-scale-content (:x scalev))))
 
-              (rx/of (set-modifiers ids modifiers))))
+                  modif-tree (create-modif-tree ids modifiers)]
+
+              (rx/of (set-modifiers modif-tree))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
@@ -463,7 +487,8 @@
             (fn [shape] (ctm/change-dimensions shape attr value))
 
             modif-tree
-            (gsh/set-objects-modifiers ids objects get-modifier false snap-pixel?)]
+            (-> (build-modif-tree ids objects get-modifier)
+                (gsh/set-objects-modifiers objects false snap-pixel?))]
 
         (assoc state :workspace-modifiers modif-tree)))
 
@@ -487,7 +512,8 @@
             (fn [shape] (ctm/change-orientation-modifiers shape orientation))
 
             modif-tree
-            (gsh/set-objects-modifiers ids objects get-modifier false snap-pixel?)]
+            (-> (build-modif-tree ids objects get-modifier)
+                (gsh/set-objects-modifiers objects false snap-pixel?))]
 
         (assoc state :workspace-modifiers modif-tree)))
 
@@ -621,37 +647,6 @@
            (rx/take 1)
            (rx/map #(start-move from-position))))))
 
-(defn set-change-frame-modifiers
-  [selected target-frame position]
-
-  (ptk/reify ::set-change-frame-modifiers
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
-
-            origin-frame-ids (->> selected (group-by #(get-in objects [% :frame-id])))
-
-            layout? (get-in objects [target-frame :layout])
-
-            drop-index
-            (when layout? (gsl/get-drop-index target-frame objects position))
-
-            modif-tree
-            (into {}
-                  (mapcat
-                   (fn [original-frame]
-                     (let [shapes (->> (get origin-frame-ids original-frame)
-                                       (d/removev #(= target-frame %)))]
-                       (cond
-                         (not= original-frame target-frame)
-                         [[original-frame {:modifiers (ctm/remove-children shapes)}]
-                          [target-frame {:modifiers (ctm/add-children shapes drop-index)}]]
-
-                         layout?
-                         [[target-frame {:modifiers (ctm/add-children shapes drop-index)}]]))))
-                  (keys origin-frame-ids))]
-
-        (assoc state :workspace-modifiers modif-tree)))))
 
 (defn- start-move
   ([from-position] (start-move from-position nil))
@@ -700,21 +695,20 @@
            (rx/concat
             (rx/merge
              (->> position
-                  (rx/map (fn [delta]
-                            (let [position (gpt/add from-position delta)
-                                  target-frame (ctst/top-nested-frame objects position)]
-                              (set-change-frame-modifiers selected target-frame position))))
-                  (rx/take-until stopper))
-
-             (->> position
                   ;; We ask for the snap position but we continue even if the result is not available
                   (rx/with-latest vector snap-delta)
 
                   ;; We try to use the previous snap so we don't have to wait for the result of the new
                   (rx/map snap/correct-snap-point)
-                  (rx/map ctm/move)
 
-                  (rx/map (partial set-modifiers ids))
+                  (rx/map
+                   (fn [move-vector]
+                     (let [position (gpt/add from-position move-vector)
+                           target-frame (ctst/top-nested-frame objects position)]
+                       (-> (create-modif-tree ids (ctm/move move-vector))
+                           (build-change-frame-modifiers objects selected target-frame position)
+                           (set-modifiers)))))
+
                   (rx/take-until stopper)))
 
             (rx/of (dwu/start-undo-transaction)
@@ -762,8 +756,8 @@
              (rx/merge
               (->> move-events
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
-                   (rx/map #(ctm/move %))
-                   (rx/map (partial set-modifiers selected))
+                   (rx/map #(create-modif-tree selected (ctm/move %)))
+                   (rx/map (partial set-modifiers))
                    (rx/take-until stopper))
               (rx/of (move-selected direction shift?)))
 
@@ -793,11 +787,12 @@
             cpos (gpt/point (:x bbox) (:y bbox))
             pos  (gpt/point (or (:x position) (:x bbox))
                             (or (:y position) (:y bbox)))
-            delta (gpt/subtract pos cpos)]
+            delta (gpt/subtract pos cpos)
 
-        (rx/of
-         (set-modifiers [id] (ctm/move delta))
-         (apply-modifiers [id]))))))
+            modif-tree (create-modif-tree [id] (ctm/move delta))]
+
+        (rx/of (set-modifiers modif-tree)
+               (apply-modifiers))))))
 
 (defn- calculate-frame-for-move
   [ids]
@@ -816,7 +811,11 @@
             moving-shapes
             (cond->> shapes
               (not layout?)
-              (remove #(= (:frame-id %) frame-id)))
+              (remove #(= (:frame-id %) frame-id))
+
+              layout?
+              (remove #(and (= (:frame-id %) frame-id)
+                            (not= (:parent-id %) frame-id))))
 
             drop-index (when layout? (gsl/get-drop-index frame-id objects position))
 
@@ -850,13 +849,15 @@
             selected (wsh/lookup-selected state {:omit-blocked? true})
             shapes   (map #(get objects %) selected)
             selrect  (gsh/selection-rect shapes)
-            origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))]
+            origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))
 
-        (rx/of (set-modifiers selected
-                              (-> (ctm/empty-modifiers)
-                                  (ctm/set-resize (gpt/point -1.0 1.0) origin)
-                                  (ctm/move (gpt/point (:width selrect) 0)))
-                              true)
+            modif-tree (create-modif-tree
+                        selected
+                        (-> (ctm/empty-modifiers)
+                            (ctm/set-resize (gpt/point -1.0 1.0) origin)
+                            (ctm/move (gpt/point (:width selrect) 0))))]
+
+        (rx/of (set-modifiers modif-tree true)
                (apply-modifiers))))))
 
 (defn flip-vertical-selected []
@@ -867,11 +868,13 @@
             selected (wsh/lookup-selected state {:omit-blocked? true})
             shapes   (map #(get objects %) selected)
             selrect  (gsh/selection-rect shapes)
-            origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))]
+            origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))
 
-        (rx/of (set-modifiers selected
-                              (-> (ctm/empty-modifiers)
-                                  (ctm/set-resize (gpt/point 1.0 -1.0) origin)
-                                  (ctm/move (gpt/point 0 (:height selrect))))
-                              true)
+            modif-tree (create-modif-tree
+                        selected
+                        (-> (ctm/empty-modifiers)
+                            (ctm/set-resize (gpt/point 1.0 -1.0) origin)
+                            (ctm/move (gpt/point 0 (:height selrect)))))]
+
+        (rx/of (set-modifiers modif-tree true)
                (apply-modifiers))))))

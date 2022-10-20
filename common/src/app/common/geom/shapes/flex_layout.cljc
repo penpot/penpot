@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.geom.shapes.layout
+(ns app.common.geom.shapes.flex-layout
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
@@ -16,52 +16,95 @@
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]))
 
-;; :layout                 ;; true if active, false if not
-;; :layout-dir             ;; :right, :left, :top, :bottom
-;; :layout-gap             ;; number could be negative
-;; :layout-type            ;; :packed, :space-between, :space-around
+;; :layout                 ;; :flex, :grid in the future
+;; :layout-flex-dir        ;; :row, :reverse-row, :column, :reverse-column
+;; :layout-gap-type        ;; :simple, :multiple
+;; :layout-gap             ;; {:row-gap number , :column-gap number}
+;; :layout-align-items     ;; :start :end :center :strech
+;; :layout-justify-content ;; :start :center :end :space-between :space-around
+;; :layout-align-content   ;; :start :center :end :space-between :space-around :strech (by default)
 ;; :layout-wrap-type       ;; :wrap, :no-wrap
 ;; :layout-padding-type    ;; :simple, :multiple
 ;; :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
-;; :layout-h-orientation   ;; :top, :center, :bottom
-;; :layout-v-orientation   ;; :left, :center, :right
+
+;; ITEMS
+;; :layout-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
+;; :layout-margin-type ;; :simple :multiple
+;; :layout-h-behavior  ;; :fill :fix :auto
+;; :layout-v-behavior  ;; :fill :fix :auto
+;; :layout-max-h       ;; num
+;; :layout-min-h       ;; num
+;; :layout-max-w       ;; num
+;; :layout-min-w
 
 (defn col?
-  [{:keys [layout-dir]}]
-  (or (= :right layout-dir) (= :left layout-dir)))
+  [{:keys [layout-flex-dir]}]
+  (or (= :column layout-flex-dir) (= :reverse-column layout-flex-dir)))
 
 (defn row?
-  [{:keys [layout-dir]}]
-  (or (= :top layout-dir) (= :bottom layout-dir)))
+  [{:keys [layout-flex-dir]}]
+  (or (= :row layout-flex-dir) (= :reverse-row layout-flex-dir)))
 
 (defn h-start?
-  [{:keys [layout-h-orientation]}]
-  (= layout-h-orientation :left))
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (col? shape)
+           (= layout-align-items :start))
+      (and (row? shape)
+           (= layout-justify-content :start))))
 
 (defn h-center?
-  [{:keys [layout-h-orientation]}]
-  (= layout-h-orientation :center))
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (col? shape)
+           (= layout-align-items :center))
+      (and (row? shape)
+           (= layout-justify-content :center))))
 
 (defn h-end?
-  [{:keys [layout-h-orientation]}]
-  (= layout-h-orientation :right))
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (col? shape)
+           (= layout-align-items :end))
+      (and (row? shape)
+           (= layout-justify-content :end))))
 
 (defn v-start?
-  [{:keys [layout-v-orientation]}]
-  (= layout-v-orientation :top))
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (row? shape)
+           (= layout-align-items :start))
+      (and (col? shape)
+           (= layout-justify-content :start))))
 
 (defn v-center?
-  [{:keys [layout-v-orientation]}]
-  (= layout-v-orientation :center))
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (row? shape)
+           (= layout-align-items :center))
+      (and (col? shape)
+           (= layout-justify-content :center))))
 
 (defn v-end?
-  [{:keys [layout-v-orientation]}]
-  (= layout-v-orientation :bottom))
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (row? shape)
+           (= layout-align-items :end))
+      (and (col? shape)
+           (= layout-justify-content :end))))
+
+(defn gaps
+  [{:keys [layout-gap layout-gap-type]}]
+  (let [layout-gap-row (or (-> layout-gap :row-gap) 0)
+        layout-gap-col (if (= layout-gap-type :simple)
+                         layout-gap-row
+                         (or (-> layout-gap :column-gap) 0))]
+    [layout-gap-row layout-gap-col]))
 
 (defn calc-layout-lines
-  [{:keys [layout-gap layout-wrap-type] :as parent} children layout-bounds]
+  "Calculates the lines basic data and accumulated values. The positions will be calculated in a different operation"
+  [{:keys [layout-wrap-type] :as parent} children layout-bounds]
 
   (let [wrap? (= layout-wrap-type :wrap)
+        col? (col? parent)
+        row? (row? parent)
+
+        [layout-gap-row layout-gap-col] (gaps parent)
+
         layout-width (gpo/width-points layout-bounds)
         layout-height (gpo/height-points layout-bounds)
 
@@ -71,39 +114,36 @@
                 child-width  (gpo/width-points child-bounds)
                 child-height (gpo/height-points child-bounds)
 
-                col? (col? parent)
-                row? (row? parent)
-
                 cur-child-fill?
-                (or (and col? (= :fill (:layout-h-behavior child)))
-                    (and row? (= :fill (:layout-v-behavior child))))
-
-                cur-line-fill?
                 (or (and row? (= :fill (:layout-h-behavior child)))
                     (and col? (= :fill (:layout-v-behavior child))))
 
+                cur-line-fill?
+                (or (and col? (= :fill (:layout-h-behavior child)))
+                    (and row? (= :fill (:layout-v-behavior child))))
+
                 ;; TODO LAYOUT: ADD MINWIDTH/HEIGHT
-                next-width   (if (or (and col? cur-child-fill?)
-                                     (and row? cur-line-fill?))
+                next-width   (if (or (and row? cur-child-fill?)
+                                     (and col? cur-line-fill?))
                                0
                                child-width)
 
-                next-height  (if (or (and row? cur-child-fill?)
-                                     (and col? cur-line-fill?))
+                next-height  (if (or (and col? cur-child-fill?)
+                                     (and row? cur-line-fill?))
                                0
                                child-height)
 
-                next-total-width (+ line-width next-width (* layout-gap (dec num-children)))
-                next-total-height (+ line-height next-height (* layout-gap (dec num-children)))]
+                next-total-width (+ line-width next-width (* layout-gap-row (dec num-children)))
+                next-total-height (+ line-height next-height (* layout-gap-col (dec num-children)))]
 
             (if (and (some? line-data)
                      (or (not wrap?)
-                         (and col? (<= next-total-width layout-width))
-                         (and row? (<= next-total-height layout-height))))
+                         (and row? (<= next-total-width layout-width))
+                         (and col? (<= next-total-height layout-height))))
 
               ;; When :fill we add min width (0 by default)
-              [{:line-width     (if col? (+ line-width next-width) (max line-width next-width))
-                :line-height    (if row? (+ line-height next-height) (max line-height next-height))
+              [{:line-width     (if row? (+ line-width next-width) (max line-width next-width))
+                :line-height    (if col? (+ line-height next-height) (max line-height next-height))
                 :num-children   (inc num-children)
                 :child-fill?    (or cur-child-fill? child-fill?)
                 :line-fill?     (or cur-line-fill? line-fill?)
@@ -123,14 +163,16 @@
     (cond-> layout-lines (some? line-data) (conj line-data))))
 
 (defn calc-layout-lines-position
-  [{:keys [layout-gap] :as parent} layout-bounds layout-lines]
+  [{:keys [layout-justify-content] :as parent} layout-bounds layout-lines]
 
   (let [layout-width   (gpo/width-points layout-bounds)
         layout-height  (gpo/height-points layout-bounds)
+        [layout-gap-row layout-gap-col] (gaps parent)
+
         row?           (row? parent)
         col?           (col? parent)
-        space-between? (= :space-between (:layout-type parent))
-        space-around?  (= :space-around (:layout-type parent))
+        space-between? (= layout-justify-content :space-between)
+        space-around?  (= layout-justify-content :space-around)
         h-center?      (h-center? parent)
         h-end?         (h-end? parent)
         v-center?      (v-center? parent)
@@ -148,61 +190,62 @@
               [total-width total-height]
 
               (cond-> (gpo/origin layout-bounds)
-                (and row? h-center?)
+                (and col? h-center?)
                 (gpt/add (xv (/ (- layout-width total-width) 2)))
 
-                (and row? h-end?)
+                (and col? h-end?)
                 (gpt/add (xv (- layout-width total-width)))
 
-                (and col? v-center?)
+                (and row? v-center?)
                 (gpt/add (yv (/ (- layout-height total-height) 2)))
 
-                (and col? v-end?)
+                (and row? v-end?)
                 (gpt/add (yv (- layout-height total-height)))))
 
             (get-start-line
               [{:keys [line-width line-height num-children child-fill?]} base-p]
 
-              (let [children-gap (* layout-gap (dec num-children))
+              (let [children-gap-width (* layout-gap-row (dec num-children))
+                    children-gap-height (* layout-gap-col (dec num-children))
 
-                    line-width  (if (and col? child-fill?)
-                                  (- layout-width (* layout-gap (dec num-children)))
+                    line-width  (if (and row? child-fill?)
+                                  (- layout-width (* layout-gap-row (dec num-children)))
                                   line-width)
 
-                    line-height (if (and row? child-fill?)
-                                  (- layout-height (* layout-gap (dec num-children)))
+                    line-height (if (and col? child-fill?)
+                                  (- layout-height (* layout-gap-col (dec num-children)))
                                   line-height)
 
                     start-p
                     (cond-> base-p
                       ;; X AXIS
-                      (and col? h-center? (not space-around?) (not space-between?))
+                      (and row? h-center? (not space-around?) (not space-between?))
                       (-> (gpt/add (xv (/ layout-width 2)))
-                          (gpt/subtract (xv (/ (+ line-width children-gap) 2))))
+                          (gpt/subtract (xv (/ (+ line-width children-gap-width) 2))))
 
-                      (and col? h-end? (not space-around?) (not space-between?))
+                      (and row? h-end? (not space-around?) (not space-between?))
                       (-> (gpt/add (xv layout-width))
-                          (gpt/subtract (xv (+ line-width children-gap))))
+                          (gpt/subtract (xv (+ line-width children-gap-width))))
 
-                      (and row? h-center?)
+                      (and col? h-center?)
                       (gpt/add (xv (/ line-width 2)))
 
-                      (and row? h-end?)
+                      (and col? h-end?)
                       (gpt/add (xv line-width))
 
                       ;; Y AXIS
-                      (and row? v-center? (not space-around?) (not space-between?))
+                      (and col? v-center? (not space-around?) (not space-between?))
                       (-> (gpt/add (yv (/ layout-height 2)))
-                          (gpt/subtract (yv (/ (+ line-height children-gap) 2))))
+                          (gpt/subtract (yv (/ (+ line-height children-gap-height) 2))))
 
-                      (and row? v-end? (not space-around?) (not space-between?))
+                      (and col? v-end? (not space-around?) (not space-between?))
                       (-> (gpt/add (yv layout-height))
-                          (gpt/subtract (yv (+ line-height children-gap))))
+                          (gpt/subtract (yv (+ line-height children-gap-height))))
 
-                      (and col? v-center?)
+                      (and row? v-center?)
                       (gpt/add (yv (/ line-height 2)))
 
-                      (and col? v-end?)
+                      (and row? v-end?)
                       (gpt/add (yv line-height)))]
 
                 start-p))
@@ -211,11 +254,11 @@
               [{:keys [line-width line-height]} base-p]
 
               (cond-> base-p
-                row?
-                (gpt/add (xv (+ line-width layout-gap)))
-
                 col?
-                (gpt/add (yv (+ line-height layout-gap)))))
+                (gpt/add (xv (+ line-width layout-gap-row)))
+
+                row?
+                (gpt/add (yv (+ line-height layout-gap-col)))))
 
             (add-lines [[total-width total-height] {:keys [line-width line-height]}]
               [(+ total-width line-width)
@@ -230,24 +273,25 @@
 
       (let [[total-width total-height] (->> layout-lines (reduce add-lines [0 0]))
 
-            total-width (+ total-width (* layout-gap (dec (count layout-lines))))
-            total-height (+ total-height (* layout-gap (dec (count layout-lines))))
+            total-width (+ total-width (* layout-gap-row (dec (count layout-lines))))
+            total-height (+ total-height (* layout-gap-col (dec (count layout-lines))))
 
             vertical-fill-space (- layout-height total-height)
+
             horizontal-fill-space (- layout-width total-width)
             num-line-fill (count (->> layout-lines (filter :line-fill?)))
 
             layout-lines
             (->> layout-lines
                  (mapv #(cond-> %
-                          (and col? (:line-fill? %))
+                          (and row? (:line-fill? %))
                           (update :line-height + (/ vertical-fill-space num-line-fill))
 
-                          (and row? (:line-fill? %))
+                          (and col? (:line-fill? %))
                           (update :line-width + (/ horizontal-fill-space num-line-fill)))))
 
-            total-height (if (and col? (> num-line-fill 0)) layout-height total-height)
-            total-width (if (and row? (> num-line-fill 0)) layout-width total-width)
+            total-width (if (and col? (> num-line-fill 0)) layout-width total-width)
+            total-height (if (and row? (> num-line-fill 0)) layout-height total-height)
 
             base-p (get-base-line total-width total-height)
 
@@ -257,40 +301,54 @@
 
 (defn calc-layout-line-data
   "Calculates the baseline for a flex layout"
-  [{:keys [layout-type layout-gap] :as shape}
+  [{:keys [layout-justify-content] :as shape}
    layout-bounds
-   {:keys [num-children line-width line-height child-fill?] :as line-data}]
+   {:keys [num-children line-width line-height] :as line-data}]
 
   (let [width (gpo/width-points layout-bounds)
         height (gpo/height-points layout-bounds)
 
-        layout-gap
-        (cond
-          (or (= :packed layout-type) child-fill?)
-          layout-gap
+        row?           (row? shape)
+        col?           (col? shape)
+        space-between? (= layout-justify-content :space-between)
+        space-around?  (= layout-justify-content :space-around)
 
-          (= :space-around layout-type)
-          0
+        [layout-gap-row layout-gap-col] (gaps shape)
 
-          (and (col? shape) (= :space-between layout-type))
-          (/ (- width line-width) (dec num-children))
+        layout-gap-row
+        (cond (and row? space-around?)
+              0
 
-          (and (row? shape) (= :space-between layout-type))
-          (/ (- height line-height) (dec num-children)))
+              (and row? space-between?)
+              (/ (- width line-width) (dec num-children))
+
+              :else
+              layout-gap-row)
+
+        layout-gap-col
+        (cond (and col? space-around?)
+              0
+
+              (and col? space-between?)
+              (/ (- height line-height) (dec num-children))
+
+              :else
+              layout-gap-col)
 
         margin-x
-        (if (and (col? shape) (= :space-around layout-type))
+        (if (and row? space-around?)
           (/ (- width line-width) (inc num-children))
           0)
 
         margin-y
-        (if (and (row? shape) (= :space-around layout-type))
+        (if (and col? space-around?)
           (/ (- height line-height) (inc num-children))
           0)]
 
     (assoc line-data
            :layout-bounds layout-bounds
-           :layout-gap layout-gap
+           :layout-gap-row layout-gap-row
+           :layout-gap-col layout-gap-col
            :margin-x margin-x
            :margin-y margin-y)))
 
@@ -298,7 +356,7 @@
   "Calculates the position for the current shape given the layout-data context"
   [parent
    child-width child-height
-   {:keys [start-p layout-gap margin-x margin-y] :as layout-data}]
+   {:keys [start-p layout-gap-row layout-gap-col margin-x margin-y] :as layout-data}]
 
   (let [row?      (row? parent)
         col?      (col? parent)
@@ -314,16 +372,16 @@
 
         corner-p
         (cond-> start-p
-          (and row? h-center?)
+          (and col? h-center?)
           (gpt/add (xv (- (/ child-width 2))))
 
-          (and row? h-end?)
+          (and col? h-end?)
           (gpt/add (xv (- child-width)))
 
-          (and col? v-center?)
+          (and row? v-center?)
           (gpt/add (yv (- (/ child-height 2))))
 
-          (and col? v-end?)
+          (and row? v-end?)
           (gpt/add (yv (- child-height)))
 
           (some? margin-x)
@@ -334,11 +392,11 @@
 
         next-p
         (cond-> start-p
-          col?
-          (gpt/add (xv (+ child-width layout-gap)))
-
           row?
-          (gpt/add (yv (+ child-height layout-gap)))
+          (gpt/add (xv (+ child-width layout-gap-row)))
+
+          col?
+          (gpt/add (yv (+ child-height layout-gap-col)))
 
           (some? margin-x)
           (gpt/add (xv margin-x))
@@ -353,46 +411,48 @@
 
 (defn calc-fill-width-data
   "Calculates the size and modifiers for the width of an auto-fill child"
-  [{:keys [layout-gap transform transform-inverse] :as parent}
+  [{:keys [transform transform-inverse] :as parent}
    {:keys [layout-h-behavior] :as child}
    child-origin child-width
    {:keys [num-children line-width line-fill? child-fill? layout-bounds] :as layout-data}]
 
-  (cond
-    (and (col? parent) (= :fill layout-h-behavior) child-fill?)
-    (let [layout-width (gpo/width-points layout-bounds)
-          fill-space (- layout-width line-width (* layout-gap (dec num-children)))
-          fill-width (/ fill-space (:num-child-fill layout-data))
-          fill-scale (/ fill-width child-width)]
+  (let [[layout-gap-row _] (gaps parent)]
+    (cond
+      (and (row? parent) (= :fill layout-h-behavior) child-fill?)
+      (let [layout-width (gpo/width-points layout-bounds)
+            fill-space (- layout-width line-width (* layout-gap-row (dec num-children)))
+            fill-width (/ fill-space (:num-child-fill layout-data))
+            fill-scale (/ fill-width child-width)]
 
-      {:width fill-width
-       :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})
+        {:width fill-width
+         :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})
 
-    (and (row? parent) (= :fill layout-h-behavior) line-fill?)
-    (let [fill-scale (/ line-width child-width)]
-      {:width line-width
-       :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})))
+      (and (col? parent) (= :fill layout-h-behavior) line-fill?)
+      (let [fill-scale (/ line-width child-width)]
+        {:width line-width
+         :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)}))))
 
 (defn calc-fill-height-data
   "Calculates the size and modifiers for the height of an auto-fill child"
-  [{:keys [layout-gap transform transform-inverse] :as parent}
+  [{:keys [transform transform-inverse] :as parent}
    {:keys [layout-v-behavior] :as child}
    child-origin child-height
    {:keys [num-children line-height layout-bounds line-fill? child-fill?] :as layout-data}]
 
-  (cond
-    (and (row? parent) (= :fill layout-v-behavior) child-fill?)
-    (let [layout-height (gpo/height-points layout-bounds)
-          fill-space (- layout-height line-height (* layout-gap (dec num-children)))
-          fill-height (/ fill-space (:num-child-fill layout-data))
-          fill-scale (/ fill-height child-height)]
-      {:height fill-height
-       :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
+  (let [[_ layout-gap-col] (gaps parent)]
+    (cond
+      (and (col? parent) (= :fill layout-v-behavior) child-fill?)
+      (let [layout-height (gpo/height-points layout-bounds)
+            fill-space (- layout-height line-height (* layout-gap-col (dec num-children)))
+            fill-height (/ fill-space (:num-child-fill layout-data))
+            fill-scale (/ fill-height child-height)]
+        {:height fill-height
+         :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
 
-    (and (col? parent) (= :fill layout-v-behavior) line-fill?)
-    (let [fill-scale (/ line-height child-height)]
-      {:height line-height
-       :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})))
+      (and (row? parent) (= :fill layout-v-behavior) line-fill?)
+      (let [fill-scale (/ line-height child-height)]
+        {:height line-height
+         :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)}))))
 
 (defn normalize-child-modifiers
   "Apply the modifiers and then normalized them against the parent coordinates"
@@ -412,7 +472,7 @@
 
 (defn calc-layout-data
   "Digest the layout data to pass it to the constrains"
-  [{:keys [layout-dir layout-padding layout-padding-type] :as parent} children]
+  [{:keys [layout-flex-dir layout-padding layout-padding-type] :as parent} children]
 
   (let [;; Add padding to the bounds
         {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
@@ -427,7 +487,7 @@
         layout-bounds (gpo/pad-points points pad-top pad-right pad-bottom pad-left)
 
         ;; Reverse
-        reverse? (or (= :left layout-dir) (= :bottom layout-dir))
+        reverse? (or (= :reverse-row layout-flex-dir) (= :reverse-column layout-flex-dir))
         children (cond->> children reverse? reverse)
 
         ;; Creates the layout lines information
@@ -476,7 +536,9 @@
         h-end? (and row? (h-end? frame))
         v-center? (and col? (v-center? frame))
         v-end? (and row? (v-end? frame))
-        layout-gap (:layout-gap frame 0)
+        layout-gap-row (or (-> frame :layout-gap :row-gap) 0)
+        ;;layout-gap-col (or (-> frame :layout-gap :column-gap) 0)
+        layout-gap layout-gap-row ;; TODO LAYOUT: FIXME
         reverse? (:reverse? layout-data)
 
         children (vec (cond->> (d/enumerate children)
@@ -499,31 +561,31 @@
                 box-width  (-> child :selrect :width)
                 box-height (-> child :selrect :height)
 
-                x (if row? (:x parent-rect) prev-x)
-                y (if col? (:y parent-rect) prev-y)
+                x (if col? (:x parent-rect) prev-x)
+                y (if row? (:y parent-rect) prev-y)
 
                 width (cond
-                        (and col? last?)
+                        (and row? last?)
                         (- (+ (:x parent-rect) (:width parent-rect)) x)
 
-                        row?
+                        col?
                         (:width parent-rect)
 
                         :else
                         (+ box-width (- box-x prev-x) (/ layout-gap 2)))
 
                 height (cond
-                         (and row? last?)
+                         (and col? last?)
                          (- (+ (:y parent-rect) (:height parent-rect)) y)
 
-                         col?
+                         row?
                          (:height parent-rect)
 
                          :else
                          (+ box-height (- box-y prev-y) (/ layout-gap 2)))
 
                 [line-area-1 line-area-2]
-                (if col?
+                (if row?
                   (let [half-point-width (+ (- box-x x) (/ box-width 2))]
                     [(-> (gsr/make-rect x y half-point-width height)
                          (assoc :index (if reverse? (inc index) index)))
@@ -555,16 +617,16 @@
                 last? (nil? next)
 
                 line-width
-                (if col?
+                (if row?
                   (:width frame)
                   (+ line-width margin-x
-                     (if col? (* layout-gap (dec num-children)) 0)))
+                     (if row? (* layout-gap (dec num-children)) 0)))
 
                 line-height
-                (if row?
+                (if col?
                   (:height frame)
                   (+ line-height margin-y
-                     (if row?
+                     (if col?
                        (* layout-gap (dec num-children))
                        0)))
 
@@ -582,24 +644,24 @@
                      v-end? line-height
                      :else 0))
 
-                x (if col? (:x frame) prev-x)
-                y (if row? (:y frame) prev-y)
+                x (if row? (:x frame) prev-x)
+                y (if col? (:y frame) prev-y)
 
                 width (cond
-                        (and row? last?)
+                        (and col? last?)
                         (- (+ (:x frame) (:width frame)) x)
 
-                        col?
+                        row?
                         (:width frame)
 
                         :else
                         (+ line-width (- box-x prev-x) (/ layout-gap 2)))
 
                 height (cond
-                         (and col? last?)
+                         (and row? last?)
                          (- (+ (:y frame) (:height frame)) y)
 
-                         row?
+                         col?
                          (:height frame)
 
                          :else

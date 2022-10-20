@@ -84,38 +84,38 @@
      [:div.layout-behavior.horizontal
       [:button.behavior-btn.tooltip.tooltip-bottom
        {:alt "Fix width"
-        :class  (dom/classnames :activated (= layout-h-behavior :fix))
+        :class  (dom/classnames :active (= layout-h-behavior :fix))
         :on-click #(on-change-behavior :h :fix)}
        i/auto-fix-layout]
       (when fill?
         [:button.behavior-btn.tooltip.tooltip-bottom
          {:alt "Width 100%"
-          :class  (dom/classnames :activated (= layout-h-behavior :fill))
+          :class  (dom/classnames :active (= layout-h-behavior :fill))
           :on-click #(on-change-behavior :h :fill)}
           i/auto-fill])
       (when auto?
         [:button.behavior-btn.tooltip.tooltip-bottom
          {:alt "Fit content"
-          :class  (dom/classnames :activated (= layout-v-behavior :auto))
+          :class  (dom/classnames :active (= layout-v-behavior :auto))
           :on-click #(on-change-behavior :h :auto)}
          i/auto-hug])]
 
      [:div.layout-behavior
       [:button.behavior-btn.tooltip.tooltip-bottom
        {:alt "Fix height"
-        :class  (dom/classnames :activated (= layout-v-behavior :fix))
+        :class  (dom/classnames :active (= layout-v-behavior :fix))
         :on-click #(on-change-behavior :v :fix)}
         i/auto-fix-layout]
       (when fill?
         [:button.behavior-btn.tooltip.tooltip-bottom
          {:alt "Height 100%"
-          :class  (dom/classnames :activated (= layout-v-behavior :fill))
+          :class  (dom/classnames :active (= layout-v-behavior :fill))
           :on-click #(on-change-behavior :v :fill)}
          i/auto-fill])
       (when auto?
         [:button.behavior-btn.tooltip.tooltip-bottom-left
          {:alt "Fit content"
-          :class  (dom/classnames :activated (= layout-v-behavior :auto))
+          :class  (dom/classnames :active (= layout-v-behavior :auto))
           :on-click #(on-change-behavior :v :auto)}
          i/auto-hug])]]))
 

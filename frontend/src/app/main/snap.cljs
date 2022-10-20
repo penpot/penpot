@@ -358,7 +358,8 @@
   "Snaps a position given an old snap to a different position. We use this to provide a temporal
   snap while the new is being processed."
   [[position [snap-pos snap-delta]]]
-  (if (some? snap-delta)
+  (if (nil? snap-delta)
+    position
     (let [dx (if (not= 0 (:x snap-delta))
                (- (+ (:x snap-pos) (:x snap-delta)) (:x position))
                0)
@@ -372,6 +373,4 @@
           dy (if (> (mth/abs dy) snap-accuracy) 0 dy)]
       (-> position
           (update :x + dx)
-          (update :y + dy)))
-
-    position))
+          (update :y + dy)))))
