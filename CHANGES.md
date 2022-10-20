@@ -7,6 +7,7 @@
 - Fix firefox changing layer color type is not applied [Taiga #4292](https://tree.taiga.io/project/penpot/issue/4292)
 - Fix justify alignes text left [Taiga #4322](https://tree.taiga.io/project/penpot/issue/4322)
 - Fix text out of borders with "auto width" and center align [Taiga #4308](https://tree.taiga.io/project/penpot/issue/4308)
+- Fix auto-width for texts can make text appear stretched [Github #2482](https://github.com/penpot/penpot/issues/2482)
 
 ## 1.16.0-beta
 
