@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-18 08:01+0000\n"
+"PO-Revision-Date: 2022-10-22 12:05+0000\n"
 "Last-Translator: Bogi Napoleon Wennerstrøm <bogi.wennerstrom@gmail.com>\n"
 "Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
 "fo/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.15-dev\n"
+"X-Generator: Weblate 4.14.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -275,3 +275,50 @@ msgstr "Kladda"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "Tvítøka"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Kanna tín teldupost og trýst á leinkina fyri at vátta og byrja at nýta "
+"Penpot."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Vit hava sent ein váttanar teldupost til"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Ert tú vís(ur) í, at tú vilt strika hetta leinkið? Gert tú tað, er tað ikki "
+"longur tøkt hjá nøkrum"
+
+msgid "common.share-link.current-tag"
+msgstr "(núverandi)"
+
+msgid "common.share-link.get-link"
+msgstr "Fá leinkið"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Leinkið avritað"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Leinkið er strikað"
+
+msgid "common.share-link.manage-ops"
+msgstr "Fyrisit heimildir"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Síður deildar"
+
+msgid "common.share-link.placeholder"
+msgstr "Leinkja, ið kann deilast, verur at síggja her"
+
+msgid "common.share-link.title"
+msgstr "Deil frumsnið"
+
+msgid "common.unpublish"
+msgstr "Angra útgevan"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 síða deild"
+msgstr[1] "%s síður deildar"
