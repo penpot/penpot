@@ -248,18 +248,22 @@
     (mf/use-layout-effect
      (mf/deps transforms)
      (fn []
-       (let [is-prev-val? (d/not-empty? @prev-modifiers)
-             is-cur-val? (d/not-empty? modifiers)]
 
-         (when (and (not is-prev-val?) is-cur-val?)
-           (start-transform! node shapes))
+       (let [curr-shapes-set (into #{} (map :id) shapes)
+             prev-shapes-set (into #{} (map :id) @prev-shapes)
 
-         (when is-cur-val?
+             new-shapes      (->> shapes (remove #(contains? prev-shapes-set (:id %))))
+             removed-shapes  (->> @prev-shapes (remove #(contains? curr-shapes-set (:id %))))]
+
+         (when (d/not-empty? new-shapes)
+           (start-transform! node new-shapes))
+
+         (when (d/not-empty? shapes)
            (update-transform! node shapes transforms modifiers))
 
-         (when (and is-prev-val? (not is-cur-val?))
-           (remove-transform! node @prev-shapes))
+         (when (d/not-empty? removed-shapes)
+           (remove-transform! node @prev-shapes)))
 
-         (reset! prev-modifiers modifiers)
-         (reset! prev-transforms transforms)
-         (reset! prev-shapes shapes))))))
+       (reset! prev-modifiers modifiers)
+       (reset! prev-transforms transforms)
+       (reset! prev-shapes shapes)))))

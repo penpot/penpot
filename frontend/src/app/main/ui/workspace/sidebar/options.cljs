@@ -60,12 +60,9 @@
   {::mf/wrap [mf/memo]}
   [{:keys [selected section shapes shapes-with-children page-id file-id]}]
   (let [drawing           (mf/deref refs/workspace-drawing)
-        base-objects      (-> (mf/deref refs/workspace-page-objects))
+        objects           (mf/deref refs/workspace-page-objects)
         shared-libs       (mf/deref refs/workspace-libraries)
-        modifiers         (mf/deref refs/workspace-modifiers)
-        objects-modified  (mf/with-memo [base-objects modifiers]
-                            (ctm/merge-modifiers base-objects modifiers))
-        selected-shapes   (into [] (keep (d/getf objects-modified)) selected)]
+        selected-shapes   (into [] (keep (d/getf objects)) selected)]
     [:div.tool-window
      [:div.tool-window-content
       [:& tab-container {:on-change-tab #(st/emit! (udw/set-options-mode %))

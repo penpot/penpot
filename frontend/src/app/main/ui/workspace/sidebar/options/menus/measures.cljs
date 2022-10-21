@@ -68,7 +68,9 @@
 ;; -- User/drawing coords
 (mf/defc measures-menu
   [{:keys [ids ids-with-children values type all-types shape] :as props}]
-  (let [options (if (= type :multiple)
+  (let [workspace-modifiers (mf/deref refs/workspace-modifiers)
+
+        options (if (= type :multiple)
                   (reduce #(union %1 %2) (map #(get type->options %) all-types))
                   (get type->options type))
 
@@ -83,7 +85,9 @@
         ;; the shape with the mouse, generate a copy of the shapes applying
         ;; the transient transformations.
         shapes (as-> old-shapes $
-                 #_(map gsh/transform-shape $)
+                 (map (fn [shape]
+                        (let [modifiers (get-in workspace-modifiers [(:id shape) :modifiers])]
+                          (gsh/transform-shape shape modifiers))) $)
                  (map gsh/translate-to-frame $ frames))
 
         ;; For rotated or stretched shapes, the origin point we show in the menu
@@ -441,5 +445,3 @@
            (tr "workspace.options.show-in-viewer")]])
 
        ]]]))
-
-

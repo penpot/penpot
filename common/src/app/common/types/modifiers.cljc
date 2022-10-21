@@ -27,6 +27,7 @@
 ;;     * reflow
 ;;  - structure-child: Structure recursive
 ;;     * scale-content
+;;     * rotation
 ;;
 
 (def conjv (fnil conj []))
@@ -62,6 +63,8 @@
 (defn set-rotation
   [modifiers center angle]
   (-> modifiers
+      (update :structure-child conjv {:type :rotation
+                                      :rotation angle})
       (update :geometry conjv {:type :rotation
                                :center center
                                :rotation angle})))
@@ -327,11 +330,12 @@
           (let [remove? (set children-to-remove)]
             (d/removev remove? shapes)))
 
-
-
         apply-modifier
-        (fn [shape {:keys [type value index]}]
+        (fn [shape {:keys [type value index rotation]}]
           (cond-> shape
+            (= type :rotation)
+            (update :rotation #(mod (+ % rotation) 360))
+
             (and (= type :add-children) (some? index))
             (update :shapes
                     (fn [shapes]
@@ -347,7 +351,6 @@
 
             (= type :scale-content)
             (apply-scale-content value)))]
-
 
     (as-> shape $
       (reduce apply-modifier $ (:structure-parent modifiers))
