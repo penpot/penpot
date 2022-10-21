@@ -146,7 +146,8 @@
     (when-not is-shared
       (absorb-library conn params)
       (unlink-files conn params))
-    (set-file-shared conn params)))
+    (-> (set-file-shared conn params)
+        (update :features db/decode-pgarray #{}))))
 
 (defn- unlink-files
   [conn {:keys [id] :as params}]

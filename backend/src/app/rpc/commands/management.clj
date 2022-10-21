@@ -194,7 +194,8 @@
     (proj/check-edition-permissions! conn profile-id (:project-id file))
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
     (-> (duplicate-file* conn params {:reset-shared-flag true})
-        (update :data blob/decode))))
+        (update :data blob/decode)
+        (update :features db/decode-pgarray #{}))))
 
 ;; --- COMMAND: Duplicate Project
 
