@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.libraries
   (:require
    [app.common.data :as d]
+   [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
@@ -87,7 +88,16 @@
         del-shared
         (mf/use-callback
          (mf/deps file)
-         #(st/emit! (dwl/set-file-shared (:id file) false)))]
+         (fn [_]
+           (st/emit! (dd/fetch-libraries-using-files [file]))
+           (st/emit! (modal/show
+                      {:type :delete-shared
+                       :origin :unpublish
+                       :on-accept (fn[]
+                                    (st/emit! (dwl/set-file-shared (:id file) false))
+                                    (modal/show! :libraries-dialog {}))
+                       :on-cancel #(modal/show! :libraries-dialog {})
+                       :count-libraries 1}))))]
     [:*
      [:div.section
       [:div.section-title (tr "workspace.libraries.in-this-file")]
