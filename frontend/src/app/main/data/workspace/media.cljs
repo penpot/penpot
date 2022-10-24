@@ -17,8 +17,6 @@
    [app.main.store :as st]
    [app.util.http :as http]
    [app.util.i18n :refer [tr]]
-   [app.util.svg :as usvg]
-   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -34,27 +32,6 @@
 
     (catch :default _err
       (rx/throw {:type :svg-parser}))))
-
-(defn extract-name [url]
-  (let [query-idx (str/last-index-of url "?")
-        url (if (> query-idx 0) (subs url 0 query-idx) url)
-        filename (->> (str/split url "/") (last))
-        ext-idx (str/last-index-of filename ".")]
-    (if (> ext-idx 0) (subs filename 0 ext-idx) filename)))
-
-(defn data-uri->blob
-  [data-uri]
-  (let [[mtype b64-data] (str/split data-uri ";base64,")
-        mtype   (subs mtype (inc (str/index-of mtype ":")))
-        decoded (.atob js/window b64-data)
-        size    (.-length ^js decoded)
-        content (js/Uint8Array. size)]
-
-    (doseq [i (range 0 size)]
-      (aset content i (.charCodeAt decoded i)))
-
-    (wapi/create-blob content mtype)))
-
 
 ;; TODO: rename to bitmap-image-uploaded
 (defn image-uploaded
@@ -82,26 +59,8 @@
       ;; Once the SVG is uploaded, we need to extract all the bitmap
       ;; images and upload them separately, then proceed to create
       ;; all shapes.
-      (->> (rx/from (usvg/collect-images svg-data))
-           (rx/map (fn [uri]
-                     (merge
-                      {:file-id file-id
-                       :is-local true}
-                      (if (str/starts-with? uri "data:")
-                        {:name "image"
-                         :content (data-uri->blob uri)}
-                        {:name (extract-name uri)
-                         :url uri}))))
-           (rx/mapcat (fn [uri-data]
-                        (->> (rp/mutation! (if (contains? uri-data :content)
-                                             :upload-file-media-object
-                                             :create-file-media-object-from-url) uri-data)
-                             ;; When the image uploaded fail we skip the shape
-                             ;; returning `nil` will afterward not create the shape.
-                             (rx/catch #(rx/of nil))
-                             (rx/map #(vector (:url uri-data) %)))))
-           (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})
-           (rx/map #(svg/create-svg-shapes (assoc svg-data :image-data %) position))))))
+      (->> (svg/upload-images svg-data file-id)
+           (rx/map #(svg/add-svg-shapes (assoc svg-data :image-data %) position))))))
 
 (defn- process-uris
   [{:keys [file-id local? name uris mtype on-image on-svg]}]
@@ -112,13 +71,13 @@
           (prepare [uri]
             {:file-id file-id
              :is-local local?
-             :name (or name (extract-name uri))
+             :name (or name (svg/extract-name uri))
              :url uri})
 
           (fetch-svg [name uri]
             (->> (http/send! {:method :get :uri uri :mode :no-cors})
                  (rx/map #(vector
-                           (or name (extract-name uri))
+                           (or name (svg/extract-name uri))
                            (:body %)))))]
 
     (rx/merge

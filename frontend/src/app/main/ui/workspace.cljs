@@ -9,6 +9,7 @@
    [app.common.colors :as clr]
    [app.common.data.macros :as dm]
    [app.main.data.messages :as msg]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.features :as features]
@@ -167,4 +168,20 @@
                                 :wglobal wglobal
                                 :layout layout}]
             [:& workspace-loader])]]]]]]))
+
+(mf/defc remove-graphics-dialog
+  {::mf/register modal/components
+   ::mf/register-as :remove-graphics-dialog}
+  [{:keys [] :as ctx}]
+  (let [remove-state (mf/deref refs/remove-graphics)
+        close #(modal/hide!)]
+    [:div.modal-overlay
+     [:div.modal-container.remove-graphics-dialog
+      [:div.modal-header
+       [:div.modal-header-title
+        [:h2 (str "Updating " (:file-name ctx) "...")]]
+       [:div.modal-close-button
+        {:on-click close} i/close]]
+      [:div.modal-content
+       [:p (str "Converting " (:current remove-state) " / " (:total remove-state))]]]]))
 

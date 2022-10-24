@@ -13,11 +13,15 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.rect :as gpsr]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.transit :as t]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
+   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -25,6 +29,7 @@
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
+   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
@@ -49,17 +54,19 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.svg-upload :as svg]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
-   [app.util.i18n :as i18n]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
@@ -78,6 +85,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare file-initialized)
+(declare remove-graphics)
 
 ;; --- Initialize Workspace
 
@@ -170,15 +178,20 @@
              :current-file-comments-users (d/index-by :id file-comments-users)))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [file-id       (:id file)
-            ignore-until  (:ignore-sync-until file)
-            needs-update? (some #(and (> (:modified-at %) (:synced-at %))
-                                      (or (not ignore-until)
-                                          (> (:modified-at %) ignore-until)))
-                                libraries)]
+    (watch [_ state _]
+      (let [file-id        (:id file)
+            ignore-until   (:ignore-sync-until file)
+            some-graphics? (some? (-> file :data :media))
+            needs-update?  (some #(and (> (:modified-at %) (:synced-at %))
+                                       (or (not ignore-until)
+                                           (> (:modified-at %) ignore-until)))
+                                 libraries)
+            components-v2  (features/active-feature? state :components-v2)]
         (rx/merge
          (rx/of (fbc/fix-bool-contents))
+         (if (and some-graphics? components-v2)
+           (rx/of (remove-graphics (:id file) (:name file)))
+           (rx/empty))
          (if needs-update?
            (rx/of (dwl/notify-sync-file file-id))
            (rx/empty)))))))
@@ -1241,7 +1254,7 @@
         (catch :default e
           (let [data (ex-data e)]
             (if (:not-implemented data)
-              (rx/of (msg/warn (i18n/tr "errors.clipboard-not-implemented")))
+              (rx/of (msg/warn (tr "errors.clipboard-not-implemented")))
               (js/console.error "ERROR" e))))))))
 
 (defn paste-from-event
@@ -1587,6 +1600,161 @@
 
              (dwu/commit-undo-transaction))))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Remove graphics
+;; TODO: this should be deprecated and removed together with components-v2
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- initialize-remove-graphics
+  [total]
+  (ptk/reify ::initialize-remove-graphics
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :remove-graphics {:total total
+                                     :current nil}))))
+
+(defn- update-remove-graphics
+  [current]
+  (ptk/reify ::update-remove-graphics
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:remove-graphics :current] current))))
+
+(defn- complete-remove-graphics
+  []
+  (ptk/reify ::complete-remove-graphics
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :remove-graphics))))
+
+(defn- create-shapes-svg
+  [file-id objects pos media-obj]
+  (let [path (cfg/resolve-file-media media-obj)
+
+        upload-images
+        (fn [svg-data]
+          (->> (svg/upload-images svg-data file-id)
+               (rx/map #(assoc svg-data :image-data %))))
+
+        process-svg
+        (fn [svg-data]
+          (let [[shape children]
+                (svg/create-svg-shapes svg-data pos objects uuid/zero #{} false)]
+          [shape children]))]
+
+    (->> (http/send! {:method :get :uri path :mode :no-cors})
+         (rx/map :body)
+         (rx/map #(vector (:name media-obj) %))
+         (rx/merge-map dwm/svg->clj)
+         (rx/merge-map upload-images)
+         (rx/map process-svg)
+         (rx/catch #(js/console.error  ; When error downloading media-obj, skip it and continue with next one
+                      (str "Error downloading " (:name media-obj) " " path ":")
+                      (clj->js %))))))
+
+(defn- create-shapes-img
+  [pos media-obj]
+  (let [{:keys [name width height id mtype]} media-obj
+
+        group-shape (cts/make-shape :group
+                                    {:x (:x pos)
+                                     :y (:y pos)
+                                     :width width
+                                     :height height}
+                                    {:name name
+                                     :frame-id uuid/zero
+                                     :parent-id uuid/zero})
+
+        img-shape (cts/make-shape :image
+                                  {:x (:x pos)
+                                   :y (:y pos)
+                                   :width width
+                                   :height height
+                                   :metadata {:id id
+                                              :width width
+                                              :height height
+                                              :mtype mtype}}
+                                  {:name name
+                                   :frame-id uuid/zero
+                                   :parent-id (:id group-shape)})]
+    (rx/of [group-shape [img-shape]])))
+
+(defn- remove-graphic
+  [it file-data page [index [media-obj pos]]]
+  (let [process-shapes
+        (fn [[shape children]]
+          (let [page' (reduce #(ctst/add-shape (:id %2) %2 %1 uuid/zero (:parent-id %2) nil false)
+                              page
+                              (cons shape children))
+
+                shape' (ctn/get-shape page' (:id shape))
+
+                [component-shape component-shapes updated-shapes]
+                (ctn/make-component-shape shape' (:objects page') (:id file-data) true)
+
+                changes (-> (pcb/empty-changes it)
+                            (pcb/set-save-undo? false)
+                            (pcb/with-page page')
+                            (pcb/with-objects (:objects page'))
+                            (pcb/with-library-data file-data)
+                            (pcb/delete-media (:id media-obj))
+                            (pcb/add-objects (cons shape children))
+                            (pcb/add-component (:id component-shape)
+                                               (:path media-obj)
+                                               (:name media-obj)
+                                               component-shapes
+                                               updated-shapes
+                                               (:id shape)
+                                               (:id page)))]
+
+            (dch/commit-changes changes)))
+
+        shapes (if (= (:mtype media-obj) "image/svg+xml")
+                 (create-shapes-svg (:id file-data) (:objects page) pos media-obj)
+                 (create-shapes-img pos media-obj))]
+
+      (rx/concat
+        (rx/of (update-remove-graphics index))
+        (rx/map process-shapes shapes))))
+
+(defn- remove-graphics
+  [file-id file-name]
+  (ptk/reify ::remove-graphics
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-data (wsh/get-file state file-id)
+
+            grid-gap 50
+
+            [file-data' page-id start-pos]
+            (ctf/get-or-add-library-page file-data grid-gap)
+
+            new-page? (nil? (ctpl/get-page file-data page-id))
+            page      (ctpl/get-page file-data' page-id)
+            media     (vals (:media file-data'))
+
+            media-points
+            (map #(assoc % :points (gpsr/rect->points {:x 0
+                                                       :y 0
+                                                       :width (:width %)
+                                                       :height (:height %)}))
+                 media)
+
+            shape-grid
+            (ctst/generate-shape-grid media-points start-pos grid-gap)]
+
+        (rx/concat
+          (rx/of (modal/show {:type :remove-graphics-dialog :file-name file-name})
+                 (initialize-remove-graphics (count media)))
+          (when new-page?
+            (rx/of (dch/commit-changes (-> (pcb/empty-changes it)
+                                           (pcb/set-save-undo? false)
+                                           (pcb/add-page (:id page) page)))))
+          (rx/mapcat (partial remove-graphic it file-data' page)
+                     (rx/from (d/enumerate (d/zip media shape-grid))))
+          (rx/of (modal/hide)
+                 (complete-remove-graphics)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

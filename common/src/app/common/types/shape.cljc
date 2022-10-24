@@ -388,12 +388,14 @@
       (setup-rect-selrect)))
 
 (defn- setup-image
-  [{:keys [metadata] :as shape} props]
-  (-> (setup-rect shape props)
-      (assoc
-       :proportion (/ (:width metadata)
-                      (:height metadata))
-       :proportion-lock true)))
+  [shape props]
+  (let [metadata (or (:metadata shape) (:metadata props))]
+    (-> (setup-rect shape props)
+        (assoc
+          :metadata metadata
+          :proportion (/ (:width metadata)
+                         (:height metadata))
+          :proportion-lock true))))
 
 (defn setup-shape
   "A function that initializes the geometric data of
@@ -409,7 +411,9 @@
 (defn make-shape
   "Make a non group shape, ready to use."
   [type geom-props attrs]
-  (-> (make-minimal-shape type)
+  (-> (if-not (= type :group)
+        (make-minimal-shape type)
+        (make-minimal-group uuid/zero geom-props (:name attrs)))
       (setup-shape geom-props)
       (merge attrs)))
 

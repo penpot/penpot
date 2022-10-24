@@ -1848,6 +1848,21 @@
   }
 }
 
+.remove-graphics-dialog {
+  .close {
+    border: 1px solid $color-gray-30;
+    background: $color-canvas;
+    border-radius: 3px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+
+    &:hover {
+      background: $color-gray-20;
+    }
+  }
+}
+
 //- LOGIN
 .login-register {
   background-color: $color-white;
