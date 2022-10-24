@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.sidebar.options
   (:require
    [app.common.data :as d]
-   [app.common.types.modifiers :as ctm]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]

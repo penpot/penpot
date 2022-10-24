@@ -9,6 +9,27 @@
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
+;; :layout                 ;; :flex, :grid in the future
+;; :layout-flex-dir        ;; :row, :reverse-row, :column, :reverse-column
+;; :layout-gap-type        ;; :simple, :multiple
+;; :layout-gap             ;; {:row-gap number , :column-gap number}
+;; :layout-align-items     ;; :start :end :center :strech
+;; :layout-justify-content ;; :start :center :end :space-between :space-around
+;; :layout-align-content   ;; :start :center :end :space-between :space-around :strech (by default)
+;; :layout-wrap-type       ;; :wrap, :no-wrap
+;; :layout-padding-type    ;; :simple, :multiple
+;; :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
+
+;; ITEMS
+;; :layout-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
+;; :layout-margin-type ;; :simple :multiple
+;; :layout-h-behavior  ;; :fill :fix :auto
+;; :layout-v-behavior  ;; :fill :fix :auto
+;; :layout-max-h       ;; num
+;; :layout-min-h       ;; num
+;; :layout-max-w       ;; num
+;; :layout-min-w
+
 (s/def ::layout  #{:flex :grid})
 (s/def ::layout-flex-dir #{:row :reverse-row :column :reverse-column})
 (s/def ::layout-gap-type #{:simple :multiple})
@@ -75,3 +96,111 @@
                    ::layout-max-w
                    ::layout-min-w
                    ::layout-align-self]))
+
+
+(defn wrap? [{:keys [layout-wrap-type]}]
+  (= layout-wrap-type :wrap))
+
+(defn fill-width? [child]
+  (= :fill (:layout-h-behavior child)))
+
+(defn fill-height? [child]
+  (= :fill (:layout-v-behavior child)))
+
+(defn col?
+  [{:keys [layout-flex-dir]}]
+  (or (= :column layout-flex-dir) (= :reverse-column layout-flex-dir)))
+
+(defn row?
+  [{:keys [layout-flex-dir]}]
+  (or (= :row layout-flex-dir) (= :reverse-row layout-flex-dir)))
+
+(defn gaps
+  [{:keys [layout-gap layout-gap-type]}]
+  (let [layout-gap-row (or (-> layout-gap :row-gap) 0)
+        layout-gap-col (if (= layout-gap-type :simple)
+                         layout-gap-row
+                         (or (-> layout-gap :column-gap) 0))]
+    [layout-gap-row layout-gap-col]))
+
+(defn child-min-width
+  [child]
+  (if (and (fill-width? child)
+           (some? (:layout-min-h child)))
+    (max 0 (:layout-min-h child))
+    0))
+
+(defn child-max-width
+  [child]
+  (if (and (fill-width? child)
+           (some? (:layout-min-h child)))
+    (max 0 (:layout-min-h child))
+    0))
+
+(defn child-min-height
+  [child]
+  (if (and (fill-width? child)
+           (some? (:layout-min-v child)))
+    (max 0 (:layout-min-v child))
+    0))
+
+(defn child-max-height
+  [child]
+  (if (and (fill-width? child)
+           (some? (:layout-min-v child)))
+    (max 0 (:layout-min-v child))
+    0))
+
+(defn h-start?
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (col? shape)
+           (= layout-align-items :start))
+      (and (row? shape)
+           (= layout-justify-content :start))))
+
+(defn h-center?
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (col? shape)
+           (= layout-align-items :center))
+      (and (row? shape)
+           (= layout-justify-content :center))))
+
+(defn h-end?
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (col? shape)
+           (= layout-align-items :end))
+      (and (row? shape)
+           (= layout-justify-content :end))))
+
+(defn v-start?
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (row? shape)
+           (= layout-align-items :start))
+      (and (col? shape)
+           (= layout-justify-content :start))))
+
+(defn v-center?
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (row? shape)
+           (= layout-align-items :center))
+      (and (col? shape)
+           (= layout-justify-content :center))))
+
+(defn v-end?
+  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  (or (and (row? shape)
+           (= layout-align-items :end))
+      (and (col? shape)
+           (= layout-justify-content :end))))
+(defn reverse?
+  [{:keys [layout-flex-dir]}]
+  (or (= :reverse-row layout-flex-dir)
+      (= :reverse-column layout-flex-dir)))
+
+(defn space-between?
+  [{:keys [layout-justify-content]}]
+  (= layout-justify-content :space-between))
+
+(defn space-around?
+  [{:keys [layout-justify-content]}]
+  (= layout-justify-content :space-around))
