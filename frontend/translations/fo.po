@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-22 12:05+0000\n"
-"Last-Translator: Bogi Napoleon Wennerstrøm <bogi.wennerstrom@gmail.com>\n"
+"PO-Revision-Date: 2022-10-25 12:20+0000\n"
+"Last-Translator: Tummas Jóhan Sigvardsen <tummas@tummas.me>\n"
 "Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
 "fo/>\n"
 "Language: fo\n"
@@ -82,7 +82,7 @@ msgstr "Loyniorðið er broytt"
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "auth.notifications.team-invitation-accepted"
-msgstr "Sameinadan í toymið var væleydnað"
+msgstr "Sameinaðan í toymið var væleydnað"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"
@@ -322,3 +322,58 @@ msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 síða deild"
 msgstr[1] "%s síður deildar"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Tá tú stovnar ein brúkara, góðtekur tú okkara treytir og privat politikk."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Legg afturat sum Deilt Savn"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Tvítak %s fílir"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "Tú hevur enn ongar fílir her"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Áh nei! Tú hevur ongar fílir enn! Um tú vilt royna við nøkrum skapilónum, "
+"vitja [Libraries & templates](https://penpot.app/libraries-templates.html)"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Útflyt til PDF"
+
+msgid "dashboard.export-multi"
+msgstr "Útflyt Penpot %s fílir"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s av %s lutum eru valdir"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Útflyt"
+
+msgid "dashboard.export-single"
+msgstr "Útflyt Penpot fílu"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Har eru ongin lutir við útflytsstillingum."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Útflyt deild søvn"
+
+msgid "dashboard.export.title"
+msgstr "Útflyt fílur"
+
+msgid "dashboard.export-frames"
+msgstr "Útflyt borð sum PDF"
