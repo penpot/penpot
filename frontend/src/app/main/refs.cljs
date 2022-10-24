@@ -363,6 +363,10 @@
 
 ;; ---- Viewer refs
 
+(defn lookup-viewer-objects-by-id
+  [page-id]
+  (l/derived #(wsh/lookup-viewer-objects % page-id) st/state =))
+
 (def viewer-data
   (l/derived :viewer st/state))
 
@@ -426,6 +430,14 @@
      (->> ids
           (some #(-> (cph/get-parent objects %) :layout))))
    workspace-page-objects))
+
+(defn get-flex-child-viewer?
+  [ids page-id]
+  (l/derived
+   (fn [state] 
+     (let [objects (wsh/lookup-viewer-objects state page-id)]
+       (filterv #(= :flex (:layout (cph/get-parent objects %))) ids)))
+   st/state =))
 
 (def colorpicker
   (l/derived :colorpicker st/state))

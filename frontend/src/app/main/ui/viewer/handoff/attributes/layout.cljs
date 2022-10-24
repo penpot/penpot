@@ -91,4 +91,5 @@
       [:& copy-button {:data (copy-data (first shapes))}])]
 
    (for [shape shapes]
-     [:& layout-block {:shape shape}])])
+     [:& layout-block {:shape shape
+                       :key (:id shape)}])])

@@ -11,7 +11,7 @@
    [app.common.geom.shapes.rect :as gre]))
 
 ;; :layout                 ;; true if active, false if not
-;; :layout-dir             ;; :right, :left, :top, :bottom
+;; :layout-flex-dir        ;; :row, :column, :reverse-row, :reverse-column
 ;; :layout-gap             ;; number could be negative
 ;; :layout-type            ;; :packed, :space-between, :space-around
 ;; :layout-wrap-type       ;; :wrap, :no-wrap
@@ -21,12 +21,12 @@
 ;; :layout-v-orientation   ;; :left, :center, :right
 
 (defn col?
-  [{:keys [layout-dir]}]
-  (or (= :right layout-dir) (= :left layout-dir)))
+  [{:keys [layout-flex-dir]}]
+  (or (= :column layout-flex-dir) (= :reverse-column layout-flex-dir)))
 
 (defn row?
-  [{:keys [layout-dir]}]
-  (or (= :top layout-dir) (= :bottom layout-dir)))
+  [{:keys [layout-flex-dir]}]
+  (or (= :row layout-flex-dir) (= :reverse-row layout-flex-dir)))
 
 (defn h-start?
   [{:keys [layout-h-orientation]}]
@@ -247,9 +247,9 @@
 
 (defn calc-layout-data
   "Digest the layout data to pass it to the constrains"
-  [{:keys [layout-dir] :as shape} children layout-bounds]
+  [{:keys [layout-flex-dir] :as shape} children layout-bounds]
 
-  (let [reverse? (or (= :left layout-dir) (= :bottom layout-dir))
+  (let [reverse? (or (= :reverse-row layout-flex-dir) (= :reverse-column layout-flex-dir))
         layout-bounds (-> layout-bounds (add-padding shape))
         children (cond->> children reverse? reverse)
         layout-lines

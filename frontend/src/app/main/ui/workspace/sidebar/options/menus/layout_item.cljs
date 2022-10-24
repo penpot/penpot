@@ -18,14 +18,16 @@
    [rumext.v2 :as mf]))
 
 (def layout-item-attrs
-  [:layout-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
-   :layout-margin-type ;; :simple :multiple
-   :layout-h-behavior  ;; :fill :fix :auto
-   :layout-v-behavior  ;; :fill :fix :auto
-   :layout-max-h       ;; num
-   :layout-min-h       ;; num
-   :layout-max-w       ;; num
-   :layout-min-w ])    ;; num
+  [:layout-item-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
+   :layout-item-margin-type ;; :simple :multiple
+   :layout-item-h-sizing    ;; :fill :fix :auto
+   :layout-item-v-sizing    ;; :fill :fix :auto
+   :layout-item-max-h       ;; num
+   :layout-item-min-h       ;; num
+   :layout-item-max-w       ;; num
+   :layout-item-min-w       ;; num
+   :layout-item-align-self  ;; :start :end :center :strech :baseline
+   ])
 
 (mf/defc margin-section
   [{:keys [values change-margin-style on-margin-change] :as props}]

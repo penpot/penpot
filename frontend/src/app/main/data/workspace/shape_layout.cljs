@@ -16,34 +16,29 @@
 
 (def layout-keys
   [:layout
-   :layout-dir
+   :layout-flex-dir
+   :layout-gap-type
    :layout-gap
-   :layout-type
+   :layout-align-items
+   :layout-justify-content
+   :layout-align-content
    :layout-wrap-type
    :layout-padding-type
    :layout-padding
-   :layout-h-orientation
-   :layout-v-orientation
-
-   :layout-align-content
-   :layout-flex-dir
-   :layout-align-items
-   :layout-justify-content
-   :layout-gap-type
    ])
 
 
 (def initial-flex-layout
-  {:layout :flex
-   :layout-flex-dir :row
-   :layout-gap-type :simple
-   :layout-gap {:row-gap 0 :column-gap 0}
-   :layout-align-items :start
+  {:layout                 :flex
+   :layout-flex-dir        :row
+   :layout-gap-type        :simple
+   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-align-items     :start
    :layout-justify-content :start
-   :layout-align-content :strech
-   :layout-wrap-type :no-wrap
-   :layout-padding-type :simple
-   :layout-padding {:p1 0 :p2 0 :p3 0 :p4 0}})
+   :layout-align-content   :strech
+   :layout-wrap-type       :no-wrap
+   :layout-padding-type    :simple
+   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
 
 (def initial-grid-layout ;; TODO
   {:layout :grid})
