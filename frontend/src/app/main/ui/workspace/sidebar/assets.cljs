@@ -759,9 +759,7 @@
         (mf/use-fn
          (mf/deps object selected-objects item-ref on-drag-start)
          (fn [event]
-           (on-asset-drag-start event object selected-objects item-ref :graphics on-drag-start)))
-
-        ]
+           (on-asset-drag-start event object selected-objects item-ref :graphics on-drag-start)))]
 
     [:div {:ref item-ref
            :class-name (dom/classnames
@@ -919,6 +917,8 @@
 
         groups (group-assets objects reverse-sort?)
 
+        components-v2   (mf/use-ctx ctx/components-v2)
+
         add-graphic
         (mf/use-fn
          (fn []
@@ -1051,12 +1051,13 @@
                        :open? open?}
      (when local?
        [:& asset-section-block {:role :title-button}
-        [:div.assets-button {:on-click add-graphic}
-         i/plus
-         [:& file-uploader {:accept cm/str-image-types
-                            :multi true
-                            :ref input-ref
-                            :on-selected on-file-selected}]]])
+        (when-not components-v2
+          [:div.assets-button {:on-click add-graphic}
+           i/plus
+           [:& file-uploader {:accept cm/str-image-types
+                              :multi true
+                              :ref input-ref
+                              :on-selected on-file-selected}]])])
 
      [:& asset-section-block {:role :content}
       [:& graphics-group {:file-id file-id
@@ -1916,10 +1917,12 @@
 
         selected-assets (mf/deref refs/selected-assets)
 
-        selected-count (+ (count (:components selected-assets))
-                          (count (:graphics selected-assets))
-                          (count (:colors selected-assets))
-                          (count (:typographies selected-assets)))
+        selected-count  (+ (count (:components selected-assets))
+                           (count (:graphics selected-assets))
+                           (count (:colors selected-assets))
+                           (count (:typographies selected-assets)))
+
+        components-v2   (mf/use-ctx ctx/components-v2)
 
         toggle-open     #(st/emit! (dwl/set-assets-box-open (:id file) :library (not open?)))
 
@@ -2053,7 +2056,8 @@
              show-graphics?     (and (or (= (:box filters) :all)
                                          (= (:box filters) :graphics))
                                      (or (> (count media) 0)
-                                         (str/empty? (:term filters))))
+                                         (and (str/empty? (:term filters))
+                                              (not components-v2))))
              show-colors?       (and (or (= (:box filters) :all)
                                          (= (:box filters) :colors))
                                      (or (> (count colors) 0)

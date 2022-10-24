@@ -300,7 +300,6 @@
   [ids]
   (l/derived #(select-keys % ids) workspace-modifiers))
 
-
 (def workspace-modifiers-with-objects
   (l/derived
    (fn [state]
@@ -360,6 +359,10 @@
 
 (def workspace-focus-selected
   (l/derived :workspace-focus-selected st/state))
+
+;; Remove this when deprecating components-v2
+(def remove-graphics
+  (l/derived :remove-graphics st/state))
 
 ;; ---- Viewer refs
 
