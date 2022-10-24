@@ -41,3 +41,23 @@
   (when (d/num? value)
     (let [value (mth/precision value 0)]
       (dm/str value))))
+
+(defn format-padding-margin-shorthand
+  [values]
+  ;; Values come in [p1 p2 p3 p4]
+  (let [[p1 p2 p3 p4] values]
+    (cond
+      (apply = values)
+      {:p1 p1}
+
+      (= 4 (count (set values)))
+      {:p1 p1 :p2 p2 :p3 p3}
+
+      (and (= p1 p3) (= p2 p4))
+      {:p1 p1 :p3 p3}
+
+      (and (not= p1 p3) (= p2 p4))
+      {:p1 p1 :p2 p2 :p3 p3}
+      
+      :else
+      {:p1 p1 :p2 p2 :p3 p3})))

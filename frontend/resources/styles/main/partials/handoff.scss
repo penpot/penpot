@@ -87,7 +87,7 @@
     position: relative;
     display: flex;
     flex-direction: row;
-    padding: 1rem 1.6rem 1rem 0.5rem;
+    padding: 0.6rem 1.6rem 0.6rem 0.5rem;
 
     .attributes-label,
     .attributes-value {
@@ -96,9 +96,12 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       width: 50%;
+      .items {
+        margin-right: 5px;
+      }
     }
     .copy-button {
-      padding: 1rem 0.5rem;
+      padding: 0.6rem 0.5rem;
       margin-top: 0.25rem;
     }
   }

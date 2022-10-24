@@ -12,6 +12,8 @@
    [app.main.ui.viewer.handoff.attributes.fill :refer [fill-panel]]
    [app.main.ui.viewer.handoff.attributes.image :refer [image-panel]]
    [app.main.ui.viewer.handoff.attributes.layout :refer [layout-panel]]
+   [app.main.ui.viewer.handoff.attributes.layout-flex :refer [layout-flex-panel]]
+   [app.main.ui.viewer.handoff.attributes.layout-flex-element :refer [layout-flex-element-panel]]
    [app.main.ui.viewer.handoff.attributes.shadow :refer [shadow-panel]]
    [app.main.ui.viewer.handoff.attributes.stroke :refer [stroke-panel]]
    [app.main.ui.viewer.handoff.attributes.svg :refer [svg-panel]]
@@ -20,14 +22,14 @@
    [rumext.v2 :as mf]))
 
 (def type->options
-  {:multiple [:fill :stroke :image :text :shadow :blur]
-   :frame    [:layout :fill :stroke :shadow :blur]
-   :group    [:layout :svg]
-   :rect     [:layout :fill :stroke :shadow :blur :svg]
-   :circle   [:layout :fill :stroke :shadow :blur :svg]
+  {:multiple [:fill :stroke :image :text :shadow :blur :layout-flex-item]
+   :frame    [:layout :fill :stroke :shadow :blur :layout-flex :layout-flex-item]
+   :group    [:layout :svg :layout-flex-item]
+   :rect     [:layout :fill :stroke :shadow :blur :svg :layout-flex-item]
+   :circle   [:layout :fill :stroke :shadow :blur :svg :layout-flex-item]
    :path     [:layout :fill :stroke :shadow :blur :svg]
-   :image    [:image :layout :fill :stroke :shadow :blur :svg]
-   :text     [:layout :text :shadow :blur :stroke]})
+   :image    [:image :layout :fill :stroke :shadow :blur :svg :layout-flex-item]
+   :text     [:layout :text :shadow :blur :stroke :layout-flex-item]})
 
 (mf/defc attributes
   [{:keys [page-id file-id shapes frame]}]
@@ -39,14 +41,16 @@
     [:div.element-options
      (for [option options]
        [:> (case option
-             :layout layout-panel
-             :fill   fill-panel
-             :stroke stroke-panel
-             :shadow shadow-panel
-             :blur   blur-panel
-             :image  image-panel
-             :text   text-panel
-             :svg    svg-panel)
+             :layout           layout-panel
+             :layout-flex      layout-flex-panel
+             :layout-flex-item layout-flex-element-panel
+             :fill             fill-panel
+             :stroke           stroke-panel
+             :shadow           shadow-panel
+             :blur             blur-panel
+             :image            image-panel
+             :text             text-panel
+             :svg              svg-panel)
         {:shapes shapes
          :frame frame}])
      [:& exports

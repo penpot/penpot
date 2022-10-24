@@ -55,9 +55,9 @@
    :shadow {:props [:shadow]
             :to-prop {:shadow :box-shadow}
             :format {:shadow #(str/join ", " (map shadow->css %1))}}
-   :blur {:props [:blur]
-          :to-prop {:blur "filter"}
-          :format {:blur #(str/fmt "blur(%spx)" (:value %))}}})
+   :blur   {:props [:blur]
+            :to-prop {:blur "filter"}
+            :format {:blur #(str/fmt "blur(%spx)" (:value %))}}})
 
 (def style-text
   {:props   [:fill-color

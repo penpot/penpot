@@ -28,6 +28,10 @@
   ([state page-id]
    (dm/get-in state [:workspace-data :pages-index page-id :objects])))
 
+(defn lookup-viewer-objects
+  ([state page-id]
+   (dm/get-in state [:viewer :pages page-id :objects])))
+
 (defn lookup-page-options
   ([state]
    (lookup-page-options state (:current-page-id state)))
