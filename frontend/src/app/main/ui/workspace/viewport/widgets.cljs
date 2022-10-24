@@ -163,11 +163,15 @@
         on-frame-enter  (unchecked-get props "on-frame-enter")
         on-frame-leave  (unchecked-get props "on-frame-leave")
         on-frame-select (unchecked-get props "on-frame-select")
-        frames          (ctt/get-frames objects)]
+        frames          (ctt/get-frames objects)
+        focus           (unchecked-get props "focus")]
 
     [:g.frame-titles
      (for [frame frames]
-       (when (= (:parent-id frame) uuid/zero)
+       (when (and
+              (= (:parent-id frame) uuid/zero)
+              (or (empty? focus)
+                  (contains? focus (:id frame))))
          [:& frame-title {:key (dm/str "frame-title-" (:id frame))
                           :frame frame
                           :selected? (contains? selected (:id frame))
