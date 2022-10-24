@@ -10,6 +10,8 @@
 - Fix wrong validation text after interaction with 2 and more files [Taiga #4276](https://tree.taiga.io/project/penpot/issue/4276)
 - Fix auto-width for texts can make text appear stretched [Github #2482](https://github.com/penpot/penpot/issues/2482)
 - Fix boards name do not disappear in focus mode [#4272](https://tree.taiga.io/project/penpot/issue/4272)
+- Fix wrong email in the info message at change email [Taiga #4274](https://tree.taiga.io/project/penpot/issue/4274)
+
 ## 1.16.0-beta
 
 ### :boom: Breaking changes & Deprecations

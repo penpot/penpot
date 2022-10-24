@@ -52,20 +52,19 @@
     (rx/throw error)))
 
 (defn- on-success
-  [form data]
+  [profile data]
   (if (:changed data)
     (st/emit! (du/fetch-profile)
               (modal/hide))
-    (let [email   (get-in @form [:clean-data :email-1])
-          message (tr "notifications.validation-email-sent" email)]
+    (let [message (tr "notifications.validation-email-sent" (:email profile))]
       (st/emit! (dm/info message)
                 (modal/hide)))))
 
 (defn- on-submit
-  [form _event]
+  [profile form _event]
   (let [params {:email (get-in @form [:clean-data :email-1])}
         mdata  {:on-error (partial on-error form)
-                :on-success (partial on-success form)}]
+                :on-success (partial on-success profile)}]
     (st/emit! (du/request-email-change (with-meta params mdata)))))
 
 (mf/defc change-email-modal
@@ -77,7 +76,12 @@
                              :validators [email-equality]
                              :initial profile)
         on-close
-        (mf/use-callback #(st/emit! (modal/hide)))]
+        (mf/use-callback #(st/emit! (modal/hide)))
+
+        on-submit
+        (mf/use-callback
+         (mf/deps profile)
+         (partial on-submit profile))]
 
     [:div.modal-overlay
      [:div.modal-container.change-email-modal.form-container
@@ -86,7 +90,7 @@
 
        [:div.modal-header
         [:div.modal-header-title
-         [:h2 {:data-test "change-email-title"} 
+         [:h2 {:data-test "change-email-title"}
           (tr "modals.change-email.title")]]
         [:div.modal-close-button
          {:on-click on-close} i/close]]
