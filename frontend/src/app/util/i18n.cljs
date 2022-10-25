@@ -24,20 +24,24 @@
   [{:label "English" :value "en"}
    {:label "Español" :value "es"}
    {:label "Català" :value "ca"}
-   {:label "Français (community)" :value "fr"}
    {:label "Deutsch (community)" :value "de"}
-   {:label "Italiano (community)" :value "it"}
    {:label "Euskera (community)" :value "eu"}
+   {:label "Français (community)" :value "fr"}
+   {:label "Gallego (Community)" :value "gl"}
+   {:label "Hrvatski (Community)" :value "hr"}
+   {:label "Italiano (community)" :value "it"}
    {:label "Norsk - Bokmål (community)" :value "nb_no"}
-   {:label "Portuguese - Brazil (community)" :value "pt_br"}
    {:label "Polski (community)" :value "pl"}
-   {:label "Русский (community)" :value "ru"}
+   {:label "Portuguese - Brazil (community)" :value "pt_br"}
+   {:label "Portuguese - Portugal (community)" :value "pt_pt"}
    {:label "Rumanian (community)" :value "ro"}
    {:label "Türkçe (community)" :value "tr"}
    {:label "Ελληνική γλώσσα (community)" :value "el"}
+   {:label "Русский (community)" :value "ru"}
    {:label "עִבְרִית (community)" :value "he"}
    {:label "عربي/عربى (community)" :value "ar"}
    {:label "فارسی (community)" :value "fa"}
+   {:label "日本語 (Community)" :value "ja_jp"}
    {:label "简体中文 (community)" :value "zh_cn"}
    {:label "繁體中文 (community)" :value "zh_hant"}])
 
@@ -68,19 +72,22 @@
 (defonce locale (l/atom (or (get @storage ::locale)
                             (autodetect))))
 
-;; The translations `data` is a javascript object and should be treated
-;; with `goog.object` namespace functions instead of a standard
-;; clojure functions. This is for performance reasons because this
-;; code is executed in the critical part (application bootstrap) and
-;; used in many parts of the application.
-
 (defn init!
+  "Initialize the i18n module with translations.
+
+  The `data` is a javascript object for performance reasons. This code
+  is executed in the critical part (application bootstrap) and used in
+  many parts of the application."
   [data]
   (set! translations data))
 
 (defn set-locale!
   [lname]
-  (if lname
+  (if (or (nil? lname)
+          (str/empty? lname))
+    (let [lname (autodetect)]
+      (swap! storage dissoc ::locale)
+      (reset! locale lname))
     (let [supported (into #{} (map :value supported-locales))
           lname     (loop [locales (seq (parse-locale lname))]
                       (if-let [locale (first locales)]
@@ -88,11 +95,7 @@
                           locale
                           (recur (rest locales)))
                         cfg/default-language))]
-
       (swap! storage assoc ::locale lname)
-      (reset! locale lname))
-    (let [lname (autodetect)]
-      (swap! storage dissoc ::locale)
       (reset! locale lname))))
 
 (defn reset-locale
@@ -102,7 +105,7 @@
   (swap! storage dissoc ::locale)
   (reset! locale (autodetect)))
 
-(add-watch locale ::browser-font
+(add-watch locale "browser-font"
            (fn [_ _ _ locale]
              (log/info :hint "locale changed" :locale locale)
              (dom/set-html-lang! locale)
