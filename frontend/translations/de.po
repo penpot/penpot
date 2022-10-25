@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-19 22:02+0000\n"
-"Last-Translator: nautilusx <translate@disroot.org>\n"
+"PO-Revision-Date: 2022-10-25 12:22+0000\n"
+"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -777,8 +777,7 @@ msgstr "Sie können Ihre E-Mail-Adresse nicht als Passwort verwenden"
 #: src/app/main/ui/settings/change_email.cljs,
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
-msgstr ""
-"Die E-Mail-Adresse «%s» hat viele permanente Unzustellbarkeitsberichte."
+msgstr "Die E-Mail-Adresse «%s» hat viele permanente Unzustellbarkeitsberichte."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
@@ -1846,8 +1845,7 @@ msgstr "Mitglied löschen"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.message"
-msgstr ""
-"Sind Sie sicher, dass Sie dieses Mitglied aus dem Team löschen möchten?"
+msgstr "Sind Sie sicher, dass Sie dieses Mitglied aus dem Team löschen möchten?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
@@ -2265,9 +2263,6 @@ msgstr "Unbegrenzte Anzahl von Mitgliedern"
 
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% kostenlos!"
-
-msgid "onboarding.team.create.title"
-msgstr "Team erstellen"
 
 msgid "onboarding.team.start.title"
 msgstr "Mit der Gestaltung beginnen"
@@ -3843,10 +3838,6 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Min.Breite"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "Min. Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title"
 msgstr "Elementgröße ändern"
 
@@ -3865,10 +3856,6 @@ msgstr "Mindesthöhe"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "Mindestbreite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
-msgstr "Minimale Breite"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
