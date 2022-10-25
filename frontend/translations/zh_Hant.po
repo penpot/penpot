@@ -92,10 +92,6 @@ msgid "auth.notifications.invalid-token-error"
 msgstr "此 Recovery token 是無效的。"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.password-changed-succesfully"
-msgstr "成功修改密碼"
-
-#: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.password-changed-successfully"
 msgstr "已成功更改密碼"
 
@@ -383,10 +379,6 @@ msgstr "釘選/取消釘選"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
 msgstr "專案"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "提升為擁有者"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
@@ -896,17 +888,8 @@ msgstr "開放原始碼"
 msgid "onboarding.contrib.desc2.1"
 msgstr "您能夠存取"
 
-msgid "onboarding.team.create.desc1"
-msgstr "您正在與他人協作嗎？建立團隊以共同作業和分享設計資源。"
-
-msgid "onboarding.team.create.input-placeholder"
-msgstr "輸入新團隊名稱"
-
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc1"
-msgstr "萬算！您已經是 Penpot 的使用者 :)"
 
 msgid "onboarding.welcome.title"
 msgstr "歡迎使用 Penpot"

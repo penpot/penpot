@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-23 20:54+0000\n"
-"Last-Translator: Stas Haas <stas@girafic.de>\n"
+"PO-Revision-Date: 2022-10-25 12:20+0000\n"
+"Last-Translator: Vin <k3kelm4vw@mozmail.com>\n"
 "Language-Team: Russian "
 "<https://hosted.weblate.org/projects/penpot/frontend/ru/>\n"
 "Language: ru\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.14.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -581,10 +581,6 @@ msgstr "Закрепить/Открепить"
 msgid "dashboard.projects-title"
 msgstr "Проекты"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Сделать владельцем"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Хотите удалить свой аккаунт?"
@@ -721,8 +717,18 @@ msgstr "Вы уверены?"
 msgid "ds.updated-at"
 msgstr "Обновлено: %s"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Провайдер аутентификации не настроен."
+
 msgid "errors.auth.unable-to-login"
 msgstr "Кажется, сеанс истёк. Войдите снова."
+
+msgid "errors.bad-font"
+msgstr "Шрифт %s не может быть загружен"
+
+msgid "errors.bad-font-plural"
+msgstr "Шрифты %s не могут быть загружены"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
@@ -741,11 +747,14 @@ msgstr "Нельзя указывать в качестве пароля адр�
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
-msgstr "Получатель «%s» постоянно не доступен."
+msgstr "Эл. почта «%s» постоянно недоступна."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "Эл. почта для подтверждения должна совпадать"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "Эл. почта «%s» была отмечена как спам или постоянно недоступна."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -795,6 +804,9 @@ msgstr "Пароль для подтверждения должен совпад
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "Пароль должен быть минимум 8 символов"
+
+msgid "errors.profile-blocked"
+msgstr "Профиль заблокирован"
 
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
@@ -1845,14 +1857,31 @@ msgstr ""
 "Вы можете посмотреть наши руководства и руководства, созданные нашим "
 "сообществом."
 
+msgid "onboarding-v2.newsletter.updates"
+msgstr "Присылать мне обновления продукта (новые функции, выпуски, исправления...)."
+
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "Penpot — проект с открытым исходным кодом, созданный Kaleidos и "
 "сообществом, где многие люди уже помогают друг другу. Каждый может начать "
 "сотрудничество:"
 
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Руководство по участию в проекте"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Добро пожаловать в Penpot!"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Создать команду позже"
+
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Название вашей команды"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr ""
+"После добавления названия команды, вы сможете пригласить людей "
+"присоединиться."
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Введите название команды"
@@ -1860,11 +1889,22 @@ msgstr "Введите название команды"
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Пригласить участников"
 
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Никого не забудьте. Разработчики, дизайнеры, менеджеры... разнообразие "
+"развивает :)"
+
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Создать команду и пригласить позже"
 
 msgid "onboarding.choice.team-up.invite-members-submit"
 msgstr "Создать команду и отправить приглашения"
+
+msgid "onboarding.choice.title"
+msgstr "Добро пожаловать в Penpot"
+
+msgid "onboarding.contrib.alt"
+msgstr "Открытый исходный код"
 
 msgid "onboarding.contrib.desc1"
 msgstr ""
@@ -1873,12 +1913,6 @@ msgstr ""
 
 msgid "onboarding.contrib.link"
 msgstr "проект на Github"
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Мы будем отправлять только акутальные эл. письма. Вы можете отказаться от "
-"подписки в любое время в своём профиле пользователя или по ссылке отказа от "
-"подписки в любом из наших писем информационной рассылки."
 
 msgid "onboarding.slide.1.alt"
 msgstr "Интерактивные прототипы"
@@ -1894,6 +1928,9 @@ msgstr ""
 "Все участники команды работают одновременно в режиме реального времени и "
 "централизованно комментируют, отправляют идеи и отзывы напрямую в проект "
 "дизайна."
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Создать команду"
 
 msgid "onboarding.team-modal.create-team-desc"
 msgstr ""
@@ -2124,20 +2161,12 @@ msgstr "На странице не найдено ни одного кадра."
 msgid "viewer.frame-not-found"
 msgstr "Кадр не найден."
 
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header-interactions"
-msgstr "взаимодействия"
-
 msgid "viewer.header.comments-section"
 msgstr "Комментарии (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.dont-show-interactions"
 msgstr "Не показывать взаимодействия"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Редактировать страницу"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
@@ -2248,10 +2277,6 @@ msgstr "Дублировать"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Редактировать"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Библиотека файлов"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
@@ -2535,10 +2560,6 @@ msgstr "Дизайн"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export"
 msgstr "Экспорт"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
-msgid "workspace.options.export-object"
-msgstr "Экспорт элемента"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-complete"

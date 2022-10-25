@@ -586,10 +586,6 @@ msgstr "Przypnij/Odepnij"
 msgid "dashboard.projects-title"
 msgstr "Projekty"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Awansuj na właściciela"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Czy chesz usunąć swoje konto?"
@@ -838,10 +834,6 @@ msgstr ""
 "Musisz zaakceptować nasze warunki świadcznia usług oraz politykę "
 "prywatności."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Token wygasł"
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Wystąpił nieoczekiwany błąd."
@@ -883,20 +875,6 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
 msgstr "Społeczność Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Przejdź do dyskusji"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle1"
-msgstr "Dołącz do forum komunikacji zespołowej Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Możesz zadawać pytania i odpowiadać na nie, prowadzić otwarte rozmowy i "
-"śledzić decyzje mające wpływ na projekt."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-title"
@@ -1987,22 +1965,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "Nie, dziękuję"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Zapisz się do naszego newslettera, aby być na bieżąco z postępami w rozwoju "
-"produktów i nowościami."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Polityka prywatności."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Ponieważ dbamy o prywatność, oto nasza "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Wyślemy Ci tylko zasadne emaile. Możesz zrezygnować z subskrypcji w "
-"dowolnym momencie w swoim profilu użytkownika lub za pośrednictwem linku "
-"rezygnacji z subskrypcji w dowolnym z naszych newsletterów."
 
 msgid "onboarding.newsletter.title"
 msgstr "Chcesz otrzymywać informacje o Penpot?"
@@ -2066,12 +2030,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Jedno wspólne źródło prawdy"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Wpisz nową nazwę zespołu"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Pomiń i zaproś później"
-
 msgid "onboarding.templates.subtitle"
 msgstr "Oto kilka szablonów."
 
@@ -2080,20 +2038,6 @@ msgstr "Zacznij projektować"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc1"
-msgstr "Hurra! Jesteś już użytkownikiem Penpot :)"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot jest w swojej pierwszej wersji beta dzięki połączeniu podstawowych "
-"funkcji, dojrzałości, stabilności i niesamowitej walidacji ze strony "
-"społeczności jako całości, w której jesteś mile widziany."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Podczas gdy Ty będziesz cieszyć się Penpot takim, jakim jest, będziemy go "
-"ulepszać, wypuszczając iteracje naszych pełnych nadziei planów."
 
 msgid "onboarding.welcome.title"
 msgstr "Witamy w Penpot"
@@ -2726,10 +2670,6 @@ msgstr "Duplikuj"
 msgid "workspace.assets.edit"
 msgstr "Edytuj"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Biblioteka plików"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
 msgstr "Grafika"
@@ -2876,16 +2816,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Ukryj nazwy obszarów kompozycji"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Ukryj zasoby"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Ukryj siatki"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Ukryj warstwy"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2931,16 +2863,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Pokaz nazwy obszarów kompozycji"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Pokaż zasoby"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Pokaż siatkę"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Pokaż warstwy"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

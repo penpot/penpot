@@ -135,10 +135,6 @@ msgstr "Fest/løsne"
 msgid "dashboard.projects-title"
 msgstr "Prosjekter"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promoter til eier"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Ønsker du å fjerne kontoen din?"
@@ -376,9 +372,6 @@ msgstr "Skriftfamilie"
 msgid "labels.font-providers"
 msgstr "Skrifttilbydere"
 
-msgid "labels.font-variant"
-msgstr "Stil"
-
 msgid "labels.fonts"
 msgstr "Skrifter"
 
@@ -599,10 +592,6 @@ msgid "title.workspace"
 msgstr "%s - Penpot"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Rediger side"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.create-link"
 msgstr "Opprett lenke"
 
@@ -632,10 +621,6 @@ msgstr "Slett"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Rediger"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Filbibliotek"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"

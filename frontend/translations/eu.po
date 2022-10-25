@@ -583,10 +583,6 @@ msgstr "Ainguratu/Desainguratu"
 msgid "dashboard.projects-title"
 msgstr "Proiektuak"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Bihurtu jabe"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Kontua ezabatu nahi duzu?"
@@ -1795,10 +1791,6 @@ msgid "modals.invite-member.emails"
 msgstr "Posta elektronikoak, komarekin banatuta"
 
 #: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member.title"
-msgstr "Gonbidatu taldera sartzeko"
-
-#: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
 msgstr "Gonbidatu kideak taldera"
 
@@ -2009,22 +2001,8 @@ msgstr "Laguntzeko gida"
 msgid "onboarding-v2.welcome.title"
 msgstr "Ongi etorri Penpotera!"
 
-msgid "onboarding.choice.desc"
-msgstr "Nola hasi nahi duzu?"
-
-msgid "onboarding.choice.fly-solo"
-msgstr "Bakarrik hasi"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Sartu Penpoten eta hasi zure kabuz diseinatzen."
-
 msgid "onboarding.choice.team-up"
 msgstr "Osatu taldea"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"Norbaitekin lan egiten duzu? Sortu talde bat eta gonbidatu elkarrekin lan "
-"egin eta baliabideak partekatzeko."
 
 msgid "onboarding.choice.team-up.create-later"
 msgstr "Sortu taldea beranduago"
@@ -2040,11 +2018,6 @@ msgstr "Idatzi taldearen izena"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Gonbidatu kideak"
-
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"Geroago ere gonbidatu ditzakezu eta bakoitzaren baimenak ezarri taldearen "
-"ezarpenetatik."
 
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
@@ -2094,22 +2067,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "Ez, eskerrik asko"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Harpidetu gure buletinera produktuaren aurrerapenari buruzko albisteak "
-"jasotzeko."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Pribatutasun politika."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Pribatutasunak axola digulako, hemen ikusi dezakezu gure "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Benetan baliozkoak diren mezuak bakarrik bidaliko dizkizugu. Edonoiz eten "
-"dezakezu harpidetza zure profiletik edo buletinean bertan datorren esteka "
-"erabiliz."
 
 msgid "onboarding.newsletter.title"
 msgstr "Penpoti buruzko albisteak jaso nahi dituzu?"
@@ -2198,19 +2157,6 @@ msgstr "Hasi diseinatzen"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc1"
-msgstr "Ondo! zure Penpot kontua ondo sortu da :)"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot bere lehenengo beta bertsioan dago, hainbat funtzionalitate, "
-"egonkortasun eta komunitatearen onarpena jaso ostean, ongi etorri."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Penpot darabilzun artean, hobekuntzak egiten jarraituko dugu gure planekin "
-"aurrera jarraituz."
 
 msgid "onboarding.welcome.title"
 msgstr "Ongi etorri Penpotera"
@@ -2848,10 +2794,6 @@ msgstr "Bikoiztu"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Editatu"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Fitxategiaren liburutegia"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
@@ -3756,18 +3698,6 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Gutxieneko zabalera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "Gehienezko altuera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "Gehienezko zabalera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "Gutxieneko altuera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.min-w"
 msgstr "Gutxieneko zabalera"
 
@@ -3792,18 +3722,6 @@ msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "Gutxieneko zabalera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "Gehienezko altuera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "Gehieneko zabalera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "Gutxieneko altuera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.min-w"
 msgstr "Gutxieneko zabalera"
 
@@ -3816,16 +3734,16 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Zutabea"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row"
-msgstr "Lerroa"
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "Alderantzikatu zutabea"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Alderantzikatu lerroa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Alderantzikatu zutabea"
+msgid "workspace.options.layout.direction.row"
+msgstr "Lerroa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"

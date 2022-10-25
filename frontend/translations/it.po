@@ -587,10 +587,6 @@ msgstr "Appunta/Rimuovi"
 msgid "dashboard.projects-title"
 msgstr "Progetti"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promuovi a proprietario"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Desideri eliminare il tuo account?"
@@ -652,10 +648,6 @@ msgstr "I tuoi file sono stati spostati con successo"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "Il tuo progetto è stato spostato con successo"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Cambia team"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
@@ -1819,11 +1811,6 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Lasciare il team di %s?"
 
-msgid "modals.leave-and-reassign.forbiden"
-msgstr ""
-"Non puoi lasciare il team se non c'è alcun membro da promuovere a "
-"proprietario. Potresti voler cancellare il team."
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
@@ -2093,16 +2080,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "No, grazie"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Iscriviti alla nostra newsletter per rimanere aggiornato con le news e i "
-"progressi di sviluppo del prodotto."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Condizioni sulla Privacy."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "In quanto ci teniamo alla privacy, qui puoi vedere la nostra "
 
 msgid "onboarding.newsletter.privacy2"
 msgstr ""

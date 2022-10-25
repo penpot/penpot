@@ -60,10 +60,6 @@ msgid "auth.login-submit"
 msgstr "ورود"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-subtitle"
-msgstr "مشخصات خود را در زیر وارد کنید"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
 msgstr "خوشحالم که دوباره شما را می‌بینم!"
 
@@ -585,11 +581,6 @@ msgstr "پین/برداشتن پین"
 msgid "dashboard.projects-title"
 msgstr "پروژه‌ها"
 
-#: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
-msgid "dashboard.promote-to-owner"
-msgstr "ارتقا به مالک"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "آیا می‌خواهید حساب خود را حذف کنید؟"
@@ -874,14 +865,6 @@ msgstr ""
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
 msgstr "انجمن Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "برو سراغ بحث‌ها"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-title"
-msgstr "بحث‌های تیمی"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subject"
@@ -1668,31 +1651,8 @@ msgstr ""
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "پس از نامگذاری تیم خود، می‌توانید افراد را برای پیوستن دعوت کنید."
 
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"ما فقط ایمیل‌های مربوطه را برای شما ارسال می‌کنیم. شما می‌توانید در هر زمان "
-"در پروفایل کاربری خود یا از طریق پیوند لغو اشتراک در هر یک از خبرنامه‌های "
-"ما، اشتراک خود را لغو کنید."
-
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-#, fuzzy
-msgid "onboarding.welcome.desc1"
-msgstr "هورا! شما یک کاربر Penpot هستید :)"
-
-#, fuzzy
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot به لطف ترکیبی از ویژگی‌های اصلی، بلوغ، پایداری و اعتبارسنجی "
-"شگفت‌انگیز جامعه به‌عنوان یک کل، در اولین نسخه بتا خود قرار دارد، که از آن "
-"استقبال می‌کنید."
-
-#, fuzzy
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"در حالی که از Penpot برای آنچه هست لذت می‌برید، ما به بهبود آن ادامه "
-"می‌دهیم و برنامه‌های امیدوارکننده خود را تکرار می‌کنیم."
 
 #, fuzzy
 msgid "onboarding.welcome.title"

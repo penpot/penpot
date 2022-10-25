@@ -304,10 +304,6 @@ msgstr "Pin/Unpin"
 msgid "dashboard.projects-title"
 msgstr "Proiecte"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promovează la administrator"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Doriți să vă ștergeți contul?"
@@ -864,9 +860,6 @@ msgstr "Familie de Fonturi"
 msgid "labels.font-providers"
 msgstr "Provideri de Fonturi"
 
-msgid "labels.font-variant"
-msgstr "Stil"
-
 msgid "labels.fonts"
 msgstr "Fonturi"
 
@@ -1236,10 +1229,6 @@ msgid "modals.leave-and-reassign.hint1"
 msgstr "Ești administratorul echipei %s."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "Selectează un membru pentru a-l promova, înainte de a părăsi echipa"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Promovează şi părăseşte echipa"
 
@@ -1404,10 +1393,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "Nu afişa interacţiunile"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Editează pagina"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Ecran complet"
 
@@ -1517,10 +1502,6 @@ msgstr "Duplică"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Editează"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Colecţii"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"

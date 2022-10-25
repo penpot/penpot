@@ -584,10 +584,6 @@ msgstr "Prikvači/Otkvači"
 msgid "dashboard.projects-title"
 msgstr "Projekti"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promakni u vlasnika"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Želiš li ukloniti svoj račun?"
@@ -647,10 +643,6 @@ msgstr "Tvoje datoteke su uspješno premještene"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "Tvoj projekt je uspješno premješten"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Promijeni tim"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
@@ -1819,11 +1811,6 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Jesi li siguran/na da želiš napustiti tim %s?"
 
-msgid "modals.leave-and-reassign.forbiden"
-msgstr ""
-"Ne možeš napustiti tim ako nema drugog člana kojeg možeš promovirati u "
-"vlasnika. Možda želiš izbrisati tim."
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
@@ -2084,22 +2071,8 @@ msgstr "Tvoj zahtjev za pretplatu je poslan, poslat ćemo ti e-mail da ga potvrd
 msgid "onboarding.newsletter.decline"
 msgstr "Ne, hvala"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Pretplati se na naš newsletter kako bi bio/la u toku s razvojem proizvoda i "
-"novostima."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Politika privatnosti."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Budući da brinemo o privatnosti, evo našeg "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Poslat ćemo ti samo relevantne e-mailove. Pretplatu možeš odjaviti u bilo "
-"kojem trenutku u svom korisničkom profilu ili putem linka za odjavu u bilo "
-"kojem od naših newslettera."
 
 msgid "onboarding.newsletter.title"
 msgstr "Želiš primati Penpot novostii?"

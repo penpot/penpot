@@ -900,10 +900,6 @@ msgid "handoff.attributes.layout"
 msgstr "Layout"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.size"
-msgstr "Size and position"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.height"
 msgstr "Height"
 
@@ -930,6 +926,10 @@ msgstr "Width"
 #: src/app/main/ui/handoff/attributes/shadow.cljs
 msgid "handoff.attributes.shadow"
 msgstr "Shadow"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.size"
+msgstr "Size and position"
 
 #: src/app/main/ui/handoff/attributes/stroke.cljs
 msgid "handoff.attributes.stroke"
@@ -3465,16 +3465,16 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Column"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row"
-msgstr "Row"
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "Reverse column"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Reverse row"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Reverse column"
+msgid "workspace.options.layout.direction.row"
+msgstr "Row"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
