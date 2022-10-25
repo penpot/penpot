@@ -218,6 +218,5 @@
                 :placeholder "--"
                 :on-click #(dom/select-target %)
                 :on-change (partial on-size-change item)
-              ;; :value (get values item)
-                :value 100}]]])]])]]
-              ))
+                :value (get values item)
+                :nillable true}]]])]])]]))

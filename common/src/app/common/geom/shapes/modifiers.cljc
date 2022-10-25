@@ -75,23 +75,18 @@
           transformed-parent (gtr/transform-shape parent modifiers)
           children (map (d/getf objects) (:shapes transformed-parent))
 
-          modif-tree (reduce (partial normalize-child transformed-parent _snap-pixel?) modif-tree children)
+          modif-tree   (reduce (partial normalize-child transformed-parent _snap-pixel?) modif-tree children)
+          children     (->> children (map (partial apply-modifiers modif-tree)))
+          layout-data  (gcl/calc-layout-data transformed-parent children)
+          children     (into [] (cond-> children (:reverse? layout-data) reverse))
+          max-idx      (dec (count children))
 
-          children (->> children (map (partial apply-modifiers modif-tree)))
-
-          layout-data (gcl/calc-layout-data transformed-parent children)
-
-          children          (into [] (cond-> children (:reverse? layout-data) reverse))
-
-          max-idx           (dec (count children))
-          layout-lines      (:layout-lines layout-data)]
+          layout-lines (:layout-lines layout-data)]
 
       (loop [modif-tree modif-tree
              layout-line (first layout-lines)
              pending (rest layout-lines)
              from-idx 0]
-
-
         (if (and (some? layout-line) (<= from-idx max-idx))
           (let [to-idx   (+ from-idx (:num-children layout-line))
                 children (subvec children from-idx to-idx)

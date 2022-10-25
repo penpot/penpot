@@ -33,47 +33,40 @@
 (defn calc-fill-width-data
   "Calculates the size and modifiers for the width of an auto-fill child"
   [{:keys [transform transform-inverse] :as parent}
-   {:keys [layout-h-behavior] :as child}
+   child
    child-origin child-width
-   {:keys [num-children line-width line-fill? child-fill? layout-bounds] :as layout-data}]
+   {:keys [children-data line-width] :as layout-data}]
 
-  (let [[layout-gap-row _] (ctl/gaps parent)]
-    (cond
-      (and (ctl/row? parent) (= :fill layout-h-behavior) child-fill?)
-      (let [layout-width (gpo/width-points layout-bounds)
-            fill-space (- layout-width line-width (* layout-gap-row (dec num-children)))
-            fill-width (/ fill-space (:num-child-fill layout-data))
-            fill-scale (/ fill-width child-width)]
+  (cond
+    (and (ctl/row? parent) (ctl/fill-width? child))
+    (let [target-width (get-in children-data [(:id child) :child-width])
+          fill-scale (/ target-width child-width)]
+      {:width target-width
+       :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})
 
-        {:width fill-width
-         :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})
-
-      (and (ctl/col? parent) (= :fill layout-h-behavior) line-fill?)
-      (let [fill-scale (/ line-width child-width)]
-        {:width line-width
-         :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)}))))
+    (and (ctl/col? parent) (ctl/fill-width? child))
+    (let [fill-scale (/ line-width child-width)]
+      {:width line-width
+       :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})))
 
 (defn calc-fill-height-data
   "Calculates the size and modifiers for the height of an auto-fill child"
   [{:keys [transform transform-inverse] :as parent}
-   {:keys [layout-v-behavior] :as child}
+   child
    child-origin child-height
-   {:keys [num-children line-height layout-bounds line-fill? child-fill?] :as layout-data}]
+   {:keys [children-data line-height] :as layout-data}]
 
-  (let [[_ layout-gap-col] (ctl/gaps parent)]
-    (cond
-      (and (ctl/col? parent) (= :fill layout-v-behavior) child-fill?)
-      (let [layout-height (gpo/height-points layout-bounds)
-            fill-space (- layout-height line-height (* layout-gap-col (dec num-children)))
-            fill-height (/ fill-space (:num-child-fill layout-data))
-            fill-scale (/ fill-height child-height)]
-        {:height fill-height
-         :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
+  (cond
+    (and (ctl/col? parent) (ctl/fill-height? child))
+    (let [target-height (get-in children-data [(:id child) :child-height])
+          fill-scale (/ target-height child-height)]
+      {:height target-height
+       :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
 
-      (and (ctl/row? parent) (= :fill layout-v-behavior) line-fill?)
-      (let [fill-scale (/ line-height child-height)]
-        {:height line-height
-         :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)}))))
+    (and (ctl/row? parent) (ctl/fill-height? child))
+    (let [fill-scale (/ line-height child-height)]
+      {:height line-height
+       :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})))
 
 (defn calc-layout-modifiers
   "Calculates the modifiers for the layout"

@@ -80,7 +80,7 @@
 (s/def ::layout-margin-type #{:simple :multiple})
 (s/def ::layout-h-behavior #{:fill :fix :auto})
 (s/def ::layout-v-behavior #{:fill :fix :auto})
-(s/def ::layout-align-self #{:start :end :center :strech :baseline})
+(s/def ::layout-align-self #{:start :end :center :strech})
 (s/def ::layout-max-h ::us/safe-number)
 (s/def ::layout-min-h ::us/safe-number)
 (s/def ::layout-max-w ::us/safe-number)
@@ -126,30 +126,30 @@
 (defn child-min-width
   [child]
   (if (and (fill-width? child)
-           (some? (:layout-min-h child)))
-    (max 0 (:layout-min-h child))
+           (some? (:layout-min-w child)))
+    (max 0 (:layout-min-w child))
     0))
 
 (defn child-max-width
   [child]
   (if (and (fill-width? child)
+           (some? (:layout-max-w child)))
+    (max 0 (:layout-max-w child))
+    ##Inf))
+
+(defn child-min-height
+  [child]
+  (if (and (fill-height? child)
            (some? (:layout-min-h child)))
     (max 0 (:layout-min-h child))
     0))
 
-(defn child-min-height
-  [child]
-  (if (and (fill-width? child)
-           (some? (:layout-min-v child)))
-    (max 0 (:layout-min-v child))
-    0))
-
 (defn child-max-height
   [child]
-  (if (and (fill-width? child)
-           (some? (:layout-min-v child)))
-    (max 0 (:layout-min-v child))
-    0))
+  (if (and (fill-height? child)
+           (some? (:layout-max-h child)))
+    (max 0 (:layout-max-h child))
+    ##Inf))
 
 (defn h-start?
   [{:keys [layout-align-items layout-justify-content] :as shape}]
