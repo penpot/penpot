@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-18 08:01+0000\n"
-"Last-Translator: Stas Haas <stas@girafic.de>\n"
+"PO-Revision-Date: 2022-10-25 12:22+0000\n"
+"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
 "Language-Team: German "
 "<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.15-dev\n"
+"X-Generator: Weblate 4.14.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -599,10 +599,6 @@ msgstr "Anheften/Lösen"
 msgid "dashboard.projects-title"
 msgstr "Projekte"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Zum Eigentümer befördern"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Möchten Sie Ihr Konto entfernen?"
@@ -689,7 +685,8 @@ msgstr "Suchergebnisse"
 msgid "dashboard.type-something"
 msgstr "Zum Suchen etwas eingeben"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "Veröffentlichung der Bibliothek aufheben"
 
@@ -753,6 +750,12 @@ msgstr "Authentifizierungsanbieter ist nicht konfiguriert."
 
 msgid "errors.auth.unable-to-login"
 msgstr "Anscheinend sind Sie nicht authentifiziert oder die Sitzung ist abgelaufen."
+
+msgid "errors.bad-font"
+msgstr "Die Schriftart %s konnte nicht geladen werden"
+
+msgid "errors.bad-font-plural"
+msgstr "Die Schriftarten %s konnten nicht geladen werden"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
@@ -878,10 +881,6 @@ msgid "errors.terms-privacy-agreement-invalid"
 msgstr ""
 "Sie müssen unsere Nutzungsbedingungen und Datenschutzrichtlinien "
 "akzeptieren."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Token abgelaufen"
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -1789,25 +1788,29 @@ msgstr "Sind Sie sicher, dass Sie dieses Projekt löschen möchten?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Projekt löschen"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Datei löschen"
 msgstr[1] "Dateien löschen"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Möchten Sie diese Datei wirklich löschen?"
 msgstr[1] "Möchten Sie diese Dateien wirklich löschen?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
 msgstr[0] "Diese Datei enthält Bibliotheken, die in dieser Datei verwendet werden:"
 msgstr[1] "Diese Datei enthält Bibliotheken, die in diesen Dateien verwendet werden:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message-plural"
 msgid_plural "modals.delete-shared-confirm.scd-message-plural"
 msgstr[0] "Diese Dateien enthalten Bibliotheken, die in dieser Datei verwendet werden:"
@@ -1815,7 +1818,8 @@ msgstr[1] ""
 "Diese Dateien enthalten Bibliotheken, die in diesen Dateien verwendet "
 "werden:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Datei löschen"
@@ -1880,12 +1884,6 @@ msgstr ""
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr "Sie sind der Eigentümer von %s."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr ""
-"Befördern Sie ein anderes Mitglied zum Eigentümer, bevor Sie das Team "
-"verlassen"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
@@ -1954,11 +1952,13 @@ msgstr "Entfernen Sie “%s” als gemeinsam genutzte Bibliothek"
 msgid "modals.small-nudge"
 msgstr "Minimal"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.accept"
 msgstr "Veröffentlichung aufheben"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
@@ -1968,19 +1968,22 @@ msgstr[1] ""
 "Wenn Sie die Veröffentlichung aufheben, werden die darin enthaltenen "
 "Elemente zu einer Bibliothek dieser Dateien."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Möchten Sie die Veröffentlichung dieser Bibliothek wirklich aufheben?"
 msgstr[1] "Möchten Sie die Veröffentlichung dieser Bibliotheken wirklich aufheben?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
 msgstr[0] "Es wird in dieser Datei verwendet:"
 msgstr[1] "Es wird in diesen Dateien verwendet:"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "Veröffentlichung der Bibliothek aufheben"
@@ -2128,11 +2131,6 @@ msgstr "Geben Sie den Namen des Teams ein"
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Mitglieder einladen"
 
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"Im Teambereich können Sie auch später Mitglieder einladen und die Rollen "
-"ändern."
-
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Denken Sie daran, alle einzubeziehen. Entwickler, Designer, Manager... die "
@@ -2182,22 +2180,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "Nein, danke"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Abonnieren Sie unseren Newsletter, um über Fortschritte in der "
-"Produktentwicklung und Neuigkeiten auf dem Laufenden zu bleiben."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Datenschutzbestimmungen."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Weil uns die Privatsphäre wichtig ist, hier ist unsere "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Wir werden Ihnen nur relevante E-Mails schicken. Sie können sich jederzeit "
-"in Ihrem Benutzerprofil oder über den Abmeldelink in jedem unserer "
-"Newsletter abmelden."
 
 msgid "onboarding.newsletter.title"
 msgstr "Möchten Sie die Penpot-Nachrichten erhalten?"
@@ -2261,9 +2245,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Eine zentrale Anlaufstelle für alle"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Neuen Teamnamen eingeben"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "Ein Team erstellen"
 
@@ -2287,31 +2268,6 @@ msgstr "Unbegrenzte Anzahl von Mitgliedern"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% kostenlos!"
 
-msgid "onboarding.team.create.button"
-msgstr "Team erstellen"
-
-msgid "onboarding.team.create.desc1"
-msgstr ""
-"Arbeiten Sie mit jemandem zusammen? Erstellen Sie ein Team, um gemeinsam an "
-"Projekten zu arbeiten und Design-Assets zu teilen."
-
-msgid "onboarding.team.create.input-placeholder"
-msgstr "Neuen Teamnamen eingeben"
-
-msgid "onboarding.team.create.title"
-msgstr "Team erstellen"
-
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Überspringen und später einladen"
-
-msgid "onboarding.team.start.button"
-msgstr "Gleich loslegen"
-
-msgid "onboarding.team.start.desc1"
-msgstr ""
-"Legen Sie gleich los und gestalten Sie erstmal alleine. Sie können später "
-"immer noch Teams erstellen."
-
 msgid "onboarding.team.start.title"
 msgstr "Mit der Gestaltung beginnen"
 
@@ -2323,20 +2279,6 @@ msgstr "Beginnen Sie mit dem Entwerfen"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc1"
-msgstr "Hurra! Sie sind bereits ein Penpot-Benutzer :)"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot ist in seiner ersten Beta-Version dank der Kombination von "
-"Kernfunktionen, Reife, Stabilität und der erstaunlichen Validierung durch "
-"die gesamte Community, zu der Sie mehr als willkommen sind."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Während Sie Penpot als das genießen, was es ist, werden wir es weiter "
-"verbessern und neue Versionen unserer hoffnungsvollen Pläne veröffentlichen."
 
 msgid "onboarding.welcome.title"
 msgstr "Willkommen bei Penpot"
@@ -2862,10 +2804,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "Interaktionen nicht anzeigen"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Seite bearbeiten"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Vollbildmodus"
 
@@ -2989,10 +2927,6 @@ msgstr "Duplizieren"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Bearbeiten"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Dateibibliothek"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -3150,16 +3084,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Namen von Zeichenflächen ausblenden"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Assets ausblenden"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Raster ausblenden"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Ebenen ausblenden"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3205,16 +3131,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Namen der Zeichenflächen anzeigen"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Assets einblenden"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Raster einblenden"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Ebenen einblenden"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3481,11 +3399,6 @@ msgstr "Exportieren"
 #: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "Auswahl exportieren"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/handoff/exports.cljs
-msgid "workspace.options.export-object"
-msgstr "1 Element exportieren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3930,22 +3843,6 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Min.Breite"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "Max. Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "Max. Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "Min. Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "Min. Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title"
 msgstr "Elementgröße ändern"
 
@@ -3965,22 +3862,6 @@ msgstr "Mindesthöhe"
 msgid "workspace.options.layout-item.title.layout-min-w"
 msgstr "Mindestbreite"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "Maximale Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "Maximale Breite"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "Minimale Höhe"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
-msgstr "Minimale Breite"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Unten"
@@ -3990,16 +3871,16 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Spalte"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row"
-msgstr "Reihe"
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "Spalte-umgekehrt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Reihe-umgekehrt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Spalte-umgekehrt"
+msgid "workspace.options.layout.direction.row"
+msgstr "Reihe"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -4567,7 +4448,8 @@ msgstr "Ebene auswählen"
 msgid "workspace.shape.menu.show"
 msgstr "Anzeigen"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "Im Assets-Panel anzeigen"
 

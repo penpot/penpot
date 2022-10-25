@@ -51,10 +51,6 @@ msgstr "Lupa kata sandi?"
 msgid "auth.fullname"
 msgstr "Nama Lengkap"
 
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.go-back-to-login"
-msgstr "Kembali!"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Masuk di sini"

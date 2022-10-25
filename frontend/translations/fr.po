@@ -600,10 +600,6 @@ msgstr "Épingler/Désépingler"
 msgid "dashboard.projects-title"
 msgstr "Projets"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promouvoir propriétaire"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Vous souhaitez supprimer votre compte ?"
@@ -876,10 +872,6 @@ msgid "errors.terms-privacy-agreement-invalid"
 msgstr ""
 "Vous devez accepter nos conditions générales d'utilisation et notre "
 "politique de confidentialité."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Jeton expiré"
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -1878,10 +1870,6 @@ msgid "modals.leave-and-reassign.hint1"
 msgstr "Vous êtes le propriétaire de %s."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "Sélectionnez un autre membre à promouvoir avant de quitter l’équipe"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Promouvoir et quitter"
 
@@ -2031,23 +2019,8 @@ msgstr "Avant de démarrer"
 msgid "onboarding-v2.welcome.title"
 msgstr "Bienvenu sur Penpot !"
 
-msgid "onboarding.choice.desc"
-msgstr "Comment voulez-vous commencer ?"
-
-msgid "onboarding.choice.fly-solo"
-msgstr "Commencer seul"
-
-msgid "onboarding.choice.fly-solo-desc"
-msgstr "Essayez Penpot et commencez à concevoir par vous-même."
-
 msgid "onboarding.choice.team-up"
 msgstr "Faites équipe"
-
-msgid "onboarding.choice.team-up-desc"
-msgstr ""
-"Vous travaillez avec quelqu'un ? Créez une équipe et invitez des personnes "
-"pour travailler avec eux sur des projets et partager des ressources de "
-"conception."
 
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Le nom de votre équipe"
@@ -2062,11 +2035,6 @@ msgstr "Entrez le nom de l'équipe"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Inviter des membres"
-
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"Vous pourrez également inviter des membres et changer les rôles plus tard "
-"dans la section équipe."
 
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Créer une équipe et inviter plus tard"
@@ -2106,22 +2074,8 @@ msgstr "Demande d'abonnement envoyé, vous allez recevoir un e-mail de confirmat
 msgid "onboarding.newsletter.decline"
 msgstr "Non, merci"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Abonnez-vous à notre newsletter pour être tenu informé du développement et "
-"de notre actualité."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Politique de confidentialité."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Parce que nous nous soucions de la vie privée, voici notre "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Nous ne vous enverrons que des e-mails pertinents. Vous pouvez vous "
-"désabonner à tout moment via votre profil d’utilisateur ou via le lien de "
-"désabonnement dans l’une de nos newsletters."
 
 msgid "onboarding.newsletter.title"
 msgstr "Vous souhaitez recevoir les actualités de Penpot ?"
@@ -2205,20 +2159,6 @@ msgstr "Commencer à concevoir"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc1"
-msgstr "Hourra ! Vous êtes déjà un utilisateur de Penpot :)"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot en est à sa première version bêta grâce à son ensemble de "
-"fonctionnalités de base, sa maturité, sa stabilité et aux retours très "
-"positifs de la communauté, à laquelle vous êtes plus que bienvenu."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Pendant que vous appréciez Penpot dans son état actuel, nous continuerons à "
-"l'améliorer, en publiant fréquemment nos projets prometteurs."
 
 msgid "onboarding.welcome.title"
 msgstr "Bienvenue chez Penpot"
@@ -2690,14 +2630,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "Ne pas afficher les interactions"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-file"
-msgstr "Modifier le fichier"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-page"
-msgstr "Modifier la page"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Plein écran"
 
@@ -2815,10 +2747,6 @@ msgstr "Dupliquer"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Modifier"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Bibliothèque du fichier"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -2943,16 +2871,8 @@ msgid "workspace.header.menu.enable-snap-grid"
 msgstr "Aligner sur la grille"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Masquer les ressources"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Masquer la grille"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Masquer les calques"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2975,16 +2895,8 @@ msgid "workspace.header.menu.select-all"
 msgstr "Tout sélectionner"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Montrer les ressources"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Montrer la grille"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Montrer les calques"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

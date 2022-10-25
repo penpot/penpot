@@ -585,10 +585,6 @@ msgstr "Fixar/Desafixar"
 msgid "dashboard.projects-title"
 msgstr "Projetos"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promover para proprietário"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Queres remover a tua conta?"
@@ -648,10 +644,6 @@ msgstr "Os teus ficheiros foram movidos com sucesso"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "O teu projeto foi movido com sucesso"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "Trocar de equipa"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
@@ -1809,11 +1801,6 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Tens a certeza de que pretendes sair da equipa %s?"
 
-msgid "modals.leave-and-reassign.forbiden"
-msgstr ""
-"Não podes sair da equipa se não tiveres outros membros para promover para "
-"proprietário. Poderás querer eliminar a equipa."
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
@@ -2074,22 +2061,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "Não, obrigado"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Subscreve a nossa newsletter para estares atualizado com o progresso e as "
-"novidades do desenvolvimento de produto."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Política de Privacidade."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Porque nos preocupamos com a privacidade, aqui está o nosso "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Enviaremos apenas e-mail relevantes para ti. Podes cancelar a subscrição a "
-"qualquer momento no teu perfil ou através do link de cancelamento em "
-"qualquer uma das nossas newsletters."
 
 msgid "onboarding.newsletter.title"
 msgstr "Queres receber as novidades do Penpot?"

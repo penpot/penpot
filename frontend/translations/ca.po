@@ -590,10 +590,6 @@ msgstr "Fixa/Deixa de fixar"
 msgid "dashboard.projects-title"
 msgstr "Projectes"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promoure a propietari"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Voleu eliminar el vostre compte?"
@@ -1801,10 +1797,6 @@ msgid "modals.leave-and-reassign.hint1"
 msgstr "Sou el propietari de %s."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "Seleccioneu un altre membre per a ascendir-lo abans d'abandonar"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Ascendeix i abandona"
 
@@ -1928,11 +1920,6 @@ msgstr "Introduïu el nom de l'equip"
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Convida membres"
 
-msgid "onboarding.choice.team-up.invite-members-desc"
-msgstr ""
-"També podreu convidar membres o canviar els rols des de la pàgina de "
-"l'equip."
-
 msgid "onboarding.choice.team-up.invite-members-skip"
 msgstr "Crea l'equip ara i convida membres en un altre moment"
 
@@ -1973,22 +1960,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "No, gràcies"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Subscriviu-vos al nostre butlletí per estar al dia de les novetats i del "
-"progrés del desenvolupament del producte."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Política de privacitat."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Com que ens preocupa la privacitat, aquí hi ha la nostra "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Només us enviarem correus rellevants. Podeu anul·lar la subscripció sempre "
-"que vulgueu des del perfil d'usuari o amb l'enllaç que trobareu a qualsevol "
-"dels nostres butlletins."
 
 msgid "onboarding.newsletter.title"
 msgstr "Voleu rebre les novetats de Penpot?"
@@ -2050,27 +2023,8 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Una font compartida de veritat"
 
-msgid "onboarding.team.create.desc1"
-msgstr ""
-"Esteu treballant amb algú? Creeu un equip per a treballar junts en "
-"projectes i compartir recursos de disseny."
-
-msgid "onboarding.team.create.input-placeholder"
-msgstr "Introduïu el nom de l'equip nou"
-
-msgid "onboarding.team.create.title"
-msgstr "Creeu un equip"
-
 msgid "onboarding.team.start.button"
 msgstr "Comenceu de seguida"
-
-msgid "onboarding.team.start.desc1"
-msgstr ""
-"Salteu ara al Penpot i comenceu a dissenyar pel vostre compte. Tindreu "
-"l'oportunitat de crear més equips després."
-
-msgid "onboarding.team.start.title"
-msgstr "Comenceu a dissenyar"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Aquí teniu algunes plantilles."
@@ -2080,20 +2034,6 @@ msgstr "Comenceu a dissenyar"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.desc1"
-msgstr "Visca! Ja sou usuari del Penpot :)"
-
-msgid "onboarding.welcome.desc2"
-msgstr ""
-"Penpot es troba en la primera versió beta gràcies a la combinació de "
-"característiques bàsiques, maduresa, estabilitat i la increïble validació "
-"de la comunitat en el seu conjunt, a la qual sou més que benvinguts."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Mentre gaudiu del Penpot pel que és, seguirem millorant-lo, alliberant "
-"iteracions dels nostres plans esperançadors."
 
 msgid "onboarding.welcome.title"
 msgstr "Et donem la benvinguda a Penpot"
@@ -2614,10 +2554,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "No mostris les interaccions"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-file"
-msgstr "Edita el fitxer"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Pantalla completa"
 
@@ -2650,10 +2586,6 @@ msgstr "Elimina l'enllaç"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Qualsevol persona amb l'enllaç hi tindrà accés"
-
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.title"
-msgstr "Comparteix el prototip"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
@@ -2739,10 +2671,6 @@ msgstr "Duplica"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Edita"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "Biblioteca del fitxer"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
@@ -3626,32 +3554,8 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Opcions avançades"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-h"
-msgstr "Alçada màx."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.max-w"
-msgstr "Amplada màx."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-h"
-msgstr "Alçada mín."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.min-w"
 msgstr "Amplada mín."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-h"
-msgstr "Alçada màxima"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.max-w"
-msgstr "Amplada màxima"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-h"
-msgstr "Alçada mínima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.min-w"
@@ -3666,16 +3570,16 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Columna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row"
-msgstr "Fila"
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "Columna invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Fila invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
-msgstr "Columna invertida"
+msgid "workspace.options.layout.direction.row"
+msgstr "Fila"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"

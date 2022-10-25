@@ -581,10 +581,6 @@ msgstr "تثبيت / إلغاء التثبيت"
 msgid "dashboard.projects-title"
 msgstr "المشاريع"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "الترقية إلى مالك"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "هل تريد إزالة حسابك؟"
@@ -646,10 +642,6 @@ msgstr "تم نقل الملفات بنجاح"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "تم نقل مشروعك بنجاح"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.switch-team"
-msgstr "تبديل الفريق"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.team-info"
@@ -1301,9 +1293,6 @@ msgstr "عائلة الخط"
 msgid "labels.font-providers"
 msgstr "موفري الخط"
 
-msgid "labels.font-variant"
-msgstr "نمط"
-
 msgid "labels.font-variants"
 msgstr "الأنماط"
 
@@ -1812,18 +1801,9 @@ msgstr ""
 "لا يمكنك مغادرة الفريق إذا لم يكن هناك عضو آخر للترقية إلى المالك. قد ترغب "
 "في حذف الفريق."
 
-msgid "modals.leave-and-reassign.forbiden"
-msgstr ""
-"لا يمكنك مغادرة الفريق إذا لم يكن هناك عضو آخر للترقية إلى المالك. قد ترغب "
-"في حذف الفريق."
-
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr "أنت %s المالك."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "حدد عضوًا آخر للترقية قبل المغادرة"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
@@ -2052,16 +2032,8 @@ msgstr "تم إرسال طلب الاشتراك الخاص بك ، وسوف نر
 msgid "onboarding.newsletter.decline"
 msgstr "لا شكرا"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"اشترك في النشرة الإخبارية لدينا للبقاء على اطلاع دائم بتقدم تطوير المنتج "
-"والأخبار."
-
 msgid "onboarding.newsletter.policy"
 msgstr "سياسة الخصوصية."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "نظرًا لأننا نهتم بالخصوصية ، فإليك موقعنا "
 
 msgid "onboarding.newsletter.privacy2"
 msgstr ""
@@ -2527,10 +2499,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "لا تظهر التفاعلات"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-file"
-msgstr "تعديل الملف"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "ملء الشاشة"
 
@@ -2557,10 +2525,6 @@ msgstr "إزالة الرابط"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "أي شخص لديه الرابط سيكون لديه حق الوصول"
-
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.title"
-msgstr "مشاركة النموذج الأولي"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
@@ -2650,10 +2614,6 @@ msgstr "تكرار"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "تعديل"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.file-library"
-msgstr "مكتبة الملف"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs

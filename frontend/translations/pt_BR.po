@@ -205,17 +205,11 @@ msgid_plural "common.share-link.page-shared"
 msgstr[0] "1 página compartilhada"
 msgstr[1] "%s páginas compartilhadas"
 
-msgid "common.share-link.permissions-can-access"
-msgstr "Pode acessar"
-
 msgid "common.share-link.permissions-can-comment"
 msgstr "Pode comentar"
 
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Pode inspecionar o código"
-
-msgid "common.share-link.permissions-can-view"
-msgstr "Pode visualizar"
 
 msgid "common.share-link.permissions-hint"
 msgstr "Qualquer pessoa com o link terá acesso"
@@ -226,9 +220,6 @@ msgstr "Páginas compartilhadas"
 msgid "common.share-link.placeholder"
 msgstr "O link compartilhável aparecerá aqui"
 
-msgid "common.share-link.remove-link"
-msgstr "Remover link"
-
 msgid "common.share-link.team-members"
 msgstr "Apenas membros da equipe"
 
@@ -237,15 +228,6 @@ msgstr "Compartilhar protótipos"
 
 msgid "common.share-link.view-all"
 msgstr "Selecionar todos"
-
-msgid "common.share-link.view-all-pages"
-msgstr "Todas as páginas"
-
-msgid "common.share-link.view-current-page"
-msgstr "Somente esta página"
-
-msgid "common.share-link.view-selected-pages"
-msgstr "Páginas selecionadas"
 
 msgid "common.unpublish"
 msgstr "Cancelar publicação"
@@ -600,10 +582,6 @@ msgstr "Fixar/Desafixar"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
 msgstr "Projetos"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promover a proprietário"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
@@ -1301,9 +1279,6 @@ msgstr "Família da fonte"
 msgid "labels.font-providers"
 msgstr "Provedores de fonte"
 
-msgid "labels.font-variant"
-msgstr "Estilo"
-
 msgid "labels.font-variants"
 msgstr "Estilos"
 
@@ -1835,10 +1810,6 @@ msgid "modals.leave-and-reassign.hint1"
 msgstr "Você é o proprietário de %s."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint2"
-msgstr "Selecione outro membro para promover antes de sair"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Promover e sair"
 
@@ -2092,22 +2063,8 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "Não, obrigado"
 
-msgid "onboarding.newsletter.desc"
-msgstr ""
-"Subscreva a nossa newsletter para se manter atualizado com o progresso e as "
-"novidades do desenvolvimento de produtos."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Politica de privacidade."
-
-msgid "onboarding.newsletter.privacy1"
-msgstr "Porque nos preocupamos com a privacidade, aqui está o nosso "
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"Enviaremos apenas e-mails relevantes para você. Você pode cancelar a "
-"inscrição a qualquer momento em seu perfil de usuário ou por meio do link "
-"de cancelamento de inscrição em qualquer um de nossos boletins informativos."
 
 msgid "onboarding.newsletter.title"
 msgstr "Deseja receber novidades sobre o Penpot?"
@@ -2721,10 +2678,6 @@ msgid "viewer.header.dont-show-interactions"
 msgstr "Não mostrar interações"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.edit-file"
-msgstr "Editar arquivo"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Tela cheia"
 
@@ -2757,10 +2710,6 @@ msgstr "Remover link"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Qualquer pessoa com o link terá acesso"
-
-#: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.title"
-msgstr "Compartilhar protótipo"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
