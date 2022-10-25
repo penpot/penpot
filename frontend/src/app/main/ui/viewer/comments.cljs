@@ -6,7 +6,6 @@
 
 (ns app.main.ui.viewer.comments
   (:require
-   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -27,21 +26,26 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   []
-  (let [local           (mf/deref refs/comments-local)
-        owner-filter    (:owner-filter local)
-        status-filter   (:status-filter local)
-        show-sidebar?   (:show-sidebar? local)
+  (let [{cmode :mode cshow :show show-sidebar? :show-sidebar?} (mf/deref refs/comments-local)
 
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
         hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
 
-        update-option   (mf/use-fn
-                         (fn [event]
-                           (let [target (dom/get-current-target event)
-                                 key    (d/read-string (dom/get-attribute target "data-key"))
-                                 val    (d/read-string (dom/get-attribute target "data-val"))]
-                             (st/emit! (dcm/update-options {key val})))))]
+        update-mode
+        (mf/use-callback
+         (fn [mode]
+           (st/emit! (dcm/update-filters {:mode mode}))))
+
+        update-show
+        (mf/use-callback
+         (fn [mode]
+           (st/emit! (dcm/update-filters {:show mode}))))
+
+        update-options
+        (mf/use-callback
+         (fn [mode]
+           (st/emit! (dcm/update-options {:show-sidebar? mode}))))]
 
     [:div.view-options {:on-click toggle-dropdown}
      [:span.label (tr "labels.comments")]
@@ -50,34 +54,26 @@
                    :on-close hide-dropdown}
 
       [:ul.dropdown.with-check
-       [:li {:class (dom/classnames :selected (= :all owner-filter))
-             :data-key ":owner-filter"
-             :data-val ":all"
-             :on-click update-option}
+       [:li {:class (dom/classnames :selected (or (= :all cmode) (nil? cmode)))
+             :on-click #(update-mode :all)}
         [:span.icon i/tick]
         [:span.label (tr "labels.show-all-comments")]]
 
-       [:li {:class (dom/classnames :selected (= :yours owner-filter))
-             :data-key ":owner-filter"
-             :data-val ":yours"
-             :on-click update-option}
+       [:li {:class (dom/classnames :selected (= :yours cmode))
+             :on-click #(update-mode :yours)}
         [:span.icon i/tick]
         [:span.label (tr "labels.show-your-comments")]]
 
        [:hr]
 
-       [:li {:class (dom/classnames :selected (= :pending status-filter))
-             :data-key ":status-filter"
-             :data-val (if (= :pending status-filter) ":all" ":pending")
-             :on-click update-option}
+       [:li {:class (dom/classnames :selected (= :pending cshow))
+             :on-click #(update-show (if (= :pending cshow) :all :pending))}
         [:span.icon i/tick]
         [:span.label (tr "labels.hide-resolved-comments")]]
 
        [:hr]
        [:li {:class (dom/classnames :selected show-sidebar?)
-             :data-key ":show-sidebar?"
-             :data-val (if show-sidebar? "false" "true")
-             :on-click update-option}
+             :on-click #(update-options (not show-sidebar?))}
         [:span.icon i/tick]
         [:span.label (tr "labels.show-comments-list")]]]]]))
 

@@ -14,6 +14,7 @@
 - Fix transform to path RMB menu item is not relevant if shape is already path [Taiga #4302](https://tree.taiga.io/project/penpot/issue/4302)
 - Fix join nodes icon is active when 2 already joined nodes are selected [Taiga #4370](https://tree.taiga.io/project/penpot/issue/4370)
 - Fix path nodes panel. "To curve" and "To corner" icons are active if node is already curved/cornered [Taiga #4371](https://tree.taiga.io/project/penpot/issue/4371)
+- Fix displaying comments settings are not applied via "Comments" menu drop-down on the top navbar on view mode [Taiga #4389](https://tree.taiga.io/project/penpot/issue/4389)
 
 ## 1.16.0-beta
 
