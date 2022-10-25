@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-20 13:46+0000\n"
-"Last-Translator: Swapnil C <swapnilchitnis360@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2022-10-27 13:02+0000\n"
+"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.14.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -102,7 +102,8 @@ msgstr "Mot de passe changé avec succès"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr "Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer."
+msgstr ""
+"Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
@@ -1194,8 +1195,8 @@ msgstr "Retour"
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
-"Il semble que vous deviez attendre un peu et réessayer ; nous effectuons "
-"une petite maintenance de nos serveurs."
+"Il semble que vous deviez attendre un peu et réessayer ; nous effectuons une "
+"petite maintenance de nos serveurs."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.main-message"
@@ -1646,9 +1647,9 @@ msgstr "Ajouter comme Bibliothèque Partagée"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"Une fois ajoutées en tant que Bibliothèque Partagée, les ressources de "
-"cette bibliothèque de fichiers seront disponibles pour être utilisées parmi "
-"le reste de vos fichiers."
+"Une fois ajoutées en tant que Bibliothèque Partagée, les ressources de cette "
+"bibliothèque de fichiers seront disponibles pour être utilisées parmi le "
+"reste de vos fichiers."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2018,9 +2019,6 @@ msgstr "Avant de démarrer"
 
 msgid "onboarding-v2.welcome.title"
 msgstr "Bienvenu sur Penpot !"
-
-msgid "onboarding.choice.team-up"
-msgstr "Faites équipe"
 
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Le nom de votre équipe"
