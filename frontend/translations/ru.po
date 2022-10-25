@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-23 20:54+0000\n"
-"Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: Russian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ru/>\n"
+"PO-Revision-Date: 2022-10-25 12:20+0000\n"
+"Last-Translator: Vin <k3kelm4vw@mozmail.com>\n"
+"Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ru/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.14.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -737,7 +737,7 @@ msgstr "Нельзя указывать в качестве пароля адр�
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
-msgstr "Получатель «%s» постоянно не доступен."
+msgstr "Эл. почта «%s» постоянно недоступна."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
@@ -2514,10 +2514,6 @@ msgstr "Дизайн"
 msgid "workspace.options.export"
 msgstr "Экспорт"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
-msgid "workspace.options.export-object"
-msgstr "Экспорт элемента"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-complete"
 msgstr "Экспорт завершён"
@@ -3109,3 +3105,51 @@ msgstr "Обновить"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Нажмите для замыкания контура"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Добро пожаловать в Penpot!"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Создать команду позже"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Никого не забудьте. Разработчики, дизайнеры, менеджеры... разнообразие "
+"развивает :)"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Создать команду"
+
+msgid "onboarding.choice.title"
+msgstr "Добро пожаловать в Penpot"
+
+msgid "onboarding.contrib.alt"
+msgstr "Открытый исходный код"
+
+msgid "errors.bad-font"
+msgstr "Шрифт %s не может быть загружен"
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Присылать мне обновления продукта (новые функции, выпуски, исправления...)."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Провайдер аутентификации не настроен."
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr ""
+"После добавления названия команды, вы сможете пригласить людей "
+"присоединиться."
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "Эл. почта «%s» была отмечена как спам или постоянно недоступна."
+
+msgid "errors.bad-font-plural"
+msgstr "Шрифты %s не могут быть загружены"
+
+msgid "errors.profile-blocked"
+msgstr "Профиль заблокирован"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Руководство по участию в проекте"
