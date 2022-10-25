@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-25 12:20+0000\n"
+"PO-Revision-Date: 2022-10-27 13:02+0000\n"
 "Last-Translator: Tummas Jóhan Sigvardsen <tummas@tummas.me>\n"
 "Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
 "fo/>\n"
@@ -377,3 +377,60 @@ msgstr "Útflyt fílur"
 
 msgid "dashboard.export-frames"
 msgstr "Útflyt borð sum PDF"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Stavsniði er strika"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Tú hevur enn onki serstavsnið innlagt."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Legg øll afturat"
+
+msgid "dashboard.import"
+msgstr "Innflyt Penpot fílur"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Ups! Tað riggaði ikki at innflyta hesa fílu"
+
+msgid "dashboard.import.import-error"
+msgstr ""
+"Har kom ein trupulleiki, tá vit royndu at innflyta fíluna. Fílan var ikki "
+"innflutt."
+
+msgid "dashboard.import.import-message"
+msgstr "% fílur eru innfluttir."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Viðgerð litir"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Viðgerð staklutir"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Viðgerð miðlar"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Viðgerð stavsnið"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Innleggur fílu: %s"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-msg"
+msgstr "Send mær tíðindi, framleiðslu dagføringar og viðmælingar um Penpot."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.newsletter-title"
+msgstr "Hald til frásagnarblað"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "Onki samsvar funnið fyri \"%\""
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "1 stavsnið lagt afturat"
+msgstr[1] "% stavsnið løgd afturat"
