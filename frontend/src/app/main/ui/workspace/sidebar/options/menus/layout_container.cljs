@@ -21,9 +21,9 @@
    :layout-flex-dir        ;; :row, :reverse-row, :column, :reverse-column 
    :layout-gap-type        ;; :simple, :multiple
    :layout-gap             ;; {:row-gap number , :column-gap number}
-   :layout-align-items     ;; :start :end :center :strech
+   :layout-align-items     ;; :start :end :center :stretch
    :layout-justify-content ;; :start :center :end :space-between :space-around
-   :layout-align-content   ;; :start :center :end :space-between :space-around :strech (by default)
+   :layout-align-content   ;; :start :center :end :space-between :space-around :stretch (by default)
    :layout-wrap-type       ;; :wrap, :no-wrap
    :layout-padding-type    ;; :simple, :multiple
    :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
@@ -37,13 +37,13 @@
                      :start    i/align-items-column-start
                      :end      i/align-items-column-end
                      :center   i/align-items-column-center
-                     :strech   i/align-items-column-strech
+                     :stretch  i/align-items-column-strech
                      :baseline i/align-items-column-baseline)
                    (case val
                      :start    i/align-items-row-start
                      :end      i/align-items-row-end
                      :center   i/align-items-row-center
-                     :strech   i/align-items-row-strech
+                     :stretch  i/align-items-row-strech
                      :baseline i/align-items-row-baseline))
     :justify-content (if is-col?
                        (case val
@@ -66,7 +66,7 @@
                         :center        i/align-content-column-center
                         :space-around  i/align-content-column-around
                         :space-between i/align-content-column-between
-                        :strech nil)
+                        :stretch nil)
                       
                       (case val
                         :start         i/align-content-row-start
@@ -74,20 +74,20 @@
                         :center        i/align-content-row-center
                         :space-around  i/align-content-row-around
                         :space-between i/align-content-row-between
-                        :strech nil))
+                        :stretch nil))
 
     :align-self  (if is-col?
                    (case val
                      :start     i/align-self-column-top
                      :end   i/align-self-column-bottom
                      :center   i/align-self-column-center
-                     :strech   i/align-self-column-strech
+                     :stretch   i/align-self-column-strech
                      :baseline i/align-self-column-baseline)
                    (case val
                      :start   i/align-self-row-left
                      :end    i/align-self-row-right
                      :center   i/align-self-row-center
-                     :strech   i/align-self-row-strech
+                     :stretch   i/align-self-row-strech
                      :baseline i/align-self-row-baseline))))
 
 (mf/defc direction-btn
@@ -129,7 +129,7 @@
   [{:keys [is-col? align-items set-align] :as props}]
 
   [:div.align-items-style
-   (for [align [:start :center :end :strech]]
+   (for [align [:start :center :end :stretch]]
      [:button.align-start.tooltip
       {:class    (dom/classnames :active  (= align-items align)
                                  :tooltip-bottom-left (not= align :start)
@@ -312,7 +312,7 @@
         align-content         (:layout-align-content values)
         set-align-content     (fn [value]
                                 (if (= align-content value)
-                                  (st/emit! (dwsl/update-layout ids {:layout-align-content :strech}))
+                                  (st/emit! (dwsl/update-layout ids {:layout-align-content :stretch}))
                                   (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))
 
         ;; Gap

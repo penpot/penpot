@@ -56,6 +56,12 @@
                 child-max-width  (ctl/child-max-width child)
                 child-max-height (ctl/child-max-height child)
 
+                [child-margin-top child-margin-right child-margin-bottom child-margin-left]
+                (ctl/child-margins child)
+
+                child-margin-width (+ child-margin-left child-margin-right)
+                child-margin-height (+ child-margin-top child-margin-bottom)
+
                 fill-width?  (ctl/fill-width? child)
                 fill-height? (ctl/fill-height? child)
 
@@ -66,10 +72,10 @@
                             :child-max-width (if fill-width? child-max-width child-width)
                             :child-max-height (if fill-height? child-max-height child-height)}
 
-                next-min-width   (if fill-width? child-min-width child-width)
-                next-min-height  (if fill-height? child-min-height child-height)
-                next-max-width   (if fill-width? child-max-width child-width)
-                next-max-height  (if fill-height? child-max-height child-height)
+                next-min-width   (+ child-margin-width (if fill-width? child-min-width child-width))
+                next-min-height  (+ child-margin-height (if fill-height? child-min-height child-height))
+                next-max-width   (+ child-margin-width (if fill-width? child-max-width child-width))
+                next-max-height  (+ child-margin-height (if fill-height? child-max-height child-height))
 
                 next-line-min-width  (+ line-min-width  next-min-width  (* layout-gap-row num-children))
                 next-line-min-height (+ line-min-height next-min-height (* layout-gap-col num-children))]
@@ -106,52 +112,100 @@
         layout-height (gpo/height-points layout-bounds)
         row?          (ctl/row? parent)
         col?          (ctl/col? parent)
-        h-center?     (ctl/h-center? parent)
-        h-end?        (ctl/h-end? parent)
-        v-center?     (ctl/v-center? parent)
-        v-end?        (ctl/v-end? parent)
         hv            (partial gpo/start-hv layout-bounds)
         vv            (partial gpo/start-vv layout-bounds)
+
+        end?     (ctl/content-end? parent)
+        center?  (ctl/content-center? parent)
+        around?  (ctl/content-around? parent)
 
         ;; Adjust the totals so it takes into account the gaps
         [layout-gap-row layout-gap-col] (ctl/gaps parent)
         lines-gap-row (* (dec num-lines) layout-gap-row)
-        lines-gap-col (* (dec num-lines) layout-gap-col)]
+        lines-gap-col (* (dec num-lines) layout-gap-col)
+
+        free-width-gap (- layout-width total-width lines-gap-row)
+        free-height-gap (- layout-height total-height lines-gap-col)
+        free-width (- layout-width total-width)
+        free-height (- layout-height total-height)]
 
     (cond-> (gpo/origin layout-bounds)
-      (and row? v-center?)
-      (gpt/add (vv (/ (- layout-height total-height lines-gap-col) 2)))
+      row?
+      (cond-> center?
+        (gpt/add (vv (/ free-height-gap 2)))
 
-      (and row? v-end?)
-      (gpt/add (vv (- layout-height total-height lines-gap-col)))
+        end?
+        (gpt/add (vv free-height-gap))
 
-      (and col? h-center?)
-      (gpt/add (hv (/ (- layout-width total-width lines-gap-row) 2)))
+        around?
+        (gpt/add (vv (/ free-height (inc num-lines)))))
 
-      (and col? h-end?)
-      (gpt/add (hv (- layout-width total-width lines-gap-row))))))
+      col?
+      (cond-> center?
+        (gpt/add (hv (/ free-width-gap 2)))
+
+        end?
+        (gpt/add (hv free-width-gap))
+
+        around?
+        (gpt/add (hv (/ free-width (inc num-lines))))))))
 
 (defn get-next-line
-  [parent layout-bounds {:keys [line-width line-height]} base-p]
+  [parent layout-bounds {:keys [line-width line-height]} base-p total-width total-height num-lines]
 
-  (let [row? (ctl/row? parent)
+  (let [layout-width  (gpo/width-points layout-bounds)
+        layout-height (gpo/height-points layout-bounds)
+        row? (ctl/row? parent)
         col? (ctl/col? parent)
 
         [layout-gap-row layout-gap-col] (ctl/gaps parent)
 
         hv   #(gpo/start-hv layout-bounds %)
-        vv   #(gpo/start-vv layout-bounds %)]
+        vv   #(gpo/start-vv layout-bounds %)
+
+        stretch? (ctl/content-stretch? parent)
+        between? (ctl/content-between? parent)
+        around?  (ctl/content-around? parent)
+
+        free-width  (- layout-width total-width)
+        free-height (- layout-height total-height)
+
+        line-gap-row (cond
+                       stretch?
+                       (/ free-width num-lines)
+
+                       between?
+                       (/ free-width (dec num-lines))
+
+                       around?
+                       (/ free-width (inc num-lines))
+
+                       :else
+                       layout-gap-row)
+
+        line-gap-col (cond
+                       stretch?
+                       (/ free-height num-lines)
+
+                       between?
+                       (/ free-height (dec num-lines))
+
+                       around?
+                       (/ free-height (inc num-lines))
+
+                       :else
+                       layout-gap-col)]
 
     (cond-> base-p
-      col?
-      (gpt/add (hv (+ line-width layout-gap-row)))
-
       row?
-      (gpt/add (vv (+ line-height layout-gap-col))))))
+      (gpt/add (vv (+ line-height (max layout-gap-col line-gap-col))))
+
+      col?
+      (gpt/add (hv (+ line-width (max layout-gap-row line-gap-row)))))))
 
 (defn get-start-line
   "Cross axis line. It's position is fixed along the different lines"
-  [parent layout-bounds {:keys [line-width line-height num-children child-fill? ]} base-p]
+  [parent layout-bounds {:keys [line-width line-height num-children]} base-p total-width total-height num-lines]
 
   (let [layout-width   (gpo/width-points layout-bounds)
         layout-height  (gpo/height-points layout-bounds)
@@ -165,12 +219,23 @@
         h-end?         (ctl/h-end? parent)
         v-center?      (ctl/v-center? parent)
         v-end?         (ctl/v-end? parent)
+        content-stretch? (ctl/content-stretch? parent)
 
         hv   #(gpo/start-hv layout-bounds %)
         vv   #(gpo/start-vv layout-bounds %)
 
         children-gap-width (* layout-gap-row (dec num-children))
         children-gap-height (* layout-gap-col (dec num-children))
+
+        line-height
+        (if (and row? content-stretch?)
+          (+ line-height (/ (- layout-height total-height) num-lines))
+          line-height)
+
+        line-width
+        (if (and col? content-stretch?)
+          (+ line-width (/ (- layout-width total-width) num-lines))
+          line-width)
 
         start-p
         (cond-> base-p
@@ -261,9 +326,9 @@
                (+ total-max-width line-max-width)
                (+ total-max-height line-max-height)])
 
-            (add-starts [[result base-p] layout-line]
-              (let [start-p (get-start-line parent layout-bounds layout-line base-p)
-                    next-p  (get-next-line  parent layout-bounds layout-line base-p)]
+            (add-starts [total-width total-height num-lines [result base-p] layout-line]
+              (let [start-p (get-start-line parent layout-bounds layout-line base-p total-width total-height num-lines)
+                    next-p  (get-next-line  parent layout-bounds layout-line base-p total-width total-height num-lines)]
 
                 [(conj result
                        (assoc layout-line :start-p start-p))
@@ -308,7 +373,7 @@
 
             base-p (get-base-line parent layout-bounds total-width total-height num-lines)]
 
-        (first (reduce add-starts [[] base-p] layout-lines))))))
+        (first (reduce (partial add-starts total-width total-height num-lines) [[] base-p] layout-lines))))))
 
 (defn add-line-spacing
   "Calculates the baseline for a flex layout"

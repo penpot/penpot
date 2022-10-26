@@ -13,9 +13,9 @@
 ;; :layout-flex-dir        ;; :row, :reverse-row, :column, :reverse-column
 ;; :layout-gap-type        ;; :simple, :multiple
 ;; :layout-gap             ;; {:row-gap number , :column-gap number}
-;; :layout-align-items     ;; :start :end :center :strech
+;; :layout-align-items     ;; :start :end :center :stretch
 ;; :layout-justify-content ;; :start :center :end :space-between :space-around
-;; :layout-align-content   ;; :start :center :end :space-between :space-around :strech (by default)
+;; :layout-align-content   ;; :start :center :end :space-between :space-around :stretch (by default)
 ;; :layout-wrap-type       ;; :wrap, :no-wrap
 ;; :layout-padding-type    ;; :simple, :multiple
 ;; :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
@@ -34,8 +34,8 @@
 (s/def ::layout-flex-dir #{:row :reverse-row :column :reverse-column})
 (s/def ::layout-gap-type #{:simple :multiple})
 (s/def ::layout-gap ::us/safe-number)
-(s/def ::layout-align-items #{:start :end :center :strech})
-(s/def ::layout-align-content #{:start :end :center :space-between :space-around :strech})
+(s/def ::layout-align-items #{:start :end :center :stretch})
+(s/def ::layout-align-content #{:start :end :center :space-between :space-around :stretch})
 (s/def ::layout-justify-content #{:start :center :end :space-between :space-around})
 (s/def ::layout-wrap-type #{:wrap :no-wrap})
 (s/def ::layout-padding-type #{:simple :multiple})
@@ -80,7 +80,7 @@
 (s/def ::layout-margin-type #{:simple :multiple})
 (s/def ::layout-h-behavior #{:fill :fix :auto})
 (s/def ::layout-v-behavior #{:fill :fix :auto})
-(s/def ::layout-align-self #{:start :end :center :strech})
+(s/def ::layout-align-self #{:start :end :center :stretch})
 (s/def ::layout-max-h ::us/safe-number)
 (s/def ::layout-min-h ::us/safe-number)
 (s/def ::layout-max-w ::us/safe-number)
@@ -151,6 +151,26 @@
     (max 0 (:layout-max-h child))
     ##Inf))
 
+(defn child-margins
+  [{{:keys [m1 m2 m3 m4]} :layout-margin :keys [layout-margin-type]}]
+  (let [m1 (or m1 0)
+        m2 (or m2 0)
+        m3 (or m3 0)
+        m4 (or m4 0)]
+    (if (= layout-margin-type :multiple)
+      [m1 m2 m3 m4]
+      [m1 m1 m1 m1])))
+
+(defn child-height-margin
+  [child]
+  (let [[top _ bottom _] (child-margins child)]
+    (+ top bottom)))
+
+(defn child-width-margin
+  [child]
+  (let [[_ right _ left] (child-margins child)]
+    (+ right left)))
+
 (defn h-start?
   [{:keys [layout-align-items layout-justify-content] :as shape}]
   (or (and (col? shape)
@@ -192,6 +212,33 @@
            (= layout-align-items :end))
       (and (col? shape)
            (= layout-justify-content :end))))
+
+(defn content-start?
+  [{:keys [layout-align-content]}]
+  (= :start layout-align-content))
+
+(defn content-center?
+  [{:keys [layout-align-content]}]
+  (= :center layout-align-content))
+
+(defn content-end?
+  [{:keys [layout-align-content]}]
+  (= :end layout-align-content))
+
+(defn content-between?
+  [{:keys [layout-align-content]}]
+  (= :space-between layout-align-content))
+
+(defn content-around?
+  [{:keys [layout-align-content]}]
+  (= :space-around layout-align-content))
+
+(defn content-stretch?
+  [{:keys [layout-align-content]}]
+  (or (= :stretch layout-align-content)
+      (nil? layout-align-content)))
+
+
 (defn reverse?
   [{:keys [layout-flex-dir]}]
   (or (= :reverse-row layout-flex-dir)

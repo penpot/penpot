@@ -35,7 +35,7 @@
    :layout-gap             {:row-gap 0 :column-gap 0}
    :layout-align-items     :start
    :layout-justify-content :start
-   :layout-align-content   :strech
+   :layout-align-content   :stretch
    :layout-wrap-type       :no-wrap
    :layout-padding-type    :simple
    :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})

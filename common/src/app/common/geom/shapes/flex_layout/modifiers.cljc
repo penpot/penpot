@@ -45,8 +45,9 @@
        :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})
 
     (and (ctl/col? parent) (ctl/fill-width? child))
-    (let [fill-scale (/ line-width child-width)]
-      {:width line-width
+    (let [target-width (- line-width (ctl/child-width-margin child))
+          fill-scale (/ target-width child-width)]
+      {:width target-width
        :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})))
 
 (defn calc-fill-height-data
@@ -64,8 +65,9 @@
        :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
 
     (and (ctl/row? parent) (ctl/fill-height? child))
-    (let [fill-scale (/ line-height child-height)]
-      {:height line-height
+    (let [target-height (- line-height (ctl/child-height-margin child))
+          fill-scale (/ target-height child-height)]
+      {:height target-height
        :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})))
 
 (defn calc-layout-modifiers
@@ -83,7 +85,7 @@
         child-width (or (:width fill-width) child-width)
         child-height (or (:height fill-height) child-height)
 
-        [corner-p layout-line] (fpo/get-child-position parent child-width child-height layout-line)
+        [corner-p layout-line] (fpo/get-child-position parent child child-width child-height layout-line)
 
         move-vec (gpt/to-vec child-origin corner-p)
 

@@ -26,7 +26,7 @@
    :layout-item-min-h       ;; num
    :layout-item-max-w       ;; num
    :layout-item-min-w       ;; num
-   :layout-item-align-self  ;; :start :end :center :strech :baseline
+   :layout-item-align-self  ;; :start :end :center :stretch :baseline
    ])
 
 (mf/defc margin-section
@@ -122,7 +122,7 @@
 
 (mf/defc align-self-row
   [{:keys [is-col? align-self set-align-self] :as props}]
-  (let [dir-v [:start :center :end :strech :baseline]]
+  (let [dir-v [:start :center :end :stretch :baseline]]
     [:div.align-self-style
      (for [align dir-v]
        [:button.align-self.tooltip.tooltip-bottom
