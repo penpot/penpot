@@ -265,6 +265,14 @@
   [ids]
   (l/derived #(into [] (keep (d/getf %)) ids) workspace-page-objects =))
 
+(defn parents-by-ids
+  [ids]
+  (l/derived
+   (fn [objects]
+     (let [parent-ids (into #{} (keep #(get-in objects [% :parent-id])) ids)]
+       (into [] (keep #(get objects %)) parent-ids)))
+   workspace-page-objects =))
+
 (defn children-objects
   [id]
   (l/derived

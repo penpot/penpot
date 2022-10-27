@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
@@ -80,6 +81,11 @@
                      (deref (refs/objects-by-id ids))
                      [shape])
         frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
+
+        selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
+        selection-parents     (mf/deref selection-parents-ref)
+
+        flex-child? (->> selection-parents (some ctl/layout?))
 
         ;; To show interactively the measures while the user is manipulating
         ;; the shape with the mouse, generate a copy of the shapes applying
@@ -327,11 +333,13 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-pos-x-change
+                              :disabled flex-child?
                               :value (:x values)}]]
           [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
                               :on-click select-all
+                              :disabled flex-child?
                               :on-change on-pos-y-change
                               :value (:y values)}]]])
 

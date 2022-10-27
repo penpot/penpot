@@ -8,7 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.icons :as i]
@@ -129,7 +131,7 @@
         {:class    (dom/classnames :active  (= align-self align)
                                    :tooltip-bottom-left (not= align :start)
                                    :tooltip-bottom (= align :start))
-         :alt      (dm/str "Align self " (d/name align)) ;; TODO añadir lineas de texto a tradus
+         :alt      (dm/str "Align self " (d/name align))
          :on-click #(set-align-self align)
          :key (str "align-self" align)}
         (get-layout-flex-icon :align-self align is-col?)])]))
@@ -141,6 +143,9 @@
   (let [open?             (mf/use-state false)
         toggle-open       (fn [] (swap! open? not))
 
+        selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
+        selection-parents     (mf/deref selection-parents-ref)
+
         change-margin-style
         (fn [type]
           (st/emit! (dwsl/update-layout-child ids {:layout-item-margin-type type})))
@@ -151,8 +156,7 @@
                                (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self nil}))
                                (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self value}))))
 
-        saved-dir (:layout-flex-dir values)
-        is-col? (or (= :column saved-dir) (= :reverse-column saved-dir))
+        is-col? (every? ctl/col? selection-parents)
 
         on-margin-change
         (fn [type val]
@@ -182,7 +186,7 @@
                              :layout-item-v-sizing (or (:layout-item-v-sizing values) :fix)
                              :layout-item-h-sizing (or (:layout-item-h-sizing values) :fix)
                              :on-change-behavior on-change-behavior}]]
-      
+
 
       [:& margin-section {:values values
                           :change-margin-style change-margin-style
