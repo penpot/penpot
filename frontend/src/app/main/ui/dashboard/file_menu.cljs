@@ -49,13 +49,14 @@
           projects))
 
 (mf/defc file-menu
-  [{:keys [files show? on-edit on-menu-close top left navigate?] :as props}]
+  [{:keys [files show? on-edit on-menu-close top left navigate? origin] :as props}]
   (assert (seq files) "missing `files` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
   (assert (boolean? navigate?) "missing `navigate?` prop")
-  (let [top              (or top 0)
+  (let [is-lib-page? (= :libraries origin)
+        top              (or top 0)
         left             (or left 0)
 
         file             (first files)
@@ -92,15 +93,15 @@
         (fn [event]
           (dom/stop-propagation event)
 
-          (let [has-shared? (filter #(:is-shared %) files)]
+          (let [num-shared (filter #(:is-shared %) files)]
 
-            (if has-shared?
+            (if (< 0 (count num-shared))
               (do (st/emit! (dd/fetch-libraries-using-files files))
                   (st/emit! (modal/show
                              {:type :delete-shared
                               :origin :delete
                               :on-accept delete-fn
-                              :count-libraries (count has-shared?)})))
+                              :count-libraries (count num-shared)})))
 
               (if multi?
                 (st/emit! (modal/show
@@ -158,12 +159,12 @@
         (fn [event]
           (dom/prevent-default event)
           (dom/stop-propagation event)
-          (st/emit! (dd/fetch-libraries-using-files [file]))
+          (st/emit! (dd/fetch-libraries-using-files files))
           (st/emit! (modal/show
                      {:type :delete-shared
                       :origin :unpublish
                       :on-accept del-shared
-                      :count-libraries 1})))
+                      :count-libraries file-count})))
 
         on-export-files
         (fn [event-name binary?]
@@ -232,27 +233,31 @@
                          [(tr "dashboard.move-to-multi" file-count) nil sub-options "move-to-multi"])
                        [(tr "dashboard.export-binary-multi" file-count) on-export-binary-files]
                        [(tr "dashboard.export-standard-multi" file-count) on-export-standard-files]
-                       [:separator]
-                       [(tr "labels.delete-multi-files" file-count) on-delete nil "delete-multi-files"]]
+                       (when (:is-shared file)
+                         [(tr "labels.unpublish-multi-files" file-count) on-del-shared nil "file-del-shared"])
+                       (when (not is-lib-page?)
+                         [:separator]
+                         [(tr "labels.delete-multi-files" file-count) on-delete nil "delete-multi-files"])]
 
                       [[(tr "dashboard.open-in-new-tab") on-new-tab]
                        [(tr "labels.rename") on-edit nil "file-rename"]
                        [(tr "dashboard.duplicate") on-duplicate nil "file-duplicate"]
-                       (when (or (seq current-projects) (seq other-teams))
-                           [(tr "dashboard.move-to") nil sub-options "file-move-to"])
+                       (when (and (not is-lib-page?) (or (seq current-projects) (seq other-teams)))
+                         [(tr "dashboard.move-to") nil sub-options "file-move-to"])
                        (if (:is-shared file)
                          [(tr "dashboard.unpublish-shared") on-del-shared nil "file-del-shared"]
                          [(tr "dashboard.add-shared") on-add-shared nil "file-add-shared"])
                        [:separator]
                        [(tr "dashboard.download-binary-file") on-export-binary-files nil "download-binary-file"]
                        [(tr "dashboard.download-standard-file") on-export-standard-files nil "download-standard-file"]
-                       [:separator]
-                       [(tr "labels.delete") on-delete nil "file-delete"]])]
+                       (when (not is-lib-page?)
+                         [:separator]
+                         [(tr "labels.delete") on-delete nil "file-delete"])])]
 
-          [:& context-menu {:on-close on-menu-close
-                            :show show?
-                            :fixed? (or (not= top 0) (not= left 0))
-                            :min-width? true
-                            :top top
-                            :left left
-                            :options options}]))))
+        [:& context-menu {:on-close on-menu-close
+                          :show show?
+                          :fixed? (or (not= top 0) (not= left 0))
+                          :min-width? true
+                          :top top
+                          :left left
+                          :options options}]))))

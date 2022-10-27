@@ -43,17 +43,26 @@
         accept-label (if is-delete?
                        (tr "modals.delete-shared-confirm.accept" (i18n/c count-libraries))
                        (tr "modals.unpublish-shared-confirm.accept"))
-        scd-message (if is-delete? 
+        
+        no-files-message  (if is-delete?
+                            (tr "modals.delete-shared-confirm.no-files-message" (i18n/c count-libraries))
+                            (tr "modals.unpublish-shared-confirm.no-files-message" (i18n/c count-libraries))
+                            )
+        scd-message (if is-delete?
                       (if (> count-libraries 1)
-                        (tr "modals.delete-shared-confirm.scd-message-plural" (i18n/c count-files))
+                        (tr "modals.delete-shared-confirm.scd-message" (i18n/c count-files))
                         (tr "modals.delete-shared-confirm.scd-message" (i18n/c count-files)))
                       (if (> count-libraries 1)
-                        (tr "modals.unpublish-shared-confirm.scd-message-plural" (i18n/c count-files))
-                        (tr "modals.unpublish-shared-confirm.scd-message" (i18n/c count-files)))
-                      )
+                         (tr "modals.unpublish-shared-confirm.scd-message-plural" (i18n/c count-files))
+                         (tr "modals.unpublish-shared-confirm.scd-message" (i18n/c count-files))))
+                      
         hint  (if is-delete?
-                ""
-                (tr "modals.unpublish-shared-confirm.hint" (i18n/c count-files)))
+                (if (> count-libraries 1)
+                  (tr "modals.delete-shared-confirm.hint-plural" (i18n/c count-files))
+                  (tr "modals.delete-shared-confirm.hint" (i18n/c count-files)))
+                (if (> count-libraries 1)
+                  (tr "modals.unpublish-shared-confirm.hint-plural" (i18n/c count-files))
+                  (tr "modals.unpublish-shared-confirm.hint" (i18n/c count-files))))
 
         accept-fn
         (mf/use-callback
@@ -91,19 +100,21 @@
       [:div.modal-content.delete-shared
        (when (and (string? message) (not= message ""))
          [:h3 message])
-
-       (when (> (count files->shared) 0)
-         [:*
-          [:div
-           (when (and (string? scd-message) (not= scd-message ""))
-             [:h3 scd-message])
-           [:ul.file-list
-            (for [[id file] files->shared]
-              [:li.modal-item-element
-               {:key id}
-               [:span "- " (:name file)]])]]
-          (when (and (string? hint) (not= hint ""))
-            [:h3 hint])])]
+       (when (not= 0 count-libraries)
+         (if (> (count files->shared) 0)
+           [:*
+            [:div
+             (when (and (string? scd-message) (not= scd-message ""))
+               [:h3 scd-message])
+             [:ul.file-list
+              (for [[id file] files->shared]
+                [:li.modal-item-element
+                 {:key id}
+                 [:span "- " (:name file)]])]]
+            (when (and (string? hint) (not= hint ""))
+              [:h3 hint])]
+           [:*
+            [:h3 no-files-message]]))]
 
       [:div.modal-footer
        [:div.action-buttons

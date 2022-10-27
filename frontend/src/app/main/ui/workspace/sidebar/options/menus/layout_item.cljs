@@ -192,7 +192,7 @@
       (when @open?
         [:div.advanced-ops-body
          [:div.layout-row
-          [:div.direction-wrap.row-title "Align"] ;; TODO tradus
+          [:div.direction-wrap.row-title "Align"]
           [:div.btn-wrapper
            [:& align-self-row {:is-col? is-col?
                                :align-self align-self

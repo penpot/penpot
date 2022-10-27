@@ -9,6 +9,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
@@ -116,8 +117,8 @@
         add-shared-fn
         #(st/emit! (dwl/set-file-shared (:id file) true))
 
-        del-shared-fn
-        #(st/emit! (dwl/set-file-shared (:id file) false))
+
+
 
         on-add-shared
         (mf/use-fn
@@ -135,14 +136,15 @@
         on-remove-shared
         (mf/use-fn
          (mf/deps file)
-         #(st/emit! (modal/show
-                     {:type :confirm
-                      :message ""
-                      :title (tr "modals.remove-shared-confirm.message" (:name file))
-                      :hint (tr "modals.remove-shared-confirm.hint")
-                      :cancel-label :omit
-                      :accept-label (tr "modals.remove-shared-confirm.accept")
-                      :on-accept del-shared-fn})))
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (st/emit! (dd/fetch-libraries-using-files [file]))
+           (st/emit! (modal/show
+                      {:type :delete-shared
+                       :origin :unpublish
+                       :on-accept #(st/emit! (dwl/set-file-shared (:id file) false))
+                       :count-libraries 1}))))
 
         handle-blur (fn [_]
                       (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
@@ -281,7 +283,7 @@
       [:ul.sub-menu.file
        (if (:is-shared file)
          [:li {:on-click on-remove-shared}
-          [:span (tr "dashboard.remove-shared")]]
+          [:span (tr "dashboard.unpublish-shared")]]
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
        [:li.export-file {:on-click on-export-shapes}
