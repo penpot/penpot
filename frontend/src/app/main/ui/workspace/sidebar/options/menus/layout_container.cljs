@@ -18,7 +18,7 @@
 
 (def layout-container-flex-attrs
   [:layout                 ;; :flex, :grid in the future
-   :layout-flex-dir        ;; :row, :reverse-row, :column, :reverse-column 
+   :layout-flex-dir        ;; :row, :reverse-row, :column, :reverse-column
    :layout-gap-type        ;; :simple, :multiple
    :layout-gap             ;; {:row-gap number , :column-gap number}
    :layout-align-items     ;; :start :end :center :stretch
@@ -67,7 +67,7 @@
                         :space-around  i/align-content-column-around
                         :space-between i/align-content-column-between
                         :stretch nil)
-                      
+
                       (case val
                         :start         i/align-content-row-start
                         :end           i/align-content-row-end
@@ -129,7 +129,7 @@
   [{:keys [is-col? align-items set-align] :as props}]
 
   [:div.align-items-style
-   (for [align [:start :center :end :stretch]]
+   (for [align [:start :center :end #_:stretch #_:baseline]]
      [:button.align-start.tooltip
       {:class    (dom/classnames :active  (= align-items align)
                                  :tooltip-bottom-left (not= align :start)
@@ -274,13 +274,14 @@
           (st/emit! (dwsl/remove-layout ids))
           (reset! open? false))
 
-        set-flex            (fn []
-                              (st/emit! (dwsl/remove-layout ids))
-                              (on-add-layout :flex))
-
-        set-grid            (fn []
-                              (st/emit! (dwsl/remove-layout ids))
-                              (on-add-layout :grid))
+        ;; Uncomment when activating the grid options
+        ;; set-flex            (fn []
+        ;;                       (st/emit! (dwsl/remove-layout ids))
+        ;;                       (on-add-layout :flex))
+        ;;
+        ;; set-grid            (fn []
+        ;;                       (st/emit! (dwsl/remove-layout ids))
+        ;;                       (on-add-layout :grid))
 
         ;; Flex-direction
 
@@ -365,7 +366,7 @@
        [:span "Layout"]
        (if (:layout values)
          [:div.title-actions
-          [:div.layout-btns
+          #_[:div.layout-btns
            [:button {:on-click set-flex
                      :class (dom/classnames
                              :active (= :flex layout-type))} "Flex"]

@@ -254,7 +254,7 @@
 
         objects
         (mf/with-memo [frame-id objects vector]
-          (let [update-fn #(update-in %1 %2 ctm/add-move vector)]
+          (let [update-fn #(update %1 %2 gsh/transform-shape (ctm/move vector))]
             (->> children-ids
                  (into [frame-id])
                  (reduce update-fn objects))))
@@ -290,7 +290,6 @@
             :xmlnsXlink "http://www.w3.org/1999/xlink"
             :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
             :fill "none"}
-
       [:& shape-wrapper {:shape frame}]]]))
 
 
@@ -313,10 +312,9 @@
         (mf/use-memo
          (mf/deps vector objects group-id)
          (fn []
-           (let [modifier-ids (cons group-id (cph/get-children-ids objects group-id))
-                 update-fn    #(update %1 %2 ctm/add-move vector)
-                 modifiers    (reduce update-fn {} modifier-ids)]
-             (ctm/merge-modifiers objects modifiers))))
+           (let [children-ids (cons group-id (cph/get-children-ids objects group-id))
+                 update-fn    #(update %1 %2 gsh/transform-shape (ctm/move vector))]
+             (reduce update-fn objects children-ids))))
 
         group  (get objects group-id)
         width  (* (:width group) zoom)

@@ -442,7 +442,10 @@
   (l/derived
    (fn [state]
      (let [objects (wsh/lookup-viewer-objects state page-id)]
-       (filterv #(= :flex (:layout (cph/get-parent objects %))) ids)))
+       (into []
+             (comp (filter #(= :flex (:layout (cph/get-parent objects %))))
+                   (map #(get objects %)))
+             ids)))
    st/state =))
 
 (def colorpicker

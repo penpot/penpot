@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
@@ -29,13 +30,10 @@
 
 (defn prepare-objects
   [frame size objects]
-  (let [
-        frame-id  (:id frame)
+  (let [frame-id  (:id frame)
         vector  (-> (gpt/point (:x size) (:y size))
                     (gpt/negate))
-
-        update-fn #(d/update-when %1 %2 ctm/add-move vector)]
-
+        update-fn #(d/update-when %1 %2 gsh/transform-shape (ctm/move vector))]
     (->> (cph/get-children-ids objects frame-id)
          (into [frame-id])
          (reduce update-fn objects))))

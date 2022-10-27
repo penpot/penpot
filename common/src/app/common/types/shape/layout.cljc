@@ -21,14 +21,14 @@
 ;; :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
 
 ;; ITEMS
-;; :layout-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
-;; :layout-margin-type ;; :simple :multiple
-;; :layout-h-behavior  ;; :fill :fix :auto
-;; :layout-v-behavior  ;; :fill :fix :auto
-;; :layout-max-h       ;; num
-;; :layout-min-h       ;; num
-;; :layout-max-w       ;; num
-;; :layout-min-w
+;; :layout-item-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
+;; :layout-item-margin-type ;; :simple :multiple
+;; :layout-item-h-sizing  ;; :fill :fix :auto
+;; :layout-item-v-sizing  ;; :fill :fix :auto
+;; :layout-item-max-h       ;; num
+;; :layout-item-min-h       ;; num
+;; :layout-item-max-w       ;; num
+;; :layout-item-min-w
 
 (s/def ::layout  #{:flex :grid})
 (s/def ::layout-flex-dir #{:row :reverse-row :column :reverse-column})
@@ -74,38 +74,38 @@
 (s/def ::m3 ::us/safe-number)
 (s/def ::m4 ::us/safe-number)
 
-(s/def ::layout-margin (s/keys :req-un [::m1]
-                               :opt-un [::m2 ::m3 ::m4]))
+(s/def ::layout-item-margin (s/keys :req-un [::m1]
+                                    :opt-un [::m2 ::m3 ::m4]))
 
-(s/def ::layout-margin-type #{:simple :multiple})
-(s/def ::layout-h-behavior #{:fill :fix :auto})
-(s/def ::layout-v-behavior #{:fill :fix :auto})
-(s/def ::layout-align-self #{:start :end :center :stretch})
-(s/def ::layout-max-h ::us/safe-number)
-(s/def ::layout-min-h ::us/safe-number)
-(s/def ::layout-max-w ::us/safe-number)
-(s/def ::layout-min-w ::us/safe-number)
+(s/def ::layout-item-margin-type #{:simple :multiple})
+(s/def ::layout-item-h-sizing #{:fill :fix :auto})
+(s/def ::layout-item-v-sizing #{:fill :fix :auto})
+(s/def ::layout-item-align-self #{:start :end :center :stretch})
+(s/def ::layout-item-max-h ::us/safe-number)
+(s/def ::layout-item-min-h ::us/safe-number)
+(s/def ::layout-item-max-w ::us/safe-number)
+(s/def ::layout-item-min-w ::us/safe-number)
 
 (s/def ::layout-child-props
-  (s/keys :opt-un [::layout-margin
-                   ::layout-margin-type
-                   ::layout-h-behavior
-                   ::layout-v-behavior
-                   ::layout-max-h
-                   ::layout-min-h
-                   ::layout-max-w
-                   ::layout-min-w
-                   ::layout-align-self]))
+  (s/keys :opt-un [::layout-item-margin
+                   ::layout-item-margin-type
+                   ::layout-item-h-sizing
+                   ::layout-item-v-sizing
+                   ::layout-item-max-h
+                   ::layout-item-min-h
+                   ::layout-item-max-w
+                   ::layout-item-min-w
+                   ::layout-item-align-self]))
 
 
 (defn wrap? [{:keys [layout-wrap-type]}]
   (= layout-wrap-type :wrap))
 
 (defn fill-width? [child]
-  (= :fill (:layout-h-behavior child)))
+  (= :fill (:layout-item-h-sizing child)))
 
 (defn fill-height? [child]
-  (= :fill (:layout-v-behavior child)))
+  (= :fill (:layout-item-v-sizing child)))
 
 (defn col?
   [{:keys [layout-flex-dir]}]
@@ -126,38 +126,38 @@
 (defn child-min-width
   [child]
   (if (and (fill-width? child)
-           (some? (:layout-min-w child)))
-    (max 0 (:layout-min-w child))
+           (some? (:layout-item-min-w child)))
+    (max 0 (:layout-item-min-w child))
     0))
 
 (defn child-max-width
   [child]
   (if (and (fill-width? child)
-           (some? (:layout-max-w child)))
-    (max 0 (:layout-max-w child))
+           (some? (:layout-item-max-w child)))
+    (max 0 (:layout-item-max-w child))
     ##Inf))
 
 (defn child-min-height
   [child]
   (if (and (fill-height? child)
-           (some? (:layout-min-h child)))
-    (max 0 (:layout-min-h child))
+           (some? (:layout-item-min-h child)))
+    (max 0 (:layout-item-min-h child))
     0))
 
 (defn child-max-height
   [child]
   (if (and (fill-height? child)
-           (some? (:layout-max-h child)))
-    (max 0 (:layout-max-h child))
+           (some? (:layout-item-max-h child)))
+    (max 0 (:layout-item-max-h child))
     ##Inf))
 
 (defn child-margins
-  [{{:keys [m1 m2 m3 m4]} :layout-margin :keys [layout-margin-type]}]
+  [{{:keys [m1 m2 m3 m4]} :layout-item-margin :keys [layout-item-margin-type]}]
   (let [m1 (or m1 0)
         m2 (or m2 0)
         m3 (or m3 0)
         m4 (or m4 0)]
-    (if (= layout-margin-type :multiple)
+    (if (= layout-item-margin-type :multiple)
       [m1 m2 m3 m4]
       [m1 m1 m1 m1])))
 
@@ -252,14 +252,14 @@
   [{:keys [layout-justify-content]}]
   (= layout-justify-content :space-around))
 
-(defn align-self-start? [{:keys [layout-align-self]}]
-  (= :start layout-align-self))
+(defn align-self-start? [{:keys [layout-item-align-self]}]
+  (= :start layout-item-align-self))
 
-(defn align-self-end? [{:keys [layout-align-self]}]
-  (= :end layout-align-self))
+(defn align-self-end? [{:keys [layout-item-align-self]}]
+  (= :end layout-item-align-self))
 
-(defn align-self-center? [{:keys [layout-align-self]}]
-  (= :center layout-align-self))
+(defn align-self-center? [{:keys [layout-item-align-self]}]
+  (= :center layout-item-align-self))
 
-(defn align-self-stretch? [{:keys [layout-align-self]}]
-  (= :stretch layout-align-self))
+(defn align-self-stretch? [{:keys [layout-item-align-self]}]
+  (= :stretch layout-item-align-self))
