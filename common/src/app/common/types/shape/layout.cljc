@@ -251,3 +251,15 @@
 (defn space-around?
   [{:keys [layout-justify-content]}]
   (= layout-justify-content :space-around))
+
+(defn align-self-start? [{:keys [layout-align-self]}]
+  (= :start layout-align-self))
+
+(defn align-self-end? [{:keys [layout-align-self]}]
+  (= :end layout-align-self))
+
+(defn align-self-center? [{:keys [layout-align-self]}]
+  (= :center layout-align-self))
+
+(defn align-self-stretch? [{:keys [layout-align-self]}]
+  (= :stretch layout-align-self))
