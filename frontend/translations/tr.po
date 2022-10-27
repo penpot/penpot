@@ -3820,19 +3820,19 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Gelişmiş seçenekler"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-max-h"
+msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "Azami Yükseklik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-max-w"
+msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "Azami Genişlik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-h"
+msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Asgari Yükseklik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-w"
+msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Asgari Genişlik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
@@ -3848,19 +3848,19 @@ msgid "workspace.options.layout-item.title"
 msgstr "Öge yeniden boyutlandırma"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-max-h"
+msgid "workspace.options.layout-item.title.layout-item-max-h"
 msgstr "Azami yükseklik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-max-w"
+msgid "workspace.options.layout-item.title.layout-item-max-w"
 msgstr "Azami genişlik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
+msgid "workspace.options.layout-item.title.layout-item-min-h"
 msgstr "Asgari yükseklik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-w"
+msgid "workspace.options.layout-item.title.layout-item-min-w"
 msgstr "Asgari genişlik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
