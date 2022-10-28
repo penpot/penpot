@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-16 21:18+0000\n"
+"PO-Revision-Date: 2022-10-29 13:03+0000\n"
 "Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
-"Language-Team: Basque "
-"<https://hosted.weblate.org/projects/penpot/frontend/eu/>\n"
+"Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
+"eu/>\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1-dev\n"
+"X-Generator: Weblate 4.14.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2001,9 +2001,6 @@ msgstr "Laguntzeko gida"
 msgid "onboarding-v2.welcome.title"
 msgstr "Ongi etorri Penpotera!"
 
-msgid "onboarding.choice.team-up"
-msgstr "Osatu taldea"
-
 msgid "onboarding.choice.team-up.create-later"
 msgstr "Sortu taldea beranduago"
 
@@ -3698,10 +3695,6 @@ msgid "workspace.options.layout-item.layout-min-w"
 msgstr "Gutxieneko zabalera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "Gutxieneko zabalera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title"
 msgstr "Elementuaren tamaina aldatzea"
 
@@ -3719,10 +3712,6 @@ msgstr "Gutxieneko altuera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-min-w"
-msgstr "Gutxieneko zabalera"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
 msgstr "Gutxieneko zabalera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
@@ -4561,3 +4550,22 @@ msgstr "Eguneratu"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Egin klik bidea ixteko"
+
+msgid "errors.bad-font"
+msgstr "Ezin izan da %s letra-tipoa kargatu"
+
+msgid "errors.bad-font-plural"
+msgstr "Ezin izan dira %s letra-tipoak kargatu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Ikusi baliabideen panelean"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Itxi alboko barra"
+
+msgid "workspace.sidebar.expand"
+msgstr "Ireki alboko barra"
+
+msgid "errors.profile-blocked"
+msgstr "Profila blokeatuta dago"
