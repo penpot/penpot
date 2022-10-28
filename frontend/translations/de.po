@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-25 12:22+0000\n"
-"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
+"PO-Revision-Date: 2022-10-29 13:03+0000\n"
+"Last-Translator: nautilusx <translate@disroot.org>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -54,7 +54,7 @@ msgstr "Vollständiger Name"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
-msgstr "Hier einloggen"
+msgstr "Hier anmelden"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -2263,9 +2263,6 @@ msgstr "Unbegrenzte Anzahl von Mitgliedern"
 
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% kostenlos!"
-
-msgid "onboarding.team.start.title"
-msgstr "Mit der Gestaltung beginnen"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Hier sind einige Vorlagen."
