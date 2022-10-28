@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-10-29 13:03+0000\n"
-"Last-Translator: nautilusx <translate@disroot.org>\n"
+"Last-Translator: Henrik Steffens <accounts@th3ph4nt0m.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -18,8 +18,8 @@ msgstr "Sie haben schon ein Konto?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
 msgstr ""
-"Überprüfen Sie Ihre E-Mail, klicken Sie auf den Link um sich zu verifizieren "
-"und Penpot zu nutzen."
+"Überprüfen Sie Ihre E-Mail und klicken Sie auf den Link, um sich zu "
+"verifizieren und Penpot zu nutzen."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
