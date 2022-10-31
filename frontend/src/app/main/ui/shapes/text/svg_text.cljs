@@ -106,7 +106,8 @@
                                              :textDecoration (:text-decoration data)
                                              :letterSpacing (:letter-spacing data)
                                              :fontStyle (:font-style data)
-                                             :direction (:direction data)}
+                                             :direction (:direction data)
+                                             :whiteSpace "pre"}
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
               shape (assoc shape :fills (:fills data))]
 
