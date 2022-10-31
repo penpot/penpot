@@ -697,7 +697,7 @@
                 stopper (->> move-events
                              (rx/debounce 100)
                              (rx/take 1))
-                scale (if shift? (gpt/point (:big nudge)) (gpt/point (:small nudge)))
+                scale (if shift? (gpt/point (or (:big nudge) 10)) (gpt/point (or (:small nudge) 1)))
                 mov-vec (gpt/multiply (get-displacement direction) scale)]
 
             (rx/concat
