@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-27 13:02+0000\n"
-"Last-Translator: Tummas Jóhan Sigvardsen <tummas@tummas.me>\n"
+"PO-Revision-Date: 2022-11-01 14:29+0000\n"
+"Last-Translator: Bogi Napoleon Wennerstrøm <bogi.wennerstrom@gmail.com>\n"
 "Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
 "fo/>\n"
 "Language: fo\n"
@@ -326,7 +326,8 @@ msgstr[1] "%s síður deildar"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr ""
-"Tá tú stovnar ein brúkara, góðtekur tú okkara treytir og privat politikk."
+"Tá ið tú gert eina nýggja kontu, játtar tú tænastu- og privatlívs-treytir "
+"okkara."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
