@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-11 02:17+0000\n"
+"PO-Revision-Date: 2022-11-01 14:29+0000\n"
 "Last-Translator: Tatsuto Yamamoto <me@laminne33569.net>\n"
-"Language-Team: Japanese "
-"<https://hosted.weblate.org/projects/penpot/frontend/jpn_JP/>\n"
+"Language-Team: Japanese <https://hosted.weblate.org/projects/penpot/frontend/"
+"jpn_JP/>\n"
 "Language: jpn_JP\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.14-dev\n"
+"X-Generator: Weblate 4.14.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -997,3 +997,17 @@ msgstr "招待を再送"
 #: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "リトライ"
+
+msgid "common.unpublish"
+msgstr "非公開"
+
+msgid "common.publish"
+msgstr "公開"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "チームを管理"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "チュートリアルを始める"
