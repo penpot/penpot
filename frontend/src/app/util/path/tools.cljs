@@ -74,6 +74,13 @@
         (assoc-in [:params :c2x] (:x h2))
         (assoc-in [:params :c2y] (:y h2)))))
 
+(defn is-curve?
+  [content point]
+  (let [handlers (-> (upc/content->handlers content)
+                     (get point))
+        handler-points (map #(upc/handler->point content (first %) (second %)) handlers)]
+    (some #(not= point %) handler-points)))
+
 (defn make-curve-point
   "Changes the content to make the point a 'curve'. The handlers will be positioned
   in the same vector that results from the previous->next points but with fixed length."
@@ -99,7 +106,6 @@
                                                  :next-p (upc/command->point next)
                                                  :command cmd)))))
 
-
         points (->> vectors (mapcat #(vector (:next-p %) (:prev-p %))) (remove nil?) (into #{}))]
 
     (cond
@@ -124,8 +130,7 @@
                     next-correction (when (some? next-h) (gpt/scale (gpt/to-vec next-h point) (/ 1 3)))
 
                     prev-h (when (some? prev-h) (gpt/add prev-h prev-correction))
-                    next-h (when (some? next-h) (gpt/add next-h next-correction))
-                    ]
+                    next-h (when (some? next-h) (gpt/add next-h next-correction))]
                 (cond-> content
                   (and (= :line-to (:command cur-cmd)) (some? prev-p))
                   (update index upc/update-curve-to prev-p prev-h)
@@ -147,7 +152,13 @@
                 (= :line-to (:command command))
                 (update index #(line->curve prev-p %))
 
+                (= :curve-to (:command command))
+                (update index #(line->curve prev-p %))
+
                 (= :line-to (:command next-c))
+                (update next-i #(line->curve point %))
+
+                (= :curve-to (:command next-c))
                 (update next-i #(line->curve point %))))]
         (->> vectors (reduce add-curve content))))))
 

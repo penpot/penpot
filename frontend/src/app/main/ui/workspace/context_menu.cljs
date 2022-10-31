@@ -265,18 +265,19 @@
 
 (mf/defc context-menu-path
   [{:keys [shapes disable-flatten? disable-booleans?]}]
-  (let [multiple? (> (count shapes) 1)
-        single?   (= (count shapes) 1)
+  (let [multiple?            (> (count shapes) 1)
+        single?              (= (count shapes) 1)
 
-        has-group? (->> shapes (d/seek cph/group-shape?))
-        has-bool? (->> shapes (d/seek cph/bool-shape?))
-        has-frame? (->> shapes (d/seek cph/frame-shape?))
+        has-group?           (->> shapes (d/seek cph/group-shape?))
+        has-bool?            (->> shapes (d/seek cph/bool-shape?))
+        has-frame?           (->> shapes (d/seek cph/frame-shape?))
+        has-path?            (->> shapes (d/seek cph/path-shape?))
 
-        is-group? (and single? has-group?)
-        is-bool? (and single? has-bool?)
-        is-frame? (and single? has-frame?)
+        is-group?            (and single? has-group?)
+        is-bool?             (and single? has-bool?)
+        is-frame?            (and single? has-frame?)
 
-        do-start-editing (fn [] (timers/schedule #(st/emit! (dw/start-editing-selected))))
+        do-start-editing     (fn [] (timers/schedule #(st/emit! (dw/start-editing-selected))))
         do-transform-to-path #(st/emit! (dw/convert-selected-to-path))
 
         make-do-bool
@@ -296,7 +297,7 @@
                        :shortcut (sc/get-tooltip :start-editing)
                        :on-click do-start-editing}])
 
-     (when-not (or disable-flatten? has-frame?)
+     (when-not (or disable-flatten? has-frame? has-path?)
        [:& menu-entry {:title (tr "workspace.shape.menu.transform-to-path")
                        :on-click do-transform-to-path}])
 

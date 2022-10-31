@@ -183,11 +183,11 @@
              (let [type-a (dm/get-in objects [id-a :type])
                    type-b (dm/get-in objects [id-b :type])]
                (cond
-                 (and bottom-frames? (= :frame type-a) (not= :frame type-b))
-                 1
+                 (and (= :frame type-a) (not= :frame type-b))
+                 (if bottom-frames? 1 -1)
 
-                 (and bottom-frames? (not= :frame type-a) (= :frame type-b))
-                 -1
+                 (and (not= :frame type-a) (= :frame type-b))
+                 (if bottom-frames? -1 1)
 
                  (= id-a id-b)
                  0

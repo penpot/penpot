@@ -82,12 +82,12 @@
         on-duplicate
         (fn [_]
           (apply st/emit! (map dd/duplicate-file files))
-          (st/emit! (dm/success (tr "dashboard.success-duplicate-file"))))
+          (st/emit! (dm/success (tr "dashboard.success-duplicate-file" (i18n/c (count files))))))
 
         delete-fn
         (fn [_]
           (apply st/emit! (map dd/delete-file files))
-          (st/emit! (dm/success (tr "dashboard.success-delete-file"))))
+          (st/emit! (dm/success (tr "dashboard.success-delete-file" (i18n/c (count files))))))
 
         on-delete
         (fn [event]

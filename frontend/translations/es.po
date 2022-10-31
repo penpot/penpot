@@ -628,7 +628,9 @@ msgstr "Ver todos los archivos"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-delete-file"
-msgstr "Tu archivo ha sido borrado con éxito"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Tu archivo ha sido borrado con éxito"
+msgstr[1] "Tus archivos han sido borrado con éxito"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
@@ -636,7 +638,9 @@ msgstr "Tu proyecto ha sido borrado con éxito"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-duplicate-file"
-msgstr "Tu archivo ha sido duplicado con éxito"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Tu archivo ha sido duplicado con éxito"
+msgstr[1] "Tus archivos han sido duplicado con éxito"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"

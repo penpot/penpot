@@ -20,10 +20,19 @@
 
 ### :bug: Bugs fixed
 
+- Fix unexpected exception related to default nudge value
 - Fix firefox changing layer color type is not applied [Taiga #4292](https://tree.taiga.io/project/penpot/issue/4292)
 - Fix justify alignes text left [Taiga #4322](https://tree.taiga.io/project/penpot/issue/4322)
 - Fix text out of borders with "auto width" and center align [Taiga #4308](https://tree.taiga.io/project/penpot/issue/4308)
+- Fix wrong validation text after interaction with 2 and more files [Taiga #4276](https://tree.taiga.io/project/penpot/issue/4276)
 - Fix auto-width for texts can make text appear stretched [Github #2482](https://github.com/penpot/penpot/issues/2482)
+- Fix boards name do not disappear in focus mode [#4272](https://tree.taiga.io/project/penpot/issue/4272)
+- Fix wrong email in the info message at change email [Taiga #4274](https://tree.taiga.io/project/penpot/issue/4274)
+- Fix transform to path RMB menu item is not relevant if shape is already path [Taiga #4302](https://tree.taiga.io/project/penpot/issue/4302)
+- Fix join nodes icon is active when 2 already joined nodes are selected [Taiga #4370](https://tree.taiga.io/project/penpot/issue/4370)
+- Fix path nodes panel. "To curve" and "To corner" icons are active if node is already curved/cornered [Taiga #4371](https://tree.taiga.io/project/penpot/issue/4371)
+- Fix displaying comments settings are not applied via "Comments" menu drop-down on the top navbar on view mode [Taiga #4389](https://tree.taiga.io/project/penpot/issue/4389)
+- Fix bad behaviour on hovering and click nested artboards[Taiga #4018](https://tree.taiga.io/project/penpot/issue/4018) and [Taiga #4269](https://tree.taiga.io/project/penpot/us/4269)
 
 ## 1.16.0-beta
 

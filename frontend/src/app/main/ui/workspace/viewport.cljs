@@ -330,7 +330,8 @@
          :show-artboard-names? show-artboard-names?
          :on-frame-enter on-frame-enter
          :on-frame-leave on-frame-leave
-         :on-frame-select on-frame-select}]
+         :on-frame-select on-frame-select
+         :focus focus}]
 
        (when show-prototypes?
          [:& widgets/frame-flows

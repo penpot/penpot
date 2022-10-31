@@ -288,7 +288,8 @@
         props     (-> (audit/extract-utm-params params)
                       (merge (:props params))
                       (merge {:viewed-tutorial? false
-                              :viewed-walkthrough? false})
+                              :viewed-walkthrough? false
+                              :nudge {:big 10 :small 1}})
                       (db/tjson))
 
         password  (if-let [password (:password params)]
