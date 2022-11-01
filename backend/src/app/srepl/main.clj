@@ -16,7 +16,9 @@
    [app.rpc.queries.profile :as profile]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
+   [app.util.blob :as blob]
    [app.util.objects-map :as omap]
+   [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [clojure.pprint :refer [pprint]]
    [cuerdas.core :as str]))
@@ -103,17 +105,48 @@
         (db/delete! conn :http-session {:profile-id (:id profile)})
         :blocked))))
 
-(defn enable-objects-map-on-file
+
+(defn enable-objects-map-feature-on-file!
   [system & {:keys [save? id]}]
   (letfn [(update-file [{:keys [features] :as file}]
             (if (contains? features "storage/objects-map")
               file
-              (update file :data migrate-to-omap)))
+              (-> file
+                  (update :data migrate-to-omap)
+                  (update :features conj "storage/objects-map"))))
 
           (migrate-to-omap [data]
             (-> data
                 (update :pages-index update-vals #(update % :objects omap/wrap))
                 (update :components update-vals #(update % :objects omap/wrap))))]
+
+    (h/update-file! system
+                    :id id
+                    :update-fn update-file
+                    :save? save?)))
+
+(defn enable-pointer-map-feature-on-file!
+  [system & {:keys [save? id]}]
+  (letfn [(update-file [{:keys [features id] :as file}]
+            (if (contains? features "storage/pointer-map")
+              file
+              (-> file
+                  (update :data migrate-to-omap id)
+                  (update :features conj "storage/pointer-map"))))
+
+          (migrate-to-omap [data file-id]
+            (binding [pmap/*tracked* (atom {})
+                      pmap/*metadata* {:file-id file-id}]
+              (let [data (-> data
+                             (update :pages-index update-vals pmap/wrap)
+                             (update :components pmap/wrap))]
+                (doseq [[id item] @pmap/*tracked*]
+                  (db/insert! h/*conn* :file-data-fragment
+                              {:id id
+                               :file-id file-id
+                               :metadata (-> item meta db/tjson)
+                               :content (-> item deref blob/encode)}))
+                data)))]
 
     (h/update-file! system
                     :id id
