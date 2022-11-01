@@ -710,9 +710,13 @@ msgstr "The fonts %s could not be loaded"
 msgid "errors.clipboard-not-implemented"
 msgstr "Your browser cannot do this operation"
 
-#: src/app/main/data/workspace/persistence.cljs
-msgid "errors.components-v2"
-msgstr "This file has already used with Components V2 enabled."
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Feature '%s' is not supported."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr "Looks like you are opening a file that has the feature '%s' enabled bug your penpot frontend does not supports it or has it disabled."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"

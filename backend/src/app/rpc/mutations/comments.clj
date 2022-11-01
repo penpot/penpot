@@ -10,8 +10,8 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.rpc.commands.comments :as cmd.comments]
+   [app.rpc.commands.files :as cmd.files]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.files :as files]
    [app.rpc.retry :as retry]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -27,7 +27,7 @@
    ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (cmd.files/check-comment-permissions! conn profile-id file-id share-id)
     (cmd.comments/create-comment-thread conn params)))
 
 ;; --- Mutation: Update Comment Thread Status
@@ -44,7 +44,7 @@
   (db/with-atomic [conn pool]
     (let [cthr (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not cthr (ex/raise :type :not-found))
-      (files/check-comment-permissions! conn profile-id (:file-id cthr) share-id)
+      (cmd.files/check-comment-permissions! conn profile-id (:file-id cthr) share-id)
       (cmd.comments/upsert-comment-thread-status! conn profile-id (:id cthr)))))
 
 
@@ -61,7 +61,7 @@
       (when-not thread
         (ex/raise :type :not-found))
 
-      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
+      (cmd.files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
       (db/update! conn :comment-thread
                   {:is-resolved is-resolved}
                   {:id id})

@@ -6,5 +6,12 @@
 
 (ns app.common.files.features)
 
+;; A set of enabled by default file features. Will be used in feature
+;; negotiation on obtaining files from backend.
+
+(def enabled #{})
+
+(def ^:dynamic *previous* #{})
 (def ^:dynamic *current* #{})
-(def ^:dynamic *wrap-objects-fn* identity)
+(def ^:dynamic *wrap-with-objects-map-fn* identity)
+(def ^:dynamic *wrap-with-pointer-map-fn* identity)

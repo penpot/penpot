@@ -135,8 +135,7 @@
                   (update :features conj "storage/pointer-map"))))
 
           (migrate-to-omap [data file-id]
-            (binding [pmap/*tracked* (atom {})
-                      pmap/*metadata* {:file-id file-id}]
+            (binding [pmap/*tracked* (atom {})]
               (let [data (-> data
                              (update :pages-index update-vals pmap/wrap)
                              (update :components pmap/wrap))]
@@ -144,7 +143,6 @@
                   (db/insert! h/*conn* :file-data-fragment
                               {:id id
                                :file-id file-id
-                               :metadata (-> item meta db/tjson)
                                :content (-> item deref blob/encode)}))
                 data)))]
 

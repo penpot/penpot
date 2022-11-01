@@ -14,6 +14,7 @@
    [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.messages :as msg]
+   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.util.globals :as glob]
@@ -166,6 +167,26 @@
   [error]
   (ts/schedule
    #(st/emit! (rt/assign-exception error))))
+
+(defmethod ptk/handle-error :restriction
+  [{:keys [code] :as error}]
+  (cond
+    (= :feature-mismatch code)
+    (let [message (tr "errors.feature-mismatch" (:feature error))]
+      (st/emit! (modal/show
+                 {:type :alert
+                  :message message
+                  :on-accept #(prn "kaka")})))
+
+    (= :features-not-supported code)
+    (let [message (tr "errors.feature-not-supported" (:feature error))]
+      (st/emit! (modal/show
+                 {:type :alert
+                  :message message
+                  :on-accept #(prn "kaka")})))
+
+    :else
+    (ptk/handle-error (assoc error :type :server-error))))
 
 ;; This happens when the backed server fails to process the
 ;; request. This can be caused by an internal assertion or any other

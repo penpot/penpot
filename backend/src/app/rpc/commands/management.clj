@@ -14,11 +14,13 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc.commands.binfile :as binfile]
+   [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
    [app.rpc.mutations.projects :refer [create-project-role create-project]]
    [app.rpc.queries.projects :as proj]
    [app.rpc.queries.teams :as teams]
    [app.util.blob :as blob]
+   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -53,7 +55,7 @@
     (assoc key (get index (get item key) (get item key)))))
 
 (defn- process-file
-  [file index]
+  [conn {:keys [id] :as file} index]
   (letfn [(process-form [form]
             (cond-> form
               ;; Relink library items
@@ -97,18 +99,25 @@
                              res)))
                        media
                        media))]
-
-    (update file :data
-            (fn [data]
-              (-> data
-                  (blob/decode)
-                  (assoc :id (:id file))
-                  (pmg/migrate-data)
-                  (update :pages-index relink-shapes)
-                  (update :components relink-shapes)
-                  (update :media relink-media)
-                  (d/without-nils)
-                  (blob/encode))))))
+    (-> file
+        (update :id #(get index %))
+        (update :data
+                (fn [data]
+                  (binding [pmap/*load-fn* (partial files/load-pointer conn id)
+                            pmap/*tracked* (atom {})]
+                    (let [file-id (get index id)
+                          data    (-> data
+                                      (blob/decode)
+                                      (assoc :id file-id)
+                                      (pmg/migrate-data)
+                                      (update :pages-index relink-shapes)
+                                      (update :components relink-shapes)
+                                      (update :media relink-media)
+                                      (d/without-nils)
+                                      (files/process-pointers pmap/clone)
+                                      (blob/encode))]
+                      (files/persist-pointers! conn file-id)
+                      data)))))))
 
 (def sql:retrieve-used-libraries
   "select flr.*
@@ -166,9 +175,9 @@
         file    (-> file
                     (assoc :created-at now)
                     (assoc :modified-at now)
-                    (assoc :ignore-sync-until ignore)
-                    (update :id #(get index %))
-                    (process-file index))]
+                    (assoc :ignore-sync-until ignore))
+
+        file    (process-file conn file index)]
 
     (db/insert! conn :file file)
     (db/insert! conn :file-profile-rel

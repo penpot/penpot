@@ -18,7 +18,9 @@
    [app.media]
    [app.migrations]
    [app.rpc.commands.auth :as cmd.auth]
-   [app.rpc.mutations.files :as files]
+   [app.rpc.commands.files :as files]
+   [app.rpc.commands.files.create :as files.create]
+   [app.rpc.commands.files.update :as files.update]
    [app.rpc.mutations.profile :as profile]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
@@ -178,11 +180,11 @@
    (us/assert uuid? profile-id)
    (us/assert uuid? project-id)
    (with-open [conn (db/open pool)]
-     (#'files/create-file conn
-                          (merge {:id (mk-uuid "file" i)
-                                  :name (str "file" i)
-                                  :components-v2 true}
-                                 params)))))
+     (files.create/create-file conn
+                               (merge {:id (mk-uuid "file" i)
+                                       :name (str "file" i)
+                                       :components-v2 true}
+                                      params)))))
 
 (defn mark-file-deleted*
   ([params] (mark-file-deleted* *pool* params))
@@ -259,27 +261,27 @@
   ([params] (create-file-role* *pool* params))
   ([pool {:keys [file-id profile-id role] :or {role :owner}}]
    (with-open [conn (db/open pool)]
-     (#'files/create-file-role conn {:file-id file-id
-                                     :profile-id profile-id
-                                     :role role}))))
+     (files.create/create-file-role! conn {:file-id file-id
+                                           :profile-id profile-id
+                                           :role role}))))
 
 (defn update-file*
   ([params] (update-file* *pool* params))
   ([pool {:keys [file-id changes session-id profile-id revn]
           :or {session-id (uuid/next) revn 0}}]
    (with-open [conn (db/open pool)]
-     (let [file    (db/get-by-id conn :file file-id)
-           msgbus  (:app.msgbus/msgbus *system*)
-           metrics (:app.metrics/metrics *system*)]
-       (#'files/update-file {:conn conn
-                             :msgbus msgbus
-                             :metrics metrics}
-                            {:file file
-                             :revn revn
-                             :components-v2 true
-                             :changes changes
-                             :session-id session-id
-                             :profile-id profile-id})))))
+     (let [msgbus    (:app.msgbus/msgbus *system*)
+           metrics   (:app.metrics/metrics *system*)
+           features  #{"components/v2"}]
+       (files.update/update-file {:conn conn
+                                  :msgbus msgbus
+                                  :metrics metrics}
+                                 {:id file-id
+                                  :revn revn
+                                  :features features
+                                  :changes changes
+                                  :session-id session-id
+                                  :profile-id profile-id})))))
 
 ;; --- RPC HELPERS
 

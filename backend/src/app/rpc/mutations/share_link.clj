@@ -10,7 +10,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.rpc.queries.files :as files]
+   [app.rpc.commands.files :as files]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 

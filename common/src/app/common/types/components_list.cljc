@@ -16,8 +16,8 @@
 
 (defn add-component
   [file-data {:keys [id name path main-instance-id main-instance-page shapes]}]
-  (let [components-v2 (dm/get-in file-data [:options :components-v2])
-        wrap-object-fn feat/*wrap-objects-fn*]
+  (let [components-v2  (dm/get-in file-data [:options :components-v2])
+        wrap-object-fn feat/*wrap-with-objects-map-fn*]
     (cond-> file-data
       :always
       (assoc-in [:components id]
@@ -35,7 +35,7 @@
 
 (defn mod-component
   [file-data {:keys [id name path objects]}]
-  (let [wrap-objects-fn feat/*wrap-objects-fn*]
+  (let [wrap-objects-fn feat/*wrap-with-objects-map-fn*]
     (update-in file-data [:components id]
                (fn [component]
                  (let [objects (some-> objects wrap-objects-fn)]

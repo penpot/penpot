@@ -15,7 +15,6 @@
    [app.common.logging :as log]
    [app.common.media :as cm]
    [app.common.text :as ct]
-   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.util.http :as http]
@@ -128,16 +127,15 @@
 (defn create-file
   "Create a new file on the back-end"
   [context components-v2]
-  (let [resolve (:resolve context)
-        file-id (resolve (:file-id context))]
-    (rp/mutation :create-temp-file
-                 {:id file-id
-                  :name (:name context)
-                  :is-shared (:shared context)
-                  :project-id (:project-id context)
-                  :data (-> ctf/empty-file-data
-                            (assoc :id file-id)
-                            (assoc-in [:options :components-v2] components-v2))})))
+  (let [resolve-fn (:resolve context)
+        file-id    (resolve-fn (:file-id context))
+        features   (cond-> #{} components-v2 (conj "components/v2"))]
+    (rp/cmd! :create-temp-file
+             {:id file-id
+              :name (:name context)
+              :is-shared (:shared context)
+              :project-id (:project-id context)
+              :features features})))
 
 (defn link-file-libraries
   "Create a new file on the back-end"
@@ -147,7 +145,7 @@
         libraries (->> context :libraries (mapv resolve))]
     (->> (rx/from libraries)
          (rx/map #(hash-map :file-id file-id :library-id %))
-         (rx/flat-map (partial rp/mutation :link-file-to-library)))))
+         (rx/flat-map (partial rp/cmd! :link-file-to-library)))))
 
 (defn send-changes
   "Creates batches of changes to be sent to the backend"
@@ -165,17 +163,17 @@
      (->> (rx/from (d/enumerate batches))
           (rx/merge-map
            (fn [[i change-batch]]
-             (->> (rp/mutation :update-temp-file
-                               {:id file-id
-                                :session-id session-id
-                                :revn i
-                                :changes change-batch})
+             (->> (rp/cmd! :update-temp-file
+                           {:id file-id
+                            :session-id session-id
+                            :revn i
+                            :changes change-batch})
                   (rx/tap #(do (swap! processed inc)
                                (progress! context :upload-data @processed total))))))
           (rx/map first)
           (rx/ignore))
 
-     (->> (rp/mutation :persist-temp-file {:id file-id})
+     (->> (rp/cmd! :persist-temp-file {:id file-id})
           ;; We use merge to keep some information not stored in back-end
           (rx/map #(merge file %))))))
 

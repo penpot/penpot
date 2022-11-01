@@ -357,7 +357,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [params {:id id :name name}]
-        (->> (rp/mutation :rename-file params)
+        (->> (rp/cmd! :rename-file params)
              (rx/ignore))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

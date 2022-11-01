@@ -8,7 +8,7 @@
   (:require
    [app.common.spec :as us]
    [app.db :as db]
-   [app.rpc.queries.files :as files]
+   [app.rpc.commands.files :as files]
    [app.rpc.queries.projects :as projects]
    [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]

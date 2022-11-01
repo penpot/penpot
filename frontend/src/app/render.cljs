@@ -98,22 +98,23 @@
   [{:keys [page-id file-id object-id render-embed?]}]
   (let [components-v2 (features/use-feature :components-v2)
         fetch-state   (mf/use-fn
-                        (mf/deps file-id page-id object-id)
+                        (mf/deps file-id page-id object-id components-v2)
                         (fn []
-                          (->> (rx/zip
-                                 (repo/query! :font-variants {:file-id file-id})
-                                 (repo/query! :page {:file-id file-id
-                                                     :page-id page-id
-                                                     :object-id object-id
-                                                     :components-v2 components-v2}))
-                               (rx/tap (fn [[fonts]]
-                                         (when (seq fonts)
-                                           (st/emit! (df/fonts-fetched fonts)))))
-                               (rx/map (comp :objects second))
-                               (rx/map (fn [objects]
-                                         (let [objects (render/adapt-objects-for-shape objects object-id)]
-                                           {:objects objects
-                                            :object (get objects object-id)}))))))
+                          (let [features (cond-> #{} components-v2 (conj "components/v2"))]
+                            (->> (rx/zip
+                                  (repo/query! :font-variants {:file-id file-id})
+                                  (repo/cmd! :page {:file-id file-id
+                                                    :page-id page-id
+                                                    :object-id object-id
+                                                    :features features}))
+                                 (rx/tap (fn [[fonts]]
+                                           (when (seq fonts)
+                                             (st/emit! (df/fonts-fetched fonts)))))
+                                 (rx/map (comp :objects second))
+                                 (rx/map (fn [objects]
+                                           (let [objects (render/adapt-objects-for-shape objects object-id)]
+                                             {:objects objects
+                                              :object (get objects object-id)})))))))
 
         {:keys [objects object]} (use-resource fetch-state)]
 
@@ -137,17 +138,18 @@
   [{:keys [page-id file-id object-ids render-embed?]}]
   (let [components-v2 (features/use-feature :components-v2)
         fetch-state   (mf/use-fn
-                       (mf/deps file-id page-id)
+                       (mf/deps file-id page-id components-v2)
                        (fn []
-                         (->> (rx/zip
-                               (repo/query! :font-variants {:file-id file-id})
-                               (repo/query! :page {:file-id file-id
-                                                   :page-id page-id
-                                                   :components-v2 components-v2}))
-                              (rx/tap (fn [[fonts]]
-                                        (when (seq fonts)
-                                          (st/emit! (df/fonts-fetched fonts)))))
-                              (rx/map (comp :objects second)))))
+                         (let [features (cond-> #{} components-v2 (conj "components/v2"))]
+                           (->> (rx/zip
+                                 (repo/query! :font-variants {:file-id file-id})
+                                 (repo/cmd! :get-page {:file-id file-id
+                                                       :page-id page-id
+                                                       :features features}))
+                                (rx/tap (fn [[fonts]]
+                                          (when (seq fonts)
+                                            (st/emit! (df/fonts-fetched fonts)))))
+                                (rx/map (comp :objects second))))))
 
         objects (use-resource fetch-state)]
 
@@ -204,7 +206,7 @@
   [{:keys [file-id embed] :as props}]
   (let [fetch (mf/use-fn
                (mf/deps file-id)
-               (fn [] (repo/query! :file {:id file-id})))
+               (fn [] (repo/cmd! :get-file {:id file-id})))
 
         file  (use-resource fetch)
         state (mf/use-state nil)]

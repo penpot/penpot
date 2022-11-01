@@ -496,7 +496,8 @@
         (t/is (contains? (:objects result) shape1-id))
         (t/is (contains? (:objects result) frame2-id))
         (t/is (contains? (:objects result) shape2-id))
-        (t/is (contains? (:objects result) uuid/zero)))
+        (t/is (contains? (:objects result) uuid/zero))
+        )
 
       ;; Query :page RPC method with page-id
       (let [data {::th/type :page
@@ -523,6 +524,7 @@
                   :components-v2 true}
             {:keys [error result] :as out} (th/query! data)]
         ;; (th/print-result! out)
+        (t/is (nil? error))
         (t/is (map? result))
         (t/is (contains? result :objects))
         (t/is (contains? (:objects result) frame1-id))
@@ -542,7 +544,9 @@
         (t/is (not (th/success? out)))
         (let [{:keys [type code]} (-> out :error ex-data)]
           (t/is (= :validation type))
-          (t/is (= :spec-validation code)))))
+          (t/is (= :spec-validation code))))
+
+      )
 
     (t/testing "RPC :file-data-for-thumbnail"
       ;; Insert a thumbnail data for the frame-id

@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.features :as ffeat]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-spec :as pcs]
@@ -18,7 +19,6 @@
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.fonts :as df]
-   [app.main.data.modal :as modal]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
@@ -26,7 +26,6 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.http :as http]
-   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
@@ -138,7 +137,11 @@
   (ptk/reify ::persist-changes
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (cond-> #{}
+      (let [;; this features set does not includes the ffeat/enabled
+            ;; because they are already available on the backend and
+            ;; this request provides a set of features to enable in
+            ;; this request.
+            features (cond-> #{}
                        (features/active-feature? state :components-v2)
                        (conj "components/v2"))
             sid      (:session-id state)
@@ -150,7 +153,7 @@
                       :features features}]
 
         (when (= file-id (:id params))
-          (->> (rp/mutation :update-file params)
+          (->> (rp/cmd! :update-file params)
                (rx/mapcat (fn [lagged]
                             (log/debug :hint "changes persisted" :lagged (count lagged))
                             (let [lagged (cond->> lagged
@@ -285,14 +288,13 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)
-            features (cond-> #{}
+            features (cond-> ffeat/enabled
                        (features/active-feature? state :components-v2)
                        (conj "components/v2"))]
-
-        (->> (rx/zip (rp/query! :file-raw {:id file-id :features features})
+        (->> (rx/zip (rp/cmd! :get-raw-file {:id file-id :features features})
                      (rp/query! :team-users {:file-id file-id})
                      (rp/query! :project {:id project-id})
-                     (rp/query! :file-libraries {:file-id file-id})
+                     (rp/cmd! :get-file-libraries {:file-id file-id})
                      (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
              (rx/take 1)
              (rx/map (fn [[file-raw users project libraries file-comments-users]]
@@ -303,16 +305,7 @@
                         :file-comments-users file-comments-users}))
              (rx/mapcat (fn [{:keys [project] :as bundle}]
                           (rx/of (ptk/data-event ::bundle-fetched bundle)
-                                 (df/load-team-fonts (:team-id project)))))
-             (rx/catch (fn [err]
-                         (if (and (= (:type err) :restriction)
-                                  (= (:code err) :feature-disabled))
-                           (let [team-id (:current-team-id state)]
-                             (rx/of (modal/show
-                                      {:type :alert
-                                       :message (tr "errors.components-v2")
-                                       :on-accept #(st/emit! (rt/nav :dashboard-projects {:team-id team-id}))})))
-                           (rx/throw err)))))))))
+                                 (df/load-team-fonts (:team-id project))))))))))
 
 ;; --- Helpers
 
