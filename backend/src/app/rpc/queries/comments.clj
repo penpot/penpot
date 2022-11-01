@@ -8,8 +8,8 @@
   (:require
    [app.db :as db]
    [app.rpc.commands.comments :as cmd.comments]
+   [app.rpc.commands.files :as cmd.files]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.files :as files]
    [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -52,7 +52,7 @@
    ::doc/deprecated "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
   (with-open [conn (db/open pool)]
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (cmd.files/check-comment-permissions! conn profile-id file-id share-id)
     (cmd.comments/get-comment-thread conn params)))
 
 ;; --- QUERY: Comments
@@ -65,7 +65,7 @@
   [{:keys [pool] :as cfg} {:keys [profile-id thread-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (let [thread (db/get-by-id conn :comment-thread thread-id)]
-      (files/check-comment-permissions! conn profile-id (:file-id thread) share-id))
+      (cmd.files/check-comment-permissions! conn profile-id (:file-id thread) share-id))
     (cmd.comments/get-comments conn thread-id)))
 
 
@@ -78,5 +78,5 @@
    ::doc/added "1.13"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id]}]
   (with-open [conn (db/open pool)]
-    (files/check-comment-permissions! conn profile-id file-id share-id)
+    (cmd.files/check-comment-permissions! conn profile-id file-id share-id)
     (cmd.comments/get-file-comments-users conn file-id profile-id)))

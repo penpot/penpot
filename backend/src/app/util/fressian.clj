@@ -86,17 +86,25 @@
   (write-tag! w tag 1)
   (write-list! w o))
 
+(defn begin-closed-list!
+  [^StreamingWriter w]
+  (.beginClosedList w))
+
+(defn end-list!
+  [^StreamingWriter w]
+  (.endList w))
+
 (defn write-map-like
   "Writes a map as Fressian with the tag 'map' and all keys cached."
   [tag ^Writer w m]
   (write-tag! w tag 1)
-  (.beginClosedList ^StreamingWriter w)
+  (begin-closed-list! w)
   (loop [items (seq m)]
     (when-let [^clojure.lang.MapEntry item (first items)]
       (write-object! w (.key item) true)
       (write-object! w (.val item))
       (recur (rest items))))
-  (.endList ^StreamingWriter w))
+  (end-list! w))
 
 (defn read-map-like
   [^Reader rdr]

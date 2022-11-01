@@ -16,7 +16,7 @@
 
 (log/set-level! :debug)
 
-(def features-list #{:auto-layout :components-v2})
+(def available-features #{:auto-layout :components-v2})
 
 (defn- toggle-feature
   [feature]
@@ -38,14 +38,14 @@
 
 (defn toggle-feature!
   [feature]
-  (assert (contains? features-list feature) "Not supported feature")
+  (assert (contains? available-features feature) "Not supported feature")
   (st/emit! (toggle-feature feature)))
 
 (defn active-feature?
   ([feature]
    (active-feature? @st/state feature))
   ([state feature]
-   (assert (contains? features-list feature) "Not supported feature")
+   (assert (contains? available-features feature) "Not supported feature")
    (contains? (get state :features) feature)))
 
 (def features
@@ -57,7 +57,7 @@
 
 (defn use-feature
   [feature]
-  (assert (contains? features-list feature) "Not supported feature")
+  (assert (contains? available-features feature) "Not supported feature")
   (let [active-feature-ref (mf/use-memo (mf/deps feature) #(active-feature feature))
         active-feature? (mf/deref active-feature-ref)]
     active-feature?))
@@ -69,6 +69,6 @@
   (when *assert*
     ;; By default, all features disabled, except in development
     ;; environment, that are enabled except components-v2
-    (doseq [f features-list]
+    (doseq [f available-features]
       (when (not= f :components-v2)
         (toggle-feature! f)))))

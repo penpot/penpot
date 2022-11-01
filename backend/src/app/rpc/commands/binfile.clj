@@ -17,14 +17,15 @@
    [app.db :as db]
    [app.media :as media]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as projects]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
    [app.util.blob :as blob]
    [app.util.fressian :as fres]
+   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -290,9 +291,11 @@
 
 (defn- retrieve-file
   [pool file-id]
-  (->> (db/query pool :file {:id file-id})
-       (map files/decode-row)
-       (first)))
+  (with-open [conn (db/open pool)]
+    (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
+      (some-> (db/get* conn :file {:id file-id})
+              (files/decode-row)
+              (update :data files/process-pointers deref)))))
 
 (def ^:private sql:file-media-objects
   "SELECT * FROM file_media_object WHERE id = ANY(?)")

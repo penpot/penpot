@@ -81,7 +81,7 @@
                      (rx/merge
                       ;; Update the local copy of the thumbnails so we don't need to request it again
                       (rx/of #(assoc-in % [:workspace-file :thumbnails object-id] data))
-                      (->> (rp/mutation! :upsert-file-object-thumbnail params)
+                      (->> (rp/cmd! :upsert-file-object-thumbnail params)
                            (rx/ignore))))
 
                    (rx/empty))))))))))

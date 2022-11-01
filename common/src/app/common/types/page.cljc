@@ -50,11 +50,13 @@
 
 (defn make-empty-page
   [id name]
-  (let [wrap-fn ffeat/*wrap-objects-fn*]
+  (let [wrap-objects-fn ffeat/*wrap-with-objects-map-fn*
+        wrap-pointer-fn ffeat/*wrap-with-pointer-map-fn*]
     (-> empty-page-data
         (assoc :id id)
         (assoc :name name)
-        (update :objects wrap-fn))))
+        (update :objects wrap-objects-fn)
+        (wrap-pointer-fn))))
 
 ;; --- Helpers for flow
 

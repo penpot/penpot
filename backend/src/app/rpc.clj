@@ -230,7 +230,10 @@
                      'app.rpc.commands.auth
                      'app.rpc.commands.ldap
                      'app.rpc.commands.demo
-                     'app.rpc.commands.files)
+                     'app.rpc.commands.files
+                     'app.rpc.commands.files.update
+                     'app.rpc.commands.files.create
+                     'app.rpc.commands.files.temp)
          (map (partial process-method cfg))
          (into {}))))
 

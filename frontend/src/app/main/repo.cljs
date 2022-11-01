@@ -12,6 +12,8 @@
    [app.util.http :as http]
    [beicon.core :as rx]))
 
+(derive :get-file ::query)
+
 (defn handle-response
   [{:keys [status body] :as response}]
   (cond
@@ -48,7 +50,6 @@
   query api."
   ([id params]
    (send-query! id params nil))
-
   ([id params {:keys [raw-transit?]}]
    (let [decode-transit (if raw-transit?
                           http/conditional-error-decode-transit
@@ -74,14 +75,24 @@
 (defn- send-command!
   "A simple helper for a common case of sending and receiving transit
   data to the penpot mutation api."
-  [id params {:keys [response-type form-data?]}]
-  (->> (http/send! {:method :post
-                    :uri (u/join @cf/public-uri "api/rpc/command/" (name id))
-                    :credentials "include"
-                    :body (if form-data? (http/form-data params) (http/transit-data params))
-                    :response-type (or response-type :text)})
-       (rx/map http/conditional-decode-transit)
-       (rx/mapcat handle-response)))
+  [id params {:keys [response-type form-data? raw-transit?]}]
+  (let [decode-fn (if raw-transit?
+                    http/conditional-error-decode-transit
+                    http/conditional-decode-transit)
+        method    (if (isa? id ::query) :get :post)]
+
+    (->> (http/send! {:method method
+                      :uri (u/join @cf/public-uri "api/rpc/command/" (name id))
+                      :credentials "include"
+                      :body (when (= method :post)
+                              (if form-data?
+                                (http/form-data params)
+                                (http/transit-data params)))
+                      :query (when (= method :get)
+                               params)
+                      :response-type (or response-type :text)})
+         (rx/map decode-fn)
+         (rx/mapcat handle-response))))
 
 (defn- dispatch [& args] (first args))
 
@@ -93,9 +104,9 @@
   [id params]
   (send-query! id params))
 
-(defmethod query :file-raw
+(defmethod command :get-raw-file
   [_id params]
-  (send-query! :file params {:raw-transit? true}))
+  (send-command! :get-file params {:raw-transit? true}))
 
 (defmethod mutation :default
   [id params]

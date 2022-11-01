@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.grid
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.features :as ffeat]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as msg]
@@ -34,18 +35,21 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(log/set-level! :info)
+(log/set-level! :debug)
 
 ;; --- Grid Item Thumbnail
 
 (defn ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"
   [file]
-  (wrk/ask! {:cmd :thumbnails/generate
-             :revn (:revn file)
-             :file-id (:id file)
-             :file-name (:name file)
-             :components-v2 (features/active-feature? :components-v2)}))
+  (let [features (cond-> ffeat/enabled
+                   (features/active-feature? :components-v2)
+                   (conj "components/v2"))]
+    (wrk/ask! {:cmd :thumbnails/generate
+               :revn (:revn file)
+               :file-id (:id file)
+               :file-name (:name file)
+               :features features})))
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap [mf/memo]}
@@ -61,10 +65,10 @@
                (rx/subscribe-on :af)
                (rx/subs (fn [{:keys [data fonts] :as params}]
                           (run! fonts/ensure-loaded! fonts)
-                          (log/info :hint "loaded thumbnail"
-                                    :file-id (dm/str (:id file))
-                                    :file-name (:name file)
-                                    :elapsed (str/ffmt "%ms" (tp)))
+                          (log/debug :hint "loaded thumbnail"
+                                     :file-id (dm/str (:id file))
+                                     :file-name (:name file)
+                                     :elapsed (str/ffmt "%ms" (tp)))
                           (when-let [node (mf/ref-val container)]
                             (dom/set-html! node data))))))))
 

@@ -33,6 +33,10 @@
 (def write-handler-map (atom nil))
 (def read-handler-map (atom nil))
 
+;; A generic pointer; mainly used for deserialize backend pointer-map
+;; instances that serializes to pointer but may in other ways.
+(defrecord Pointer [id])
+
 ;; --- HELPERS
 
 #?(:clj
@@ -132,6 +136,11 @@
             :cljs (let [ms (js/parseInt v 10)]
                     (.fromMillis ^js lxn/DateTime ms))))
   :wfn (comp str inst-ms)}
+
+ {:id "penpot/pointer"
+  :class Pointer
+  :rfn (fn [[id meta]]
+         (Pointer. id meta {}))}
 
  #?(:clj
     {:id "m"

@@ -110,7 +110,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/query :team-members {:team-id team-id})
+        (->> (rp/query! :team-members {:team-id team-id})
              (rx/map team-members-fetched))))))
 
 ;; --- EVENT: fetch-team-stats
@@ -128,7 +128,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/query :team-stats {:team-id team-id})
+        (->> (rp/query! :team-stats {:team-id team-id})
              (rx/map team-stats-fetched))))))
 
 ;; --- EVENT: fetch-team-invitations
@@ -146,7 +146,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/query :team-invitations {:team-id team-id})
+        (->> (rp/query! :team-invitations {:team-id team-id})
              (rx/map team-invitations-fetched))))))
 
 ;; --- EVENT: fetch-projects
@@ -165,7 +165,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/query :projects {:team-id team-id})
+        (->> (rp/query! :projects {:team-id team-id})
              (rx/map projects-fetched))))))
 
 ;; --- EVENT: search
@@ -193,7 +193,7 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)
             params  (assoc params :team-id team-id)]
-        (->> (rp/query :search-files params)
+        (->> (rp/query! :search-files params)
              (rx/map search-result-fetched))))))
 
 ;; --- EVENT: files
@@ -222,7 +222,7 @@
   (ptk/reify ::fetch-files
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/query :project-files {:project-id project-id})
+      (->> (rp/cmd! :get-project-files {:project-id project-id})
            (rx/map #(files-fetched project-id %))))))
 
 ;; --- EVENT: shared-files
@@ -243,7 +243,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/query :team-shared-files {:team-id team-id})
+        (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
              (rx/map shared-files-fetched))))))
 
 ;; --- EVENT: Get files that use this shared-file
@@ -269,7 +269,8 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rx/from files)
-           (rx/mapcat (fn [file]  (rp/query :library-using-files {:file-id (:id file)})))
+           (rx/map :id)
+           (rx/mapcat #(rp/cmd! :get-library-file-references {:file-id %}))
            (rx/reduce into [])
            (rx/map library-using-files-fetched)))))
 
@@ -292,7 +293,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [team-id (or team-id (:current-team-id state))]
-         (->> (rp/query :team-recent-files {:team-id team-id})
+         (->> (rp/cmd! :get-team-recent-files {:team-id team-id})
               (rx/map recent-files-fetched)))))))
 
 
@@ -588,7 +589,7 @@
 
             new-name (str name " " (tr "dashboard.copy-suffix"))]
 
-        (->> (rp/command! :duplicate-project {:project-id id :name new-name})
+        (->> (rp/cmd! :duplicate-project {:project-id id :name new-name})
              (rx/tap on-success)
              (rx/map project-duplicated)
              (rx/catch on-error))))))
@@ -608,7 +609,7 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
 
-        (->> (rp/command! :move-project {:project-id id :team-id team-id})
+        (->> (rp/cmd! :move-project {:project-id id :team-id team-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -683,7 +684,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (uuid/uuid (get-in state [:route :path-params :team-id]))]
-        (->> (rp/mutation :delete-file {:id id})
+        (->> (rp/cmd! :delete-file {:id id})
              (rx/map #(file-deleted team-id project-id)))))))
 
 ;; --- Rename File
@@ -706,7 +707,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [params (select-keys params [:id :name])]
-        (->> (rp/mutation :rename-file params)
+        (->> (rp/cmd! :rename-file params)
              (rx/ignore))))))
 
 ;; --- Set File shared
@@ -731,7 +732,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [params {:id id :is-shared is-shared}]
-        (->> (rp/mutation :set-file-shared params)
+        (->> (rp/cmd! :set-file-shared params)
              (rx/ignore))))))
 
 ;; --- EVENT: create-file
@@ -774,7 +775,7 @@
                          (assoc :name name)
                          (assoc :features features))]
 
-        (->> (rp/mutation! :create-file params)
+        (->> (rp/cmd! :create-file params)
              (rx/tap on-success)
              (rx/map #(with-meta (file-created %) (meta it)))
              (rx/catch on-error))))))
@@ -794,7 +795,7 @@
 
             new-name (str name " " (tr "dashboard.copy-suffix"))]
 
-        (->> (rp/command! :duplicate-file {:file-id id :name new-name})
+        (->> (rp/cmd! :duplicate-file {:file-id id :name new-name})
              (rx/tap on-success)
              (rx/map file-created)
              (rx/catch on-error))))))
@@ -816,7 +817,7 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/command! :move-files {:ids ids :project-id project-id})
+        (->> (rp/cmd! :move-files {:ids ids :project-id project-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -836,8 +837,7 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-
-        (->> (rp/command! :clone-template {:project-id project-id :template-id template-id})
+        (->> (rp/cmd! :clone-template {:project-id project-id :template-id template-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 

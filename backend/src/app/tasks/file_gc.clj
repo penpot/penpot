@@ -17,11 +17,12 @@
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
+   [app.rpc.commands.files :as files]
    [app.util.blob :as blob]
+   [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [integrant.core :as ig]))
 
 (declare ^:private retrieve-candidates)
@@ -55,7 +56,7 @@
               (recur (inc total)
                      (rest files)))
             (do
-              (l/info :hint "task finished" :min-age (dt/format-duration min-age) :total total)
+              (l/info :hint "task finished" :min-age (dt/format-duration min-age) :processed total)
 
               ;; Allow optional rollback passed by params
               (when (:rollback? params)
@@ -72,6 +73,7 @@
   "select f.id,
           f.data,
           f.revn,
+          f.features,
           f.modified_at
      from file as f
     where f.has_media_trimmed is false
@@ -86,17 +88,22 @@
   (if id
     (do
       (l/warn :hint "explicit file id passed on params" :id id)
-      (db/query conn :file {:id id}))
+      (->> (db/query conn :file {:id id})
+           (map #(update % :features db/decode-pgarray #{}))))
     (let [interval  (db/interval min-age)
           get-chunk (fn [cursor]
                       (let [rows (db/exec! conn [sql:retrieve-candidates-chunk interval cursor])]
-                        [(some->> rows peek :modified-at) (seq rows)]))]
+                        [(some->> rows peek :modified-at)
+                         (map #(update % :features db/decode-pgarray #{}) rows)]))]
+
       (d/iteration get-chunk
                    :vf second
                    :kf first
                    :initk (dt/now)))))
 
 (defn collect-used-media
+  "Analyzes the file data and collects all references to external
+  assets. Returns a set of ids."
   [data]
   (let [xform (comp
                (map :objects)
@@ -152,9 +159,8 @@
         unused (set/difference stored using)]
 
     (when (seq unused)
-      (let [sql (str/concat
-                 "delete from file_object_thumbnail "
-                 " where file_id=? and object_id=ANY(?)")
+      (let [sql (str "delete from file_object_thumbnail "
+                     " where file_id=? and object_id=ANY(?)")
             res (db/exec-one! conn [sql file-id (db/create-array conn "text" unused)])]
         (l/debug :hint "delete file object thumbnails" :file-id file-id :total (:next.jdbc/update-count res))))))
 
@@ -233,21 +239,41 @@
                     {:data new-data}
                     {:id library-id})))))
 
+(def ^:private sql:get-unused-fragments
+  "SELECT id FROM file_data_fragment
+    WHERE file_id = ? AND id != ALL(?::uuid[])")
+
+(defn- clean-data-fragments!
+  [conn file-id data]
+  (let [used (->> (concat (vals data)
+                          (vals (:pages-index data)))
+                  (into #{} (comp (filter pmap/pointer-map?)
+                                  (map pmap/get-id)))
+                  (db/create-array conn "uuid"))
+        rows (db/exec! conn [sql:get-unused-fragments file-id used])]
+    (doseq [fragment-id (map :id rows)]
+      (l/trace :hint "remove unused file data fragment" :id (str fragment-id))
+      (db/delete! conn :file-data-fragment {:id fragment-id :file-id file-id}))))
+
 (defn- process-file
-  [{:keys [conn] :as cfg} {:keys [id data revn modified-at] :as file}]
+  [{:keys [conn] :as cfg} {:keys [id data revn modified-at features] :as file}]
   (l/debug :hint "processing file" :id id :modified-at modified-at)
 
-  (let [data (-> (blob/decode data)
-                 (assoc :id id)
-                 (pmg/migrate-data))]
+  (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
+    (let [data (-> (blob/decode data)
+                   (assoc :id id)
+                   (pmg/migrate-data))]
 
-    (clean-file-media! conn id data)
-    (clean-file-frame-thumbnails! conn id data)
-    (clean-file-thumbnails! conn id revn)
-    (clean-deleted-components! conn id data)
+      (clean-file-media! conn id data)
+      (clean-file-frame-thumbnails! conn id data)
+      (clean-file-thumbnails! conn id revn)
+      (clean-deleted-components! conn id data)
 
-    ;; Mark file as trimmed
-    (db/update! conn :file
+      (when (contains? features "storage/pointer-map")
+        (clean-data-fragments! conn id data))
+
+      ;; Mark file as trimmed
+      (db/update! conn :file
                   {:has-media-trimmed true}
                   {:id id})
-    nil))
+      nil)))
