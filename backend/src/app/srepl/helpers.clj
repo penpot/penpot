@@ -30,6 +30,8 @@
    [cuerdas.core :as str]
    [expound.alpha :as expound]))
 
+(def ^:dynamic *conn*)
+
 (defn reset-password!
   "Reset a password to a specific one for a concrete user or all users
   if email is `:all` keyword."
@@ -69,8 +71,9 @@
                    (update :features db/decode-pgarray #{})
                    (update :data blob/decode)
                    (cond-> migrate? (update :data pmg/migrate-data)))
-          file (-> (update-fn file)
-                   (cond-> inc-revn? (update :revn inc)))]
+          file (binding [*conn* conn]
+                 (-> (update-fn file)
+                     (cond-> inc-revn? (update :revn inc))))]
       (when save?
         (let [features (db/create-array conn "text" (:features file))
               data     (blob/encode (:data file))]
