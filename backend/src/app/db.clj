@@ -420,21 +420,23 @@
 
 (defn decode-json-pgobject
   [^PGobject o]
-  (let [typ (.getType o)
-        val (.getValue o)]
-    (if (or (= typ "json")
-            (= typ "jsonb"))
-      (json/read val)
-      val)))
+  (when o
+    (let [typ (.getType o)
+          val (.getValue o)]
+      (if (or (= typ "json")
+              (= typ "jsonb"))
+        (json/read val)
+        val))))
 
 (defn decode-transit-pgobject
   [^PGobject o]
-  (let [typ (.getType o)
-        val (.getValue o)]
-    (if (or (= typ "json")
-            (= typ "jsonb"))
-      (t/decode-str val)
-      val)))
+  (when o
+    (let [typ (.getType o)
+          val (.getValue o)]
+      (if (or (= typ "json")
+              (= typ "jsonb"))
+        (t/decode-str val)
+        val))))
 
 (defn inet
   [ip-addr]
