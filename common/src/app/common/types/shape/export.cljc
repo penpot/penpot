@@ -9,9 +9,9 @@
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
-(s/def ::suffix string?)
+(s/def ::suffix ::us/string)
 (s/def ::scale ::us/safe-number)
-(s/def ::type keyword?)
+(s/def ::type ::us/keyword)
 
 (s/def ::export
   (s/keys :req-un [::type

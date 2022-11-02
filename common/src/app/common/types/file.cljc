@@ -37,7 +37,7 @@
   (s/coll-of ::ctc/recent-color :kind vector?))
 
 (s/def ::typographies
-  (s/map-of uuid? :ctst/typography))
+  (s/map-of uuid? ::cty/typography))
 
 (s/def ::pages
   (s/coll-of uuid? :kind vector?))
@@ -49,12 +49,13 @@
   (s/map-of uuid? ::ctp/page))
 
 (s/def ::components
-  (s/map-of uuid? ::ctp/container))
+  (s/map-of uuid? ::ctn/container))
 
 (s/def ::data
   (s/keys :req-un [::pages-index
                    ::pages]
           :opt-un [::colors
+                   ::components
                    ::recent-colors
                    ::typographies
                    ::media]))

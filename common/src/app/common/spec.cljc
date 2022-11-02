@@ -18,6 +18,7 @@
    [app.common.exceptions :as ex]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
+   [clojure.test.check.generators :as tgen]
    [cuerdas.core :as str]
    [expound.alpha :as expound]))
 
@@ -47,7 +48,9 @@
               ::s/invalid)))
         (unformer [v]
           (dm/str v))]
-  (s/def ::uuid (s/conformer conformer unformer)))
+  (s/def ::uuid
+    (s/with-gen (s/conformer conformer unformer)
+      #(tgen/fmap (fn [_] (uuid/random)) tgen/any))))
 
 ;; --- SPEC: boolean
 
@@ -61,7 +64,9 @@
               ::s/invalid)))
         (unformer [v]
           (if v "true" "false"))]
-  (s/def ::boolean (s/conformer conformer unformer)))
+  (s/def ::boolean
+    (s/with-gen (s/conformer conformer unformer)
+      (constantly tgen/boolean))))
 
 ;; --- SPEC: number
 
@@ -71,7 +76,9 @@
             (str/numeric? v) #?(:cljs (js/parseFloat v)
                                 :clj  (Double/parseDouble v))
             :else            ::s/invalid))]
-  (s/def ::number (s/conformer conformer str)))
+  (s/def ::number
+    (s/with-gen (s/conformer conformer str)
+      #(s/gen ::safe-number))))
 
 ;; --- SPEC: integer
 
@@ -84,7 +91,9 @@
                  :cljs (js/parseInt v 10))
               ::s/invalid)
             :else ::s/invalid))]
-  (s/def ::integer (s/conformer conformer str)))
+  (s/def ::integer
+    (s/with-gen (s/conformer conformer str)
+      #(s/gen ::safe-integer))))
 
 ;; --- SPEC: keyword
 
@@ -96,7 +105,10 @@
 
         (unformer [v]
           (name v))]
-  (s/def ::keyword (s/conformer conformer unformer)))
+  (s/def ::keyword
+    (s/with-gen (s/conformer conformer unformer)
+      #(->> (s/gen ::not-empty-string)
+            (tgen/fmap keyword)))))
 
 ;; --- SPEC: email
 
@@ -110,7 +122,13 @@
           (or (parse-email v) ::s/invalid))
         (unformer [v]
           (dm/str v))]
-  (s/def ::email (s/conformer conformer unformer)))
+  (s/def ::email
+    (s/with-gen (s/conformer conformer unformer)
+      #(as-> (tgen/let [p1 (s/gen ::not-empty-string)
+                        p2 (s/gen ::not-empty-string)
+                        p3 (tgen/elements ["com" "net"])]
+               (str p1 "@" p2 "." p3)) $
+         (tgen/such-that (partial re-matches email-re) $ 50)))))
 
 ;; -- SPEC: uri
 
@@ -121,17 +139,34 @@
             :else ::s/invalid))
         (unformer [v]
           (dm/str v))]
-  (s/def ::uri (s/conformer conformer unformer)))
+  (s/def ::uri
+    (s/with-gen (s/conformer conformer unformer)
+      #(tgen/let [scheme (tgen/elements ["http" "https"])
+                  domain (as-> (s/gen ::not-empty-string) $
+                           (tgen/such-that (fn [x] (> (count x) 5)) $ 100)
+                           (tgen/fmap str/lower $))
+                  ext    (tgen/elements ["net" "com" "org" "app" "io"])]
+         (u/uri (str scheme "://" domain "." ext))))))
 
 ;; --- SPEC: color string
 
+(def rgb-color-str-re
+  #"^#(?:[0-9a-fA-F]{3}){1,2}$")
+
 (letfn [(conformer [v]
-          (if (and (string? v) (re-matches #"^#(?:[0-9a-fA-F]{3}){1,2}$" v))
+          (if (and (string? v) (re-matches rgb-color-str-re v))
             v
             ::s/invalid))
         (unformer [v]
           (dm/str v))]
-  (s/def ::rgb-color-str (s/conformer conformer unformer)))
+  (s/def ::rgb-color-str
+    (s/with-gen (s/conformer conformer unformer)
+      #(->> tgen/any
+            (tgen/fmap (fn [_]
+                         #?(:clj (format "%x" (rand-int 16rFFFFFF))
+                            :cljs (.toString (rand-int 16rFFFFFF) 16))))
+            (tgen/fmap (fn [x]
+                         (str "#" x)))))))
 
 ;; --- SPEC: set/vector of Keywords
 
@@ -142,17 +177,19 @@
                                 (keyword? s) s
                                 :else nil)))]
             (cond
-              (set? s)    (into dest xform s)
+              (coll? s)   (into dest xform s)
               (string? s) (into dest xform (str/words s))
               :else       ::s/invalid)))
         (unformer-fn [v]
           (str/join " " (map name v)))]
 
   (s/def ::set-of-keywords
-    (s/conformer (partial conformer-fn #{}) unformer-fn))
+    (s/with-gen (s/conformer (partial conformer-fn #{}) unformer-fn)
+      #(tgen/set (s/gen ::keyword))))
 
   (s/def ::vector-of-keywords
-    (s/conformer (partial conformer-fn []) unformer-fn)))
+    (s/with-gen (s/conformer (partial conformer-fn []) unformer-fn)
+      #(tgen/vector (s/gen ::keyword)))))
 
 ;; --- SPEC: set/vector of strings
 
@@ -164,18 +201,18 @@
 
 (letfn [(conformer-fn [dest v]
           (cond
+            (coll? v) (into dest non-empty-strings-xf v)
             (string? v) (into dest non-empty-strings-xf (str/split v #"[\s,]+"))
-            (vector? v) (into dest non-empty-strings-xf v)
-            (set? v)    (into dest non-empty-strings-xf v)
             :else       ::s/invalid))
         (unformer-fn [v]
           (str/join "," v))]
-
   (s/def ::set-of-strings
-    (s/conformer (partial conformer-fn #{}) unformer-fn))
+    (s/with-gen (s/conformer (partial conformer-fn #{}) unformer-fn)
+      #(tgen/set (s/gen ::not-empty-string))))
 
   (s/def ::vector-of-strings
-    (s/conformer (partial conformer-fn []) unformer-fn)))
+    (s/with-gen (s/conformer (partial conformer-fn []) unformer-fn)
+      #(tgen/vector (s/gen ::not-empty-string)))))
 
 ;; --- SPEC: set-of-valid-emails
 
@@ -192,24 +229,27 @@
             :else ::s/invalid))
         (unformer [v]
           (str/join " " v))]
-  (s/def ::set-of-valid-emails (s/conformer conformer unformer)))
-
-;; --- SPEC: query-string
-
-(letfn [(conformer [s]
-          (if (string? s)
-            (ex/try* #(u/query-string->map s) (constantly ::s/invalid))
-            s))
-        (unformer [s]
-          (u/map->query-string s))]
-  (s/def ::query-string (s/conformer conformer unformer)))
+  (s/def ::set-of-valid-emails
+    (s/with-gen (s/conformer conformer unformer)
+      #(tgen/set (s/gen ::email)))))
 
 ;; --- SPECS WITHOUT CONFORMER
 
 (s/def ::inst inst?)
-(s/def ::string string?)
-(s/def ::not-empty-string (s/and string? #(not (str/empty? %))))
-(s/def ::url string?)
+
+(s/def ::string
+  (s/with-gen string?
+    (fn []
+      (tgen/such-that (fn [o]
+                        (re-matches #"\w+" o))
+                      tgen/string-alphanumeric
+                      50))))
+
+(s/def ::not-empty-string
+  (s/with-gen (s/and string? #(not (str/empty? %)))
+    #(tgen/such-that (complement str/empty?) (s/gen ::string))))
+
+(s/def ::url ::string)
 (s/def ::fn fn?)
 (s/def ::id ::uuid)
 
@@ -231,20 +271,34 @@
        :cljs (or (instance? js/Uint8Array x)
                  (instance? js/ArrayBuffer x)))))
 
-(s/def ::bytes bytes?)
+(s/def ::bytes
+  #?(:clj (s/with-gen bytes? (constantly tgen/bytes))
+     :cljs bytes?))
+
+(defn safe-number?
+  [x]
+  (and (number? x)
+       (>= x min-safe-int)
+       (<= x max-safe-int)))
+
+(defn safe-int? [x]
+  (and (safe-number? x) (int? x)))
+
+(defn safe-float? [x]
+  (and (safe-number? x) (float? x)))
 
 (s/def ::safe-integer
-  #(and
-    (int? %)
-    (>= % min-safe-int)
-    (<= % max-safe-int)))
+  (s/with-gen safe-int? (constantly tgen/small-integer)))
+
+(s/def ::safe-float
+  (s/with-gen safe-float? #(tgen/double* {:inifinite? false
+                                          :NaN? false
+                                          :min min-safe-int
+                                          :max max-safe-int})))
 
 (s/def ::safe-number
-  #(and
-    (or (int? %)
-        (float? %))
-    (>= % min-safe-int)
-    (<= % max-safe-int)))
+  (s/with-gen safe-number? #(tgen/one-of [(s/gen ::safe-integer)
+                                          (s/gen ::safe-float)])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MACROS

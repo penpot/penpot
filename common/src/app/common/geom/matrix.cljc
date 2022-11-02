@@ -12,7 +12,8 @@
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.spec :as us]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [clojure.test.check.generators :as tgen]))
 
 (def precision 6)
 
@@ -39,22 +40,27 @@
   [v]
   (instance? Matrix v))
 
-(s/def ::a ::us/safe-number)
-(s/def ::b ::us/safe-number)
-(s/def ::c ::us/safe-number)
-(s/def ::d ::us/safe-number)
-(s/def ::e ::us/safe-number)
-(s/def ::f ::us/safe-number)
-
-(s/def ::matrix
-  (s/and (s/keys :req-un [::a ::b ::c ::d ::e ::f]) matrix?))
-
 (defn matrix
   "Create a new matrix instance."
   ([]
    (Matrix. 1 0 0 1 0 0))
   ([a b c d e f]
    (Matrix. a b c d e f)))
+
+(s/def ::a ::us/safe-float)
+(s/def ::b ::us/safe-float)
+(s/def ::c ::us/safe-float)
+(s/def ::d ::us/safe-float)
+(s/def ::e ::us/safe-float)
+(s/def ::f ::us/safe-float)
+
+(s/def ::matrix-attrs
+  (s/keys :req-un [::a ::b ::c ::d ::e ::f]))
+
+(s/def ::matrix
+  (s/with-gen
+    (s/and ::matrix-attrs matrix?)
+    #(tgen/fmap map->Matrix (s/gen ::matrix-attrs))))
 
 (def number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
 

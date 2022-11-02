@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.files.features :as ffeat]
+   [app.common.spec :as us]
    [app.common.types.page.flow :as ctpf]
    [app.common.types.page.grid :as ctpg]
    [app.common.types.page.guide :as ctpu]
@@ -17,7 +18,7 @@
 
 ;; --- Background color
 
-(s/def ::background string?)
+(s/def ::background ::us/rgb-color-str)
 
 ;; --- Page options
 

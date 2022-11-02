@@ -22,12 +22,13 @@
 
 ;; -- Options depending on event type
 
-(s/def ::event-type #{:click
-                      :mouse-press
-                      :mouse-over
-                      :mouse-enter
-                      :mouse-leave
-                      :after-delay})
+(s/def ::event-type
+  #{:click
+    :mouse-press
+    :mouse-over
+    :mouse-enter
+    :mouse-leave
+    :after-delay})
 
 (s/def ::delay ::us/safe-integer)
 
@@ -40,26 +41,21 @@
   (s/keys :req-un []))
 
 (s/def ::event-opts
-  (s/multi-spec event-opts-spec ::event-type))
+  (s/multi-spec event-opts-spec :event-type))
 
 ;; -- Animation options
 
-(s/def ::animation-type #{:dissolve
-                          :slide
-                          :push})
+(s/def ::animation-type #{:dissolve :slide :push})
 (s/def ::duration ::us/safe-integer)
-(s/def ::easing #{:linear
-                  :ease
-                  :ease-in
-                  :ease-out
-                  :ease-in-out})
-(s/def ::way #{:in
-               :out})
-(s/def ::direction #{:right
-                     :left
-                     :up
-                     :down})
+(s/def ::way #{:in :out})
+(s/def ::direction #{:right :left :up :down})
 (s/def ::offset-effect ::us/boolean)
+(s/def ::easing
+  #{:linear
+    :ease
+    :ease-in
+    :ease-out
+    :ease-in-out})
 
 (defmulti animation-spec :animation-type)
 
@@ -80,26 +76,29 @@
                    ::direction]))
 
 (s/def ::animation
-  (s/multi-spec animation-spec ::animation-type))
+  (s/multi-spec animation-spec :animation-type))
 
 ;; -- Options depending on action type
 
-(s/def ::action-type #{:navigate
-                       :open-overlay
-                       :toggle-overlay
-                       :close-overlay
-                       :prev-screen
-                       :open-url})
+(s/def ::action-type
+  #{:navigate
+    :open-overlay
+    :toggle-overlay
+    :close-overlay
+    :prev-screen
+    :open-url})
+
+(s/def ::overlay-pos-type
+  #{:manual
+    :center
+    :top-left
+    :top-right
+    :top-center
+    :bottom-left
+    :bottom-right
+    :bottom-center})
 
 (s/def ::destination (s/nilable ::us/uuid))
-(s/def ::overlay-pos-type #{:manual
-                            :center
-                            :top-left
-                            :top-right
-                            :top-center
-                            :bottom-left
-                            :bottom-right
-                            :bottom-center})
 (s/def ::overlay-position ::gpt/point)
 (s/def ::url ::us/string)
 (s/def ::close-click-outside ::us/boolean)
@@ -140,7 +139,7 @@
   (s/keys :req-un [::url]))
 
 (s/def ::action-opts
-  (s/multi-spec action-opts-spec ::action-type))
+  (s/multi-spec action-opts-spec :action-type))
 
 ;; -- Interaction
 
@@ -412,6 +411,7 @@
   (us/verify (s/nilable ::animation-type) animation-type)
   (assert (has-animation? interaction))
   (assert (allowed-animation? (:action-type interaction) animation-type))
+
   (if (= (-> interaction :animation :animation-type) animation-type)
     interaction
     (if (nil? animation-type)

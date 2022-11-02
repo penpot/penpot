@@ -2,17 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.shape.spec-interactions-test
+(ns common-tests.test-types-shape-interactions
   (:require
-   [clojure.test :as t]
-   [clojure.pprint :refer [pprint]]
    [app.common.exceptions :as ex]
+   [app.common.geom.point :as gpt]
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
-   [app.common.geom.point :as gpt]))
+   [clojure.pprint :refer [pprint]]
+   [clojure.test :as t]))
 
 (t/deftest set-event-type
   (let [interaction ctsi/default-interaction
@@ -496,7 +496,6 @@
       (t/is (= :right (:direction a-left')))
       (t/is (= :down (:direction a-up')))
       (t/is (= :up (:direction a-down')))))))
-
 
 (t/deftest option-offset-effect
   (let [i1 ctsi/default-interaction

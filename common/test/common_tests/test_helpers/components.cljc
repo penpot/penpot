@@ -1,4 +1,10 @@
-(ns app.common.test-helpers.components
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
+(ns common-tests.test-helpers.components
   (:require
    [clojure.test :as t]
    [app.common.pages.helpers :as cph]
@@ -136,7 +142,7 @@
     [shapes-inst shapes-main component]))
 
 (defn resolve-component
-  "Get the component with the given id and all its shapes." 
+  "Get the component with the given id and all its shapes."
   [page component-id libraries]
   (let [component   (cph/get-component libraries component-id)
         root-main   (ctk/get-component-root component)

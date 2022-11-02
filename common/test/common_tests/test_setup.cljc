@@ -1,4 +1,4 @@
-(ns app.common.setup-test
+(ns common-tests.test-setup
   (:require
    [clojure.test :as t]))
 

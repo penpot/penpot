@@ -27,7 +27,7 @@
 (s/def ::color-gradient/end-y ::us/safe-number)
 (s/def ::color-gradient/width ::us/safe-number)
 
-(s/def ::color-gradient-stop/color string?)
+(s/def ::color-gradient-stop/color ::us/rgb-color-str)
 (s/def ::color-gradient-stop/opacity ::us/safe-number)
 (s/def ::color-gradient-stop/offset ::us/safe-number)
 
@@ -53,7 +53,7 @@
 (s/def ::color-generic/name string?)
 (s/def ::color-generic/path (s/nilable string?))
 (s/def ::color-generic/value (s/nilable string?))
-(s/def ::color-generic/color (s/nilable string?))
+(s/def ::color-generic/color (s/nilable ::us/rgb-color-str))
 (s/def ::color-generic/opacity (s/nilable ::us/safe-number))
 (s/def ::color-generic/gradient (s/nilable ::gradient))
 (s/def ::color-generic/ref-id uuid?)
@@ -76,10 +76,14 @@
                    ::color-generic/gradient]))
 
 (s/def ::recent-color
-  (s/keys :opt-un [::color-generic/value
-                   ::color-generic/color
-                   ::color-generic/opacity
-                   ::color-generic/gradient]))
+  (s/and
+   (s/keys :opt-un [::color-generic/value
+                    ::color-generic/color
+                    ::color-generic/opacity
+                    ::color-generic/gradient])
+   (fn [o]
+     (or (contains? o :gradient)
+         (contains? o :color)))))
 
 ;; --- Helpers for color in different parts of a shape
 
@@ -159,7 +163,7 @@
   [shape position color opacity gradient]
   (update-in shape [:shadow position :color]
              (fn [shadow-color]
-               (d/without-nils (assoc shadow-color 
+               (d/without-nils (assoc shadow-color
                                       :color color
                                       :opacity opacity
                                       :gradient gradient)))))
@@ -190,7 +194,7 @@
   [shape position color opacity gradient]
   (update-in shape [:grids position :params :color]
              (fn [grid-color]
-               (d/without-nils (assoc grid-color 
+               (d/without-nils (assoc grid-color
                                       :color color
                                       :opacity opacity
                                       :gradient gradient)))))

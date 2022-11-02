@@ -2,29 +2,28 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.file-test
+(ns common-tests.test-types-file
   (:require
-    ;; Uncomment to debug
-    ;; [clojure.pprint :refer [pprint]]
-    ;; [cuerdas.core :as str]
-    [clojure.test :as t]
-    [app.common.data :as d]
-    [app.common.geom.point :as gpt]
-    [app.common.text :as txt]
-    [app.common.types.colors-list :as ctcl]
-    [app.common.types.component :as ctk]
-    [app.common.types.components-list :as ctkl]
-    [app.common.types.container :as ctn]
-    [app.common.types.file :as ctf]
-    [app.common.types.pages-list :as ctpl]
-    [app.common.types.shape :as cts]
-    [app.common.types.shape-tree :as ctst]
-    [app.common.types.typographies-list :as ctyl]
-    [app.common.uuid :as uuid]
-    [app.common.test-helpers.files :as thf]
-    [app.common.test-helpers.components :as thk]))
+   [app.common.data :as d]
+   [app.common.geom.point :as gpt]
+   [app.common.text :as txt]
+   [app.common.types.colors-list :as ctcl]
+   [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
+   [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
+   [app.common.types.typographies-list :as ctyl]
+   [app.common.uuid :as uuid]
+   [clojure.pprint :refer [pprint]]
+   [clojure.test :as t]
+   [common-tests.test-helpers.components :as thk]
+   [common-tests.test-helpers.files :as thf]
+   [cuerdas.core :as str]))
 
 (t/use-fixtures :each thf/reset-idmap!)
 
