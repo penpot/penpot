@@ -31,7 +31,7 @@ export PENPOT_STORAGE_ASSETS_S3_ENDPOINT=http://minio:9000
 export PENPOT_STORAGE_ASSETS_S3_BUCKET=penpot
 
 export OPTIONS="
-       -A:dev:jmx-remote \
+       -A:jmx-remote -A:dev \
        -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
        -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
        -J-XX:+UseG1GC \
