@@ -13,7 +13,6 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.corners :as gsc]
-   [app.common.geom.shapes.flex-layout :as gcl]
    [app.common.geom.shapes.intersect :as gin]
    [app.common.geom.shapes.modifiers :as gsm]
    [app.common.geom.shapes.path :as gsp]
@@ -183,10 +182,6 @@
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
-
-;; Layout
-(dm/export gcl/calc-layout-data)
-(dm/export gcl/calc-layout-modifiers)
 
 ;; PATHS
 (dm/export gsp/content->selrect)

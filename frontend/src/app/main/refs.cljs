@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [okulary.core :as l]))
@@ -442,7 +443,7 @@
   (l/derived
    (fn [objects]
      (->> ids
-          (some #(-> (cph/get-parent objects %) :layout))))
+          (some #(-> (cph/get-parent objects %) ctl/layout?))))
    workspace-page-objects))
 
 (defn get-flex-child-viewer?

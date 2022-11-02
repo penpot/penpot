@@ -109,6 +109,12 @@
 (defn fill-height? [child]
   (= :fill (:layout-item-v-sizing child)))
 
+(defn auto-width? [child]
+  (= :auto (:layout-item-h-sizing child)))
+
+(defn auto-height? [child]
+  (= :auto (:layout-item-v-sizing child)))
+
 (defn col?
   [{:keys [layout-flex-dir]}]
   (or (= :column layout-flex-dir) (= :reverse-column layout-flex-dir)))

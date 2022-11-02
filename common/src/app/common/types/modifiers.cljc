@@ -17,7 +17,11 @@
 ;; --- Modifiers
 
 ;; Moodifiers types
-;;  - geometry: Geometry
+;;  - geometry-parent: Geometry non-recursive
+;;     * move
+;;     * resize
+;;     * rotation
+;;  - geometry-child: Geometry recursive
 ;;     * move
 ;;     * resize
 ;;     * rotation
@@ -28,7 +32,6 @@
 ;;  - structure-child: Structure recursive
 ;;     * scale-content
 ;;     * rotation
-;;
 
 (def conjv (fnil conj []))
 
@@ -37,37 +40,59 @@
 (defn empty-modifiers []
   {})
 
+(defn set-move-parent
+  ([modifiers x y]
+   (set-move-parent modifiers (gpt/point x y)))
+
+  ([modifiers vector]
+   (-> modifiers
+       (update :geometry-parent conjv {:type :move :vector vector}))))
+
+(defn set-resize-parent
+  ([modifiers vector origin]
+   (-> modifiers
+       (update :geometry-parent conjv {:type :resize
+                                       :vector vector
+                                       :origin origin})))
+
+  ([modifiers vector origin transform transform-inverse]
+   (-> modifiers
+       (update :geometry-parent conjv {:type :resize
+                                       :vector vector
+                                       :origin origin
+                                       :transform transform
+                                       :transform-inverse transform-inverse}))))
 (defn set-move
   ([modifiers x y]
    (set-move modifiers (gpt/point x y)))
 
   ([modifiers vector]
    (-> modifiers
-       (update :geometry conjv {:type :move :vector vector}))))
+       (update :geometry-child conjv {:type :move :vector vector}))))
 
 (defn set-resize
   ([modifiers vector origin]
    (-> modifiers
-       (update :geometry conjv {:type :resize
-                                :vector vector
-                                :origin origin})))
+       (update :geometry-child conjv {:type :resize
+                                      :vector vector
+                                      :origin origin})))
 
   ([modifiers vector origin transform transform-inverse]
    (-> modifiers
-       (update :geometry conjv {:type :resize
-                                :vector vector
-                                :origin origin
-                                :transform transform
-                                :transform-inverse transform-inverse}))))
+       (update :geometry-child conjv {:type :resize
+                                      :vector vector
+                                      :origin origin
+                                      :transform transform
+                                      :transform-inverse transform-inverse}))))
 
 (defn set-rotation
   [modifiers center angle]
   (-> modifiers
       (update :structure-child conjv {:type :rotation
                                       :rotation angle})
-      (update :geometry conjv {:type :rotation
-                               :center center
-                               :rotation angle})))
+      (update :geometry-child conjv {:type :rotation
+                                     :center center
+                                     :rotation angle})))
 
 (defn set-remove-children
   [modifiers shapes]
@@ -97,8 +122,11 @@
   [modifiers new-modifiers]
 
   (cond-> modifiers
-    (some? (:geometry new-modifiers))
-    (update :geometry #(d/concat-vec [] % (:geometry new-modifiers)))
+    (some? (:geometry-child new-modifiers))
+    (update :geometry-child #(d/concat-vec [] % (:geometry-child new-modifiers)))
+
+    (some? (:geometry-parent new-modifiers))
+    (update :geometry-parent #(d/concat-vec [] % (:geometry-parent new-modifiers)))
 
     (some? (:structure-parent new-modifiers))
     (update :structure-parent #(d/concat-vec [] % (:structure-parent new-modifiers)))
@@ -116,12 +144,26 @@
   ([vector]
    (set-move (empty-modifiers) vector)))
 
+(defn move-parent
+  ([x y]
+   (set-move-parent (empty-modifiers) (gpt/point x y)))
+
+  ([vector]
+   (set-move-parent (empty-modifiers) vector)))
+
 (defn resize
   ([vector origin]
    (set-resize (empty-modifiers) vector origin))
 
   ([vector origin transform transform-inverse]
    (set-resize (empty-modifiers) vector origin transform transform-inverse)))
+
+(defn resize-parent
+  ([vector origin]
+   (set-resize-parent (empty-modifiers) vector origin))
+
+  ([vector origin transform transform-inverse]
+   (set-resize-parent (empty-modifiers) vector origin transform transform-inverse)))
 
 (defn rotation
   [shape center angle]
@@ -155,32 +197,30 @@
       (set-scale-content value)))
 
 (defn child-modifiers?
-  [{:keys [geometry structure-child]}]
-  (or (d/not-empty? geometry)
+  [{:keys [geometry-child structure-child]}]
+  (or (d/not-empty? geometry-child)
       (d/not-empty? structure-child)))
 
 (defn select-child-modifiers
   [modifiers]
-  (select-keys modifiers [:geometry :structure-child]))
+  (select-keys modifiers [:geometry-child :structure-child]))
+
+(defn select-child-geometry-modifiers
+  [modifiers]
+  (select-keys modifiers [:geometry-child]))
+
+(defn select-parent-modifiers
+  [modifiers]
+  (select-keys modifiers [:geometry-parent :structure-parent]))
 
 (defn select-structure
   [modifiers]
   (select-keys modifiers [:structure-parent]))
 
-(defn add-move
-  ([object x y]
-   (add-move object (gpt/point x y)))
-
-  ([object vector]
-   (update object :modifiers (move vector))))
-
-(defn add-resize
-  [object vector origin]
-  (update object :modifiers (resize vector origin)))
-
 (defn empty-modifiers?
   [modifiers]
-  (and (empty? (:geometry modifiers))
+  (and (empty? (:geometry-child modifiers))
+       (empty? (:geometry-parent modifiers))
        (empty? (:structure-parent modifiers))
        (empty? (:structure-child modifiers))))
 
@@ -253,8 +293,10 @@
 
 (defn only-move?
   [modifier]
-  (and (= 1 (-> modifier :geometry count))
-       (= :move (-> modifier :geometry first :type))))
+  (or (and (= 1 (-> modifier :geometry-child count))
+           (= :move (-> modifier :geometry-child first :type)))
+      (and (= 1 (-> modifier :geometry-parent count))
+           (= :move (-> modifier :geometry-parent first :type)))))
 
 (defn get-frame-add-children
   [modif-tree]
@@ -300,8 +342,11 @@
                    (gmt/multiply (gmt/rotate-matrix rotation))
                    (gmt/translate (gpt/negate center)))
                matrix)))]
-    (->> modifiers :geometry
-         (reduce apply-modifier (gmt/matrix)))))
+    (let [modifiers (if (d/not-empty? (:geometry-parent modifiers))
+                      (d/concat-vec (:geometry-parent modifiers) (:geometry-child modifiers))
+                      (:geometry-child modifiers))]
+      (->> modifiers
+           (reduce apply-modifier (gmt/matrix))))))
 
 (defn scale-text-content
   [content value]
@@ -357,5 +402,6 @@
       (reduce apply-modifier $ (:structure-child modifiers)))))
 
 (defn has-geometry?
-  [{:keys [geometry]}]
-  (d/not-empty? geometry))
+  [{:keys [geometry-parent geometry-child]}]
+  (or (d/not-empty? geometry-parent)
+      (d/not-empty? geometry-child)))

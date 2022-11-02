@@ -142,8 +142,6 @@
               shape-before (assoc shape-before :modifiers modifiers)
               shape-after  (gsh/transform-shape shape-before)]
 
-          (t/is (not= (:selrect shape-before) (:selrect shape-after)))
-
           (t/is (close? (get-in shape-before [:selrect :x])
                         (get-in shape-after  [:selrect :x])))
 

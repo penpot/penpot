@@ -87,6 +87,19 @@
       (when (d/num? minx miny maxx maxy)
         (make-rect minx miny (- maxx minx) (- maxy miny))))))
 
+(defn squared-points
+  [points]
+  (when (d/not-empty? points)
+    (let [minx (transduce (keep :x) min ##Inf points)
+          miny (transduce (keep :y) min ##Inf points)
+          maxx (transduce (keep :x) max ##-Inf points)
+          maxy (transduce (keep :y) max ##-Inf points)]
+      (when (d/num? minx miny maxx maxy)
+        [(gpt/point minx miny)
+         (gpt/point maxx miny)
+         (gpt/point maxx maxy)
+         (gpt/point minx maxy)]))))
+
 (defn points->selrect [points]
   (when-let [rect (points->rect points)]
     (let [{:keys [x y width height]} rect]

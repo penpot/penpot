@@ -7,12 +7,15 @@
 (ns app.common.geom.shapes.flex-layout
   (:require
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes.flex-layout.bounds :as fbo]
    [app.common.geom.shapes.flex-layout.drop-area :as fdr]
    [app.common.geom.shapes.flex-layout.lines :as fli]
    [app.common.geom.shapes.flex-layout.modifiers :as fmo]))
 
-(dm/export fli/calc-layout-data)
-(dm/export fmo/normalize-child-modifiers)
-(dm/export fmo/calc-layout-modifiers)
-(dm/export fdr/layout-drop-areas)
+(dm/export fbo/layout-content-bounds)
 (dm/export fdr/get-drop-index)
+(dm/export fdr/layout-drop-areas)
+(dm/export fli/calc-layout-data)
+(dm/export fmo/layout-child-modifiers)
+(dm/export fmo/normalize-child-modifiers)
+

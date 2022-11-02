@@ -13,10 +13,9 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]))
 
-
 (defn normalize-child-modifiers
   "Apply the modifiers and then normalized them against the parent coordinates"
-  [parent child modifiers {:keys [transform transform-inverse] :as transformed-parent}]
+  [modifiers parent child {:keys [transform transform-inverse] :as transformed-parent}]
 
   (let [transformed-child (gst/transform-shape child modifiers)
         child-bb-before (gst/parent-coords-rect child parent)
@@ -38,14 +37,16 @@
    {:keys [children-data line-width] :as layout-data}]
 
   (cond
-    (and (ctl/row? parent) (ctl/fill-width? child))
-    (let [target-width (get-in children-data [(:id child) :child-width])
+    (ctl/row? parent)
+    (let [target-width (max (get-in children-data [(:id child) :child-width]) 0.01)
           fill-scale (/ target-width child-width)]
       {:width target-width
        :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})
 
-    (and (ctl/col? parent) (ctl/fill-width? child))
-    (let [target-width (- line-width (ctl/child-width-margin child))
+    (ctl/col? parent)
+    (let [target-width (max (- line-width (ctl/child-width-margin child)) 0.01)
+          max-width (ctl/child-max-width child)
+          target-width (min max-width target-width)
           fill-scale (/ target-width child-width)]
       {:width target-width
        :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})))
@@ -58,19 +59,21 @@
    {:keys [children-data line-height] :as layout-data}]
 
   (cond
-    (and (ctl/col? parent) (ctl/fill-height? child))
-    (let [target-height (get-in children-data [(:id child) :child-height])
+    (ctl/col? parent)
+    (let [target-height (max (get-in children-data [(:id child) :child-height]) 0.01)
           fill-scale (/ target-height child-height)]
       {:height target-height
        :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
 
-    (and (ctl/row? parent) (ctl/fill-height? child))
-    (let [target-height (- line-height (ctl/child-height-margin child))
+    (ctl/row? parent)
+    (let [target-height (max (- line-height (ctl/child-height-margin child)) 0.01)
+          max-height (ctl/child-max-height child)
+          target-height (min max-height target-height)
           fill-scale (/ target-height child-height)]
       {:height target-height
        :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})))
 
-(defn calc-layout-modifiers
+(defn layout-child-modifiers
   "Calculates the modifiers for the layout"
   [parent child layout-line]
   (let [child-bounds (gst/parent-coords-points child parent)
@@ -79,8 +82,8 @@
         child-width  (gpo/width-points child-bounds)
         child-height (gpo/height-points child-bounds)
 
-        fill-width   (calc-fill-width-data parent child child-origin child-width layout-line)
-        fill-height  (calc-fill-height-data parent child child-origin child-height layout-line)
+        fill-width   (when (ctl/fill-width? child)  (calc-fill-width-data parent child child-origin child-width layout-line))
+        fill-height  (when (ctl/fill-height? child) (calc-fill-height-data parent child child-origin child-height layout-line))
 
         child-width (or (:width fill-width) child-width)
         child-height (or (:height fill-height) child-height)

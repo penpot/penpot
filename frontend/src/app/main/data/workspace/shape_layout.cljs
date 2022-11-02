@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
@@ -68,7 +69,6 @@
         (rx/of (dwc/update-shapes ids #(merge % initial-grid-layout))
                (update-layout-positions ids))))))
 
-
 (defn remove-layout
   [ids]
   (ptk/reify ::remove-layout
@@ -91,6 +91,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
-            parent-ids (->> ids (map #(cph/get-parent-id objects %)))]
+            parent-ids (->> ids (map #(cph/get-parent-id objects %)))
+            layout-ids (->> ids (filter (comp ctl/layout? (d/getf objects))))]
         (rx/of (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
-               (update-layout-positions parent-ids))))))
+               (update-layout-positions (d/concat-vec layout-ids parent-ids)))))))

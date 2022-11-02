@@ -34,9 +34,12 @@
   "Calculates the lines basic data and accumulated values. The positions will be calculated in a different operation"
   [shape children layout-bounds]
 
-  (let [wrap? (ctl/wrap? shape)
-        col?  (ctl/col? shape)
+  (let [col?  (ctl/col? shape)
         row?  (ctl/row? shape)
+
+        wrap? (and (ctl/wrap? shape)
+                   (or col? (not (ctl/auto-width? shape)))
+                   (or row? (not (ctl/auto-height? shape))))
 
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
         layout-width  (gpo/width-points layout-bounds)
@@ -279,6 +282,12 @@
             (fn [children-data]
               (cond->> children-data
                 row?
+                (map #(assoc % :child-width (:child-min-width %)))
+
+                col?
+                (map #(assoc % :child-height (:child-min-height %)))
+
+                row?
                 (distribute-space :child-width :child-min-width :child-max-width line-min-width line-width)
 
                 col?
@@ -304,3 +313,4 @@
 
     {:layout-lines layout-lines
      :reverse? reverse?}))
+

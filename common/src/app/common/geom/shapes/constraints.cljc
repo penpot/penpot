@@ -265,7 +265,7 @@
     (if (and (= :scale constraints-h) (= :scale constraints-v))
       modifiers
 
-      (let [transformed-child (gst/transform-shape child modifiers)
+      (let [transformed-child (gst/transform-shape child (ctm/select-child-modifiers modifiers))
             modifiers (normalize-modifiers constraints-h constraints-v modifiers child parent transformed-child transformed-parent)
 
             transformed-child (gst/transform-shape child modifiers)

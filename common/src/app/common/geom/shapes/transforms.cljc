@@ -434,20 +434,35 @@
        (map (comp gpr/points->selrect :points transform-shape))
        (gpr/join-selrects)))
 
+(defn apply-children-modifiers
+  [objects modif-tree children]
+  (->> children
+       (map (fn [child]
+              (let [modifiers (get-in modif-tree [(:id child) :modifiers])
+                    child (transform-shape child modifiers)
+                    parent? (or (= :group (:type child)) (= :bool (:type child)))]
+                (cond-> child
+                  parent?
+                  (apply-children-modifiers objects modif-tree)))))))
+
 (defn apply-group-modifiers
   "Apply the modifiers to the group children to calculate its selection rect"
-  [group objects modif-tree]
+  [parent objects modif-tree]
 
+  (let [children (->> (:shapes parent)
+                      (map (d/getf objects))
+                      (apply-children-modifiers objects modif-tree))]
+    (cond-> parent
+      (= :group (:type parent))
+      (update-group-selrect children))))
+
+(defn get-children-bounds
+  [parent objects modif-tree]
   (let [children
-        (->> (:shapes group)
+        (->> (:shapes parent)
              (map (d/getf objects))
-             (map (fn [shape]
-                    (let [modifiers (get modif-tree (:id shape))
-                          shape (-> shape (merge modifiers) transform-shape)]
-                      (if (= :group (:type shape))
-                        (apply-group-modifiers shape objects modif-tree)
-                        shape)))))]
-    (update-group-selrect group children)))
+             (apply-children-modifiers objects modif-tree))]
+    (->> children (mapcat :points) gpr/points->rect)))
 
 (defn parent-coords-rect
   [child parent]

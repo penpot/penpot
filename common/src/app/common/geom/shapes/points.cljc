@@ -50,12 +50,13 @@
 
 (defn pad-points
   [[p0 p1 p2 p3 :as points] pad-top pad-right pad-bottom pad-left]
-  (let [top-v    (start-vv points pad-top)
-        right-v  (end-hv points pad-right)
-        bottom-v (end-vv points pad-bottom)
-        left-v   (start-hv points pad-left)]
+  (when (some? points)
+    (let [top-v    (start-vv points pad-top)
+          right-v  (end-hv points pad-right)
+          bottom-v (end-vv points pad-bottom)
+          left-v   (start-hv points pad-left)]
 
-    [(-> p0 (gpt/add left-v)  (gpt/add top-v))
-     (-> p1 (gpt/add right-v) (gpt/add top-v))
-     (-> p2 (gpt/add right-v) (gpt/add bottom-v))
-     (-> p3 (gpt/add left-v)  (gpt/add bottom-v))]))
+      [(-> p0 (gpt/add left-v)  (gpt/add top-v))
+       (-> p1 (gpt/add right-v) (gpt/add top-v))
+       (-> p2 (gpt/add right-v) (gpt/add bottom-v))
+       (-> p3 (gpt/add left-v)  (gpt/add bottom-v))])))

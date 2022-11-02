@@ -80,7 +80,7 @@
 (mf/defc element-behavior
   [{:keys [is-layout-container? is-layout-child? layout-item-h-sizing layout-item-v-sizing on-change-behavior] :as props}]
   (let [fill? is-layout-child?
-        auto?  is-layout-container?]
+        auto? is-layout-container?]
 
     [:div.btn-wrapper
      [:div.layout-behavior.horizontal
@@ -98,7 +98,7 @@
       (when auto?
         [:button.behavior-btn.tooltip.tooltip-bottom
          {:alt "Fit content"
-          :class  (dom/classnames :active (= layout-item-v-sizing :auto))
+          :class  (dom/classnames :active (= layout-item-h-sizing :auto))
           :on-click #(on-change-behavior :h :auto)}
          i/auto-hug])]
 
@@ -188,9 +188,11 @@
                              :on-change-behavior on-change-behavior}]]
 
 
-      [:& margin-section {:values values
-                          :change-margin-style change-margin-style
-                          :on-margin-change on-margin-change}]
+      (when is-layout-child?
+        [:& margin-section {:values values
+                            :change-margin-style change-margin-style
+                            :on-margin-change on-margin-change}])
+
       [:div.advanced-ops-container
        [:button.advanced-ops.toltip.tooltip-bottom
         {:on-click toggle-open
@@ -200,12 +202,13 @@
 
       (when @open?
         [:div.advanced-ops-body
-         [:div.layout-row
-          [:div.direction-wrap.row-title "Align"]
-          [:div.btn-wrapper
-           [:& align-self-row {:is-col? is-col?
-                               :align-self align-self
-                               :set-align-self set-align-self}]]]
+         (when is-layout-child?
+           [:div.layout-row
+            [:div.direction-wrap.row-title "Align"]
+            [:div.btn-wrapper
+             [:& align-self-row {:is-col? is-col?
+                                 :align-self align-self
+                                 :set-align-self set-align-self}]]])
          [:div.input-wrapper
           (for  [item [:layout-item-max-h :layout-item-min-h :layout-item-max-w :layout-item-min-w]]
             [:div.tooltip.tooltip-bottom
