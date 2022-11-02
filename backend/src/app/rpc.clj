@@ -33,10 +33,9 @@
 
 (defn- handle-response-transformation
   [response request mdata]
-  (let [response (if (sv/wrapped? response) @response response)]
-    (if-let [transform-fn (::transform-response mdata)]
-      (p/do (transform-fn request response))
-      (p/resolved response))))
+  (if-let [transform-fn (::transform-response mdata)]
+    (p/do (transform-fn request response))
+    (p/resolved response)))
 
 (defn- handle-before-comple-hook
   [response mdata]
@@ -46,7 +45,8 @@
 
 (defn- handle-response
   [request result]
-  (let [mdata (meta result)]
+  (let [mdata  (meta result)
+        result (if (sv/wrapped? result) @result result)]
     (p/-> (yrs/response 200 result (::http/headers mdata {}))
           (handle-response-transformation request mdata)
           (handle-before-comple-hook mdata))))
