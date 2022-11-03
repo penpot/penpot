@@ -78,17 +78,17 @@
 
     :align-self  (if is-col?
                    (case val
-                     :start     i/align-self-column-top
-                     :end   i/align-self-column-bottom
-                     :center   i/align-self-column-center
-                     :stretch   i/align-self-column-strech
-                     :baseline i/align-self-column-baseline)
-                   (case val
                      :start   i/align-self-row-left
                      :end    i/align-self-row-right
                      :center   i/align-self-row-center
                      :stretch   i/align-self-row-strech
-                     :baseline i/align-self-row-baseline))))
+                     :baseline i/align-self-row-baseline)
+                   (case val
+                     :start     i/align-self-column-top
+                     :end   i/align-self-column-bottom
+                     :center   i/align-self-column-center
+                     :stretch   i/align-self-column-strech
+                     :baseline i/align-self-column-baseline))))
 
 (mf/defc direction-btn
   [{:keys [dir saved-dir set-direction] :as props}]
@@ -170,7 +170,8 @@
   [{:keys [values on-change-style on-change] :as props}]
 
   (let [padding-type (:layout-padding-type values)
-        rx (if (apply = (vals (:layout-padding values)))
+        rx (if (and (not (= :multiple (:layout-padding values)))
+                    (apply = (vals (:layout-padding values))))
              (:p1 (:layout-padding values))
              "--")]
 

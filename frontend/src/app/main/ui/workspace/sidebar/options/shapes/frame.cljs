@@ -43,8 +43,9 @@
                         :values measure-values
                         :type type
                         :shape shape}]
-     [:& constraints-menu {:ids ids
-                           :values constraint-values}]
+     (when (not is-layout-child?)
+       [:& constraints-menu {:ids ids
+                             :values constraint-values}])
      (when (or layout-active? is-layout-container?)
        [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}])
 

@@ -62,7 +62,8 @@
          :is-layout-container? false
          :values layout-item-values}])
 
-     [:& constraints-menu {:ids constraint-ids :values constraint-values}]
+     (when (not is-layout-child?)
+       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]
 
      (when-not (empty? fill-ids)

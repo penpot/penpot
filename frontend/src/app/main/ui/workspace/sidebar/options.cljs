@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options
   (:require
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -36,24 +37,27 @@
 (mf/defc shape-options
   {::mf/wrap [#(mf/throttle % 60)]}
   [{:keys [shape shapes-with-children page-id file-id shared-libs]}]
-  [:*
-   (case (:type shape)
-     :frame   [:& frame/options {:shape shape}]
-     :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
-     :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
-     :rect    [:& rect/options {:shape shape}]
-     :circle  [:& circle/options {:shape shape}]
-     :path    [:& path/options {:shape shape}]
-     :image   [:& image/options {:shape shape}]
-     :svg-raw [:& svg-raw/options {:shape shape}]
-     :bool    [:& bool/options {:shape shape}]
-     nil)
-   [:& exports-menu
-    {:ids [(:id shape)]
-     :values (select-keys shape [:exports])
-     :shape shape
-     :page-id page-id
-     :file-id file-id}]])
+  (let [workspace-modifiers (mf/deref refs/workspace-modifiers)
+        modifiers (get-in workspace-modifiers [(:id shape) :modifiers])
+        shape (gsh/transform-shape shape modifiers)]
+    [:*
+     (case (:type shape)
+       :frame   [:& frame/options {:shape shape}]
+       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
+       :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
+       :rect    [:& rect/options {:shape shape}]
+       :circle  [:& circle/options {:shape shape}]
+       :path    [:& path/options {:shape shape}]
+       :image   [:& image/options {:shape shape}]
+       :svg-raw [:& svg-raw/options {:shape shape}]
+       :bool    [:& bool/options {:shape shape}]
+       nil)
+     [:& exports-menu
+      {:ids [(:id shape)]
+       :values (select-keys shape [:exports])
+       :shape shape
+       :page-id page-id
+       :file-id file-id}]]))
 
 (mf/defc options-content
   {::mf/wrap [mf/memo]}

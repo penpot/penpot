@@ -253,6 +253,10 @@
   [props]
   (let [shapes (unchecked-get props "shapes")
         shapes-with-children (unchecked-get props "shapes-with-children")
+
+        workspace-modifiers (mf/deref refs/workspace-modifiers)
+        shapes (map #(gsh/transform-shape % (get-in workspace-modifiers [(:id %) :modifiers])) shapes)
+
         page-id (unchecked-get props "page-id")
         file-id (unchecked-get props "file-id")
         shared-libs (unchecked-get props "shared-libs")
@@ -319,7 +323,7 @@
          :is-layout-container? true
          :values layout-item-values}])
 
-     (when-not (empty? constraint-ids)
+     (when-not (or (empty? constraint-ids) is-layout-child?)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? layer-ids)
