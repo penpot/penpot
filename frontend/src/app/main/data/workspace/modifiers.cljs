@@ -16,6 +16,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.comments :as-alias dwcm]
    [app.main.data.workspace.guides :as-alias dwg]
@@ -144,12 +145,11 @@
   (into {} (map #(vector % {:modifiers (get-modifier (get objects %))})) ids))
 
 (defn build-change-frame-modifiers
-  [modif-tree objects selected target-frame position]
+  [modif-tree objects selected target-frame drop-index]
 
   (let [origin-frame-ids (->> selected (group-by #(get-in objects [% :frame-id])))
-        layout? (get-in objects [target-frame :layout])
         child-set (set (get-in objects [target-frame :shapes]))
-        drop-index (when layout? (gsl/get-drop-index target-frame objects position))
+        layout? (ctl/layout? objects target-frame)
 
         update-frame-modifiers
         (fn [modif-tree [original-frame shapes]]

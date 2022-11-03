@@ -353,7 +353,7 @@
 
 (declare start-move)
 (declare start-move-duplicate)
-(declare calculate-frame-for-move)
+(declare move-shapes-to-frame)
 (declare get-displacement)
 
 (defn start-move-selected
@@ -414,7 +414,6 @@
            (rx/take 1)
            (rx/map #(start-move from-position))))))
 
-
 (defn- start-move
   ([from-position] (start-move from-position nil))
   ([from-position ids]
@@ -436,13 +435,18 @@
              zoom    (get-in state [:workspace-local :zoom] 1)
              focus   (:workspace-focus-selected state)
 
-             fix-axis (fn [[position shift?]]
-                        (let [delta (gpt/to-vec from-position position)]
-                          (if shift?
-                            (if (> (mth/abs (:x delta)) (mth/abs (:y delta)))
-                              (gpt/point (:x delta) 0)
-                              (gpt/point 0 (:y delta)))
-                            delta)))
+             exclude-frames (into #{}
+                                  (filter (partial cph/frame-shape? objects))
+                                  (cph/selected-with-children objects selected))
+
+             fix-axis
+             (fn [[position shift?]]
+               (let [delta (gpt/to-vec from-position position)]
+                 (if shift?
+                   (if (> (mth/abs (:x delta)) (mth/abs (:y delta)))
+                     (gpt/point (:x delta) 0)
+                     (gpt/point 0 (:y delta)))
+                   delta)))
 
              position (->> ms/mouse-position
                            (rx/with-latest-from ms/mouse-position-shift)
@@ -456,33 +460,48 @@
                               (rx/switch-map
                                (fn [pos]
                                  (->> (snap/closest-snap-move page-id shapes objects layout zoom focus pos)
-                                      (rx/map #(vector pos %)))))))]
+                                      (rx/map #(vector pos %)))))))
+
+             drop-frame (atom nil)]
          (if (empty? shapes)
            (rx/of (finish-transform))
-           (rx/concat
-            (rx/merge
-             (->> position
-                  ;; We ask for the snap position but we continue even if the result is not available
-                  (rx/with-latest vector snap-delta)
+           (let [move-stream
+                 (->> position
+                      ;; We ask for the snap position but we continue even if the result is not available
+                      (rx/with-latest vector snap-delta)
 
-                  ;; We try to use the previous snap so we don't have to wait for the result of the new
-                  (rx/map snap/correct-snap-point)
+                      ;; We try to use the previous snap so we don't have to wait for the result of the new
+                      (rx/map snap/correct-snap-point)
 
-                  (rx/map
-                   (fn [move-vector]
-                     (let [position (gpt/add from-position move-vector)
-                           target-frame (ctst/top-nested-frame objects position)]
-                       (-> (dwm/create-modif-tree ids (ctm/move move-vector))
-                           (dwm/build-change-frame-modifiers objects selected target-frame position)
-                           (dwm/set-modifiers)))))
+                      (rx/map
+                       (fn [move-vector]
+                         (let [position     (gpt/add from-position move-vector)
+                               target-frame (ctst/top-nested-frame objects position exclude-frames)
+                               layout?      (ctl/layout? objects target-frame)
+                               drop-index   (when layout? (gsl/get-drop-index target-frame objects position))]
+                           [move-vector target-frame drop-index])))
 
-                  (rx/take-until stopper)))
+                      (rx/take-until stopper))]
 
-            (rx/of (dwu/start-undo-transaction)
-                   (calculate-frame-for-move ids)
-                   (dwm/apply-modifiers {:undo-transation? false})
-                   (finish-transform)
-                   (dwu/commit-undo-transaction)))))))))
+             (rx/merge
+              ;; Temporary modifiers stream
+              (->> move-stream
+                   (rx/map
+                    (fn [[move-vector target-frame drop-index]]
+                      (-> (dwm/create-modif-tree ids (ctm/move move-vector))
+                          (dwm/build-change-frame-modifiers objects selected target-frame drop-index)
+                          (dwm/set-modifiers)))))
+
+              ;; Last event will write the modifiers creating the changes
+              (->> move-stream
+                   (rx/last)
+                   (rx/mapcat
+                    (fn [[move-vector target-frame drop-index]]
+                      (rx/of (dwu/start-undo-transaction)
+                             (move-shapes-to-frame ids target-frame drop-index)
+                             (dwm/apply-modifiers {:undo-transation? false})
+                             (finish-transform)
+                             (dwu/commit-undo-transaction)))))))))))))
 
 (s/def ::direction #{:up :down :right :left})
 
@@ -561,15 +580,13 @@
         (rx/of (dwm/set-modifiers modif-tree)
                (dwm/apply-modifiers))))))
 
-(defn- calculate-frame-for-move
-  [ids]
-  (ptk/reify ::calculate-frame-for-move
+(defn- move-shapes-to-frame
+  [ids frame-id drop-index]
+  (ptk/reify ::move-shapes-to-frame
     ptk/WatchEvent
     (watch [it state _]
-      (let [position @ms/mouse-position
-            page-id  (:current-page-id state)
+      (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            frame-id (ctst/top-nested-frame objects position)
             layout?  (get-in objects [frame-id :layout])
             lookup   (d/getf objects)
 
@@ -584,14 +601,12 @@
               (remove #(and (= (:frame-id %) frame-id)
                             (not= (:parent-id %) frame-id))))
 
-            drop-index (when layout? (gsl/get-drop-index frame-id objects position))
-
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
                 (pcb/change-parent frame-id moving-shapes drop-index))]
 
-        (when-not (empty? changes)
+        (when (and (some? frame-id) (not (empty? changes)))
           (rx/of (dch/commit-changes changes)
                  (dwc/expand-collapse frame-id)))))))
 

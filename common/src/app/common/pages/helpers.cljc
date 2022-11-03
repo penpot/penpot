@@ -29,7 +29,7 @@
 
 (defn frame-shape?
   ([objects id]
-   (= (get-in objects [id :type]) id))
+   (frame-shape? (get objects id)))
   ([{:keys [type]}]
    (= type :frame)))
 
@@ -467,7 +467,6 @@
 
 (defn selected-with-children
   [objects selected]
-
   (into selected
         (mapcat #(get-children-ids objects %))
         selected))

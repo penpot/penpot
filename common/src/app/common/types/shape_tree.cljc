@@ -224,16 +224,25 @@
   "Search for the top nested frame for positioning shapes when moving or creating.
   Looks for all the frames in a position and then goes in depth between the top-most and its
   children to find the target."
-  [objects position]
-  (let [frame-ids (all-frames-by-position objects position)
-        frame-set (set frame-ids)]
-    (loop [current-id (first frame-ids)]
-      (let [current-shape (get objects current-id)
-            child-frame-id (d/seek #(contains? frame-set %)
-                                   (-> (:shapes current-shape) reverse))]
-        (if (nil? child-frame-id)
-          (or current-id uuid/zero)
-          (recur child-frame-id))))))
+  ([objects position]
+   (top-nested-frame objects position nil))
+
+  ([objects position excluded]
+   (assert (or (nil? excluded) (set? excluded)))
+
+   (let [frame-ids (cond->> (all-frames-by-position objects position)
+                     (some? excluded)
+                     (remove excluded))
+
+         frame-set (set frame-ids)]
+
+     (loop [current-id (first frame-ids)]
+       (let [current-shape (get objects current-id)
+             child-frame-id (d/seek #(contains? frame-set %)
+                                    (-> (:shapes current-shape) reverse))]
+         (if (nil? child-frame-id)
+           (or current-id uuid/zero)
+           (recur child-frame-id)))))))
 
 (defn top-nested-frame-ids
   "Search the top nested frame in a list of ids"
