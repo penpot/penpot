@@ -1790,32 +1790,41 @@ msgstr "¿Seguro que quieres eliminar este proyecto?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Eliminar proyecto"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.accept"
-msgid_plural "modals.delete-shared-confirm.accept"
-msgstr[0] "Borrar archivo"
-msgstr[1] "Borrar archivos"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.message"
-msgid_plural "modals.delete-shared-confirm.message"
-msgstr[0] "¿Seguro que quieres borrar este archivo?"
-msgstr[1] "¿Seguro que quieres borrar estos archivos?"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Algunos elementos de esta biblioteca están siendo usados por:"
-msgstr[1] "Algunos elementos de estas biblitecas están siendo usados por:"
-
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Borrando archivo"
 msgstr[1] "Borrando archivos"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "¿Seguro que quieres borrar este archivo?"
+msgstr[1] "¿Seguro que quieres borrar estos archivos?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Borrar archivo"
+msgstr[1] "Borrar archivos"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] "Ninguno de los elementos de su biblioteca están en uso. Se borrarán junto con el archivo."
+msgstr[1] "Ninguno de los elementos de sus bibliotecas están en uso. Se borrarán junto con los archivos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Algunos elementos de su biblioteca están siendo usados por:"
+msgstr[1] "Algunos elementos de sus bibliotecas están siendo usados por:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "Algunos elementos de su biblioteca están siendo usados por:"
+msgstr[1] "Algunos elementos de sus bibliotecas están siendo usados por:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint"
@@ -1824,30 +1833,18 @@ msgstr[0] ""
 "Si lo borras, esos elementos pasarán a formar parte de la biblioteca local "
 "de este archivo. Cualquier elemento en desuso se perderá."
 msgstr[1] ""
-"Si lo borras, los elementos pasarán a formar parte de la biblioteca local de "
+"Si lo borras, esos elementos pasarán a formar parte de las bibliotecas locales de "
 "estos archivos. Cualquier elemento en desuso se perderá."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-plural"
-msgid_plural "modals.delete-shared-confirm.hint-plural"
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
 msgstr[0] ""
 "Si los borras, esos elementos pasarán a formar parte de la biblioteca local "
 "de este archivo. Cualquier elemento en desuso se perderá."
 msgstr[1] ""
-"Si los borras, los elementos pasarán a formar parte de la biblioteca local de "
+"Si los borras, esos elementos pasarán a formar parte de las bibliotecas locales de "
 "estos archivos. Cualquier elemento en desuso se perderá."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] "Ninguno de los elementos de su biblioteca están en uso. Se borrarán junto con el archivo."
-msgstr[1] "Ninguno de los elementos de sus bibliotecas están en uso. Se borrarán junto con el archivo."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Ninguno de los elementos de su biblioteca están en uso."
-msgstr[1] "Ninguno de los elementos de sus bibliotecas están en uso."
 
 #: src/app/main/ui/delete_shared.cljs
 msgid "modals.delete-shared.title"
@@ -1980,31 +1977,11 @@ msgstr "Añadir “%s” como Biblioteca Compartida"
 msgid "modals.small-nudge"
 msgstr "Mínimo"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Despublicar"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Si la despublicas, los elementos pasarán a formar parte de la biblioteca "
-"del archivo."
-msgstr[1] ""
-"Si la despublicas, los elementos pasarán a formar parte de la biblioteca de "
-"los archivos."
-
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-plural"
-msgid_plural "modals.unpublish-shared-confirm.hint-plural"
-msgstr[0] ""
-"Si las despublicas, los elementos pasarán a formar parte de la biblioteca "
-"del archivo."
-msgstr[1] ""
-"Si las despublicas, los elementos pasarán a formar parte de la biblioteca de "
-"los archivos."
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Despublicar biblioteca"
+msgstr[1] "Despublicar bibliotecas"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -2012,24 +1989,49 @@ msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "¿Seguro que quieres despublicar esta biblioteca?"
 msgstr[1] "¿Seguro que quieres despublicar estas bibliotecas?"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Despublicar"
+msgstr[1] "Despublicar"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "Ninguno de los elementos de esta biblioteca están en uso."
+msgstr[1] "Ninguno de los elementos de estas bibliotecas están en uso."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Está siendo usada en este archivo:"
-msgstr[1] "Está siendo usada en estos archivos:"
+msgstr[0] "Algunos elementos de esta bibioteca están siendo usados por:"
+msgstr[1] "Algunos elementos de estas bibiotecas están siendo usados por:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-plural"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-plural"
-msgstr[0] "Están siendo usadas en este archivo:"
-msgstr[1] "Están siendo usadas en estos archivos:"
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
+msgstr[0] "Algunos elementos de esta bibioteca están siendo usados por:"
+msgstr[1] "Algunos elementos de estas bibiotecas están siendo usados por:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.title"
-msgid_plural "modals.unpublish-shared-confirm.title"
-msgstr[0] "Despublicar biblioteca"
-msgstr[1] "Despublicar bibliotecas"
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Si la despublicas, esos elementos pasarán a formar parte de la biblioteca local "
+"de este archivo."
+msgstr[1] ""
+"Si las despublicas, esos elementos pasarán a formar parte de la biblioteca local "
+"de este archivo."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] ""
+"Si la despublicas, esos elementos pasarán a formar parte de las bibliotecas locales "
+"de estos archivos."
+msgstr[1] ""
+"Si las despublicas, esos elementos pasarán a formar parte de las bibliotecas locales "
+"de estos archivos."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs

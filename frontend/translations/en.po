@@ -1593,10 +1593,10 @@ msgid "modals.delete-project-confirm.title"
 msgstr "Delete project"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.accept"
-msgid_plural "modals.delete-shared-confirm.accept"
-msgstr[0] "Delete file"
-msgstr[1] "Delete files"
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Deleting file"
+msgstr[1] "Deleting files"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
@@ -1605,10 +1605,10 @@ msgstr[0] "Are you sure you want to delete this file?"
 msgstr[1] "Are you sure you want to delete these files?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Some of the assets in this file's library are in use here:"
-msgstr[1] "Some of the assets in these file's libraries are in use here:"
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Delete file"
+msgstr[1] "Delete files"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.no-files-message"
@@ -1617,36 +1617,36 @@ msgstr[0] "None of the assets in this file's library are in use. They will be de
 msgstr[1] "None of the assets in these file's libraries are in use. They will be deleted along with the files."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "None of the assets in this file's library are in use."
-msgstr[1] "None of the assets in these file's libraries are in use."
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Some of the assets in this file's library are in use here:"
+msgstr[1] "Some of the assets in these file's libraries are in use here:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.title"
-msgid_plural "modals.delete-shared-confirm.title"
-msgstr[0] "Deleting file"
-msgstr[1] "Deleting files"
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "Some of the assets in this file's library are in use here:"
+msgstr[1] "Some of the assets in these file's libraries are in use here:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint"
 msgid_plural "modals.delete-shared-confirm.hint"
 msgstr[0] ""
-"If you delete it, those assets will move tothe local library"
-"of this file. Any unsued assets will be lost."
+"If you delete it, those assets will move to the local library "
+"of this file. Any unused assets will be lost."
 msgstr[1] ""
-"If you delete it, those assets will move tothe local library"
-"of these files. Any unsued assets will be lost."
+"If you delete it, those assets will move to the local library "
+"of these files. Any unused assets will be lost."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-plural"
-msgid_plural "modals.delete-shared-confirm.hint-plural"
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
 msgstr[0] ""
-"If you delete them, those assets will move tothe local library"
-"of this file. Any unsued assets will be lost."
+"If you delete them, those assets will move to the local library "
+"of this file. Any unused assets will be lost."
 msgstr[1] ""
-"If you delete them, those assets will move tothe local library"
-"of these files. Any unsued assets will be lost."
+"If you delete them, those assets will move to the local library "
+"of these files. Any unused assets will be lost."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"
@@ -1773,26 +1773,10 @@ msgid "modals.small-nudge"
 msgstr "Small nudge"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Unpublish"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] "If you unpublish it, those assets will move to the local library of this file."
-msgstr[1] "If you unpublish it, those assets will move to the local library of these files."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-plural"
-msgid_plural "modals.unpublish-shared-confirm.hint-plural"
-msgstr[0] "If you unpublish them, those assets will move to the local library of this file."
-msgstr[1] "If you unpublish them, those assets will move to the local library of these files."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-plural"
-msgid_plural "modals.unpublish-shared-confirm.hint-plural"
-msgstr[0] "If you unpublish them, the assets in them became a library of this file."
-msgstr[1] "If you unpublish them, the assets in them became a library of these files."
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Unpublish library"
+msgstr[1] "Unpublish libraries"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1801,22 +1785,40 @@ msgstr[0] "Are you sure you want to unpublish this library?"
 msgstr[1] "Are you sure you want to unpublish these libraries?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Unpublish"
+msgstr[1] "Unpublish"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "None of the assets in this library are in use."
+msgstr[1] "None of the assets in these libraries are in use."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Some of the assets in this file's library are in use here:"
-msgstr[1] "Some of the assets in these file's libraries are in use here:"
+msgstr[0] "Some of the assets in this library are in use here:"
+msgstr[1] "Some of the assets in these libraries are in use here:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-plural"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-plural"
-msgstr[0] "Some of the assets in this file's library are in use here:"
-msgstr[1] "Some of the assets in these file's libraries are in use here:"
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
+msgstr[0] "Some of the assets in this library are in use here:"
+msgstr[1] "Some of the assets in these libraries are in use here:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.title"
-msgid_plural "modals.unpublish-shared-confirm.title"
-msgstr[0] "Unpublish library"
-msgstr[1] "Unpublish libraries"
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] "If you unpublish it, those assets will move to the local library of this file."
+msgstr[1] "If you unpublish it, those assets will move to the local libraries of these files."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] "If you unpublish them, those assets will move to the local library of this file."
+msgstr[1] "If you unpublish them, those assets will move to the local libraries of these files."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
