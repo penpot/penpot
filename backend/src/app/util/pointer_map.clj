@@ -192,7 +192,7 @@
     (into (create) data)))
 
 (fres/add-handlers!
- {:name "penpot/experimental/pointer-map/v2"
+ {:name "penpot/pointer-map/v1"
   :class PointerMap
   :wfn (fn [n w o]
          (fres/write-tag! w n 3)
