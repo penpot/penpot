@@ -121,9 +121,9 @@
          (rx/concat
            (rx/of (dch/update-shapes [(:id shape)]
                     (fn [shape]
-                      (let [new-interaction (ctsi/set-destination
-                                             ctsi/default-interaction
-                                             destination)]
+                      (let [new-interaction (-> ctsi/default-interaction
+                                                (ctsi/set-destination destination)
+                                                (assoc :position-relative-to (:id shape)))]
                         (update shape :interactions
                                 ctsi/add-interaction new-interaction)))))
            (when (and (not (connected-frame? objects (:id frame)))

@@ -27,7 +27,7 @@
     (t/testing "Set event type changed"
       (let [new-interaction
             (ctsi/set-event-type interaction :mouse-press shape)]
-          (t/is (= :mouse-press (:event-type new-interaction)))))
+        (t/is (= :mouse-press (:event-type new-interaction)))))
 
     (t/testing "Set after delay on non-frame"
       (let [result (ex/try
@@ -91,7 +91,7 @@
 
     (t/testing "Set action type open-overlay with previous data"
       (let [interaction (assoc interaction :overlay-pos-type :top-left
-                                           :overlay-position (gpt/point 100 200))
+                               :overlay-position (gpt/point 100 200))
             new-interaction
             (ctsi/set-action-type interaction :open-overlay)]
         (t/is (= :open-overlay (:action-type new-interaction)))
@@ -107,7 +107,7 @@
 
     (t/testing "Set action type toggle-overlay with previous data"
       (let [interaction (assoc interaction :overlay-pos-type :top-left
-                                           :overlay-position (gpt/point 100 200))
+                               :overlay-position (gpt/point 100 200))
             new-interaction
             (ctsi/set-action-type interaction :toggle-overlay)]
         (t/is (= :toggle-overlay (:action-type new-interaction)))
@@ -146,19 +146,18 @@
         (t/is (= :open-url (:action-type new-interaction)))
         (t/is (= "https://example.com" (:url new-interaction)))))))
 
-
 (t/deftest option-delay
   (let [frame (cts/make-minimal-shape :frame)
         i1    ctsi/default-interaction
         i2    (ctsi/set-event-type i1 :after-delay frame)]
 
-  (t/testing "Has delay"
-    (t/is (not (ctsi/has-delay i1)))
-    (t/is (ctsi/has-delay i2)))
+    (t/testing "Has delay"
+      (t/is (not (ctsi/has-delay i1)))
+      (t/is (ctsi/has-delay i2)))
 
-  (t/testing "Set delay"
-    (let [new-interaction (ctsi/set-delay i2 1000)]
-      (t/is (= 1000 (:delay new-interaction)))))))
+    (t/testing "Set delay"
+      (let [new-interaction (ctsi/set-delay i2 1000)]
+        (t/is (= 1000 (:delay new-interaction)))))))
 
 
 (t/deftest option-destination
@@ -167,47 +166,47 @@
         i2          (ctsi/set-action-type i1 :prev-screen)
         i3          (ctsi/set-action-type i1 :open-overlay)]
 
-  (t/testing "Has destination"
-    (t/is (ctsi/has-destination i1))
-    (t/is (not (ctsi/has-destination i2))))
+    (t/testing "Has destination"
+      (t/is (ctsi/has-destination i1))
+      (t/is (not (ctsi/has-destination i2))))
 
-  (t/testing "Set destination"
-    (let [new-interaction (ctsi/set-destination i1 destination)]
-      (t/is (= destination (:destination new-interaction)))
-      (t/is (nil? (:overlay-pos-type new-interaction)))
-      (t/is (nil? (:overlay-position new-interaction)))))
+    (t/testing "Set destination"
+      (let [new-interaction (ctsi/set-destination i1 destination)]
+        (t/is (= destination (:destination new-interaction)))
+        (t/is (nil? (:overlay-pos-type new-interaction)))
+        (t/is (nil? (:overlay-position new-interaction)))))
 
-  (t/testing "Set destination of overlay"
-    (let [new-interaction (ctsi/set-destination i3 destination)]
-      (t/is (= destination (:destination new-interaction)))
-      (t/is (= :center (:overlay-pos-type new-interaction)))
-      (t/is (= (gpt/point 0 0) (:overlay-position new-interaction)))))))
+    (t/testing "Set destination of overlay"
+      (let [new-interaction (ctsi/set-destination i3 destination)]
+        (t/is (= destination (:destination new-interaction)))
+        (t/is (= :center (:overlay-pos-type new-interaction)))
+        (t/is (= (gpt/point 0 0) (:overlay-position new-interaction)))))))
 
 
 (t/deftest option-preserve-scroll
   (let [i1 ctsi/default-interaction
         i2 (ctsi/set-action-type i1 :prev-screen)]
 
-  (t/testing "Has preserve-scroll"
-    (t/is (ctsi/has-preserve-scroll i1))
-    (t/is (not (ctsi/has-preserve-scroll i2))))
+    (t/testing "Has preserve-scroll"
+      (t/is (ctsi/has-preserve-scroll i1))
+      (t/is (not (ctsi/has-preserve-scroll i2))))
 
-  (t/testing "Set preserve-scroll"
-    (let [new-interaction (ctsi/set-preserve-scroll i1 true)]
-      (t/is (= true (:preserve-scroll new-interaction)))))))
+    (t/testing "Set preserve-scroll"
+      (let [new-interaction (ctsi/set-preserve-scroll i1 true)]
+        (t/is (= true (:preserve-scroll new-interaction)))))))
 
 
 (t/deftest option-url
   (let [i1 ctsi/default-interaction
         i2 (ctsi/set-action-type i1 :open-url)]
 
-  (t/testing "Has url"
-    (t/is (not (ctsi/has-url i1)))
-    (t/is (ctsi/has-url i2)))
+    (t/testing "Has url"
+      (t/is (not (ctsi/has-url i1)))
+      (t/is (ctsi/has-url i2)))
 
-  (t/testing "Set url"
-    (let [new-interaction (ctsi/set-url i2 "https://example.com")]
-      (t/is (= "https://example.com" (:url new-interaction)))))))
+    (t/testing "Set url"
+      (let [new-interaction (ctsi/set-url i2 "https://example.com")]
+        (t/is (= "https://example.com" (:url new-interaction)))))))
 
 
 (t/deftest option-overlay-opts
@@ -226,50 +225,237 @@
                (ctsi/set-action-type :open-overlay)
                (ctsi/set-destination (:id overlay-frame)))]
 
-  (t/testing "Has overlay options"
-    (t/is (not (ctsi/has-overlay-opts i1)))
-    (t/is (ctsi/has-overlay-opts i2)))
+    (t/testing "Has overlay options"
+      (t/is (not (ctsi/has-overlay-opts i1)))
+      (t/is (ctsi/has-overlay-opts i2)))
 
-  (t/testing "Set overlay-pos-type without destination"
-    (let [new-interaction (ctsi/set-overlay-pos-type i2 :top-right base-frame objects)]
-      (t/is (= :top-right (:overlay-pos-type new-interaction)))
-      (t/is (= (gpt/point 0 0) (:overlay-position new-interaction)))))
+    (t/testing "Set overlay-pos-type without destination"
+      (let [new-interaction (ctsi/set-overlay-pos-type i2 :top-right base-frame objects)]
+        (t/is (= :top-right (:overlay-pos-type new-interaction)))
+        (t/is (= (gpt/point 0 0) (:overlay-position new-interaction)))))
 
-  (t/testing "Set overlay-pos-type with destination and auto"
-    (let [new-interaction (ctsi/set-overlay-pos-type i3 :bottom-right base-frame objects)]
-      (t/is (= :bottom-right (:overlay-pos-type new-interaction)))
-      (t/is (= (gpt/point 0 0) (:overlay-position new-interaction)))))
+    (t/testing "Set overlay-pos-type with destination and auto"
+      (let [new-interaction (ctsi/set-overlay-pos-type i3 :bottom-right base-frame objects)]
+        (t/is (= :bottom-right (:overlay-pos-type new-interaction)))
+        (t/is (= (gpt/point 0 0) (:overlay-position new-interaction)))))
 
-  (t/testing "Set overlay-pos-type with destination and manual"
-    (let [new-interaction (ctsi/set-overlay-pos-type i3 :manual base-frame objects)]
-      (t/is (= :manual (:overlay-pos-type new-interaction)))
-      (t/is (= (gpt/point 35 40) (:overlay-position new-interaction)))))
+    (t/testing "Set overlay-pos-type with destination and manual"
+      (let [new-interaction (ctsi/set-overlay-pos-type i3 :manual base-frame objects)]
+        (t/is (= :manual (:overlay-pos-type new-interaction)))
+        (t/is (= (gpt/point 35 40) (:overlay-position new-interaction)))))
 
-  (t/testing "Toggle overlay-pos-type"
-    (let [new-interaction (ctsi/toggle-overlay-pos-type i3 :center base-frame objects)
-          new-interaction-2 (ctsi/toggle-overlay-pos-type new-interaction :center base-frame objects)
-          new-interaction-3 (ctsi/toggle-overlay-pos-type new-interaction-2 :top-right base-frame objects)]
-      (t/is (= :manual (:overlay-pos-type new-interaction)))
-      (t/is (= (gpt/point 35 40) (:overlay-position new-interaction)))
-      (t/is (= :center (:overlay-pos-type new-interaction-2)))
-      (t/is (= (gpt/point 0 0) (:overlay-position new-interaction-2)))
-      (t/is (= :top-right (:overlay-pos-type new-interaction-3)))
-      (t/is (= (gpt/point 0 0) (:overlay-position new-interaction-3)))))
+    (t/testing "Toggle overlay-pos-type"
+      (let [new-interaction (ctsi/toggle-overlay-pos-type i3 :center base-frame objects)
+            new-interaction-2 (ctsi/toggle-overlay-pos-type new-interaction :center base-frame objects)
+            new-interaction-3 (ctsi/toggle-overlay-pos-type new-interaction-2 :top-right base-frame objects)]
+        (t/is (= :manual (:overlay-pos-type new-interaction)))
+        (t/is (= (gpt/point 35 40) (:overlay-position new-interaction)))
+        (t/is (= :center (:overlay-pos-type new-interaction-2)))
+        (t/is (= (gpt/point 0 0) (:overlay-position new-interaction-2)))
+        (t/is (= :top-right (:overlay-pos-type new-interaction-3)))
+        (t/is (= (gpt/point 0 0) (:overlay-position new-interaction-3)))))
 
-  (t/testing "Set overlay-position"
-    (let [new-interaction (ctsi/set-overlay-position i3 (gpt/point 50 60))]
-      (t/is (= :manual (:overlay-pos-type new-interaction)))
-      (t/is (= (gpt/point 50 60) (:overlay-position new-interaction)))))
+    (t/testing "Set overlay-position"
+      (let [new-interaction (ctsi/set-overlay-position i3 (gpt/point 50 60))]
+        (t/is (= :manual (:overlay-pos-type new-interaction)))
+        (t/is (= (gpt/point 50 60) (:overlay-position new-interaction)))))
 
-  (t/testing "Set close-click-outside"
-    (let [new-interaction (ctsi/set-close-click-outside i3 true)]
-      (t/is (not (:close-click-outside i3)))
-      (t/is (:close-click-outside new-interaction))))
+    (t/testing "Set close-click-outside"
+      (let [new-interaction (ctsi/set-close-click-outside i3 true)]
+        (t/is (not (:close-click-outside i3)))
+        (t/is (:close-click-outside new-interaction))))
 
-  (t/testing "Set background-overlay"
-    (let [new-interaction (ctsi/set-background-overlay i3 true)]
-      (t/is (not (:background-overlay i3)))
-      (t/is (:background-overlay new-interaction))))))
+    (t/testing "Set background-overlay"
+      (let [new-interaction (ctsi/set-background-overlay i3 true)]
+        (t/is (not (:background-overlay i3)))
+        (t/is (:background-overlay new-interaction))))
+
+    (t/testing "Set relative-to"
+      (let [relative-to-id (uuid/random)
+            new-interaction (ctsi/set-position-relative-to i3 relative-to-id)]
+        (t/is (= relative-to-id (:position-relative-to new-interaction)))))))
+
+
+(t/deftest calc-overlay-position
+  (let [base-frame    (-> (cts/make-minimal-shape :frame)
+                          (assoc-in [:selrect :width] 100)
+                          (assoc-in [:selrect :height] 100))
+        popup         (-> (cts/make-minimal-shape :frame)
+                          (assoc-in [:selrect :width] 50)
+                          (assoc-in [:selrect :height] 50)
+                          (assoc-in [:selrect :x] 10)
+                          (assoc-in [:selrect :y] 10))
+        overlay-frame (-> (cts/make-minimal-shape :frame)
+                          (assoc-in [:selrect :width] 30)
+                          (assoc-in [:selrect :height] 20))
+
+        objects       {(:id base-frame) base-frame
+                       (:id popup) popup
+                       (:id overlay-frame) overlay-frame}
+
+        frame-offset (gpt/point 5 5)
+
+        interaction (-> ctsi/default-interaction
+                        (ctsi/set-action-type :open-overlay)
+                        (ctsi/set-destination (:id overlay-frame)))
+        interaction-auto (ctsi/set-position-relative-to interaction nil)
+        interaction-base-frame (ctsi/set-position-relative-to interaction (:id base-frame))
+        interaction-popup (ctsi/set-position-relative-to interaction (:id popup))]
+    (t/testing "Overlay top-left relative to auto"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-auto :top-left base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 0))
+        (t/is (= (:y overlay-pos) 0))))
+
+    (t/testing "Overlay top-center relative to auto"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-auto :top-center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 35))
+        (t/is (= (:y overlay-pos) 0))))
+
+    (t/testing "Overlay top-right relative to auto"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-auto :top-right base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 70))
+        (t/is (= (:y overlay-pos) 0))))
+
+    (t/testing "Overlay bottom-left relative to auto"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-auto :bottom-left base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 0))
+        (t/is (= (:y overlay-pos) 80))))
+
+    (t/testing "Overlay bottom-center relative to auto"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-auto :bottom-center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 35))
+        (t/is (= (:y overlay-pos) 80))))
+
+    (t/testing "Overlay bottom-right relative to auto"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-auto :bottom-right base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 70))
+        (t/is (= (:y overlay-pos) 80))))
+
+    (t/testing "Overlay center relative to auto"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-auto :center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 35))
+        (t/is (= (:y overlay-pos) 40))))
+
+    (t/testing "Overlay manual relative to auto"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-auto :center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 35))
+        (t/is (= (:y overlay-pos) 40))))
+
+    (t/testing "Overlay manual relative to auto"
+      (let [i2 (-> interaction-auto
+                   (ctsi/set-overlay-pos-type :manual base-frame objects)
+                   (ctsi/set-overlay-position (gpt/point 12 62)))
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 17))
+        (t/is (= (:y overlay-pos) 67))))
+
+    (t/testing "Overlay top-left relative to base-frame"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :top-left base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 5))
+        (t/is (= (:y overlay-pos) 5))))
+
+    (t/testing "Overlay top-center relative to base-frame"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :top-center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 40))
+        (t/is (= (:y overlay-pos) 5))))
+
+    (t/testing "Overlay top-right relative to base-frame"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :top-right base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 75))
+        (t/is (= (:y overlay-pos) 5))))
+
+    (t/testing "Overlay bottom-left relative to base-frame"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :bottom-left base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 5))
+        (t/is (= (:y overlay-pos) 85))))
+
+    (t/testing "Overlay bottom-center relative to base-frame"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :bottom-center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 40))
+        (t/is (= (:y overlay-pos) 85))))
+
+    (t/testing "Overlay bottom-right relative to base-frame"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :bottom-right base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 75))
+        (t/is (= (:y overlay-pos) 85))))
+
+    (t/testing "Overlay center relative to base-frame"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-base-frame :center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 40))
+        (t/is (= (:y overlay-pos) 45))))
+
+    (t/testing "Overlay manual relative to base-frame"
+      (let [i2 (-> interaction-base-frame
+                   (ctsi/set-overlay-pos-type :manual base-frame objects)
+                   (ctsi/set-overlay-position (gpt/point 12 62)))
+            overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 17))
+        (t/is (= (:y overlay-pos) 67))))
+
+    (t/testing "Overlay top-left relative to popup"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-popup :top-left base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 15))
+        (t/is (= (:y overlay-pos) 15))))
+
+    (t/testing "Overlay top-center relative to popup"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-popup :top-center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 25))
+        (t/is (= (:y overlay-pos) 15))))
+
+    (t/testing "Overlay top-right relative to popup"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-popup :top-right base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 35))
+        (t/is (= (:y overlay-pos) 15))))
+
+    (t/testing "Overlay bottom-left relative to popup"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-popup :bottom-left base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 15))
+        (t/is (= (:y overlay-pos) 45))))
+
+    (t/testing "Overlay bottom-center relative to popup"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-popup :bottom-center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 25))
+        (t/is (= (:y overlay-pos) 45))))
+
+    (t/testing "Overlay bottom-right relative to popup"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-popup :bottom-right base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 35))
+        (t/is (= (:y overlay-pos) 45))))
+
+    (t/testing "Overlay center relative to popup"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-popup :center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 25))
+        (t/is (= (:y overlay-pos) 30))))
+
+    (t/testing "Overlay manual relative to popup"
+      (let [i2 (-> interaction-popup
+                   (ctsi/set-overlay-pos-type :manual base-frame objects)
+                   (ctsi/set-overlay-position (gpt/point 12 62)))
+            overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 27))
+        (t/is (= (:y overlay-pos) 77))))))
 
 
 (t/deftest animation-checks
@@ -409,11 +595,11 @@
                                                     :easing :ease-out
                                                     :direction :left})]
         (t/is (not (ctsi/allowed-animation? (:action-type bad-interaction-1)
-                                           (-> bad-interaction-1 :animation :animation-type))))
+                                            (-> bad-interaction-1 :animation :animation-type))))
         (t/is (not (ctsi/allowed-animation? (:action-type bad-interaction-2)
-                                           (-> bad-interaction-1 :animation :animation-type))))
+                                            (-> bad-interaction-1 :animation :animation-type))))
         (t/is (not (ctsi/allowed-animation? (:action-type bad-interaction-3)
-                                           (-> bad-interaction-1 :animation :animation-type))))))
+                                            (-> bad-interaction-1 :animation :animation-type))))))
 
     (t/testing "Remove animation if moving to an forbidden state"
       (let [interaction (ctsi/set-animation-type ctsi/default-interaction :push)
@@ -425,26 +611,26 @@
   (let [i1 ctsi/default-interaction
         i2 (ctsi/set-animation-type ctsi/default-interaction :dissolve)]
 
-  (t/testing "Has duration?"
-    (t/is (not (ctsi/has-duration? i1)))
-    (t/is (ctsi/has-duration? i2)))
+    (t/testing "Has duration?"
+      (t/is (not (ctsi/has-duration? i1)))
+      (t/is (ctsi/has-duration? i2)))
 
-  (t/testing "Set duration"
-    (let [new-interaction (ctsi/set-duration i2 1000)]
-      (t/is (= 1000 (-> new-interaction :animation :duration)))))))
+    (t/testing "Set duration"
+      (let [new-interaction (ctsi/set-duration i2 1000)]
+        (t/is (= 1000 (-> new-interaction :animation :duration)))))))
 
 
 (t/deftest option-easing
   (let [i1 ctsi/default-interaction
         i2 (ctsi/set-animation-type ctsi/default-interaction :dissolve)]
 
-  (t/testing "Has easing?"
-    (t/is (not (ctsi/has-easing? i1)))
-    (t/is (ctsi/has-easing? i2)))
+    (t/testing "Has easing?"
+      (t/is (not (ctsi/has-easing? i1)))
+      (t/is (ctsi/has-easing? i2)))
 
-  (t/testing "Set easing"
-    (let [new-interaction (ctsi/set-easing i2 :ease-in)]
-      (t/is (= :ease-in (-> new-interaction :animation :easing)))))))
+    (t/testing "Set easing"
+      (let [new-interaction (ctsi/set-easing i2 :ease-in)]
+        (t/is (= :ease-in (-> new-interaction :animation :easing)))))))
 
 
 (t/deftest option-way
@@ -452,15 +638,15 @@
         i2 (ctsi/set-animation-type ctsi/default-interaction :slide)
         i3 (ctsi/set-action-type i2 :open-overlay)]
 
-  (t/testing "Has way?"
-    (t/is (not (ctsi/has-way? i1)))
-    (t/is (ctsi/has-way? i2))
-    (t/is (not (ctsi/has-way? i3)))
-    (t/is (some? (-> i3 :animation :way)))) ; <- it exists but is ignored
+    (t/testing "Has way?"
+      (t/is (not (ctsi/has-way? i1)))
+      (t/is (ctsi/has-way? i2))
+      (t/is (not (ctsi/has-way? i3)))
+      (t/is (some? (-> i3 :animation :way)))) ; <- it exists but is ignored
 
-  (t/testing "Set way"
-    (let [new-interaction (ctsi/set-way i2 :out)]
-      (t/is (= :out (-> new-interaction :animation :way)))))))
+    (t/testing "Set way"
+      (let [new-interaction (ctsi/set-way i2 :out)]
+        (t/is (= :out (-> new-interaction :animation :way)))))))
 
 
 (t/deftest option-direction
@@ -468,49 +654,49 @@
         i2 (ctsi/set-animation-type ctsi/default-interaction :push)
         i3 (ctsi/set-animation-type ctsi/default-interaction :dissolve)]
 
-  (t/testing "Has direction?"
-    (t/is (not (ctsi/has-direction? i1)))
-    (t/is (ctsi/has-direction? i2)))
+    (t/testing "Has direction?"
+      (t/is (not (ctsi/has-direction? i1)))
+      (t/is (ctsi/has-direction? i2)))
 
-  (t/testing "Set direction"
-    (let [new-interaction (ctsi/set-direction i2 :left)]
-      (t/is (= :left (-> new-interaction :animation :direction)))))
+    (t/testing "Set direction"
+      (let [new-interaction (ctsi/set-direction i2 :left)]
+        (t/is (= :left (-> new-interaction :animation :direction)))))
 
-  (t/testing "Invert direction"
-    (let [a-none (:animation i3)
-          a-right (:animation i2)
-          a-left (assoc a-right :direction :left)
-          a-up (assoc a-right :direction :up)
-          a-down (assoc a-right :direction :down)
+    (t/testing "Invert direction"
+      (let [a-none (:animation i3)
+            a-right (:animation i2)
+            a-left (assoc a-right :direction :left)
+            a-up (assoc a-right :direction :up)
+            a-down (assoc a-right :direction :down)
 
-          a-nil' (ctsi/invert-direction nil)
-          a-none' (ctsi/invert-direction a-none)
-          a-right' (ctsi/invert-direction a-right)
-          a-left' (ctsi/invert-direction a-left)
-          a-up' (ctsi/invert-direction a-up)
-          a-down' (ctsi/invert-direction a-down)]
+            a-nil' (ctsi/invert-direction nil)
+            a-none' (ctsi/invert-direction a-none)
+            a-right' (ctsi/invert-direction a-right)
+            a-left' (ctsi/invert-direction a-left)
+            a-up' (ctsi/invert-direction a-up)
+            a-down' (ctsi/invert-direction a-down)]
 
-      (t/is (nil? a-nil'))
-      (t/is (nil? (:direction a-none')))
-      (t/is (= :left (:direction a-right')))
-      (t/is (= :right (:direction a-left')))
-      (t/is (= :down (:direction a-up')))
-      (t/is (= :up (:direction a-down')))))))
+        (t/is (nil? a-nil'))
+        (t/is (nil? (:direction a-none')))
+        (t/is (= :left (:direction a-right')))
+        (t/is (= :right (:direction a-left')))
+        (t/is (= :down (:direction a-up')))
+        (t/is (= :up (:direction a-down')))))))
 
 (t/deftest option-offset-effect
   (let [i1 ctsi/default-interaction
         i2 (ctsi/set-animation-type ctsi/default-interaction :slide)
         i3 (ctsi/set-action-type i2 :open-overlay)]
 
-  (t/testing "Has offset-effect"
-    (t/is (not (ctsi/has-offset-effect? i1)))
-    (t/is (ctsi/has-offset-effect? i2))
-    (t/is (not (ctsi/has-offset-effect? i3)))
-    (t/is (some? (-> i3 :animation :offset-effect)))) ; <- it exists but is ignored
+    (t/testing "Has offset-effect"
+      (t/is (not (ctsi/has-offset-effect? i1)))
+      (t/is (ctsi/has-offset-effect? i2))
+      (t/is (not (ctsi/has-offset-effect? i3)))
+      (t/is (some? (-> i3 :animation :offset-effect)))) ; <- it exists but is ignored
 
-  (t/testing "Set offset-effect"
-    (let [new-interaction (ctsi/set-offset-effect i2 true)]
-      (t/is (= true (-> new-interaction :animation :offset-effect)))))))
+    (t/testing "Set offset-effect"
+      (let [new-interaction (ctsi/set-offset-effect i2 true)]
+        (t/is (= true (-> new-interaction :animation :offset-effect)))))))
 
 
 (t/deftest modify-interactions

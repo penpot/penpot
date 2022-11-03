@@ -385,6 +385,9 @@
 (def viewer-local
   (l/derived :viewer-local st/state))
 
+(def viewer-overlays
+  (l/derived :viewer-overlays st/state))
+
 (def comment-threads
   (l/derived :comment-threads st/state))
 

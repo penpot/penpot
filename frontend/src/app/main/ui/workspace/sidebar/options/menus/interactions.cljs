@@ -184,6 +184,8 @@
         destination          (get objects (:destination interaction))
 
         frames               (mf/with-memo [objects] (ctt/get-viewer-frames objects {:all-frames? true}))
+        shape-parent-ids     (mf/with-memo [objects] (cph/get-parent-ids objects (:id shape)))
+        shape-parents        (mf/with-memo [frames shape] (filter (comp (set shape-parent-ids) :id) frames))
 
         overlay-pos-type     (:overlay-pos-type interaction)
         close-click-outside? (:close-click-outside interaction false)
@@ -220,6 +222,14 @@
                 value (when (not= value "") (uuid/uuid value))]
             (update-interaction index #(ctsi/set-destination % value))))
 
+        change-position-relative-to
+        (fn [event]
+          (let [value (-> event
+                          dom/get-target
+                          dom/get-value
+                          uuid/uuid)]
+            (update-interaction index #(ctsi/set-position-relative-to % value))))
+
         change-preserve-scroll
         (fn [event]
           (let [value (-> event dom/get-target dom/checked?)]
@@ -243,9 +253,12 @@
               (dom/add-class! target "error"))))
 
         change-overlay-pos-type
-        (fn [event]
+        (fn [shape-id event]
           (let [value (-> event dom/get-target dom/get-value d/read-string)]
-            (update-interaction index #(ctsi/set-overlay-pos-type % value shape objects))))
+            (update-interaction index #(ctsi/set-overlay-pos-type % value shape objects))
+            (when (= value :manual)
+              (update-interaction index #(ctsi/set-position-relative-to % shape-id)))))
+
 
         toggle-overlay-pos-type
         (fn [pos-type]
@@ -287,8 +300,7 @@
         change-offset-effect
         (fn [event]
           (let [value (-> event dom/get-target dom/checked?)]
-            (update-interaction index #(ctsi/set-offset-effect % value))))
-        ]
+            (update-interaction index #(ctsi/set-offset-effect % value))))]
 
     [:*
      [:div.element-set-options-group {:class (dom/classnames
@@ -378,12 +390,27 @@
 
          (when (ctsi/has-overlay-opts interaction)
            [:*
+            ; Overlay position relative-to (select)
+            [:div.interactions-element
+             [:span.element-set-subtitle.wide (tr "workspace.options.interaction-relative-to")]
+             [:select.input-select
+              {:value (str (:position-relative-to interaction))
+               :on-change change-position-relative-to}
+              (when (not= (:overlay-pos-type interaction) :manual)
+                [:*
+                 [:option {:value ""} (tr "workspace.options.interaction-auto")]
+                 (for [frame shape-parents]
+                   [:option {:key (dm/str "position-relative-to-" (:id frame))
+                             :value (str (:id frame))} (:name frame)])])
+              [:option {:key (dm/str "position-relative-to-" (:id shape))
+                        :value (str (:id shape))} (:name shape) " (" (tr "workspace.options.interaction-self") ")"]]]
+
             ; Overlay position (select)
             [:div.interactions-element
              [:span.element-set-subtitle.wide (tr "workspace.options.interaction-position")]
              [:select.input-select
               {:value (str (:overlay-pos-type interaction))
-               :on-change change-overlay-pos-type}
+               :on-change (partial change-overlay-pos-type (:id shape))}
               (for [[value name] (overlay-pos-type-names)]
                 [:option {:value (str value)} name])]]
 

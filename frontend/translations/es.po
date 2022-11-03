@@ -3621,6 +3621,9 @@ msgstr "Empujar"
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Deslizar"
 
+msgid "workspace.options.interaction-auto"
+msgstr "automático"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
 msgstr "Añadir sombreado de fondo"
@@ -3760,6 +3763,10 @@ msgstr "Arriba derecha"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-position"
 msgstr "Posición"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relativo a"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-preserve-scroll"
