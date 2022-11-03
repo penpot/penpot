@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.services-projects-test
+(ns app-tests.test-rpc-project
   (:require
+   [app-tests.test-helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
-   [app.test-helpers :as th]
    [app.util.time :as dt]
    [clojure.test :as t]))
 

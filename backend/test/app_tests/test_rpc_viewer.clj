@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.services-viewer-test
+(ns app-tests.test-rpc-viewer
   (:require
+   [app-tests.test-helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.test-helpers :as th]
    [clojure.test :as t]
    [datoteka.core :as fs]))
 

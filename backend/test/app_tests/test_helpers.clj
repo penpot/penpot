@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.test-helpers
+(ns app-tests.test-helpers
   (:require
    [app.common.data :as d]
    [app.common.flags :as flags]
@@ -65,7 +65,7 @@
                     :name "test"
                     :file-uri "test"
                     :thumbnail-uri "test"
-                    :path (-> "app/test_files/template.penpot" io/resource fs/path)}]
+                    :path (-> "app_tests/test_files/template.penpot" io/resource fs/path)}]
         system (-> (merge main/system-config main/worker-config)
                    (assoc-in [:app.redis/redis :uri] (:redis-uri config))
                    (assoc-in [:app.db/pool :uri] (:database-uri config))

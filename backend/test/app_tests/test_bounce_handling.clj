@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.bounce-handling-test
+(ns app-tests.test-bounce-handling
   (:require
+   [app-tests.test-helpers :as th]
    [app.db :as db]
    [app.emails :as emails]
    [app.http.awsns :as awsns]
-   [app.test-helpers :as th]
    [app.tokens :as tokens]
    [app.util.time :as dt]
    [clojure.pprint :refer [pprint]]

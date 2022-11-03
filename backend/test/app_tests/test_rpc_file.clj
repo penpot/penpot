@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.services-files-test
+(ns app-tests.test-rpc-file
   (:require
+   [app-tests.test-helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http :as http]
    [app.storage :as sto]
-   [app.test-helpers :as th]
    [app.util.time :as dt]
    [clojure.test :as t]
    [datoteka.core :as fs]))
@@ -124,7 +124,7 @@
 (t/deftest file-gc-task
   (letfn [(create-file-media-object [{:keys [profile-id file-id]}]
             (let [mfile  {:filename "sample.jpg"
-                          :path (th/tempfile "app/test_files/sample.jpg")
+                          :path (th/tempfile "app_tests/test_files/sample.jpg")
                           :mtype "image/jpeg"
                           :size 312043}
                   params {::th/type :upload-file-media-object

@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.services-profile-test
+(ns app-tests.test-rpc-profile
   (:require
+   [app-tests.test-helpers :as th]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.rpc.commands.auth :as cauth]
    [app.rpc.mutations.profile :as profile]
-   [app.test-helpers :as th]
    [app.tokens :as tokens]
    [app.util.time :as dt]
    [clojure.java.io :as io]
@@ -110,7 +110,7 @@
                   :profile-id (:id profile)
                   :file {:filename "sample.jpg"
                          :size 123123
-                         :path (th/tempfile "app/test_files/sample.jpg")
+                         :path (th/tempfile "app_tests/test_files/sample.jpg")
                          :mtype "image/jpeg"}}
             out  (th/mutation! data)]
 

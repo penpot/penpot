@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.services-media-test
+(ns app-tests.test-rpc-media
   (:require
+   [app-tests.test-helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.storage :as sto]
-   [app.test-helpers :as th]
    [clojure.test :as t]
    [datoteka.core :as fs]))
 
@@ -60,7 +60,7 @@
                                    :project-id (:default-project-id prof)
                                    :is-shared false})
         mfile  {:filename "sample.jpg"
-                :path (th/tempfile "app/test_files/sample.jpg")
+                :path (th/tempfile "app_tests/test_files/sample.jpg")
                 :mtype "image/jpeg"
                 :size 312043}
 
@@ -99,7 +99,7 @@
                                    :project-id (:default-project-id prof)
                                    :is-shared false})
         mfile  {:filename "sample.jpg"
-                :path (th/tempfile "app/test_files/sample.jpg")
+                :path (th/tempfile "app_tests/test_files/sample.jpg")
                 :mtype "image/jpeg"
                 :size 312043}
 
