@@ -97,8 +97,16 @@
                    ::layout-item-min-w
                    ::layout-item-align-self]))
 
-(defn layout? [shape]
-  (and (= :frame (:type shape)) (= :flex (:layout shape))))
+(defn layout?
+  ([objects id]
+   (layout? (get objects id)))
+  ([shape]
+   (and (= :frame (:type shape)) (= :flex (:layout shape)))))
+
+(defn layout-child? [objects shape]
+  (let [parent-id (:parent-id shape)
+        parent (get objects parent-id)]
+    (layout? parent)))
 
 (defn wrap? [{:keys [layout-wrap-type]}]
   (= layout-wrap-type :wrap))

@@ -21,6 +21,7 @@
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.zoom :as dwz]
@@ -552,8 +553,11 @@
                                        (filter #(= :frame (get-in % [:obj :type])))
                                        (map #(vector (:old-id %) (get-in % [:obj :id]))))
 
-                  id-duplicated   (first new-selected)]
+                  id-duplicated   (first new-selected)
 
+                  frames (into #{}
+                               (map #(get-in objects [% :frame-id]))
+                               selected)]
               (rx/concat
                (->> (rx/from dup-frames)
                     (rx/map (fn [[old-id new-id]] (dwt/duplicate-thumbnail old-id new-id))))
@@ -561,6 +565,7 @@
                ;; Warning: This order is important for the focus mode.
                (rx/of (dch/commit-changes changes)
                       (select-shapes new-selected)
+                      (dwsl/update-layout-positions frames)
                       (memorize-duplicated id-original id-duplicated))))))))))
 
 (defn change-hover-state

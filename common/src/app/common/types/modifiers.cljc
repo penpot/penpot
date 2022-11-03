@@ -32,6 +32,7 @@
 ;;  - structure-child: Structure recursive
 ;;     * scale-content
 ;;     * rotation
+;;     * change-properties
 
 (def conjv (fnil conj []))
 
@@ -117,6 +118,13 @@
   [modifiers value]
   (-> modifiers
       (update :structure-child conjv {:type :scale-content :value value})))
+
+(defn set-change-property
+  [modifiers property value]
+  (-> modifiers
+      (update :structure-child conjv {:type :change-property
+                                      :property property
+                                      :value value})))
 
 (defn add-modifiers
   [modifiers new-modifiers]
@@ -376,7 +384,7 @@
             (d/removev remove? shapes)))
 
         apply-modifier
-        (fn [shape {:keys [type value index rotation]}]
+        (fn [shape {:keys [type property value index rotation]}]
           (cond-> shape
             (= type :rotation)
             (update :rotation #(mod (+ % rotation) 360))
@@ -395,7 +403,10 @@
             (update :shapes remove-children value)
 
             (= type :scale-content)
-            (apply-scale-content value)))]
+            (apply-scale-content value)
+
+            (= type :change-property)
+            (assoc property value)))]
 
     (as-> shape $
       (reduce apply-modifier $ (:structure-parent modifiers))

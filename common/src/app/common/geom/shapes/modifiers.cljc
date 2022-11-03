@@ -138,20 +138,21 @@
 
     (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
           transformed-parent (gtr/transform-shape parent modifiers)
+
           children (->> transformed-parent
                         :shapes
                         (map (comp apply-modifiers (d/getf objects))))
 
           {auto-width :width auto-height :height}
-          (when (and (d/not-empty? children) (or (ctl/auto-height? parent) (ctl/auto-width? parent)))
-            (gcl/layout-content-bounds parent children))
+          (when (and (d/not-empty? children) (or (ctl/auto-height? transformed-parent) (ctl/auto-width? transformed-parent)))
+            (gcl/layout-content-bounds transformed-parent children))
 
           modifiers
           (cond-> modifiers
-            (and (some? auto-width) (ctl/auto-width? parent))
+            (and (some? auto-width) (ctl/auto-width? transformed-parent))
             (set-parent-auto-width transformed-parent auto-width)
 
-            (and (some? auto-height) (ctl/auto-height? parent))
+            (and (some? auto-height) (ctl/auto-height? transformed-parent))
             (set-parent-auto-height transformed-parent auto-height))]
 
       (assoc-in modif-tree [(:id parent) :modifiers] modifiers))))

@@ -286,7 +286,7 @@
 
        (when show-frame-outline?
          [:& outline/shape-outlines
-          {:objects base-objects
+          {:objects objects-modified
            :hover #{(->> @hover-ids
                          (filter #(cph/frame-shape? (get base-objects %)))
                          (remove selected)
