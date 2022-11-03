@@ -110,4 +110,4 @@
 
 (defn thread-sleep
   [ms]
-  (Thread/sleep ms))
+  (Thread/sleep (long ms)))
