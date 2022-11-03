@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.storage-test
+(ns app-tests.test-storage
   (:require
+   [app-tests.test-helpers :as th]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.storage :as sto]
-   [app.test-helpers :as th]
    [app.util.time :as dt]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -126,7 +126,7 @@
                                     :is-shared false})
 
         mfile   {:filename "sample.jpg"
-                 :path (th/tempfile "app/test_files/sample.jpg")
+                 :path (th/tempfile "app_tests/test_files/sample.jpg")
                  :mtype "image/jpeg"
                  :size 312043}
 
@@ -196,12 +196,12 @@
                                     :project-id proj-id
                                     :is-shared false})
 
-        ttfdata (-> (io/resource "app/test_files/font-1.ttf")
+        ttfdata (-> (io/resource "app_tests/test_files/font-1.ttf")
                     io/input-stream
                     io/read-as-bytes)
 
         mfile   {:filename "sample.jpg"
-                 :path (th/tempfile "app/test_files/sample.jpg")
+                 :path (th/tempfile "app_tests/test_files/sample.jpg")
                  :mtype "image/jpeg"
                  :size 312043}
 
@@ -267,7 +267,7 @@
                                     :project-id (:default-project-id prof)
                                     :is-shared false})
         mfile   {:filename "sample.jpg"
-                 :path (th/tempfile "app/test_files/sample.jpg")
+                 :path (th/tempfile "app_tests/test_files/sample.jpg")
                  :mtype "image/jpeg"
                  :size 312043}
 

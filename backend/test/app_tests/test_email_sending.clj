@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.emails-test
+(ns app-tests.test-email-sending
   (:require
-   [clojure.test :as t]
-   [promesa.core :as p]
+   [app-tests.test-helpers :as th]
    [app.db :as db]
    [app.emails :as emails]
-   [app.test-helpers :as th]))
+   [clojure.test :as t]
+   [promesa.core :as p]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)

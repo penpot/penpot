@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.services-fonts-test
+(ns app-tests.test-rpc-font
   (:require
+   [app-tests.test-helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
    [app.storage :as sto]
-   [app.test-helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]
    [datoteka.io :as io]))
@@ -24,7 +24,7 @@
         proj-id (:default-project-id prof)
         font-id (uuid/custom 10 1)
 
-        ttfdata (-> (io/resource "app/test_files/font-1.ttf")
+        ttfdata (-> (io/resource "app_tests/test_files/font-1.ttf")
                     io/input-stream
                     io/read-as-bytes)
 
@@ -59,7 +59,7 @@
         proj-id (:default-project-id prof)
         font-id (uuid/custom 10 1)
 
-        data    (-> (io/resource "app/test_files/font-1.woff")
+        data    (-> (io/resource "app_tests/test_files/font-1.woff")
                     io/input-stream
                     io/read-as-bytes)
 

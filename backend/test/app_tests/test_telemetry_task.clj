@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.tasks-telemetry-test
+(ns app-tests.test-telemetry-task
   (:require
+   [app-tests.test-helpers :as th]
    [app.db :as db]
    [app.emails :as emails]
-   [app.test-helpers :as th]
    [app.util.time :as dt]
    [clojure.pprint :refer [pprint]]
    [clojure.test :as t]

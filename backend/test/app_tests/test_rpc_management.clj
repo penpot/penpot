@@ -4,16 +4,16 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.services-management-test
+(ns app-tests.test-rpc-management
   (:require
+   [app-tests.test-storage :refer [configure-storage-backend]]
+   [app-tests.test-helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
    [app.storage :as sto]
-   [app.test-helpers :as th]
-   [app.storage-test :refer [configure-storage-backend]]
-   [clojure.test :as t]
    [buddy.core.bytes :as b]
+   [clojure.test :as t]
    [datoteka.core :as fs]))
 
 (t/use-fixtures :once th/state-init)
