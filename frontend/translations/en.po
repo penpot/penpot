@@ -3222,6 +3222,9 @@ msgstr "Push"
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Slide"
 
+msgid "workspace.options.interaction-auto"
+msgstr "auto"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
 msgstr "Add background overlay"
@@ -3361,6 +3364,10 @@ msgstr "Top right"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-position"
 msgstr "Position"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relative to"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-preserve-scroll"
