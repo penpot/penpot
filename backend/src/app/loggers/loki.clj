@@ -85,7 +85,6 @@
     (let [payload  (prepare-payload event)
           response (make-request cfg payload)]
       (when-not (= 204 (:status response))
-        (map? response)
         (l/error :hint "error on sending log to loki (unexpected response)"
                  :response (pr-str response))))
     (catch Throwable cause
