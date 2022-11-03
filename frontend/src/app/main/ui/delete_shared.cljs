@@ -57,8 +57,8 @@
                               (tr "modals.unpublish-shared-confirm.scd-message-many" (i18n/c count-libraries))))
         hint             (if is-delete?
                            (if (= count-files 1)
-                             (tr "modals.delete-shared-confirm.hint" (i18n/c count-files))
-                             (tr "modals.delete-shared-confirm.hint-many" (i18n/c count-files)))
+                             (tr "modals.delete-shared-confirm.hint" (i18n/c count-libraries))
+                             (tr "modals.delete-shared-confirm.hint-many" (i18n/c count-libraries)))
                            (if (= count-files 1)
                              (tr "modals.unpublish-shared-confirm.hint" (i18n/c count-libraries))
                              (tr "modals.unpublish-shared-confirm.hint-many" (i18n/c count-libraries))))
