@@ -1635,17 +1635,17 @@ msgstr[0] ""
 "If you delete it, those assets will move to the local library "
 "of this file. Any unused assets will be lost."
 msgstr[1] ""
-"If you delete it, those assets will move to the local library "
-"of these files. Any unused assets will be lost."
+"If you delete them, those assets will move to the local library "
+"of this file. Any unused assets will be lost."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint-many"
 msgid_plural "modals.delete-shared-confirm.hint-many"
 msgstr[0] ""
-"If you delete them, those assets will move to the local library "
-"of this file. Any unused assets will be lost."
+"If you delete it, those assets will move to the local libraries "
+"of these files. Any unused assets will be lost."
 msgstr[1] ""
-"If you delete them, those assets will move to the local library "
+"If you delete them, those assets will move to the local libraries "
 "of these files. Any unused assets will be lost."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -1812,12 +1812,12 @@ msgstr[1] "Some of the assets in these libraries are in use here:"
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] "If you unpublish it, those assets will move to the local library of this file."
-msgstr[1] "If you unpublish it, those assets will move to the local libraries of these files."
+msgstr[1] "If you unpublish them, those assets will move to the local library of this file."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint-many"
 msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] "If you unpublish them, those assets will move to the local library of this file."
+msgstr[0] "If you unpublish it, those assets will move to the local libraries of these files."
 msgstr[1] "If you unpublish them, those assets will move to the local libraries of these files."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
