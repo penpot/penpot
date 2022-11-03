@@ -13,6 +13,7 @@
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
@@ -434,10 +435,18 @@
         zoom                (mf/deref refs/selected-zoom)
         params              {:page-id page-id :file-id (:id file) :section "interactions"}
 
+        close-modals
+        (mf/use-callback
+         (fn []
+           (st/emit! (dc/stop-picker))
+           (st/emit! (modal/hide!))))
+
         go-back
         (mf/use-callback
          (mf/deps project)
-         #(st/emit! (dw/go-to-dashboard project)))
+         (fn []
+           (close-modals)
+           (st/emit! (dw/go-to-dashboard project))))
 
         go-viewer
         (mf/use-callback
