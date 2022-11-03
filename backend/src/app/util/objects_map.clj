@@ -34,9 +34,10 @@
 (declare create)
 
 (defprotocol IObjectsMap
-  (-initialize! [_])
-  (-compact! [_])
-  (-get-byte-array [_])
+  (load! [_])
+  (modified? [_])
+  (compact! [_])
+  (clone [_])
   (-get-key-hash [_ key])
   (-force-modified! [_]))
 
@@ -70,7 +71,7 @@
                      ^:unsynchronized-mutable blob
                      ^:unsynchronized-mutable header
                      ^:unsynchronized-mutable content
-                     ^:unsynchronized-mutable initialized?
+                     ^:unsynchronized-mutable loaded?
                      ^:unsynchronized-mutable modified?]
 
   IHashEq
@@ -84,47 +85,54 @@
     (.hasheq ^IHashEq this))
 
   IObjectsMap
-  (-initialize! [_]
-    (when-not initialized?
-      ;; (l/trace :fn "-initialize!" :blob blob ::l/async false)
-      (let [hsize      (.getInt ^ByteBuffer blob 0)
-            header'    (.slice ^ByteBuffer blob 4 hsize)
-            content'   (.slice ^ByteBuffer blob
-                                (int (+ 4 hsize))
-                                (int (- (.remaining ^ByteBuffer blob)
-                                        (+ 4 hsize))))
+  (modified? [_] modified?)
 
-            nitems     (long (/ (.remaining ^ByteBuffer header') RECORD-SIZE))
-            positions' (reduce (fn [positions i]
-                                 (let [hb   (.slice ^ByteBuffer header'
-                                                    (int (* i RECORD-SIZE))
-                                                    (int RECORD-SIZE))
-                                       msb  (.getLong ^ByteBuffer hb)
-                                       lsb  (.getLong ^ByteBuffer hb)
-                                       size (.getInt ^ByteBuffer hb)
-                                       pos  (.getInt ^ByteBuffer hb)
-                                       key  (uuid/custom msb lsb)
-                                       val  [size pos]]
-                                   (assoc! positions key val)))
-                               (transient {})
-                               (range nitems))]
-        (set! positions (persistent! positions'))
-        (if *lazy*
-          (set! cache {})
-          (loop [cache'  (transient {})
-                 entries (seq positions)]
-            (if-let [[key [size pos]] (first entries)]
-              (let [tmp (byte-array (- size 4))]
-                (.get ^ByteBuffer content' (int (+ pos 4)) ^bytes tmp (int 0) (int (- size 4)))
-                ;; (l/trace :fn "-initialize!" :step "preload" :key key :size size :pos pos ::l/async false)
-                (recur (assoc! cache' key (fres/decode tmp))
-                       (rest entries)))
+  (load! [this]
+    (let [hsize      (.getInt ^ByteBuffer blob 0)
+          header'    (.slice ^ByteBuffer blob 4 hsize)
+          content'   (.slice ^ByteBuffer blob
+                             (int (+ 4 hsize))
+                             (int (- (.remaining ^ByteBuffer blob)
+                                     (+ 4 hsize))))
 
-              (set! cache (persistent! cache')))))
+          nitems     (long (/ (.remaining ^ByteBuffer header') RECORD-SIZE))
+          positions' (reduce (fn [positions i]
+                               (let [hb   (.slice ^ByteBuffer header'
+                                                  (int (* i RECORD-SIZE))
+                                                  (int RECORD-SIZE))
+                                     msb  (.getLong ^ByteBuffer hb)
+                                     lsb  (.getLong ^ByteBuffer hb)
+                                     size (.getInt ^ByteBuffer hb)
+                                     pos  (.getInt ^ByteBuffer hb)
+                                     key  (uuid/custom msb lsb)
+                                     val  [size pos]]
+                                 (assoc! positions key val)))
+                             (transient {})
+                             (range nitems))]
+      (set! positions (persistent! positions'))
+      (if *lazy*
+        (set! cache {})
+        (loop [cache'  (transient {})
+               entries (seq positions)]
+          (if-let [[key [size pos]] (first entries)]
+            (let [tmp (byte-array (- size 4))]
+              (.get ^ByteBuffer content' (int (+ pos 4)) ^bytes tmp (int 0) (int (- size 4)))
+              (recur (assoc! cache' key (fres/decode tmp))
+                     (rest entries)))
 
-        (set! header header')
-        (set! content content')
-        (set! initialized? true))))
+            (set! cache (persistent! cache')))))
+
+      (set! header header')
+      (set! content content')
+      (set! loaded? true))
+    this)
+
+  (-get-key-hash [this key]
+    (when-not loaded? (load! this))
+    (if (contains? cache key)
+      (c/hash (get cache key))
+      (let [[_ pos] (get positions key)]
+        (.getInt ^ByteBuffer content (int pos)))))
 
   (-force-modified! [this]
     (set! modified? true)
@@ -133,7 +141,7 @@
         (set! positions (assoc positions key nil))
         (set! cache (assoc cache key val)))))
 
-  (-compact! [_]
+  (compact! [this]
     (when modified?
       (let [[total-items total-size new-items new-hashes]
             (loop [entries     (seq positions)
@@ -181,8 +189,6 @@
                           hval (get new-hashes key)
                           size (+ (alength ^bytes bval) 4)]
 
-                      ;; (l/trace :fn "-compact!" :cache "miss" :key key :size size :pos position ::l/async false)
-
                       (.putInt ^ByteBuffer rbuf (int size))
                       (.putInt ^ByteBuffer rbuf (int position))
                       (.rewind ^ByteBuffer rbuf)
@@ -199,7 +205,6 @@
                       (.putInt ^ByteBuffer rbuf (int position))
                       (.rewind ^ByteBuffer rbuf)
 
-                      ;; (l/trace :fn "-compact!" :cache "hit" :key key :size size :pos position ::l/async false)
                       (.put ^ByteBuffer header' ^ByteBuffer rbuf)
                       (.put ^ByteBuffer content' ^ByteBuffer cbuf)
                       (recur (long (+ position size))
@@ -212,112 +217,82 @@
         (.rewind ^ByteBuffer content')
         (.rewind ^ByteBuffer blob')
 
-        ;; (l/trace :fn "-compact!" :step "end" ::l/async false)
-
         (set! positions positions')
         (set! modified? false)
         (set! blob blob')
         (set! header header')
-        (set! content content'))))
+        (set! content content')))
+    this)
 
-  (-get-byte-array [this]
-    ;; (l/trace :fn "-get-byte-array" :this (.getHashCode this) :blob blob ::l/async false)
-    (-compact! this)
-    (.array ^ByteBuffer blob))
-
-  (-get-key-hash [this key]
-    (-initialize! this)
-    (if (contains? cache key)
-      (c/hash (get cache key))
-      (let [[_ pos] (get positions key)]
-        (.getInt ^ByteBuffer content (int pos)))))
+  (clone [_]
+    (if loaded?
+      (ObjectsMap. metadata hash positions cache blob header content loaded? modified?)
+      (ObjectsMap. metadata nil nil nil blob nil nil false false)))
 
   clojure.lang.IDeref
-  (deref [_]
-    {:positions positions
-     :cache cache
-     :blob blob
-     :header header
-     :content content
-     :initialized? initialized?
-     :modified? modified?})
-
-  Cloneable
-  (clone [_]
-    (if initialized?
-      (ObjectsMap. metadata hash positions cache blob header content initialized? modified?)
-      (ObjectsMap. metadata nil nil nil blob nil nil false false)))
+  (deref [this]
+    (compact! this)
+    (.array ^ByteBuffer blob))
 
   IObj
   (meta [_] metadata)
-  (withMeta [this meta]
-    (set! metadata meta)
-    this)
+  (withMeta [_ metadata]
+    (ObjectsMap. metadata hash positions cache blob header content loaded? modified?))
 
   Seqable
   (seq [this]
-    (-initialize! this)
+    (when-not loaded? (load! this))
     (RT/chunkIteratorSeq (.iterator ^Iterable this)))
 
   IPersistentCollection
-  (equiv [_ _]
-    (throw (UnsupportedOperationException. "not implemented")))
+  (equiv [this other]
+    (identical? this other))
 
   IPersistentMap
   (cons [this o]
-    (-initialize! this)
+    (when-not loaded? (load! this))
     (if (map-entry? o)
-      (do
-        ;; (l/trace :fn "cons" :key (key o))
-        (assoc this (key o) (val o)))
+      (assoc this (key o) (val o))
       (if (vector? o)
-        (do
-          ;; (l/trace :fn "cons" :key (nth o 0))
-          (assoc this (nth o 0) (nth o 1)))
+        (assoc this (nth o 0) (nth o 1))
         (throw (UnsupportedOperationException. "invalid arguments to cons")))))
 
   (empty [_]
     (create))
 
   (containsKey [this key]
-    (-initialize! this)
+    (when-not loaded? (load! this))
     (contains? positions key))
 
   (entryAt [this key]
-    (-initialize! this)
+    (when-not loaded? (load! this))
     (ObjectsMapEntry. this key))
 
   (valAt [this key]
-    (-initialize! this)
-    ;; (strace/print-stack-trace (ex-info "" {}))
+    (when-not loaded? (load! this))
     (if (contains? cache key)
-      (do
-        ;; (l/trace :fn "valAt" :key key :cache "hit")
-        (get cache key))
-      (do
-        (if (contains? positions key)
-          (let [[size pos] (get positions key)
-                tmp        (byte-array (- size 4))]
-            (.get ^ByteBuffer content (int (+ pos 4)) ^bytes tmp (int 0) (int (- size 4)))
-            ;; (l/trace :fn "valAt" :key key :cache "miss" :size size :pos pos)
-
-            (let [val (fres/decode tmp)]
-              (set! cache (assoc cache key val))
-              val))
-          (do
-            ;; (l/trace :fn "valAt" :key key :cache "miss" :val nil)
-            (set! cache (assoc cache key nil))
-            nil)))))
+      (get cache key)
+      (if (contains? positions key)
+        (let [[size pos] (get positions key)
+              tmp        (byte-array (- size 4))]
+          (.get ^ByteBuffer content (int (+ pos 4)) ^bytes tmp (int 0) (int (- size 4)))
+          (let [val (fres/decode tmp)]
+            (set! cache (assoc cache key val))
+            val))
+        (do
+          (set! cache (assoc cache key nil))
+          nil))))
 
   (valAt [this key not-found]
-    (-initialize! this)
+    (when-not loaded? (load! this))
     (if (.containsKey ^IPersistentMap positions key)
       (.valAt this key)
       not-found))
 
   (assoc [this key val]
-    (-initialize! this)
-    ;; (l/trace :fn "assoc" :key key ::l/async false)
+    (when-not loaded? (load! this))
+    (when-not (instance? UUID key)
+      (throw (IllegalArgumentException. "key should be an instance of UUID")))
     (ObjectsMap. metadata
                  nil
                  (assoc positions key nil)
@@ -325,15 +300,14 @@
                  blob
                  header
                  content
-                 initialized?
+                 loaded?
                  true))
 
   (assocEx [_ _ _]
     (throw (UnsupportedOperationException. "method not implemented")))
 
   (without [this key]
-    (-initialize! this)
-    ;; (l/trace :fn "without" :key key ::l/async false)
+    (when-not loaded? (load! this))
     (ObjectsMap. metadata
                  nil
                  (dissoc positions key)
@@ -341,16 +315,17 @@
                  blob
                  header
                  content
-                 initialized?
+                 loaded?
                  true))
 
   Counted
-  (count [_]
+  (count [this]
+    (when-not loaded? (load! this))
     (count positions))
 
   Iterable
   (iterator [this]
-    (-initialize! this)
+    (when-not loaded? (load! this))
     (ObjectsMapIterator. (.iterator ^Iterable positions) this))
   )
 
@@ -376,12 +351,16 @@
     objects
     (into (create) objects)))
 
+(defn objects-map?
+  [o]
+  (instance? ObjectsMap o))
+
 (fres/add-handlers!
  {:name "penpot/experimental/objects-map"
   :class ObjectsMap
   :wfn (fn [n w o]
          (fres/write-tag! w n)
-         (fres/write-bytes! w (-get-byte-array o)))
+         (fres/write-bytes! w (deref o)))
   :rfn (fn [r]
          (-> r fres/read-object! create))})
 
