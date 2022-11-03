@@ -36,13 +36,6 @@
       (let [obj (dissoc obj id)]
         (t/is (not (contains? obj id))))))
 
-  (t/testing "dissoc"
-    (let [id  (uuid/custom 0 1)
-          obj (-> (omap/create) (assoc id {:foo 1}))]
-      (t/is (contains? obj id))
-      (let [obj (dissoc obj id)]
-        (t/is (not (contains? obj id))))))
-
   (t/testing "seq"
     (let [id  (uuid/custom 0 1)
           obj (-> (omap/create) (assoc id 1))]
@@ -52,7 +45,7 @@
         (t/is (= (key entry) id))
         (t/is (= (val entry) 1)))))
 
-  (t/testing "const & count"
+  (t/testing "cons & count"
     (let [obj (into (omap/create) [[uuid/zero 1]])]
       (t/is (contains? obj uuid/zero))
       (t/is (= 1 (count obj)))
