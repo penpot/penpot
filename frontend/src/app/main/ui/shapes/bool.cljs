@@ -14,7 +14,6 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
-;; TODO LAYOUT: REVIEW DYNAMIC CHANGES IN BOOLEANS
 (defn bool-shape
   [shape-wrapper]
   (mf/fnc bool-shape
@@ -34,9 +33,7 @@
                      (:bool-content shape)
 
                      (some? childs)
-                     (->> childs
-                          #_(d/mapm #(gsh/transform-shape %2))
-                          (gsh/calc-bool-content shape)))))]
+                     (gsh/calc-bool-content shape childs))))]
 
             [:*
              (when (some? bool-content)

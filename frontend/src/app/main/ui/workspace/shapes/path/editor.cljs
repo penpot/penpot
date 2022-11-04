@@ -185,8 +185,9 @@
         matches      (concat (second (:x snap-matches)) (second (:y snap-matches)))]
 
     [:g.snap-paths
-     (for [[from to] matches]
-       [:line {:x1 (:x from)
+     (for [[idx [from to]] (d/enumerate matches)]
+       [:line {:key (dm/str "snap-" idx "-" from "-" to)
+               :x1 (:x from)
                :y1 (:y from)
                :x2 (:x to)
                :y2 (:y to)

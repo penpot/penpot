@@ -57,17 +57,23 @@
                    (dwm/apply-modifiers)))
           (rx/empty))))))
 
-;; TODO LAYOUT: Remove constraints from children
+(defn get-layout-initializer
+  [type]
+  (let [initial-layout-data (if (= type :flex) initial-flex-layout initial-grid-layout)]
+    (fn [shape]
+      (-> shape
+          (merge shape initial-layout-data)))))
+
 (defn create-layout
   [ids type]
   (ptk/reify ::create-layout
     ptk/WatchEvent
-    (watch [_ _ _]
-      (if (= type :flex)
-        (rx/of (dwc/update-shapes ids #(merge % initial-flex-layout))
-               (update-layout-positions ids))
-        (rx/of (dwc/update-shapes ids #(merge % initial-grid-layout))
-               (update-layout-positions ids))))))
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            children-ids (into [] (mapcat #(get-in objects [% :shapes])) ids)]
+        (rx/of (dwc/update-shapes ids (get-layout-initializer type))
+               (update-layout-positions ids)
+               (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v)))))))
 
 (defn remove-layout
   [ids]

@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.path.commands :as upc]
-   [app.common.types.modifiers :as ctm]))
+   [app.common.path.commands :as upc]))
 
 (defn lookup-page
   ([state]
@@ -127,16 +127,15 @@
 (defn select-bool-children
   [parent-id state]
   (let [objects   (lookup-page-objects state)
-        selected  (lookup-selected-raw state)
         modifiers (:workspace-modifiers state)
-
         children-ids (cph/get-children-ids objects parent-id)
-        selected-children (into [] (filter selected) children-ids)
-
-        modifiers    (select-keys modifiers selected-children)
-        children     (select-keys objects children-ids)]
+        children
+        (-> (select-keys objects children-ids)
+            (d/update-vals
+             (fn [child]
+               (cond-> child
+                 (contains? modifiers (:id child))
+                 (gsh/transform-shape (get-in modifiers [(:id child) :modifiers]))))))]
 
     (as-> children $
-      ;; TODO LAYOUT: REVIEW THIS
-      (ctm/merge-modifiers $ modifiers)
       (d/mapm (set-content-modifiers state) $))))

@@ -319,17 +319,14 @@
     (watch [_ _ _]
       (letfn [(update-fn [shape]
                 (let [{:keys [selrect grow-type]} shape
-                      {shape-width :width shape-height :height} selrect
-                      modifier-width (ctm/change-dimensions shape :width new-width)
-                      modifier-height (ctm/change-dimensions shape :height new-height)]
-                  ;; TODO LAYOUT: MEZCLAR ESTOS EN UN UNICO MODIFIER
+                      {shape-width :width shape-height :height} selrect]
                   (cond-> shape
                     (and (not-changed? shape-width new-width) (= grow-type :auto-width))
-                    (gsh/transform-shape modifier-width)
+                    (gsh/transform-shape (ctm/change-dimensions shape :width new-width))
 
                     (and (not-changed? shape-height new-height)
                          (or (= grow-type :auto-height) (= grow-type :auto-width)))
-                    (gsh/transform-shape modifier-height))))]
+                    (gsh/transform-shape (ctm/change-dimensions shape :height new-height)))))]
 
         (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? false}))))))
 
@@ -346,17 +343,13 @@
 (defn apply-text-modifier
   [shape {:keys [width height position-data]}]
 
-  (let [modifier-width (when width (ctm/change-dimensions shape :width width))
-        modifier-height (when height (ctm/change-dimensions shape :height height))
-
-        ;; TODO LAYOUT: MEZCLAR LOS DOS EN UN UNICO MODIFIER
-        new-shape
+  (let [new-shape
         (cond-> shape
-          (some? modifier-width)
-          (gsh/transform-shape modifier-width)
+          (some? width)
+          (gsh/transform-shape (ctm/change-dimensions shape :width width))
 
-          (some? modifier-height)
-          (gsh/transform-shape modifier-height)
+          (some? height)
+          (gsh/transform-shape (ctm/change-dimensions shape :height height))
 
           (some? position-data)
           (assoc :position-data position-data))
