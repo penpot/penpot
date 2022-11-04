@@ -460,9 +460,7 @@
                               (rx/switch-map
                                (fn [pos]
                                  (->> (snap/closest-snap-move page-id shapes objects layout zoom focus pos)
-                                      (rx/map #(vector pos %)))))))
-
-             drop-frame (atom nil)]
+                                      (rx/map #(vector pos %)))))))]
          (if (empty? shapes)
            (rx/of (finish-transform))
            (let [move-stream
@@ -496,7 +494,7 @@
               (->> move-stream
                    (rx/last)
                    (rx/mapcat
-                    (fn [[move-vector target-frame drop-index]]
+                    (fn [[_ target-frame drop-index]]
                       (rx/of (dwu/start-undo-transaction)
                              (move-shapes-to-frame ids target-frame drop-index)
                              (dwm/apply-modifiers {:undo-transation? false})
@@ -606,7 +604,7 @@
                 (pcb/with-objects objects)
                 (pcb/change-parent frame-id moving-shapes drop-index))]
 
-        (when (and (some? frame-id) (not (empty? changes)))
+        (when (and (some? frame-id) (d/not-empty? changes))
           (rx/of (dch/commit-changes changes)
                  (dwc/expand-collapse frame-id)))))))
 
@@ -637,7 +635,7 @@
                         selected
                         (-> (ctm/empty-modifiers)
                             (ctm/set-resize (gpt/point -1.0 1.0) origin)
-                            (ctm/move (gpt/point (:width selrect) 0))))]
+                            (ctm/set-move (gpt/point (:width selrect) 0))))]
 
         (rx/of (dwm/set-modifiers modif-tree true)
                (dwm/apply-modifiers))))))
@@ -656,7 +654,7 @@
                         selected
                         (-> (ctm/empty-modifiers)
                             (ctm/set-resize (gpt/point 1.0 -1.0) origin)
-                            (ctm/move (gpt/point 0 (:height selrect)))))]
+                            (ctm/set-move (gpt/point 0 (:height selrect)))))]
 
         (rx/of (dwm/set-modifiers modif-tree true)
                (dwm/apply-modifiers))))))

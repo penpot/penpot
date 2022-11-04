@@ -21,6 +21,7 @@
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
+   [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
 (mf/defc pixel-grid
@@ -34,8 +35,8 @@
                :pattern-units "userSpaceOnUse"}
      [:path {:d "M 1 0 L 0 0 0 1"
              :style {:fill "none"
-                     :stroke "var(--color-info)"
-                     :stroke-opacity "0.2"
+                     :stroke (if (debug? :pixel-grid) "red" "var(--color-info)")
+                     :stroke-opacity (if (debug? :pixel-grid) 1 "0.2")
                      :stroke-width (str (/ 1 zoom))}}]]]
    [:rect {:x (:x vbox)
            :y (:y vbox)

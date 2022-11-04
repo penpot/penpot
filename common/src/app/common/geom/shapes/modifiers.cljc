@@ -26,7 +26,6 @@
 ;;                           [(get-in objects [k :name]) v]))
 ;;                    modif-tree))))
 
-
 (defn set-children-modifiers
   [modif-tree objects parent ignore-constraints snap-pixel?]
   (let [children (map (d/getf objects) (:shapes parent))
@@ -52,10 +51,9 @@
   (= :frame (:type shape)))
 
 (defn set-layout-modifiers
-  ;; TODO LAYOUT: SNAP PIXEL!
-  [modif-tree objects parent _snap-pixel?]
+  [modif-tree objects parent process-child?]
 
-  (letfn [(process-child [transformed-parent _snap-pixel? modif-tree child]
+  (letfn [(process-child [transformed-parent modif-tree child]
             (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
                   child-modifiers (-> modifiers
                                       (ctm/select-child-geometry-modifiers)
@@ -88,7 +86,9 @@
           transformed-parent (gtr/transform-shape parent modifiers)
           children (map (d/getf objects) (:shapes transformed-parent))
 
-          modif-tree   (reduce (partial process-child transformed-parent _snap-pixel?) modif-tree children)
+          modif-tree   (if process-child?
+                         (reduce (partial process-child transformed-parent) modif-tree children)
+                         modif-tree)
           children     (->> children (map (partial apply-modifiers modif-tree)))
 
           layout-data  (gcl/calc-layout-data transformed-parent children)
@@ -169,16 +169,13 @@
         result
 
         ;; Frame found, but not layout we return the last layout found (or the id)
-        (and (and (= :frame (:type parent))
-                  (not (ctl/auto-width? parent))
-                  (not (ctl/auto-height? parent)))
-             (not (:layout parent)))
+        (and (= :frame (:type parent))
+             (not (ctl/layout? parent)))
         result
 
         ;; Layout found. We continue upward but we mark this layout
-        (and (= :frame (:type parent))
-             (:layout parent))
-        (:id parent)
+        (ctl/layout? parent)
+        (recur (:id parent) (:id parent))
 
         ;; If group or boolean or other type of group we continue with the last result
         :else
@@ -238,42 +235,50 @@
         (recur (:parent-id current))))))
 
 (defn- calculate-modifiers
-  ([objects snap-pixel? ignore-constraints [modif-tree recalculate] shape]
-   (calculate-modifiers objects snap-pixel? ignore-constraints false [modif-tree recalculate] shape))
+  [objects snap-pixel? ignore-constraints [modif-tree recalculate] shape]
+  (let [shape-id (:id shape)
+        root? (= uuid/zero shape-id)
+        modifiers (get-in modif-tree [shape-id :modifiers])
 
-  ([objects snap-pixel? ignore-constraints ignore-auto? [modif-tree recalculate] shape]
-   (let [shape-id (:id shape)
-         root? (= uuid/zero shape-id)
-         modifiers (get-in modif-tree [shape-id :modifiers])
+        modifiers (cond-> modifiers
+                    (and (not root?) (ctm/has-geometry? modifiers) snap-pixel?)
+                    (gpp/set-pixel-precision shape))
 
-         modifiers (cond-> modifiers
-                     (and (not root?) (ctm/has-geometry? modifiers) snap-pixel?)
-                     (gpp/set-pixel-precision shape))
+        modif-tree (-> modif-tree (assoc-in [shape-id :modifiers] modifiers))
 
-         modif-tree (-> modif-tree (assoc-in [shape-id :modifiers] modifiers))
+        has-modifiers? (ctm/child-modifiers? modifiers)
+        is-layout? (ctl/layout? shape)
+        is-auto?   (or (ctl/auto-height? shape) (ctl/auto-width? shape))
+        is-parent? (or (group? shape) (and (frame? shape) (not (ctl/layout? shape))))
 
-         has-modifiers? (ctm/child-modifiers? modifiers)
-         is-layout? (ctl/layout? shape)
-         is-auto?   (or (ctl/auto-height? shape) (ctl/auto-width? shape))
-         is-parent? (or (group? shape) (and (frame? shape) (not (ctl/layout? shape))))
+        ;; If the current child is inside the layout we ignore the constraints
+        is-inside-layout? (inside-layout? objects shape)]
 
-         ;; If the current child is inside the layout we ignore the constraints
-         is-inside-layout? (inside-layout? objects shape)]
+    [(cond-> modif-tree
+       (and has-modifiers? is-parent? (not root?))
+       (set-children-modifiers objects shape (or ignore-constraints is-inside-layout?) snap-pixel?)
 
-     [(cond-> modif-tree
-        (and has-modifiers? is-parent? (not root?))
-        (set-children-modifiers objects shape (or ignore-constraints is-inside-layout?) snap-pixel?)
+       is-layout?
+       (set-layout-modifiers objects shape true)
 
-        is-layout?
-        (set-layout-modifiers objects shape snap-pixel?)
+       is-auto?
+       (set-auto-modifiers objects shape))
 
-        (and (not ignore-auto?) is-auto?)
-        (set-auto-modifiers objects shape))
+     (cond-> recalculate
+       ;; Auto-width/height can change the positions in the parent so we need to recalculate
+       is-auto?
+       (conj (:id shape)))]))
 
-      (cond-> recalculate
-        ;; Auto-width/height can change the positions in the parent so we need to recalculate
-        (and (not ignore-auto?) is-auto?)
-        (conj (:id shape)))])))
+(defn- calculate-reflow-layout
+  [objects snap-pixel? modif-tree shape]
+  (let [is-layout? (ctl/layout? shape)
+        is-auto?   (or (ctl/auto-height? shape) (ctl/auto-width? shape))]
+    (cond-> modif-tree
+      is-layout?
+      (set-layout-modifiers objects shape false)
+
+      is-auto?
+      (set-auto-modifiers objects shape))))
 
 (defn set-objects-modifiers
   [modif-tree objects ignore-constraints snap-pixel?]
@@ -284,8 +289,19 @@
         (reduce (partial calculate-modifiers objects snap-pixel? ignore-constraints) [modif-tree #{}] shapes-tree)
 
         shapes-tree (resolve-tree-sequence recalculate objects)
-        [modif-tree _]
-        (reduce (partial calculate-modifiers objects snap-pixel? ignore-constraints true) [modif-tree #{}] shapes-tree)]
+
+        ;; We need to go again and recalculate the layout positions+hug
+        ;; TODO LAYOUT: How to remove this recalculus?
+        modif-tree
+        (->> shapes-tree
+             reverse
+             (filter ctl/layout?)
+             (reduce (partial calculate-reflow-layout objects snap-pixel?) modif-tree ))
+
+        modif-tree
+        (->> shapes-tree
+             (filter ctl/layout?)
+             (reduce (partial calculate-reflow-layout objects snap-pixel?) modif-tree ))]
 
     ;;#?(:cljs
     ;;   (.log js/console ">result" (modif->js modif-tree objects)))

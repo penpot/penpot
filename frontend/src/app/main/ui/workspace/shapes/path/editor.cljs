@@ -6,6 +6,8 @@
 
 (ns app.main.ui.workspace.shapes.path.editor
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gsp]
    [app.common.path.commands :as upc]
@@ -308,7 +310,7 @@
                         :start-path? start-p?
                         :zoom zoom}]])
 
-     (for [position points]
+     (for [[index position] (d/enumerate points)]
        (let [show-handler?
              (fn [[index prefix]]
                (let [handler-position (upc/handler->point content index prefix)]
@@ -322,7 +324,7 @@
              pos-handlers (->> pos-handlers (filter show-handler?))
              curve? (boolean (seq pos-handlers))]
 
-         [:g.path-node
+         [:g.path-node {:key (dm/str index "-" (:x position) "-" (:y position))}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
            (for [[index prefix] pos-handlers]
              (let [handler-position (upc/handler->point content index prefix)

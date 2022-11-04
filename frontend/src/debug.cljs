@@ -70,6 +70,9 @@
 
     ;; Enable a widget to show the auto-layout drop-zones
     :layout-drop-zones
+
+    ;; Makes the pixel grid red so its more visibile
+    :pixel-grid
     })
 
 ;; These events are excluded when we activate the :events flag

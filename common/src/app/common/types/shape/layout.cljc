@@ -46,15 +46,14 @@
 (s/def ::p4 ::us/safe-number)
 
 (s/def ::layout-padding
-  (s/keys :req-un [::p1]
-          :opt-un [::p2 ::p3 ::p4]))
+  (s/keys :opt-un [::p1 ::p2 ::p3 ::p4]))
 
 (s/def ::row-gap ::us/safe-number)
 (s/def ::column-gap ::us/safe-number)
 (s/def ::layout-type #{:flex :grid})
 
 (s/def ::layout-gap
-  (s/keys :req-un [::row-gap ::column-gap]))
+  (s/keys :opt-un [::row-gap ::column-gap]))
 
 (s/def ::layout-container-props
   (s/keys :opt-un [::layout
@@ -74,8 +73,7 @@
 (s/def ::m3 ::us/safe-number)
 (s/def ::m4 ::us/safe-number)
 
-(s/def ::layout-item-margin (s/keys :req-un [::m1]
-                                    :opt-un [::m2 ::m3 ::m4]))
+(s/def ::layout-item-margin (s/keys :opt-un [::m1 ::m2 ::m3 ::m4]))
 
 (s/def ::layout-item-margin-type #{:simple :multiple})
 (s/def ::layout-item-h-sizing #{:fill :fix :auto})

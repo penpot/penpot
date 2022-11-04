@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.math :as mth]
    [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
