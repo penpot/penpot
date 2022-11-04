@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-29 13:03+0000\n"
+"PO-Revision-Date: 2022-11-05 10:09+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -31,7 +31,7 @@ msgstr "Ein Demo-Konto erstellen"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
-msgstr "Einfach testen?"
+msgstr "Wollen Sie es einfach ausprobieren?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
