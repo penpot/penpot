@@ -106,6 +106,22 @@
         parent (get objects parent-id)]
     (layout? parent)))
 
+(defn inside-layout?
+  "Check if the shape is inside a layout"
+  [objects shape]
+
+  (loop [current-id (:id shape)]
+    (let [current (get objects current-id)]
+      (cond
+        (or (nil? current) (= current-id (:parent-id current)))
+        false
+
+        (= :frame (:type current))
+        (:layout current)
+
+        :else
+        (recur (:parent-id current))))))
+
 (defn wrap? [{:keys [layout-wrap-type]}]
   (= layout-wrap-type :wrap))
 
