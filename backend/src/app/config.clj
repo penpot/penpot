@@ -151,7 +151,6 @@
 (s/def ::http-server-max-multipart-body-size ::us/integer)
 (s/def ::http-server-io-threads ::us/integer)
 (s/def ::http-server-worker-threads ::us/integer)
-(s/def ::initial-project-skey ::us/string)
 (s/def ::ldap-attrs-email ::us/string)
 (s/def ::ldap-attrs-fullname ::us/string)
 (s/def ::ldap-attrs-username ::us/string)
@@ -248,7 +247,6 @@
                    ::http-server-max-multipart-body-size
                    ::http-server-io-threads
                    ::http-server-worker-threads
-                   ::initial-project-skey
                    ::ldap-attrs-email
                    ::ldap-attrs-fullname
                    ::ldap-attrs-username
