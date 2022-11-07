@@ -81,7 +81,6 @@
         cp (gsi/line-line-intersect c3 (gpt/add c3 dir-v) p0 p3)]
     (gpt/to-vec c3 cp)))
 
-
 (defn top-vector
   [child-points parent-points]
 

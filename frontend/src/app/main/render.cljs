@@ -81,9 +81,7 @@
       [{:keys [shape] :as props}]
 
       (let [render-thumbnails? (mf/use-ctx muc/render-thumbnails)
-            childs (mapv #(get objects %) (:shapes shape))
-            ;;shape  (gsh/transform-shape shape)
-            ]
+            childs (mapv #(get objects %) (:shapes shape))]
         (if (and render-thumbnails? (some? (:thumbnail shape)))
           [:& frame/frame-thumbnail {:shape shape :bounds (:children-bounds shape)}]
           [:& frame-shape {:shape shape :childs childs}])))))
@@ -136,8 +134,7 @@
           bool-wrapper    (mf/use-memo (mf/deps objects) #(bool-wrapper-factory objects))
           frame-wrapper   (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
-        (let [;;shape (gsh/transform-shape shape)
-              opts #js {:shape shape}
+        (let [opts #js {:shape shape}
               svg-raw? (= :svg-raw (:type shape))]
           (if-not svg-raw?
             [:> shape-container {:shape shape}
@@ -167,9 +164,7 @@
   [objects object]
   (let [shapes   (cph/get-immediate-children objects)
         srect    (gsh/selection-rect shapes)
-        object   (merge object (select-keys srect [:x :y :width :height]))
-        ;; object   (gsh/transform-shape object)
-        ]
+        object   (merge object (select-keys srect [:x :y :width :height]))]
     (assoc object :fill-color "#f0f0f0")))
 
 (defn adapt-objects-for-shape

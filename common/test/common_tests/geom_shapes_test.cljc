@@ -171,12 +171,11 @@
   (t/testing "Transform shape with invalid selrect fails gracefully"
     (t/are [type selrect]
         (let [modifiers (ctm/move-modifiers 0 0)
-              shape-before (-> (create-test-shape type {:modifiers modifiers})
-                               (assoc :selrect selrect))
-              shape-after  (gsh/transform-shape shape-before)]
+              shape-before (-> (create-test-shape type) (assoc :selrect selrect))
+              shape-after  (gsh/transform-shape shape-before modifiers)]
           
-          (t/is (not= (:selrect shape-before)
-                      (:selrect shape-after))))
+          (t/is (= (:selrect shape-before)
+                   (:selrect shape-after))))
 
       :rect {:x 0.0 :y 0.0 :x1 0.0 :y1 0.0 :x2 ##Inf :y2 ##Inf :width ##Inf :height ##Inf}
       :path {:x 0.0 :y 0.0 :x1 0.0 :y1 0.0 :x2 ##Inf :y2 ##Inf :width ##Inf :height ##Inf}

@@ -16,6 +16,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dc]
    [app.main.data.workspace.changes :as dch]
@@ -148,7 +149,7 @@
 
              layout-ids (->> ids
                              (mapcat (partial cph/get-parent-ids objects))
-                             (filter (partial cph/layout-shape? objects)))
+                             (filter (partial ctl/layout? objects)))
 
              components-v2 (features/active-feature? state :components-v2)
 

@@ -350,7 +350,6 @@
             [props]
             (let [shape     (obj/get props "shape")
                   childs    (mapv #(get objects %) (:shapes shape))
-            ;;shape     (gsh/transform-shape shape)
                   props     (obj/merge! #js {} props
                                         #js {:shape shape
                                              :childs childs

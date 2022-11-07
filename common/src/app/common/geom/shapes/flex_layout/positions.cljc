@@ -249,7 +249,6 @@
           (some? margin-y)
           (gpt/add (vv margin-y)))
 
-
         ;; Fix position when layout is flipped
         corner-p
         (cond-> corner-p

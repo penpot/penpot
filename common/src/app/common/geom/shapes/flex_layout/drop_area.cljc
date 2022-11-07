@@ -16,6 +16,7 @@
    [app.common.types.shape.layout :as ctl]))
 
 (defn layout-drop-areas
+  "Retrieve the layout drop areas to move shapes inside layouts"
   [{:keys [margin-x margin-y] :as frame} layout-data children]
 
   (let [col?      (ctl/col? frame)
@@ -84,14 +85,7 @@
                      (-> (gsr/make-rect x (+ y half-point-height) width (- height half-point-height))
                          (assoc :index (if reverse? index (inc index))))]))
 
-                result (conj result line-area-1 line-area-2)
-
-                ;;line-area
-                ;;(-> (gsr/make-rect x y width height)
-                ;;    (assoc :index (if reverse? (inc index) index)))
-                ;;result (conj result line-area)
-                ;;result (conj result (gsr/make-rect box-x box-y box-width box-height))
-                ]
+                result (conj result line-area-1 line-area-2)]
 
             [result parent-rect (+ x width) (+ y height)]))
 
@@ -157,10 +151,6 @@
                 line-area (gsr/make-rect x y width height)
 
                 children (subvec children from-idx (+ from-idx num-children))
-
-
-                ;; To debug the lines
-                ;;result (conj result line-area)
 
                 result (first (reduce redfn-child [result line-area] (d/with-next children)))]
 

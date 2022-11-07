@@ -341,7 +341,6 @@
   (let [shape (mf/use-memo
                (mf/deps shapes)
                #(->> shapes
-                     #_(map gsh/transform-shape)
                      (gsh/selection-rect)
                      (cts/setup-shape)))
         on-resize
@@ -369,7 +368,6 @@
   (let [shape (mf/use-memo
                (mf/deps shapes)
                #(->> shapes
-                     #_(map gsh/transform-shape)
                      (gsh/selection-rect)
                      (cts/setup-shape)))]
 
@@ -384,7 +382,6 @@
 (mf/defc single-handlers
   [{:keys [shape zoom color disable-handlers] :as props}]
   (let [shape-id (:id shape)
-        ;;shape (gsh/transform-shape shape)
 
         on-resize
         (fn [current-position _initial-position event]
