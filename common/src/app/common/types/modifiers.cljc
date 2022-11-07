@@ -196,13 +196,17 @@
 (defn rotation-modifiers
   [shape center angle]
   (let [shape-center (gco/center-shape shape)
-        rotation (-> (gmt/matrix)
-                     (gmt/rotate angle center)
-                     (gmt/rotate (- angle) shape-center))]
+        ;; Translation caused by the rotation
+        move-vec
+        (gpt/transform
+         (gpt/point 0 0)
+         (-> (gmt/matrix)
+             (gmt/rotate angle center)
+             (gmt/rotate (- angle) shape-center)))]
 
     (-> (empty)
         (rotation shape-center angle)
-        (move (gpt/transform (gpt/point 0 0) rotation)))))
+        (move move-vec))))
 
 (defn remove-children-modifiers
   [shapes]

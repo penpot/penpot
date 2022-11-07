@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gsi]
+   [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.rect :as gre]
    [app.common.geom.shapes.transforms :as gst]
    [app.common.math :as mth]
@@ -235,9 +236,7 @@
         child-bb-after  (gst/parent-coords-rect transformed-child transformed-parent)
         scale-x (/ (:width child-bb-before) (:width child-bb-after))
         scale-y (/ (:height child-bb-before) (:height child-bb-after))
-
-        ;; TODO LAYOUT: Is the first always the origin?
-        resize-origin (-> transformed-parent :points first)]
+        resize-origin (-> transformed-parent :points gpo/origin)]
 
     (cond-> modifiers
       (not= :scale constraints-h)

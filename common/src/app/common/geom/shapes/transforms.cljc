@@ -311,7 +311,6 @@
         (cond-> (some? selrect)
           (assoc :selrect selrect))
 
-        ;; TODO LAYOUT: Make sure the order of points is alright
         (cond-> (d/not-empty? points)
           (assoc :points points))
         (assoc :rotation rotation))))

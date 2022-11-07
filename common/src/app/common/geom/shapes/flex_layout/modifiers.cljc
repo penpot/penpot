@@ -22,8 +22,7 @@
         child-bb-after  (gst/parent-coords-rect transformed-child transformed-parent)
         scale-x (/ (:width child-bb-before) (:width child-bb-after))
         scale-y (/ (:height child-bb-before) (:height child-bb-after))
-
-        resize-origin (-> transformed-parent :points first) ;; TODO LAYOUT: IS always the origin
+        resize-origin (-> transformed-parent :points gpo/origin)
         resize-vector (gpt/point scale-x scale-y)]
     (-> modifiers
         (ctm/select-child-modifiers)

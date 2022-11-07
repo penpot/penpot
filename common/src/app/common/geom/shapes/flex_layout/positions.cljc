@@ -249,6 +249,16 @@
           (some? margin-y)
           (gpt/add (vv margin-y)))
 
+
+        ;; Fix position when layout is flipped
+        corner-p
+        (cond-> corner-p
+          (:flip-x parent)
+          (gpt/add (hv child-width))
+
+          (:flip-y parent)
+          (gpt/add (vv child-height)))
+
         next-p
         (cond-> start-p
           row?

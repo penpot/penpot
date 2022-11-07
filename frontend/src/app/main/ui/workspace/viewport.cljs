@@ -418,10 +418,16 @@
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (debug? :layout-drop-zones)
+         [:& wvd/debug-drop-zones {:selected-shapes selected-shapes
+                                   :objects objects-modified
+                                   :hover-top-frame-id @hover-top-frame-id
+                                   :zoom zoom}])
+
+       (when (debug? :layout-lines)
          [:& wvd/debug-layout {:selected-shapes selected-shapes
                                :objects objects-modified
-                               :hover-top-frame-id @hover-top-frame-id}])
-
+                               :hover-top-frame-id @hover-top-frame-id
+                               :zoom zoom}])
 
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}

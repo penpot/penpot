@@ -1580,8 +1580,7 @@
   (ptk/reify ::create-artboard-from-selection
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id       (:current-page-id state)
-            objects       (wsh/lookup-page-objects state page-id)
+      (let [objects       (wsh/lookup-page-objects state)
             selected      (wsh/lookup-selected state)
             selected-objs (map #(get objects %) selected)]
         (when (d/not-empty? selected)

@@ -22,13 +22,8 @@
         [pad-top pad-right pad-bottom pad-left]
         (if (= layout-padding-type :multiple)
           [pad-top pad-right pad-bottom pad-left]
-          [pad-top pad-top pad-top pad-top])
-
-        ;; Normalize the points to remove flips
-        ;; TODO LAYOUT: Need function to normalize the points
-        points (gst/parent-coords-points shape shape)]
-
-    (gpo/pad-points points pad-top pad-right pad-bottom pad-left)))
+          [pad-top pad-top pad-top pad-top])]
+    (gpo/pad-points (:points shape) pad-top pad-right pad-bottom pad-left)))
 
 (defn init-layout-lines
   "Calculates the lines basic data and accumulated values. The positions will be calculated in a different operation"
@@ -312,5 +307,6 @@
              (mapv (partial add-children-resizes shape)))]
 
     {:layout-lines layout-lines
+     :layout-bounds layout-bounds
      :reverse? reverse?}))
 

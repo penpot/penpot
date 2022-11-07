@@ -71,6 +71,9 @@
     ;; Enable a widget to show the auto-layout drop-zones
     :layout-drop-zones
 
+    ;; Display the layout lines
+    :layout-lines
+
     ;; Makes the pixel grid red so its more visibile
     :pixel-grid
     })
