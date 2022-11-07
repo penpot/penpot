@@ -16,8 +16,8 @@
    [app.emails :as eml]
    [app.loggers.audit :as audit]
    [app.media :as media]
-   [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
+   [app.rpc.helpers :as rph]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.profile :as profile]
@@ -487,18 +487,17 @@
                 :email email
                 :role role)))
 
-      (with-meta team
-        {::audit/props {:invitations (count emails)}
-
-         ::rpc/before-complete
-         #(audit-fn :cmd :submit
-                    :type "mutation"
-                    :name "invite-team-member"
-                    :profile-id profile-id
-                    :props {:emails emails
-                            :role role
-                            :profile-id profile-id
-                            :invitations (count emails)})}))))
+      (-> team
+          (vary-meta assoc ::audit/props {:invitations (count emails)})
+          (rph/with-defer
+            #(audit-fn :cmd :submit
+                       :type "mutation"
+                       :name "invite-team-member"
+                       :profile-id profile-id
+                       :props {:emails emails
+                               :role role
+                               :profile-id profile-id
+                               :invitations (count emails)}))))))
 
 ;; --- Mutation: Update invitation role
 

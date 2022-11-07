@@ -19,10 +19,10 @@
    [app.loggers.audit :as audit]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
-   [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
@@ -135,10 +135,8 @@
     (let [cfg    (assoc cfg :conn conn)
           tpoint (dt/tpoint)]
       (-> (update-file cfg params)
-          (vary-meta assoc ::rpc/before-complete
-                     (fn []
-                       (let [elapsed (tpoint)]
-                         (l/trace :hint "update-file" :time (dt/format-duration elapsed)))))))))
+          (rph/with-defer #(let [elapsed (tpoint)]
+                             (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))
 
 (defn update-file
   [{:keys [conn metrics] :as cfg} {:keys [id profile-id changes changes-with-metadata] :as params}]

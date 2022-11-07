@@ -19,8 +19,9 @@
    [app.db.sql :as sql]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files.thumbnails :as-alias thumbs]
+   [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.helpers :as rpch]
+   [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as projects]
    [app.rpc.queries.share-link :refer [retrieve-share-link]]
@@ -237,19 +238,30 @@
 
       file)))
 
+(defn- get-minimal-file
+  [{:keys [pool] :as cfg} id]
+  (db/get pool :file {:id id} {:columns [:id :modified-at :revn]}))
+
+(defn- get-file-etag
+  [{:keys [modified-at revn]}]
+  (str (dt/format-instant modified-at :iso) "-" revn))
+
 (s/def ::get-file
   (s/keys :req-un [::profile-id ::id]
           :opt-un [::features]))
 
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::cond/get-object #(get-minimal-file %1 (:id %2))
+   ::cond/key-fn get-file-etag}
   [{:keys [pool] :as cfg} {:keys [profile-id id features] :as params}]
   (with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id id)]
       (check-read-permissions! perms)
-      (-> (get-file conn id features)
-          (assoc :permissions perms)))))
+      (let [file (-> (get-file conn id features)
+                     (assoc :permissions perms))]
+        (vary-meta file assoc ::cond/key (get-file-etag file))))))
 
 
 ;; --- COMMAND QUERY: get-file-object-thumbnails
@@ -277,7 +289,10 @@
 
 (sv/defmethod ::get-file-object-thumbnails
   "Retrieve a file object thumbnails."
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::cond/get-object #(get-minimal-file %1 (:file-id %2))
+   ::cond/reuse-key? true
+   ::cond/key-fn get-file-etag}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
@@ -592,8 +607,7 @@
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (-> (get-file-thumbnail conn file-id revn)
-        (with-meta {::rpc/transform-response (rpch/http-cache {:max-age (* 1000 60 60)})}))))
-
+        (with-meta {::rpc/transform-response (rph/http-cache {:max-age (* 1000 60 60)})}))))
 
 
 ;; --- COMMAND QUERY: get-file-data-for-thumbnail

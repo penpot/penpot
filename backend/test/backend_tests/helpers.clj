@@ -17,6 +17,7 @@
    [app.main :as main]
    [app.media]
    [app.migrations]
+   [app.rpc.helpers :as rph]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files.create :as files.create]
@@ -295,7 +296,7 @@
   [expr]
   `(try
      (let [result# (deref ~expr)
-           result# (cond-> result# (sv/wrapped? result#) deref)]
+           result# (cond-> result# (rph/wrapped? result#) deref)]
        {:error nil
         :result result#})
      (catch Exception e#
