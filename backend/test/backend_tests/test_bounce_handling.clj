@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app-tests.test-bounce-handling
+(ns backend-tests.test-bounce-handling
   (:require
-   [app-tests.test-helpers :as th]
+   [backend-tests.test-helpers :as th]
    [app.db :as db]
    [app.emails :as emails]
    [app.http.awsns :as awsns]

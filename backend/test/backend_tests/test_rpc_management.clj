@@ -4,10 +4,10 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app-tests.test-rpc-management
+(ns backend-tests.test-rpc-management
   (:require
-   [app-tests.test-storage :refer [configure-storage-backend]]
-   [app-tests.test-helpers :as th]
+   [backend-tests.test-storage :refer [configure-storage-backend]]
+   [backend-tests.test-helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]

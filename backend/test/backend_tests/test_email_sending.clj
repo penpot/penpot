@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app-tests.test-email-sending
+(ns backend-tests.test-email-sending
   (:require
-   [app-tests.test-helpers :as th]
+   [backend-tests.test-helpers :as th]
    [app.db :as db]
    [app.emails :as emails]
    [clojure.test :as t]

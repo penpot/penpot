@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app-tests.test-helpers
+(ns backend-tests.test-helpers
   (:require
    [app.common.data :as d]
    [app.common.flags :as flags]

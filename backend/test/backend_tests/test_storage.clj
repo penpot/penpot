@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app-tests.test-storage
+(ns backend-tests.test-storage
   (:require
-   [app-tests.test-helpers :as th]
+   [backend-tests.test-helpers :as th]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.db :as db]
