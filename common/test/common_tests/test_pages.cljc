@@ -2,9 +2,9 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
-(ns app.common.pages-test
+(ns common-tests.test-pages
   (:require
    [app.common.files.features :as ffeat]
    [app.common.pages :as cp]
@@ -438,7 +438,7 @@
                   :frame-id frame-id
                   :parent-id frame-id
                   :id shape-1-id
-                  :obj {:type :shape
+                  :obj {:type :rect
                         :name "Shape 1"}}
                  {:type :add-obj
                   :page-id page-id

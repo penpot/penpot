@@ -16,19 +16,18 @@
    :exclusions [org.eclipse.jetty/jetty-server
                 org.eclipse.jetty/jetty-servlet]}
 
-
   io.prometheus/simpleclient_httpserver {:mvn/version "0.16.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.2.0.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "6.2.1.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/yetti
-  {:git/tag "v9.9"
-   :git/sha "f0a455d"
+  {:git/tag "v9.10"
+   :git/sha "9744349"
    :git/url "https://github.com/funcool/yetti.git"
    :exclusions [org.slf4j/slf4j-api]}
 
-  com.github.seancorfield/next.jdbc {:mvn/version "1.3.828"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.3.834"}
   metosin/reitit-core {:mvn/version "0.5.18"}
   org.postgresql/postgresql {:mvn/version "42.5.0"}
   com.zaxxer/HikariCP {:mvn/version "5.0.1"}
@@ -37,6 +36,8 @@
 
   buddy/buddy-hashers {:mvn/version "1.8.158"}
   buddy/buddy-sign {:mvn/version "3.4.333"}
+
+  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.1"}
 
   org.jsoup/jsoup {:mvn/version "1.15.1"}
   org.im4java/im4java
@@ -62,7 +63,6 @@
   {:extra-deps
    {com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    org.clojure/test.check {:mvn/version "RELEASE"}
     clojure-humanize/clojure-humanize {:mvn/version "0.2.2"}
     org.clojure/data.csv {:mvn/version "RELEASE"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}

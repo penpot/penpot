@@ -52,7 +52,9 @@
 
    :default-blob-version 5
    :loggers-zmq-uri "tcp://localhost:45556"
+
    :rpc-rlimit-config (fs/path "resources/rlimit.edn")
+   :rpc-climit-config (fs/path "resources/climit.edn")
 
    :file-change-snapshot-every 5
    :file-change-snapshot-timeout "3h"
@@ -90,6 +92,7 @@
 
 (s/def ::default-rpc-rlimit ::us/vector-of-strings)
 (s/def ::rpc-rlimit-config ::fs/path)
+(s/def ::rpc-climit-config ::fs/path)
 
 (s/def ::media-max-file-size ::us/integer)
 
@@ -171,11 +174,6 @@
 (s/def ::public-uri ::us/string)
 (s/def ::redis-uri ::us/string)
 (s/def ::registration-domain-whitelist ::us/set-of-strings)
-
-(s/def ::semaphore-process-font ::us/integer)
-(s/def ::semaphore-process-image ::us/integer)
-(s/def ::semaphore-update-file ::us/integer)
-(s/def ::semaphore-auth ::us/integer)
 
 (s/def ::smtp-default-from ::us/string)
 (s/def ::smtp-default-reply-to ::us/string)

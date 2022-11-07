@@ -14,8 +14,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.media :as media]
+   [app.rpc.climit :as climit]
    [app.rpc.queries.teams :as teams]
-   [app.rpc.semaphore :as rsem]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
@@ -23,7 +23,8 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.io :as io]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [promesa.exec :as px]))
 
 (def default-max-file-size (* 1024 1024 10)) ; 10 MiB
 
@@ -104,25 +105,25 @@
 ;; inverse, soft referential integrity).
 
 (defn create-file-media-object
-  [{:keys [storage pool semaphores] :as cfg}
+  [{:keys [storage pool climit executor] :as cfg}
    {:keys [id file-id is-local name content] :as params}]
   (letfn [;; Function responsible to retrieve the file information, as
           ;; it is synchronous operation it should be wrapped into
           ;; with-dispatch macro.
           (get-info [content]
-            (rsem/with-dispatch (:process-image semaphores)
+            (climit/with-dispatch (:process-image climit)
               (media/run {:cmd :info :input content})))
 
           ;; Function responsible of calculating cryptographyc hash of
           ;; the provided data.
           (calculate-hash [data]
-            (rsem/with-dispatch (:process-image semaphores)
+            (px/with-dispatch executor
               (sto/calculate-hash data)))
 
           ;; Function responsible of generating thumnail. As it is synchronous
           ;; opetation, it should be wrapped into with-dispatch macro
           (generate-thumbnail [info]
-            (rsem/with-dispatch (:process-image semaphores)
+            (climit/with-dispatch (:process-image climit)
               (media/run (assoc thumbnail-options
                                 :cmd :generic-thumbnail
                                 :input info))))
@@ -154,14 +155,15 @@
                                 :bucket "file-media-object"})))
 
           (insert-into-database [info image thumb]
-            (db/exec-one! pool [sql:create-file-media-object
-                                (or id (uuid/next))
-                                file-id is-local name
-                                (:id image)
-                                (:id thumb)
-                                (:width info)
-                                (:height info)
-                                (:mtype info)]))]
+            (px/with-dispatch executor
+              (db/exec-one! pool [sql:create-file-media-object
+                                  (or id (uuid/next))
+                                  file-id is-local name
+                                  (:id image)
+                                  (:id thumb)
+                                  (:width info)
+                                  (:height info)
+                                  (:mtype info)])))]
 
     (p/let [info  (get-info content)
             thumb (create-thumbnail info)

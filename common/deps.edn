@@ -4,6 +4,7 @@
   org.clojure/tools.cli {:mvn/version "1.0.206"}
   metosin/jsonista {:mvn/version "0.3.6"}
   org.clojure/clojurescript {:mvn/version "1.11.60"}
+  org.clojure/test.check {:mvn/version "1.1.1"}
 
   ;; Logging
   org.apache.logging.log4j/log4j-api {:mvn/version "2.19.0"}
@@ -16,12 +17,13 @@
   selmer/selmer {:mvn/version "1.12.55"}
   criterium/criterium {:mvn/version "0.4.6"}
 
+
   expound/expound {:mvn/version "0.9.0"}
   com.cognitect/transit-clj {:mvn/version "1.0.329"}
   com.cognitect/transit-cljs {:mvn/version "0.8.280"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
-  funcool/promesa {:mvn/version "8.0.450"}
+  funcool/promesa {:mvn/version "9.0.507"}
   funcool/cuerdas {:mvn/version "2022.06.16-403"}
 
   lambdaisland/uri {:mvn/version "1.13.95"
@@ -41,7 +43,6 @@
  {:dev
   {:extra-deps
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    org.clojure/test.check {:mvn/version "RELEASE"}
     thheller/shadow-cljs {:mvn/version "2.20.2"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}

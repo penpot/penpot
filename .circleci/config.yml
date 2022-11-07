@@ -94,7 +94,7 @@ jobs:
           working_directory: "./common"
           name: common tests (clj)
           command: |
-            clojure -X:dev:test
+            clojure -X:dev:test :patterns '["common-tests.test-.*"]'
 
           environment:
             PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin

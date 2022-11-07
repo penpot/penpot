@@ -1,4 +1,10 @@
-(ns app.common.text-test
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
+(ns common-tests.test-text
   (:require
    [app.common.data :as d]
    [app.common.text :as txt]

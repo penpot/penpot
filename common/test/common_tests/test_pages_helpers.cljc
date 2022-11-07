@@ -2,9 +2,9 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
-(ns app.common.pages-helpers-test
+(ns common-tests.test-pages-helpers
   (:require
    [clojure.test :as t]
    [clojure.pprint :refer [pprint]]

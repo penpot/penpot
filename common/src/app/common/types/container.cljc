@@ -15,13 +15,12 @@
 
 (s/def ::type #{:page :component})
 (s/def ::id uuid?)
-(s/def ::name string?)
-(s/def ::path (s/nilable string?))
+(s/def ::name ::us/string)
+(s/def ::path (s/nilable ::us/string))
 
 (s/def ::container
-  ;; (s/keys :req-un [::id ::name ::ctst/objects]
   (s/keys :req-un [::id ::name]
-          :opt-un [::type ::path]))
+          :opt-un [::type ::path ::ctst/objects]))
 
 (defn make-container
   [page-or-component type]

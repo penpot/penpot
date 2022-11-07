@@ -17,6 +17,7 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.http.middleware :as hmw]
+   [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.rpc.queries.profile :as profile]
    [app.tokens :as tokens]
@@ -423,7 +424,7 @@
 (defn- generate-redirect
   [{:keys [sprops session audit] :as cfg} request info profile]
   (if profile
-    (let [sxf    ((:create session) (:id profile))
+    (let [sxf    (session/create-fn session (:id profile))
           token  (or (:invitation-token info)
                      (tokens/generate sprops {:iss :auth
                                               :exp (dt/in-future "15m")
@@ -502,14 +503,13 @@
 
 (s/def ::public-uri ::us/not-empty-string)
 (s/def ::http-client ::http/client)
-(s/def ::session map?)
 (s/def ::sprops map?)
 (s/def ::providers map?)
 
 (defmethod ig/pre-init-spec ::routes
   [_]
   (s/keys :req-un [::public-uri
-                   ::session
+                   ::session/session
                    ::sprops
                    ::http-client
                    ::providers

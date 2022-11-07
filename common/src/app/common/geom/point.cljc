@@ -13,7 +13,8 @@
       :clj [clojure.core :as c])
    [app.common.math :as mth]
    [app.common.spec :as us]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [clojure.test.check.generators :as tgen]))
 
 ;; --- Point Impl
 
@@ -30,8 +31,11 @@
 (s/def ::x ::us/safe-number)
 (s/def ::y ::us/safe-number)
 
+(s/def ::point-attrs (s/keys :req-un [::x ::y]))
+
 (s/def ::point
-  (s/and (s/keys :req-un [::x ::y]) point?))
+  (s/with-gen (s/and ::point-attrs point?)
+    #(tgen/fmap map->Point (s/gen ::point-attrs))))
 
 (defn point-like?
   [{:keys [x y] :as v}]

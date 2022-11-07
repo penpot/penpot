@@ -30,6 +30,7 @@
 
 (s/def ::row-gap ::us/safe-number)
 (s/def ::column-gap ::us/safe-number)
+(s/def ::layout-type #{:flex :grid})
 
 (s/def ::layout-gap
   (s/keys :req-un [::row-gap ::column-gap]))
