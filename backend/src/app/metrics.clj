@@ -38,110 +38,6 @@
 ;; METRICS SERVICE PROVIDER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def default-metrics
-  {:update-file-changes
-   {::mdef/name "penpot_rpc_update_file_changes_total"
-    ::mdef/help "A total number of changes submitted to update-file."
-    ::mdef/type :counter}
-
-   :update-file-bytes-processed
-   {::mdef/name "penpot_rpc_update_file_bytes_processed_total"
-    ::mdef/help "A total number of bytes processed by update-file."
-    ::mdef/type :counter}
-
-   :rpc-mutation-timing
-   {::mdef/name "penpot_rpc_mutation_timing"
-    ::mdef/help "RPC mutation method call timing."
-    ::mdef/labels ["name"]
-    ::mdef/type :histogram}
-
-   :rpc-command-timing
-   {::mdef/name "penpot_rpc_command_timing"
-    ::mdef/help "RPC command method call timing."
-    ::mdef/labels ["name"]
-    ::mdef/type :histogram}
-
-   :rpc-query-timing
-   {::mdef/name "penpot_rpc_query_timing"
-    ::mdef/help "RPC query method call timing."
-    ::mdef/labels ["name"]
-    ::mdef/type :histogram}
-
-   :websocket-active-connections
-   {::mdef/name "penpot_websocket_active_connections"
-    ::mdef/help "Active websocket connections gauge"
-    ::mdef/type :gauge}
-
-   :websocket-messages-total
-   {::mdef/name "penpot_websocket_message_total"
-    ::mdef/help "Counter of processed messages."
-    ::mdef/labels ["op"]
-    ::mdef/type :counter}
-
-   :websocket-session-timing
-   {::mdef/name "penpot_websocket_session_timing"
-    ::mdef/help "Websocket session timing (seconds)."
-    ::mdef/type :summary}
-
-   :session-update-total
-   {::mdef/name "penpot_http_session_update_total"
-    ::mdef/help "A counter of session update batch events."
-    ::mdef/type :counter}
-
-   :tasks-timing
-   {::mdef/name "penpot_tasks_timing"
-    ::mdef/help "Background tasks timing (milliseconds)."
-    ::mdef/labels ["name"]
-    ::mdef/type :summary}
-
-   :redis-eval-timing
-   {::mdef/name "penpot_redis_eval_timing"
-    ::mdef/help "Redis EVAL commands execution timings (ms)"
-    ::mdef/labels ["name"]
-    ::mdef/type :summary}
-
-   :rpc-climit-queue-size
-   {::mdef/name "penpot_rpc_climit_queue_size"
-    ::mdef/help "Current number of queued submissions on the CLIMIT."
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}
-
-   :rpc-climit-concurrency
-   {::mdef/name "penpot_rpc_climit_concurrency"
-    ::mdef/help "Current number of used concurrency capacity on the CLIMIT"
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}
-
-   :rpc-climit-timing
-   {::mdef/name "penpot_rpc_climit_timing"
-    ::mdef/help "Summary of the time between queuing and executing on the CLIMIT"
-    ::mdef/labels ["name"]
-    ::mdef/type :summary}
-
-   :executors-active-threads
-   {::mdef/name "penpot_executors_active_threads"
-    ::mdef/help "Current number of threads available in the executor service."
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}
-
-   :executors-completed-tasks
-   {::mdef/name "penpot_executors_completed_tasks_total"
-    ::mdef/help "Approximate number of completed tasks by the executor."
-    ::mdef/labels ["name"]
-    ::mdef/type :counter}
-
-   :executors-running-threads
-   {::mdef/name "penpot_executors_running_threads"
-    ::mdef/help "Current number of threads with state RUNNING."
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}
-
-   :executors-queued-submissions
-   {::mdef/name "penpot_executors_queued_submissions"
-    ::mdef/help "Current number of queued submissions."
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}})
-
 (s/def ::mdef/name string?)
 (s/def ::mdef/help string?)
 (s/def ::mdef/labels (s/every string? :kind vector?))
@@ -169,8 +65,13 @@
                 ::handler
                 ::definitions]))
 
+(s/def ::default ::definitions)
+
+(defmethod ig/pre-init-spec ::metrics [_]
+  (s/keys :req-un [::default]))
+
 (defmethod ig/init-key ::metrics
-  [_ _]
+  [_ cfg]
   (l/info :action "initialize metrics")
   (let [registry    (create-registry)
         definitions (reduce-kv (fn [res k v]
@@ -178,7 +79,7 @@
                                       (create-collector)
                                       (assoc res k)))
                                {}
-                               default-metrics)]
+                               (:default cfg))]
 
     (us/verify! ::definitions definitions)
 

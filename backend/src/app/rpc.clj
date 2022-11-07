@@ -252,8 +252,8 @@
                    ::public-uri
                    ::msgbus
                    ::http-client
-                   ::climit
                    ::rlimit
+                   ::climit
                    ::mtx/metrics
                    ::db/pool
                    ::ldap]))
