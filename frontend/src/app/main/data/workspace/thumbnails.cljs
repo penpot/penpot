@@ -36,11 +36,10 @@
      ;; will be empty on first rendering before drawing the thumbnail and we don't want to store that
      (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'][data-empty='false']" object-id))]
        (if (some? node)
-         (-> node
-             (.toBlob (fn [blob]
-                        (rx/push! subs blob)
-                        (rx/end! subs))
-                      "image/png"))
+         (.toBlob node (fn [blob]
+                         (rx/push! subs blob)
+                         (rx/end! subs))
+                  "image/png")
 
          ;; If we cannot find the node we send `nil` and the upsert will delete the thumbnail
          (do (rx/push! subs nil)
