@@ -11,33 +11,6 @@
    [app.common.data :as d]
    [cuerdas.core :as str]))
 
-;; A utilty wrapper object for wrap service responses that does not
-;; implements the IObj interface that make possible attach metadata to
-;; it.
-
-(deftype MetadataWrapper [obj ^:unsynchronized-mutable metadata]
-  clojure.lang.IDeref
-  (deref [_] obj)
-
-  clojure.lang.IObj
-  (withMeta [_ meta]
-    (MetadataWrapper. obj meta))
-
-  (meta [_] metadata))
-
-(defn wrap
-  "Conditionally wrap a value into MetadataWrapper instance. If the
-  object already implements IObj interface it will be returned as is."
-  ([] (wrap nil))
-  ([o]
-   (if (instance? clojure.lang.IObj o)
-     o
-     (MetadataWrapper. o {}))))
-
-(defn wrapped?
-  [o]
-  (instance? MetadataWrapper o))
-
 (defmacro defmethod
   [sname & body]
   (let [[docs body]  (if (string? (first body))

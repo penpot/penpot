@@ -18,6 +18,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.tokens :as tokens]
@@ -135,10 +136,10 @@
                          {:invitation-token (:invitation-token params)}
                          profile)]
 
-        (with-meta response
-          {::rpc/transform-response (session/create-fn session (:id profile))
-           ::audit/props (audit/profile->props profile)
-           ::audit/profile-id (:id profile)})))))
+        (-> response
+            (rph/with-transform (session/create-fn session (:id profile)))
+            (vary-meta merge {::audit/props (audit/profile->props profile)
+                              ::audit/profile-id (:id profile)}))))))
 
 (s/def ::login-with-password
   (s/keys :req-un [::email ::password]

@@ -11,13 +11,13 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.loggers.audit :as audit]
-   [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as cmd.files]
    [app.rpc.commands.files.create :as cmd.files.create]
    [app.rpc.commands.files.temp :as cmd.files.temp]
    [app.rpc.commands.files.update :as cmd.files.update]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.queries.projects :as proj]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -166,10 +166,8 @@
           cfg       (assoc cfg :conn conn)]
 
       (-> (cmd.files.update/update-file cfg params)
-          (vary-meta assoc ::rpc/before-complete
-                     (fn []
-                       (let [elapsed (tpoint)]
-                         (l/trace :hint "update-file" :time (dt/format-duration elapsed)))))))))
+          (rph/with-defer #(let [elapsed (tpoint)]
+                             (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))
 
 ;; --- Mutation: upsert object thumbnail
 
