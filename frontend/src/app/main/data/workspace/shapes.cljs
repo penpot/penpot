@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.proportions :as gpr]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -21,8 +22,9 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.shapes-update-layout :as dwsul] 
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.streams :as ms]
    [beicon.core :as rx]
@@ -101,7 +103,7 @@
 
          (rx/concat
           (rx/of (dch/commit-changes changes)
-                 (dwsl/update-layout-positions [(:parent-id shape)])
+                 (dwsul/update-layout-positions [(:parent-id shape)])
                  (when-not no-select?
                    (dws/select-shapes (d/ordered-set id))))
           (when (= :text (:type attrs))
@@ -265,7 +267,7 @@
                                                                  (reduce ctp/remove-flow flows))))))]
 
          (rx/of (dc/detach-comment-thread ids)
-                (dwsl/update-layout-positions all-parents)
+                (dwsul/update-layout-positions all-parents)
                 (dch/commit-changes changes)))))))
 
 (defn- viewport-center
@@ -292,3 +294,37 @@
                       (assoc :frame-id frame-id)
                       (cts/setup-rect-selrect))]
         (rx/of (add-shape shape))))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Artboard
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-artboard-from-selection
+  ([]
+   (create-artboard-from-selection nil))
+  ([id]
+   (create-artboard-from-selection id nil))
+  ([id parent-id]
+   (ptk/reify ::create-artboard-from-selection
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [page-id       (:current-page-id state)
+             objects       (wsh/lookup-page-objects state page-id)
+             selected      (wsh/lookup-selected state)
+             selected-objs (map #(get objects %) selected)]
+         (when (d/not-empty? selected)
+           (let [srect     (gsh/selection-rect selected-objs)
+                 frame-id  (get-in objects [(first selected) :frame-id])
+                 parent-id (or parent-id (get-in objects [(first selected) :parent-id]))
+                 shape     (-> (cts/make-minimal-shape :frame)
+                               (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
+                               (cond-> id
+                                 (assoc :id id))
+                               (assoc :frame-id frame-id :parent-id parent-id)
+                               (cond-> (not= frame-id uuid/zero)
+                                 (assoc :fills [] :hide-in-viewer true))
+                               (cts/setup-rect-selrect))]
+             (rx/of
+              (dwu/start-undo-transaction)
+              (add-shape shape)
+              (move-shapes-into-frame (:id shape) selected)
+              (dwu/commit-undo-transaction)))))))))

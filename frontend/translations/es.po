@@ -4511,6 +4511,14 @@ msgstr "Actualizar componentes"
 msgid "workspace.shape.menu.update-main"
 msgstr "Actualizar componente principal"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Añadir layout flex"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Eliminar layout flex"
+
 msgid "workspace.sidebar.collapse"
 msgstr "Cerrar barra lateral"
 
