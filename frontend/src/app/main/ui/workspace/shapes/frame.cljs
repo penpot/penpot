@@ -45,9 +45,10 @@
 
 (defn check-props
   [new-props old-props]
-  (and
-       (= (unchecked-get new-props "thumbnail?") (unchecked-get old-props "thumbnail?"))
-       (= (unchecked-get new-props "shape") (unchecked-get old-props "shape"))))
+  (and (= (unchecked-get new-props "thumbnail?")
+          (unchecked-get old-props "thumbnail?"))
+       (= (unchecked-get new-props "shape")
+          (unchecked-get old-props "shape"))))
 
 (defn nested-frame-wrapper-factory
   [shape-wrapper]
