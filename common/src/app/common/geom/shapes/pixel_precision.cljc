@@ -32,7 +32,7 @@
         ratio-height (/ target-height curr-height)
         scalev       (gpt/point ratio-width ratio-height)]
     (-> modifiers
-        (ctm/set-resize scalev origin transform transform-inverse))))
+        (ctm/resize scalev origin transform transform-inverse))))
 
 (defn position-pixel-precision
   [modifiers shape]
@@ -42,7 +42,7 @@
         target-corner (gpt/round corner)
         deltav        (gpt/to-vec corner target-corner)]
     (-> modifiers
-        (ctm/set-move deltav))))
+        (ctm/move deltav))))
 
 (defn set-pixel-precision
   "Adjust modifiers so they adjust to the pixel grid"

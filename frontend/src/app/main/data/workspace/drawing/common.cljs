@@ -51,7 +51,7 @@
                    
                    (and click-draw? (not text?))
                    (-> (assoc :width min-side :height min-side)
-                       (gsh/transform-shape (ctm/move (- (/ min-side 2)) (- (/ min-side 2)))))
+                       (gsh/transform-shape (ctm/move-modifiers (- (/ min-side 2)) (- (/ min-side 2)))))
 
                    (and click-draw? text?)
                    (assoc :height 17 :width 4 :grow-type :auto-width)

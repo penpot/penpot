@@ -52,7 +52,7 @@
       (let [objects (wsh/lookup-page-objects state)
             ids     (->> ids (filter (partial ctl/layout? objects)))]
         (if (d/not-empty? ids)
-          (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow))]
+          (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
             (rx/of (dwm/set-modifiers modif-tree)
                    (dwm/apply-modifiers)))
           (rx/empty))))))

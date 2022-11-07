@@ -185,19 +185,19 @@
                            (and layout-child? fill-height?)))
 
                   modifiers
-                  (-> (ctm/empty-modifiers)
+                  (-> (ctm/empty)
                       (cond-> displacement
-                        (ctm/set-move displacement))
-                      (ctm/set-resize scalev resize-origin shape-transform shape-transform-inverse)
+                        (ctm/move displacement))
+                      (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
                       (cond-> set-fix-width?
-                        (ctm/set-change-property :layout-item-h-sizing :fix))
+                        (ctm/change-property :layout-item-h-sizing :fix))
 
                       (cond-> set-fix-height?
-                        (ctm/set-change-property :layout-item-v-sizing :fix))
+                        (ctm/change-property :layout-item-v-sizing :fix))
 
                       (cond-> scale-text
-                        (ctm/set-scale-content (:x scalev))))
+                        (ctm/scale-content (:x scalev))))
 
                   modif-tree (dwm/create-modif-tree ids modifiers)]
               (rx/of (dwm/set-modifiers modif-tree))))
@@ -251,7 +251,7 @@
             snap-pixel? (and (contains? (:workspace-layout state) :snap-pixel-grid)
                              (int? value))
             get-modifier
-            (fn [shape] (ctm/change-dimensions shape attr value))
+            (fn [shape] (ctm/change-dimensions-modifiers shape attr value))
 
             modif-tree
             (-> (dwm/build-modif-tree ids objects get-modifier)
@@ -486,7 +486,7 @@
               (->> move-stream
                    (rx/map
                     (fn [[move-vector target-frame drop-index]]
-                      (-> (dwm/create-modif-tree ids (ctm/move move-vector))
+                      (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
                           (dwm/build-change-frame-modifiers objects selected target-frame drop-index)
                           (dwm/set-modifiers)))))
 
@@ -540,7 +540,7 @@
              (rx/merge
               (->> move-events
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
-                   (rx/map #(dwm/create-modif-tree selected (ctm/move %)))
+                   (rx/map #(dwm/create-modif-tree selected (ctm/move-modifiers %)))
                    (rx/map (partial dwm/set-modifiers))
                    (rx/take-until stopper))
               (rx/of (move-selected direction shift?)))
@@ -573,7 +573,7 @@
                             (or (:y position) (:y bbox)))
             delta (gpt/subtract pos cpos)
 
-            modif-tree (dwm/create-modif-tree [id] (ctm/move delta))]
+            modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
 
         (rx/of (dwm/set-modifiers modif-tree)
                (dwm/apply-modifiers))))))
@@ -633,9 +633,9 @@
 
             modif-tree (dwm/create-modif-tree
                         selected
-                        (-> (ctm/empty-modifiers)
-                            (ctm/set-resize (gpt/point -1.0 1.0) origin)
-                            (ctm/set-move (gpt/point (:width selrect) 0))))]
+                        (-> (ctm/empty)
+                            (ctm/resize (gpt/point -1.0 1.0) origin)
+                            (ctm/move (gpt/point (:width selrect) 0))))]
 
         (rx/of (dwm/set-modifiers modif-tree true)
                (dwm/apply-modifiers))))))
@@ -652,9 +652,9 @@
 
             modif-tree (dwm/create-modif-tree
                         selected
-                        (-> (ctm/empty-modifiers)
-                            (ctm/set-resize (gpt/point 1.0 -1.0) origin)
-                            (ctm/set-move (gpt/point 0 (:height selrect)))))]
+                        (-> (ctm/empty)
+                            (ctm/resize (gpt/point 1.0 -1.0) origin)
+                            (ctm/move (gpt/point 0 (:height selrect)))))]
 
         (rx/of (dwm/set-modifiers modif-tree true)
                (dwm/apply-modifiers))))))

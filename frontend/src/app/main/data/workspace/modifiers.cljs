@@ -159,11 +159,11 @@
                          (filterv #(contains? child-set %)))]
             (cond-> modif-tree
               (not= original-frame target-frame)
-              (-> (update-in [original-frame :modifiers] ctm/set-remove-children shapes)
-                  (update-in [target-frame :modifiers] ctm/set-add-children shapes drop-index))
+              (-> (update-in [original-frame :modifiers] ctm/remove-children shapes)
+                  (update-in [target-frame :modifiers] ctm/add-children shapes drop-index))
 
               (and layout? (= original-frame target-frame))
-              (update-in [target-frame :modifiers] ctm/set-add-children shapes drop-index))))]
+              (update-in [target-frame :modifiers] ctm/add-children shapes drop-index))))]
 
     (reduce update-frame-modifiers modif-tree origin-frame-ids)))
 
@@ -214,7 +214,7 @@
 
              get-modifier
              (fn [shape]
-               (ctm/rotation shape center angle))
+               (ctm/rotation-modifiers shape center angle))
 
              modif-tree
              (-> (build-modif-tree ids objects get-modifier)

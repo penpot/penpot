@@ -188,7 +188,7 @@
                    (/ (:height shape) (:height shape')))]
     ;; Reverse the change in size so we can recalculate the layout
     (-> modifiers
-        (ctm/set-resize scalev (-> shape' :points first) (:transform shape') (:transform-inverse shape')))))
+        (ctm/resize scalev (-> shape' :points first) (:transform shape') (:transform-inverse shape')))))
 
 (defn use-dynamic-modifiers
   [objects node modifiers]
@@ -205,7 +205,7 @@
                          (ctm/modifiers->transform modifiers)))
                      modifiers))))
 
-        add-children (mf/use-memo (mf/deps modifiers) #(ctm/get-frame-add-children modifiers))
+        add-children (mf/use-memo (mf/deps modifiers) #(ctm/added-children-frames modifiers))
         add-children (hooks/use-equal-memo add-children)
         add-children-prev (hooks/use-previous add-children)
 

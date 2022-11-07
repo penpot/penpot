@@ -42,7 +42,7 @@
 
         deltav (gpt/to-vec (gpt/point (:selrect shape'))
                            (gpt/point (:selrect shape)))]
-    (gsh/transform-shape shape' (ctm/move deltav))))
+    (gsh/transform-shape shape' (ctm/move-modifiers deltav))))
 
 (defn process-shape [modifiers {:keys [id] :as shape}]
   (let [modifier (dm/get-in modifiers [id :modifiers])]

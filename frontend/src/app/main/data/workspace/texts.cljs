@@ -322,11 +322,11 @@
                       {shape-width :width shape-height :height} selrect]
                   (cond-> shape
                     (and (not-changed? shape-width new-width) (= grow-type :auto-width))
-                    (gsh/transform-shape (ctm/change-dimensions shape :width new-width))
+                    (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width new-width))
 
                     (and (not-changed? shape-height new-height)
                          (or (= grow-type :auto-height) (= grow-type :auto-width)))
-                    (gsh/transform-shape (ctm/change-dimensions shape :height new-height)))))]
+                    (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height new-height)))))]
 
         (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? false}))))))
 
@@ -346,10 +346,10 @@
   (let [new-shape
         (cond-> shape
           (some? width)
-          (gsh/transform-shape (ctm/change-dimensions shape :width width))
+          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width width))
 
           (some? height)
-          (gsh/transform-shape (ctm/change-dimensions shape :height height))
+          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height height))
 
           (some? position-data)
           (assoc :position-data position-data))

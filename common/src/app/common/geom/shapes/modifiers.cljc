@@ -98,7 +98,7 @@
           (let [child-modifiers (gct/calc-child-modifiers parent child modifiers ignore-constraints transformed-parent)
                 child-modifiers (cond-> child-modifiers snap-pixel? (gpp/set-pixel-precision child))]
             (cond-> modif-tree
-              (not (ctm/empty-modifiers? child-modifiers))
+              (not (ctm/empty? child-modifiers))
               (update-in [(:id child) :modifiers] ctm/add-modifiers child-modifiers))))]
 
     (reduce set-child modif-tree children)))
@@ -111,7 +111,7 @@
                                       (ctm/select-child-geometry-modifiers)
                                       (gcl/normalize-child-modifiers parent child transformed-parent))]
               (cond-> modif-tree
-                (not (ctm/empty-modifiers? child-modifiers))
+                (not (ctm/empty? child-modifiers))
                 (update-in [(:id child) :modifiers] ctm/add-modifiers child-modifiers))))]
     (let [children (map (d/getf objects) (:shapes transformed-parent))]
       (reduce process-child modif-tree children))))
@@ -178,14 +178,14 @@
             (let [origin (-> parent :points first)
                   scale-width (/ auto-width (-> parent :selrect :width) )]
               (-> modifiers
-                  (ctm/set-resize-parent (gpt/point scale-width 1) origin (:transform parent) (:transform-inverse parent)))))
+                  (ctm/resize-parent (gpt/point scale-width 1) origin (:transform parent) (:transform-inverse parent)))))
 
           (set-parent-auto-height
             [modifiers parent auto-height]
             (let [origin (-> parent :points first)
                   scale-height (/ auto-height (-> parent :selrect :height) )]
               (-> modifiers
-                  (ctm/set-resize-parent (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))]
+                  (ctm/resize-parent (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))]
 
     (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
           children (->> parent

@@ -403,7 +403,7 @@
 
   ([shape modifiers]
    (cond-> shape
-     (and (some? modifiers) (not (ctm/empty-modifiers? modifiers)))
+     (and (some? modifiers) (not (ctm/empty? modifiers)))
      (apply-modifiers modifiers))))
 
 (defn transform-bounds

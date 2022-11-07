@@ -23,11 +23,11 @@
         scale-x (/ (:width child-bb-before) (:width child-bb-after))
         scale-y (/ (:height child-bb-before) (:height child-bb-after))
 
-        resize-origin (-> transformed-parent :points first) ;; TODO LAYOUT: IS always the origin?n
+        resize-origin (-> transformed-parent :points first) ;; TODO LAYOUT: IS always the origin
         resize-vector (gpt/point scale-x scale-y)]
     (-> modifiers
         (ctm/select-child-modifiers)
-        (ctm/set-resize resize-vector resize-origin transform transform-inverse))))
+        (ctm/resize resize-vector resize-origin transform transform-inverse))))
 
 (defn calc-fill-width-data
   "Calculates the size and modifiers for the width of an auto-fill child"
@@ -41,7 +41,7 @@
     (let [target-width (max (get-in children-data [(:id child) :child-width]) 0.01)
           fill-scale (/ target-width child-width)]
       {:width target-width
-       :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})
+       :modifiers (ctm/resize-modifiers (gpt/point fill-scale 1) child-origin transform transform-inverse)})
 
     (ctl/col? parent)
     (let [target-width (max (- line-width (ctl/child-width-margin child)) 0.01)
@@ -49,7 +49,7 @@
           target-width (min max-width target-width)
           fill-scale (/ target-width child-width)]
       {:width target-width
-       :modifiers (ctm/resize (gpt/point fill-scale 1) child-origin transform transform-inverse)})))
+       :modifiers (ctm/resize-modifiers (gpt/point fill-scale 1) child-origin transform transform-inverse)})))
 
 (defn calc-fill-height-data
   "Calculates the size and modifiers for the height of an auto-fill child"
@@ -63,7 +63,7 @@
     (let [target-height (max (get-in children-data [(:id child) :child-height]) 0.01)
           fill-scale (/ target-height child-height)]
       {:height target-height
-       :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
+       :modifiers (ctm/resize-modifiers (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
 
     (ctl/row? parent)
     (let [target-height (max (- line-height (ctl/child-height-margin child)) 0.01)
@@ -71,7 +71,7 @@
           target-height (min max-height target-height)
           fill-scale (/ target-height child-height)]
       {:height target-height
-       :modifiers (ctm/resize (gpt/point 1 fill-scale) child-origin transform transform-inverse)})))
+       :modifiers (ctm/resize-modifiers (gpt/point 1 fill-scale) child-origin transform transform-inverse)})))
 
 (defn layout-child-modifiers
   "Calculates the modifiers for the layout"
@@ -93,9 +93,9 @@
         move-vec (gpt/to-vec child-origin corner-p)
 
         modifiers
-        (-> (ctm/empty-modifiers)
+        (-> (ctm/empty)
             (cond-> fill-width (ctm/add-modifiers (:modifiers fill-width)))
             (cond-> fill-height (ctm/add-modifiers (:modifiers fill-height)))
-            (ctm/set-move move-vec))]
+            (ctm/move move-vec))]
 
     [modifiers layout-line]))

@@ -152,7 +152,7 @@
         end-angl (gpt/angle-with-other end-before end-after)
         target-end (if (mth/close? end-angl 180) (- (gpt/length end-before)) (gpt/length end-before))
         disp-vector-end (gpt/subtract end-after (gpt/scale (gpt/unit end-after) target-end))]
-    (ctm/move disp-vector-end)))
+    (ctm/move-modifiers disp-vector-end)))
 
 (defmethod constraint-modifier :fixed
   [_ axis child-points-before parent-points-before child-points-after parent-points-after transformed-parent]
@@ -174,9 +174,8 @@
         resize-angl (gpt/angle-with-other before-vec after-vec)
         resize-sign (if (mth/close? resize-angl 180) -1 1)
 
-        scale (* resize-sign (/  (gpt/length after-vec) (gpt/length before-vec)))
-        ]
-    (ctm/resize (get-scale axis scale) c0 (:transform transformed-parent) (:transform-inverse transformed-parent))))
+        scale (* resize-sign (/  (gpt/length after-vec) (gpt/length before-vec)))]
+    (ctm/resize-modifiers (get-scale axis scale) c0 (:transform transformed-parent) (:transform-inverse transformed-parent))))
 
 (defmethod constraint-modifier :center
   [_ axis child-points-before parent-points-before child-points-after parent-points-after]
@@ -185,7 +184,7 @@
         center-angl (gpt/angle-with-other center-before center-after)
         target-center (if (mth/close? center-angl 180) (- (gpt/length center-before)) (gpt/length center-before))
         disp-vector-center (gpt/subtract center-after (gpt/scale (gpt/unit center-after) target-center))]
-    (ctm/move disp-vector-center)))
+    (ctm/move-modifiers disp-vector-center)))
 
 (defmethod constraint-modifier :default [_ _ _ _ _]
   [])
@@ -242,10 +241,10 @@
 
     (cond-> modifiers
       (not= :scale constraints-h)
-      (ctm/set-resize (gpt/point scale-x 1) resize-origin transform transform-inverse)
+      (ctm/resize (gpt/point scale-x 1) resize-origin transform transform-inverse)
 
       (not= :scale constraints-v)
-      (ctm/set-resize (gpt/point 1 scale-y) resize-origin transform transform-inverse))))
+      (ctm/resize (gpt/point 1 scale-y) resize-origin transform transform-inverse))))
 
 (defn calc-child-modifiers
   [parent child modifiers ignore-constraints transformed-parent]

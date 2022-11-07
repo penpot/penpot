@@ -187,7 +187,7 @@
 
         mod-ids  (cons object-id (cph/get-children-ids objects object-id))
 
-        updt-fn  #(update %1 %2 gsh/transform-shape (ctm/move vector))]
+        updt-fn  #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
 
     (reduce updt-fn objects mod-ids)))
 
@@ -254,14 +254,14 @@
 
         objects
         (mf/with-memo [frame-id objects vector]
-          (let [update-fn #(update %1 %2 gsh/transform-shape (ctm/move vector))]
+          (let [update-fn #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
             (->> children-ids
                  (into [frame-id])
                  (reduce update-fn objects))))
 
         frame
         (mf/with-memo [vector]
-          (gsh/transform-shape frame (ctm/move vector)))
+          (gsh/transform-shape frame (ctm/move-modifiers vector)))
 
         frame
         (cond-> frame
@@ -313,7 +313,7 @@
          (mf/deps vector objects group-id)
          (fn []
            (let [children-ids (cons group-id (cph/get-children-ids objects group-id))
-                 update-fn    #(update %1 %2 gsh/transform-shape (ctm/move vector))]
+                 update-fn    #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
              (reduce update-fn objects children-ids))))
 
         group  (get objects group-id)

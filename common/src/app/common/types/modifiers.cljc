@@ -5,6 +5,7 @@
 ;; Copyright (c) UXBOX Labs SL
 
 (ns app.common.types.modifiers
+  (:refer-clojure :exclude [empty empty?])
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
@@ -13,7 +14,9 @@
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
-   [app.common.text :as txt]))
+   [app.common.text :as txt]
+   #?(:cljs [cljs.core :as c]
+      :clj [clojure.core :as c])))
 
 ;; --- Modifiers
 
@@ -39,7 +42,7 @@
 
 ;; Public builder API
 
-(defn empty-modifiers []
+(defn empty []
   {})
 
 (defn move-vec? [vector]
@@ -50,16 +53,16 @@
   (or (not (mth/almost-zero? (- (:x vector) 1)))
       (not (mth/almost-zero? (- (:y vector) 1)))))
 
-(defn set-move-parent
+(defn move-parent
   ([modifiers x y]
-   (set-move-parent modifiers (gpt/point x y)))
+   (move-parent modifiers (gpt/point x y)))
 
   ([modifiers vector]
    (cond-> modifiers
      (move-vec? vector)
      (update :geometry-parent conjv {:type :move :vector vector}))))
 
-(defn set-resize-parent
+(defn resize-parent
   ([modifiers vector origin]
    (cond-> modifiers
      (resize-vec? vector)
@@ -75,16 +78,16 @@
                                      :origin origin
                                      :transform transform
                                      :transform-inverse transform-inverse}))))
-(defn set-move
+(defn move
   ([modifiers x y]
-   (set-move modifiers (gpt/point x y)))
+   (move modifiers (gpt/point x y)))
 
   ([modifiers vector]
    (cond-> modifiers
      (move-vec? vector)
      (update :geometry-child conjv {:type :move :vector vector}))))
 
-(defn set-resize
+(defn resize
   ([modifiers vector origin]
    (cond-> modifiers
      (resize-vec? vector)
@@ -101,7 +104,7 @@
                                     :transform transform
                                     :transform-inverse transform-inverse}))))
 
-(defn set-rotation
+(defn rotation
   [modifiers center angle]
   (cond-> modifiers
     (not (mth/close? angle 0))
@@ -111,14 +114,14 @@
                                        :center center
                                        :rotation angle}))))
 
-(defn set-remove-children
+(defn remove-children
   [modifiers shapes]
   (cond-> modifiers
     (d/not-empty? shapes)
     (update :structure-parent conjv {:type :remove-children
                                      :value shapes})))
 
-(defn set-add-children
+(defn add-children
   [modifiers shapes index]
   (cond-> modifiers
     (d/not-empty? shapes)
@@ -126,17 +129,17 @@
                                      :value shapes
                                      :index index})))
 
-(defn set-reflow
+(defn reflow
   [modifiers]
   (-> modifiers
       (update :structure-parent conjv {:type :reflow})))
 
-(defn set-scale-content
+(defn scale-content
   [modifiers value]
   (-> modifiers
       (update :structure-child conjv {:type :scale-content :value value})))
 
-(defn set-change-property
+(defn change-property
   [modifiers property value]
   (-> modifiers
       (update :structure-child conjv {:type :change-property
@@ -162,94 +165,66 @@
 
 ;; These are convenience methods to create single operation modifiers without the builder
 
-(defn move
+(defn move-modifiers
   ([x y]
-   (set-move (empty-modifiers) (gpt/point x y)))
+   (move (empty) (gpt/point x y)))
 
   ([vector]
-   (set-move (empty-modifiers) vector)))
+   (move (empty) vector)))
 
-(defn move-parent
+(defn move-parent-modifiers
   ([x y]
-   (set-move-parent (empty-modifiers) (gpt/point x y)))
+   (move-parent (empty) (gpt/point x y)))
 
   ([vector]
-   (set-move-parent (empty-modifiers) vector)))
+   (move-parent (empty) vector)))
 
-(defn resize
+(defn resize-modifiers
   ([vector origin]
-   (set-resize (empty-modifiers) vector origin))
+   (resize (empty) vector origin))
 
   ([vector origin transform transform-inverse]
-   (set-resize (empty-modifiers) vector origin transform transform-inverse)))
+   (resize (empty) vector origin transform transform-inverse)))
 
-(defn resize-parent
+(defn resize-parent-modifiers
   ([vector origin]
-   (set-resize-parent (empty-modifiers) vector origin))
+   (resize-parent (empty) vector origin))
 
   ([vector origin transform transform-inverse]
-   (set-resize-parent (empty-modifiers) vector origin transform transform-inverse)))
+   (resize-parent (empty) vector origin transform transform-inverse)))
 
-(defn rotation
+(defn rotation-modifiers
   [shape center angle]
   (let [shape-center (gco/center-shape shape)
         rotation (-> (gmt/matrix)
                      (gmt/rotate angle center)
                      (gmt/rotate (- angle) shape-center))]
 
-    (-> (empty-modifiers)
-        (set-rotation shape-center angle)
-        (set-move (gpt/transform (gpt/point 0 0) rotation)))))
+    (-> (empty)
+        (rotation shape-center angle)
+        (move (gpt/transform (gpt/point 0 0) rotation)))))
 
-(defn remove-children
+(defn remove-children-modifiers
   [shapes]
-  (-> (empty-modifiers)
-      (set-remove-children shapes)))
+  (-> (empty)
+      (remove-children shapes)))
 
-(defn add-children
+(defn add-children-modifiers
   [shapes index]
-  (-> (empty-modifiers)
-      (set-add-children shapes index)))
+  (-> (empty)
+      (add-children shapes index)))
 
-(defn reflow
+(defn reflow-modifiers
   []
-  (-> (empty-modifiers)
-      (set-reflow)))
+  (-> (empty)
+      (reflow)))
 
-(defn scale-content
+(defn scale-content-modifiers
   [value]
-  (-> (empty-modifiers)
-      (set-scale-content value)))
+  (-> (empty)
+      (scale-content value)))
 
-(defn child-modifiers?
-  [{:keys [geometry-child structure-child]}]
-  (or (d/not-empty? geometry-child)
-      (d/not-empty? structure-child)))
-
-(defn select-child-modifiers
-  [modifiers]
-  (select-keys modifiers [:geometry-child :structure-child]))
-
-(defn select-child-geometry-modifiers
-  [modifiers]
-  (select-keys modifiers [:geometry-child]))
-
-(defn select-parent-modifiers
-  [modifiers]
-  (select-keys modifiers [:geometry-parent :structure-parent]))
-
-(defn select-structure
-  [modifiers]
-  (select-keys modifiers [:structure-parent]))
-
-(defn empty-modifiers?
-  [modifiers]
-  (and (empty? (:geometry-child modifiers))
-       (empty? (:geometry-parent modifiers))
-       (empty? (:structure-parent modifiers))
-       (empty? (:structure-child modifiers))))
-
-(defn change-dimensions
+(defn change-dimensions-modifiers
   [shape attr value]
   (us/assert map? shape)
   (us/assert #{:width :height} attr)
@@ -281,7 +256,7 @@
         scalev (gpt/divide (gpt/point width height)
                            (gpt/point sr-width sr-height))]
 
-    (resize scalev origin shape-transform shape-transform-inv)))
+    (resize-modifiers scalev origin shape-transform shape-transform-inv)))
 
 (defn change-orientation-modifiers
   [shape orientation]
@@ -304,28 +279,56 @@
         scalev (gpt/divide (gpt/point new-width new-height)
                            (gpt/point sr-width sr-height))]
 
-    (resize scalev origin shape-transform shape-transform-inv)))
+    (resize-modifiers scalev origin shape-transform shape-transform-inv)))
 
-(defn merge-modifiers
-  [objects modifiers]
+;; Predicates
 
-  (let [set-modifier
-        (fn [objects [id modifiers]]
-          (-> objects
-              (d/update-when id merge modifiers)))]
-    (->> modifiers
-         (reduce set-modifier objects))))
+(defn empty?
+  [modifiers]
+  (and (c/empty? (:geometry-child modifiers))
+       (c/empty? (:geometry-parent modifiers))
+       (c/empty? (:structure-parent modifiers))
+       (c/empty? (:structure-child modifiers))))
+
+(defn child-modifiers?
+  [{:keys [geometry-child structure-child]}]
+  (or (d/not-empty? geometry-child)
+      (d/not-empty? structure-child)))
 
 (defn only-move?
+  "Returns true if there are only move operations"
   [modifier]
   (or (and (= 1 (-> modifier :geometry-child count))
            (= :move (-> modifier :geometry-child first :type)))
       (and (= 1 (-> modifier :geometry-parent count))
            (= :move (-> modifier :geometry-parent first :type)))))
 
-(defn get-frame-add-children
-  [modif-tree]
+(defn has-geometry?
+  [{:keys [geometry-parent geometry-child]}]
+  (or (d/not-empty? geometry-parent)
+      (d/not-empty? geometry-child)))
 
+;; Extract subsets of modifiers
+
+(defn select-child-modifiers
+  [modifiers]
+  (select-keys modifiers [:geometry-child :structure-child]))
+
+(defn select-child-geometry-modifiers
+  [modifiers]
+  (select-keys modifiers [:geometry-child]))
+
+(defn select-parent-modifiers
+  [modifiers]
+  (select-keys modifiers [:geometry-parent :structure-parent]))
+
+(defn select-structure
+  [modifiers]
+  (select-keys modifiers [:structure-parent]))
+
+(defn added-children-frames
+  "Returns the frames that have an 'add-children' operation"
+  [modif-tree]
   (let [structure-changes
         (into {}
               (comp (filter (fn [[_ val]] (-> val :modifiers :structure-parent some?)))
@@ -340,7 +343,10 @@
                                    (->> value (map (fn [id] {:frame frame-id :shape id}))))))))
           structure-changes)))
 
+;; Main transformation functions
+
 (defn modifiers->transform
+  "Given a set of modifiers returns its transformation matrix"
   [modifiers]
   (letfn [(apply-modifier [matrix {:keys [type vector rotation center origin transform transform-inverse] :as modifier}]
             (case type
@@ -360,7 +366,6 @@
                matrix)
 
               :rotation
-              ;; TODO LAYOUT: Maybe an issue when no center data
               (gmt/multiply
                (-> (gmt/matrix)
                    (gmt/translate center)
@@ -373,63 +378,60 @@
       (->> modifiers
            (reduce apply-modifier (gmt/matrix))))))
 
-(defn scale-text-content
-  [content value]
-
-  (->> content
-       (txt/transform-nodes
-        txt/is-text-node?
-        (fn [attrs]
-          (let [font-size (-> (get attrs :font-size 14)
-                              (d/parse-double)
-                              (* value)
-                              (str)) ]
-            (d/txt-merge attrs {:font-size font-size}))))))
-
-(defn apply-scale-content
-  [shape value]
-
-  (cond-> shape
-    (cph/text-shape? shape)
-    (update :content scale-text-content value)))
-
 (defn apply-structure-modifiers
+  "Apply structure changes to a shape"
   [shape modifiers]
-  (let [remove-children
-        (fn [shapes children-to-remove]
-          (let [remove? (set children-to-remove)]
-            (d/removev remove? shapes)))
+  (letfn [(scale-text-content
+            [content value]
 
-        apply-modifier
-        (fn [shape {:keys [type property value index rotation]}]
-          (cond-> shape
-            (= type :rotation)
-            (update :rotation #(mod (+ % rotation) 360))
+            (->> content
+                 (txt/transform-nodes
+                  txt/is-text-node?
+                  (fn [attrs]
+                    (let [font-size (-> (get attrs :font-size 14)
+                                        (d/parse-double)
+                                        (* value)
+                                        (str)) ]
+                      (d/txt-merge attrs {:font-size font-size}))))))
 
-            (and (= type :add-children) (some? index))
-            (update :shapes
-                    (fn [shapes]
-                      (if (vector? shapes)
-                        (cph/insert-at-index shapes index value)
-                        (d/concat-vec shapes value))))
+          (apply-scale-content
+            [shape value]
 
-            (and (= type :add-children) (nil? index))
-            (update :shapes d/concat-vec value)
+            (cond-> shape
+              (cph/text-shape? shape)
+              (update :content scale-text-content value)))]
+    (let [remove-children
+          (fn [shapes children-to-remove]
+            (let [remove? (set children-to-remove)]
+              (d/removev remove? shapes)))
 
-            (= type :remove-children)
-            (update :shapes remove-children value)
+          apply-modifier
+          (fn [shape {:keys [type property value index rotation]}]
+            (cond-> shape
+              (= type :rotation)
+              (update :rotation #(mod (+ % rotation) 360))
 
-            (= type :scale-content)
-            (apply-scale-content value)
+              (and (= type :add-children) (some? index))
+              (update :shapes
+                      (fn [shapes]
+                        (if (vector? shapes)
+                          (cph/insert-at-index shapes index value)
+                          (d/concat-vec shapes value))))
 
-            (= type :change-property)
-            (assoc property value)))]
+              (and (= type :add-children) (nil? index))
+              (update :shapes d/concat-vec value)
 
-    (as-> shape $
-      (reduce apply-modifier $ (:structure-parent modifiers))
-      (reduce apply-modifier $ (:structure-child modifiers)))))
+              (= type :remove-children)
+              (update :shapes remove-children value)
 
-(defn has-geometry?
-  [{:keys [geometry-parent geometry-child]}]
-  (or (d/not-empty? geometry-parent)
-      (d/not-empty? geometry-child)))
+              (= type :scale-content)
+              (apply-scale-content value)
+
+              (= type :change-property)
+              (assoc property value)))]
+
+      (as-> shape $
+        (reduce apply-modifier $ (:structure-parent modifiers))
+        (reduce apply-modifier $ (:structure-child modifiers))))))
+
+

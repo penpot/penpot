@@ -33,7 +33,7 @@
   (let [frame-id  (:id frame)
         vector  (-> (gpt/point (:x size) (:y size))
                     (gpt/negate))
-        update-fn #(d/update-when %1 %2 gsh/transform-shape (ctm/move vector))]
+        update-fn #(d/update-when %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
     (->> (cph/get-children-ids objects frame-id)
          (into [frame-id])
          (reduce update-fn objects))))
