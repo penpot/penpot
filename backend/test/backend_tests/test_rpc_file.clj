@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app-tests.test-rpc-file
+(ns backend-tests.test-rpc-file
   (:require
-   [app-tests.test-helpers :as th]
+   [backend-tests.test-helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as sql]

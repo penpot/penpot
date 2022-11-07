@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app-tests.test-telemetry-task
+(ns backend-tests.test-telemetry-task
   (:require
-   [app-tests.test-helpers :as th]
+   [backend-tests.test-helpers :as th]
    [app.db :as db]
    [app.emails :as emails]
    [app.util.time :as dt]

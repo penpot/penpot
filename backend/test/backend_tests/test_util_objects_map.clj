@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app-tests.test-util-objects-map
+(ns backend-tests.test-util-objects-map
   (:require
-   [app-tests.test-helpers :as th]
+   [backend-tests.test-helpers :as th]
    [app.common.spec :as us]
    [app.common.transit :as transit]
    [app.common.types.shape :as cts]
