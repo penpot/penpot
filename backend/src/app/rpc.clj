@@ -161,8 +161,8 @@
   [cfg f mdata]
   (let [f     (as-> f $
                 (wrap-dispatch cfg $ mdata)
-                (wrap-metrics cfg $ mdata)
                 (retry/wrap-retry cfg $ mdata)
+                (wrap-metrics cfg $ mdata)
                 (climit/wrap cfg $ mdata)
                 (rlimit/wrap cfg $ mdata)
                 (wrap-audit cfg $ mdata))
