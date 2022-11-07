@@ -36,6 +36,12 @@
   (s/and ::cmd.files/get-file
          (s/keys :opt-un [::components-v2])))
 
+(defn get-file
+  [conn id features]
+  (let [file   (cmd.files/get-file conn id features)
+        thumbs (cmd.files/get-object-thumbnails conn id)]
+    (assoc file :thumbnails thumbs)))
+
 (sv/defmethod ::file
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.0"
@@ -48,7 +54,7 @@
                      components-v2 (conj "components/v2"))]
 
       (cmd.files/check-read-permissions! perms)
-      (-> (cmd.files/get-file conn id features)
+      (-> (get-file conn id features)
           (assoc :permissions perms)))))
 
 ;; --- QUERY: page
@@ -96,7 +102,7 @@
     (let [;; BACKWARD COMPATIBILTY with the components-v2 parameter
           features (cond-> (or features #{})
                      components-v2 (conj "components/v2"))
-          file     (cmd.files/retrieve-file conn file-id features)]
+          file     (cmd.files/get-file conn file-id features)]
       {:file-id file-id
        :revn (:revn file)
        :page (cmd.files/get-file-data-for-thumbnail conn file)})))

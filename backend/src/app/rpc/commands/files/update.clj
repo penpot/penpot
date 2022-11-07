@@ -282,7 +282,7 @@
 
     (when (and (:is-shared file) (seq lchanges))
       (let [team-id (or (:team-id file)
-                        (files/retrieve-team-id conn (:project-id file)))]
+                        (files/get-team-id conn (:project-id file)))]
         ;; Asynchronously publish message to the msgbus
         (mbus/pub! msgbus
                    :topic team-id

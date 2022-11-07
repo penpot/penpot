@@ -408,7 +408,7 @@
              st/state))
 
 (def thumbnail-data
-  (l/derived #(dm/get-in % [:workspace-file :thumbnails] {}) st/state))
+  (l/derived #(get % :workspace-thumbnails {}) st/state))
 
 (defn thumbnail-frame-data
   [page-id frame-id]
@@ -434,7 +434,7 @@
 (defn get-flex-child-viewer?
   [ids page-id]
   (l/derived
-   (fn [state] 
+   (fn [state]
      (let [objects (wsh/lookup-viewer-objects state page-id)]
        (filterv #(= :flex (:layout (cph/get-parent objects %))) ids)))
    st/state =))

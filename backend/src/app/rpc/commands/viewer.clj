@@ -23,18 +23,19 @@
 
 (defn- get-bundle
   [conn file-id profile-id features]
-  (let [file    (files/get-file conn file-id features)
-        project (get-project conn (:project-id file))
-        libs    (files/get-file-libraries conn false file-id)
-        users   (comments/get-file-comments-users conn file-id profile-id)
+  (let [file       (files/get-file conn file-id features)
+        thumbnails (files/get-object-thumbnails conn file-id)
+        project    (get-project conn (:project-id file))
+        libs       (files/get-file-libraries conn false file-id)
+        users      (comments/get-file-comments-users conn file-id profile-id)
 
-        links   (->> (db/query conn :share-link {:file-id file-id})
-                     (mapv slnk/decode-share-link-row))
+        links      (->> (db/query conn :share-link {:file-id file-id})
+                        (mapv slnk/decode-share-link-row))
 
-        fonts   (db/query conn :team-font-variant
-                          {:team-id (:team-id project)
-                           :deleted-at nil})]
-    {:file file
+        fonts      (db/query conn :team-font-variant
+                             {:team-id (:team-id project)
+                              :deleted-at nil})]
+    {:file (assoc file :thumbnails thumbnails)
      :users users
      :fonts fonts
      :project project
@@ -45,7 +46,7 @@
   [conn {:keys [profile-id file-id share-id features] :as params}]
   (let [slink  (slnk/retrieve-share-link conn file-id share-id)
         perms  (files/get-permissions conn profile-id file-id share-id)
-        thumbs (files/retrieve-object-thumbnails conn file-id)
+        thumbs (files/get-object-thumbnails conn file-id)
         bundle (-> (get-bundle conn file-id profile-id features)
                    (assoc :permissions perms)
                    (assoc-in [:file :thumbnails] thumbs))]

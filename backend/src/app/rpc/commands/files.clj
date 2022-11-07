@@ -90,7 +90,7 @@
     where f.id = ?
       and ppr.profile_id = ?")
 
-(defn retrieve-file-permissions
+(defn get-file-permissions
   [conn profile-id file-id]
   (when (and profile-id file-id)
     (db/exec! conn [sql:file-permissions
@@ -100,7 +100,7 @@
 
 (defn get-permissions
   ([conn profile-id file-id]
-   (let [rows     (retrieve-file-permissions conn profile-id file-id)
+   (let [rows     (get-file-permissions conn profile-id file-id)
          is-owner (boolean (some :is-owner rows))
          is-admin (boolean (some :is-admin rows))
          can-edit (boolean (some :can-edit rows))]
@@ -154,7 +154,7 @@
 
 ;; --- HELPERS
 
-(defn retrieve-team-id
+(defn get-team-id
   [conn project-id]
   (:team-id (db/get-by-id conn :project project-id {:columns [:team-id]})))
 
@@ -209,25 +209,7 @@
 
 ;; --- COMMAND QUERY: get-file (by id)
 
-(defn retrieve-object-thumbnails
-  ([conn file-id]
-   (let [sql (str/concat
-              "select object_id, data "
-              "  from file_object_thumbnail"
-              " where file_id=?")]
-     (->> (db/exec! conn [sql file-id])
-          (d/index-by :object-id :data))))
-
-  ([conn file-id object-ids]
-   (let [sql (str/concat
-              "select object_id, data "
-              "  from file_object_thumbnail"
-              " where file_id=? and object_id = ANY(?)")
-         ids (db/create-array conn "text" (seq object-ids))]
-     (->> (db/exec! conn [sql file-id ids])
-          (d/index-by :object-id :data)))))
-
-(defn retrieve-file
+(defn get-file
   [conn id client-features]
   ;; here we check if client requested features are supported
   (check-features-compatibility! client-features)
@@ -255,19 +237,9 @@
 
       file)))
 
-(defn get-file
-  [conn id features]
-  (let [file   (retrieve-file conn id features)
-        thumbs (retrieve-object-thumbnails conn id)]
-    (assoc file :thumbnails thumbs)
-    #_file))
-
 (s/def ::get-file
   (s/keys :req-un [::profile-id ::id]
           :opt-un [::features]))
-
-
-;; TODO: this should be changed probably because thumbnails will not be included
 
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
@@ -278,6 +250,38 @@
       (check-read-permissions! perms)
       (-> (get-file conn id features)
           (assoc :permissions perms)))))
+
+
+;; --- COMMAND QUERY: get-file-object-thumbnails
+
+(defn get-object-thumbnails
+  ([conn file-id]
+   (let [sql (str/concat
+              "select object_id, data "
+              "  from file_object_thumbnail"
+              " where file_id=?")]
+     (->> (db/exec! conn [sql file-id])
+          (d/index-by :object-id :data))))
+
+  ([conn file-id object-ids]
+   (let [sql (str/concat
+              "select object_id, data "
+              "  from file_object_thumbnail"
+              " where file_id=? and object_id = ANY(?)")
+         ids (db/create-array conn "text" (seq object-ids))]
+     (->> (db/exec! conn [sql file-id ids])
+          (d/index-by :object-id :data)))))
+
+(s/def ::get-file-object-thumbnails
+  (s/keys :req-un [::profile-id ::file-id]))
+
+(sv/defmethod ::get-file-object-thumbnails
+  "Retrieve a file object thumbnails."
+  {::doc/added "1.17"}
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  (with-open [conn (db/open pool)]
+    (check-read-permissions! conn profile-id file-id)
+    (get-object-thumbnails conn file-id)))
 
 
 ;; --- COMMAND QUERY: get-project-files
@@ -313,7 +317,7 @@
 
 ;; --- COMMAND QUERY: has-file-libraries
 
-(declare retrieve-has-file-libraries)
+(declare get-has-file-libraries)
 
 (s/def ::file-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
@@ -327,7 +331,7 @@
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! pool profile-id file-id)
-    (retrieve-has-file-libraries conn params)))
+    (get-has-file-libraries conn params)))
 
 (def ^:private sql:has-file-libraries
   "SELECT COUNT(*) > 0 AS has_libraries
@@ -337,7 +341,7 @@
       AND (fl.deleted_at IS NULL OR
            fl.deleted_at > now())")
 
-(defn- retrieve-has-file-libraries
+(defn- get-has-file-libraries
   [conn {:keys [file-id]}]
   (let [row (db/exec-one! conn [sql:has-file-libraries file-id])]
     (:has-libraries row)))
@@ -361,7 +365,7 @@
 
 (defn get-page
   [conn {:keys [file-id page-id object-id features]}]
-  (let [file     (retrieve-file conn file-id features)
+  (let [file     (get-file conn file-id features)
         page-id  (or page-id (-> file :data :pages first))
         page     (dm/get-in file [:data :pages-index page-id])]
     (cond-> (prune-thumbnails page)
@@ -656,7 +660,7 @@
           frame-ids (if (some? frame) (list frame-id) (map :id (ctt/get-frames (:objects page))))
 
           obj-ids   (map #(str page-id %) frame-ids)
-          thumbs    (retrieve-object-thumbnails conn id obj-ids)]
+          thumbs    (get-object-thumbnails conn id obj-ids)]
 
       (cond-> page
         ;; If we have frame, we need to specify it on the page level
@@ -681,7 +685,7 @@
   [{:keys [pool] :as cfg} {:keys [profile-id file-id features] :as props}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
-    (let [file (retrieve-file conn file-id features)]
+    (let [file (get-file conn file-id features)]
       {:file-id file-id
        :revn (:revn file)
        :page (get-file-data-for-thumbnail conn file)})))

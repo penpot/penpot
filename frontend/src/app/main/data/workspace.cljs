@@ -132,7 +132,8 @@
                 (->> (rx/of bundle)
                      (rx/mapcat
                       (fn [bundle]
-                        (let [bundle (assoc bundle :file (t/decode-str (:file-raw bundle)))
+                        (let [file    (-> bundle :file-raw t/decode-str)
+                              bundle  (assoc bundle :file file)
                               team-id (dm/get-in bundle [:project :team-id])]
                           (rx/merge
                            (rx/of (dwn/initialize team-id file-id)
@@ -148,7 +149,7 @@
         (unchecked-set ug/global "name" name)))))
 
 (defn- file-initialized
-  [{:keys [file users project libraries file-comments-users] :as bundle}]
+  [{:keys [file thumbnails users project libraries file-comments-users] :as bundle}]
   (ptk/reify ::file-initialized
     ptk/UpdateEvent
     (update [_ state]
@@ -158,6 +159,7 @@
              :workspace-undo {}
              :workspace-project project
              :workspace-file (assoc file :initialized true)
+             :workspace-thumbnails thumbnails
              :workspace-data (-> (:data file)
                                  (ctst/start-object-indices)
                                  ;; DEBUG: Uncomment this to try out migrations in local without changing

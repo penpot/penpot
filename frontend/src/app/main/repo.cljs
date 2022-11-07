@@ -13,6 +13,8 @@
    [beicon.core :as rx]))
 
 (derive :get-file ::query)
+(derive :get-file-object-thumbnails ::query)
+(derive :get-file-libraries ::query)
 
 (defn handle-response
   [{:keys [status body] :as response}]
