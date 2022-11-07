@@ -15,6 +15,8 @@
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.shapes :as dws]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -204,7 +206,12 @@
    :artboard-selection   {:tooltip (ds/meta (ds/alt "G"))
                           :command (ds/c-mod "alt+g")
                           :subsections [:modify-layers]
-                          :fn #(st/emit! (dw/create-artboard-from-selection))}
+                          :fn #(st/emit! (dws/create-artboard-from-selection))}
+
+   :toogle-layout-flex   {:tooltip (ds/shift "F")
+                          :command "shift+f"
+                          :subsections [:modify-layers]
+                          :fn #(st/emit! (dwsl/toogle-layout-flex))}
 
    ;; TOOLS
 
@@ -382,7 +389,7 @@
    :show-shortcuts       {:tooltip "?"
                           :command "?"
                           :subsections [:main-menu]
-                          :fn #(st/emit! (toggle-layout-flag :shortcuts)) }
+                          :fn #(st/emit! (toggle-layout-flag :shortcuts))}
 
    ;; PANELS
 

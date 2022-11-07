@@ -52,8 +52,8 @@
    [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.shapes-update-layout :as dwul]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.svg-upload :as svg]
    [app.main.data.workspace.thumbnails :as dwth]
@@ -690,7 +690,7 @@
 
         (rx/of (dch/commit-changes changes)
                (dwco/expand-collapse parent-id)
-               (dwsl/update-layout-positions [parent-id]))))))
+               (dwul/update-layout-positions [parent-id]))))))
 
 (defn relocate-selected-shapes
   [parent-id to-index]
@@ -1570,36 +1570,6 @@
                         (pcb/set-page-option :background (:color color)))]
 
         (rx/of (dch/commit-changes changes))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Artboard
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn create-artboard-from-selection
-  []
-  (ptk/reify ::create-artboard-from-selection
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects       (wsh/lookup-page-objects state)
-            selected      (wsh/lookup-selected state)
-            selected-objs (map #(get objects %) selected)]
-        (when (d/not-empty? selected)
-          (let [srect    (gsh/selection-rect selected-objs)
-                frame-id (get-in objects [(first selected) :frame-id])
-                parent-id (get-in objects [(first selected) :parent-id])
-                shape    (-> (cts/make-minimal-shape :frame)
-                             (merge {:x (:x srect) :y (:y srect) :width (:width srect) :height (:height srect)})
-                             (assoc :frame-id frame-id :parent-id parent-id)
-                             (cond-> (not= frame-id uuid/zero)
-                               (assoc :fills [] :hide-in-viewer true))
-                             (cts/setup-rect-selrect))]
-            (rx/of
-             (dwu/start-undo-transaction)
-             (dwsh/add-shape shape)
-             (dwsh/move-shapes-into-frame (:id shape) selected)
-
-             (dwu/commit-undo-transaction))))))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Remove graphics
