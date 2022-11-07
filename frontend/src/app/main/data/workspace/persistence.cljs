@@ -292,13 +292,15 @@
                        (features/active-feature? state :components-v2)
                        (conj "components/v2"))]
         (->> (rx/zip (rp/cmd! :get-raw-file {:id file-id :features features})
+                     (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
                      (rp/query! :team-users {:file-id file-id})
                      (rp/query! :project {:id project-id})
                      (rp/cmd! :get-file-libraries {:file-id file-id})
                      (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
              (rx/take 1)
-             (rx/map (fn [[file-raw users project libraries file-comments-users]]
+             (rx/map (fn [[file-raw thumbnails users project libraries file-comments-users]]
                        {:file-raw file-raw
+                        :thumbnails thumbnails
                         :users users
                         :project project
                         :libraries libraries

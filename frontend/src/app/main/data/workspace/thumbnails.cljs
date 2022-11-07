@@ -52,7 +52,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [object-id  (dm/str page-id frame-id)]
-        (assoc-in state [:workspace-file :thumbnails object-id] nil)))))
+        (update state :workspace-thumbnails dissoc object-id)))))
 
 (defn update-thumbnail
   "Updates the thumbnail information for the given frame `id`"
@@ -63,8 +63,8 @@
    (ptk/reify ::update-thumbnail
      ptk/WatchEvent
      (watch [_ state _]
-       (let [object-id  (dm/str page-id frame-id)
-             file-id (or file-id (:current-file-id state))
+       (let [object-id   (dm/str page-id frame-id)
+             file-id     (or file-id (:current-file-id state))
              blob-result (thumbnail-stream object-id)]
 
          (->> blob-result
@@ -80,7 +80,7 @@
                    (let [params {:file-id file-id :object-id object-id :data data}]
                      (rx/merge
                       ;; Update the local copy of the thumbnails so we don't need to request it again
-                      (rx/of #(assoc-in % [:workspace-file :thumbnails object-id] data))
+                      (rx/of #(update % :workspace-thumbnails assoc object-id data))
                       (->> (rp/cmd! :upsert-file-object-thumbnail params)
                            (rx/ignore))))
 
@@ -169,6 +169,6 @@
   (ptk/reify ::duplicate-thumbnail
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (get state :current-page-id)
-            old-shape-thumbnail (get-in state [:workspace-file :thumbnails (dm/str page-id old-id)])]
-        (-> state (assoc-in [:workspace-file :thumbnails (dm/str page-id new-id)] old-shape-thumbnail))))))
+      (let [page-id   (:current-page-id state)
+            thumbnail (dm/get-in state [:workspace-thumbnails (dm/str page-id old-id)])]
+        (update state :workspace-thumbnails assoc (dm/str page-id new-id) thumbnail)))))

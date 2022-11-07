@@ -33,7 +33,7 @@
   [{:keys [pool] :as cfg} {:keys [profile-id project-id features components-v2] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)
-    (let [team-id  (cmd.files/retrieve-team-id conn project-id)
+    (let [team-id  (cmd.files/get-team-id conn project-id)
           features (cond-> (or features #{})
                      ;; BACKWARD COMPATIBILITY with the components-v2 param
                      components-v2 (conj "components/v2"))

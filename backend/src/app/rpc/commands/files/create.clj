@@ -77,7 +77,7 @@
   [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)
-    (let [team-id (files/retrieve-team-id conn project-id)]
+    (let [team-id (files/get-team-id conn project-id)]
       (-> (create-file conn params)
           (vary-meta assoc ::audit/props {:team-id team-id})))))
 
