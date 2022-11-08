@@ -151,7 +151,9 @@
   (let [angl (gpt/angle-with-other before-v after-v)
         sign (if (mth/close? angl 180) -1 1)
         length (* sign (gpt/length before-v))]
-    (gpt/subtract after-v (gpt/scale (gpt/unit after-v) length))))
+    (if (mth/almost-zero? length)
+      after-v
+      (gpt/subtract after-v (gpt/scale (gpt/unit after-v) length)))))
 
 (defn side-vector
   [axis [c0 c1 _ c3]]

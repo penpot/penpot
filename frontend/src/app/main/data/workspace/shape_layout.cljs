@@ -78,8 +78,8 @@
             has-group?      (->> selected-shapes (d/seek cph/group-shape?))
             is-group?       (and single? has-group?)]
         (if is-group?
-          (let [parent-id    (:parent-id (first selected-shapes))
-                new-shape-id (uuid/next)
+          (let [new-shape-id (uuid/next)
+                parent-id    (:parent-id (first selected-shapes))
                 shapes-ids   (:shapes (first selected-shapes))
                 ordered-ids  (into (d/ordered-set) shapes-ids)]
             (rx/of (dwse/select-shapes ordered-ids)
