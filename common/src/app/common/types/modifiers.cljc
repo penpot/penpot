@@ -229,7 +229,7 @@
       (scale-content value)))
 
 (defn change-dimensions-modifiers
-  [shape attr value]
+  [{:keys [transform transform-inverse] :as shape} attr value]
   (us/assert map? shape)
   (us/assert #{:width :height} attr)
   (us/assert number? value)
@@ -245,22 +245,17 @@
                      (-> size
                          (assoc :height value)
                          (assoc :width (* value proportion)))))
+
         width (:width new-size)
         height (:height new-size)
 
-        shape-transform (:transform shape)
-        shape-transform-inv (:transform-inverse shape)
-        shape-center (gco/center-shape shape)
         {sr-width :width sr-height :height} (:selrect shape)
 
-        origin (cond-> (gpt/point (:selrect shape))
-                 (some? shape-transform)
-                 (gmt/transform-point-center shape-center shape-transform))
+        origin (-> shape :points first)
+        scalex (/ width sr-width)
+        scaley (/ height sr-height)]
 
-        scalev (gpt/divide (gpt/point width height)
-                           (gpt/point sr-width sr-height))]
-
-    (resize-modifiers scalev origin shape-transform shape-transform-inv)))
+    (resize-modifiers (gpt/point scalex scaley) origin transform transform-inverse)))
 
 (defn change-orientation-modifiers
   [shape orientation]
@@ -437,5 +432,3 @@
       (as-> shape $
         (reduce apply-modifier $ (:structure-parent modifiers))
         (reduce apply-modifier $ (:structure-child modifiers))))))
-
-

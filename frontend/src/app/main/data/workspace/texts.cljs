@@ -394,7 +394,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [ids (keys (::update-position-data state))]
-        (update state :workspace-text-modifiers #(apply dissoc % ids))))
+        (update state :workspace-text-modifier #(apply dissoc % ids))))
 
     ptk/WatchEvent
     (watch [_ state _]
