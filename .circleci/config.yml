@@ -62,19 +62,19 @@ jobs:
           name: common tests
           command: |
             yarn install
-            yarn run compile-test
-            node target/test.js
-            clojure -X:dev:test :patterns '["common-tests.test-.*"]'
+            yarn test
+            clojure -X:dev:test :patterns '["common-tests.*-test"]'
 
           environment:
             PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
             JVM_OPTS: -Xmx4g
+            NODE_OPTIONS: --max-old-space-size=4096
 
       - run:
           name: backend test
           working_directory: "./backend"
           command: |
-            clojure -X:dev:test :patterns '["app-tests.test-.*"]'
+            clojure -X:dev:test :patterns '["backend-tests.*-test"]'
 
           environment:
             PENPOT_TEST_DATABASE_URI: "postgresql://localhost/penpot_test"
@@ -88,11 +88,11 @@ jobs:
           working_directory: "./frontend"
           command: |
             yarn install
-            clojure -M:dev:shadow-cljs compile test
-            node target/tests.js
+            yarn test
 
           environment:
             PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
+            NODE_OPTIONS: --max-old-space-size=4096
 
       - save_cache:
          paths:
