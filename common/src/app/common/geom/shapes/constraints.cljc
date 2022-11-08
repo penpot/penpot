@@ -130,61 +130,89 @@
 
 (defn start-vector
   [axis child-points parent-points]
-  ((if (= :x axis) left-vector top-vector) child-points parent-points))
+  (let [pos-vector
+        (cond (= :x axis) left-vector
+              (= :y axis) top-vector)]
+    (pos-vector child-points parent-points)))
 
 (defn end-vector
   [axis child-points parent-points]
-  ((if (= :x axis) right-vector bottom-vector) child-points parent-points))
+  (let [pos-vector
+        (cond (= :x axis) right-vector
+              (= :y axis) bottom-vector)]
+    (pos-vector child-points parent-points)))
 
 (defn center-vector
   [axis child-points parent-points]
   ((if (= :x axis) center-horizontal-vector center-vertical-vector) child-points parent-points))
 
+(defn displacement
+  [before-v after-v]
+  (let [angl (gpt/angle-with-other before-v after-v)
+        sign (if (mth/close? angl 180) -1 1)
+        length (* sign (gpt/length before-v))]
+    (gpt/subtract after-v (gpt/scale (gpt/unit after-v) length))))
+
+(defn side-vector
+  [axis [c0 c1 _ c3]]
+  (if (= axis :x)
+    (gpt/to-vec c0 c1)
+    (gpt/to-vec c0 c3)))
+
+(defn side-vector-resize
+  [axis [c0 c1 _ c3] start-vector end-vector]
+  (if (= axis :x)
+    (gpt/to-vec (gpt/add c0 start-vector) (gpt/add c1 end-vector))
+    (gpt/to-vec (gpt/add c0 start-vector) (gpt/add c3 end-vector))))
 
 ;; Constraint function definitions
 
 (defmulti constraint-modifier (fn [type & _] type))
 
+(defmethod constraint-modifier :start
+  [_ axis child-points-before parent-points-before child-points-after parent-points-after]
+  (let [start-before (start-vector axis child-points-before parent-points-before)
+        start-after  (start-vector axis child-points-after parent-points-after)]
+    (ctm/move-modifiers (displacement start-before start-after))))
+
 (defmethod constraint-modifier :end
   [_ axis child-points-before parent-points-before child-points-after parent-points-after]
   (let [end-before  (end-vector axis child-points-before parent-points-before)
-        end-after   (end-vector axis child-points-after parent-points-after)
-        end-angl (gpt/angle-with-other end-before end-after)
-        target-end (if (mth/close? end-angl 180) (- (gpt/length end-before)) (gpt/length end-before))
-        disp-vector-end (gpt/subtract end-after (gpt/scale (gpt/unit end-after) target-end))]
-    (ctm/move-modifiers disp-vector-end)))
+        end-after   (end-vector axis child-points-after parent-points-after)]
+    (ctm/move-modifiers (displacement end-before end-after))))
 
 (defmethod constraint-modifier :fixed
   [_ axis child-points-before parent-points-before child-points-after parent-points-after transformed-parent]
-  (let [[c0 c1 _ c4] child-points-after
+  (let [;; Same as constraint end
+        end-before   (end-vector axis child-points-before parent-points-before)
+        end-after    (end-vector axis child-points-after parent-points-after)
+        start-before (start-vector axis child-points-before parent-points-before)
+        start-after  (start-vector axis child-points-after parent-points-after)
 
-        ;; Same as constraint end
-        end-before  (end-vector axis child-points-before parent-points-before)
-        end-after   (end-vector axis child-points-after parent-points-after)
-        end-angl (gpt/angle-with-other end-before end-after)
-        target-end (if (mth/close? end-angl 180) (- (gpt/length end-before)) (gpt/length end-before))
-        disp-vector-end (gpt/subtract end-after (gpt/scale (gpt/unit end-after) target-end))
+        disp-end     (displacement end-before end-after)
+        disp-start   (displacement start-before start-after)
 
-        before-vec (if (= axis :x) (gpt/to-vec c0 c1) (gpt/to-vec c0 c4))
-        after-vec (if (= axis :x)
-                    (gpt/to-vec c0 (gpt/add c1 disp-vector-end))
-                    (gpt/to-vec c0 (gpt/add c4 disp-vector-end))
-                    )
+        ;; We get the current axis side and grow it on both side by the end+start displacements
+        before-vec   (side-vector axis child-points-after)
+        after-vec    (side-vector-resize axis child-points-after disp-start disp-end)
 
-        resize-angl (gpt/angle-with-other before-vec after-vec)
-        resize-sign (if (mth/close? resize-angl 180) -1 1)
+        ;; after-vec will contain the side length of the grown side
+        ;; we scale the shape by the diference and translate it by the start
+        ;; displacement (so its left+top position is constant)
+        scale        (/ (gpt/length after-vec) (gpt/length before-vec))
 
-        scale (* resize-sign (/  (gpt/length after-vec) (gpt/length before-vec)))]
-    (ctm/resize-modifiers (get-scale axis scale) c0 (:transform transformed-parent) (:transform-inverse transformed-parent))))
+        resize-origin (first child-points-after)
+        {:keys [transform transform-inverse]} transformed-parent]
+
+    (-> (ctm/empty)
+        (ctm/resize (get-scale axis scale) resize-origin transform transform-inverse)
+        (ctm/move disp-start))))
 
 (defmethod constraint-modifier :center
   [_ axis child-points-before parent-points-before child-points-after parent-points-after]
   (let [center-before  (center-vector axis child-points-before parent-points-before)
-        center-after   (center-vector axis child-points-after parent-points-after)
-        center-angl (gpt/angle-with-other center-before center-after)
-        target-center (if (mth/close? center-angl 180) (- (gpt/length center-before)) (gpt/length center-before))
-        disp-vector-center (gpt/subtract center-after (gpt/scale (gpt/unit center-after) target-center))]
-    (ctm/move-modifiers disp-vector-center)))
+        center-after   (center-vector axis child-points-after parent-points-after)]
+    (ctm/move-modifiers (displacement center-before center-after))))
 
 (defmethod constraint-modifier :default [_ _ _ _ _]
   [])
@@ -266,11 +294,11 @@
             modifiers (normalize-modifiers constraints-h constraints-v modifiers child parent transformed-child transformed-parent)
 
             transformed-child (gst/transform-shape child modifiers)
-            parent-points-before (:points parent)
-            child-points-before (bounding-box-parent-transform child parent)
 
-            parent-points-after (:points transformed-parent)
-            child-points-after (bounding-box-parent-transform transformed-child transformed-parent)
+            parent-points-before (bounding-box-parent-transform parent parent)
+            child-points-before  (bounding-box-parent-transform child parent)
+            parent-points-after  (bounding-box-parent-transform transformed-parent transformed-parent)
+            child-points-after   (bounding-box-parent-transform transformed-child transformed-parent)
 
             modifiers-h (constraint-modifier (constraints-h const->type+axis) :x
                                              child-points-before parent-points-before

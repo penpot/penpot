@@ -131,7 +131,7 @@
     (update [_ state]
       (-> state
           (dissoc :workspace-modifiers)
-          (dissoc ::current-move-selected)))))
+          (dissoc :app.main.data.workspace.transforms/current-move-selected)))))
 
 (defn create-modif-tree
   [ids modifiers]
