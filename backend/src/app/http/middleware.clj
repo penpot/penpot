@@ -19,6 +19,7 @@
    [yetti.request :as yrq]
    [yetti.response :as yrs])
   (:import
+   com.fasterxml.jackson.core.JsonParseException
    com.fasterxml.jackson.core.io.JsonEOFException
    io.undertow.server.RequestTooBigException
    java.io.OutputStream))
@@ -60,10 +61,13 @@
                                :code :request-body-too-large
                                :hint (ex-message cause)))
 
-              (instance? JsonEOFException cause)
+
+              (or (instance? JsonEOFException cause)
+                  (instance? JsonParseException cause))
               (raise (ex/error :type :validation
                                :code :malformed-json
-                               :hint (ex-message cause)))
+                               :hint (ex-message cause)
+                               :cause cause))
               :else
               (raise cause)))]
 
