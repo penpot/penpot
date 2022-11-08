@@ -5,6 +5,16 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.util.objects-map
+  "Implements a specialized map-like data structure for store an UUID =>
+  OBJECT mappings. The main purpose of this data structure is be able
+  to serialize it on fressian as byte-array and have the ability to
+  decode each field separatelly without the need to decode the whole
+  map from the byte-array.
+
+  It works transparently, so no aditional dynamic vars are needed.  It
+  only works by reference equality and the hash-code is calculated
+  properly from each value."
+
   (:require
    ;; [app.common.logging :as l]
    [app.common.transit :as t]

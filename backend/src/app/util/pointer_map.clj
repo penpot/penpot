@@ -5,6 +5,36 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.util.pointer-map
+  "Implements a map-like data structure that provides an entry point for
+  store its content in a separated blob storage.
+
+  By default it is not coupled with any storage mode and this is
+  externalized using specified entry points for inspect the current
+  available objects and hook the load data function.
+
+  Each object is identified by an UUID and metadata hashmap which can
+  be used to locate it in the storage layer. The hash code of the
+  object is always the hash of the UUID. And it always performs
+  equality by reference (I mean, you can't deep compare two pointers
+  map without completelly loads its contents and compare the content.
+
+  Each time you pass from not-modified to modified state, the id will
+  be regenerated, and is resposability of the hashmap user to properly
+  garbage collect the unused/unreferenced objects.
+
+  For properly work it requires some dynamic vars binded to
+  appropriate values:
+
+  - *load-fn*: when you instantatiate an object by ID, on first access
+    to the contents of the hash-map will try to load the real data by
+    calling the function binded to that dynamic var.
+
+  - *tracked*: when you instantiate an object or modify it, it is updated
+    on the atom (holding a hashmap) binded to this var; if no binding is
+    available, no tracking is performed. Tracking is needed for finally
+    persist to external storage all modified objects.
+  "
+
   (:require
    [app.common.logging :as l]
    [app.common.transit :as t]
