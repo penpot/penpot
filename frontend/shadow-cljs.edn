@@ -86,7 +86,7 @@
   {:target :node-test
    :output-to "target/tests.js"
    :output-dir "target/test/"
-   :ns-regexp "^app.*-test$"
+   :ns-regexp "^frontend-tests.*-test$"
    :autorun true
 
    :compiler-options
