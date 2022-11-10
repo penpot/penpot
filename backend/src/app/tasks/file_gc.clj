@@ -44,10 +44,10 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as cfg}]
-  (fn [{:keys [id] :as params}]
+  (fn [{:keys [file-id] :as params}]
     (db/with-atomic [conn pool]
       (let [min-age (or (:min-age params) (:min-age cfg))
-            cfg     (assoc cfg :min-age min-age :conn conn :id id)]
+            cfg     (assoc cfg :min-age min-age :conn conn :file-id file-id)]
         (loop [total 0
                files (retrieve-candidates cfg)]
           (if-let [file (first files)]
@@ -84,11 +84,11 @@
     for update skip locked")
 
 (defn- retrieve-candidates
-  [{:keys [conn min-age id] :as cfg}]
-  (if id
+  [{:keys [conn min-age file-id] :as cfg}]
+  (if (uuid? file-id)
     (do
-      (l/warn :hint "explicit file id passed on params" :id id)
-      (->> (db/query conn :file {:id id})
+      (l/warn :hint "explicit file id passed on params" :file-id file-id)
+      (->> (db/query conn :file {:id file-id})
            (map #(update % :features db/decode-pgarray #{}))))
     (let [interval  (db/interval min-age)
           get-chunk (fn [cursor]
