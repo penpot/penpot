@@ -14,6 +14,7 @@
    [app.common.geom.shapes.pixel-precision :as gpp]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.pages.helpers :as cph]
+   [app.common.spec :as us]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
@@ -30,7 +31,9 @@
   "Given the ids that have changed search for layout roots to recalculate"
   [ids objects]
 
-  (assert (or (nil? ids) (set? ids)) (dm/str "tree sequence from not set: " ids))
+  (us/assert!
+   :expr (or (nil? ids) (set? ids))
+   :hint (dm/str "tree sequence from not set: " ids))
 
   (letfn [(get-tree-root ;; Finds the tree root for the current id
             [id]
@@ -76,8 +79,8 @@
           (generate-tree ;; Generate a tree sequence from a given root id
             [id]
             (->> (tree-seq
-                  #(d/not-empty? (get-in objects [% :shapes]))
-                  #(get-in objects [% :shapes])
+                  #(d/not-empty? (dm/get-in objects [% :shapes]))
+                  #(dm/get-in objects [% :shapes])
                   id)
                  (map #(get objects %))))]
 
@@ -90,7 +93,7 @@
   "Propagates the modifiers from a parent too its children applying constraints if necesary"
   [modif-tree objects parent transformed-parent ignore-constraints snap-pixel?]
   (let [children (map (d/getf objects) (:shapes parent))
-        modifiers (get-in modif-tree [(:id parent) :modifiers])
+        modifiers (dm/get-in modif-tree [(:id parent) :modifiers])
         parent (gtr/transform-shape parent (ctm/select-parent-modifiers modifiers))
 
         set-child
@@ -106,7 +109,7 @@
 (defn- process-layout-children
   [modif-tree objects parent transformed-parent]
   (letfn [(process-child [modif-tree child]
-            (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
+            (let [modifiers (dm/get-in modif-tree [(:id parent) :modifiers])
                   child-modifiers (-> modifiers
                                       (ctm/select-child-geometry-modifiers)
                                       (gcl/normalize-child-modifiers parent child transformed-parent))]
@@ -120,7 +123,7 @@
   [modif-tree objects parent]
 
   (letfn [(apply-modifiers [modif-tree child]
-            (let [modifiers (get-in modif-tree [(:id child) :modifiers])]
+            (let [modifiers (dm/get-in modif-tree [(:id child) :modifiers])]
               (cond-> child
                 (some? modifiers)
                 (gtr/transform-shape modifiers)
@@ -165,7 +168,7 @@
   [modif-tree objects parent]
   (letfn [(apply-modifiers
             [child]
-            (let [modifiers (get-in modif-tree [(:id child) :modifiers])]
+            (let [modifiers (dm/get-in modif-tree [(:id child) :modifiers])]
               (cond-> child
                 (some? modifiers)
                 (gtr/transform-shape modifiers)
@@ -187,7 +190,7 @@
               (-> modifiers
                   (ctm/resize-parent (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))]
 
-    (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
+    (let [modifiers (dm/get-in modif-tree [(:id parent) :modifiers])
           children (->> parent
                         :shapes
                         (map (comp apply-modifiers (d/getf objects))))
@@ -210,7 +213,7 @@
   [objects snap-pixel? ignore-constraints [modif-tree recalculate] parent]
   (let [parent-id (:id parent)
         root? (= uuid/zero parent-id)
-        modifiers (get-in modif-tree [parent-id :modifiers])
+        modifiers (dm/get-in modif-tree [parent-id :modifiers])
 
         modifiers (cond-> modifiers
                     (and (not root?) (ctm/has-geometry? modifiers) snap-pixel?)
@@ -248,7 +251,7 @@
   [objects modif-tree parent]
   (let [is-layout? (ctl/layout? parent)
         is-auto?   (or (ctl/auto-height? parent) (ctl/auto-width? parent))
-        modifiers (get-in modif-tree [(:id parent) :modifiers])
+        modifiers (dm/get-in modif-tree [(:id parent) :modifiers])
         transformed-parent (gtr/transform-shape parent modifiers)]
     (cond-> modif-tree
       is-layout?

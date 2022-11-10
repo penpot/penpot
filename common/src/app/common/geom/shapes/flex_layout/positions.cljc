@@ -114,24 +114,21 @@
   "Cross axis line. It's position is fixed along the different lines"
   [parent layout-bounds {:keys [line-width line-height num-children]} base-p total-width total-height num-lines]
 
-  (let [layout-width   (gpo/width-points layout-bounds)
-        layout-height  (gpo/height-points layout-bounds)
+  (let [layout-width        (gpo/width-points layout-bounds)
+        layout-height       (gpo/height-points layout-bounds)
         [layout-gap-row layout-gap-col] (ctl/gaps parent)
-
-        row?           (ctl/row? parent)
-        col?           (ctl/col? parent)
-        space-between? (ctl/space-between? parent)
-        space-around?  (ctl/space-around? parent)
-        h-center?      (ctl/h-center? parent)
-        h-end?         (ctl/h-end? parent)
-        v-center?      (ctl/v-center? parent)
-        v-end?         (ctl/v-end? parent)
-        content-stretch? (ctl/content-stretch? parent)
-
-        hv   #(gpo/start-hv layout-bounds %)
-        vv   #(gpo/start-vv layout-bounds %)
-
-        children-gap-width (* layout-gap-row (dec num-children))
+        row?                (ctl/row? parent)
+        col?                (ctl/col? parent)
+        space-between?      (ctl/space-between? parent)
+        space-around?       (ctl/space-around? parent)
+        h-center?           (ctl/h-center? parent)
+        h-end?              (ctl/h-end? parent)
+        v-center?           (ctl/v-center? parent)
+        v-end?              (ctl/v-end? parent)
+        content-stretch?    (ctl/content-stretch? parent)
+        hv                  (partial gpo/start-hv layout-bounds)
+        vv                  (partial gpo/start-vv layout-bounds)
+        children-gap-width  (* layout-gap-row (dec num-children))
         children-gap-height (* layout-gap-col (dec num-children))
 
         line-height

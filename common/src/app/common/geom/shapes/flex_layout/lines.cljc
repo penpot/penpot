@@ -37,71 +37,79 @@
                    (or row? (not (ctl/auto-height? shape))))
 
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
-        layout-width  (gpo/width-points layout-bounds)
-        layout-height (gpo/height-points layout-bounds)
 
-        calculate-line-data
-        (fn [[{:keys [line-min-width line-min-height
+        layout-width  (gpo/width-points layout-bounds)
+        layout-height (gpo/height-points layout-bounds)]
+
+    (loop [line-data    nil
+           result       []
+           child        (first children)
+           children     (rest children)]
+
+      (if (nil? child)
+        (cond-> result (some? line-data) (conj line-data))
+
+        (let [{:keys [line-min-width line-min-height
                       line-max-width line-max-height
                       num-children
-                      children-data] :as line-data} result] child]
+                      children-data]} line-data
 
-          (let [child-bounds     (gst/parent-coords-points child shape)
-                child-width      (gpo/width-points child-bounds)
-                child-height     (gpo/height-points child-bounds)
-                child-min-width  (ctl/child-min-width child)
-                child-min-height (ctl/child-min-height child)
-                child-max-width  (ctl/child-max-width child)
-                child-max-height (ctl/child-max-height child)
+              child-bounds     (gst/parent-coords-points child shape)
+              child-width      (gpo/width-points child-bounds)
+              child-height     (gpo/height-points child-bounds)
+              child-min-width  (ctl/child-min-width child)
+              child-min-height (ctl/child-min-height child)
+              child-max-width  (ctl/child-max-width child)
+              child-max-height (ctl/child-max-height child)
 
-                [child-margin-top child-margin-right child-margin-bottom child-margin-left]
-                (ctl/child-margins child)
+              [child-margin-top child-margin-right child-margin-bottom child-margin-left]
+              (ctl/child-margins child)
 
-                child-margin-width (+ child-margin-left child-margin-right)
-                child-margin-height (+ child-margin-top child-margin-bottom)
+              child-margin-width (+ child-margin-left child-margin-right)
+              child-margin-height (+ child-margin-top child-margin-bottom)
 
-                fill-width?  (ctl/fill-width? child)
-                fill-height? (ctl/fill-height? child)
+              fill-width?  (ctl/fill-width? child)
+              fill-height? (ctl/fill-height? child)
 
-                ;; We need this info later to calculate the child resizes when fill
-                child-data {:id (:id child)
-                            :child-min-width (if fill-width? child-min-width child-width)
-                            :child-min-height (if fill-height? child-min-height child-height)
-                            :child-max-width (if fill-width? child-max-width child-width)
-                            :child-max-height (if fill-height? child-max-height child-height)}
+              ;; We need this info later to calculate the child resizes when fill
+              child-data {:id (:id child)
+                          :child-min-width (if fill-width? child-min-width child-width)
+                          :child-min-height (if fill-height? child-min-height child-height)
+                          :child-max-width (if fill-width? child-max-width child-width)
+                          :child-max-height (if fill-height? child-max-height child-height)}
 
-                next-min-width   (+ child-margin-width (if fill-width? child-min-width child-width))
-                next-min-height  (+ child-margin-height (if fill-height? child-min-height child-height))
-                next-max-width   (+ child-margin-width (if fill-width? child-max-width child-width))
-                next-max-height  (+ child-margin-height (if fill-height? child-max-height child-height))
+              next-min-width   (+ child-margin-width (if fill-width? child-min-width child-width))
+              next-min-height  (+ child-margin-height (if fill-height? child-min-height child-height))
+              next-max-width   (+ child-margin-width (if fill-width? child-max-width child-width))
+              next-max-height  (+ child-margin-height (if fill-height? child-max-height child-height))
 
-                next-line-min-width  (+ line-min-width  next-min-width  (* layout-gap-row num-children))
-                next-line-min-height (+ line-min-height next-min-height (* layout-gap-col num-children))]
-            (if (and (some? line-data)
-                     (or (not wrap?)
-                         (and row? (<= next-line-min-width layout-width))
-                         (and col? (<= next-line-min-height layout-height))))
+              next-line-min-width  (+ line-min-width  next-min-width  (* layout-gap-row num-children))
+              next-line-min-height (+ line-min-height next-min-height (* layout-gap-col num-children))]
 
-              [{:line-min-width  (if row? (+ line-min-width next-min-width) (max line-min-width next-min-width))
-                :line-max-width  (if row? (+ line-max-width next-max-width) (max line-max-width next-max-width))
-                :line-min-height (if col? (+ line-min-height next-min-height) (max line-min-height next-min-height))
-                :line-max-height (if col? (+ line-max-height next-max-height) (max line-max-height next-max-height))
-                :num-children    (inc num-children)
-                :children-data   (conjv children-data child-data)}
-               result]
+          (if (and (some? line-data)
+                   (or (not wrap?)
+                       (and row? (<= next-line-min-width layout-width))
+                       (and col? (<= next-line-min-height layout-height))))
 
-              [{:line-min-width  next-min-width
-                :line-min-height next-min-height
-                :line-max-width  next-max-width
-                :line-max-height next-max-height
-                :num-children    1
-                :children-data   [child-data]}
-               (cond-> result (some? line-data) (conj line-data))])))
+            (recur {:line-min-width  (if row? (+ line-min-width next-min-width) (max line-min-width next-min-width))
+                    :line-max-width  (if row? (+ line-max-width next-max-width) (max line-max-width next-max-width))
+                    :line-min-height (if col? (+ line-min-height next-min-height) (max line-min-height next-min-height))
+                    :line-max-height (if col? (+ line-max-height next-max-height) (max line-max-height next-max-height))
+                    :num-children    (inc num-children)
+                    :children-data   (conjv children-data child-data)}
+                   result
+                   (first children)
+                   (rest children))
 
-        [line-data layout-lines] (reduce calculate-line-data [nil []] children)]
-
-    (cond-> layout-lines (some? line-data) (conj line-data))))
-
+            (recur {:line-min-width  next-min-width
+                    :line-min-height next-min-height
+                    :line-max-width  next-max-width
+                    :line-max-height next-max-height
+                    :num-children    1
+                    :children-data   [child-data]}
+                   (cond-> result (some? line-data) (conj line-data))
+                   (first children)
+                   (rest children))))))))
 
 (defn add-space-to-items
   ;; Distributes the remainder space between the lines
@@ -162,8 +170,7 @@
               (let [start-p (flp/get-start-line parent layout-bounds layout-line base-p total-width total-height num-lines)
                     next-p  (flp/get-next-line  parent layout-bounds layout-line base-p total-width total-height num-lines)]
 
-                [(conj result
-                       (assoc layout-line :start-p start-p))
+                [(conj result (assoc layout-line :start-p start-p))
                  next-p]))]
 
       (let [[total-min-width total-min-height total-max-width total-max-height]
@@ -303,10 +310,10 @@
         layout-lines
         (->> (init-layout-lines shape children layout-bounds)
              (add-lines-positions shape layout-bounds)
-             (mapv (partial add-line-spacing shape layout-bounds))
-             (mapv (partial add-children-resizes shape)))]
+             (into []
+                   (comp (map (partial add-line-spacing shape layout-bounds))
+                         (map (partial add-children-resizes shape)))))]
 
     {:layout-lines layout-lines
      :layout-bounds layout-bounds
      :reverse? reverse?}))
-

@@ -14,6 +14,7 @@
    [app.common.geom.shapes.path :as gpa]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
+   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
 
@@ -452,7 +453,7 @@
                       (map (d/getf objects))
                       (apply-children-modifiers objects modif-tree))]
     (cond-> parent
-      (= :group (:type parent))
+      (cph/group-shape? parent)
       (update-group-selrect children))))
 
 (defn get-children-bounds

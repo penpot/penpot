@@ -105,9 +105,8 @@
             (child-layout-bound-points parent child)
             points))]
 
-    (as-> children $
-      (mapcat child-bounds $)
-      (gco/transform-points $ (gco/center-shape parent) (:transform-inverse parent))
-      (gre/squared-points $)
-      (gpo/pad-points $ (- pad-top) (- pad-right) (- pad-bottom) (- pad-left))
-      (gre/points->rect $))))
+    (-> (mapcat child-bounds children)
+        (gco/transform-points (gco/center-shape parent) (:transform-inverse parent))
+        (gre/squared-points)
+        (gpo/pad-points (- pad-top) (- pad-right) (- pad-bottom) (- pad-left))
+        (gre/points->rect))))

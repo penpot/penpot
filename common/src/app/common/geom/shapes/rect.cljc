@@ -12,10 +12,14 @@
 
 (defn make-rect
   ([p1 p2]
-   (let [x1 (min (:x p1) (:x p2))
-         y1 (min (:y p1) (:y p2))
-         x2 (max (:x p1) (:x p2))
-         y2 (max (:y p1) (:y p2))]
+   (let [xp1 (:x p1)
+         yp1 (:y p1)
+         xp2 (:x p2)
+         yp2 (:y p2)
+         x1 (min xp1 xp2)
+         y1 (min yp1 yp2)
+         x2 (max xp1 xp2)
+         y2 (max yp1 yp2)]
      (make-rect x1 y1 (- x2 x1) (- y2 y1))))
 
   ([x y width height]
