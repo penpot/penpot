@@ -14,6 +14,7 @@
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.rect :as gpsr]
+   [app.common.logging :as log]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -1649,15 +1650,15 @@
          (rx/merge-map dwm/svg->clj)
          (rx/merge-map upload-images)
          (rx/map process-svg)
-         (rx/catch #(js/console.error  ; When error downloading media-obj, skip it and continue with next one
-                      (str "Error downloading " (:name media-obj) " " path ":")
-                      (clj->js %))))))
+         (rx/catch  ; When error downloading media-obj, skip it and continue with next one
+           #(log/error :hint "error downloading file"
+                       :path path
+                       :name (:name media-obj)
+                       :cause %)))))
 
 (defn- create-shapes-img
-  [pos media-obj]
-  (let [{:keys [name width height id mtype]} media-obj
-
-        group-shape (cts/make-shape :group
+  [pos {:keys [name width height id mtype] :as media-obj}]
+  (let [group-shape (cts/make-shape :group
                                     {:x (:x pos)
                                      :y (:y pos)
                                      :width width
