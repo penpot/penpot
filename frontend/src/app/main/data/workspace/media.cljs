@@ -7,11 +7,20 @@
 (ns app.main.data.workspace.media
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as log]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.spec :as us]
+   [app.common.types.container :as ctn]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
+   [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.main.data.media :as dmm]
    [app.main.data.messages :as dm]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.svg-upload :as svg]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -202,7 +211,6 @@
                       :on-image #(st/emit! (dwl/add-media %)))]
     (process-media-objects params)))
 
-
 ;; TODO: it is really need handle SVG here, looks like it already
 ;; handled separately
 (defn upload-media-workspace
@@ -215,6 +223,120 @@
 
 
 ;; --- Upload File Media objects
+
+(defn load-and-parse-svg
+  "Load the contents of a media-obj of type svg, and parse it
+  into a clojure structure."
+  [media-obj]
+  (let [path (cfg/resolve-file-media media-obj)]
+    (->> (http/send! {:method :get :uri path :mode :no-cors})
+         (rx/map :body)
+         (rx/map #(vector (:name media-obj) %))
+         (rx/merge-map svg->clj)
+         (rx/catch  ; When error downloading media-obj, skip it and continue with next one
+           #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
+                       :hint (ex-message %)
+                       :error %)))))
+
+(defn create-shapes-svg
+  "Convert svg elements into penpot shapes."
+  [file-id objects pos svg-data]
+  (let [upload-images
+        (fn [svg-data]
+          (->> (svg/upload-images svg-data file-id)
+               (rx/map #(assoc svg-data :image-data %))))
+
+        process-svg
+        (fn [svg-data]
+          (let [[shape children]
+                (svg/create-svg-shapes svg-data pos objects uuid/zero #{} false)]
+            [shape children]))]
+
+    (->> (upload-images svg-data)
+         (rx/map process-svg))))
+
+(defn create-shapes-img
+  "Convert a media object that contains a bitmap image into shapes,
+  one shape of type :image and one group that contains it."
+  [pos {:keys [name width height id mtype] :as media-obj}]
+  (let [group-shape (cts/make-shape :group
+                                    {:x (:x pos)
+                                     :y (:y pos)
+                                     :width width
+                                     :height height}
+                                    {:name name
+                                     :frame-id uuid/zero
+                                     :parent-id uuid/zero})
+
+        img-shape (cts/make-shape :image
+                                  {:x (:x pos)
+                                   :y (:y pos)
+                                   :width width
+                                   :height height
+                                   :metadata {:id id
+                                              :width width
+                                              :height height
+                                              :mtype mtype}}
+                                  {:name name
+                                   :frame-id uuid/zero
+                                   :parent-id (:id group-shape)})]
+    (rx/of [group-shape [img-shape]])))
+
+(defn- add-shapes-and-component
+  [it file-data page name [shape children]]
+  (let [page'  (reduce #(ctst/add-shape (:id %2) %2 %1 uuid/zero (:parent-id %2) nil false)
+                       page
+                       (cons shape children))
+
+        shape' (ctn/get-shape page' (:id shape))
+
+        [component-shape component-shapes updated-shapes]
+        (ctn/make-component-shape shape' (:objects page') (:id file-data) true)
+
+        changes (-> (pcb/empty-changes it)
+                    (pcb/with-page page')
+                    (pcb/with-objects (:objects page'))
+                    (pcb/with-library-data file-data)
+                    (pcb/add-objects (cons shape children))
+                    (pcb/add-component (:id component-shape)
+                                       ""
+                                       name
+                                       component-shapes
+                                       updated-shapes
+                                       (:id shape)
+                                       (:id page)))]
+
+    (dch/commit-changes changes)))
+
+(defn- process-img-component
+  [media-obj]
+  (ptk/reify ::process-img-component
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-data (wsh/get-local-file state)
+            page      (wsh/lookup-page state)
+            pos       (wsh/viewport-center state)]
+        (->> (create-shapes-img pos media-obj)
+             (rx/map (partial add-shapes-and-component it file-data page (:name media-obj))))))))
+
+(defn- process-svg-component
+  [svg-data]
+  (ptk/reify ::process-svg-component
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-data (wsh/get-local-file state)
+            page      (wsh/lookup-page state)
+            pos       (wsh/viewport-center state)]
+        (->> (create-shapes-svg (:id file-data) (:objects page) pos svg-data)
+             (rx/map (partial add-shapes-and-component it file-data page (:name svg-data))))))))
+
+(defn upload-media-components
+  [params]
+  (let [params (assoc params
+                      :local? false
+                      :on-image #(st/emit! (process-img-component %))
+                      :on-svg #(st/emit! (process-svg-component %)))]
+    (process-media-objects params)))
 
 (s/def ::object-id ::us/uuid)
 

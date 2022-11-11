@@ -552,8 +552,9 @@
 (mf/defc components-box
   [{:keys [file-id local? components listing-thumbs? open? reverse-sort? open-groups selected-assets
            on-asset-click on-assets-delete on-clear-selection] :as props}]
-  (let [state (mf/use-state {:renaming nil
-                             :component-id nil})
+  (let [input-ref (mf/use-ref nil)
+        state     (mf/use-state {:renaming nil
+                                 :component-id nil})
 
         menu-state (mf/use-state auto-pos-menu-state)
 
@@ -565,6 +566,24 @@
                                      (seq (:typographies selected-assets)))
 
         groups                   (group-assets components reverse-sort?)
+
+        components-v2            (mf/use-ctx ctx/components-v2)
+
+        add-component
+        (mf/use-fn
+         (fn []
+           #(st/emit! (dwl/set-assets-box-open file-id :components true))
+           (dom/click (mf/ref-val input-ref))))
+
+        on-file-selected
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [blobs]
+           (let [params {:file-id file-id
+                         :blobs (seq blobs)}]
+             (st/emit! (dwm/upload-media-components params)
+                       (ptk/event ::ev/event {::ev/name "add-asset-to-library"
+                                              :asset-type "components"})))))
 
         on-duplicate
         (mf/use-fn
@@ -694,6 +713,16 @@
                        :box :components
                        :assets-count (count components)
                        :open? open?}
+     (when local?
+       [:& asset-section-block {:role :title-button}
+        (when components-v2
+          [:div.assets-button {:on-click add-component}
+           i/plus
+           [:& file-uploader {:accept cm/str-image-types
+                              :multi true
+                              :ref input-ref
+                              :on-selected on-file-selected}]])])
+
      [:& asset-section-block {:role :content}
       [:& components-group {:file-id file-id
                             :prefix ""
@@ -899,9 +928,9 @@
 (mf/defc graphics-box
   [{:keys [file-id project-id local? objects listing-thumbs? open? open-groups selected-assets reverse-sort?
            on-asset-click on-assets-delete on-clear-selection] :as props}]
-  (let [input-ref  (mf/use-ref nil)
-        state      (mf/use-state {:renaming nil
-                                  :object-id nil})
+  (let [input-ref (mf/use-ref nil)
+        state     (mf/use-state {:renaming nil
+                                 :object-id nil})
 
         menu-state (mf/use-state auto-pos-menu-state)
 
