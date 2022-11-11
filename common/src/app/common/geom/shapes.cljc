@@ -175,7 +175,6 @@
 (dm/export gtr/transform-selrect-matrix)
 (dm/export gtr/transform-bounds)
 (dm/export gtr/move-position-data)
-(dm/export gtr/apply-transform)
 (dm/export gtr/apply-objects-modifiers)
 (dm/export gtr/parent-coords-rect)
 (dm/export gtr/parent-coords-points)

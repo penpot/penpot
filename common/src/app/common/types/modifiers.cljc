@@ -38,20 +38,78 @@
 ;;     * rotation
 ;;     * change-properties
 
+;; Private aux functions
+
 (def conjv (fnil conj []))
+
+(defn- move-vec? [vector]
+  (or (not (mth/almost-zero? (:x vector)))
+      (not (mth/almost-zero? (:y vector)))))
+
+(defn- resize-vec? [vector]
+  (or (not (mth/almost-zero? (- (:x vector) 1)))
+      (not (mth/almost-zero? (- (:y vector) 1)))))
+
+
+(defn- mergeable-move?
+  [op1 op2]
+  (and (= :move (:type op1))
+       (= :move (:type op2))))
+
+(defn- mergeable-resize?
+  [op1 op2]
+  (and (= :resize (:type op1))
+       (= :resize (:type op2))
+
+       ;; Same transforms
+       (gmt/close? (or (:transform op1) (gmt/matrix)) (or (:transform op2) (gmt/matrix)))
+       (gmt/close? (or (:transform-inverse op1) (gmt/matrix)) (or (:transform-inverse op2) (gmt/matrix)))
+
+       ;; Same origin
+       (gpt/close? (:origin op1) (:origin op2))))
+
+(defn- merge-move
+  [op1 op2]
+  {:type :move
+   :vector (gpt/add (:vector op1) (:vector op2))})
+
+(defn- merge-resize
+  [op1 op2]
+  (let [vector (gpt/point (* (-> op1 :vector :x) (-> op2 :vector :x))
+                          (* (-> op1 :vector :y) (-> op2 :vector :y)))]
+    (assoc op1 :vector vector)))
+
+(defn- maybe-add-move
+  "Check the last operation to check if we can stack it over the last one"
+  [operations op]
+  (if (c/empty? operations)
+    [op]
+    (let [head (peek operations)]
+      (if (mergeable-move? head op)
+        (let [item (merge-move head op)]
+          (cond-> (pop operations)
+            (move-vec? (:vector item))
+            (conj item)))
+        (conj operations op)))))
+
+(defn- maybe-add-resize
+  "Check the last operation to check if we can stack it over the last one"
+  [operations op]
+
+  (if (c/empty? operations)
+    [op]
+    (let [head (peek operations)]
+      (if (mergeable-resize? head op)
+        (let [item (merge-resize head op)]
+          (cond-> (pop operations)
+            (resize-vec? (:vector item))
+            (conj item)))
+        (conj operations op)))))
 
 ;; Public builder API
 
 (defn empty []
   {})
-
-(defn move-vec? [vector]
-  (or (not (mth/almost-zero? (:x vector)))
-      (not (mth/almost-zero? (:y vector)))))
-
-(defn resize-vec? [vector]
-  (or (not (mth/almost-zero? (- (:x vector) 1)))
-      (not (mth/almost-zero? (- (:y vector) 1)))))
 
 (defn move-parent
   ([modifiers x y]
@@ -66,18 +124,18 @@
   ([modifiers vector origin]
    (cond-> modifiers
      (resize-vec? vector)
-     (update :geometry-parent conjv {:type :resize
-                                       :vector vector
-                                       :origin origin})))
+     (update :geometry-parent maybe-add-resize {:type :resize
+                                                :vector vector
+                                                :origin origin})))
 
   ([modifiers vector origin transform transform-inverse]
    (cond-> modifiers
      (resize-vec? vector)
-     (update :geometry-parent conjv {:type :resize
-                                     :vector vector
-                                     :origin origin
-                                     :transform transform
-                                     :transform-inverse transform-inverse}))))
+     (update :geometry-parent maybe-add-resize {:type :resize
+                                                :vector vector
+                                                :origin origin
+                                                :transform transform
+                                                :transform-inverse transform-inverse}))))
 (defn move
   ([modifiers x y]
    (move modifiers (gpt/point x y)))
@@ -85,24 +143,24 @@
   ([modifiers vector]
    (cond-> modifiers
      (move-vec? vector)
-     (update :geometry-child conjv {:type :move :vector vector}))))
+     (update :geometry-child maybe-add-move {:type :move :vector vector}))))
 
 (defn resize
   ([modifiers vector origin]
    (cond-> modifiers
      (resize-vec? vector)
-     (update :geometry-child conjv {:type :resize
-                                    :vector vector
-                                    :origin origin})))
+     (update :geometry-child maybe-add-resize {:type :resize
+                                               :vector vector
+                                               :origin origin})))
 
   ([modifiers vector origin transform transform-inverse]
    (cond-> modifiers
      (resize-vec? vector)
-     (update :geometry-child conjv {:type :resize
-                                    :vector vector
-                                    :origin origin
-                                    :transform transform
-                                    :transform-inverse transform-inverse}))))
+     (update :geometry-child maybe-add-resize {:type :resize
+                                               :vector vector
+                                               :origin origin
+                                               :transform transform
+                                               :transform-inverse transform-inverse}))))
 
 (defn rotation
   [modifiers center angle]
@@ -296,16 +354,19 @@
 
 (defn only-move?
   "Returns true if there are only move operations"
-  [modifier]
-  (or (and (= 1 (-> modifier :geometry-child count))
-           (= :move (-> modifier :geometry-child first :type)))
-      (and (= 1 (-> modifier :geometry-parent count))
-           (= :move (-> modifier :geometry-parent first :type)))))
+  [{:keys [geometry-child geometry-parent]}]
+  (and (every? #(= :move (:type %)) geometry-child)
+       (every? #(= :move (:type %)) geometry-parent)))
 
 (defn has-geometry?
   [{:keys [geometry-parent geometry-child]}]
   (or (d/not-empty? geometry-parent)
       (d/not-empty? geometry-child)))
+
+(defn has-structure?
+  [{:keys [structure-parent structure-child]}]
+  (or (d/not-empty? structure-parent)
+      (d/not-empty? structure-child)))
 
 ;; Extract subsets of modifiers
 
@@ -374,8 +435,9 @@
     (let [modifiers (if (d/not-empty? (:geometry-parent modifiers))
                       (d/concat-vec (:geometry-parent modifiers) (:geometry-child modifiers))
                       (:geometry-child modifiers))]
-      (->> modifiers
-           (reduce apply-modifier (gmt/matrix))))))
+      (when (d/not-empty? modifiers)
+        (->> modifiers
+             (reduce apply-modifier (gmt/matrix)))))))
 
 (defn apply-structure-modifiers
   "Apply structure changes to a shape"

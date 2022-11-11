@@ -192,3 +192,10 @@
        (>= (:y1 sr2) (:y1 sr1))
        (<= (:y2 sr2) (:y2 sr1))))
 
+(defn corners->selrect
+  [p1 p2]
+  (let [xp1 (:x p1)
+        xp2 (:x p2)
+        yp1 (:y p1)
+        yp2 (:y p2)]
+    (make-selrect (min xp1 xp2) (min yp1 yp2) (abs (- xp1 xp2)) (abs (- yp1 yp2)))))

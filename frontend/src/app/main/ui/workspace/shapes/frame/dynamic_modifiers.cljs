@@ -200,8 +200,8 @@
            (when (some? modifiers)
              (d/mapm (fn [id {modifiers :modifiers}]
                        (let [shape (get objects id)
-                             text? (= :text (:type shape))
-                             modifiers (cond-> modifiers text? (adapt-text-modifiers shape))]
+                             adapt-text? (and (= :text (:type shape)) (not (ctm/only-move? modifiers)))
+                             modifiers (cond-> modifiers adapt-text? (adapt-text-modifiers shape))]
                          (ctm/modifiers->transform modifiers)))
                      modifiers))))
 
@@ -214,6 +214,7 @@
          (mf/deps transforms)
          (fn []
            (->> (keys transforms)
+                (filter #(some? (get transforms %)))
                 (mapv (d/getf objects)))))
 
         prev-shapes (mf/use-var nil)

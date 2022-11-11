@@ -91,20 +91,30 @@
 
 (defn- set-children-modifiers
   "Propagates the modifiers from a parent too its children applying constraints if necesary"
-  [modif-tree objects parent transformed-parent ignore-constraints snap-pixel?]
-  (let [children (map (d/getf objects) (:shapes parent))
-        modifiers (dm/get-in modif-tree [(:id parent) :modifiers])
-        parent (gtr/transform-shape parent (ctm/select-parent-modifiers modifiers))
+  [modif-tree objects parent transformed-parent ignore-constraints]
+  (let [children  (:shapes parent)
+        modifiers (dm/get-in modif-tree [(:id parent) :modifiers])]
 
-        set-child
-        (fn [modif-tree child]
-          (let [child-modifiers (gct/calc-child-modifiers parent child modifiers ignore-constraints transformed-parent)
-                child-modifiers (cond-> child-modifiers snap-pixel? (gpp/set-pixel-precision child))]
-            (cond-> modif-tree
-              (not (ctm/empty? child-modifiers))
-              (update-in [(:id child) :modifiers] ctm/add-modifiers child-modifiers))))]
+    (if (ctm/only-move? modifiers)
+      ;; Move modifiers don't need to calculate constraints
+      (loop [modif-tree modif-tree
+             children (seq children)]
+        (if-let [current (first children)]
+          (recur (update-in modif-tree [current :modifiers] ctm/add-modifiers modifiers)
+                 (rest children))
+          modif-tree))
 
-    (reduce set-child modif-tree children)))
+      ;; Check the constraints, then resize
+      (let [parent (gtr/transform-shape parent (ctm/select-parent-modifiers modifiers))]
+        (loop [modif-tree modif-tree
+               children (seq children)]
+          (if-let [current (first children)]
+            (let [child-modifiers (gct/calc-child-modifiers parent (get objects current) modifiers ignore-constraints transformed-parent)]
+              (recur (cond-> modif-tree
+                       (not (ctm/empty? child-modifiers))
+                       (update-in [current :modifiers] ctm/add-modifiers child-modifiers))
+                     (rest children)))
+            modif-tree))))))
 
 (defn- process-layout-children
   [modif-tree objects parent transformed-parent]
@@ -210,17 +220,11 @@
       (assoc-in modif-tree [(:id parent) :modifiers] modifiers))))
 
 (defn- propagate-modifiers
-  [objects snap-pixel? ignore-constraints [modif-tree recalculate] parent]
+  "Propagate modifiers to its children"
+  [objects ignore-constraints [modif-tree recalculate] parent]
   (let [parent-id (:id parent)
         root? (= uuid/zero parent-id)
         modifiers (dm/get-in modif-tree [parent-id :modifiers])
-
-        modifiers (cond-> modifiers
-                    (and (not root?) (ctm/has-geometry? modifiers) snap-pixel?)
-                    (gpp/set-pixel-precision parent))
-
-        modif-tree (-> modif-tree (assoc-in [parent-id :modifiers] modifiers))
-
         transformed-parent (gtr/transform-shape parent modifiers)
 
         has-modifiers? (ctm/child-modifiers? modifiers)
@@ -233,7 +237,7 @@
 
     [(cond-> modif-tree
        (and (not is-layout?) has-modifiers? is-parent? (not root?))
-       (set-children-modifiers objects parent transformed-parent (or ignore-constraints is-inside-layout?) snap-pixel?)
+       (set-children-modifiers objects parent transformed-parent (or ignore-constraints is-inside-layout?))
 
        is-layout?
        (-> (process-layout-children objects parent transformed-parent)
@@ -266,7 +270,7 @@
   (let [shapes-tree (resolve-tree-sequence (-> modif-tree keys set) objects)
 
         [modif-tree recalculate]
-        (reduce (partial propagate-modifiers objects snap-pixel? ignore-constraints) [modif-tree #{}] shapes-tree)
+        (reduce (partial propagate-modifiers objects ignore-constraints) [modif-tree #{}] shapes-tree)
 
         shapes-tree (resolve-tree-sequence recalculate objects)
 
@@ -281,7 +285,11 @@
         modif-tree
         (->> shapes-tree
              (filter ctl/layout?)
-             (reduce (partial calculate-reflow-layout objects) modif-tree ))]
+             (reduce (partial calculate-reflow-layout objects) modif-tree))
+
+        modif-tree
+        (cond-> modif-tree
+          snap-pixel? (gpp/adjust-pixel-precision objects))]
 
     ;;#?(:cljs
     ;;   (.log js/console ">result" (modif->js modif-tree objects)))

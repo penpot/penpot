@@ -6,6 +6,8 @@
 
 (ns app.common.geom.shapes.pixel-precision
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.rect :as gpr]
@@ -15,9 +17,8 @@
    [app.common.types.modifiers :as ctm]))
 
 (defn size-pixel-precision
-  [modifiers shape]
-  (let [{:keys [points transform transform-inverse] :as shape} (gtr/transform-shape shape modifiers)
-        origin        (gpo/origin points)
+  [modifiers {:keys [points transform transform-inverse] :as shape}]
+  (let [origin        (gpo/origin points)
         curr-width    (gpo/width-points points)
         curr-height   (gpo/height-points points)
 
@@ -35,9 +36,8 @@
         (ctm/resize scalev origin transform transform-inverse))))
 
 (defn position-pixel-precision
-  [modifiers shape]
-  (let [{:keys [points]} (gtr/transform-shape shape modifiers)
-        bounds        (gpr/points->rect points)
+  [modifiers {:keys [points]}]
+  (let [bounds        (gpr/points->rect points)
         corner        (gpt/point bounds)
         target-corner (gpt/round corner)
         deltav        (gpt/to-vec corner target-corner)]
@@ -47,7 +47,25 @@
 (defn set-pixel-precision
   "Adjust modifiers so they adjust to the pixel grid"
   [modifiers shape]
-
-  (-> modifiers
+  (let [move? (ctm/only-move? modifiers)]
+    (cond-> modifiers
+      (not move?)
       (size-pixel-precision shape)
-      (position-pixel-precision shape)))
+
+      :always
+      (position-pixel-precision shape))))
+
+(defn adjust-pixel-precision
+  [modif-tree objects]
+  (let [update-modifiers
+        (fn [modif-tree shape]
+          (let [modifiers (dm/get-in modif-tree [(:id shape) :modifiers])]
+            (if-not (ctm/has-geometry? modifiers)
+              modif-tree
+              (let [shape (gtr/transform-shape shape modifiers)]
+                (-> modif-tree
+                    (update-in [(:id shape) :modifiers] set-pixel-precision shape))))))]
+
+    (->> (keys modif-tree)
+         (map (d/getf objects))
+         (reduce update-modifiers modif-tree))))

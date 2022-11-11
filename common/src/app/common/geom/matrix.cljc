@@ -263,3 +263,10 @@
                matrix
                (translate-matrix (gpt/negate center))))
     point))
+
+(defn move?
+  [{:keys [a b c d _ _]}]
+  (and (mth/almost-zero? (- a 1))
+       (mth/almost-zero? b)
+       (mth/almost-zero? c)
+       (mth/almost-zero? (- d 1))))

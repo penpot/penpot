@@ -156,7 +156,7 @@
     (if (> num to) to num)))
 
 (defn almost-zero? [num]
-  (< (abs (double num)) 1e-5))
+  (< (abs (double num)) 1e-4))
 
 (defonce float-equal-precision 0.001)
 
