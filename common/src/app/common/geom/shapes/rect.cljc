@@ -83,13 +83,22 @@
 
 (defn points->rect
   [points]
-  (when (d/not-empty? points)
-    (let [minx (transduce (keep :x) min ##Inf points)
-          miny (transduce (keep :y) min ##Inf points)
-          maxx (transduce (keep :x) max ##-Inf points)
-          maxy (transduce (keep :y) max ##-Inf points)]
-      (when (d/num? minx miny maxx maxy)
-        (make-rect minx miny (- maxx minx) (- maxy miny))))))
+  (when-let [points (seq points)]
+    (loop [minx ##Inf
+           miny ##Inf
+           maxx ##-Inf
+           maxy ##-Inf
+           pts  points]
+      (if-let [pt (first pts)]
+        (let [x (d/get-prop pt :x)
+              y (d/get-prop pt :y)]
+          (recur (min minx x)
+                 (min miny y)
+                 (max maxx x)
+                 (max maxy y)
+                 (rest pts)))
+        (when (d/num? minx miny maxx maxy)
+          (make-rect minx miny (- maxx minx) (- maxy miny)))))))
 
 (defn bounds->rect
   [[{ax :x ay :y} {bx :x by :y} {cx :x cy :y} {dx :x dy :y}]]

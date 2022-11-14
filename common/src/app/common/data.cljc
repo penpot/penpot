@@ -555,22 +555,32 @@
 
 (defn num?
   "Checks if a value `val` is a number but not an Infinite or NaN"
-  ([val]
-   (and (number? val)
-        (mth/finite? val)
-        (not (mth/nan? val))))
-
-  ([val & vals]
-   (and (num? val)
-        (->> vals (every? num?)))))
+  ([a]
+   (mth/finite? a))
+  ([a b]
+   (and (mth/finite? a)
+        (mth/finite? b)))
+  ([a b c]
+   (and (mth/finite? a)
+        (mth/finite? b)
+        (mth/finite? c)))
+  ([a b c d]
+   (and (mth/finite? a)
+        (mth/finite? b)
+        (mth/finite? c)
+        (mth/finite? d)))
+  ([a b c d & others]
+   (and (mth/finite? a)
+        (mth/finite? b)
+        (mth/finite? c)
+        (mth/finite? d)
+        (every? mth/finite? others))))
 
 (defn check-num
   "Function that checks if a number is nil or nan. Will return 0 when not
   valid and the number otherwise."
-  ([v]
-   (check-num v 0))
-  ([v default]
-   (if (num? v) v default)))
+  ([v] (mth/finite v 0))
+  ([v default] (mth/finite v default)))
 
 (defn any-key? [element & rest]
   (some #(contains? element %) rest))

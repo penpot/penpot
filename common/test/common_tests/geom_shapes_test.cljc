@@ -21,7 +21,8 @@
    {:command :curve-to :params {:x 40 :y 40 :c1x 35 :c1y 35 :c2x 45 :c2y 45}}
    {:command :close-path}])
 
-(defn add-path-data [shape]
+(defn add-path-data
+  [shape]
   (let [content (:content shape default-path)
         selrect (gsh/content->selrect content)
         points (gsh/rect->points selrect)]
@@ -30,7 +31,8 @@
            :selrect selrect
            :points points)))
 
-(defn add-rect-data [shape]
+(defn add-rect-data
+  [shape]
   (let [shape (-> shape
                   (assoc :width 20 :height 20))
         selrect (gsh/rect->selrect shape)
@@ -49,7 +51,7 @@
            (not= type :path) (add-rect-data)))))
 
 
-(t/deftest transform-shape-tests
+(t/deftest transform-shapes
   (t/testing "Shape without modifiers should stay the same"
     (t/are [type]
         (let [shape-before (create-test-shape type)
@@ -181,3 +183,18 @@
       :path {:x 0.0 :y 0.0 :x1 0.0 :y1 0.0 :x2 ##Inf :y2 ##Inf :width ##Inf :height ##Inf}
       :rect nil
       :path nil)))
+
+(t/deftest points-to-selrect
+  (let [points [(gpt/point 0.5 0.5)
+                (gpt/point -1 -2)
+                (gpt/point 20 65.2)
+                (gpt/point 12 -10)]
+        result (gsh/points->rect points)
+        expect {:x -1, :y -10, :width 21, :height 75.2}]
+
+    (t/is (= (:x expect) (:x result)))
+    (t/is (= (:y expect) (:y result)))
+    (t/is (= (:width expect) (:width result)))
+    (t/is (= (:height expect) (:height result)))
+    ))
+

@@ -51,3 +51,17 @@
   (t/is (= [1 10 100 2 20 200 3 30 300]
            (d/join [1 2 3] [1 10 100] *))))
 
+(t/deftest num-predicate
+  (t/is (not (d/num? ##NaN)))
+  (t/is (not (d/num? nil)))
+  (t/is (d/num? 1))
+  (t/is (d/num? -0.3))
+  (t/is (not (d/num? {}))))
+
+(t/deftest check-num-helper
+  (t/is (= 1 (d/check-num 1 0)))
+  (t/is (= 0 (d/check-num ##NaN 0)))
+  (t/is (= 0 (d/check-num {} 0)))
+  (t/is (= 0 (d/check-num [] 0)))
+  (t/is (= 0 (d/check-num :foo 0)))
+  (t/is (= 0 (d/check-num nil 0))))
