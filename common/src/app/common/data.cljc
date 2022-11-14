@@ -461,6 +461,15 @@
   (->> (apply c/iteration args)
        (concat-all)))
 
+(defmacro get-prop
+  "A macro based, optimized variant of `get` that access the property
+  directly on CLJS, on CLJ works as get."
+  [obj prop]
+  (if (:ns &env)
+    (list (symbol ".") (with-meta obj {:tag 'js}) (symbol (str "-" (c/name prop))))
+    `(c/get ~obj ~prop)))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
