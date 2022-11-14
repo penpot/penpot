@@ -128,7 +128,7 @@
                 (some? modifiers)
                 (gtr/transform-shape modifiers)
 
-                (and (some? modifiers) (cph/group-like-shape? child))
+                (cph/group-like-shape? child)
                 (gtr/apply-group-modifiers objects modif-tree))))
 
           (set-child-modifiers [parent [layout-line modif-tree] child]
@@ -226,13 +226,13 @@
         has-modifiers? (ctm/child-modifiers? modifiers)
         is-layout? (ctl/layout? parent)
         is-auto?   (or (ctl/auto-height? transformed-parent) (ctl/auto-width? transformed-parent))
-        is-parent? (or (cph/group-like-shape? parent) (and (cph/frame-shape? parent) (not (ctl/layout? parent))))
+        is-parent? (or (cph/group-like-shape? parent) (cph/frame-shape? parent))
 
         ;; If the current child is inside the layout we ignore the constraints
         is-inside-layout? (ctl/inside-layout? objects parent)]
 
     [(cond-> modif-tree
-       (and has-modifiers? is-parent? (not root?))
+       (and (not is-layout?) has-modifiers? is-parent? (not root?))
        (set-children-modifiers objects parent transformed-parent (or ignore-constraints is-inside-layout?) snap-pixel?)
 
        is-layout?

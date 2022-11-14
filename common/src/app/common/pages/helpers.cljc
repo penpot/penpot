@@ -37,6 +37,10 @@
   [{:keys [type]}]
   (= type :group))
 
+(defn mask-shape?
+  [{:keys [type masked-group?]}]
+  (and (= type :group) masked-group?))
+
 (defn bool-shape?
   [{:keys [type]}]
   (= type :bool))

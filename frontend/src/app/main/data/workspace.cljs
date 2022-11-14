@@ -25,6 +25,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.comments :as dcm]
@@ -686,11 +687,16 @@
                                              shapes-to-detach
                                              shapes-to-reroot
                                              shapes-to-deroot
-                                             ids)]
+                                             ids)
+
+            layouts-to-update
+            (into #{}
+                  (filter (partial ctl/layout? objects))
+                  (concat [parent-id] (cph/get-parent-ids objects parent-id)))]
 
         (rx/of (dch/commit-changes changes)
                (dwco/expand-collapse parent-id)
-               (dwul/update-layout-positions [parent-id]))))))
+               (dwul/update-layout-positions layouts-to-update))))))
 
 (defn relocate-selected-shapes
   [parent-id to-index]

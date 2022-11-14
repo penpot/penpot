@@ -10,6 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.shape.layout :as ctl]
    [app.main.snap :as snap]
    [app.util.geom.snap-points :as sp]
    [beicon.core :as rx]
@@ -172,9 +173,11 @@
                (and (= type :layout) (= grid :square))
                (= type :guide))))
 
-        shapes    (if drawing [drawing] shapes)]
-    [:& snap-feedback {:shapes shapes
-                       :page-id page-id
-                       :remove-snap? remove-snap?
-                       :zoom zoom}]))
+        shapes    (if drawing [drawing] shapes)
+        frame-id (snap/snap-frame-id shapes)]
+    (when-not (ctl/layout? objects frame-id)
+      [:& snap-feedback {:shapes shapes
+                         :page-id page-id
+                         :remove-snap? remove-snap?
+                         :zoom zoom}])))
 
