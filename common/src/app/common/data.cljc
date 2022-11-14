@@ -57,8 +57,12 @@
   ([a & more] (into (queue) (cons a more))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Data Structures Manipulation
+;; Data Structures Access & Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn not-empty?
+  [coll]
+  (boolean (seq coll)))
 
 (defn editable-collection?
   [m]
@@ -144,6 +148,16 @@
        (recur (inc idx)
               (rest items)
               (conj! res [idx (first items)]))))))
+
+(defn group-by
+  ([kf coll] (group-by kf identity [] coll))
+  ([kf vf coll] (group-by kf vf [] coll))
+  ([kf vf iv coll]
+   (let [conj (fnil conj iv)]
+     (reduce (fn [result item]
+               (update result (kf item) conj (vf item)))
+             {}
+             coll))))
 
 (defn seek
   ([pred coll]
@@ -243,12 +257,12 @@
 (defn filterm
   "Filter values of a map that satisfy a predicate"
   [pred coll]
-  (into {} (filter pred coll)))
+  (into {} (filter pred) coll))
 
 (defn removem
   "Remove values of a map that satisfy a predicate"
   [pred coll]
-  (into {} (remove pred coll)))
+  (into {} (remove pred) coll))
 
 (defn map-perm
   "Maps a function to each pair of values that can be combined inside the
@@ -373,6 +387,80 @@
              (do (vswap! seen conj input*)
                  (rf result input)))))))))
 
+(defn with-next
+  "Given a collection will return a new collection where each element
+  is paired with the next item in the collection
+  (with-next (range 5)) => [[0 1] [1 2] [2 3] [3 4] [4 nil]]"
+  [coll]
+  (map vector
+       coll
+       (c/concat (rest coll) [nil])))
+
+(defn with-prev
+  "Given a collection will return a new collection where each element
+  is paired with the previous item in the collection
+  (with-prev (range 5)) => [[0 nil] [1 0] [2 1] [3 2] [4 3]]"
+  [coll]
+  (map vector
+       coll
+       (c/cons nil coll)))
+
+(defn with-prev-next
+  "Given a collection will return a new collection where every item is paired
+  with the previous and the next item of a collection
+  (with-prev-next (range 5)) => [[0 nil 1] [1 0 2] [2 1 3] [3 2 4] [4 3 nil]]"
+  [coll]
+  (map vector
+       coll
+       (c/cons nil coll)
+       (c/concat (rest coll) [nil])))
+
+(defn deep-mapm
+  "Applies a map function to an associative map and recurses over its children
+  when it's a vector or a map"
+  [mfn m]
+  (let [do-map
+        (fn [entry]
+          (let [[k v] (mfn entry)]
+            (cond
+              (or (vector? v) (map? v))
+              [k (deep-mapm mfn v)]
+
+              :else
+              (mfn [k v]))))]
+    (cond
+      (map? m)
+      (into {} (map do-map) m)
+
+      (vector? m)
+      (into [] (map (partial deep-mapm mfn)) m)
+
+      :else
+      m)))
+
+(defn iteration
+  "Creates a totally lazy seqable via repeated calls to step, a
+  function of some (continuation token) 'k'. The first call to step
+  will be passed initk, returning 'ret'. If (somef ret) is true, (vf
+  ret) will be included in the iteration, else iteration will
+  terminate and vf/kf will not be called. If (kf ret) is non-nil it
+  will be passed to the next step call, else iteration will terminate.
+
+  This can be used e.g. to consume APIs that return paginated or batched data.
+
+   step - (possibly impure) fn of 'k' -> 'ret'
+   :somef - fn of 'ret' -> logical true/false, default 'some?'
+   :vf - fn of 'ret' -> 'v', a value produced by the iteration, default 'identity'
+   :kf - fn of 'ret' -> 'next-k' or nil (signaling 'do not continue'), default 'identity'
+   :initk - the first value passed to step, default 'nil'
+
+  It is presumed that step with non-initk is
+  unreproducible/non-idempotent. If step with initk is unreproducible
+  it is on the consumer to not consume twice."
+  [& args]
+  (->> (apply c/iteration args)
+       (concat-all)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -439,8 +527,9 @@
   (or val default))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Data Parsing / Conversion
+;; Utilities
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn nilf
   "Returns a new function that if you pass nil as any argument will
   return nil"
@@ -493,34 +582,6 @@
      :else
      (or default-value
          (str maybe-keyword)))))
-
-(defn with-next
-  "Given a collection will return a new collection where each element
-  is paired with the next item in the collection
-  (with-next (range 5)) => [[0 1] [1 2] [2 3] [3 4] [4 nil]]"
-  [coll]
-  (map vector
-       coll
-       (c/concat (rest coll) [nil])))
-
-(defn with-prev
-  "Given a collection will return a new collection where each element
-  is paired with the previous item in the collection
-  (with-prev (range 5)) => [[0 nil] [1 0] [2 1] [3 2] [4 3]]"
-  [coll]
-  (map vector
-       coll
-       (c/concat [nil] coll)))
-
-(defn with-prev-next
-  "Given a collection will return a new collection where every item is paired
-  with the previous and the next item of a collection
-  (with-prev-next (range 5)) => [[0 nil 1] [1 0 2] [2 1 3] [3 2 4] [4 3 nil]]"
-  [coll]
-  (map vector
-       coll
-       (c/concat [nil] coll)
-       (c/concat (rest coll) [nil])))
 
 (defn prefix-keyword
   "Given a keyword and a prefix will return a new keyword with the prefix attached
@@ -612,33 +673,6 @@
                (recur (inc counter))
                candidate))))))))
 
-(defn deep-mapm
-  "Applies a map function to an associative map and recurses over its children
-  when it's a vector or a map"
-  [mfn m]
-  (let [do-map
-        (fn [entry]
-          (let [[k v] (mfn entry)]
-            (cond
-              (or (vector? v) (map? v))
-              [k (deep-mapm mfn v)]
-
-              :else
-              (mfn [k v]))))]
-    (cond
-      (map? m)
-      (into {} (map do-map) m)
-
-      (vector? m)
-      (into [] (map (partial deep-mapm mfn)) m)
-
-      :else
-      m)))
-
-(defn not-empty?
-  [coll]
-  (boolean (seq coll)))
-
 (defn kebab-keys [m]
   (->> m
        (deep-mapm
@@ -646,40 +680,6 @@
           (if (or (keyword? k) (string? k))
             [(keyword (str/kebab (name k))) v]
             [k v])))))
-
-
-(defn group-by
-  ([kf coll] (group-by kf identity [] coll))
-  ([kf vf coll] (group-by kf vf [] coll))
-  ([kf vf iv coll]
-   (let [conj (fnil conj iv)]
-     (reduce (fn [result item]
-               (update result (kf item) conj (vf item)))
-             {}
-             coll))))
-
-(defn iteration
-  "Creates a totally lazy seqable via repeated calls to step, a
-  function of some (continuation token) 'k'. The first call to step
-  will be passed initk, returning 'ret'. If (somef ret) is true, (vf
-  ret) will be included in the iteration, else iteration will
-  terminate and vf/kf will not be called. If (kf ret) is non-nil it
-  will be passed to the next step call, else iteration will terminate.
-
-  This can be used e.g. to consume APIs that return paginated or batched data.
-
-   step - (possibly impure) fn of 'k' -> 'ret'
-   :somef - fn of 'ret' -> logical true/false, default 'some?'
-   :vf - fn of 'ret' -> 'v', a value produced by the iteration, default 'identity'
-   :kf - fn of 'ret' -> 'next-k' or nil (signaling 'do not continue'), default 'identity'
-   :initk - the first value passed to step, default 'nil'
-
-  It is presumed that step with non-initk is
-  unreproducible/non-idempotent. If step with initk is unreproducible
-  it is on the consumer to not consume twice."
-  [& args]
-  (->> (apply c/iteration args)
-       (concat-all)))
 
 (defn toggle-selection
   ([set value]
