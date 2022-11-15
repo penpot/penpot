@@ -285,6 +285,13 @@
                           (assoc-in [:selrect :height] 50)
                           (assoc-in [:selrect :x] 10)
                           (assoc-in [:selrect :y] 10))
+
+        rect         (-> (cts/make-minimal-shape :rect)
+                         (assoc-in [:selrect :width] 50)
+                         (assoc-in [:selrect :height] 50)
+                         (assoc-in [:selrect :x] 10)
+                         (assoc-in [:selrect :y] 10))
+
         overlay-frame (-> (cts/make-minimal-shape :frame)
                           (assoc-in [:selrect :width] 30)
                           (assoc-in [:selrect :height] 20))
@@ -300,7 +307,8 @@
                         (ctsi/set-destination (:id overlay-frame)))
         interaction-auto (ctsi/set-position-relative-to interaction nil)
         interaction-base-frame (ctsi/set-position-relative-to interaction (:id base-frame))
-        interaction-popup (ctsi/set-position-relative-to interaction (:id popup))]
+        interaction-popup (ctsi/set-position-relative-to interaction (:id popup))
+        interaction-rect (ctsi/set-position-relative-to interaction (:id rect))]
     (t/testing "Overlay top-left relative to auto"
       (let [i2 (ctsi/set-overlay-pos-type interaction-auto :top-left base-frame objects)
             overlay-pos (ctsi/calc-overlay-position i2 base-frame base-frame overlay-frame frame-offset)]
@@ -455,7 +463,57 @@
                    (ctsi/set-overlay-position (gpt/point 12 62)))
             overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
         (t/is (= (:x overlay-pos) 27))
-        (t/is (= (:y overlay-pos) 77))))))
+        (t/is (= (:y overlay-pos) 77))))
+
+    (t/testing "Overlay top-left relative to popup"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-popup :top-left base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 popup base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 15))
+        (t/is (= (:y overlay-pos) 15))))
+
+    (t/testing "Overlay top-center relative to rect"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-rect :top-center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 rect base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 25))
+        (t/is (= (:y overlay-pos) 15))))
+
+    (t/testing "Overlay top-right relative to rect"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-rect :top-right base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 rect base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 35))
+        (t/is (= (:y overlay-pos) 15))))
+
+    (t/testing "Overlay bottom-left relative to rect"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-rect :bottom-left base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 rect base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 15))
+        (t/is (= (:y overlay-pos) 45))))
+
+    (t/testing "Overlay bottom-center relative to rect"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-rect :bottom-center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 rect base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 25))
+        (t/is (= (:y overlay-pos) 45))))
+
+    (t/testing "Overlay bottom-right relative to rect"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-rect :bottom-right base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 rect base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 35))
+        (t/is (= (:y overlay-pos) 45))))
+
+    (t/testing "Overlay center relative to rect"
+      (let [i2 (ctsi/set-overlay-pos-type interaction-rect :center base-frame objects)
+            overlay-pos (ctsi/calc-overlay-position i2 rect base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 25))
+        (t/is (= (:y overlay-pos) 30))))
+
+    (t/testing "Overlay manual relative to rect"
+      (let [i2 (-> interaction-rect
+                   (ctsi/set-overlay-pos-type :manual base-frame objects)
+                   (ctsi/set-overlay-position (gpt/point 12 62)))
+            overlay-pos (ctsi/calc-overlay-position i2 rect base-frame overlay-frame frame-offset)]
+        (t/is (= (:x overlay-pos) 17))
+        (t/is (= (:y overlay-pos) 67))))))
 
 
 (t/deftest animation-checks

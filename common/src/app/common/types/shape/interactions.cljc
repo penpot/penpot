@@ -371,17 +371,23 @@
   (assert (has-overlay-opts interaction))
   (if (nil? dest-frame)
     (gpt/point 0 0)
-    (let [overlay-position       (:overlay-position interaction)
-          overlay-size           (:selrect dest-frame)
-          relative-to-shape-size (:selrect relative-to-shape)
+    (let [overlay-size           (:selrect dest-frame)
           base-frame-size        (:selrect base-frame)
+          relative-to-shape-size (:selrect relative-to-shape)
+          relative-to-adjusted-to-base-frame {:x (- (:x relative-to-shape-size) (:x base-frame-size))
+                                              :y (- (:y relative-to-shape-size) (:y base-frame-size))}
           relative-to-is-auto?   (and (nil? (:position-relative-to interaction)) (not= :manual (:overlay-pos-type interaction)))
           base-position          (if relative-to-is-auto?
                                    {:x 0 :y 0}
                                    {:x (+ (:x frame-offset)
-                                          (- (:x relative-to-shape-size) (:x base-frame-size)))
+                                          (:x relative-to-adjusted-to-base-frame))
                                     :y (+ (:y frame-offset)
-                                          (- (:y relative-to-shape-size) (:y base-frame-size)))})]
+                                          (:y relative-to-adjusted-to-base-frame))})
+          overlay-position       (:overlay-position interaction)
+          overlay-position       (if (= (:type relative-to-shape) :frame)
+                                   overlay-position
+                                   {:x (- (:x overlay-position) (:x relative-to-adjusted-to-base-frame))
+                                    :y (- (:y overlay-position) (:y relative-to-adjusted-to-base-frame))})]
       (case (:overlay-pos-type interaction)
         :center
         (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
