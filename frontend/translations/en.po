@@ -2699,6 +2699,9 @@ msgstr "Line Height"
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
+msgid "workspace.assets.typography.text-styles"
+msgstr "Text styles"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
 msgstr "Text Transform"
