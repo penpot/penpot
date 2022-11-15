@@ -135,10 +135,10 @@
   (letfn [(apply-modifiers [modif-tree child]
             (let [modifiers (dm/get-in modif-tree [(:id child) :modifiers])]
               (cond-> child
-                (some? modifiers)
+                (and (not (cph/group-shape? child)) (some? modifiers))
                 (gtr/transform-shape modifiers)
 
-                (cph/group-like-shape? child)
+                (cph/group-shape? child)
                 (gtr/apply-group-modifiers objects modif-tree))))
 
           (set-child-modifiers [parent [layout-line modif-tree] child]
@@ -152,7 +152,7 @@
 
               [layout-line modif-tree]))]
 
-    (let [children (map (d/getf objects) (:shapes parent))
+    (let [children     (map (d/getf objects) (:shapes parent))
           children     (->> children (map (partial apply-modifiers modif-tree)))
           layout-data  (gcl/calc-layout-data parent children)
           children     (into [] (cond-> children (:reverse? layout-data) reverse))
@@ -173,119 +173,136 @@
 
           modif-tree)))))
 
-(defn- set-auto-modifiers
+(defn- calc-auto-modifiers
   "Calculates the modifiers to adjust the bounds for auto-width/auto-height shapes"
-  [modif-tree objects parent]
-  (letfn [(apply-modifiers
-            [child]
-            (let [modifiers (dm/get-in modif-tree [(:id child) :modifiers])]
-              (cond-> child
-                (some? modifiers)
-                (gtr/transform-shape modifiers)
-
-                (and (some? modifiers) (cph/group-like-shape? child))
-                (gtr/apply-group-modifiers objects modif-tree))))
-
-          (set-parent-auto-width
-            [modifiers parent auto-width]
+  [objects parent]
+  (letfn [(set-parent-auto-width
+            [modifiers auto-width]
             (let [origin (-> parent :points first)
                   scale-width (/ auto-width (-> parent :selrect :width) )]
               (-> modifiers
                   (ctm/resize-parent (gpt/point scale-width 1) origin (:transform parent) (:transform-inverse parent)))))
 
           (set-parent-auto-height
-            [modifiers parent auto-height]
+            [modifiers auto-height]
             (let [origin (-> parent :points first)
                   scale-height (/ auto-height (-> parent :selrect :height) )]
               (-> modifiers
                   (ctm/resize-parent (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))]
 
-    (let [modifiers (dm/get-in modif-tree [(:id parent) :modifiers])
-          children (->> parent
-                        :shapes
-                        (map (comp apply-modifiers (d/getf objects))))
+    (let [children (->> parent :shapes (map (d/getf objects)))
 
           {auto-width :width auto-height :height}
           (when (and (d/not-empty? children) (or (ctl/auto-height? parent) (ctl/auto-width? parent)))
-            (gcl/layout-content-bounds parent children))
+            (gcl/layout-content-bounds parent children))]
 
-          modifiers
-          (cond-> modifiers
-            (and (some? auto-width) (ctl/auto-width? parent))
-            (set-parent-auto-width parent auto-width)
+      (cond-> (ctm/empty)
+        (and (some? auto-width) (ctl/auto-width? parent))
+        (set-parent-auto-width auto-width)
 
-            (and (some? auto-height) (ctl/auto-height? parent))
-            (set-parent-auto-height parent auto-height))]
-
-      (assoc-in modif-tree [(:id parent) :modifiers] modifiers))))
+        (and (some? auto-height) (ctl/auto-height? parent))
+        (set-parent-auto-height auto-height)))))
 
 (defn- propagate-modifiers
   "Propagate modifiers to its children"
-  [objects ignore-constraints [modif-tree recalculate] parent]
+  [objects ignore-constraints [modif-tree autolayouts] parent]
   (let [parent-id (:id parent)
         root? (= uuid/zero parent-id)
         modifiers (dm/get-in modif-tree [parent-id :modifiers])
         transformed-parent (gtr/transform-shape parent modifiers)
 
         has-modifiers? (ctm/child-modifiers? modifiers)
-        is-layout? (ctl/layout? parent)
-        is-auto?   (or (ctl/auto-height? transformed-parent) (ctl/auto-width? transformed-parent))
-        is-parent? (or (cph/group-like-shape? parent) (cph/frame-shape? parent))
+        layout? (ctl/layout? parent)
+        auto?   (or (ctl/auto-height? transformed-parent) (ctl/auto-width? transformed-parent))
+        parent? (or (cph/group-like-shape? parent) (cph/frame-shape? parent))
 
         ;; If the current child is inside the layout we ignore the constraints
-        is-inside-layout? (ctl/inside-layout? objects parent)]
+        inside-layout? (ctl/inside-layout? objects parent)]
 
     [(cond-> modif-tree
-       (and (not is-layout?) has-modifiers? is-parent? (not root?))
-       (set-children-modifiers objects parent transformed-parent (or ignore-constraints is-inside-layout?))
+       (and (not layout?) has-modifiers? parent? (not root?))
+       (set-children-modifiers objects parent transformed-parent (or ignore-constraints inside-layout?))
 
-       is-layout?
+       layout?
        (-> (process-layout-children objects parent transformed-parent)
-           (set-layout-modifiers objects transformed-parent))
+           (set-layout-modifiers objects transformed-parent)))
 
-       is-auto?
-       (set-auto-modifiers objects transformed-parent))
+     ;; Auto-width/height can change the positions in the parent so we need to recalculate
+     (cond-> autolayouts auto? (conj (:id parent)))]))
 
-     (cond-> recalculate
-       ;; Auto-width/height can change the positions in the parent so we need to recalculate
-       is-auto?
-       (conj (:id parent)))]))
+(defn- apply-structure-modifiers
+  [objects modif-tree]
+  (letfn [(apply-shape [objects [id {:keys [modifiers]}]]
+            (if (ctm/has-structure? modifiers)
+              (let [shape (get objects id)]
+                (update objects id ctm/apply-structure-modifiers modifiers))
+              objects))]
+    (reduce apply-shape objects modif-tree)))
 
-(defn- calculate-reflow-layout
-  [objects modif-tree parent]
-  (let [is-layout? (ctl/layout? parent)
-        is-auto?   (or (ctl/auto-height? parent) (ctl/auto-width? parent))
-        modifiers (dm/get-in modif-tree [(:id parent) :modifiers])
-        transformed-parent (gtr/transform-shape parent modifiers)]
-    (cond-> modif-tree
-      is-layout?
-      (set-layout-modifiers objects transformed-parent)
+(defn- apply-partial-objects-modifiers
+  [objects tree-seq modif-tree]
 
-      is-auto?
-      (set-auto-modifiers objects transformed-parent))))
+  (letfn [(apply-shape [objects {:keys [id] :as shape}]
+            (if (cph/group-shape? shape)
+              (let [children (cph/get-children objects id)]
+                (assoc objects id
+                       (cond
+                         (cph/mask-shape? shape)
+                         (gtr/update-mask-selrect shape children)
+
+                         :else
+                         (gtr/update-group-selrect shape children))))
+
+              (let [modifiers (get-in modif-tree [id :modifiers])
+                    object (cond-> shape
+                             (some? modifiers)
+                             (gtr/transform-shape modifiers))]
+                (assoc objects id object))))]
+
+    (reduce apply-shape objects (reverse tree-seq))))
+
+(defn merge-modif-tree
+  [modif-tree other-tree]
+  (reduce (fn [modif-tree [id {:keys [modifiers]}]]
+            (update-in modif-tree [id :modifiers] ctm/add-modifiers modifiers))
+          modif-tree
+          other-tree))
+
+(defn sizing-auto-modifiers
+  "Recalculates the layouts to adjust the sizing: auto new sizes"
+  [modif-tree sizing-auto-layouts objects ignore-constraints]
+  (loop [modif-tree modif-tree
+         sizing-auto-layouts (reverse sizing-auto-layouts)]
+    (if-let [current (first sizing-auto-layouts)]
+      (let [parent-base (get objects current)
+            tree-seq (resolve-tree-sequence #{current} objects)
+
+            ;; Apply the current stack of transformations so we can calculate the auto-layouts
+            objects (apply-partial-objects-modifiers objects tree-seq modif-tree)
+
+            resize-modif-tree
+            {current {:modifiers (calc-auto-modifiers objects parent-base)}}
+
+            tree-seq (resolve-tree-sequence #{current} objects)
+
+            [resize-modif-tree _]
+            (reduce (partial propagate-modifiers objects ignore-constraints) [resize-modif-tree #{}] tree-seq)
+
+            modif-tree (merge-modif-tree modif-tree resize-modif-tree)]
+        (recur modif-tree (rest sizing-auto-layouts)))
+      modif-tree)))
 
 (defn set-objects-modifiers
   [modif-tree objects ignore-constraints snap-pixel?]
 
-  (let [shapes-tree (resolve-tree-sequence (-> modif-tree keys set) objects)
+  (let [objects (apply-structure-modifiers objects modif-tree)
+        shapes-tree (resolve-tree-sequence (-> modif-tree keys set) objects)
 
-        [modif-tree recalculate]
+        [modif-tree sizing-auto-layouts]
         (reduce (partial propagate-modifiers objects ignore-constraints) [modif-tree #{}] shapes-tree)
 
-        shapes-tree (resolve-tree-sequence recalculate objects)
-
-        ;; We need to go again and recalculate the layout positions+hug
-        ;; TODO LAYOUT: How to remove this recalculation?
-        modif-tree
-        (->> shapes-tree
-             reverse
-             (filter ctl/layout?)
-             (reduce (partial calculate-reflow-layout objects) modif-tree))
-
-        modif-tree
-        (->> shapes-tree
-             (filter ctl/layout?)
-             (reduce (partial calculate-reflow-layout objects) modif-tree))
+        ;; Calculate hug layouts positions
+        modif-tree (sizing-auto-modifiers modif-tree sizing-auto-layouts objects ignore-constraints)
 
         modif-tree
         (cond-> modif-tree

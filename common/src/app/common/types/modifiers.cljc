@@ -384,7 +384,11 @@
 
 (defn select-structure
   [modifiers]
-  (select-keys modifiers [:structure-parent]))
+  (select-keys modifiers [:structure-parent :structure-child]))
+
+(defn select-geometry
+  [modifiers]
+  (select-keys modifiers [:geometry-parent :geometry-child]))
 
 (defn added-children-frames
   "Returns the frames that have an 'add-children' operation"

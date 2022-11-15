@@ -369,6 +369,9 @@
         ;; Points for every shape inside the group
         points (->> children (mapcat :points))
 
+        ;; Fixed problem with empty groups. Should not happen (but it does)
+        points (if (empty? points) (:points group) points)
+
         ;; Invert to get the points minus the transforms applied to the group
         base-points (gco/transform-points points shape-center (:transform-inverse group (gmt/matrix)))
 
@@ -478,43 +481,43 @@
 (declare apply-group-modifiers)
 
 (defn apply-children-modifiers
-  [objects modif-tree parent-modifiers children]
+  [objects modif-tree parent-modifiers children propagate?]
   (->> children
        (map (fn [child]
-              (let [modifiers (->> (get-in modif-tree [(:id child) :modifiers])
-                                   (ctm/add-modifiers parent-modifiers))
+              (let [modifiers (cond-> (get-in modif-tree [(:id child) :modifiers])
+                                propagate? (ctm/add-modifiers parent-modifiers))
                     child     (transform-shape child modifiers)
-                    parent?   (cph/group-like-shape? child)]
+                    parent?   (cph/group-like-shape? child)
+
+                    modif-tree
+                    (cond-> modif-tree
+                      propagate?
+                      (assoc-in [(:id child) :modifiers] modifiers))]
+
                 (cond-> child
                   parent?
-                  (apply-group-modifiers objects (assoc-in modif-tree [(:id child) :modifiers] modifiers))))))))
+                  (apply-group-modifiers objects modif-tree propagate?)))))))
 
 (defn apply-group-modifiers
   "Apply the modifiers to the group children to calculate its selection rect"
-  [group objects modif-tree]
+  ([group objects modif-tree]
+   (apply-group-modifiers group objects modif-tree true))
 
-  (let [modifiers (get-in modif-tree [(:id group) :modifiers])
-        children (->> (:shapes group)
-                      (map (d/getf objects))
-                      (apply-children-modifiers objects modif-tree modifiers))]
-    (cond
-      (cph/mask-shape? group)
-      (update-mask-selrect group children)
+  ([group objects modif-tree propagate?]
+   (let [modifiers (get-in modif-tree [(:id group) :modifiers])
+         children
+         (as-> (:shapes group) $
+           (map (d/getf objects) $)
+           (apply-children-modifiers objects modif-tree modifiers $ propagate?))]
+     (cond
+       (cph/mask-shape? group)
+       (update-mask-selrect group children)
 
-      (cph/group-shape? group)
-      (update-group-selrect group children)
+       (cph/group-shape? group)
+       (update-group-selrect group children)
 
-      :else
-      group)))
-
-(defn get-children-bounds
-  [parent objects modif-tree]
-  (let [modifiers (get-in modif-tree [(:id parent) :modifiers])
-        children
-        (->> (:shapes parent)
-             (map (d/getf objects))
-             (apply-children-modifiers objects modif-tree modifiers))]
-    (->> children (mapcat :points) gpr/points->rect)))
+       :else
+       group))))
 
 (defn parent-coords-rect
   [child parent]
