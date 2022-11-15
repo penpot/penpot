@@ -225,13 +225,18 @@
             marker-x   (+ (:x orig-frame) (:x position))
             marker-y   (+ (:y orig-frame) (:y position))
             width      (:width dest-shape)
-            height     (:height dest-shape)]
+            height     (:height dest-shape)
+            dest-x     (:x dest-shape)
+            dest-y     (:y dest-shape)]
         [:g {:on-mouse-down start-move-position
              :on-mouse-enter #(reset! hover-disabled? true)
              :on-mouse-leave #(reset! hover-disabled? false)}
+         [:use {:href (str "#shape-" (:id dest-shape))
+                :x (- marker-x dest-x)
+                :y (- marker-y dest-y)}]
          [:path {:stroke "var(--color-primary)"
                  :fill "var(--color-black)"
-                 :fill-opacity 0.3
+                 :fill-opacity 0.5
                  :stroke-width 1
                  :d (dm/str "M" marker-x " " marker-y " "
                             "h " width " "

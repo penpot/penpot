@@ -5,6 +5,7 @@
 ### :boom: Breaking changes & Deprecations
 ### :sparkles: New features
 - Better overlays interactions on boards inside boards [Taiga #4386](https://tree.taiga.io/project/penpot/us/4386)
+- Show board miniature in manual overlay setting [Taiga #4475](https://tree.taiga.io/project/penpot/issue/4475)
 ### :bug: Bugs fixed
 
 - Add title to color bullets [Taiga #4218](https://tree.taiga.io/project/penpot/task/4218)
