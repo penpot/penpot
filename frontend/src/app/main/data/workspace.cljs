@@ -15,6 +15,7 @@
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.rect :as gpsr]
+   [app.common.logging :as log]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -123,8 +124,8 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file           (:workspace-file state)
-            has-graphics?  (-> file :data :media seq)
+      (let [file           (:workspace-data state)
+            has-graphics?  (-> file :media seq)
             components-v2  (features/active-feature? state :components-v2)]
         (rx/merge
          (rx/of (fbc/fix-bool-contents))
@@ -1674,7 +1675,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :remove-graphics {:total total
-                                     :current nil}))))
+                                     :current nil
+                                     :error false
+                                     :completed false}))))
 
 (defn- update-remove-graphics
   [current]
@@ -1683,12 +1686,31 @@
     (update [_ state]
       (assoc-in state [:remove-graphics :current] current))))
 
+(defn- error-in-remove-graphics
+  []
+  (ptk/reify ::error-in-remove-graphics
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:remove-graphics :error] true))))
+
+(defn clear-remove-graphics
+  []
+  (ptk/reify ::clear-remove-graphics
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :remove-graphics))))
+
 (defn- complete-remove-graphics
   []
   (ptk/reify ::complete-remove-graphics
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :remove-graphics))))
+      (assoc-in state [:remove-graphics :completed] true))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-not (get-in state [:remove-graphics :error])
+        (rx/of (modal/hide))))))
 
 (defn- remove-graphic
   [it file-data page [index [media-obj pos]]]
@@ -1727,9 +1749,14 @@
                       (rx/mapcat (partial dwm/create-shapes-svg (:id file-data) (:objects page) pos)))
                  (dwm/create-shapes-img pos media-obj))]
 
-      (rx/concat
-        (rx/of (update-remove-graphics index))
-        (rx/map process-shapes shapes))))
+    (->> (rx/concat
+           (rx/of (update-remove-graphics index))
+           (rx/map process-shapes shapes))
+         (rx/catch #(do
+                      (log/error :msg (str "Error removing " (:name media-obj))
+                                 :hint (ex-message %)
+                                 :error %)
+                      (rx/of (error-in-remove-graphics)))))))
 
 (defn- remove-graphics
   [file-id file-name]
@@ -1766,8 +1793,7 @@
                                            (pcb/add-page (:id page) page)))))
           (rx/mapcat (partial remove-graphic it file-data' page)
                      (rx/from (d/enumerate (d/zip media shape-grid))))
-          (rx/of (modal/hide)
-                 (complete-remove-graphics)))))))
+          (rx/of (complete-remove-graphics)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

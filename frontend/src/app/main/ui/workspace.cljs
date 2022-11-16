@@ -174,14 +174,35 @@
    ::mf/register-as :remove-graphics-dialog}
   [{:keys [] :as ctx}]
   (let [remove-state (mf/deref refs/remove-graphics)
-        close #(modal/hide!)]
+        close #(modal/hide!)
+        reload-file #(dom/reload-current-window)]
+    (mf/use-effect
+      (fn []
+        #(st/emit! (dw/clear-remove-graphics))))
     [:div.modal-overlay
      [:div.modal-container.remove-graphics-dialog
       [:div.modal-header
        [:div.modal-header-title
-        [:h2 (str "Updating " (:file-name ctx) "...")]]
-       [:div.modal-close-button
-        {:on-click close} i/close]]
-      [:div.modal-content
-       [:p (str "Converting " (:current remove-state) " / " (:total remove-state))]]]]))
-
+        [:h2 (tr "workspace.remove-graphics.title" (:file-name ctx))]]
+       (when (and (:completed remove-state) (:error remove-state))
+         [:div.modal-close-button
+          {:on-click close} i/close])]
+      (if-not (and (:completed remove-state) (:error remove-state))
+        [:div.modal-content
+         [:p (tr "workspace.remove-graphics.text1")]
+         [:p (tr "workspace.remove-graphics.text2")]
+         [:p.progress-message (tr "workspace.remove-graphics.progress"
+                                  (:current remove-state)
+                                  (:total remove-state))]]
+        [:*
+         [:div.modal-content
+          [:p.error-message [:span i/close] (tr "workspace.remove-graphics.error-msg")]
+          [:p (tr "workspace.remove-graphics.error-hint")]]
+         [:div.modal-footer
+          [:div.action-buttons
+           [:input.button-secondary {:type "button"
+                                     :value (tr "labels.close")
+                                     :on-click close}]
+           [:input.button-primary {:type "button"
+                                   :value (tr "labels.reload-file")
+                                   :on-click reload-file}]]]])]]))
