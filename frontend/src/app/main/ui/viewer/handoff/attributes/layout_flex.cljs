@@ -13,20 +13,6 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn format-gap
-  [gap-values]
-  (let [row-gap (:row-gap gap-values)
-        column-gap (:column-gap gap-values)]
-    (if (= row-gap column-gap)
-      (str/fmt "%spx" row-gap)
-      (str/fmt "%spx %spx" row-gap column-gap))))
-
-(defn format-padding
-  [padding-values]
-  (let [short-hand (fm/format-padding-margin-shorthand (vals padding-values))
-        parsed-values (map #(str/fmt "%spx" %) (vals short-hand))]
-    (str/join " " parsed-values)))
-
 (def properties [:layout
                  :layout-flex-dir
                  :layout-align-items
@@ -49,7 +35,7 @@
              :layout-flex-dir "flex-direction"
              :layout-align-items "align-items"
              :layout-justify-content "justify-content"
-             :layout-wrap-type "wrap"
+             :layout-wrap-type "flex-wrap"
              :layout-gap "gap"
              :layout-padding "padding"}
    :format  {:layout name
@@ -57,8 +43,8 @@
              :layout-align-items name
              :layout-justify-content name
              :layout-wrap-type name
-             :layout-gap format-gap
-             :layout-padding format-padding}})
+             :layout-gap fm/format-gap
+             :layout-padding fm/format-padding}})
 
 (def layout-align-content-params
   {:props   [:layout-align-content]
@@ -109,7 +95,7 @@
     [:& copy-button {:data (copy-data shape :layout-justify-content)}]]
 
    [:div.attributes-unit-row
-    [:div.attributes-label "Wrap"]
+    [:div.attributes-label "Flex wrap"]
     [:div.attributes-value (str/capital (d/name (:layout-wrap-type shape)))]
     [:& copy-button {:data (copy-data shape :layout-wrap-type)}]]
    

@@ -447,14 +447,14 @@
           (some (partial ctl/layout-child? objects))))
    workspace-page-objects))
 
-(defn get-flex-child-viewer?
+(defn get-flex-child-viewer
   [ids page-id]
   (l/derived
    (fn [state]
      (let [objects (wsh/lookup-viewer-objects state page-id)]
        (into []
-             (comp (filter (partial ctl/layout-child? objects))
-                   (map (d/getf objects)))
+             (comp (map (d/getf objects))
+                   (filter (partial ctl/layout-child? objects)))
              ids)))
    st/state =))
 

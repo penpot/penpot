@@ -104,16 +104,19 @@
   (ptk/reify ::toogle-layout-flex
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page-id         (:current-page-id state)
-            objects         (wsh/lookup-page-objects state page-id)
-            selected        (wsh/lookup-selected state)
-            selected-shapes (map (d/getf objects) selected)
-            single?         (= (count selected-shapes) 1)
-            has-flex-layout? (and single? (= :flex (:layout (first selected-shapes))))]
+      (let [page-id          (:current-page-id state)
+            objects          (wsh/lookup-page-objects state page-id)
+            selected         (wsh/lookup-selected state)
+            selected-shapes  (map (d/getf objects) selected)
+            single?          (= (count selected-shapes) 1)
+            has-flex-layout? (and single? (= :flex (:layout (first selected-shapes))))
+            is-frame?        (and single? (= :frame (:type (first selected-shapes))))]
 
         (if has-flex-layout?
           (rx/of (remove-layout selected))
-          (rx/of (create-layout-from-selection :flex)))))))
+          (if is-frame?
+            (rx/of (create-layout [(first selected)] :flex))
+            (rx/of (create-layout-from-selection :flex))))))))
 
 (defn update-layout
   [ids changes]

@@ -19,6 +19,11 @@
      (if (= style :inner-shadow) "inset " "")
      (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
 
+(defn format-gap
+  [{row-gap :row-gap column-gap :column-gap}]
+  (if (= row-gap column-gap)
+    (str/fmt "%spx" row-gap)
+    (str/fmt "%spx %spx" row-gap column-gap)))
 
 (defn format-fill-color [_ shape]
   (let [color {:color (:fill-color shape)
@@ -37,27 +42,50 @@
       (str/format "%spx %s %s" width style (uc/color->background color)))))
 
 (def styles-data
-  {:layout {:props   [:width :height :x :y :radius :rx :r1]
-            :to-prop {:x "left"
-                      :y "top"
-                      :rotation "transform"
-                      :rx "border-radius"
-                      :r1 "border-radius"}
-            :format  {:rotation #(str/fmt "rotate(%sdeg)" %)
-                      :r1 #(apply str/fmt "%spx, %spx, %spx, %spx" %)}
-            :multi   {:r1 [:r1 :r2 :r3 :r4]}}
-   :fill   {:props [:fill-color :fill-color-gradient]
-            :to-prop {:fill-color "background" :fill-color-gradient "background"}
-            :format {:fill-color format-fill-color :fill-color-gradient format-fill-color}}
-   :stroke {:props [:stroke-style]
-            :to-prop {:stroke-style "border"}
-            :format {:stroke-style format-stroke}}
-   :shadow {:props [:shadow]
-            :to-prop {:shadow :box-shadow}
-            :format {:shadow #(str/join ", " (map shadow->css %1))}}
-   :blur   {:props [:blur]
-            :to-prop {:blur "filter"}
-            :format {:blur #(str/fmt "blur(%spx)" (:value %))}}})
+  {:layout      {:props   [:width :height :x :y :radius :rx :r1]
+                 :to-prop {:x "left"
+                           :y "top"
+                           :rotation "transform"
+                           :rx "border-radius"
+                           :r1 "border-radius"}
+                 :format  {:rotation #(str/fmt "rotate(%sdeg)" %)
+                           :r1 #(apply str/fmt "%spx, %spx, %spx, %spx" %)
+                           :width (partial fmt/format-size :width)
+                           :height (partial fmt/format-size :height)}
+                 :multi   {:r1 [:r1 :r2 :r3 :r4]}}
+   :fill        {:props [:fill-color :fill-color-gradient]
+                 :to-prop {:fill-color "background" :fill-color-gradient "background"}
+                 :format {:fill-color format-fill-color :fill-color-gradient format-fill-color}}
+   :stroke      {:props [:stroke-style]
+                 :to-prop {:stroke-style "border"}
+                 :format {:stroke-style format-stroke}}
+   :shadow      {:props [:shadow]
+                 :to-prop {:shadow :box-shadow}
+                 :format {:shadow #(str/join ", " (map shadow->css %1))}}
+   :blur        {:props [:blur]
+                 :to-prop {:blur "filter"}
+                 :format {:blur #(str/fmt "blur(%spx)" (:value %))}}
+   :layout-flex {:props   [:layout
+                           :layout-align-items
+                           :layout-flex-dir
+                           :layout-justify-content
+                           :layout-gap
+                           :layout-padding
+                           :layout-wrap-type]
+                 :to-prop {:layout "display"
+                           :layout-flex-dir "flex-direction"
+                           :layout-align-items "align-items"
+                           :layout-justify-content "justify-content"
+                           :layout-wrap-type "flex-wrap"
+                           :layout-gap "gap"
+                           :layout-padding "padding"}
+                 :format  {:layout name
+                           :layout-flex-dir name
+                           :layout-align-items name
+                           :layout-justify-content name
+                           :layout-wrap-type name
+                           :layout-gap format-gap
+                           :layout-padding fmt/format-padding}}})
 
 (def style-text
   {:props   [:fill-color
@@ -77,6 +105,26 @@
              :text-decoration name
              :text-transform name
              :fill-color format-fill-color}})
+
+(def layout-flex-item-params
+  {:props   [:layout-item-margin
+             :layout-item-max-h
+             :layout-item-min-h
+             :layout-item-max-w
+             :layout-item-min-w
+             :layout-item-align-self]
+   :to-prop {:layout-item-margin "margin"
+             :layout-item-max-h "max-height"
+             :layout-item-min-h "min-height"
+             :layout-item-max-w "max-width"
+             :layout-item-min-w "min-width"
+             :layout-item-align-self "align-self"}
+   :format  {:layout-item-margin fmt/format-margin
+             :layout-item-max-h #(str % "px")
+             :layout-item-min-h #(str % "px")
+             :layout-item-max-w #(str % "px")
+             :layout-item-min-w #(str % "px")
+             :layout-item-align-self name}})
 
 (defn generate-css-props
   ([values properties]
@@ -126,10 +174,24 @@
           (str/join "\n")))))
 
 (defn shape->properties [shape]
-  (let [props   (->> styles-data vals (mapcat :props))
-        to-prop (->> styles-data vals (map :to-prop) (reduce merge))
-        format  (->> styles-data vals (map :format) (reduce merge))
-        multi   (->> styles-data vals (map :multi) (reduce merge))]
+  (let [;; This property is added in an earlier step (code.cljs), 
+        ;; it will come with a vector of flex-items if any.
+        ;; If there are none it will continue as usual. 
+        flex-items (:flex-items shape)
+        
+        props      (->> styles-data vals (mapcat :props))
+        to-prop    (->> styles-data vals (map :to-prop) (reduce merge))
+        format     (->> styles-data vals (map :format) (reduce merge))
+        multi      (->> styles-data vals (map :multi) (reduce merge))
+        props      (if (seq flex-items)
+                     (concat props (:props layout-flex-item-params))
+                     props)
+        to-prop    (if (seq flex-items)
+                     (merge to-prop (:to-prop layout-flex-item-params))
+                     to-prop)
+        format     (if (seq flex-items)
+                     (merge format (:format layout-flex-item-params))
+                     format)]
     (generate-css-props shape props {:to-prop to-prop
                                      :format format
                                      :multi multi
