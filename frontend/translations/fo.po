@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-11-17 19:21+0000\n"
-"Last-Translator: Bogi Napoleon Wennerstrøm <bogi.wennerstrom@gmail.com>\n"
+"Last-Translator: Tummas Jóhan Sigvardsen <tummas@tummas.me>\n"
 "Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
 "fo/>\n"
 "Language: fo\n"
@@ -637,3 +637,7 @@ msgstr "Vilt tú strika tína konto?"
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.save-settings"
 msgstr "Goym stillingar"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "Vel markamóts tungumál"
