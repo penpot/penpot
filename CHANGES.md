@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## 1.16.2-beta
+
 ## 1.16.1-beta
 
 ### :bug: Bugs fixed
