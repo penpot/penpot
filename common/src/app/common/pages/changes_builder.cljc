@@ -12,8 +12,6 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.bool :as gshb]
-   [app.common.geom.shapes.rect :as gshr]
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
@@ -419,7 +417,7 @@
                           (every? #(apply gpt/close? %) (d/zip old-val new-val))
 
                           (= attr :selrect)
-                          (gshr/close-selrect? old-val new-val)
+                          (gsh/close-selrect? old-val new-val)
 
                           :else
                           (= old-val new-val))]
@@ -438,7 +436,7 @@
                                  nil               ;; so it does not need resize
 
                                  (= (:type parent) :bool)
-                                 (gshb/update-bool-selrect parent children objects)
+                                 (gsh/update-bool-selrect parent children objects)
 
                                  (= (:type parent) :group)
                                  (if (:masked-group? parent)

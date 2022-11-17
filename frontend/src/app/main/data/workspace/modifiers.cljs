@@ -150,6 +150,19 @@
         child-set (set (get-in objects [target-frame :shapes]))
         layout? (ctl/layout? objects target-frame)
 
+        set-parent-ids
+        (fn [modif-tree shapes target-frame]
+          (reduce
+           (fn [modif-tree id]
+             (update-in
+              modif-tree
+              [id :modifiers]
+              #(-> %
+                   (ctm/change-property :frame-id target-frame)
+                   (ctm/change-property :parent-id target-frame))))
+           modif-tree
+           shapes))
+
         update-frame-modifiers
         (fn [modif-tree [original-frame shapes]]
           (let [shapes (->> shapes (d/removev #(= target-frame %)))
@@ -160,7 +173,8 @@
             (cond-> modif-tree
               (not= original-frame target-frame)
               (-> (update-in [original-frame :modifiers] ctm/remove-children shapes)
-                  (update-in [target-frame :modifiers] ctm/add-children shapes drop-index))
+                  (update-in [target-frame :modifiers] ctm/add-children shapes drop-index)
+                  (set-parent-ids shapes target-frame))
 
               (and layout? (= original-frame target-frame))
               (update-in [target-frame :modifiers] ctm/add-children shapes drop-index))))]

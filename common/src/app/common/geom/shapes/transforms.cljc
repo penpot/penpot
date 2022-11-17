@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.bool :as gshb]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
    [app.common.geom.shapes.rect :as gpr]
@@ -408,6 +409,20 @@
         (assoc :flip-x  (-> mask :flip-x))
         (assoc :flip-y  (-> mask :flip-y)))))
 
+(defn update-bool-selrect
+  "Calculates the selrect+points for the boolean shape"
+  [shape children objects]
+
+  (let [bool-content     (gshb/calc-bool-content shape objects)
+        shape            (assoc shape :bool-content bool-content)
+        [points selrect] (gpa/content->points+selrect shape bool-content)]
+
+    (if (and (some? selrect) (d/not-empty? points))
+      (-> shape
+          (assoc :selrect selrect)
+          (assoc :points points))
+      (update-group-selrect shape children))))
+
 (defn transform-shape
   ([shape]
    (let [modifiers (:modifiers shape)]
@@ -512,6 +527,9 @@
      (cond
        (cph/mask-shape? group)
        (update-mask-selrect group children)
+
+       (cph/bool-shape? group)
+       (transform-shape group modifiers)
 
        (cph/group-shape? group)
        (update-group-selrect group children)

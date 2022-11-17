@@ -160,6 +160,7 @@
 (dm/export gpr/join-selrects)
 (dm/export gpr/contains-selrect?)
 (dm/export gpr/contains-point?)
+(dm/export gpr/close-selrect?)
 
 (dm/export gtr/move)
 (dm/export gtr/absolute-move)
@@ -170,6 +171,7 @@
 (dm/export gtr/calculate-adjust-matrix)
 (dm/export gtr/update-group-selrect)
 (dm/export gtr/update-mask-selrect)
+(dm/export gtr/update-bool-selrect)
 (dm/export gtr/transform-shape)
 (dm/export gtr/transform-selrect)
 (dm/export gtr/transform-selrect-matrix)
@@ -194,7 +196,7 @@
 (dm/export gin/rect-contains-shape?)
 
 ;; Bool
-(dm/export gsb/update-bool-selrect)
+
 (dm/export gsb/calc-bool-content)
 
 ;; Constraints

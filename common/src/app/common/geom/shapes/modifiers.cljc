@@ -133,13 +133,17 @@
   [modif-tree objects parent]
 
   (letfn [(apply-modifiers [modif-tree child]
-            (let [modifiers (dm/get-in modif-tree [(:id child) :modifiers])]
-              (cond-> child
-                (and (not (cph/group-shape? child)) (some? modifiers))
-                (gtr/transform-shape modifiers)
+            (let [modifiers (-> (dm/get-in modif-tree [(:id child) :modifiers])
+                                (ctm/select-geometry))]
+              (cond
+                (cph/group-like-shape? child)
+                (gtr/apply-group-modifiers child objects modif-tree)
 
-                (cph/group-shape? child)
-                (gtr/apply-group-modifiers objects modif-tree))))
+                (some? modifiers)
+                (gtr/transform-shape child modifiers)
+
+                :else
+                child)))
 
           (set-child-modifiers [parent [layout-line modif-tree] child]
             (let [[modifiers layout-line]
@@ -208,7 +212,8 @@
   [objects ignore-constraints [modif-tree autolayouts] parent]
   (let [parent-id (:id parent)
         root? (= uuid/zero parent-id)
-        modifiers (dm/get-in modif-tree [parent-id :modifiers])
+        modifiers (-> (dm/get-in modif-tree [parent-id :modifiers])
+                      (ctm/select-geometry))
         transformed-parent (gtr/transform-shape parent modifiers)
 
         has-modifiers? (ctm/child-modifiers? modifiers)
@@ -233,10 +238,9 @@
 (defn- apply-structure-modifiers
   [objects modif-tree]
   (letfn [(apply-shape [objects [id {:keys [modifiers]}]]
-            (if (ctm/has-structure? modifiers)
-              (let [shape (get objects id)]
-                (update objects id ctm/apply-structure-modifiers modifiers))
-              objects))]
+            (cond-> objects
+              (ctm/has-structure? modifiers)
+              (update id ctm/apply-structure-modifiers modifiers)))]
     (reduce apply-shape objects modif-tree)))
 
 (defn- apply-partial-objects-modifiers
