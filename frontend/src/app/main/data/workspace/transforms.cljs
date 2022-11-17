@@ -599,10 +599,34 @@
               (remove #(and (= (:frame-id %) frame-id)
                             (not= (:parent-id %) frame-id))))
 
+            all-parents
+            (reduce (fn [res id]
+                      (into res (cph/get-parent-ids objects id)))
+                    (d/ordered-set)
+                    ids)
+
+            find-all-empty-parents
+            (fn recursive-find-empty-parents [empty-parents]
+              (let [all-ids   (into empty-parents ids)
+                    contains? (partial contains? all-ids)
+                    xform     (comp (map lookup)
+                                    (filter cph/group-shape?)
+                                    (remove #(->> (:shapes %) (remove contains?) seq))
+                                    (map :id))
+                    parents   (into #{} xform all-parents)]
+                (if (= empty-parents parents)
+                  empty-parents
+                  (recursive-find-empty-parents parents))))
+
+            empty-parents
+            ;; Any parent whose children are moved should be deleted
+            (into (d/ordered-set) (find-all-empty-parents #{}))
+
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
-                (pcb/change-parent frame-id moving-shapes drop-index))]
+                (pcb/change-parent frame-id moving-shapes drop-index)
+                (pcb/remove-objects empty-parents))]
 
         (when (and (some? frame-id) (d/not-empty? changes))
           (rx/of (dch/commit-changes changes)
