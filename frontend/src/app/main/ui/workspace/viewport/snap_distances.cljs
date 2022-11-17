@@ -10,6 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.main.ui.formats :as fmt]
    [app.main.worker :as uw]
@@ -272,18 +273,20 @@
         frame-id        (-> selected-shapes first :frame-id)
         frame           (mf/deref (refs/object-by-id frame-id))
         selrect         (gsh/selection-rect selected-shapes)]
-    [:g.distance
-     [:& shape-distance
-      {:selrect selrect
-       :page-id page-id
-       :frame frame
-       :zoom zoom
-       :coord :x
-       :selected selected}]
-     [:& shape-distance
-      {:selrect selrect
-       :page-id page-id
-       :frame frame
-       :zoom zoom
-       :coord :y
-       :selected selected}]]))
+
+    (when-not (ctl/layout? frame)
+      [:g.distance
+       [:& shape-distance
+        {:selrect selrect
+         :page-id page-id
+         :frame frame
+         :zoom zoom
+         :coord :x
+         :selected selected}]
+       [:& shape-distance
+        {:selrect selrect
+         :page-id page-id
+         :frame frame
+         :zoom zoom
+         :coord :y
+         :selected selected}]])))

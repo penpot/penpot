@@ -15,12 +15,12 @@
    ["react-dom/server" :as rds]
    [app.common.colors :as clr]
    [app.common.data.macros :as dm]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.config :as cfg]
    [app.main.fonts :as fonts]
@@ -81,8 +81,7 @@
       [{:keys [shape] :as props}]
 
       (let [render-thumbnails? (mf/use-ctx muc/render-thumbnails)
-            childs (mapv #(get objects %) (:shapes shape))
-            shape  (gsh/transform-shape shape)]
+            childs (mapv #(get objects %) (:shapes shape))]
         (if (and render-thumbnails? (some? (:thumbnail shape)))
           [:& frame/frame-thumbnail {:shape shape :bounds (:children-bounds shape)}]
           [:& frame-shape {:shape shape :childs childs}])))))
@@ -135,8 +134,7 @@
           bool-wrapper    (mf/use-memo (mf/deps objects) #(bool-wrapper-factory objects))
           frame-wrapper   (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
-        (let [shape (gsh/transform-shape shape)
-              opts #js {:shape shape}
+        (let [opts #js {:shape shape}
               svg-raw? (= :svg-raw (:type shape))]
           (if-not svg-raw?
             [:> shape-container {:shape shape}
@@ -166,8 +164,7 @@
   [objects object]
   (let [shapes   (cph/get-immediate-children objects)
         srect    (gsh/selection-rect shapes)
-        object   (merge object (select-keys srect [:x :y :width :height]))
-        object   (gsh/transform-shape object)]
+        object   (merge object (select-keys srect [:x :y :width :height]))]
     (assoc object :fill-color "#f0f0f0")))
 
 (defn adapt-objects-for-shape
@@ -180,14 +177,12 @@
         ;; Replace the previous object with the new one
         objects  (assoc objects object-id object)
 
-        modifier (-> (gpt/point (:x object) (:y object))
-                     (gpt/negate)
-                     (gmt/translate-matrix))
+        vector (-> (gpt/point (:x object) (:y object))
+                   (gpt/negate))
 
         mod-ids  (cons object-id (cph/get-children-ids objects object-id))
-        updt-fn  #(-> %1
-                      (assoc-in [%2 :modifiers :displacement] modifier)
-                      (update %2 gsh/transform-shape))]
+
+        updt-fn  #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
 
     (reduce updt-fn objects mod-ids)))
 
@@ -247,24 +242,21 @@
         bounds2 (gsb/get-object-bounds objects (dissoc frame :shadow :blur))
 
         delta-bounds (gpt/point (:x bounds) (:y bounds))
-
-        modifier (gmt/translate-matrix (gpt/negate delta-bounds))
+        vector (gpt/negate delta-bounds)
 
         children-ids
         (cph/get-children-ids objects frame-id)
 
         objects
-        (mf/with-memo [frame-id objects modifier]
-          (let [update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)]
+        (mf/with-memo [frame-id objects vector]
+          (let [update-fn #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
             (->> children-ids
                  (into [frame-id])
                  (reduce update-fn objects))))
 
         frame
-        (mf/with-memo [modifier]
-          (-> frame
-              (assoc-in [:modifiers :displacement] modifier)
-              (gsh/transform-shape)))
+        (mf/with-memo [vector]
+          (gsh/transform-shape frame (ctm/move-modifiers vector)))
 
         frame
         (cond-> frame
@@ -293,7 +285,6 @@
             :xmlnsXlink "http://www.w3.org/1999/xlink"
             :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
             :fill "none"}
-
       [:& shape-wrapper {:shape frame}]]]))
 
 
@@ -305,22 +296,20 @@
   (let [group-id (:id group)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
-        modifier
+        vector
         (mf/use-memo
          (mf/deps (:x group) (:y group))
          (fn []
            (-> (gpt/point (:x group) (:y group))
-               (gpt/negate)
-               (gmt/translate-matrix))))
+               (gpt/negate))))
 
         objects
         (mf/use-memo
-         (mf/deps modifier objects group-id)
+         (mf/deps vector objects group-id)
          (fn []
-           (let [modifier-ids (cons group-id (cph/get-children-ids objects group-id))
-                 update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)
-                 modifiers    (reduce update-fn {} modifier-ids)]
-             (gsh/merge-modifiers objects modifiers))))
+           (let [children-ids (cons group-id (cph/get-children-ids objects group-id))
+                 update-fn    #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
+             (reduce update-fn objects children-ids))))
 
         group  (get objects group-id)
         width  (* (:width group) zoom)

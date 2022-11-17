@@ -19,6 +19,8 @@
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -212,7 +214,7 @@
 
   (let [multiple? (> (count shapes) 1)
         single?   (= (count shapes) 1)
-        do-create-artboard-from-selection #(st/emit! (dw/create-artboard-from-selection))
+        do-create-artboard-from-selection #(st/emit! (dwsh/create-artboard-from-selection))
 
         has-frame? (->> shapes (d/seek cph/frame-shape?))
         has-group? (->> shapes (d/seek cph/group-shape?))
@@ -364,6 +366,31 @@
 
           [:& menu-entry {:title (tr "workspace.shape.menu.flow-start")
                           :on-click do-add-flow}])))))
+(mf/defc context-menu-flex
+  [{:keys [shapes]}]
+  (let [single?            (= (count shapes) 1)
+        has-frame?         (->> shapes (d/seek cph/frame-shape?))
+        is-frame?          (and single? has-frame?)
+        is-flex-container? (and is-frame? (= :flex (:layout (first shapes))))
+        has-group?         (->> shapes (d/seek cph/group-shape?))
+        is-group?          (and single? has-group?)
+        ids                (->> shapes (map :id))
+        add-flex           #(st/emit! (dwsl/create-layout-from-selection :flex))
+        remove-flex        #(st/emit! (dwsl/remove-layout ids))]
+    (cond
+      (or (not single?) (and is-frame? (not is-flex-container?)) is-group?)
+      [:*
+       [:& menu-separator]
+       [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
+                       :shortcut (sc/get-tooltip :toogle-layout-flex)
+                       :on-click add-flex}]]
+      
+      is-flex-container?
+      [:*
+       [:& menu-separator]
+       [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
+                       :shortcut (sc/get-tooltip :toogle-layout-flex)
+                       :on-click remove-flex}]])))
 
 (mf/defc context-menu-component
   [{:keys [shapes]}]
@@ -517,6 +544,7 @@
        [:> context-menu-path props]
        [:> context-menu-layer-options props]
        [:> context-menu-prototype props]
+       [:> context-menu-flex props]
        [:> context-menu-component props]
        [:> context-menu-delete props]])))
 

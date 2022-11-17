@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.bool :as gshb]
    [app.common.math :as mth]
    [app.common.pages.common :refer [component-sync-attrs]]
    [app.common.pages.helpers :as cph]
@@ -170,7 +169,7 @@
                 group
 
                 (= :bool (:type group))
-                (gshb/update-bool-selrect group children objects)
+                (gsh/update-bool-selrect group children objects)
 
                 (:masked-group? group)
                 (set-mask-selrect group children)

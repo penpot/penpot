@@ -37,35 +37,35 @@
 (mf/defc shape-options
   {::mf/wrap [#(mf/throttle % 60)]}
   [{:keys [shape shapes-with-children page-id file-id shared-libs]}]
-  [:*
-   (case (:type shape)
-     :frame   [:& frame/options {:shape shape}]
-     :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
-     :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
-     :rect    [:& rect/options {:shape shape}]
-     :circle  [:& circle/options {:shape shape}]
-     :path    [:& path/options {:shape shape}]
-     :image   [:& image/options {:shape shape}]
-     :svg-raw [:& svg-raw/options {:shape shape}]
-     :bool    [:& bool/options {:shape shape}]
-     nil)
-   [:& exports-menu
-    {:ids [(:id shape)]
-     :values (select-keys shape [:exports])
-     :shape shape
-     :page-id page-id
-     :file-id file-id}]])
+  (let [workspace-modifiers (mf/deref refs/workspace-modifiers)
+        modifiers (get-in workspace-modifiers [(:id shape) :modifiers])
+        shape (gsh/transform-shape shape modifiers)]
+    [:*
+     (case (:type shape)
+       :frame   [:& frame/options {:shape shape}]
+       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
+       :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
+       :rect    [:& rect/options {:shape shape}]
+       :circle  [:& circle/options {:shape shape}]
+       :path    [:& path/options {:shape shape}]
+       :image   [:& image/options {:shape shape}]
+       :svg-raw [:& svg-raw/options {:shape shape}]
+       :bool    [:& bool/options {:shape shape}]
+       nil)
+     [:& exports-menu
+      {:ids [(:id shape)]
+       :values (select-keys shape [:exports])
+       :shape shape
+       :page-id page-id
+       :file-id file-id}]]))
 
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
   [{:keys [selected section shapes shapes-with-children page-id file-id]}]
   (let [drawing           (mf/deref refs/workspace-drawing)
-        base-objects      (-> (mf/deref refs/workspace-page-objects))
+        objects           (mf/deref refs/workspace-page-objects)
         shared-libs       (mf/deref refs/workspace-libraries)
-        modifiers         (mf/deref refs/workspace-modifiers)
-        objects-modified  (mf/with-memo [base-objects modifiers]
-                            (gsh/merge-modifiers base-objects modifiers))
-        selected-shapes   (into [] (keep (d/getf objects-modified)) selected)]
+        selected-shapes   (into [] (keep (d/getf objects)) selected)]
     [:div.tool-window
      [:div.tool-window-content
       [:& tab-container {:on-change-tab #(st/emit! (udw/set-options-mode %))

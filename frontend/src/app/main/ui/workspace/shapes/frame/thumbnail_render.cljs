@@ -199,6 +199,8 @@
     (mf/use-effect
      (mf/deps disable?)
      (fn []
+       (when (and disable? (not @disable-ref?))
+         (rx/push! updates-str :update))
        (reset! disable-ref? disable?)))
 
     (mf/use-effect

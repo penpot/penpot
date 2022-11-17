@@ -34,116 +34,134 @@
 ;;   - text: read it from all the content nodes, and then merging it.
 (def type->read-mode
   {:frame
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :children
-    :blur       :children
-    :stroke     :shape
-    :text       :children
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :children
+    :blur             :children
+    :stroke           :shape
+    :text             :children
+    :exports          :shape
+    :layout-container :shape
+    :layout-item      :shape}
 
    :group
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :children
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :children
-    :text       :children
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :children
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :children
+    :text             :children
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :path
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :text
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :text
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :text
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :text
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :text
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :image
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :ignore
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :ignore
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :ignore
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :ignore
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :rect
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :circle
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :svg-raw
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :bool
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}})
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}})
 
 (def group->attrs
-  {:measure     measure-attrs
-   :layer       layer-attrs
-   :constraint  constraint-attrs
-   :fill        fill-attrs
-   :shadow      shadow-attrs
-   :blur        blur-attrs
-   :stroke      stroke-attrs
-   :text        ot/attrs
-   :exports     exports-attrs
-   :layout      layout-container-flex-attrs
-   :layout-item layout-item-attrs})
+  {:measure           measure-attrs
+   :layer             layer-attrs
+   :constraint        constraint-attrs
+   :fill              fill-attrs
+   :shadow            shadow-attrs
+   :blur              blur-attrs
+   :stroke            stroke-attrs
+   :text              ot/attrs
+   :exports           exports-attrs
+   :layout-container  layout-container-flex-attrs
+   :layout-item       layout-item-attrs})
 
 (def shadow-keys [:style :color :offset-x :offset-y :blur :spread])
 
@@ -235,6 +253,10 @@
   [props]
   (let [shapes (unchecked-get props "shapes")
         shapes-with-children (unchecked-get props "shapes-with-children")
+
+        workspace-modifiers (mf/deref refs/workspace-modifiers)
+        shapes (map #(gsh/transform-shape % (get-in workspace-modifiers [(:id %) :modifiers])) shapes)
+
         page-id (unchecked-get props "page-id")
         file-id (unchecked-get props "file-id")
         shared-libs (unchecked-get props "shared-libs")
@@ -254,20 +276,20 @@
         is-layout-child? (mf/deref is-layout-child-ref)
 
         has-text? (contains? all-types :text)
-        
+
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
 
 
-        [layer-ids       layer-values
-         constraint-ids  constraint-values
-         fill-ids        fill-values
-         shadow-ids      shadow-values
-         blur-ids        blur-values
-         stroke-ids      stroke-values
-         text-ids        text-values
-         exports-ids     exports-values
-         layout-ids      layout-container-values
-         layout-item-ids layout-item-values]
+        [layer-ids            layer-values
+         constraint-ids       constraint-values
+         fill-ids             fill-values
+         shadow-ids           shadow-values
+         blur-ids             blur-values
+         stroke-ids           stroke-values
+         text-ids             text-values
+         exports-ids          exports-values
+         layout-container-ids layout-container-values
+         layout-item-ids      layout-item-values]
         (mf/use-memo
          (mf/deps objects-no-measures)
          (fn []
@@ -282,7 +304,7 @@
              (get-attrs shapes objects-no-measures :stroke)
              (get-attrs shapes objects-no-measures :text)
              (get-attrs shapes objects-no-measures :exports)
-             (get-attrs shapes objects-no-measures :layout)
+             (get-attrs shapes objects-no-measures :layout-container)
              (get-attrs shapes objects-no-measures :layout-item)
              ])))]
 
@@ -291,8 +313,8 @@
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
      (when (:layout layout-container-values)
-       [:& layout-container-menu {:type type :ids layout-ids :values layout-container-values}])
-     
+       [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values}])
+
      (when is-layout-child?
        [:& layout-item-menu
         {:type type
@@ -301,7 +323,7 @@
          :is-layout-container? true
          :values layout-item-values}])
 
-     (when-not (empty? constraint-ids)
+     (when-not (or (empty? constraint-ids) is-layout-child?)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? layer-ids)

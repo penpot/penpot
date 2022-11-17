@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
+   [app.common.types.shape.layout :as ctl]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
@@ -35,26 +36,27 @@
         layout-item-values (select-keys shape layout-item-attrs)
 
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child? (mf/deref is-layout-child-ref)]
+        is-layout-child? (mf/deref is-layout-child-ref)
+        is-layout-container? (ctl/layout? shape)]
     [:*
      [:& measures-menu {:ids [(:id shape)]
                         :values measure-values
                         :type type
                         :shape shape}]
-     [:& constraints-menu {:ids ids
-                           :values constraint-values}]
-     (when layout-active?
-       [:*
-        [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}]
+     (when (not is-layout-child?)
+       [:& constraints-menu {:ids ids
+                             :values constraint-values}])
+     (when (or layout-active? is-layout-container?)
+       [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}])
 
-        (when (or (:layout shape) is-layout-child?)
-          [:& layout-item-menu
-           {:ids ids
-            :type type
-            :values layout-item-values
-            :is-layout-child? is-layout-child?
-            :is-layout-container? (:layout shape)
-            :shape shape}])])
+     (when (and layout-active? (or is-layout-child? is-layout-container?))
+       [:& layout-item-menu
+        {:ids ids
+         :type type
+         :values layout-item-values
+         :is-layout-child? is-layout-child?
+         :is-layout-container? is-layout-container?
+         :shape shape}])
 
      [:& layer-menu {:ids ids
                      :type type

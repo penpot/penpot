@@ -156,7 +156,7 @@
     (if (> num to) to num)))
 
 (defn almost-zero? [num]
-  (< (abs (double num)) 1e-5))
+  (< (abs (double num)) 1e-4))
 
 (defonce float-equal-precision 0.001)
 
@@ -174,3 +174,8 @@
 (defn max-abs
   [a b]
   (max (abs a) (abs b)))
+
+(defn sign
+  "Get the sign (+1 / -1) for the number"
+  [n]
+  (if (neg? n) -1 1))

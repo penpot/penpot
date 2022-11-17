@@ -28,16 +28,26 @@
        (= frame-id uuid/zero)))
 
 (defn frame-shape?
-  [{:keys [type]}]
-  (= type :frame))
+  ([objects id]
+   (frame-shape? (get objects id)))
+  ([{:keys [type]}]
+   (= type :frame)))
 
 (defn group-shape?
   [{:keys [type]}]
   (= type :group))
 
+(defn mask-shape?
+  [{:keys [type masked-group?]}]
+  (and (= type :group) masked-group?))
+
 (defn bool-shape?
   [{:keys [type]}]
   (= type :bool))
+
+(defn group-like-shape?
+  [{:keys [type]}]
+  (or (= :group type) (= :bool type)))
 
 (defn text-shape?
   [{:keys [type]}]
@@ -63,9 +73,12 @@
 
 (defn get-children-ids
   [objects id]
-  (if-let [shapes (-> (get objects id) :shapes (some-> vec))]
-    (into shapes (mapcat #(get-children-ids objects %)) shapes)
-    []))
+  (letfn [(get-children-ids-rec
+            [id processed]
+            (when (not (contains? processed id))
+              (when-let [shapes (-> (get objects id) :shapes (some-> vec))]
+                (into shapes (mapcat #(get-children-ids-rec % (conj processed id))) shapes))))]
+    (get-children-ids-rec id #{})))
 
 (defn get-children
   [objects id]
@@ -456,7 +469,6 @@
 
 (defn selected-with-children
   [objects selected]
-
   (into selected
         (mapcat #(get-children-ids objects %))
         selected))

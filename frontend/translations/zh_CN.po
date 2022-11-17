@@ -3565,19 +3565,19 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "高级选项"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-max-h"
+msgid "workspace.options.layout-item.layout-item-max-h"
 msgstr "最大高度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-max-w"
+msgid "workspace.options.layout-item.layout-item-max-w"
 msgstr "最大宽度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-h"
+msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "最小高度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-w"
+msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "最小宽度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
@@ -3585,19 +3585,19 @@ msgid "workspace.options.layout-item.title"
 msgstr "调整大小"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-max-h"
+msgid "workspace.options.layout-item.title.layout-item-max-h"
 msgstr "最大高度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-max-w"
+msgid "workspace.options.layout-item.title.layout-item-max-w"
 msgstr "最大宽度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
+msgid "workspace.options.layout-item.title.layout-item-min-h"
 msgstr "最小高度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-w"
+msgid "workspace.options.layout-item.title.layout-item-min-w"
 msgstr "最小宽度"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs

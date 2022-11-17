@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [okulary.core :as l]))
@@ -265,6 +266,14 @@
   [ids]
   (l/derived #(into [] (keep (d/getf %)) ids) workspace-page-objects =))
 
+(defn parents-by-ids
+  [ids]
+  (l/derived
+   (fn [objects]
+     (let [parent-ids (into #{} (keep #(get-in objects [% :parent-id])) ids)]
+       (into [] (keep #(get objects %)) parent-ids)))
+   workspace-page-objects =))
+
 (defn children-objects
   [id]
   (l/derived
@@ -434,7 +443,8 @@
   (l/derived
    (fn [objects]
      (->> ids
-          (some #(-> (cph/get-parent objects %) :layout))))
+          (map (d/getf objects))
+          (some (partial ctl/layout-child? objects))))
    workspace-page-objects))
 
 (defn get-flex-child-viewer?
@@ -442,7 +452,10 @@
   (l/derived
    (fn [state]
      (let [objects (wsh/lookup-viewer-objects state page-id)]
-       (filterv #(= :flex (:layout (cph/get-parent objects %))) ids)))
+       (into []
+             (comp (filter (partial ctl/layout-child? objects))
+                   (map (d/getf objects)))
+             ids)))
    st/state =))
 
 (def colorpicker

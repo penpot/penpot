@@ -3545,27 +3545,27 @@ msgid "workspace.options.layer-options.title.multiple"
 msgstr "Wybrane warstwy"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-h"
+msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Min.Wysokość"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-w"
+msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Min.Szerokość"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-max-h"
+msgid "workspace.options.layout-item.title.layout-item-max-h"
 msgstr "Maksymalna wysokość"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-max-w"
+msgid "workspace.options.layout-item.title.layout-item-max-w"
 msgstr "Maksymalna szerokość"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
+msgid "workspace.options.layout-item.title.layout-item-min-h"
 msgstr "Minimalna wysokość"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-w"
+msgid "workspace.options.layout-item.title.layout-item-min-w"
 msgstr "Minimalna szerokość"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs

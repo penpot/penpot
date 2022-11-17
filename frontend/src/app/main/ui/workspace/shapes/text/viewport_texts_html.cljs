@@ -8,11 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gsht]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.common.types.modifiers :as ctm]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -31,22 +33,24 @@
   (-> shape
       (cond-> (some? (meta (:position-data shape)))
         (with-meta (meta (:position-data shape))))
-      (dissoc :position-data :transform :transform-inverse)))
+      (dissoc :position-data)))
 
-(defn strip-modifier
-  [modifier]
-  (if (or (some? (dm/get-in modifier [:modifiers :resize-vector]))
-          (some? (dm/get-in modifier [:modifiers :resize-vector-2])))
-    modifier
-    (d/update-when modifier :modifiers dissoc :displacement :rotation)))
+(defn fix-position [shape modifier]
+  (let [shape' (-> shape
+                   (assoc :grow-type :fixed)
+                   (gsh/transform-shape modifier))
+
+        deltav (gpt/to-vec (gpt/point (:selrect shape'))
+                           (gpt/point (:selrect shape)))]
+    (gsh/transform-shape shape' (ctm/move-modifiers deltav))))
 
 (defn process-shape [modifiers {:keys [id] :as shape}]
-  (let [modifier (-> (get modifiers id) strip-modifier)
-        shape (cond-> shape
-                (not (gsh/empty-modifiers? (:modifiers modifier)))
-                (-> (assoc :grow-type :fixed)
-                    (merge modifier) gsh/transform-shape))]
+  (let [modifier (dm/get-in modifiers [id :modifiers])]
     (-> shape
+        (cond-> (and (some? modifier)
+                     (not (ctm/only-move? modifier)))
+          (fix-position modifier))
+
         (cond-> (nil? (:position-data shape))
           (assoc :migrate true))
         strip-position-data)))
@@ -88,20 +92,26 @@
 
 (defn- update-text-modifier
   [{:keys [grow-type id]} node]
-  (p/let [position-data (tsp/calc-position-data id)
-          props {:position-data position-data}
+  (ts/raf
+   #(p/let [position-data (tsp/calc-position-data id)
+            props {:position-data position-data}
 
-          props
-          (if (contains? #{:auto-height :auto-width} grow-type)
-            (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
-                  width (mth/ceil width)
-                  height (mth/ceil height)]
-              (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
-                (assoc props :width width :height height)
-                props))
-            props)]
+            props
+            (if (contains? #{:auto-height :auto-width} grow-type)
+              (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
+                    width (mth/ceil width)
+                    height (mth/ceil height)]
+                (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
+                  (cond-> props
+                    (= grow-type :auto-width)
+                    (assoc :width width)
 
-    (st/emit! (dwt/update-text-modifier id props))))
+                    (or (= grow-type :auto-height) (= grow-type :auto-width))
+                    (assoc :height height))
+                  props))
+              props)]
+
+      (st/emit! (dwt/update-text-modifier id props)))))
 
 (mf/defc text-container
   {::mf/wrap-props false
@@ -136,8 +146,8 @@
         (fn [id]
           (let [new-shape (get text-shapes id)
                 old-shape (get prev-text-shapes id)
-                old-modifiers (-> (get prev-modifiers id) strip-modifier)
-                new-modifiers (-> (get modifiers id) strip-modifier)
+                old-modifiers (get prev-modifiers id)
+                new-modifiers (get modifiers id)
 
                 remote? (some? (-> new-shape meta :session-id)) ]
 
@@ -159,10 +169,9 @@
 
         handle-update-modifier (mf/use-callback update-text-modifier)
         handle-update-shape (mf/use-callback update-text-shape)]
-
     [:*
      (for [{:keys [id] :as shape} changed-texts]
-       [:& text-container {:shape (gsh/transform-shape shape)
+       [:& text-container {:shape shape
                            :on-update (if (some? (get modifiers (:id shape)))
                                         handle-update-modifier
                                         handle-update-shape)

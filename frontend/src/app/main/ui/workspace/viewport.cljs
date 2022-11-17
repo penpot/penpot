@@ -23,6 +23,7 @@
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
+   [app.main.ui.workspace.viewport.debug :as wvd]
    [app.main.ui.workspace.viewport.drawarea :as drawarea]
    [app.main.ui.workspace.viewport.frame-grid :as frame-grid]
    [app.main.ui.workspace.viewport.gradients :as gradients]
@@ -79,8 +80,7 @@
         modifiers         (mf/deref refs/workspace-modifiers)
 
         objects-modified  (mf/with-memo [base-objects modifiers]
-                            (gsh/merge-modifiers base-objects modifiers))
-
+                            (gsh/apply-objects-modifiers base-objects modifiers))
         background        (get options :background clr/canvas)
 
         ;; STATE
@@ -91,6 +91,7 @@
         hover-ids         (mf/use-state nil)
         hover             (mf/use-state nil)
         hover-disabled?   (mf/use-state false)
+        hover-top-frame-id (mf/use-state nil)
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state #{})
 
@@ -187,7 +188,7 @@
     (hooks/setup-viewport-size viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-keyboard alt? mod? space?)
-    (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids @hover-disabled? focus zoom)
+    (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids hover-top-frame-id @hover-disabled? focus zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
@@ -285,7 +286,7 @@
 
        (when show-frame-outline?
          [:& outline/shape-outlines
-          {:objects base-objects
+          {:objects objects-modified
            :hover #{(->> @hover-ids
                          (filter #(cph/frame-shape? (get base-objects %)))
                          (remove selected)
@@ -336,10 +337,9 @@
        (when show-prototypes?
          [:& widgets/frame-flows
           {:flows (:flows options)
-           :objects base-objects
+           :objects objects-modified
            :selected selected
            :zoom zoom
-           :modifiers modifiers
            :on-frame-enter on-frame-enter
            :on-frame-leave on-frame-leave
            :on-frame-select on-frame-select}])
@@ -348,8 +348,7 @@
          [:& drawarea/draw-area
           {:shape drawing-obj
            :zoom zoom
-           :tool drawing-tool
-           :modifiers modifiers}])
+           :tool drawing-tool}])
 
        (when show-grids?
          [:& frame-grid/frame-grid
@@ -371,9 +370,8 @@
            :zoom zoom
            :page-id page-id
            :selected selected
-           :objects base-objects
-           :focus focus
-           :modifiers modifiers}])
+           :objects objects-modified
+           :focus focus}])
 
        (when show-snap-distance?
          [:& snap-distances/snap-distances
@@ -416,8 +414,20 @@
           {:zoom zoom
            :vbox vbox
            :hover-frame frame-parent
-           :modifiers modifiers
            :disabled-guides? disabled-guides?}])
+
+       ;; DEBUG LAYOUT DROP-ZONES
+       (when (debug? :layout-drop-zones)
+         [:& wvd/debug-drop-zones {:selected-shapes selected-shapes
+                                   :objects objects-modified
+                                   :hover-top-frame-id @hover-top-frame-id
+                                   :zoom zoom}])
+
+       (when (debug? :layout-lines)
+         [:& wvd/debug-layout {:selected-shapes selected-shapes
+                               :objects objects-modified
+                               :hover-top-frame-id @hover-top-frame-id
+                               :zoom zoom}])
 
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}

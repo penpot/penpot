@@ -159,8 +159,8 @@
             build-move-event
             (fn [comment-thread]
               (let [frame (get objects (:frame-id comment-thread))
-                    frame' (-> (merge frame (get object-modifiers (:frame-id comment-thread)))
-                               (gsh/transform-shape))
+                    modifiers (get object-modifiers (:frame-id comment-thread))
+                    frame' (gsh/transform-shape frame modifiers)
                     moved (gpt/to-vec (gpt/point (:x frame) (:y frame))
                                       (gpt/point (:x frame') (:y frame')))
                     position (get-in threads-position-map [(:id comment-thread) :position])

@@ -58,7 +58,7 @@
                      :height height
                      :style {:fill "none" :stroke "red"}}]
 
-             ;; Text baselineazo
+             ;; Text baseline
              [:line {:x1 (mth/round x)
                      :y1 (mth/round (- (:y data) (:height data)))
                      :x2 (mth/round (+ x width))

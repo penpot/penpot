@@ -11,6 +11,7 @@
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
+   [app.common.uuid :as uuid]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
@@ -104,7 +105,8 @@
             (some #(cph/is-parent? objects % group-id))
             (not))))
 
-(defn setup-hover-shapes [page-id move-stream objects transform selected mod? hover hover-ids hover-disabled? focus zoom]
+(defn setup-hover-shapes
+  [page-id move-stream objects transform selected mod? hover hover-ids hover-top-frame-id hover-disabled? focus zoom]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         mod-ref (mf/use-ref @mod?)
@@ -143,9 +145,10 @@
                   (rx/map #(deref last-point-ref)))
 
              (->> move-stream
+                  (rx/tap #(reset! last-point-ref %))
                   ;; When transforming shapes we stop querying the worker
                   (rx/merge-map query-point)
-                  (rx/tap #(reset! last-point-ref %))))))]
+                  ))))]
 
     ;; Refresh the refs on a value change
     (mf/use-effect
@@ -213,7 +216,8 @@
                   (first)
                   (get objects))]
          (reset! hover hover-shape)
-         (reset! hover-ids ids))))))
+         (reset! hover-ids ids)
+         (reset! hover-top-frame-id (ctt/top-nested-frame objects (deref last-point-ref))))))))
 
 (defn setup-viewport-modifiers
   [modifiers objects]
@@ -221,7 +225,7 @@
         (mf/use-memo
          (mf/deps objects)
          #(ctt/get-root-shapes-ids objects))
-        modifiers (select-keys modifiers root-frame-ids)]
+        modifiers (select-keys modifiers (conj root-frame-ids uuid/zero))]
     (sfd/use-dynamic-modifiers objects globals/document modifiers)))
 
 (defn inside-vbox [vbox objects frame-id]

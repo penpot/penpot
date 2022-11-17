@@ -14,7 +14,6 @@
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.corners :as gsc]
    [app.common.geom.shapes.intersect :as gin]
-   [app.common.geom.shapes.layout :as gcl]
    [app.common.geom.shapes.modifiers :as gsm]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
@@ -28,7 +27,7 @@
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
   (->> shapes
-       (map (comp gpr/points->selrect :points gtr/transform-shape))
+       (map (comp gpr/points->selrect :points))
        (gpr/join-selrects)))
 
 (defn translate-to-frame
@@ -160,36 +159,30 @@
 (dm/export gpr/join-rects)
 (dm/export gpr/join-selrects)
 (dm/export gpr/contains-selrect?)
+(dm/export gpr/contains-point?)
+(dm/export gpr/close-selrect?)
 
 (dm/export gtr/move)
 (dm/export gtr/absolute-move)
 (dm/export gtr/transform-matrix)
 (dm/export gtr/transform-str)
 (dm/export gtr/inverse-transform-matrix)
-(dm/export gtr/transform-point-center)
 (dm/export gtr/transform-rect)
 (dm/export gtr/calculate-adjust-matrix)
 (dm/export gtr/update-group-selrect)
 (dm/export gtr/update-mask-selrect)
-(dm/export gtr/resize-modifiers)
-(dm/export gtr/change-orientation-modifiers)
-(dm/export gtr/rotation-modifiers)
-(dm/export gtr/merge-modifiers)
+(dm/export gtr/update-bool-selrect)
 (dm/export gtr/transform-shape)
 (dm/export gtr/transform-selrect)
 (dm/export gtr/transform-selrect-matrix)
 (dm/export gtr/transform-bounds)
-(dm/export gtr/modifiers->transform)
-(dm/export gtr/empty-modifiers?)
 (dm/export gtr/move-position-data)
-(dm/export gtr/apply-transform)
+(dm/export gtr/apply-objects-modifiers)
+(dm/export gtr/parent-coords-rect)
+(dm/export gtr/parent-coords-points)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
-
-;; Layout
-(dm/export gcl/calc-layout-data)
-(dm/export gcl/calc-layout-modifiers)
 
 ;; PATHS
 (dm/export gsp/content->selrect)
@@ -203,7 +196,7 @@
 (dm/export gin/rect-contains-shape?)
 
 ;; Bool
-(dm/export gsb/update-bool-selrect)
+
 (dm/export gsb/calc-bool-content)
 
 ;; Constraints
@@ -216,3 +209,4 @@
 
 ;; Modifiers
 (dm/export gsm/set-objects-modifiers)
+

@@ -11,14 +11,25 @@
    [app.common.math :as mth]))
 
 (defn make-rect
-  [x y width height]
-  (when (d/num? x y width height)
-    (let [width (max width 0.01)
-          height (max height 0.01)]
-      {:x x
-       :y y
-       :width width
-       :height height})))
+  ([p1 p2]
+   (let [xp1 (:x p1)
+         yp1 (:y p1)
+         xp2 (:x p2)
+         yp2 (:y p2)
+         x1 (min xp1 xp2)
+         y1 (min yp1 yp2)
+         x2 (max xp1 xp2)
+         y2 (max yp1 yp2)]
+     (make-rect x1 y1 (- x2 x1) (- y2 y1))))
+
+  ([x y width height]
+   (when (d/num? x y width height)
+     (let [width (max width 0.01)
+           height (max height 0.01)]
+       {:x x
+        :y y
+        :width width
+        :height height}))))
 
 (defn make-selrect
   [x y width height]
@@ -79,6 +90,19 @@
           maxy (transduce (keep :y) max ##-Inf points)]
       (when (d/num? minx miny maxx maxy)
         (make-rect minx miny (- maxx minx) (- maxy miny))))))
+
+(defn squared-points
+  [points]
+  (when (d/not-empty? points)
+    (let [minx (transduce (keep :x) min ##Inf points)
+          miny (transduce (keep :y) min ##Inf points)
+          maxx (transduce (keep :x) max ##-Inf points)
+          maxy (transduce (keep :y) max ##-Inf points)]
+      (when (d/num? minx miny maxx maxy)
+        [(gpt/point minx miny)
+         (gpt/point maxx miny)
+         (gpt/point maxx maxy)
+         (gpt/point minx maxy)]))))
 
 (defn points->selrect [points]
   (when-let [rect (points->rect points)]
@@ -168,3 +192,10 @@
        (>= (:y1 sr2) (:y1 sr1))
        (<= (:y2 sr2) (:y2 sr1))))
 
+(defn corners->selrect
+  [p1 p2]
+  (let [xp1 (:x p1)
+        xp2 (:x p2)
+        yp1 (:y p1)
+        yp2 (:y p2)]
+    (make-selrect (min xp1 xp2) (min yp1 yp2) (abs (- xp1 xp2)) (abs (- yp1 yp2)))))

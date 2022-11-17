@@ -57,8 +57,6 @@
 
         shapes          (resolve-shapes objects [hover])
         hover-shape     (or (first shapes) frame)
-        hover-shape     (gsh/translate-to-frame hover-shape size)
-
         selected-shapes (resolve-shapes objects selected)
         selrect         (gsh/selection-rect selected-shapes)]
 

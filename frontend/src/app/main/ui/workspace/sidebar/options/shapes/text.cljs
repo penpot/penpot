@@ -78,9 +78,11 @@
          :values layout-item-values
          :is-layout-child? true
          :shape shape}])
-     [:& constraints-menu
-      {:ids ids
-       :values (select-keys shape constraint-attrs)}]
+
+     (when (not is-layout-child?)
+       [:& constraints-menu
+        {:ids ids
+         :values (select-keys shape constraint-attrs)}])
 
      [:& layer-menu {:ids ids
                      :type type

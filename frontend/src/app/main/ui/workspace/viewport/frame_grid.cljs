@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.viewport.frame-grid
   (:require
    [app.common.data :as d]
-   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -138,4 +137,4 @@
                   (or (empty? focus) (contains? focus (:id frame))))
          [:& grid-display-frame {:key (str "grid-" (:id frame))
                                  :zoom zoom
-                                 :frame (gsh/transform-shape frame)}]))]))
+                                 :frame frame}]))]))

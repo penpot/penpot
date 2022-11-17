@@ -6,6 +6,7 @@
 
 (ns app.main.ui.components.shape-icon
   (:require
+   [app.common.types.shape.layout :as ctl]
    [app.main.ui.icons :as i]
    [rumext.v2 :as mf]))
 
@@ -13,7 +14,15 @@
 (mf/defc element-icon
   [{:keys [shape main-instance?] :as props}]
   (case (:type shape)
-    :frame i/artboard
+    :frame (cond
+             (and (ctl/layout? shape) (ctl/col? shape))
+             i/layout-columns
+
+             (and (ctl/layout? shape) (ctl/row? shape))
+             i/layout-rows
+
+             :else
+             i/artboard)
     :image i/image
     :line i/line
     :circle i/circle

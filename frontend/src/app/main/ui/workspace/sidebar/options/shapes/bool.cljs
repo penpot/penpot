@@ -41,8 +41,10 @@
          :values layout-item-values
          :is-layout-child? true
          :shape shape}])
-     [:& constraints-menu {:ids ids
-                           :values constraint-values}]
+
+     (when (not is-layout-child?)
+       [:& constraints-menu {:ids ids
+                             :values constraint-values}])
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]

@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.rows.stroke-row
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.hooks :as h]
@@ -132,9 +133,10 @@
                       :on-close (close-caps-select start-caps-state)}
          [:ul.dropdown.cap-select-dropdown {:style {:top  (:top @start-caps-state)
                                                     :left (:left @start-caps-state)}}
-          (for [[value label separator] (stroke-cap-names)]
+          (for [[idx [value label separator]] (d/enumerate (stroke-cap-names))]
             (let [img (value->img value)]
-              [:li {:class (dom/classnames :separator separator)
+              [:li {:key (dm/str "start-cap-" idx)
+                    :class (dom/classnames :separator separator)
                     :on-click #(on-stroke-cap-start-change index value)}
                (when img [:img {:src (value->img value)}])
                label]))]]
@@ -151,9 +153,10 @@
                       :on-close (close-caps-select end-caps-state)}
          [:ul.dropdown.cap-select-dropdown {:style {:top  (:top @end-caps-state)
                                                     :left (:left @end-caps-state)}}
-          (for [[value label separator] (stroke-cap-names)]
+          (for [[idx [value label separator]] (d/enumerate (stroke-cap-names))]
             (let [img (value->img value)]
-              [:li {:class (dom/classnames :separator separator)
+              [:li {:key (dm/str "end-cap-" idx)
+                    :class (dom/classnames :separator separator)
                     :on-click #(on-stroke-cap-end-change index value)}
                (when img [:img {:src (value->img value)}])
                label]))]]])]))

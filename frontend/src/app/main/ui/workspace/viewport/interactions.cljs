@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.workspace :as dw]
@@ -254,13 +253,11 @@
 (mf/defc interactions
   [{:keys [current-transform objects zoom selected hover-disabled?] :as props}]
   (let [active-shapes (into []
-                            (comp (filter #(seq (:interactions %)))
-                                  (map gsh/transform-shape))
+                            (comp (filter #(seq (:interactions %))))
                             (vals objects))
 
         selected-shapes (into []
-                              (comp (map (d/getf objects))
-                                    (map gsh/transform-shape))
+                              (map (d/getf objects))
                               selected)
 
         {:keys [editing-interaction-index

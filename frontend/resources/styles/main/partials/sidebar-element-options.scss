@@ -182,6 +182,10 @@
     &.error {
       border-color: $color-danger;
     }
+
+    &[disabled] {
+      color: $color-gray-30;
+    }
   }
 
   .input-select {

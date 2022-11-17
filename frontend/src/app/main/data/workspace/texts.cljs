@@ -13,6 +13,7 @@
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
@@ -318,18 +319,14 @@
     (watch [_ _ _]
       (letfn [(update-fn [shape]
                 (let [{:keys [selrect grow-type]} shape
-                      {shape-width :width shape-height :height} selrect
-                      modifier-width (gsh/resize-modifiers shape :width new-width)
-                      modifier-height (gsh/resize-modifiers shape :height new-height)]
+                      {shape-width :width shape-height :height} selrect]
                   (cond-> shape
                     (and (not-changed? shape-width new-width) (= grow-type :auto-width))
-                    (-> (assoc :modifiers modifier-width)
-                        (gsh/transform-shape))
+                    (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width new-width))
 
                     (and (not-changed? shape-height new-height)
                          (or (= grow-type :auto-height) (= grow-type :auto-width)))
-                    (-> (assoc :modifiers modifier-height)
-                        (gsh/transform-shape)))))]
+                    (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height new-height)))))]
 
         (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? false}))))))
 
@@ -346,18 +343,13 @@
 (defn apply-text-modifier
   [shape {:keys [width height position-data]}]
 
-  (let [modifier-width (when width (gsh/resize-modifiers shape :width width))
-        modifier-height (when height (gsh/resize-modifiers shape :height height))
-
-        new-shape
+  (let [new-shape
         (cond-> shape
-          (some? modifier-width)
-          (-> (assoc :modifiers modifier-width)
-              (gsh/transform-shape))
+          (some? width)
+          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width width))
 
-          (some? modifier-height)
-          (-> (assoc :modifiers modifier-height)
-              (gsh/transform-shape))
+          (some? height)
+          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height height))
 
           (some? position-data)
           (assoc :position-data position-data))
@@ -402,7 +394,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [ids (keys (::update-position-data state))]
-        (update state :workspace-text-modifiers #(apply dissoc % ids))))
+        (update state :workspace-text-modifier #(apply dissoc % ids))))
 
     ptk/WatchEvent
     (watch [_ state _]

@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.point
-  (:refer-clojure :exclude [divide min max])
+  (:refer-clojure :exclude [divide min max abs])
   (:require
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
@@ -327,6 +327,13 @@
   (-> point
       (update :x #(if (mth/almost-zero? %) 0.001 %))
       (update :y #(if (mth/almost-zero? %) 0.001 %))))
+
+
+(defn abs
+  [point]
+  (-> point
+      (update :x mth/abs)
+      (update :y mth/abs)))
 
 ;; --- Debug
 

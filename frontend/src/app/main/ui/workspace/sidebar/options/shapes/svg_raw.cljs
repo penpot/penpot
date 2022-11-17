@@ -120,8 +120,9 @@
            :is-layout-child? true
            :shape shape}])
 
-       [:& constraints-menu {:ids ids
-                             :values constraint-values}]
+       (when (not is-layout-child?)
+         [:& constraints-menu {:ids ids
+                               :values constraint-values}])
 
        [:& fill-menu {:ids ids
                       :type type

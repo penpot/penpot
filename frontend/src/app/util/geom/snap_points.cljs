@@ -29,10 +29,9 @@
 (defn shape-snap-points
   [{:keys [hidden blocked] :as shape}]
   (when (and (not blocked) (not hidden))
-    (let [shape (gsh/transform-shape shape)]
-      (case (:type shape)
-        :frame (-> shape :points gsh/points->selrect frame-snap-points)
-        (into #{(gsh/center-shape shape)} (:points shape))))))
+    (case (:type shape)
+      :frame (-> shape :points gsh/points->selrect frame-snap-points)
+      (into #{(gsh/center-shape shape)} (:points shape)))))
 
 (defn guide-snap-points
   [guide frame]
