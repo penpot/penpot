@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-11-01 14:29+0000\n"
-"Last-Translator: Tummas Jóhan Sigvardsen <tummas@tummas.me>\n"
+"PO-Revision-Date: 2022-11-17 19:21+0000\n"
+"Last-Translator: Bogi Napoleon Wennerstrøm <bogi.wennerstrom@gmail.com>\n"
 "Language-Team: Faroese <https://hosted.weblate.org/projects/penpot/frontend/"
 "fo/>\n"
 "Language: fo\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.2-dev\n"
+"X-Generator: Weblate 4.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -565,3 +565,75 @@ msgstr "Vangamyndin er stongd"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
 msgstr "Legg afturat sum Deilt Savn"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Leinkjan til at endurseta títt loyniorð er send til tín postkassa."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Tað er ókeypis, tað Open Source"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Kann skoða kotu"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Lær alt tað grundleggjandi í Penpot, meðan tú stuttleikar tær við hesari lær-"
+"og-ger leiðbeiningini."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Lær-við-at-gera leiðbeining"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Kom ein túr gjøgnum Penpot og lær høvuðsfunkurnar at kenna."
+
+msgid "dashboard.download-standard-file"
+msgstr "Heinta standarafílu (.svg + .json)"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Upplýsingar um hvussu tú setur útflytingar í Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Valt til útflyting"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Heinta %s standarafílur (.svg + .json)"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Viðger síðu: %s"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Sendur upp dátur til ambætara (%s/%s)"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "lesur tínar fílur inn…"
+
+msgid "dashboard.loading-fonts"
+msgstr "lesur tíni stavsnið inn…"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Tín teldupostadressa er dagførd"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Tín teldupostadressa er váttta"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "Loyniorði er goymt!"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Vilt tú strika tína konto?"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Goym stillingar"
