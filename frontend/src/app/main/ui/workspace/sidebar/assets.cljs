@@ -899,7 +899,7 @@
                                 :selected-graphics-paths selected-graphics-paths}]))])]))
 
 (mf/defc graphics-box
-  [{:keys [file-id local? objects listing-thumbs? open? open-groups selected-assets reverse-sort?
+  [{:keys [file-id project-id local? objects listing-thumbs? open? open-groups selected-assets reverse-sort?
            on-asset-click on-assets-delete on-clear-selection] :as props}]
   (let [input-ref  (mf/use-ref nil)
         state      (mf/use-state {:renaming nil
@@ -919,6 +919,8 @@
 
         groups (group-assets objects reverse-sort?)
 
+        team-id (mf/use-ctx ctx/current-team-id)
+
         add-graphic
         (mf/use-fn
          (fn []
@@ -927,13 +929,16 @@
 
         on-file-selected
         (mf/use-fn
-         (mf/deps file-id)
+         (mf/deps file-id project-id team-id)
          (fn [blobs]
            (let [params {:file-id file-id
                          :blobs (seq blobs)}]
              (st/emit! (dwm/upload-media-asset params)
                        (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                              :asset-type "graphics"})))))
+                                              :asset-type "graphics"
+                                              :file-id file-id
+                                              :project-id project-id
+                                              :team-id team-id})))))
 
         on-delete
         (mf/use-fn
@@ -2091,6 +2096,7 @@
 
           (when show-graphics?
             [:& graphics-box {:file-id (:id file)
+                              :project-id (:project-id file)
                               :local? local?
                               :objects media
                               :listing-thumbs? listing-thumbs?
