@@ -18,6 +18,7 @@
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.typography :as cty]
    [app.main.data.workspace.groups :as dwg]
@@ -453,6 +454,11 @@
         component     (cph/get-component libraries
                                          (:component-file shape-inst)
                                          (:component-id shape-inst))
+        component     (or component
+                          (and reset?
+                               (ctf/get-deleted-component
+                                 (get-in libraries [(:component-file shape-inst) :data])
+                                 (:component-id shape-inst))))
         shape-main    (when component
                         (ctn/get-shape component (:shape-ref shape-inst)))
 

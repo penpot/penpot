@@ -106,23 +106,21 @@
                               (if local-component?
                                 (if is-dangling?
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   ;; [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
                                    (when components-v2
                                      [(tr "workspace.shape.menu.restore-main") do-restore-component])]
 
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   ;; [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
                                    [(tr "workspace.shape.menu.update-main") do-update-component]
                                    [(tr "workspace.shape.menu.show-main") do-show-component]])
-                                
+
                                 (if is-dangling?
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   ;; [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
                                    (when components-v2
                                      [(tr "workspace.shape.menu.restore-main") do-restore-component])]
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   ;; [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
-                                   ;; [(tr "workspace.shape.menu.update-main") _do-update-remote-component]
-                                   [(tr "workspace.shape.menu.go-main") do-navigate-component-file]
-                                   ])))}]]]]])))
-
+                                   [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   [(tr "workspace.shape.menu.update-main") _do-update-remote-component]
+                                   [(tr "workspace.shape.menu.go-main") do-navigate-component-file]])))}]]]]])))
