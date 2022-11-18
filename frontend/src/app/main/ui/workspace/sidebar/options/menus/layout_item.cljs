@@ -34,7 +34,14 @@
 (mf/defc margin-section
   [{:keys [values change-margin-style on-margin-change] :as props}]
 
-  (let [margin-type (or (:layout-item-margin-type values) :simple)]
+  (let [margin-type (or (:layout-item-margin-type values) :simple)
+        margins (if (nil? (:layout-item-margin values))
+                  {:m1 0 :m2 0 :m3 0 :m4 0}
+                  (:layout-item-margin values))
+        rx (if (and (not (= :multiple (:layout-item-margin-type values)))
+                    (apply = (vals margins)))
+             (:m1 margins)
+             "--")]
 
     [:div.margin-row
      [:div.margin-icons
@@ -59,7 +66,7 @@
            {:placeholder "--"
             :on-click #(dom/select-target %)
             :on-change (partial on-margin-change :simple)
-            :value (or (-> values :layout-item-margin :m1) 0)}]]]
+            :value rx}]]]
 
         (= margin-type :multiple)
         (for [num [:m1 :m2 :m3 :m4]]

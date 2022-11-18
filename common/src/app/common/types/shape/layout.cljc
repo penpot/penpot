@@ -23,12 +23,12 @@
 ;; ITEMS
 ;; :layout-item-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
 ;; :layout-item-margin-type ;; :simple :multiple
-;; :layout-item-h-sizing  ;; :fill :fix :auto
-;; :layout-item-v-sizing  ;; :fill :fix :auto
+;; :layout-item-h-sizing    ;; :fill :fix :auto
+;; :layout-item-v-sizing    ;; :fill :fix :auto
 ;; :layout-item-max-h       ;; num
 ;; :layout-item-min-h       ;; num
 ;; :layout-item-max-w       ;; num
-;; :layout-item-min-w
+;; :layout-item-min-w       ;; num
 
 (s/def ::layout  #{:flex :grid})
 (s/def ::layout-flex-dir #{:row :reverse-row :column :reverse-column})
