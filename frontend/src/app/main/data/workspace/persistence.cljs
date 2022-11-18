@@ -8,24 +8,17 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.features :as ffeat]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-spec :as pcs]
    [app.common.spec :as us]
-   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
-   [app.main.data.dashboard :as dd]
-   [app.main.data.fonts :as df]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.util.http :as http]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
@@ -156,9 +149,10 @@
           (->> (rp/cmd! :update-file params)
                (rx/mapcat (fn [lagged]
                             (log/debug :hint "changes persisted" :lagged (count lagged))
-                            (let [lagged (cond->> lagged
-                                           (= #{sid} (into #{} (map :session-id) lagged))
-                                           (map #(assoc % :changes [])))
+                            (let [lagged-updates
+                                  (cond->> lagged
+                                    (= #{sid} (into #{} (map :session-id) lagged))
+                                    (map #(assoc % :changes [])))
 
                                   frame-updates
                                   (-> (group-by :page-id changes)
@@ -166,10 +160,10 @@
 
                               (rx/merge
                                (->> (rx/from frame-updates)
-                                    (rx/flat-map (fn [[page-id frames]]
-                                              (->> frames (map #(vector page-id %)))))
+                                    (rx/mapcat (fn [[page-id frames]]
+                                                 (->> frames (map #(vector page-id %)))))
                                     (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail (:id file) page-id frame-id))))
-                               (->> (rx/of lagged)
+                               (->> (rx/of lagged-updates)
                                     (rx/mapcat seq)
                                     (rx/map #(shapes-changes-persisted file-id %)))))))
                (rx/catch (fn [cause]
@@ -178,7 +172,6 @@
                               (rx/empty)
                               (rx/of (rt/assign-exception cause)))
                             (rx/throw cause))))))))))
-
 
 (defn persist-synchronous-changes
   [{:keys [file-id changes]}]
@@ -202,7 +195,6 @@
           (->> (rp/mutation :update-file params)
                (rx/ignore)))))))
 
-
 (defn update-persistence-status
   [{:keys [status reason]}]
   (ptk/reify ::update-persistence-status
@@ -215,6 +207,7 @@
                        :status status
                        :updated-at (dt/now)))))))
 
+(s/def ::revn ::us/integer)
 (s/def ::shapes-changes-persisted
   (s/keys :req-un [::revn ::pcs/changes]))
 
@@ -223,8 +216,8 @@
 
 (defn shapes-changes-persisted
   [file-id {:keys [revn changes] :as params}]
-  (us/verify ::us/uuid file-id)
-  (us/verify ::shapes-changes-persisted params)
+  (us/verify! ::us/uuid file-id)
+  (us/verify! ::shapes-changes-persisted params)
   (ptk/reify ::changes-persisted
     ptk/UpdateEvent
     (update [_ state]
@@ -249,94 +242,5 @@
               (update-in [:workspace-libraries file-id :data]
                          cp/process-changes changes)))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Data Fetching & Uploading
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- Specs
 
-(s/def ::id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
-(s/def ::name string?)
-(s/def ::type keyword?)
-(s/def ::file-id ::us/uuid)
-(s/def ::created-at ::us/inst)
-(s/def ::modified-at ::us/inst)
-(s/def ::version ::us/integer)
-(s/def ::revn ::us/integer)
-(s/def ::ordering ::us/integer)
-(s/def ::data ::ctf/data)
-
-(s/def ::file ::dd/file)
-(s/def ::project ::dd/project)
-(s/def ::page
-  (s/keys :req-un [::id
-                   ::name
-                   ::file-id
-                   ::revn
-                   ::created-at
-                   ::modified-at
-                   ::ordering
-                   ::data]))
-
-(declare fetch-libraries-content)
-(declare bundle-fetched)
-
-(defn fetch-bundle
-  [project-id file-id]
-  (ptk/reify ::fetch-bundle
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [share-id (-> state :viewer-local :share-id)
-            features (cond-> ffeat/enabled
-                       (features/active-feature? state :components-v2)
-                       (conj "components/v2"))]
-        (->> (rx/zip (rp/cmd! :get-raw-file {:id file-id :features features})
-                     (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
-                     (rp/query! :team-users {:file-id file-id})
-                     (rp/query! :project {:id project-id})
-                     (rp/cmd! :get-file-libraries {:file-id file-id})
-                     (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
-             (rx/take 1)
-             (rx/map (fn [[file-raw thumbnails users project libraries file-comments-users]]
-                       {:file-raw file-raw
-                        :thumbnails thumbnails
-                        :users users
-                        :project project
-                        :libraries libraries
-                        :file-comments-users file-comments-users}))
-             (rx/mapcat (fn [{:keys [project] :as bundle}]
-                          (rx/of (ptk/data-event ::bundle-fetched bundle)
-                                 (df/load-team-fonts (:team-id project))))))))))
-
-;; --- Helpers
-
-(defn purge-page
-  "Remove page and all related stuff from the state."
-  [state id]
-  (-> state
-      (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
-      (update :workspace-pages dissoc id)))
-
-(defn preload-data-uris
-  "Preloads the image data so it's ready when necessary"
-  []
-  (ptk/reify ::preload-data-uris
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [extract-urls
-            (fn [{:keys [metadata fill-image]}]
-              (cond
-                (some? metadata)
-                [(cf/resolve-file-media metadata)]
-
-                (some? fill-image)
-                [(cf/resolve-file-media fill-image)]))
-
-            uris (into #{}
-                       (comp (mapcat extract-urls)
-                             (filter some?))
-                       (vals (wsh/lookup-page-objects state)))]
-        (->> (rx/from uris)
-             (rx/merge-map #(http/fetch-data-uri % false))
-             (rx/ignore))))))

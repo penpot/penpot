@@ -35,7 +35,24 @@
 
 ;; A generic pointer; mainly used for deserialize backend pointer-map
 ;; instances that serializes to pointer but may in other ways.
-(defrecord Pointer [id])
+(deftype Pointer [id metadata]
+  #?@(:clj
+      [clojure.lang.IObj
+       (meta [_] metadata)
+       (withMeta [_ meta] (Pointer. id meta))
+       clojure.lang.IDeref
+       (deref [_] id)]
+      :cljs
+      [cljs.core/IMeta
+       (-meta [_] metadata)
+       cljs.core/IWithMeta
+       (-with-meta [_ meta] (Pointer. id meta))
+       cljs.core/IDeref
+       (-deref [_] id)]))
+
+(defn pointer?
+  [o]
+  (instance? Pointer o))
 
 ;; --- HELPERS
 
@@ -140,7 +157,7 @@
  {:id "penpot/pointer"
   :class Pointer
   :rfn (fn [[id meta]]
-         (Pointer. id meta {}))}
+         (Pointer. id meta))}
 
  #?(:clj
     {:id "m"

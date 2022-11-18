@@ -44,13 +44,6 @@
   [o]
   (if (wrapped? o) @o o))
 
-(defn http-cache
-  [{:keys [max-age]}]
-  (fn [_ response]
-    (let [exp (if (integer? max-age) max-age (inst-ms max-age))
-          val (dm/fmt "max-age=%" (int (/ exp 1000.0)))]
-      (update response :headers assoc "cache-control" val))))
-
 (defn with-header
   "Add a http header to the RPC result."
   [mdw key val]
@@ -66,3 +59,10 @@
   [mdw hook-fn]
   (vary-meta mdw update ::rpc/before-complete-fns conj hook-fn))
 
+(defn with-http-cache
+  [mdw max-age]
+  (vary-meta mdw update ::rpc/response-transform-fns conj
+             (fn [_ response]
+               (let [exp (if (integer? max-age) max-age (inst-ms max-age))
+                     val (dm/fmt "max-age=%" (int (/ exp 1000.0)))]
+                 (update response :headers assoc "cache-control" val)))))

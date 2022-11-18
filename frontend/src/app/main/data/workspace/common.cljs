@@ -9,7 +9,6 @@
    [app.common.logging :as log]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.worker :as uw]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -26,18 +25,6 @@
 ;; --- Helpers
 
 (defn interrupt? [e] (= e :interrupt))
-
-;; --- Selection Index Handling
-
-(defn initialize-indices
-  [{:keys [file-raw] :as bundle}]
-  (ptk/reify ::setup-selection-index
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [msg {:cmd :initialize-indices
-                 :file-raw file-raw}]
-        (->> (uw/ask! msg)
-             (rx/map (constantly ::index-initialized)))))))
 
 ;; These functions should've been in `src/app/main/data/workspace/undo.cljs` but doing that causes
 ;; a circular dependency with `src/app/main/data/workspace/changes.cljs`
