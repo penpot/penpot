@@ -101,6 +101,9 @@
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
 
+(def workspace-ready?
+  (l/derived :workspace-ready? st/state))
+
 ;; TODO: rename to workspace-selected (?)
 ;; Don't use directly from components, this is a proxy to improve performance of selected-shapes
 (def ^:private selected-shapes-data

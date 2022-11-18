@@ -278,12 +278,6 @@
   [objects]
   (with-meta objects {::index-frames (get-frames (with-meta objects nil))}))
 
-(defn start-object-indices
-  [file]
-  (letfn [(process-index [page-index page-id]
-            (update-in page-index [page-id :objects] start-page-index))]
-    (update file :pages-index #(reduce process-index % (keys %)))))
-
 (defn update-object-indices
   [file page-id]
   (update-in file [:pages-index page-id :objects] update-page-index))

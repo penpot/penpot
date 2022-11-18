@@ -8,10 +8,9 @@
   (:require
    [app.common.spec :as us]
    [app.db :as db]
-   [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as cmd.files]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.helpers :as rpch]
+   [app.rpc.helpers :as rph]
    [app.rpc.queries.projects :as projects]
    [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
@@ -127,10 +126,10 @@
 (sv/defmethod ::file-libraries
   {::doc/added "1.3"
    ::doc/deprecated "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id features] :as params}]
   (with-open [conn (db/open pool)]
     (cmd.files/check-read-permissions! conn profile-id file-id)
-    (cmd.files/get-file-libraries conn false file-id)))
+    (cmd.files/get-file-libraries conn file-id features)))
 
 
 ;; --- Query: Files that use this File library
@@ -169,4 +168,4 @@
   (with-open [conn (db/open pool)]
     (cmd.files/check-read-permissions! conn profile-id file-id)
     (-> (cmd.files/get-file-thumbnail conn file-id revn)
-        (with-meta {::rpc/transform-response (rpch/http-cache {:max-age (* 1000 60 60)})}))))
+        (rph/with-http-cache cmd.files/long-cache-duration))))

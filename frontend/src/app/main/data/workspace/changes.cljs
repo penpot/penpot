@@ -78,7 +78,7 @@
     ptk/EffectEvent
     (effect [_ state _]
       (doseq [[page-id changes] (::update-changes state)]
-        (uw/ask! {:cmd :update-page-indices
+        (uw/ask! {:cmd :update-page-index
                   :page-id page-id
                   :changes changes})))))
 

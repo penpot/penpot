@@ -26,7 +26,7 @@
   (let [file       (files/get-file conn file-id features)
         thumbnails (files/get-object-thumbnails conn file-id)
         project    (get-project conn (:project-id file))
-        libs       (files/get-file-libraries conn false file-id)
+        libs       (files/get-file-libraries conn file-id features)
         users      (comments/get-file-comments-users conn file-id profile-id)
 
         links      (->> (db/query conn :share-link {:file-id file-id})

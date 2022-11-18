@@ -90,7 +90,7 @@
                            :selected selected
                            :layout layout}]])]))
 
-(def trimmed-page-ref (l/derived :trimmed-page st/state =))
+(def trimmed-page-ref (l/derived :workspace-trimmed-page st/state =))
 
 (mf/defc workspace-page
   [{:keys [file layout page-id wglobal] :as props}]
@@ -121,6 +121,7 @@
         project (mf/deref refs/workspace-project)
         layout  (mf/deref refs/workspace-layout)
         wglobal (mf/deref refs/workspace-global)
+        ready?  (mf/deref refs/workspace-ready?)
 
         components-v2 (features/use-feature :components-v2)
 
@@ -128,7 +129,7 @@
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]
-      (st/emit! (dw/initialize layout-name)))
+      (st/emit! (dw/initialize-layout layout-name)))
 
     (mf/with-effect [project-id file-id]
       (st/emit! (dw/initialize-file project-id file-id))
@@ -160,8 +161,7 @@
 
           [:& context-menu]
 
-          (if (and (and file project)
-                   (:initialized file))
+          (if ready?
             [:& workspace-page {:key (dm/str "page-" page-id)
                                 :page-id page-id
                                 :file file
