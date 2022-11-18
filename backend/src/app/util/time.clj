@@ -39,9 +39,7 @@
       :seconds ChronoUnit/SECONDS
       :minutes ChronoUnit/MINUTES
       :hours   ChronoUnit/HOURS
-      :days    ChronoUnit/DAYS
-      :weeks   ChronoUnit/WEEKS
-      :months   ChronoUnit/MONTHS)))
+      :days    ChronoUnit/DAYS)))
 
 ;; --- DURATION
 
