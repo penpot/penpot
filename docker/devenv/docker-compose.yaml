@@ -97,7 +97,7 @@ services:
   #     - "8080:8080"
 
   postgres:
-    image: postgres:13
+    image: postgres:15
     command: postgres -c config_file=/etc/postgresql.conf
     restart: always
     stop_signal: SIGINT
@@ -112,7 +112,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:5.0.7
+    image: redis:7
     hostname: "penpot-devenv-redis"
     container_name: "penpot-devenv-redis"
     restart: always
