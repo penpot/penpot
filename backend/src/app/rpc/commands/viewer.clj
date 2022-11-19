@@ -10,6 +10,7 @@
    [app.db :as db]
    [app.rpc.commands.comments :as comments]
    [app.rpc.commands.files :as files]
+   [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
    [app.rpc.queries.share-link :as slnk]
    [app.util.services :as sv]
@@ -23,57 +24,52 @@
 
 (defn- get-bundle
   [conn file-id profile-id features]
-  (let [file       (files/get-file conn file-id features)
-        thumbnails (files/get-object-thumbnails conn file-id)
-        project    (get-project conn (:project-id file))
-        libs       (files/get-file-libraries conn file-id features)
-        users      (comments/get-file-comments-users conn file-id profile-id)
+  (let [file    (files/get-file conn file-id features)
+        project (get-project conn (:project-id file))
+        libs    (files/get-file-libraries conn file-id features)
+        users   (comments/get-file-comments-users conn file-id profile-id)
 
-        links      (->> (db/query conn :share-link {:file-id file-id})
-                        (mapv slnk/decode-share-link-row))
+        links   (->> (db/query conn :share-link {:file-id file-id})
+                     (mapv slnk/decode-share-link-row))
 
-        fonts      (db/query conn :team-font-variant
-                             {:team-id (:team-id project)
-                              :deleted-at nil})]
-    {:file (assoc file :thumbnails thumbnails)
+        fonts   (db/query conn :team-font-variant
+                          {:team-id (:team-id project)
+                           :deleted-at nil})]
+
+    {:file file
      :users users
      :fonts fonts
      :project project
      :share-links links
      :libraries libs}))
 
+(defn- remove-not-allowed-pages
+  [data allowed]
+  (-> data
+      (update :pages (fn [pages] (filterv #(contains? allowed %) pages)))
+      (update :pages-index select-keys allowed)))
+
 (defn get-view-only-bundle
   [conn {:keys [profile-id file-id share-id features] :as params}]
-  (let [slink  (slnk/retrieve-share-link conn file-id share-id)
-        perms  (files/get-permissions conn profile-id file-id share-id)
-        thumbs (files/get-object-thumbnails conn file-id)
+  (let [perms  (files/get-permissions conn profile-id file-id share-id)
         bundle (-> (get-bundle conn file-id profile-id features)
-                   (assoc :permissions perms)
-                   (assoc-in [:file :thumbnails] thumbs))]
+                   (assoc :permissions perms))]
 
     ;; When we have neither profile nor share, we just return a not
     ;; found response to the user.
-    (when (and (not profile-id)
-               (not slink))
+    (when-not perms
       (ex/raise :type :not-found
-                :code :object-not-found))
+                :code :object-not-found
+                :hint "object not found"))
 
-    ;; When we have only profile, we need to check read permissions
-    ;; on file.
-    (when (and profile-id (not slink))
-      (files/check-read-permissions! conn profile-id file-id))
+    (update bundle :file
+            (fn [file]
+              (cond-> file
+                (= :share-link (:type perms))
+                (update :data remove-not-allowed-pages (:pages perms))
 
-    (cond-> bundle
-      (some? slink)
-      (assoc :share slink)
-
-      (and (some? slink)
-           (not (contains? (:flags slink) "view-all-pages")))
-      (update-in [:file :data] (fn [data]
-                                 (let [allowed-pages (:pages slink)]
-                                   (-> data
-                                       (update :pages (fn [pages] (filterv #(contains? allowed-pages %) pages)))
-                                       (update :pages-index (fn [index] (select-keys index allowed-pages))))))))))
+                :always
+                (update :data select-keys [:id :options :pages :pages-index]))))))
 
 (s/def ::get-view-only-bundle
   (s/keys :req-un [::files/file-id]
@@ -83,8 +79,10 @@
 
 (sv/defmethod ::get-view-only-bundle
   {:auth false
+   ::cond/get-object #(files/get-minimal-file %1 (:file-id %2))
+   ::cond/key-fn files/get-file-etag
+   ::cond/reuse-key? true
    ::doc/added "1.17"}
   [{:keys [pool]} params]
   (with-open [conn (db/open pool)]
     (get-view-only-bundle conn params)))
-

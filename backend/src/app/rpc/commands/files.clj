@@ -116,6 +116,7 @@
         :can-edit (or is-owner is-admin can-edit)
         :can-read true
         :is-logged (some? profile-id)})))
+
   ([conn profile-id file-id share-id]
    (let [perms  (get-permissions conn profile-id file-id)
          ldata  (retrieve-share-link conn file-id share-id)]
@@ -128,6 +129,7 @@
        (some? perms) perms
        (some? ldata) {:type :share-link
                       :can-read true
+                      :pages (:pages ldata)
                       :is-logged (some? profile-id)
                       :who-comment (:who-comment ldata)
                       :who-inspect (:who-inspect ldata)}))))
@@ -212,7 +214,7 @@
 ;; QUERY COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- handle-file-features
+(defn handle-file-features
   [{:keys [features] :as file} client-features]
   (when (and (contains? features "components/v2")
              (not (contains? client-features "components/v2")))
@@ -244,11 +246,11 @@
         (pmg/migrate-file)
         (handle-file-features client-features))))
 
-(defn- get-minimal-file
+(defn get-minimal-file
   [{:keys [pool] :as cfg} id]
   (db/get pool :file {:id id} {:columns [:id :modified-at :revn]}))
 
-(defn- get-file-etag
+(defn get-file-etag
   [{:keys [modified-at revn]}]
   (str (dt/format-instant modified-at :iso) "-" revn))
 
@@ -277,18 +279,23 @@
   (some-> (db/get conn :file-data-fragment {:file-id file-id :id fragment-id})
           (update :content blob/decode)))
 
+(s/def ::share-id ::us/uuid)
 (s/def ::fragment-id ::us/uuid)
+
 (s/def ::get-file-fragment
-  (s/keys :req-un [::file-id ::fragment-id ::profile-id]))
+  (s/keys :req-un [::file-id ::fragment-id]
+          :opt-un [::share-id ::profile-id]))
 
 (sv/defmethod ::get-file-fragment
   "Retrieve a file by its ID. Only authenticated users."
-  {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id fragment-id] :as params}]
+  {::doc/added "1.17"
+   :auth false}
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id fragment-id share-id] :as params}]
   (with-open [conn (db/open pool)]
-    (check-read-permissions! conn profile-id file-id)
-    (-> (get-file-fragment conn file-id fragment-id)
-        (rph/with-http-cache long-cache-duration))))
+    (let [perms (get-permissions conn profile-id file-id share-id)]
+      (check-read-permissions! perms)
+      (-> (get-file-fragment conn file-id fragment-id)
+          (rph/with-http-cache long-cache-duration)))))
 
 ;; --- COMMAND QUERY: get-file-object-thumbnails
 
