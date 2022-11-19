@@ -88,7 +88,6 @@
         (t/is (nil? (:error out)))
 
         (let [result (:result out)]
-          (t/is (contains? result :share))
           (t/is (contains? result :file))
           (t/is (contains? result :project)))))
 
@@ -103,7 +102,6 @@
         ;; (th/print-result! out)
         (let [result (:result out)]
           (t/is (contains? result :file))
-          (t/is (contains? result :share))
           (t/is (contains? result :project)))))
 
     ))

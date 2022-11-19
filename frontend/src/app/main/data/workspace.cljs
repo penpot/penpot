@@ -215,11 +215,10 @@
 
                          (->> (rp/cmd! :get-file-libraries {:file-id id :features features})
                               (rx/mapcat identity)
-                              (rx/merge-map
+                              (rx/mapcat
                                (fn [file]
                                  (->> (filter (comp t/pointer? val) file)
                                       (resolve-pointers file))))
-                              (rx/reduce conj [])
                               (rx/map libraries-fetched)))))))
 
                (rx/take-until stoper)))))))

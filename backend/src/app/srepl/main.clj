@@ -137,3 +137,8 @@
                     :id id
                     :update-fn update-file
                     :save? save?)))
+
+(defn enable-storage-features-on-file!
+  [system & {:as params}]
+  (enable-objects-map-feature-on-file! system params)
+  (enable-pointer-map-feature-on-file! system params))

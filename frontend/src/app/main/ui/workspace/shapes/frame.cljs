@@ -100,7 +100,7 @@
               ;; when `true` we've called the mount for the frame
               rendered?          (mf/use-var false)
 
-              disable-thumbnail? (d/not-empty? (dm/get-in modifiers [(:id shape) :modifiers]))
+              disable-thumbnail? (d/not-empty? (dm/get-in modifiers [frame-id :modifiers]))
 
               [on-load-frame-dom render-frame? thumbnail-renderer]
               (ftr/use-render-thumbnail page-id shape node-ref rendered? disable-thumbnail? @force-render)

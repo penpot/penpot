@@ -8,18 +8,18 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.features :as ffeat]
    [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.transit :as t]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.comments :as dcm]
    [app.main.data.fonts :as df]
-   [app.main.data.messages :as msg]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.globals :as ug]
-   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -99,40 +99,58 @@
 
 ;; --- Data Fetching
 
-(s/def ::fetch-bundle-params
+(s/def ::fetch-bundle
   (s/keys :req-un [::page-id ::file-id]
           :opt-un [::share-id]))
 
-(defn fetch-bundle
+(defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
-  (us/assert ::fetch-bundle-params params)
-  (ptk/reify ::fetch-file
+  (us/assert! ::fetch-bundle params)
+
+  (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ state _]
-      (let [components-v2 (features/active-feature? state :components-v2)
-            params'       (cond-> {:file-id file-id}
-                            (uuid? share-id)
-                            (assoc :share-id share-id)
+      (let [features (cond-> ffeat/enabled
+                       (features/active-feature? state :components-v2)
+                       (conj "components/v2")
 
-                            :always
-                            (assoc :components-v2 components-v2))]
+                       :always
+                       (conj "storage/pointer-map"))
+            params'  (cond-> {:file-id file-id :features features}
+                       (uuid? share-id)
+                       (assoc :share-id share-id))
+
+            resolve  (fn [[key pointer]]
+                       (let [params {:file-id file-id :fragment-id @pointer}
+                             params (cond-> params
+                                      (uuid? share-id)
+                                      (assoc :share-id share-id))]
+                         (->> (rp/cmd! :get-file-fragment params)
+                              (rx/map :content)
+                              (rx/map #(vector key %)))))]
 
         (->> (rp/query! :view-only-bundle params')
-             (rx/mapcat
-               (fn [{:keys [fonts] :as bundle}]
-                 (->> (rx/of (df/fonts-fetched fonts)
-                             (bundle-fetched (merge bundle params))))))
-             (rx/catch (fn [err]
-                         (if (and (= (:type err) :restriction)
-                                  (= (:code err) :feature-disabled))
-                           (rx/of (msg/error (tr "errors.components-v2") {:timeout nil}))
-                           (rx/throw err)))))))))
+               (rx/mapcat
+                (fn [bundle]
+                  (->> (rx/from (-> bundle :file :data :pages-index seq))
+                       (rx/merge-map
+                        (fn [[_ page :as kp]]
+                          (if (t/pointer? page)
+                            (resolve kp)
+                            (rx/of kp))))
+                       (rx/reduce conj {})
+                       (rx/map (fn [pages-index]
+                                 (update-in bundle [:file :data] assoc :pages-index pages-index))))))
+               (rx/mapcat
+                (fn [{:keys [fonts] :as bundle}]
+                  (rx/of (df/fonts-fetched fonts)
+                         (bundle-fetched (merge bundle params))))))))))
 
 (declare go-to-frame-auto)
 
 (defn bundle-fetched
-  [{:keys [project file share-links libraries users permissions] :as bundle}]
-  (let [pages (->> (get-in file [:data :pages])
+  [{:keys [project file share-links libraries users permissions thumbnails] :as bundle}]
+  (let [pages (->> (dm/get-in file [:data :pages])
                    (map (fn [page-id]
                           (let [data (get-in file [:data :pages-index page-id])]
                             [page-id (assoc data
@@ -150,6 +168,7 @@
                             :permissions permissions
                             :project project
                             :pages pages
+                            :thumbnails thumbnails
                             :file file})))
 
       ptk/WatchEvent
