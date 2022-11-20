@@ -1,6 +1,7 @@
 (ns bench
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.rect :as gsr]
    [app.common.perf :as perf]
@@ -10,39 +11,21 @@
 (def points
   (gen/sample (s/gen ::gpt/point) 20))
 
-(defn points->rect
-  [points]
-  (when-let [points (seq points)]
-    (loop [minx ##Inf
-           miny ##Inf
-           maxx ##-Inf
-           maxy ##-Inf
-           pts  points]
-      (if-let [pt ^boolean (first pts)]
-        (let [x (d/get-prop pt :x)
-              y (d/get-prop pt :y)]
-          (recur (min minx x)
-                 (min miny y)
-                 (max maxx x)
-                 (max maxy y)
-                 (rest pts)))
-        (when (d/num? minx miny maxx maxy)
-          (gsr/make-rect minx miny (- maxx minx) (- maxy miny)))))))
-
 (defn bench-points
   []
+  #_(perf/benchmark
+     :f #(gpt/center-points-old points)
+     :samples 20
+     :max-iterations 500000
+     :name "base")
   (perf/benchmark
-   :f #(gsr/points->rect points)
-   :name "base")
-  (perf/benchmark
-   :f #(points->rect points)
+   :f #(gpt/center-points points)
+   :max-iterations 500000
+   :samples 20
    :name "optimized"))
-
 
 (defn main
   [& [name]]
   (case name
     "points" (bench-points)
     (println "available: points")))
-
-
