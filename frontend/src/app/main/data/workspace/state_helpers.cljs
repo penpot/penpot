@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.path.commands :as upc]))
@@ -139,3 +140,9 @@
 
     (as-> children $
       (d/mapm (set-content-modifiers state) $))))
+
+(defn viewport-center
+  [state]
+  (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
+    (gpt/point (+ x (/ width 2)) (+ y (/ height 2)))))
+

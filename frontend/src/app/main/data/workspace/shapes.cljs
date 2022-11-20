@@ -276,11 +276,6 @@
                 (dch/commit-changes changes)
                 (dwsul/update-layout-positions layout-ids)))))))
 
-(defn- viewport-center
-  [state]
-  (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
-    [(+ x (/ width 2)) (+ y (/ height 2))]))
-
 (defn create-and-add-shape
   [type frame-x frame-y data]
   (ptk/reify ::create-and-add-shape
@@ -288,9 +283,9 @@
     (watch [_ state _]
       (let [{:keys [width height]} data
 
-            [vbc-x vbc-y] (viewport-center state)
-            x (:x data (- vbc-x (/ width 2)))
-            y (:y data (- vbc-y (/ height 2)))
+            vbc (wsh/viewport-center state)
+            x (:x data (- (:x vbc) (/ width 2)))
+            y (:y data (- (:y vbc) (/ height 2)))
             page-id (:current-page-id state)
             frame-id (-> (wsh/lookup-page-objects state page-id)
                          (ctst/top-nested-frame {:x frame-x :y frame-y}))

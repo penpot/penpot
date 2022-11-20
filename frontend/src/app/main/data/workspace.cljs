@@ -14,7 +14,6 @@
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.rect :as gpsr]
-   [app.common.logging :as log]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -56,7 +55,6 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shapes-update-layout :as dwul]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.data.workspace.svg-upload :as svg]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -1604,58 +1602,6 @@
     (update [_ state]
       (dissoc state :remove-graphics))))
 
-(defn- create-shapes-svg
-  [file-id objects pos media-obj]
-  (let [path (cfg/resolve-file-media media-obj)
-
-        upload-images
-        (fn [svg-data]
-          (->> (svg/upload-images svg-data file-id)
-               (rx/map #(assoc svg-data :image-data %))))
-
-        process-svg
-        (fn [svg-data]
-          (let [[shape children]
-                (svg/create-svg-shapes svg-data pos objects uuid/zero #{} false)]
-          [shape children]))]
-
-    (->> (http/send! {:method :get :uri path :mode :no-cors})
-         (rx/map :body)
-         (rx/map #(vector (:name media-obj) %))
-         (rx/merge-map dwm/svg->clj)
-         (rx/merge-map upload-images)
-         (rx/map process-svg)
-         (rx/catch  ; When error downloading media-obj, skip it and continue with next one
-           #(log/error :hint "error downloading file"
-                       :path path
-                       :name (:name media-obj)
-                       :cause %)))))
-
-(defn- create-shapes-img
-  [pos {:keys [name width height id mtype] :as media-obj}]
-  (let [group-shape (cts/make-shape :group
-                                    {:x (:x pos)
-                                     :y (:y pos)
-                                     :width width
-                                     :height height}
-                                    {:name name
-                                     :frame-id uuid/zero
-                                     :parent-id uuid/zero})
-
-        img-shape (cts/make-shape :image
-                                  {:x (:x pos)
-                                   :y (:y pos)
-                                   :width width
-                                   :height height
-                                   :metadata {:id id
-                                              :width width
-                                              :height height
-                                              :mtype mtype}}
-                                  {:name name
-                                   :frame-id uuid/zero
-                                   :parent-id (:id group-shape)})]
-    (rx/of [group-shape [img-shape]])))
-
 (defn- remove-graphic
   [it file-data page [index [media-obj pos]]]
   (let [process-shapes
@@ -1689,8 +1635,9 @@
             (dch/commit-changes changes)))
 
         shapes (if (= (:mtype media-obj) "image/svg+xml")
-                 (create-shapes-svg (:id file-data) (:objects page) pos media-obj)
-                 (create-shapes-img pos media-obj))]
+                 (->> (dwm/load-and-parse-svg media-obj)
+                      (rx/mapcat (partial dwm/create-shapes-svg (:id file-data) (:objects page) pos)))
+                 (dwm/create-shapes-img pos media-obj))]
 
       (rx/concat
         (rx/of (update-remove-graphics index))
