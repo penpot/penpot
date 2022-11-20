@@ -19,6 +19,7 @@
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.transit :as t]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
@@ -987,28 +988,6 @@
                                                             :graphics #{}
                                                             :colors #{}
                                                             :typographies #{}}))))
-(defn go-to-component
-  [component-id]
-  (ptk/reify ::go-to-component
-    IDeref
-    (-deref [_] {:layout :assets})
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [project-id    (get-in state [:workspace-project :id])
-            file-id       (get-in state [:workspace-file :id])
-            page-id       (get state :current-page-id)
-            pparams       {:file-id file-id :project-id project-id}
-            qparams       {:page-id page-id :layout :assets}]
-        (rx/of (rt/nav :workspace pparams qparams)
-               (dwl/set-assets-box-open file-id :library true)
-               (dwl/set-assets-box-open file-id :components true)
-               (select-single-asset component-id :components))))
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (let [wrapper-id    (str "component-shape-id-" component-id)]
-        (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id)))))))
-
 (defn go-to-main-instance
   [page-id shape-id on-page-selected]
   (us/verify ::us/uuid page-id)
@@ -1024,7 +1003,8 @@
           (let [project-id      (:current-project-id state)
                 file-id         (:current-file-id state)
                 pparams         {:file-id file-id :project-id project-id}
-                qparams         {:page-id page-id :layout :assets}]
+                qparams         {:page-id page-id}]
+                ;; qparams         {:page-id page-id :layout :assets}]
             (rx/merge
               (rx/of (rt/nav :workspace pparams qparams))
               (->> stream
@@ -1033,6 +1013,58 @@
                    (rx/mapcat #(do
                                  (on-page-selected)
                                  (rx/of (dws/select-shapes (lks/set shape-id)))))))))))))
+
+(defn go-to-component
+  [component-id]
+  (ptk/reify ::go-to-component
+    IDeref
+    (-deref [_] {:layout :assets})
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [components-v2 (features/active-feature? state :components-v2)]
+        (if components-v2
+          (let [file-data          (wsh/get-local-file state)
+                component          (ctkl/get-component file-data component-id)
+                main-instance-id   (:main-instance-id component)
+                main-instance-page (:main-instance-page component)]
+            (rx/of (go-to-main-instance main-instance-page main-instance-id identity)))
+          (let [project-id    (get-in state [:workspace-project :id])
+                file-id       (get-in state [:workspace-file :id])
+                page-id       (get state :current-page-id)
+                pparams       {:file-id file-id :project-id project-id}
+                qparams       {:page-id page-id :layout :assets}]
+            (rx/of (rt/nav :workspace pparams qparams)
+                   (dwl/set-assets-box-open file-id :library true)
+                   (dwl/set-assets-box-open file-id :components true)
+                   (select-single-asset component-id :components))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [components-v2 (features/active-feature? state :components-v2)
+            wrapper-id    (str "component-shape-id-" component-id)]
+        (when-not components-v2
+          (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id))))))))
+
+(defn show-component-in-assets
+  [component-id]
+  (ptk/reify ::show-component-in-assets
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [project-id    (get-in state [:workspace-project :id])
+            file-id       (get-in state [:workspace-file :id])
+            page-id       (get state :current-page-id)
+            pparams       {:file-id file-id :project-id project-id}
+            qparams       {:page-id page-id :layout :assets}]
+        (rx/of (rt/nav :workspace pparams qparams)
+               (dwl/set-assets-box-open file-id :library true)
+               (dwl/set-assets-box-open file-id :components true)
+               (select-single-asset component-id :components))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (let [wrapper-id (str "component-shape-id-" component-id)]
+        (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id)))))))
 
 (def go-to-file
   (ptk/reify ::go-to-file

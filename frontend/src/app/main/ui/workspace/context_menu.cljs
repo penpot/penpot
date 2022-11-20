@@ -424,6 +424,9 @@
         do-detach-component-in-bulk #(st/emit! dwl/detach-selected-components)
         do-reset-component #(st/emit! (dwl/reset-component shape-id))
         do-show-component #(st/emit! (dw/go-to-component component-id))
+        do-show-in-assets #(st/emit! (if components-v2
+                                       (dw/show-component-in-assets component-id)
+                                       (dw/go-to-component component-id)))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file component-file))
         do-update-component #(st/emit! (dwl/update-component-sync shape-id component-file))
         do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
@@ -474,7 +477,7 @@
         [:& menu-separator]
         (if main-component?
           [:& menu-entry {:title (tr "workspace.shape.menu.show-in-assets")
-                          :on-click do-show-component}]
+                          :on-click do-show-in-assets}]
           (if local-component?
             (if is-dangling?
               [:*
