@@ -297,8 +297,8 @@
                  (mapv (fn [[value points]]
                          [(- value pval)
                           (->> points (mapv #(vector point %)))])))))]
-    {:x (query-coord point :x)
-     :y (query-coord point :y)}))
+    (gpt/point (query-coord point :x)
+               (query-coord point :y))))
 
 (defn merge-matches
   ([] {:x nil :y nil})

@@ -7,6 +7,7 @@
 (ns app.common.geom.shapes.rect
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]))
 
@@ -90,8 +91,8 @@
            maxy ##-Inf
            pts  points]
       (if-let [pt (first pts)]
-        (let [x (d/get-prop pt :x)
-              y (d/get-prop pt :y)]
+        (let [x (dm/get-prop pt :x)
+              y (dm/get-prop pt :y)]
           (recur (min minx x)
                  (min miny y)
                  (max maxx x)

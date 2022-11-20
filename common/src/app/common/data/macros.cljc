@@ -107,3 +107,15 @@
                    (d/close! ~(first bindings))))))
           `(do ~@body)
           (reverse (partition 2 bindings))))
+
+(defmacro get-prop
+  "A macro based, optimized variant of `get` that access the property
+  directly on CLJS, on CLJ works as get."
+  [obj prop]
+  ;; `(do
+  ;;    (when-not (record? ~obj)
+  ;;      (js/console.trace (pr-str ~obj)))
+  ;;    (c/get ~obj ~prop)))
+  (if (:ns &env)
+    (list (symbol ".") (with-meta obj {:tag 'js}) (symbol (str "-" (c/name prop))))
+    `(c/get ~obj ~prop)))
