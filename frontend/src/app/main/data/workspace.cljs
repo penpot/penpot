@@ -842,63 +842,6 @@
           (rx/of (dch/update-shapes selected #(assoc % :proportion-lock true)))
           (rx/of (dch/update-shapes selected #(update % :proportion-lock not))))))))
 
-;; --- Update Shape Flags
-
-(defn update-shape-flags
-  [ids {:keys [blocked hidden] :as flags}]
-  (us/verify (s/coll-of ::us/uuid) ids)
-  (us/assert ::shape-attrs flags)
-  (ptk/reify ::update-shape-flags
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [update-fn
-            (fn [obj]
-              (cond-> obj
-                (boolean? blocked) (assoc :blocked blocked)
-                (boolean? hidden) (assoc :hidden hidden)))
-            objects (wsh/lookup-page-objects state)
-            ids     (into ids (->> ids (mapcat #(cph/get-children-ids objects %))))]
-        (rx/of (dch/update-shapes ids update-fn))))))
-
-(defn toggle-visibility-selected
-  []
-  (ptk/reify ::toggle-visibility-selected
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
-        (rx/of (dch/update-shapes selected #(update % :hidden not)))))))
-
-(defn toggle-lock-selected
-  []
-  (ptk/reify ::toggle-lock-selected
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
-        (rx/of (dch/update-shapes selected #(update % :blocked not)))))))
-
-(defn toggle-file-thumbnail-selected
-  []
-  (ptk/reify ::toggle-file-thumbnail-selected
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [selected   (wsh/lookup-selected state)
-            pages      (-> state :workspace-data :pages-index vals)
-            get-frames (fn [{:keys [objects id] :as page}]
-                         (->> (ctst/get-frames objects)
-                              (sequence
-                               (comp (filter :use-for-thumbnail?)
-                                     (map :id)
-                                     (remove selected)
-                                     (map (partial vector id))))))]
-
-        (rx/concat
-         (rx/from
-          (->> (mapcat get-frames pages)
-               (d/group-by first second)
-               (map (fn [[page-id frame-ids]]
-                      (dch/update-shapes frame-ids #(dissoc % :use-for-thumbnail?) {:page-id page-id})))))
-         (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail? not))))))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1754,6 +1697,12 @@
 ;; Highlight
 (dm/export dwh/highlight-shape)
 (dm/export dwh/dehighlight-shape)
+
+;; Shape flags
+(dm/export dwsh/update-shape-flags)
+(dm/export dwsh/toggle-visibility-selected)
+(dm/export dwsh/toggle-lock-selected)
+(dm/export dwsh/toggle-file-thumbnail-selected)
 
 ;; Groups
 (dm/export dwg/mask-group)

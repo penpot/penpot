@@ -23,7 +23,13 @@
        (or (= (:shape-ref shape-inst) (:id shape-main))
            (= (:shape-ref shape-inst) (:shape-ref shape-main)))))
 
+(defn main-instance?
+  "Check if this shape is the root of the main instance of some component."
+  [shape]
+  (some? (:main-instance? shape)))
+
 (defn is-main-instance?
+  "Check if this shape is the root of the main instance of the given component."
   [shape-id page-id component]
   (and (= shape-id (:main-instance-id component))
        (= page-id (:main-instance-page component))))
@@ -37,4 +43,9 @@
   [shape library-id]
   (and (some? (:component-id shape))
        (= (:component-file shape) library-id)))
+
+(defn in-component-instance?
+  "Check if the shape is inside a component instance."
+  [shape]
+  (some? (:shape-ref shape)))
 
