@@ -40,7 +40,7 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (log/debug :hint "initialize persistence")
-      (let [stoper   (rx/filter #(= ::finalize %) stream)
+      (let [stoper   (rx/filter (ptk/type? ::initialize-persistence) stream)
             commits  (l/atom [])
 
             local-file?
