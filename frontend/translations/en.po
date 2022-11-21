@@ -813,7 +813,7 @@ msgstr "Unknown token"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
-msgstr "Username or password seems to be wrong."
+msgstr "Email or password is incorrect."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
