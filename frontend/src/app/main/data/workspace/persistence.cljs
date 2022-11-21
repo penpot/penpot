@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.persistence
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.pages :as cp]
@@ -156,7 +155,7 @@
 
                                   frame-updates
                                   (-> (group-by :page-id changes)
-                                      (d/update-vals #(into #{} (mapcat :frames) %)))]
+                                      (update-vals #(into #{} (mapcat :frames) %)))]
 
                               (rx/merge
                                (->> (rx/from frame-updates)

@@ -409,7 +409,7 @@
   "Given the page data, removes the `:thumbnail` prop from all
   shapes."
   [page]
-  (update page :objects d/update-vals #(dissoc % :thumbnail)))
+  (update page :objects update-vals #(dissoc % :thumbnail)))
 
 (defn get-page
   [conn {:keys [file-id page-id object-id features]}]

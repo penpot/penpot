@@ -232,13 +232,6 @@
   ([mfn coll]
    (into {} (mapm mfn) coll)))
 
-(defn update-vals
-  "m f => {k (f v) ...}
-  Given a map m and a function f of 1-argument, returns a new map where the keys of m
-  are mapped to result of applying f to the corresponding values of m."
-  [m f]
-  (c/update-vals m f))
-
 (defn removev
   "Returns a vector of the items in coll for which (fn item) returns logical false"
   [fn coll]

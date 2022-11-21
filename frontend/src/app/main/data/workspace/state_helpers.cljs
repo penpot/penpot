@@ -132,7 +132,7 @@
         children-ids (cph/get-children-ids objects parent-id)
         children
         (-> (select-keys objects children-ids)
-            (d/update-vals
+            (update-vals
              (fn [child]
                (cond-> child
                  (contains? modifiers (:id child))
