@@ -242,7 +242,7 @@
         text-shapes
         (mf/use-memo
          (mf/deps text-shapes modifiers)
-         #(d/update-vals text-shapes (partial process-shape modifiers)))
+         #(update-vals text-shapes (partial process-shape modifiers)))
 
         editing-shape (get text-shapes edition)
 

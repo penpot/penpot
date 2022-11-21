@@ -350,7 +350,7 @@
                        (mapv #(update % :starting-frame resolve)))
 
         guides    (-> (get-in page-data [:options :guides])
-                      (d/update-vals #(update % :frame-id resolve)))
+                      (update-vals #(update % :frame-id resolve)))
 
         page-data (-> page-data
                       (d/assoc-in-when [:options :flows] flows)

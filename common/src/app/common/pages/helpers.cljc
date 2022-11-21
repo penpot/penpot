@@ -411,7 +411,7 @@
                   cur (-> (or (get objects frame-id) (transient {}))
                           (assoc! id shape))]
               (assoc! objects frame-id cur)))]
-    (d/update-vals
+    (update-vals
      (->> objects
           (reduce process-shape (transient {}))
           (persistent!))
@@ -432,7 +432,7 @@
           (update shape :shapes #(filterv selected+parents %)))]
 
     (-> (select-keys objects selected+parents)
-        (d/update-vals remove-children))))
+        (update-vals remove-children))))
 
 (defn is-child?
   [objects parent-id candidate-child-id]

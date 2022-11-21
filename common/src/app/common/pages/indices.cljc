@@ -6,7 +6,6 @@
 
 (ns app.common.pages.indices
   (:require
-   [app.common.data :as d]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]))
 
@@ -54,4 +53,4 @@
                         (mapcat get-clip-parents))
                   parents)))]
     (-> parents-index
-        (d/update-vals retrieve-clips))))
+        (update-vals retrieve-clips))))
