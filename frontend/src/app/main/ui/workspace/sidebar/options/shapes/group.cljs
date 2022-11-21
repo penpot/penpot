@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.group
   (:require
    [app.common.data :as d]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -14,6 +15,7 @@
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
@@ -27,15 +29,16 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [shape (unchecked-get props "shape")
-        shape-with-children (unchecked-get props "shape-with-children")
-        shared-libs (unchecked-get props "shared-libs")
-        objects (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
-        file-id (unchecked-get props "file-id")
-
-        ids [(:id shape)]
-        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child? (mf/deref is-layout-child-ref)
+  (let [shape                   (unchecked-get props "shape")
+        shape-with-children     (unchecked-get props "shape-with-children")
+        shared-libs             (unchecked-get props "shared-libs")
+        objects                 (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
+        file-id                 (unchecked-get props "file-id")
+        layout-active?          (features/use-feature :auto-layout) 
+        layout-container-values (select-keys shape layout-container-flex-attrs)
+        ids                     [(:id shape)]
+        is-layout-child-ref     (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
+        is-layout-child?        (mf/deref is-layout-child-ref)
 
         type :group
         [measure-ids    measure-values]      (get-attrs [shape] objects :measure)
@@ -53,7 +56,8 @@
     [:div.options
      [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
      [:& component-menu {:ids comp-ids :values comp-values :shape-name (:name shape)}]
-
+     (when layout-active?
+       [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}])
      (when is-layout-child?
        [:& layout-item-menu
         {:type type

@@ -376,7 +376,7 @@
         is-group?          (and single? has-group?)
         ids                (->> shapes (map :id))
         add-flex           #(st/emit! (if is-frame?
-                                        (dwsl/create-layout ids :flex)
+                                        (dwsl/create-layout-from-id ids :flex)
                                         (dwsl/create-layout-from-selection :flex)))
         remove-flex        #(st/emit! (dwsl/remove-layout ids))]
     (cond

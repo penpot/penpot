@@ -6,11 +6,13 @@
 
 (ns app.main.data.workspace.shape-layout
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.selection :as dwse]
    [app.main.data.workspace.shapes :as dws]
    [app.main.data.workspace.shapes-update-layout :as wsul]
@@ -53,9 +55,9 @@
       (-> shape
           (merge shape initial-layout-data)))))
 
-(defn create-layout
+(defn create-layout-from-id
   [ids type]
-  (ptk/reify ::create-layout
+  (ptk/reify ::create-layout-from-id
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
@@ -81,15 +83,27 @@
           (let [new-shape-id (uuid/next)
                 parent-id    (:parent-id (first selected-shapes))
                 shapes-ids   (:shapes (first selected-shapes))
-                ordered-ids  (into (d/ordered-set) shapes-ids)]
-            (rx/of (dwse/select-shapes ordered-ids)
-                   (dws/create-artboard-from-selection new-shape-id parent-id)
-                   (create-layout [new-shape-id] type)
-                   (dws/delete-shapes page-id selected)))
+                ordered-ids  (into (d/ordered-set) shapes-ids)
+                undo-id      (uuid/next)]
+            (rx/of
+             (dwu/start-undo-transaction undo-id)
+             (dwse/select-shapes ordered-ids)
+             (dws/create-artboard-from-selection new-shape-id parent-id)
+             (cl/remove-all-fills [new-shape-id] {:color clr/black
+                                                  :opacity 1})
+             (create-layout-from-id [new-shape-id] type)
+             (dws/delete-shapes page-id selected)
+             (dwu/commit-undo-transaction undo-id)))
 
-          (let [new-shape-id (uuid/next)]
-            (rx/of (dws/create-artboard-from-selection new-shape-id)
-                   (create-layout [new-shape-id] type))))))))
+          (let [new-shape-id (uuid/next)
+                undo-id      (uuid/next)]
+            (rx/of
+             (dwu/start-undo-transaction undo-id)
+             (dws/create-artboard-from-selection new-shape-id)
+             (cl/remove-all-fills [new-shape-id] {:color clr/black
+                                                  :opacity 1})
+             (create-layout-from-id [new-shape-id] type)
+             (dwu/commit-undo-transaction undo-id))))))))
 
 (defn remove-layout
   [ids]
@@ -98,6 +112,29 @@
     (watch [_ _ _]
       (rx/of (dwc/update-shapes ids #(apply dissoc % layout-keys))
              (wsul/update-layout-positions ids)))))
+
+(defn create-layout
+  []
+  (ptk/reify ::create-layout
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page-id          (:current-page-id state)
+            objects          (wsh/lookup-page-objects state page-id)
+            selected         (wsh/lookup-selected state)
+            selected-shapes  (map (d/getf objects) selected)
+            single?          (= (count selected-shapes) 1)
+            is-frame?        (= :frame (:type (first selected-shapes)))
+            undo-id          (uuid/next)]
+
+        (if (and single? is-frame?)
+          (rx/of
+           (dwu/start-undo-transaction undo-id)
+           (create-layout-from-id [(first selected)] :flex)
+           (dwu/commit-undo-transaction undo-id))
+          (rx/of
+           (dwu/start-undo-transaction undo-id)
+           (create-layout-from-selection :flex)
+           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn toogle-layout-flex
   []
@@ -109,14 +146,11 @@
             selected         (wsh/lookup-selected state)
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
-            has-flex-layout? (and single? (= :flex (:layout (first selected-shapes))))
-            is-frame?        (and single? (= :frame (:type (first selected-shapes))))]
+            has-flex-layout? (and single? (ctl/layout? objects (:id (first selected-shapes))))]
 
         (if has-flex-layout?
           (rx/of (remove-layout selected))
-          (if is-frame?
-            (rx/of (create-layout [(first selected)] :flex))
-            (rx/of (create-layout-from-selection :flex))))))))
+          (rx/of (create-layout)))))))
 
 (defn update-layout
   [ids changes]
