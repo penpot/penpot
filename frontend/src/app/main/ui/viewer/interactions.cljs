@@ -84,7 +84,14 @@
 
         ;; Retrieve frames again with correct modifier
         frame   (get objects-not-fixed (:id frame))
-        base    (get objects-not-fixed (:id base))]
+        base    (get objects-not-fixed (:id base))
+
+        non-delay-interactions (->> (:interactions frame)
+                                    (filterv #(not= (:event-type %) :after-delay)))
+
+        fixed-frame (-> frame
+                        (dissoc :fills)
+                        (assoc :interactions non-delay-interactions))]
 
     [:& (mf/provider shapes/base-frame-ctx) {:value base}
      [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
@@ -106,7 +113,7 @@
                    :fill "none"
                    :style {:width (:width size)
                            :height (:height size)}}
-       [:& wrapper-fixed {:shape (dissoc frame :fills) :view-box vbox}]]]]))
+       [:& wrapper-fixed {:shape fixed-frame :view-box vbox}]]]]))
 
 (mf/defc viewport
   {::mf/wrap [mf/memo]
