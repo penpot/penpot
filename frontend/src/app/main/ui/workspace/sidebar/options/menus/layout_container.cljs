@@ -267,8 +267,10 @@
         layout-type         (:layout values)
 
         on-add-layout
-        (fn [type]
-          (st/emit! (dwsl/create-layout ids type)))
+        (fn [_]
+          (st/emit! (dwsl/create-layout))
+          (reset! open? true))
+
 
         on-remove-layout
         (fn [_]
@@ -376,7 +378,7 @@
                              :active (= :grid layout-type))} "Grid"]]
           [:button.remove-layout {:on-click on-remove-layout} i/minus]]
 
-         [:button.add-page {:on-click #(on-add-layout :flex)} i/close])]]
+         [:button.add-page {:on-click on-add-layout} i/close])]]
 
      (when (:layout values)
        (if (= :flex layout-type)

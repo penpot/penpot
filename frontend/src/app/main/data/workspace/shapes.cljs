@@ -362,12 +362,13 @@
                                (assoc :frame-id frame-id :parent-id parent-id)
                                (cond-> (not= frame-id uuid/zero)
                                  (assoc :fills [] :hide-in-viewer true))
-                               (cts/setup-rect-selrect))]
+                               (cts/setup-rect-selrect))
+                 undo-id (uuid/next)]
              (rx/of
-              (dwu/start-undo-transaction)
+              (dwu/start-undo-transaction undo-id)
               (add-shape shape)
               (move-shapes-into-frame (:id shape) selected)
-              (dwu/commit-undo-transaction)))))))))
+              (dwu/commit-undo-transaction undo-id)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shape Flags

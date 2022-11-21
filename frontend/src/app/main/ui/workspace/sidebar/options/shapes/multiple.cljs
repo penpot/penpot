@@ -288,7 +288,6 @@
          stroke-ids           stroke-values
          text-ids             text-values
          exports-ids          exports-values
-         layout-container-ids layout-container-values
          layout-item-ids      layout-item-values]
         (mf/use-memo
          (mf/deps objects-no-measures)
@@ -312,8 +311,7 @@
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
-     (when (:layout layout-container-values)
-       [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values}])
+     [:& layout-container-menu {:type type :ids [] :values []}]
 
      (when is-layout-child?
        [:& layout-item-menu
