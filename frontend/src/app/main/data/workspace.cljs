@@ -315,10 +315,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/merge
-       (rx/of (dwn/finalize file-id))
-       (->> (rx/of ::dwp/finalize)
-            (rx/observe-on :async))))))
+      (rx/of (dwn/finalize file-id)))))
 
 (declare go-to-page)
 (declare ^:private preload-data-uris)
