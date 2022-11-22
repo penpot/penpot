@@ -39,6 +39,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.groups :as dwg]
@@ -1768,6 +1769,28 @@
                      (rx/from (d/enumerate (d/zip media shape-grid))))
           (rx/of (modal/hide)
                  (complete-remove-graphics)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Read only
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn set-workspace-read-only
+  [read-only?]
+  (ptk/reify ::set-workspace-read-only
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :read-only?] read-only?))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if read-only?
+        (rx/of :interrupt
+               (dwdc/clear-drawing)
+               (remove-layout-flag :colorpalette)
+               (remove-layout-flag :textpalette))
+        (rx/empty)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

@@ -32,14 +32,14 @@
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
-(defn setup-dom-events [viewport-ref zoom disable-paste in-viewport?]
+(defn setup-dom-events [viewport-ref zoom disable-paste in-viewport? workspace-read-only?]
   (let [on-key-down       (actions/on-key-down)
         on-key-up         (actions/on-key-up)
         on-mouse-move     (actions/on-mouse-move viewport-ref zoom)
         on-mouse-wheel    (actions/on-mouse-wheel viewport-ref zoom)
-        on-paste          (actions/on-paste disable-paste in-viewport?)]
+        on-paste          (actions/on-paste disable-paste in-viewport? workspace-read-only?)]
     (mf/use-layout-effect
-     (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-paste)
+     (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-paste workspace-read-only?)
      (fn []
        (let [node (mf/ref-val viewport-ref)
              keys [(events/listen js/document EventType.KEYDOWN on-key-down)

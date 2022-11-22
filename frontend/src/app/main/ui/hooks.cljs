@@ -84,7 +84,9 @@
 ;; things go weird.
 
 (defn use-sortable
-  [& {:keys [data-type data on-drop on-drag on-hold disabled detect-center?] :as opts}]
+  [& {:keys [data-type data on-drop on-drag on-hold disabled detect-center? draggable?]
+      :or {draggable? true}
+      :as opts}]
   (let [ref   (mf/use-ref)
         state (mf/use-state {:over nil
                              :timer nil
@@ -169,7 +171,7 @@
         on-mount
         (fn []
           (let [dom (mf/ref-val ref)]
-            (.setAttribute dom "draggable" true)
+            (.setAttribute dom "draggable" draggable?)
 
             ;; Register all events in the (default) bubble mode, so that they
             ;; are captured by the most leaf item. The handler will stop
@@ -189,7 +191,7 @@
                (.removeEventListener dom "dragend" on-drag-end))))]
 
     (mf/use-effect
-     (mf/deps data on-drop)
+     (mf/deps data on-drop draggable?)
      on-mount)
 
     [(deref state) ref]))

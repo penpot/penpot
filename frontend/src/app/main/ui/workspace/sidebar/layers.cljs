@@ -86,7 +86,7 @@
        (when (seq (:touched shape)) " *")])))
 
 (mf/defc layer-item
-  [{:keys [index item selected objects sortable? filtered?] :as props}]
+  [{:keys [index item selected objects sortable? filtered? workspace-read-only?] :as props}]
   (let [id         (:id item)
         blocked?   (:blocked item)
         hidden?    (:hidden item)
@@ -170,12 +170,13 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps item)
+         (mf/deps item workspace-read-only?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (let [pos (dom/get-client-position event)]
-             (st/emit! (dw/show-shape-context-menu {:position pos :shape item})))))
+           (when-not workspace-read-only?
+             (let [pos (dom/get-client-position event)]
+               (st/emit! (dw/show-shape-context-menu {:position pos :shape item}))))))
 
         on-drag
         (mf/use-fn
@@ -192,7 +193,7 @@
              (st/emit! (dw/relocate-selected-shapes id 0))
              (let [to-index  (if (= side :top) (inc index) index)
                    parent-id (cph/get-parent-id objects id)]
-              (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))
+               (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))
 
         on-hold
         (mf/use-fn
@@ -201,17 +202,18 @@
            (when-not expanded?
              (st/emit! (dwc/toggle-collapse id)))))
 
-        [dprops dref] (when sortable?
-                        (hooks/use-sortable
-                         :data-type "penpot/layer"
-                         :on-drop on-drop
-                         :on-drag on-drag
-                         :on-hold on-hold
-                         :disabled @disable-drag
-                         :detect-center? container?
-                         :data {:id (:id item)
-                                :index index
-                                :name (:name item)}))
+        [dprops dref]
+        (hooks/use-sortable
+         :data-type "penpot/layer"
+         :on-drop on-drop
+         :on-drag on-drag
+         :on-hold on-hold
+         :disabled @disable-drag
+         :detect-center? container?
+         :data {:id (:id item)
+                :index index
+                :name (:name item)}
+         :draggable? (and sortable? (not workspace-read-only?)))
 
         ref         (mf/use-ref)]
 
@@ -257,6 +259,7 @@
                             :main-instance? main-instance?}]]
       [:& layer-name {:shape item
                       :name-ref ref
+                      :disabled-double-click workspace-read-only?
                       :on-start-edit #(reset! disable-drag true)
                       :on-stop-edit #(reset! disable-drag false)}]
 
@@ -283,7 +286,8 @@
               :index index
               :objects objects
               :key (:id item)
-              :sortable? sortable?}]))])]))
+              :sortable? sortable?
+              :workspace-read-only? workspace-read-only?}]))])]))
 
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not
@@ -299,7 +303,7 @@
 (mf/defc layers-tree
   {::mf/wrap [#(mf/memo % =)
               #(mf/throttle % 200)]}
-  [{:keys [objects filtered?] :as props}]
+  [{:keys [objects filtered? workspace-read-only?] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected (hooks/use-equal-memo selected)
         root (get objects uuid/zero)]
@@ -315,7 +319,8 @@
               :objects objects
               :key id
               :sortable? true
-              :filtered? filtered?}]
+              :filtered? filtered?
+              :workspace-read-only? workspace-read-only?}]
             [:& layer-item
              {:item obj
               :selected selected
@@ -323,7 +328,8 @@
               :objects objects
               :key id
               :sortable? true
-              :filtered? filtered?}])))]]))
+              :filtered? filtered?
+              :workspace-read-only? workspace-read-only?}])))]]))
 
 (mf/defc filters-tree
   {::mf/wrap [#(mf/memo % =)
@@ -517,6 +523,7 @@
   []
   (let [page  (mf/deref refs/workspace-page)
         focus (mf/deref refs/workspace-focus-selected)
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         objects (hooks/with-focus-objects (:objects page) focus)
         title (when (= 1 (count focus)) (get-in objects [(first focus) :name]))
 
@@ -580,10 +587,12 @@
                                    :style {:display (when (some? filtered-objects) "none")}}
          [:& layers-tree {:objects filtered-objects
                           :key (dm/str (:id page))
-                          :filtered? true}]]]
+                          :filtered? true
+                          :workspace-read-only? workspace-read-only?}]]]
 
      [:div.tool-window-content {:on-scroll on-scroll
                                 :style {:display (when (some? filtered-objects) "none")}}
       [:& layers-tree {:objects objects
                        :key (dm/str (:id page))
-                       :filtered? false}]])]))
+                       :filtered? false
+                       :workspace-read-only? workspace-read-only?}]])]))

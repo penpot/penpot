@@ -455,11 +455,12 @@
 ;; In summary, this need to a good UX/UI/IMPL rework.
 
 (mf/defc typography-entry
-  [{:keys [typography read-only? selected? on-click on-change on-detach on-context-menu editing? focus-name? file]}]
+  [{:keys [typography local? selected? on-click on-change on-detach on-context-menu editing? focus-name? file workspace-read-only?]}]
   (let [open?          (mf/use-state editing?)
         hover-detach   (mf/use-state false)
         name-input-ref (mf/use-ref)
         on-change-ref  (mf/use-ref nil)
+        editable?      (and local? (not workspace-read-only?))
 
         on-name-blur
         (mf/use-callback
@@ -511,7 +512,7 @@
 
      [:& advanced-options {:visible? @open?
                            :on-close #(reset! open? false)}
-      (if read-only?
+      (if (not editable?)
         [:div.element-set-content.typography-read-only-data
          [:div.row-flex.typography-name
           [:span (:name typography)]]
@@ -544,13 +545,14 @@
           [:span.label (tr "workspace.assets.typography.text-transform")]
           [:span (:text-transform typography)]]
 
-         [:div.row-flex
-          [:a.go-to-lib-button
-           {:on-click #(st/emit! (rt/nav-new-window* {:rname :workspace
-                                                      :path-params {:project-id (:project-id file)
-                                                                    :file-id (:id file)}
-                                                      :query-params {:page-id (get-in file [:data :pages 0])}}))}
-           (tr "workspace.assets.typography.go-to-edit")]]]
+         (when-not local?
+           [:div.row-flex
+            [:a.go-to-lib-button
+             {:on-click #(st/emit! (rt/nav-new-window* {:rname :workspace
+                                                        :path-params {:project-id (:project-id file)
+                                                                      :file-id (:id file)}
+                                                        :query-params {:page-id (get-in file [:data :pages 0])}}))}
+             (tr "workspace.assets.typography.go-to-edit")]])]
 
         [:*
          [:div.element-set-content

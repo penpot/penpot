@@ -316,3 +316,8 @@
         objects (get-in @st/state [:workspace-data :pages-index page-id :objects])]
     (.log js/console (modif->js (:workspace-modifiers @st/state) objects)))
   nil)
+
+(defn ^:export set-workspace-read-only
+  [read-only?]
+  (st/emit! (dw/set-workspace-read-only read-only?)))
+

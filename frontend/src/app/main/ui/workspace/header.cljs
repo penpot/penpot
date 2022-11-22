@@ -21,6 +21,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.export :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks.resize :as r]
@@ -106,7 +107,7 @@
 ;; --- Header Users
 
 (mf/defc menu
-  [{:keys [layout project file team-id] :as props}]
+  [{:keys [layout project file team-id workspace-read-only?] :as props}]
   (let [show-menu?     (mf/use-state false)
         show-sub-menu? (mf/use-state false)
         editing?       (mf/use-state false)
@@ -328,25 +329,27 @@
            (tr "workspace.header.menu.show-grid"))]
         [:span.shortcut (sc/get-tooltip :toggle-grid)]]
 
-       [:li {:on-click (fn []
-                         (r/set-resize-type! :bottom)
-                         (st/emit! (dw/remove-layout-flag :textpalette)
-                                   (toggle-flag :colorpalette)))}
-        [:span
-         (if (contains? layout :colorpalette)
-           (tr "workspace.header.menu.hide-palette")
-           (tr "workspace.header.menu.show-palette"))]
-        [:span.shortcut (sc/get-tooltip :toggle-colorpalette)]]
+       (when-not workspace-read-only?
+         [:*
+          [:li {:on-click (fn []
+                            (r/set-resize-type! :bottom)
+                            (st/emit! (dw/remove-layout-flag :textpalette)
+                                      (toggle-flag :colorpalette)))}
+           [:span
+            (if (contains? layout :colorpalette)
+              (tr "workspace.header.menu.hide-palette")
+              (tr "workspace.header.menu.show-palette"))]
+           [:span.shortcut (sc/get-tooltip :toggle-colorpalette)]]
 
-       [:li {:on-click (fn []
-                         (r/set-resize-type! :bottom)
-                         (st/emit! (dw/remove-layout-flag :colorpalette)
-                                   (toggle-flag :textpalette)))}
-        [:span
-         (if (contains? layout :textpalette)
-           (tr "workspace.header.menu.hide-textpalette")
-           (tr "workspace.header.menu.show-textpalette"))]
-        [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]
+          [:li {:on-click (fn []
+                            (r/set-resize-type! :bottom)
+                            (st/emit! (dw/remove-layout-flag :colorpalette)
+                                      (toggle-flag :textpalette)))}
+           [:span
+            (if (contains? layout :textpalette)
+              (tr "workspace.header.menu.hide-textpalette")
+              (tr "workspace.header.menu.show-textpalette"))]
+           [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]])
 
        [:li {:on-click #(st/emit! (toggle-flag :display-artboard-names))}
         [:span
@@ -436,6 +439,7 @@
   (let [team-id             (:team-id project)
         zoom                (mf/deref refs/selected-zoom)
         params              {:page-id page-id :file-id (:id file) :section "interactions"}
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         close-modals
         (mf/use-callback
@@ -464,7 +468,8 @@
                 :project project
                 :file file
                 :team-id team-id
-                :page-id page-id}]]
+                :page-id page-id
+                :workspace-read-only? workspace-read-only?}]]
 
      [:div.center-area
       [:div.users-section
@@ -474,13 +479,14 @@
       [:div.options-section
        [:& persistence-state-widget]
        [:& export-progress-widget]
-       [:button.document-history
-        {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
-         :aria-label (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
-         :class (when (contains? layout :document-history) "selected")
-         :on-click #(st/emit! (-> (dw/toggle-layout-flag :document-history)
-                                  (vary-meta assoc ::ev/origin "workspace-header")))}
-        i/recent]]
+       (when-not workspace-read-only?
+         [:button.document-history
+          {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+           :aria-label (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+           :class (when (contains? layout :document-history) "selected")
+           :on-click #(st/emit! (-> (dw/toggle-layout-flag :document-history)
+                                    (vary-meta assoc ::ev/origin "workspace-header")))}
+          i/recent])]
 
       [:div.options-section
        [:& zoom-widget-workspace

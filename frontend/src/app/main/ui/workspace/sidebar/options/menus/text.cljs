@@ -320,7 +320,7 @@
      (cond
        typography
        [:& typography-entry {:typography typography
-                             :read-only? (not= (:typography-ref-file values) file-id)
+                             :local? (= (:typography-ref-file values) file-id)
                              :file (get shared-libs (:typography-ref-file values))
                              :on-detach handle-detach-typography
                              :on-change handle-change-typography}]
