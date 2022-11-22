@@ -48,19 +48,19 @@
                  (cond-> shape
                    (not click-draw?)
                    (-> (assoc :grow-type :fixed))
-                   
+
                    (and click-draw? (not text?))
                    (-> (assoc :width min-side :height min-side)
+                       (cts/setup-rect-selrect)
                        (gsh/transform-shape (ctm/move-modifiers (- (/ min-side 2)) (- (/ min-side 2)))))
 
                    (and click-draw? text?)
-                   (assoc :height 17 :width 4 :grow-type :auto-width)
-
-                   click-draw?
-                   (cts/setup-rect-selrect)
+                   (-> (assoc :height 17 :width 4 :grow-type :auto-width)
+                       (cts/setup-rect-selrect))
 
                    :always
                    (dissoc :initialized? :click-draw?))]
+
              ;; Add & select the created shape to the workspace
              (rx/concat
               (if (= :text (:type shape))
