@@ -21,6 +21,7 @@
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.undo :as undo]
+   [app.main.data.workspace.shapes-update-layout :as dwul]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [app.util.path.tools :as upt]
@@ -297,22 +298,25 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [mode (get-in state [:workspace-local :edit-path id :edit-mode])]
+      (let [mode (get-in state [:workspace-local :edit-path id :edit-mode])
+            stopper (->> stream (rx/filter (ptk/type? ::start-path-edit)))
+            interrupt (->> stream (rx/filter #(= % :interrupt)) (rx/take 1))]
         (rx/concat
          (rx/of (undo/start-path-undo))
          (rx/of (drawing/change-edit-mode mode))
-         (->> stream
-              (rx/take-until (->> stream (rx/filter (ptk/type? ::start-path-edit))))
-              (rx/filter #(= % :interrupt))
-              (rx/take 1)
-              (rx/map #(stop-path-edit))))))))
+         (->> interrupt
+              (rx/map #(stop-path-edit id))
+              (rx/take-until stopper)))))))
 
-(defn stop-path-edit []
+(defn stop-path-edit [id]
   (ptk/reify ::stop-path-edit
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
-        (update state :workspace-local dissoc :edit-path id)))))
+      (update state :workspace-local dissoc :edit-path id))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dwul/update-layout-positions [id])))))
 
 (defn split-segments
   [{:keys [from-p to-p t]}]

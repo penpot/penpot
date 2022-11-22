@@ -1553,7 +1553,8 @@
                                  (into (d/ordered-set)))]
 
               (rx/of (dch/commit-changes changes)
-                     (dws/select-shapes selected))))]
+                     (dws/select-shapes selected)
+                     (dwul/update-layout-positions [frame-id]))))]
 
     (ptk/reify ::paste-shape
       ptk/WatchEvent

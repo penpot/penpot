@@ -155,7 +155,11 @@
                      (not (identical? old-shape new-shape))
                      (not= (dissoc old-shape :migrate)
                            (dissoc new-shape :migrate)))
-                (not= new-modifiers old-modifiers)
+                (and (not= new-modifiers old-modifiers)
+                     (or (nil? new-modifiers)
+                         (nil? old-modifiers)
+                         (not (ctm/only-move? new-modifiers))
+                         (not (ctm/only-move? old-modifiers))))
 
                 ;; When the position data is nil we force to recalculate
                 (:migrate new-shape))))

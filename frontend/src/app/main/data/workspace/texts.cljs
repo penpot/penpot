@@ -14,11 +14,13 @@
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.shapes-update-layout :as dwul]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.util.router :as rt]
@@ -75,7 +77,8 @@
                   (dch/update-shapes [id] (fn [shape]
                                             (-> shape
                                                 (assoc :content content)
-                                                (merge modifiers))))
+                                                (merge modifiers)
+                                                (cts/setup-rect-selrect))))
                   (dwu/commit-undo-transaction)))))
 
             (when (some? id)
@@ -316,19 +319,24 @@
   [id new-width new-height]
   (ptk/reify ::resize-text
     ptk/WatchEvent
-    (watch [_ _ _]
-      (letfn [(update-fn [shape]
-                (let [{:keys [selrect grow-type]} shape
-                      {shape-width :width shape-height :height} selrect]
-                  (cond-> shape
-                    (and (not-changed? shape-width new-width) (= grow-type :auto-width))
-                    (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width new-width))
+    (watch [_ state _]
+      (let [shape (wsh/lookup-shape state id)]
+        (letfn [(update-fn [shape]
+                  (let [{:keys [selrect grow-type]} shape
+                        {shape-width :width shape-height :height} selrect]
+                    (cond-> shape
+                      (and (not-changed? shape-width new-width) (= grow-type :auto-width))
+                      (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width new-width))
 
-                    (and (not-changed? shape-height new-height)
-                         (or (= grow-type :auto-height) (= grow-type :auto-width)))
-                    (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height new-height)))))]
+                      (and (not-changed? shape-height new-height)
+                           (or (= grow-type :auto-height) (= grow-type :auto-width)))
+                      (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height new-height)))))]
 
-        (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? false}))))))
+          (when (or (and (not-changed? (:width shape) new-width) (= (:grow-type shape) :auto-width))
+                    (and (not-changed? (:height shape) new-height)
+                         (or (= (:grow-type shape) :auto-height) (= (:grow-type shape) :auto-width))))
+            (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? false})
+                   (dwul/update-layout-positions [id]))))))))
 
 (defn save-font
   [data]
@@ -358,10 +366,8 @@
         (gpt/subtract (gpt/point (:selrect new-shape))
                       (gpt/point (:selrect shape)))
 
-
         new-shape
         (update new-shape :position-data gsh/move-position-data (:x delta-move) (:y delta-move))]
-
 
     new-shape))
 
@@ -370,7 +376,16 @@
   (ptk/reify ::update-text-modifier
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-text-modifier id] (fnil merge {}) props))))
+      (update-in state [:workspace-text-modifier id] (fnil merge {}) props))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [shape (wsh/lookup-shape state id)]
+        (when (or (and (some? (:width props))
+                       (not (mth/close? (:width props) (:width shape))))
+                  (and (some? (:height props))
+                       (not (mth/close? (:height props) (:height shape)))))
+          (rx/of (dwul/update-layout-positions [id])))))))
 
 (defn clean-text-modifier
   [id]

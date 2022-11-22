@@ -304,7 +304,7 @@
 
   (let [layout-bounds (layout-bounds shape)
         reverse?      (ctl/reverse? shape)
-        children      (cond->> children reverse? reverse)
+        children      (cond->> children (not reverse?) reverse)
 
         ;; Creates the layout lines information
         layout-lines

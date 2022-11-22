@@ -109,6 +109,11 @@
         (recur (conj result parent-id) parent-id)
         result))))
 
+(defn get-siblings-ids
+  [objects id]
+  (let [parent (get-parent objects id)]
+    (into [] (->> (:shapes parent) (remove #(= % id))))))
+
 (defn get-frame
   "Get the frame that contains the shape. If the shape is already a
   frame, get itself. If no shape is provided, returns the root frame."

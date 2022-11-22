@@ -43,11 +43,12 @@
 (defn move-position-data
   [position-data dx dy]
 
-  (cond->> position-data
-    (d/num? dx dy)
-    (mapv #(-> %
-               (update :x + dx)
-               (update :y + dy)))))
+  (when (some? position-data)
+    (cond->> position-data
+      (d/num? dx dy)
+      (mapv #(-> %
+                 (update :x + dx)
+                 (update :y + dy))))))
 
 (defn move
   "Move the shape relatively to its current
@@ -284,6 +285,8 @@
   [shape transform-mtx]
   (let [bool?   (= (:type shape) :bool)
         path?   (= (:type shape) :path)
+        text?   (= (:type shape) :text)
+        {dx :x dy :y} (gpt/transform (gpt/point) transform-mtx)
         points  (gco/transform-points (:points shape) transform-mtx)
         selrect (gco/transform-selrect (:selrect shape) transform-mtx)]
     (-> shape
@@ -291,6 +294,8 @@
           (update :bool-content gpa/transform-content transform-mtx))
         (cond-> path?
           (update :content gpa/transform-content transform-mtx))
+        (cond-> text?
+          (update :position-data move-position-data dx dy))
         (cond-> (not path?)
           (assoc :x (:x selrect)
                  :y (:y selrect)
