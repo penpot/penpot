@@ -3621,7 +3621,7 @@ msgstr "All corners"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "Single corners"
+msgstr "Individual corners"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Recent"
