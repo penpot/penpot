@@ -130,22 +130,25 @@
         node-editing?     (and edition (not= :text (get-in base-objects [edition :type])))
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
 
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect)
-        on-context-menu   (actions/on-context-menu hover hover-ids)
-        on-double-click   (actions/on-double-click hover hover-ids drawing-path? base-objects edition)
+        on-context-menu   (actions/on-context-menu hover hover-ids workspace-read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids drawing-path? base-objects edition workspace-read-only?)
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file viewport-ref zoom)
         on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing?
-                                                 drawing-path? create-comment? space? viewport-ref zoom panning)
+                                                 drawing-path? create-comment? space? viewport-ref zoom panning
+                                                 workspace-read-only?)
         on-mouse-up       (actions/on-mouse-up disable-paste)
         on-pointer-down   (actions/on-pointer-down)
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
         on-pointer-move   (actions/on-pointer-move viewport-ref zoom move-stream)
         on-pointer-up     (actions/on-pointer-up)
-        on-move-selected  (actions/on-move-selected hover hover-ids selected space?)
-        on-menu-selected  (actions/on-menu-selected hover hover-ids selected)
+        on-move-selected  (actions/on-move-selected hover hover-ids selected space? workspace-read-only?)
+        on-menu-selected  (actions/on-menu-selected hover hover-ids selected workspace-read-only?)
 
         on-frame-enter    (actions/on-frame-enter frame-hover)
         on-frame-leave    (actions/on-frame-leave frame-hover)
@@ -184,7 +187,7 @@
 
         disabled-guides?         (or drawing-tool transform)]
 
-    (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
+    (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing?)
     (hooks/setup-keyboard alt? mod? space?)

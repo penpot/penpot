@@ -34,11 +34,12 @@
 
 (defn on-mouse-down
   [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
-   node-editing? drawing-path? create-comment? space? viewport-ref zoom panning]
+   node-editing? drawing-path? create-comment? space? viewport-ref zoom panning
+   workspace-read-only?]
   (mf/use-callback
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
             node-editing? drawing-path? create-comment? @space? viewport-ref zoom
-            panning)
+            panning workspace-read-only?)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
@@ -81,7 +82,8 @@
                (cond
                  node-editing?
                  ;; Handle path node area selection
-                 (st/emit! (dwdp/handle-area-selection shift?))
+                 (when-not workspace-read-only?
+                   (st/emit! (dwdp/handle-area-selection shift?)))
 
                  (and @space? mod?)
                  (let [raw-pt   (dom/get-client-position event)
@@ -93,18 +95,20 @@
                  (st/emit! (dw/start-panning))
 
                  drawing-tool
-                 (st/emit! (dd/start-drawing drawing-tool))
+                 (when-not workspace-read-only?
+                   (st/emit! (dd/start-drawing drawing-tool)))
 
                  (or (not id) mod?)
                  (st/emit! (dw/handle-area-selection shift? mod?))
 
                  (not drawing-tool)
-                 (st/emit! (dw/start-move-selected id shift?)))))))))))
+                 (when-not workspace-read-only?
+                   (st/emit! (dw/start-move-selected id shift?))))))))))))
 
 (defn on-move-selected
-  [hover hover-ids selected space?]
+  [hover hover-ids selected space? workspace-read-only?]
   (mf/use-callback
-   (mf/deps @hover @hover-ids selected @space?)
+   (mf/deps @hover @hover-ids selected @space? workspace-read-only?)
    (fn [bevent]
      (let [event (.-nativeEvent bevent)
            shift? (kbd/shift? event)
@@ -117,7 +121,8 @@
                   (not @space?))
          (dom/prevent-default bevent)
          (dom/stop-propagation bevent)
-         (st/emit! (dw/start-move-selected)))))))
+         (when-not workspace-read-only?
+           (st/emit! (dw/start-move-selected))))))))
 
 (defn on-frame-select
   [selected]
@@ -167,10 +172,10 @@
            (st/emit! (dw/select-shape (:id @hover) shift?))))))))
 
 (defn on-double-click
-  [hover hover-ids drawing-path? objects edition]
+  [hover hover-ids drawing-path? objects edition workspace-read-only?]
 
   (mf/use-callback
-   (mf/deps @hover @hover-ids drawing-path? edition)
+   (mf/deps @hover @hover-ids drawing-path? edition workspace-read-only?)
    (fn [event]
      (dom/stop-propagation event)
      (let [ctrl? (kbd/ctrl? event)
@@ -189,7 +194,7 @@
         (fn []
           (when (and (not drawing-path?) shape)
             (cond
-              (and editable? (not= id edition))
+              (and editable? (not= id edition) (not workspace-read-only?))
               (st/emit! (dw/select-shape id)
                         (dw/start-editing-selected))
 
@@ -202,33 +207,37 @@
                   (st/emit! (dw/select-shape (:id selected)))))))))))))
 
 (defn on-context-menu
-  [hover hover-ids]
+  [hover hover-ids workspace-read-only?]
   (mf/use-callback
-   (mf/deps @hover @hover-ids)
+   (mf/deps @hover @hover-ids workspace-read-only?)
    (fn [event]
-     (when (or (dom/class? (dom/get-target event) "viewport-controls")
-               (dom/class? (dom/get-target event) "viewport-selrect"))
+     (if workspace-read-only?
        (dom/prevent-default event)
+       (when (or (dom/class? (dom/get-target event) "viewport-controls")
+                 (dom/class? (dom/get-target event) "viewport-selrect")
+                 (workspace-read-only?))
+         (dom/prevent-default event)
 
-       (let [position (dom/get-client-position event)]
+         (let [position (dom/get-client-position event)]
          ;; Delayed callback because we need to wait to the previous context menu to be closed
-         (timers/schedule
-          #(st/emit!
-            (if (some? @hover)
-              (dw/show-shape-context-menu {:position position
-                                           :shape @hover
-                                           :hover-ids @hover-ids})
-              (dw/show-context-menu {:position position})))))))))
+           (timers/schedule
+            #(st/emit!
+              (if (some? @hover)
+                (dw/show-shape-context-menu {:position position
+                                             :shape @hover
+                                             :hover-ids @hover-ids})
+                (dw/show-context-menu {:position position}))))))))))
 
 (defn on-menu-selected
-  [hover hover-ids selected]
+  [hover hover-ids selected workspace-read-only?]
   (mf/use-callback
-   (mf/deps @hover @hover-ids selected)
+   (mf/deps @hover @hover-ids selected workspace-read-only?)
    (fn [event]
      (dom/prevent-default event)
      (dom/stop-propagation event)
-     (let [position (dom/get-client-position event)]
-       (st/emit! (dw/show-shape-context-menu {:position position :hover-ids @hover-ids}))))))
+     (when-not workspace-read-only?
+       (let [position (dom/get-client-position event)]
+         (st/emit! (dw/show-shape-context-menu {:position position :hover-ids @hover-ids})))))))
 
 (defn on-mouse-up
   [disable-paste]
@@ -484,12 +493,13 @@
                        :blobs (seq files)}]
            (st/emit! (dwm/upload-media-workspace params))))))))
 
-(defn on-paste [disable-paste in-viewport?]
+(defn on-paste [disable-paste in-viewport? workspace-read-only?]
   (mf/use-callback
+   (mf/deps workspace-read-only?)
    (fn [event]
     ;; We disable the paste just after mouse-up of a middle button so when panning won't
     ;; paste the content into the workspace
      (let [tag-name (-> event dom/get-target dom/get-tag-name)]
-       (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
+       (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste) (not workspace-read-only?))
          (st/emit! (dw/paste-from-event event @in-viewport?)))))))
 

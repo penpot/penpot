@@ -146,3 +146,4 @@
   (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
     (gpt/point (+ x (/ width 2)) (+ y (/ height 2)))))
 
+

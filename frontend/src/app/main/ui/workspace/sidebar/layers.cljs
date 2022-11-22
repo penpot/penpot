@@ -87,25 +87,26 @@
 
 (mf/defc layer-item
   [{:keys [index item selected objects sortable? filtered?] :as props}]
-  (let [id         (:id item)
-        blocked?   (:blocked item)
-        hidden?    (:hidden item)
+  (let [id                   (:id item)
+        blocked?             (:blocked item)
+        hidden?              (:hidden item)
 
-        disable-drag      (mf/use-state false)
-        scroll-to-middle? (mf/use-var true)
-        expanded-iref     (mf/with-memo [id]
-                            (-> (l/in [:expanded id])
-                                (l/derived refs/workspace-local)))
+        disable-drag         (mf/use-state false)
+        scroll-to-middle?    (mf/use-var true)
+        expanded-iref        (mf/with-memo [id]
+                               (-> (l/in [:expanded id])
+                                   (l/derived refs/workspace-local)))
 
-        expanded?         (mf/deref expanded-iref)
-        selected?         (contains? selected id)
-        container?        (or (cph/frame-shape? item)
-                              (cph/group-shape? item))
+        expanded?            (mf/deref expanded-iref)
+        selected?            (contains? selected id)
+        container?           (or (cph/frame-shape? item)
+                                 (cph/group-shape? item))
 
-        components-v2  (mf/use-ctx ctx/components-v2)
-        main-instance? (if components-v2
-                         (:main-instance? item)
-                         true)
+        components-v2        (mf/use-ctx ctx/components-v2)
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+        main-instance?       (if components-v2
+                               (:main-instance? item)
+                               true)
 
         toggle-collapse
         (mf/use-fn
@@ -170,12 +171,13 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps item)
+         (mf/deps item workspace-read-only?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (let [pos (dom/get-client-position event)]
-             (st/emit! (dw/show-shape-context-menu {:position pos :shape item})))))
+           (when-not workspace-read-only?
+             (let [pos (dom/get-client-position event)]
+               (st/emit! (dw/show-shape-context-menu {:position pos :shape item}))))))
 
         on-drag
         (mf/use-fn
@@ -192,7 +194,7 @@
              (st/emit! (dw/relocate-selected-shapes id 0))
              (let [to-index  (if (= side :top) (inc index) index)
                    parent-id (cph/get-parent-id objects id)]
-              (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))
+               (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))
 
         on-hold
         (mf/use-fn
@@ -201,17 +203,18 @@
            (when-not expanded?
              (st/emit! (dwc/toggle-collapse id)))))
 
-        [dprops dref] (when sortable?
-                        (hooks/use-sortable
-                         :data-type "penpot/layer"
-                         :on-drop on-drop
-                         :on-drag on-drag
-                         :on-hold on-hold
-                         :disabled @disable-drag
-                         :detect-center? container?
-                         :data {:id (:id item)
-                                :index index
-                                :name (:name item)}))
+        [dprops dref]
+        (hooks/use-sortable
+         :data-type "penpot/layer"
+         :on-drop on-drop
+         :on-drag on-drag
+         :on-hold on-hold
+         :disabled @disable-drag
+         :detect-center? container?
+         :data {:id (:id item)
+                :index index
+                :name (:name item)}
+         :draggable? (and sortable? (not workspace-read-only?)))
 
         ref         (mf/use-ref)]
 
@@ -257,6 +260,7 @@
                             :main-instance? main-instance?}]]
       [:& layer-name {:shape item
                       :name-ref ref
+                      :disabled-double-click workspace-read-only?
                       :on-start-edit #(reset! disable-drag true)
                       :on-stop-edit #(reset! disable-drag false)}]
 
