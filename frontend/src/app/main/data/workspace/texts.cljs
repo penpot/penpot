@@ -358,10 +358,8 @@
         (gpt/subtract (gpt/point (:selrect new-shape))
                       (gpt/point (:selrect shape)))
 
-
         new-shape
         (update new-shape :position-data gsh/move-position-data (:x delta-move) (:y delta-move))]
-
 
     new-shape))
 

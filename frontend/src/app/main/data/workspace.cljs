@@ -55,6 +55,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shapes-update-layout :as dwul]
+   [app.main.data.workspace.shapes-update-layout :as dwul]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
@@ -1441,7 +1442,8 @@
                                  (into (d/ordered-set)))]
 
               (rx/of (dch/commit-changes changes)
-                     (dws/select-shapes selected))))]
+                     (dws/select-shapes selected)
+                     (dwul/update-layout-positions [frame-id]))))]
 
     (ptk/reify ::paste-shape
       ptk/WatchEvent
