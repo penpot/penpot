@@ -15,6 +15,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.comments :as-alias dwcm]
@@ -188,6 +189,42 @@
                            [(get-in objects [k :name]) v]))
                     modif-tree)))
 
+(defn apply-text-modifiers
+  [objects text-modifiers]
+  (letfn [(apply-text-modifier
+            [shape {:keys [width height]}]
+            (cond-> shape
+              (some? width)
+              (assoc :width width)
+
+              (some? height)
+              (assoc :height height)
+
+              (or (some? width) (some? height))
+              (cts/setup-rect-selrect)))]
+    (loop [modifiers (seq text-modifiers)
+           result objects]
+      (if (empty? modifiers)
+        result
+        (let [[id text-modifier] (first modifiers)]
+          (recur (rest modifiers)
+                 (update objects id apply-text-modifier text-modifier)))))))
+
+#_(defn apply-path-modifiers
+  [objects path-modifiers]
+  (letfn [(apply-path-modifier
+            [shape {:keys [content-modifiers]}]
+            (let [shape (update shape :content upc/apply-content-modifiers content-modifiers)
+                  [points selrect] (helpers/content->points+selrect shape (:content shape))]
+              (assoc shape :selrect selrect :points points)))]
+    (loop [modifiers (seq path-modifiers)
+           result objects]
+      (if (empty? modifiers)
+        result
+        (let [[id path-modifier] (first modifiers)]
+          (recur (rest modifiers)
+                 (update objects id apply-path-modifier path-modifier)))))))
+
 (defn set-modifiers
   ([modif-tree]
    (set-modifiers modif-tree false))
@@ -206,7 +243,10 @@
              (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
              modif-tree
-             (gsh/set-objects-modifiers modif-tree objects ignore-constraints snap-pixel?)]
+             (as-> objects $
+               (apply-text-modifiers $ (get state :workspace-text-modifier))
+               ;;(apply-path-modifiers $ (get-in state [:workspace-local :edit-path]))
+               (gsh/set-objects-modifiers modif-tree $ ignore-constraints snap-pixel?))]
 
          (assoc state :workspace-modifiers modif-tree))))))
 

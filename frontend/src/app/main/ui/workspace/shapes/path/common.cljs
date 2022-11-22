@@ -28,9 +28,12 @@
    (let [selfn #(get-in % [:edit-path id])]
      #(l/derived selfn refs/workspace-local))))
 
+(defn content-modifiers-ref
+  [id]
+  (l/derived #(get-in % [:edit-path id :content-modifiers]) refs/workspace-local))
+
 (defn make-content-modifiers-ref [id]
   (mf/use-memo
    (mf/deps id)
-   (let [selfn #(get-in % [:edit-path id :content-modifiers])]
-     #(l/derived selfn refs/workspace-local))))
+   #(content-modifiers-ref id)))
 

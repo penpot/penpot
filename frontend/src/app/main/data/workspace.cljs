@@ -55,7 +55,6 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shapes-update-layout :as dwul]
-   [app.main.data.workspace.shapes-update-layout :as dwul]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
