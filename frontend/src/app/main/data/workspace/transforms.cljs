@@ -435,9 +435,15 @@
              zoom    (get-in state [:workspace-local :zoom] 1)
              focus   (:workspace-focus-selected state)
 
-             exclude-frames (into #{}
-                                  (filter (partial cph/frame-shape? objects))
-                                  (cph/selected-with-children objects selected))
+             exclude-frames
+             (into #{}
+                   (filter (partial cph/frame-shape? objects))
+                   (cph/selected-with-children objects selected))
+
+             exclude-frames-siblings
+             (into exclude-frames
+                   (mapcat (partial cph/get-siblings-ids objects))
+                   selected)
 
              fix-axis
              (fn [[position shift?]]
@@ -471,9 +477,12 @@
                       ;; We try to use the previous snap so we don't have to wait for the result of the new
                       (rx/map snap/correct-snap-point)
 
+                      (rx/with-latest vector ms/mouse-position-mod)
+
                       (rx/map
-                       (fn [move-vector]
+                       (fn [[move-vector mod?]]
                          (let [position     (gpt/add from-position move-vector)
+                               exclude-frames (if mod? exclude-frames exclude-frames-siblings)
                                target-frame (ctst/top-nested-frame objects position exclude-frames)
                                layout?      (ctl/layout? objects target-frame)
                                drop-index   (when layout? (gsl/get-drop-index target-frame objects position))]
