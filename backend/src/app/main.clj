@@ -139,9 +139,8 @@
    [::worker :app.worker/executor]
    {:parallelism (cf/get :worker-executor-parallelism 20)}
 
-   :app.worker/scheduler
-   {:parallelism 1
-    :prefix :scheduler}
+   :app.worker/scheduled-executor
+   {:parallelism 1}
 
    :app.worker/executors
    {:default (ig/ref [::default :app.worker/executor])
@@ -171,7 +170,7 @@
 
    :app.storage.tmp/cleaner
    {:executor (ig/ref [::worker :app.worker/executor])
-    :scheduler (ig/ref :app.worker/scheduler)}
+    :scheduled-executor (ig/ref :app.worker/scheduled-executor)}
 
    :app.storage/gc-deleted-task
    {:pool     (ig/ref :app.db/pool)
@@ -315,7 +314,7 @@
 
    :app.rpc/rlimit
    {:executor  (ig/ref [::worker :app.worker/executor])
-    :scheduler (ig/ref :app.worker/scheduler)}
+    :scheduled-executor (ig/ref :app.worker/scheduled-executor)}
 
    :app.rpc/methods
    {:pool        (ig/ref :app.db/pool)
@@ -464,10 +463,10 @@
 
 (def worker-config
   {:app.worker/cron
-   {:executor   (ig/ref [::worker :app.worker/executor])
-    :scheduler  (ig/ref :app.worker/scheduler)
-    :tasks      (ig/ref :app.worker/registry)
-    :pool       (ig/ref :app.db/pool)
+   {:executor            (ig/ref [::worker :app.worker/executor])
+    :scheduled-executor  (ig/ref :app.worker/scheduled-executor)
+    :tasks               (ig/ref :app.worker/registry)
+    :pool                (ig/ref :app.db/pool)
     :entries
     [{:cron #app/cron "0 0 * * * ?" ;; hourly
       :task :file-xlog-gc}
