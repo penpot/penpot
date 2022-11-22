@@ -22,6 +22,10 @@
   :name "Circum Icons pack"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-circum.jpg"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/CircumIcons.penpot"}
+ {:id "coreui"
+  :name "CoreUI"
+  :thumbnail-uri "https://penpot.app/images/libraries/cover-coreui.jpg"
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/CoreUI%20DesignSystem%20(DEMO).penpot"}
  {:id "whiteboarding-kit"
   :name "Whiteboarding Kit"
   :thumbnail-uri "https://penpot.app/images/libraries/cover-whiteboards.jpg"
