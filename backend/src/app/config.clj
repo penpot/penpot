@@ -106,7 +106,8 @@
 (s/def ::file-change-snapshot-timeout ::dt/duration)
 
 (s/def ::default-executor-parallelism ::us/integer)
-(s/def ::worker-executor-parallelism ::us/integer)
+(s/def ::scheduled-executor-parallelism ::us/integer)
+(s/def ::worker-parallelism ::us/integer)
 
 (s/def ::authenticated-cookie-domain ::us/string)
 (s/def ::authenticated-cookie-name ::us/string)
@@ -218,7 +219,8 @@
                    ::default-rpc-rlimit
                    ::error-report-webhook
                    ::default-executor-parallelism
-                   ::worker-executor-parallelism
+                   ::scheduled-executor-parallelism
+                   ::worker-parallelism
                    ::file-change-snapshot-every
                    ::file-change-snapshot-timeout
                    ::user-feedback-destination

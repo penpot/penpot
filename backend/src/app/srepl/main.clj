@@ -20,6 +20,7 @@
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.pprint :refer [pprint]]
    [cuerdas.core :as str]))
 
@@ -36,6 +37,16 @@
      (if-let [task-fn (get tasks name)]
        (task-fn params)
        (println (format "no task '%s' found" name))))))
+
+(defn schedule-task!
+  ([system name]
+   (schedule-task! system name {}))
+  ([system name props]
+   (let [pool (:app.db/pool system)]
+     (wrk/submit!
+      ::wrk/conn pool
+      ::wrk/task name
+      ::wrk/props props))))
 
 (defn send-test-email!
   [system destination]

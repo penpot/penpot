@@ -50,6 +50,10 @@
   [& exprs]
   `(try* (^:once fn* [] ~@exprs) identity))
 
+(defmacro try!
+  [& exprs]
+  `(try* (^:once fn* [] ~@exprs) identity))
+
 (defn with-always
   "A helper that evaluates an exptession independently if the body
   raises exception or not."

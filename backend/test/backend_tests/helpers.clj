@@ -324,7 +324,7 @@
    (run-task! name {}))
   ([name params]
    (let [tasks (:app.worker/registry *system*)]
-     (let [task-fn (get tasks name)]
+     (let [task-fn (get tasks (d/name name))]
        (task-fn params)))))
 
 ;; --- UTILS

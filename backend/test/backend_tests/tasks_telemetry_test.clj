@@ -20,12 +20,10 @@
 (t/deftest test-base-report-data-structure
   (with-mocks [mock {:target 'app.tasks.telemetry/send!
                      :return nil}]
-    (let [task-fn (-> th/*system* :app.worker/registry :telemetry)
-          prof    (th/create-profile* 1 {:is-active true
-                                         :props {:newsletter-news true}})]
+    (let [prof (th/create-profile* 1 {:is-active true
+                                      :props {:newsletter-news true}})]
 
-      ;; run the task
-      (task-fn {:send? true :enabled? true})
+      (th/run-task! :telemetry {:send? true :enabled? true})
 
       (t/is (:called? @mock))
       (let [[_ data] (-> @mock :call-args)]

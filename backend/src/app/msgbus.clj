@@ -123,8 +123,8 @@
 
 (defn- redis-disconnect
   [{:keys [::pconn ::sconn] :as cfg}]
-  (redis/close! pconn)
-  (redis/close! sconn))
+  (d/close! pconn)
+  (d/close! sconn))
 
 (defn- conj-subscription
   "A low level function that is responsible to create on-demand
