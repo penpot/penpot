@@ -51,7 +51,7 @@
 (s/def ::timer
   #(instance? Timer %))
 
-(s/def ::connection
+(s/def ::default-connection
   #(or (instance? StatefulRedisConnection %)
        (and (instance? IDeref %)
             (instance? StatefulRedisConnection (deref %)))))
@@ -60,6 +60,13 @@
   #(or (instance? StatefulRedisPubSubConnection %)
        (and (instance? IDeref %)
             (instance? StatefulRedisPubSubConnection (deref %)))))
+
+(s/def ::connection
+  (s/or :default ::default-connection
+        :pubsub  ::pubsub-connection))
+
+(s/def ::connection-holder
+  (s/keys :req [::connection]))
 
 (s/def ::redis-uri
   #(instance? RedisURI %))
@@ -94,7 +101,7 @@
     (merge {:timeout (dt/duration 5000)
             :io-threads (max 3 cpus)
             :worker-threads (max 3 cpus)}
-         (d/without-nils cfg))))
+           (d/without-nils cfg))))
 
 (defmethod ig/init-key ::redis
   [_ {:keys [connect?] :as cfg}]
@@ -146,27 +153,28 @@
     (.stop ^Timer timer)))
 
 (defn connect
-  [{:keys [::resources ::redis-uri] :as cfg}
-   & {:keys [timeout codec type] :or {codec default-codec type :default}}]
+  [{:keys [::resources ::redis-uri] :as state}
+   & {:keys [timeout codec type]
+      :or {codec default-codec type :default}}]
 
   (us/assert! ::resources resources)
 
   (let [client  (RedisClient/create ^ClientResources resources ^RedisURI redis-uri)
-        timeout (or timeout (:timeout cfg))
+        timeout (or timeout (:timeout state))
         conn    (case type
                   :default (.connect ^RedisClient client ^RedisCodec codec)
                   :pubsub  (.connectPubSub ^RedisClient client ^RedisCodec codec))]
 
     (.setTimeout ^StatefulConnection conn ^Duration timeout)
+    (assoc state ::connection
+           (reify
+             IDeref
+             (deref [_] conn)
 
-    (reify
-      IDeref
-      (deref [_] conn)
-
-      AutoCloseable
-      (close [_]
-        (.close ^StatefulConnection conn)
-        (.shutdown ^RedisClient client)))))
+             AutoCloseable
+             (close [_]
+               (.close ^StatefulConnection conn)
+               (.shutdown ^RedisClient client))))))
 
 (defn get-or-connect
   [{:keys [::cache] :as state} key options]
@@ -179,42 +187,47 @@
                  (get key)))))
 
 (defn add-listener!
-  [conn listener]
-  (us/assert! ::pubsub-connection @conn)
+  [{:keys [::connection] :as conn} listener]
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::pubsub-connection connection)
   (us/assert! ::pubsub-listener listener)
-
-  (.addListener ^StatefulRedisPubSubConnection @conn
+  (.addListener ^StatefulRedisPubSubConnection @connection
                 ^RedisPubSubListener listener)
   conn)
 
 (defn publish!
-  [conn topic message]
+  [{:keys [::connection] :as conn} topic message]
   (us/assert! ::us/string topic)
   (us/assert! ::us/bytes message)
-  (us/assert! ::connection @conn)
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::default-connection connection)
 
-  (let [pcomm (.async ^StatefulRedisConnection @conn)]
+  (let [pcomm (.async ^StatefulRedisConnection @connection)]
     (.publish ^RedisAsyncCommands pcomm ^String topic ^bytes message)))
 
 (defn subscribe!
-  "Blocking operation, intended to be used on a worker/agent thread."
-  [conn & topics]
-  (us/assert! ::pubsub-connection @conn)
+  "Blocking operation, intended to be used on a thread/agent thread."
+  [{:keys [::connection] :as conn} & topics]
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::pubsub-connection connection)
   (let [topics (into-array String (map str topics))
-        cmd    (.sync ^StatefulRedisPubSubConnection @conn)]
+        cmd    (.sync ^StatefulRedisPubSubConnection @connection)]
     (.subscribe ^RedisPubSubCommands cmd topics)))
 
 (defn unsubscribe!
-  "Blocking operation, intended to be used on a worker/agent thread."
-  [conn & topics]
-  (us/assert! ::pubsub-connection @conn)
+  "Blocking operation, intended to be used on a thread/agent thread."
+  [{:keys [::connection] :as conn} & topics]
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::pubsub-connection connection)
   (let [topics (into-array String (map str topics))
-        cmd    (.sync ^StatefulRedisPubSubConnection @conn)]
+        cmd    (.sync ^StatefulRedisPubSubConnection @connection)]
     (.unsubscribe ^RedisPubSubCommands cmd topics)))
 
 (defn open?
-  [conn]
-  (.isOpen ^StatefulConnection @conn))
+  [{:keys [::connection] :as conn}]
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::pubsub-connection connection)
+  (.isOpen ^StatefulConnection @connection))
 
 (defn pubsub-listener
   [& {:keys [on-message on-subscribe on-unsubscribe]}]
@@ -244,8 +257,10 @@
         (on-unsubscribe nil topic count)))))
 
 (defn close!
-  [o]
-  (.close ^AutoCloseable o))
+  [{:keys [::connection] :as conn}]
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::connection connection)
+  (.close ^AutoCloseable connection))
 
 (def ^:private scripts-cache (atom {}))
 (def noop-fn (constantly nil))
@@ -262,12 +277,12 @@
                 ::rscript/vals]))
 
 (defn eval!
-  [{:keys [::mtx/metrics] :as state} script]
-  (us/assert! ::rscript/script script)
+  [{:keys [::mtx/metrics ::connection] :as state} script]
   (us/assert! ::redis state)
+  (us/assert! ::connection-holder state)
+  (us/assert! ::rscript/script script)
 
-  (let [rconn (-> state ::connection deref)
-        cmd   (.async ^StatefulRedisConnection rconn)
+  (let [cmd   (.async ^StatefulRedisConnection @connection)
         keys  (into-array String (map str (::rscript/keys script)))
         vals  (into-array String (map str (::rscript/vals script)))
         sname (::rscript/name script)]
@@ -276,20 +291,20 @@
               (if (instance? io.lettuce.core.RedisNoScriptException cause)
                 (do
                   (l/error :hint "no script found" :name sname :cause cause)
-                  (-> (load-script)
-                      (p/then eval-script)))
+                  (->> (load-script)
+                       (p/mapcat eval-script)))
                 (if-let [on-error (::rscript/on-error script)]
                   (on-error cause)
                   (p/rejected cause))))
 
             (eval-script [sha]
               (let [tpoint (dt/tpoint)]
-                (-> (.evalsha ^RedisScriptingAsyncCommands cmd
-                              ^String sha
-                              ^ScriptOutputType ScriptOutputType/MULTI
-                              ^"[Ljava.lang.String;" keys
-                              ^"[Ljava.lang.String;" vals)
-                    (p/then (fn [result]
+                (->> (.evalsha ^RedisScriptingAsyncCommands cmd
+                               ^String sha
+                               ^ScriptOutputType ScriptOutputType/MULTI
+                               ^"[Ljava.lang.String;" keys
+                               ^"[Ljava.lang.String;" vals)
+                     (p/map (fn [result]
                               (let [elapsed (tpoint)]
                                 (mtx/run! metrics {:id :redis-eval-timing
                                                    :labels [(name sname)]
@@ -300,20 +315,20 @@
                                          :params (str/join "," (::rscript/vals script))
                                          :elapsed (dt/format-duration elapsed))
                                 result)))
-                    (p/catch on-error))))
+                     (p/error on-error))))
 
             (read-script []
               (-> script ::rscript/path io/resource slurp))
 
             (load-script []
               (l/trace :hint "load script" :name sname)
-              (-> (.scriptLoad ^RedisScriptingAsyncCommands cmd
+              (->> (.scriptLoad ^RedisScriptingAsyncCommands cmd
                                ^String (read-script))
-                  (p/then (fn [sha]
+                   (p/map (fn [sha]
                             (swap! scripts-cache assoc sname sha)
                             sha))))]
 
       (if-let [sha (get @scripts-cache sname)]
         (eval-script sha)
-        (-> (load-script)
-            (p/then eval-script))))))
+        (->> (load-script)
+             (p/mapcat eval-script))))))
