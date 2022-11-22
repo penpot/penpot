@@ -10,6 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.uuid :as uuid]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
@@ -248,9 +249,10 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (let [value (-> event dom/get-target dom/checked?)]
+           (let [value (-> event dom/get-target dom/checked?)
+                 undo-id (uuid/next)]
              (do
-               (st/emit! (dwu/start-undo-transaction)
+               (st/emit! (dwu/start-undo-transaction undo-id)
                          (dch/update-shapes ids (fn [shape] (assoc shape :hide-in-viewer (not value)))))
 
                (when-not value
@@ -258,7 +260,7 @@
                  ;; interactions that navigate to it.
                  (apply st/emit! (map #(dwi/remove-all-interactions-nav-to %) ids)))
 
-               (st/emit! (dwu/commit-undo-transaction))))))
+               (st/emit! (dwu/commit-undo-transaction undo-id))))))
 
         select-all #(-> % (dom/get-target) (.select))]
 

@@ -79,7 +79,7 @@
                                                 (assoc :content content)
                                                 (merge modifiers)
                                                 (cts/setup-rect-selrect))))
-                  (dwu/commit-undo-transaction)))))
+                  (dwu/commit-undo-transaction (:id shape))))))
 
             (when (some? id)
               (rx/of (dws/deselect-shape id)

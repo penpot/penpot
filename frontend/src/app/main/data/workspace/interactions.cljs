@@ -245,10 +245,11 @@
                 (ctsi/set-action-type :navigate)
 
                 :always
-                (ctsi/set-destination (:id target-frame))))]
+                (ctsi/set-destination (:id target-frame))))
+            undo-id (uuid/next)]
 
         (rx/of
-          (dwu/start-undo-transaction)
+          (dwu/start-undo-transaction undo-id)
 
           (when (:hide-in-viewer target-frame)
             ; If the target frame is hidden, we need to unhide it so
@@ -274,7 +275,7 @@
             :else
             (update-interaction shape index change-interaction))
 
-          (dwu/commit-undo-transaction))))))
+          (dwu/commit-undo-transaction undo-id))))))
 
 ;; --- Overlays
 

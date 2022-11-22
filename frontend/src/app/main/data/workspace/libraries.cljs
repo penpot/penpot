@@ -152,11 +152,13 @@
         color       (assoc color :path path :name name)
         changes     (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/update-color color))]
-    (rx/of (dwu/start-undo-transaction)
+                        (pcb/update-color color))
+        
+        undo-id (uuid/next)]
+    (rx/of (dwu/start-undo-transaction undo-id)
            (dch/commit-changes changes)
            (sync-file (:current-file-id state) file-id :colors (:id color))
-           (dwu/commit-undo-transaction))))
+           (dwu/commit-undo-transaction undo-id))))
 
 (defn update-color
   [color file-id]
@@ -256,11 +258,12 @@
         typography  (extract-path-if-missing typography)
         changes     (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/update-typography typography))]
-    (rx/of (dwu/start-undo-transaction)
+                        (pcb/update-typography typography))
+        undo-id (uuid/next)]
+    (rx/of (dwu/start-undo-transaction undo-id)
            (dch/commit-changes changes)
            (sync-file (:current-file-id state) file-id :typographies (:id typography))
-           (dwu/commit-undo-transaction))))
+           (dwu/commit-undo-transaction undo-id))))
 
 (defn update-typography
   [typography file-id]
@@ -646,24 +649,26 @@
     (watch [_ state _]
       (let [current-file-id (:current-file-id state)
             page            (wsh/lookup-page state)
-            shape           (ctn/get-shape page shape-id)]
+            shape           (ctn/get-shape page shape-id)
+            undo-id (uuid/next)]
         (rx/of
-         (dwu/start-undo-transaction)
+         (dwu/start-undo-transaction undo-id)
          (update-component shape-id)
          (sync-file current-file-id file-id :components (:component-id shape))
          (when (not= current-file-id file-id)
            (sync-file file-id file-id :components (:component-id shape)))
-         (dwu/commit-undo-transaction))))))
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn update-component-in-bulk
   [shapes file-id]
   (ptk/reify ::update-component-in-bulk
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/concat
-       (rx/of (dwu/start-undo-transaction))
+      (let [undo-id (uuid/next)]
+       (rx/concat
+       (rx/of (dwu/start-undo-transaction undo-id))
        (rx/map #(update-component-sync (:id %) file-id) (rx/from shapes))
-       (rx/of (dwu/commit-undo-transaction))))))
+       (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (declare sync-file-2nd-stage)
 
