@@ -27,11 +27,11 @@
 
         on-open
         (fn []
-          (st/emit! (dwu/start-undo-transaction)))
+          (st/emit! (dwu/start-undo-transaction :options)))
 
         on-close
         (fn []
-          (st/emit! (dwu/commit-undo-transaction)))]
+          (st/emit! (dwu/commit-undo-transaction :options)))]
 
     [:div.element-set
      [:div.element-set-title (tr "workspace.options.canvas-background")]

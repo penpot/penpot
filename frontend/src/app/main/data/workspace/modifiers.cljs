@@ -17,6 +17,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.comments :as-alias dwcm]
    [app.main.data.workspace.guides :as-alias dwg]
@@ -293,11 +294,12 @@
 
              shapes            (map (d/getf objects) ids)
              ignore-tree       (->> (map #(get-ignore-tree object-modifiers objects %) shapes)
-                                    (reduce merge {}))]
+                                    (reduce merge {}))
+             undo-id (uuid/next)]
 
          (rx/concat
           (if undo-transation?
-            (rx/of (dwu/start-undo-transaction))
+            (rx/of (dwu/start-undo-transaction undo-id))
             (rx/empty))
           (rx/of (ptk/event ::dwg/move-frame-guides ids-with-children)
                  (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
@@ -333,5 +335,5 @@
                            ]})
                  (clear-local-transform))
           (if undo-transation?
-            (rx/of (dwu/commit-undo-transaction))
+            (rx/of (dwu/commit-undo-transaction undo-id))
             (rx/empty))))))))

@@ -108,13 +108,13 @@
         (mf/use-fn
          (fn []
            (reset! drag? true)
-           (st/emit! (dwu/start-undo-transaction))))
+           (st/emit! (dwu/start-undo-transaction (mf/ref-val node-ref)))))
 
         on-finish-drag
         (mf/use-fn
          (fn []
            (reset! drag? false)
-           (st/emit! (dwu/commit-undo-transaction))))]
+           (st/emit! (dwu/commit-undo-transaction (mf/ref-val node-ref)))))]
 
     ;; Initialize colorpicker state
     (mf/with-effect []

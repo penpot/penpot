@@ -64,7 +64,7 @@
              ;; Add & select the created shape to the workspace
              (rx/concat
               (if (= :text (:type shape))
-                (rx/of (dwu/start-undo-transaction))
+                (rx/of (dwu/start-undo-transaction (:id shape)))
                 (rx/empty))
 
               (rx/of (dwsh/add-shape shape {:no-select? (= tool :curve)}))

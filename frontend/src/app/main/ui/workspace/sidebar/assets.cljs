@@ -12,6 +12,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
@@ -181,13 +182,14 @@
 
 (defn- create-assets-group
   [rename components-to-group group-name]
-  (st/emit! (dwu/start-undo-transaction))
+  (let [undo-id (uuid/next)]
+  (st/emit! (dwu/start-undo-transaction undo-id))
   (apply st/emit!
          (->> components-to-group
               (map #(rename
                      (:id %)
                      (add-group % group-name)))))
-  (st/emit! (dwu/commit-undo-transaction)))
+  (st/emit! (dwu/commit-undo-transaction undo-id))))
 
 (defn- on-drop-asset
   [event asset dragging? selected-assets selected-assets-full selected-assets-paths rename]
@@ -589,23 +591,25 @@
         (mf/use-fn
          (mf/deps @state)
          (fn []
-           (if (empty? selected-components)
+           (let [undo-id (uuid/next)]
+             (if (empty? selected-components)
              (st/emit! (dwl/duplicate-component {:id (:component-id @state)}))
              (do
-               (st/emit! (dwu/start-undo-transaction))
+               (st/emit! (dwu/start-undo-transaction undo-id))
                (apply st/emit! (map #(dwl/duplicate-component {:id %}) selected-components))
-               (st/emit! (dwu/commit-undo-transaction))))))
+               (st/emit! (dwu/commit-undo-transaction undo-id)))))))
 
         on-delete
         (mf/use-fn
          (mf/deps @state file-id multi-components? multi-assets?)
          (fn []
-           (if (or multi-components? multi-assets?)
+           (let [undo-id (uuid/next)]
+             (if (or multi-components? multi-assets?)
              (on-assets-delete)
-             (st/emit! (dwu/start-undo-transaction)
+             (st/emit! (dwu/start-undo-transaction undo-id)
                        (dwl/delete-component {:id (:component-id @state)})
                        (dwl/sync-file file-id file-id :components (:component-id @state))
-                       (dwu/commit-undo-transaction)))))
+                       (dwu/commit-undo-transaction undo-id))))))
 
         on-rename
         (mf/use-fn
@@ -646,30 +650,32 @@
          (mf/deps components selected-components on-clear-selection)
          (fn [group-name]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> components
-                       (filter #(if multi-components?
-                                  (contains? selected-components (:id %))
-                                  (= (:component-id @state) (:id %))))
-                       (map #(dwl/rename-component
-                              (:id %)
-                              (add-group % group-name)))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> components
+                         (filter #(if multi-components?
+                                    (contains? selected-components (:id %))
+                                    (= (:component-id @state) (:id %))))
+                         (map #(dwl/rename-component
+                                (:id %)
+                                (add-group % group-name)))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         rename-group
         (mf/use-fn
          (mf/deps components)
          (fn [path last-path]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> components
-                       (filter #(str/starts-with? (:path %) path))
-                       (map #(dwl/rename-component
-                              (:id %)
-                              (rename-group % path last-path)))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> components
+                         (filter #(str/starts-with? (:path %) path))
+                         (map #(dwl/rename-component
+                                (:id %)
+                                (rename-group % path last-path)))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-group
         (mf/use-fn
@@ -692,14 +698,15 @@
          (mf/deps components)
          (fn [path]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> components
-                       (filter #(str/starts-with? (:path %) path))
-                       (map #(dwl/rename-component
-                              (:id %)
-                              (ungroup % path)))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> components
+                         (filter #(str/starts-with? (:path %) path))
+                         (map #(dwl/rename-component
+                                (:id %)
+                                (ungroup % path)))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-drag-start
         (mf/use-fn
@@ -1015,30 +1022,32 @@
          (mf/deps objects selected-objects on-clear-selection)
          (fn [group-name]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> objects
-                       (filter #(if multi-objects?
-                                  (contains? selected-objects (:id %))
-                                  (= (:object-id @state) (:id %))))
-                       (map #(dwl/rename-media
-                              (:id %)
-                              (add-group % group-name)))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> objects
+                         (filter #(if multi-objects?
+                                    (contains? selected-objects (:id %))
+                                    (= (:object-id @state) (:id %))))
+                         (map #(dwl/rename-media
+                                (:id %)
+                                (add-group % group-name)))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         rename-group
         (mf/use-fn
          (mf/deps objects)
          (fn [path last-path]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> objects
-                       (filter #(str/starts-with? (:path %) path))
-                       (map #(dwl/rename-media
-                              (:id %)
-                              (rename-group % path last-path)))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> objects
+                         (filter #(str/starts-with? (:path %) path))
+                         (map #(dwl/rename-media
+                                (:id %)
+                                (rename-group % path last-path)))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-group
         (mf/use-fn
@@ -1060,14 +1069,15 @@
          (mf/deps objects)
          (fn [path]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> objects
-                       (filter #(str/starts-with? (:path %) path))
-                       (map #(dwl/rename-media
-                              (:id %)
-                              (ungroup % path)))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> objects
+                         (filter #(str/starts-with? (:path %) path))
+                         (map #(dwl/rename-media
+                                (:id %)
+                                (ungroup % path)))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-drag-start
         (mf/use-fn
@@ -1175,10 +1185,11 @@
          (fn []
            (if (or multi-colors? multi-assets?)
              (on-assets-delete)
-             (st/emit! (dwu/start-undo-transaction)
+             (let [undo-id (uuid/next)]
+              (st/emit! (dwu/start-undo-transaction undo-id)
                        (dwl/delete-color color)
                        (dwl/sync-file file-id file-id :colors (:id color))
-                       (dwu/commit-undo-transaction)))))
+                       (dwu/commit-undo-transaction undo-id))))))
 
         rename-color-clicked
         (fn [event]
@@ -1436,7 +1447,8 @@
          (fn [color-id]
            (fn [group-name]
              (on-clear-selection)
-             (st/emit! (dwu/start-undo-transaction))
+             (let [undo-id (uuid/next)]
+               (st/emit! (dwu/start-undo-transaction undo-id))
              (apply st/emit!
                     (->> colors
                          (filter #(if multi-colors?
@@ -1446,22 +1458,23 @@
                                 (assoc % :name
                                        (add-group % group-name))
                                 file-id))))
-             (st/emit! (dwu/commit-undo-transaction)))))
+             (st/emit! (dwu/commit-undo-transaction undo-id))))))
 
         rename-group
         (mf/use-fn
          (mf/deps colors)
          (fn [path last-path]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> colors
-                       (filter #(str/starts-with? (:path %) path))
-                       (map #(dwl/update-color
-                              (assoc % :name
-                                     (rename-group % path last-path))
-                              file-id))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> colors
+                         (filter #(str/starts-with? (:path %) path))
+                         (map #(dwl/update-color
+                                (assoc % :name
+                                       (rename-group % path last-path))
+                                file-id))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-group
         (mf/use-fn
@@ -1484,15 +1497,16 @@
          (mf/deps colors)
          (fn [path]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> colors
-                       (filter #(str/starts-with? (:path %) path))
-                       (map #(dwl/update-color
-                              (assoc % :name
-                                     (ungroup % path))
-                              file-id))))
-           (st/emit! (dwu/commit-undo-transaction))))]
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> colors
+                         (filter #(str/starts-with? (:path %) path))
+                         (map #(dwl/update-color
+                                (assoc % :name
+                                       (ungroup % path))
+                                file-id))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))]
 
     [:& asset-section {:file-id file-id
                        :title (tr "workspace.assets.colors")
@@ -1724,32 +1738,34 @@
          (mf/deps typographies selected-typographies on-clear-selection file-id)
          (fn [group-name]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> typographies
-                       (filter #(if multi-typographies?
-                                  (contains? selected-typographies (:id %))
-                                  (= (:id @state) (:id %))))
-                       (map #(dwl/update-typography
-                              (assoc % :name
-                                     (add-group % group-name))
-                              file-id))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> typographies
+                         (filter #(if multi-typographies?
+                                    (contains? selected-typographies (:id %))
+                                    (= (:id @state) (:id %))))
+                         (map #(dwl/update-typography
+                                (assoc % :name
+                                       (add-group % group-name))
+                                file-id))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         rename-group
         (mf/use-fn
          (mf/deps typographies)
          (fn [path last-path]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> typographies
-                       (filter #(str/starts-with? (:path %) path))
-                       (map #(dwl/update-typography
-                              (assoc % :name
-                                     (rename-group % path last-path))
-                              file-id))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> typographies
+                         (filter #(str/starts-with? (:path %) path))
+                         (map #(dwl/update-typography
+                                (assoc % :name
+                                       (rename-group % path last-path))
+                                file-id))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-group
         (mf/use-fn
@@ -1771,15 +1787,16 @@
          (mf/deps typographies)
          (fn [path]
            (on-clear-selection)
-           (st/emit! (dwu/start-undo-transaction))
-           (apply st/emit!
-                  (->> typographies
-                       (filter #(str/starts-with? (:path %) path))
-                       (map #(dwl/rename-typography
-                              file-id
-                              (:id %)
-                              (ungroup % path)))))
-           (st/emit! (dwu/commit-undo-transaction))))
+           (let [undo-id (uuid/next)]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit!
+                    (->> typographies
+                         (filter #(str/starts-with? (:path %) path))
+                         (map #(dwl/rename-typography
+                                file-id
+                                (:id %)
+                                (ungroup % path)))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
         on-context-menu
         (mf/use-fn
@@ -1808,12 +1825,13 @@
         (mf/use-fn
          (mf/deps @state multi-typographies? multi-assets?)
          (fn []
-           (if (or multi-typographies? multi-assets?)
-             (on-assets-delete)
-             (st/emit! (dwu/start-undo-transaction)
-                       (dwl/delete-typography (:id @state))
-                       (dwl/sync-file file-id file-id :typographies (:id @state))
-                       (dwu/commit-undo-transaction)))))
+           (let [undo-id (uuid/next)]
+             (if (or multi-typographies? multi-assets?)
+               (on-assets-delete)
+               (st/emit! (dwu/start-undo-transaction undo-id)
+                         (dwl/delete-typography (:id @state))
+                         (dwl/sync-file file-id file-id :typographies (:id @state))
+                         (dwu/commit-undo-transaction undo-id))))))
 
         editing-id (or (:rename-typography local-data)
                        (:edit-typography local-data))]
@@ -2045,7 +2063,8 @@
         (mf/use-fn
          (mf/deps selected-assets)
          (fn []
-           (st/emit! (dwu/start-undo-transaction))
+           (let [undo-id (uuid/next)]
+            (st/emit! (dwu/start-undo-transaction undo-id))
            (apply st/emit! (map #(dwl/delete-component {:id %})
                                 (:components selected-assets)))
            (apply st/emit! (map #(dwl/delete-media {:id %})
@@ -2058,7 +2077,7 @@
                      (d/not-empty? (:colors selected-assets))
                      (d/not-empty? (:typographies selected-assets)))
              (st/emit! (dwl/sync-file (:id file) (:id file))))
-           (st/emit! (dwu/commit-undo-transaction))))]
+           (st/emit! (dwu/commit-undo-transaction undo-id)))))]
 
     [:div.tool-window {:on-context-menu #(dom/prevent-default %)
                        :on-click unselect-all}

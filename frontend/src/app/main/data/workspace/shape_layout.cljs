@@ -17,6 +17,7 @@
    [app.main.data.workspace.shapes :as dws]
    [app.main.data.workspace.shapes-update-layout :as wsul]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.undo :as dwu]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -110,8 +111,12 @@
   (ptk/reify ::remove-layout
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwc/update-shapes ids #(apply dissoc % layout-keys))
-             (wsul/update-layout-positions ids)))))
+      (let [undo-id (uuid/next)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dwc/update-shapes ids #(apply dissoc % layout-keys))
+         (wsul/update-layout-positions ids)
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn create-layout
   []

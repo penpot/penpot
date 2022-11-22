@@ -114,7 +114,7 @@
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (st/emit! (dwu/start-undo-transaction)
+           (st/emit! (dwu/start-undo-transaction :mouse-down-picker)
                      (dwc/pick-color-select true (kbd/shift? event)))))
 
         handle-mouse-up-picker
@@ -122,7 +122,7 @@
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (st/emit! (dwu/commit-undo-transaction)
+           (st/emit! (dwu/commit-undo-transaction :mouse-down-picker)
                      (dwc/stop-picker))
            (modal/disallow-click-outside!)))
 

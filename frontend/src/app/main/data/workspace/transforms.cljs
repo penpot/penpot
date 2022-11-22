@@ -19,6 +19,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
@@ -504,11 +505,12 @@
                    (rx/last)
                    (rx/mapcat
                     (fn [[_ target-frame drop-index]]
-                      (rx/of (dwu/start-undo-transaction)
+                      (let [undo-id (uuid/next)]
+                        (rx/of (dwu/start-undo-transaction undo-id)
                              (move-shapes-to-frame ids target-frame drop-index)
                              (dwm/apply-modifiers {:undo-transation? false})
                              (finish-transform)
-                             (dwu/commit-undo-transaction)))))))))))))
+                             (dwu/commit-undo-transaction undo-id))))))))))))))
 
 (s/def ::direction #{:up :down :right :left})
 

@@ -73,28 +73,34 @@
 (def empty-tx
   {:undo-changes [] :redo-changes []})
 
-(defn start-undo-transaction []
+(defn start-undo-transaction [id]
   (ptk/reify ::start-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       ;; We commit the old transaction before starting the new one
-      (let [current-tx (get-in state [:workspace-undo :transaction])]
+      (let [current-tx (get-in state [:workspace-undo :transaction])
+            pending-tx (get-in state [:workspace-undo :transactions-pending])]
         (cond-> state
-          (nil? current-tx) (assoc-in [:workspace-undo :transaction] empty-tx))))))
+          (nil? current-tx)  (assoc-in [:workspace-undo :transaction] empty-tx)
+          (nil? pending-tx)  (assoc-in [:workspace-undo :transactions-pending] #{id})
+          (some? pending-tx) (update-in [:workspace-undo :transactions-pending] conj id))))))
 
 (defn discard-undo-transaction []
   (ptk/reify ::discard-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-undo dissoc :transaction))))
+      (update state :workspace-undo dissoc :transaction :transactions-pending))))
 
-(defn commit-undo-transaction []
+(defn commit-undo-transaction [id]
   (ptk/reify ::commit-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (add-undo-entry (get-in state [:workspace-undo :transaction]))
-          (update :workspace-undo dissoc :transaction)))))
+      (let [state (update-in state [:workspace-undo :transactions-pending] disj id)]
+        (if (empty? (get-in state [:workspace-undo :transactions-pending]))
+          (-> state
+              (add-undo-entry (get-in state [:workspace-undo :transaction]))
+              (update :workspace-undo dissoc :transaction))
+          state)))))
 
 (def pop-undo-into-transaction
   (ptk/reify ::last-undo-into-transaction

@@ -192,8 +192,8 @@
                       :disable-gradient true
                       :on-change (update-color index)
                       :on-detach (detach-color index)
-                      :on-open #(st/emit! (dwu/start-undo-transaction))
-                      :on-close #(st/emit! (dwu/commit-undo-transaction))}]]]]))
+                      :on-open #(st/emit! (dwu/start-undo-transaction :color-row))
+                      :on-close #(st/emit! (dwu/commit-undo-transaction :color-row))}]]]]))
 (mf/defc shadow-menu
   [{:keys [ids type values] :as props}]
   (let [on-remove-all-shadows
