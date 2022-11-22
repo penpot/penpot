@@ -261,9 +261,17 @@ $height-palette-max: 80px;
     }
 
     .render-shapes {
+      height: 100%;
       position: absolute;
       width: 100%;
-      height: 100%;
+    }
+
+    .frame-thumbnail-wrapper {
+      .fills,
+      .strokes,
+      .frame-clip-def {
+        opacity: 0;
+      }
     }
 
     .viewport-controls {
