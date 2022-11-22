@@ -141,7 +141,7 @@
   [frame layout-data children]
 
   (let [reverse? (:reverse? layout-data)
-        children (vec (cond->> (d/enumerate children) reverse? reverse))
+        children (vec (cond->> (d/enumerate children) (not reverse?) reverse))
         lines    (:layout-lines layout-data)]
 
     (loop [areas        []
@@ -169,7 +169,7 @@
                   areas
 
                   (let [[child-area child-area-start child-area-end]
-                        (drop-child-areas frame line-area child index reverse? prev-child-x prev-child-y (nil? (first children)))]
+                        (drop-child-areas frame line-area child index (not reverse?) prev-child-x prev-child-y (nil? (first children)))]
                     (recur (conj areas child-area-start child-area-end)
                            (+ (:x child-area) (:width child-area))
                            (+ (:y child-area) (:height child-area))

@@ -159,7 +159,7 @@
     (let [children     (map (d/getf objects) (:shapes parent))
           children     (->> children (map (partial apply-modifiers modif-tree)))
           layout-data  (gcl/calc-layout-data parent children)
-          children     (into [] (cond-> children (:reverse? layout-data) reverse))
+          children     (into [] (cond-> children (not (:reverse? layout-data)) reverse))
           max-idx      (dec (count children))
           layout-lines (:layout-lines layout-data)]
 
