@@ -567,8 +567,9 @@
 ;; --- Helpers
 
 (defn decode-row
-  [{:keys [data changes] :as row}]
+  [{:keys [data changes features] :as row}]
   (when row
     (cond-> row
-      changes (assoc :changes (blob/decode changes))
-      data    (assoc :data (blob/decode data)))))
+      features (assoc :features (db/decode-pgarray features #{}))
+      changes  (assoc :changes (blob/decode changes))
+      data     (assoc :data (blob/decode data)))))
