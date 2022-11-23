@@ -14,6 +14,7 @@
     [app.common.geom.shapes :as gsh]
     [app.common.pages.common :refer [file-version]]
     [app.common.pages.helpers :as cph]
+    [app.common.spec :as us]
     [app.common.types.color :as ctc]
     [app.common.types.colors-list :as ctcl]
     [app.common.types.component :as ctk]
