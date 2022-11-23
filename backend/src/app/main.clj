@@ -166,10 +166,9 @@
     :executor  (ig/ref ::wrk/executor)
     :redis     (ig/ref ::rds/redis)}
 
-   ;; TODO: refactor execution model
    :app.storage.tmp/cleaner
-   {:executor (ig/ref ::wrk/executor)
-    :scheduled-executor (ig/ref ::wrk/scheduled-executor)}
+   {::wrk/executor (ig/ref ::wrk/executor)
+    ::wrk/scheduled-executor (ig/ref ::wrk/scheduled-executor)}
 
    ::sto/gc-deleted-task
    {:pool     (ig/ref ::db/pool)
