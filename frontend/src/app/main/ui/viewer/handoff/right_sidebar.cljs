@@ -6,7 +6,6 @@
 
 (ns app.main.ui.viewer.handoff.right-sidebar
   (:require
-   [app.common.data :as d]
    [app.main.ui.components.shape-icon :as si]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.icons :as i]
@@ -22,16 +21,7 @@
         section       (mf/use-state :info #_:code)
         shapes        (resolve-shapes (:objects page) selected)
 
-        first-shape   (first shapes)
-
-        selected-type (or (:type first-shape) :not-found)
-        selected-type (if (= selected-type :group)
-                        (if (some? (:component-id first-shape))
-                          :component
-                          (if (:masked-group? first-shape)
-                            :mask
-                            :group))
-                        selected-type)]
+        first-shape   (first shapes)]
 
     [:aside.settings-bar.settings-bar-right {:class (when @expanded "expanded")}
      [:div.settings-bar-inside
@@ -57,7 +47,7 @@
              ;;   handoff.tabs.code.selected.rect
              ;;   handoff.tabs.code.selected.svg-raw
              ;;   handoff.tabs.code.selected.text
-             [:span.tool-window-bar-title (->> selected-type d/name (str "handoff.tabs.code.selected.") (tr))]])]
+             [:span.tool-window-bar-title (:name first-shape)]])]
          [:div.tool-window-content
           [:& tab-container {:on-change-tab #(do
                                                (reset! expanded false)
