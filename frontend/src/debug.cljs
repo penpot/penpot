@@ -76,6 +76,9 @@
 
     ;; Makes the pixel grid red so its more visibile
     :pixel-grid
+
+    ;; Show the bounds relative to the parent
+    :parent-bounds
     })
 
 ;; These events are excluded when we activate the :events flag

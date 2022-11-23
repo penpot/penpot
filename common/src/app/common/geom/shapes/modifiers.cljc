@@ -12,6 +12,7 @@
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.flex-layout :as gcl]
    [app.common.geom.shapes.pixel-precision :as gpp]
+   [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -91,12 +92,12 @@
 
 (defn- set-children-modifiers
   "Propagates the modifiers from a parent too its children applying constraints if necesary"
-  [modif-tree objects parent transformed-parent ignore-constraints]
+  [modif-tree objects parent transformed-parent-bounds ignore-constraints]
   (let [children  (:shapes parent)
         modifiers (dm/get-in modif-tree [(:id parent) :modifiers])]
 
+    ;; Move modifiers don't need to calculate constraints
     (if (ctm/only-move? modifiers)
-      ;; Move modifiers don't need to calculate constraints
       (loop [modif-tree modif-tree
              children (seq children)]
         (if-let [current (first children)]
@@ -105,49 +106,65 @@
           modif-tree))
 
       ;; Check the constraints, then resize
-      (let [parent (gtr/transform-shape parent (ctm/select-parent-modifiers modifiers))]
+      (let [parent-bounds (gtr/transform-bounds (:points parent) (ctm/select-parent-modifiers modifiers))]
         (loop [modif-tree modif-tree
                children (seq children)]
-          (if-let [current (first children)]
-            (let [child-modifiers (gct/calc-child-modifiers parent (get objects current) modifiers ignore-constraints transformed-parent)]
+          (if (empty? children)
+            modif-tree
+            (let [child-id (first children)
+                  child (get objects child-id)
+                  child-modifiers (gct/calc-child-modifiers parent child modifiers ignore-constraints parent-bounds @transformed-parent-bounds)]
               (recur (cond-> modif-tree
                        (not (ctm/empty? child-modifiers))
-                       (update-in [current :modifiers] ctm/add-modifiers child-modifiers))
-                     (rest children)))
-            modif-tree))))))
+                       (update-in [child-id :modifiers] ctm/add-modifiers child-modifiers))
+                     (rest children)))))))))
 
 (defn- process-layout-children
-  [modif-tree objects parent transformed-parent]
+  [modif-tree objects parent transformed-parent-bounds]
   (letfn [(process-child [modif-tree child]
             (let [modifiers (dm/get-in modif-tree [(:id parent) :modifiers])
                   child-modifiers (-> modifiers
                                       (ctm/select-child-geometry-modifiers)
-                                      (gcl/normalize-child-modifiers parent child transformed-parent))]
+                                      (gcl/normalize-child-modifiers parent child @transformed-parent-bounds))]
               (cond-> modif-tree
                 (not (ctm/empty? child-modifiers))
                 (update-in [(:id child) :modifiers] ctm/add-modifiers child-modifiers))))]
-    (let [children (map (d/getf objects) (:shapes transformed-parent))]
+    (let [children (map (d/getf objects) (:shapes parent))]
       (reduce process-child modif-tree children))))
 
+
+(defn get-bounds
+  [objects modif-tree shape]
+
+  (let [modifiers (-> (dm/get-in modif-tree [(:id shape) :modifiers])
+                      (ctm/select-geometry))
+
+        children (cph/get-immediate-children objects (:id shape))
+        bounds (cond
+                 (cph/group-shape? shape)
+                 (let [children-bounds (->> children (mapv (partial get-bounds objects modif-tree)))]
+                   (gtr/group-bounds shape children-bounds))
+
+                 (cph/mask-shape? shape)
+                 (get-bounds objects modif-tree (-> children first))
+
+                 :else
+                 (:points shape))]
+
+    (gtr/transform-bounds bounds modifiers)))
+
+
 (defn- set-layout-modifiers
-  [modif-tree objects parent]
+  [modif-tree objects parent transformed-parent-bounds]
 
-  (letfn [(apply-modifiers [modif-tree child]
-            (let [modifiers (-> (dm/get-in modif-tree [(:id child) :modifiers])
-                                (ctm/select-geometry))]
-              (cond
-                (cph/group-like-shape? child)
-                (gtr/apply-group-modifiers child objects modif-tree)
+  (letfn [(apply-modifiers [child]
+            [(-> (get-bounds objects modif-tree child)
+                 (gpo/parent-coords-bounds @transformed-parent-bounds))
+             child])
 
-                (some? modifiers)
-                (gtr/transform-shape child modifiers)
-
-                :else
-                child)))
-
-          (set-child-modifiers [parent [layout-line modif-tree] child]
+          (set-child-modifiers [[layout-line modif-tree] [child-bounds child]]
             (let [[modifiers layout-line]
-                  (gcl/layout-child-modifiers parent child layout-line)
+                  (gcl/layout-child-modifiers parent child child-bounds layout-line)
 
                   modif-tree
                   (cond-> modif-tree
@@ -156,13 +173,12 @@
 
               [layout-line modif-tree]))]
 
-    (let [children     (map (d/getf objects) (:shapes parent))
-          children     (->> children (map (partial apply-modifiers modif-tree)))
-          layout-data  (gcl/calc-layout-data parent children)
+    (let [children     (->> (:shapes parent)
+                            (map (comp apply-modifiers (d/getf objects))))
+          layout-data  (gcl/calc-layout-data parent children @transformed-parent-bounds)
           children     (into [] (cond-> children (not (:reverse? layout-data)) reverse))
           max-idx      (dec (count children))
           layout-lines (:layout-lines layout-data)]
-
       (loop [modif-tree modif-tree
              layout-line (first layout-lines)
              pending (rest layout-lines)
@@ -172,7 +188,7 @@
                 children (subvec children from-idx to-idx)
 
                 [_ modif-tree]
-                (reduce (partial set-child-modifiers parent) [layout-line modif-tree] children)]
+                (reduce set-child-modifiers [layout-line modif-tree] children)]
             (recur modif-tree (first pending) (rest pending) to-idx))
 
           modif-tree)))))
@@ -195,11 +211,9 @@
                   (ctm/resize-parent (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))]
 
     (let [children (->> parent :shapes (map (d/getf objects)))
-
           {auto-width :width auto-height :height}
           (when (and (d/not-empty? children) (or (ctl/auto-height? parent) (ctl/auto-width? parent)))
             (gcl/layout-content-bounds parent children))]
-
       (cond-> (ctm/empty)
         (and (some? auto-width) (ctl/auto-width? parent))
         (set-parent-auto-width auto-width)
@@ -214,11 +228,12 @@
         root? (= uuid/zero parent-id)
         modifiers (-> (dm/get-in modif-tree [parent-id :modifiers])
                       (ctm/select-geometry))
-        transformed-parent (gtr/transform-shape parent modifiers)
+
+        transformed-parent-bounds (delay (gtr/transform-bounds (:points parent) modifiers))
 
         has-modifiers? (ctm/child-modifiers? modifiers)
         layout? (ctl/layout? parent)
-        auto?   (or (ctl/auto-height? transformed-parent) (ctl/auto-width? transformed-parent))
+        auto?   (or (ctl/auto-height? parent) (ctl/auto-width? parent))
         parent? (or (cph/group-like-shape? parent) (cph/frame-shape? parent))
 
         ;; If the current child is inside the layout we ignore the constraints
@@ -226,11 +241,11 @@
 
     [(cond-> modif-tree
        (and (not layout?) has-modifiers? parent? (not root?))
-       (set-children-modifiers objects parent transformed-parent (or ignore-constraints inside-layout?))
+       (set-children-modifiers objects parent transformed-parent-bounds (or ignore-constraints inside-layout?))
 
        layout?
-       (-> (process-layout-children objects parent transformed-parent)
-           (set-layout-modifiers objects transformed-parent)))
+       (-> (process-layout-children objects parent transformed-parent-bounds)
+           (set-layout-modifiers objects parent transformed-parent-bounds)))
 
      ;; Auto-width/height can change the positions in the parent so we need to recalculate
      (cond-> autolayouts auto? (conj (:id parent)))]))
@@ -247,21 +262,21 @@
   [objects tree-seq modif-tree]
 
   (letfn [(apply-shape [objects {:keys [id] :as shape}]
-            (if (cph/group-shape? shape)
-              (let [children (cph/get-children objects id)]
-                (assoc objects id
-                       (cond
-                         (cph/mask-shape? shape)
-                         (gtr/update-mask-selrect shape children)
+            (let [modifiers (get-in modif-tree [id :modifiers])
+                  object
+                  (cond
+                    (cph/mask-shape? shape)
+                    (gtr/update-mask-selrect shape (cph/get-children objects id))
 
-                         :else
-                         (gtr/update-group-selrect shape children))))
+                    (cph/group-shape? shape)
+                    (gtr/update-group-selrect shape (cph/get-children objects id))
 
-              (let [modifiers (get-in modif-tree [id :modifiers])
-                    object (cond-> shape
-                             (some? modifiers)
-                             (gtr/transform-shape modifiers))]
-                (assoc objects id object))))]
+                    (some? modifiers)
+                    (gtr/transform-shape shape modifiers)
+
+                    :else
+                    shape)]
+              (assoc objects id object)))]
 
     (reduce apply-shape objects (reverse tree-seq))))
 

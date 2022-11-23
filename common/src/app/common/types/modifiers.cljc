@@ -8,6 +8,7 @@
   (:refer-clojure :exclude [empty empty?])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
@@ -49,7 +50,6 @@
 (defn- resize-vec? [vector]
   (or (not (mth/almost-zero? (- (:x vector) 1)))
       (not (mth/almost-zero? (- (:y vector) 1)))))
-
 
 (defn- mergeable-move?
   [op1 op2]
@@ -106,6 +106,13 @@
             (conj item)))
         (conj operations op)))))
 
+(defn valid-vector?
+  [{:keys [x y]}]
+  (and (some? x)
+       (some? y)
+       (not (mth/nan? x))
+       (not (mth/nan? y))))
+
 ;; Public builder API
 
 (defn empty []
@@ -116,12 +123,14 @@
    (move-parent modifiers (gpt/point x y)))
 
   ([modifiers vector]
+   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
    (cond-> modifiers
      (move-vec? vector)
-     (update :geometry-parent conjv {:type :move :vector vector}))))
+     (update :geometry-parent maybe-add-move {:type :move :vector vector}))))
 
 (defn resize-parent
   ([modifiers vector origin]
+   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
    (cond-> modifiers
      (resize-vec? vector)
      (update :geometry-parent maybe-add-resize {:type :resize
@@ -129,6 +138,7 @@
                                                 :origin origin})))
 
   ([modifiers vector origin transform transform-inverse]
+   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
    (cond-> modifiers
      (resize-vec? vector)
      (update :geometry-parent maybe-add-resize {:type :resize
@@ -141,12 +151,14 @@
    (move modifiers (gpt/point x y)))
 
   ([modifiers vector]
+   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
    (cond-> modifiers
      (move-vec? vector)
      (update :geometry-child maybe-add-move {:type :move :vector vector}))))
 
 (defn resize
   ([modifiers vector origin]
+   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
    (cond-> modifiers
      (resize-vec? vector)
      (update :geometry-child maybe-add-resize {:type :resize
@@ -154,6 +166,7 @@
                                                :origin origin})))
 
   ([modifiers vector origin transform transform-inverse]
+   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
    (cond-> modifiers
      (resize-vec? vector)
      (update :geometry-child maybe-add-resize {:type :resize
@@ -355,8 +368,9 @@
 (defn only-move?
   "Returns true if there are only move operations"
   [{:keys [geometry-child geometry-parent]}]
-  (and (every? #(= :move (:type %)) geometry-child)
-       (every? #(= :move (:type %)) geometry-parent)))
+  (let [move-op? #(= :move (:type %))]
+    (and (every? move-op? geometry-child)
+         (every? move-op? geometry-parent))))
 
 (defn has-geometry?
   [{:keys [geometry-parent geometry-child]}]
@@ -418,16 +432,19 @@
               (gmt/multiply (gmt/translate-matrix vector) matrix)
 
               :resize
-              (gmt/multiply
-               (-> (gmt/matrix)
-                   (gmt/translate origin)
-                   (cond-> (some? transform)
-                     (gmt/multiply transform))
-                   (gmt/scale vector)
-                   (cond-> (some? transform-inverse)
-                     (gmt/multiply transform-inverse))
-                   (gmt/translate (gpt/negate origin)))
-               matrix)
+              (let [origin (cond-> origin
+                             (or (some? transform-inverse)(some? transform))
+                             (gpt/transform transform-inverse))]
+                (gmt/multiply
+                 (-> (gmt/matrix)
+                     (cond-> (some? transform)
+                       (gmt/multiply transform))
+                     (gmt/translate origin)
+                     (gmt/scale vector)
+                     (gmt/translate (gpt/negate origin))
+                     (cond-> (some? transform-inverse)
+                       (gmt/multiply transform-inverse)))
+                 matrix))
 
               :rotation
               (gmt/multiply

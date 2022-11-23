@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.proportions :as gpr]
+   [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
@@ -69,7 +69,7 @@
         (get-shape-layer-position objects selected-non-frames attrs)]
 
     (-> (merge default-attrs attrs)
-        (gpr/setup-proportions)
+        (gpp/setup-proportions)
         (assoc :frame-id frame-id
                :parent-id parent-id
                :index index))))

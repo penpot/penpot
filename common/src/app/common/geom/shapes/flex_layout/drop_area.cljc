@@ -10,25 +10,24 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.flex-layout.lines :as fli]
+   [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.rect :as gsr]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]))
 
 (defn drop-child-areas
-  [{:keys [transform-inverse] :as frame} parent-rect child index reverse? prev-x prev-y last?]
+  [frame parent-rect child-bounds index reverse? prev-x prev-y last?]
 
   (let [col?      (ctl/col? frame)
         row?      (ctl/row? frame)
         [layout-gap-row layout-gap-col] (ctl/gaps frame)
 
-        start-p (-> child :points first)
-        center  (gco/center-shape frame)
-        start-p (gmt/transform-point-center start-p center transform-inverse)
+        start-p (gpo/origin child-bounds)
 
         box-x      (:x start-p)
         box-y      (:y start-p)
-        box-width  (-> child :selrect :width)
-        box-height (-> child :selrect :height)
+        box-width  (gpo/width-points child-bounds)
+        box-height (gpo/height-points child-bounds)
 
         x (if col? (:x parent-rect) prev-x)
         y (if row? (:y parent-rect) prev-y)
@@ -148,47 +147,45 @@
            from-idx     0
            prev-line-x  (:x frame)
            prev-line-y  (:y frame)
+           lines        (seq lines)]
 
-           current-line (first lines)
-           lines        (rest lines)]
-
-      (if (nil? current-line)
+      (if (empty? lines)
         areas
 
-        (let [line-area (drop-line-area frame current-line prev-line-x prev-line-y (nil? (first lines)))
+        (let [current-line (first lines)
+              line-area (drop-line-area frame current-line prev-line-x prev-line-y (empty? (rest lines)))
               children  (subvec children from-idx (+ from-idx (:num-children current-line)))
 
               next-areas
               (loop [areas         areas
                      prev-child-x  (:x line-area)
                      prev-child-y  (:y line-area)
-                     [index child] (first children)
-                     children      (rest children)]
+                     children (seq children)]
 
-                (if (nil? child)
+                (if (empty? children)
                   areas
 
-                  (let [[child-area child-area-start child-area-end]
-                        (drop-child-areas frame line-area child index (not reverse?) prev-child-x prev-child-y (nil? (first children)))]
+                  (let [[index [child-bounds _]] (first children)
+                        [child-area child-area-start child-area-end]
+                        (drop-child-areas frame line-area child-bounds index (not reverse?) prev-child-x prev-child-y (empty? (rest children)))]
                     (recur (conj areas child-area-start child-area-end)
                            (+ (:x child-area) (:width child-area))
                            (+ (:y child-area) (:height child-area))
-                           (first children)
                            (rest children)))))]
 
           (recur next-areas
                  (+ from-idx (:num-children current-line))
                  (+ (:x line-area) (:width line-area))
                  (+ (:y line-area) (:height line-area))
-                 (first lines)
                  (rest lines)))))))
 
 (defn get-drop-index
   [frame-id objects position]
   (let [frame       (get objects frame-id)
         position    (gmt/transform-point-center position (gco/center-shape frame) (:transform-inverse frame))
-        children    (cph/get-immediate-children objects frame-id)
-        layout-data (fli/calc-layout-data frame children)
+        children    (->> (cph/get-immediate-children objects frame-id)
+                         (map #(vector (gpo/parent-coords-bounds (:points %) (:points frame)) %)))
+        layout-data (fli/calc-layout-data frame children (:points frame))
         drop-areas  (layout-drop-areas frame layout-data children)
         area        (d/seek #(gsr/contains-point? % position) drop-areas)]
     (:index area)))

@@ -14,6 +14,7 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -76,7 +77,7 @@
             col? (ctl/col? shape)
 
             children (cph/get-immediate-children objects (:id shape))
-            layout-data (gsl/calc-layout-data shape children)
+            layout-data (gsl/calc-layout-data shape children (:points shape))
 
             layout-bounds (:layout-bounds layout-data)
             xv   #(gpo/start-hv layout-bounds %)
@@ -112,8 +113,9 @@
         shape (or selected-frame (get objects hover-top-frame-id))]
 
     (when (and shape (:layout shape))
-      (let [children (cph/get-immediate-children objects (:id shape))
-            layout-data (gsl/calc-layout-data shape children)
+      (let [children (->> (cph/get-immediate-children objects (:id shape))
+                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
+            layout-data (gsl/calc-layout-data shape children (:points shape))
             drop-areas (gsl/layout-drop-areas shape layout-data children)]
         [:g.debug-layout {:pointer-events "none"
                           :transform (gsh/transform-str shape)}
@@ -135,3 +137,51 @@
                     :alignment-baseline "hanging"
                     :fill "black"}
              (:index drop-area)]])]))))
+
+(mf/defc shape-parent-bound
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "parent"]))]
+   ::mf/wrap-props false}
+  [props]
+
+  (let [shape (unchecked-get props "shape")
+        parent (unchecked-get props "parent")
+        zoom (unchecked-get props "zoom")
+        [i1 i2 i3 i4] (gpo/parent-coords-bounds (:points shape) (:points parent))]
+    [:*
+     [:polygon {:points (->> [i1 i2 i3 i4] (map #(dm/fmt "%,%" (:x %) (:y %))) (str/join ","))
+                :style {:fill "none" :stroke "red" :stroke-width (/ 1 zoom)}}]
+
+     [:line {:x1 (:x i1)
+             :y1 (:y i1)
+             :x2 (:x i2)
+             :y2 (:y i2)
+             :style {:stroke "green" :stroke-width (/ 1 zoom)}}]
+     [:line {:x1 (:x i1)
+             :y1 (:y i1)
+             :x2 (:x i4)
+             :y2 (:y i4)
+             :style {:stroke "blue" :stroke-width (/ 1 zoom)}}]]))
+
+(mf/defc debug-parent-bounds
+  {::mf/wrap-props false}
+  [props]
+
+  (let [objects            (unchecked-get props "objects")
+        zoom               (unchecked-get props "objects")
+        selected-shapes    (unchecked-get props "selected-shapes")
+        hover-top-frame-id (unchecked-get props "hover-top-frame-id")
+
+        selected-frame
+        (when (and (= (count selected-shapes) 1) (= :frame (-> selected-shapes first :type)))
+          (first selected-shapes))
+
+        parent (or selected-frame (get objects hover-top-frame-id))]
+
+    (when (and (some? parent) (not= uuid/zero (:id parent)))
+      (let [children (cph/get-immediate-children objects (:id parent))]
+        [:g.debug-parent-bounds {:pointer-events "none"}
+         (for [[idx child] (d/enumerate children)]
+           [:> shape-parent-bound {:key (dm/str "bound-" idx)
+                                   :zoom zoom
+                                   :shape child
+                                   :parent parent}])]))))

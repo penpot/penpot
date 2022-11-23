@@ -369,6 +369,16 @@
                    (update :width + (:width deltas))
                    (update :height + (:height deltas)))))))
 
+(defn group-bounds
+  [group children-bounds]
+  (let [shape-center (gco/center-shape group)
+        points (flatten children-bounds)
+        points (if (empty? points) (:points group) points)]
+    (-> points
+        (gco/transform-points shape-center (:transform-inverse group (gmt/matrix)))
+        (gpr/squared-points)
+        (gco/transform-points shape-center (:transform group (gmt/matrix))))))
+
 (defn update-group-selrect
   [group children]
   (let [shape-center (gco/center-shape group)
@@ -541,19 +551,3 @@
 
        :else
        group))))
-
-(defn parent-coords-rect
-  [child parent]
-  (-> child
-      :points
-      (gco/transform-points (:transform-inverse parent))
-      (gpr/points->rect)))
-
-(defn parent-coords-points
-  [child parent]
-  (-> child
-      :points
-      (gco/transform-points (:transform-inverse parent))
-      (gpr/points->rect)
-      (gpr/rect->points)
-      (gco/transform-points (:transform parent))))
