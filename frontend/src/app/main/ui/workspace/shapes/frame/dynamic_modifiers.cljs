@@ -208,7 +208,8 @@
                 (let [children (->> root-shape
                                     :shapes
                                     (map #(get objects %))
-                                    (map #(gsh/apply-modifiers % (get-in modifiers [(:id %) :modifiers]))))
+                                    ;; %% (map #(gsh/apply-modifiers % (get-in modifiers [(:id %) :modifiers])))
+                                    )
                       root-shape (gsh/update-group-selrect root-shape children)]
                   [(:id root-shape) [root-shape (ctn/get-instances objects root-shape)]]))))]
 
@@ -323,7 +324,8 @@
                                                  ]
                                                  (->> (get-in modifiers [(:id shape) :modifiers])
                                                       (process-text-modifiers shape)
-                                                      (gsh/apply-modifiers shape))))
+                                                      ;; %% (gsh/apply-modifiers shape)
+                                                      )))
                                          main-shapes)]
               (reduce #(add-copy-modifiers %1 %2 main-root main-shapes main-shapes-modif)
                       modifiers

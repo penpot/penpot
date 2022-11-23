@@ -193,10 +193,6 @@
 (dm/export gtr/transform-bounds)
 (dm/export gtr/move-position-data)
 (dm/export gtr/apply-objects-modifiers)
-(dm/export gtr/parent-coords-rect)
-(dm/export gtr/parent-coords-points)
-(dm/export gtr/apply-modifiers)
-(dm/export gtr/apply-transform)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)

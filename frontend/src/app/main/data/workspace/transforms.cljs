@@ -14,6 +14,7 @@
    [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.component :as ctk]
@@ -51,7 +52,8 @@
                 (let [children (->> root-shape
                                     :shapes
                                     (map #(get objects %))
-                                    (map #(gsh/apply-modifiers % (get-in modifiers [(:id %) :modifiers]))))
+                                    ;; %% (map #(gsh/apply-modifiers % (get-in modifiers [(:id %) :modifiers])))
+                                    )
                       root-shape (gsh/update-group-selrect root-shape children)]
                   [(:id root-shape) [root-shape (ctn/get-instances objects root-shape)]]))))]
 
@@ -130,7 +132,8 @@
                                                  ]
                                                  (->> (get-in modifiers [(:id shape) :modifiers])
                                                       (process-text-modifiers shape)
-                                                      (gsh/apply-modifiers shape))))
+                                                      ;; %% (gsh/apply-modifiers shape)
+                                                      )))
                                          main-shapes)]
               (reduce #(add-copy-modifiers %1 %2 main-root main-shapes main-shapes-modif)
                       modifiers
@@ -249,7 +252,8 @@
                               (contains? (:workspace-layout state) :snap-pixel-grid))
 
              modif-tree
-             (gsh/set-objects-modifiers ids objects (constantly modifiers) ignore-constraints snap-pixel?)
+             {}
+             ;; %% (gsh/set-objects-modifiers ids objects (constantly modifiers) ignore-constraints snap-pixel?)
 
              copies (get-copies (mapv (d/getf objects) ids) objects modif-tree)
 
@@ -285,10 +289,11 @@
 
              get-modifier
              (fn [shape]
-               (gsh/rotation-modifiers shape center angle))
+               (ctm/rotation-modifiers shape center angle))
 
              modif-tree
-             (gsh/set-objects-modifiers ids objects get-modifier false false)]
+             {}]
+             ;;%% (gsh/set-objects-modifiers ids objects get-modifier false false)]
 
          (update state :workspace-modifiers merge modif-tree))))))
 
@@ -672,7 +677,7 @@
               (rx/map
                (fn [[[pos mod?] shift?]]
                  (let [delta-angle (calculate-angle pos mod? shift?)]
-                   (dwm/set-rotation-modifiers delta-angle shapes group-center))))
+                   (set-rotation-modifiers delta-angle shapes group-center))))
               (rx/take-until stoper))
          (rx/of (dwm/apply-modifiers)
                 (finish-transform)))))))
@@ -688,7 +693,7 @@
             objects (wsh/lookup-page-objects state page-id)
             rotate-shape (fn [shape]
                            (let [delta (- rotation (:rotation shape))]
-                             (dwm/set-rotation-modifiers delta [shape])))]
+                             (set-rotation-modifiers delta [shape])))]
         (rx/concat
          (rx/from (->> ids (map #(get objects %)) (map rotate-shape)))
          (rx/of (dwm/apply-modifiers)))))))
