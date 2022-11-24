@@ -251,9 +251,11 @@
 
 (defn normalize-modifiers
   "Before aplying constraints we need to remove the deformation caused by the resizing of the parent"
-  [constraints-h constraints-v modifiers child {:keys [transform transform-inverse] :as parent} transformed-child-bounds transformed-parent-bounds]
+  [constraints-h constraints-v modifiers
+   {:keys [transform transform-inverse] :as parent}
+   child-bounds transformed-child-bounds parent-bounds transformed-parent-bounds]
 
-  (let [child-bb-before (gpo/parent-coords-bounds (:points child) (:points parent))
+  (let [child-bb-before (gpo/parent-coords-bounds child-bounds parent-bounds)
         child-bb-after  (gpo/parent-coords-bounds transformed-child-bounds transformed-parent-bounds)
 
         scale-x (if (= :scale constraints-h)
@@ -278,7 +280,7 @@
          resize-transform-inverse))))
 
 (defn calc-child-modifiers
-  [parent child modifiers ignore-constraints parent-bounds transformed-parent-bounds]
+  [parent child modifiers ignore-constraints child-bounds parent-bounds transformed-parent-bounds]
 
   (let [modifiers (ctm/select-child-modifiers modifiers)
 
@@ -295,10 +297,13 @@
     (if (and (= :scale constraints-h) (= :scale constraints-v))
       modifiers
 
-      (let [child-bounds (:points child)
+      (let [transformed-parent-bounds @transformed-parent-bounds
+
             modifiers (ctm/select-child-modifiers modifiers)
             transformed-child-bounds (gtr/transform-bounds child-bounds modifiers)
-            modifiers (normalize-modifiers constraints-h constraints-v modifiers child parent transformed-child-bounds transformed-parent-bounds)
+            modifiers (normalize-modifiers constraints-h constraints-v
+                                           modifiers parent
+                                           child-bounds transformed-child-bounds parent-bounds transformed-parent-bounds)
             transformed-child-bounds (gtr/transform-bounds child-bounds modifiers)
 
             child-points-before  (gpo/parent-coords-bounds child-bounds parent-bounds)

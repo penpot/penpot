@@ -106,6 +106,12 @@
         parent (get objects parent-id)]
     (layout? parent)))
 
+(defn layout-child-id? [objects id]
+  (let [shape (get objects id)
+        parent-id (:parent-id shape)
+        parent (get objects parent-id)]
+    (layout? parent)))
+
 (defn inside-layout?
   "Check if the shape is inside a layout"
   [objects shape]

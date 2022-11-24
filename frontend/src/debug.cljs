@@ -74,6 +74,9 @@
     ;; Display the layout lines
     :layout-lines
 
+    ;; Display the bounds for the hug content adjust
+    :layout-content-bounds
+
     ;; Makes the pixel grid red so its more visibile
     :pixel-grid
 

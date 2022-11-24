@@ -80,7 +80,8 @@
         modifiers         (mf/deref refs/workspace-modifiers)
 
         objects-modified  (mf/with-memo [base-objects modifiers]
-                            (gsh/apply-objects-modifiers base-objects modifiers))
+                            (gsh/apply-objects-modifiers base-objects modifiers selected))
+
         background        (get options :background clr/canvas)
 
         ;; STATE
@@ -423,11 +424,17 @@
                                    :hover-top-frame-id @hover-top-frame-id
                                    :zoom zoom}])
 
+       (when (debug? :layout-content-bounds)
+         [:& wvd/debug-content-bounds {:selected-shapes selected-shapes
+                                       :objects objects-modified
+                                       :hover-top-frame-id @hover-top-frame-id
+                                       :zoom zoom}])
+
        (when (debug? :layout-lines)
-         [:& wvd/debug-layout {:selected-shapes selected-shapes
-                               :objects objects-modified
-                               :hover-top-frame-id @hover-top-frame-id
-                               :zoom zoom}])
+         [:& wvd/debug-layout-lines {:selected-shapes selected-shapes
+                                     :objects objects-modified
+                                     :hover-top-frame-id @hover-top-frame-id
+                                     :zoom zoom}])
 
        (when (debug? :parent-bounds)
          [:& wvd/debug-parent-bounds {:selected-shapes selected-shapes

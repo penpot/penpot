@@ -91,6 +91,15 @@
       (when (d/num? minx miny maxx maxy)
         (make-rect minx miny (- maxx minx) (- maxy miny))))))
 
+(defn bounds->rect
+  [[{ax :x ay :y} {bx :x by :y} {cx :x cy :y} {dx :x dy :y}]]
+  (let [minx (min ax bx cx dx)
+        miny (min ay by cy dy)
+        maxx (max ax bx cx dx)
+        maxy (max ay by cy dy)]
+    (when (d/num? minx miny maxx maxy)
+      (make-rect minx miny (- maxx minx) (- maxy miny)))))
+
 (defn squared-points
   [points]
   (when (d/not-empty? points)

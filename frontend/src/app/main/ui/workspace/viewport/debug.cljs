@@ -19,7 +19,7 @@
    [rumext.v2 :as mf]))
 
 ;; Helper to debug the bounds when set the "hug" content property
-#_(mf/defc debug-layout
+(mf/defc debug-content-bounds
   "Debug component to show the auto-layout drop areas"
   {::mf/wrap-props false}
   [props]
@@ -36,27 +36,12 @@
 
     (when (and shape (:layout shape))
       (let [children (cph/get-immediate-children objects (:id shape))
-            layout-data (gsl/calc-layout-data shape children)
+            layout-bounds (gsl/layout-content-bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points])) shape children)]
+        [:g.debug-layout {:pointer-events "none"}
+         [:polygon {:points (->> layout-bounds (map #(dm/fmt "%, %" (:x %) (:y %))) (str/join " "))
+                    :style  {:stroke "red" :fill "none"}}]]))))
 
-            {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} (:layout-padding shape)
-            pad-top (or pad-top 0)
-            pad-right (or pad-right 0)
-            pad-bottom (or pad-bottom 0)
-            pad-left (or pad-left 0)
-
-            layout-bounds (gsl/layout-content-bounds shape children)]
-        [:g.debug-layout {:pointer-events "none"
-                          :transform (gsh/transform-str shape)}
-
-
-         [:rect {:x      (:x layout-bounds)
-                 :y      (:y layout-bounds)
-                 :width  (:width layout-bounds)
-                 :height (:height layout-bounds)
-                 :style  {:stroke "red"
-                          :fill "none"}}]]))))
-
-(mf/defc debug-layout
+(mf/defc debug-layout-lines
   "Debug component to show the auto-layout drop areas"
   {::mf/wrap-props false}
   [props]

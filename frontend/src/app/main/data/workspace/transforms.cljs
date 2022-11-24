@@ -443,7 +443,8 @@
 
              exclude-frames-siblings
              (into exclude-frames
-                   (mapcat (partial cph/get-siblings-ids objects))
+                   (comp (mapcat (partial cph/get-siblings-ids objects))
+                         (filter (partial ctl/layout-child-id? objects)))
                    selected)
 
              fix-axis
