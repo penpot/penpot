@@ -1849,9 +1849,70 @@
 }
 
 .remove-graphics-dialog {
+  .modal-content {
+    padding-top: 16px;
+  }
+
+  h2 {
+    font-size: $fs18;
+  }
+
+  p {
+    font-size: $fs12;
+    color: $color-gray-30;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    &.progress-message {
+      color: $color-info;
+    }
+
+    &.error-message {
+      color: $color-black;
+
+      & svg {
+        width: 16px;
+        height: 16px;
+        fill: $color-danger;
+        margin-right: 0.5rem;
+        position: relative;
+        bottom: -4px;
+        transform: rotate(45deg);
+      }
+    }
+  }
+
   .close {
     border: 1px solid $color-gray-30;
     background: $color-canvas;
+    border-radius: 3px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+
+    &:hover {
+      background: $color-gray-20;
+    }
+  }
+
+  .button-primary {
+    background: $color-primary;
+    border: 1px solid $color-primary;
+    border-radius: 3px;
+    color: $color-black;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+
+    &:hover {
+      background: $color-primary-dark;
+    }
+  }
+
+  .button-secondary {
+    border: 1px solid $color-gray-30;
+    background: $color-white;
     border-radius: 3px;
     padding: 0.5rem 1rem;
     cursor: pointer;

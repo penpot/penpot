@@ -1351,6 +1351,10 @@ msgstr "Projects"
 msgid "labels.release-notes"
 msgstr "Release notes"
 
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Reload file"
+
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
 msgstr "Remove"
@@ -3914,6 +3918,32 @@ msgstr "Separate nodes (%s)"
 
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Snap nodes (%s)"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "Updating %s..."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr "Library Graphics are Components from now on, which will make them much more powerful."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "This update is a one time action."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "Some graphics could not be updated."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr ""
+"To try it again, you can reload this file. If the problem persists, we suggest you to take"
+" a look at the list and consider to delete broken graphics."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "Converting %s/%s"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"

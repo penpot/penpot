@@ -596,6 +596,10 @@
   []
   (.back (.-history js/window)))
 
+(defn reload-current-window
+  []
+  (.reload (.-location js/window)))
+
 (defn animate!
   ([item keyframes duration] (animate! item keyframes duration nil))
   ([item keyframes duration onfinish]
