@@ -61,7 +61,7 @@
         [:a {:on-click go-settings} (tr "labels.settings")]]]]
      [:div.dashboard-buttons
       (if (and (or invitations-section? members-section?) (:is-admin permissions))
-        [:a.btn-secondary.btn-small {:on-click invite-member :data-test "invite-member"}
+        [:a.btn-primary.btn-small {:on-click invite-member :data-test "invite-member"}
          (tr "dashboard.invite-profile")]
         [:div.blank-space])]]))
 

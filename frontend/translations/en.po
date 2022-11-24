@@ -460,7 +460,7 @@ msgstr "Uploading file: %s"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "Invite to team"
+msgstr "Invite people"
 
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
@@ -1285,11 +1285,11 @@ msgstr "You have no pending comment notifications"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
-msgstr "There are no invitations."
+msgstr "No pending invitations."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
-msgstr "Press the button \"Invite to team\" to invite more members to this team."
+msgstr "Click the **Invite people** button to invite people to this team."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
