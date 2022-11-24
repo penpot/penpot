@@ -8,7 +8,7 @@ networks:
         - subnet: 172.177.9.0/24
 
 volumes:
-  postgres_data:
+  postgres_data_pg15:
   user_data:
   minio_data:
 
@@ -109,7 +109,7 @@ services:
     volumes:
       - ./files/postgresql.conf:/etc/postgresql.conf:z
       - ./files/postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql:z
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_pg15:/var/lib/postgresql/data
 
   redis:
     image: redis:7
