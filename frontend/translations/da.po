@@ -301,10 +301,6 @@ msgstr "Fastgør/Løsne"
 msgid "dashboard.projects-title"
 msgstr "Projekter"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Forfrem til ejer"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "Vil du slette din konto?"
@@ -433,9 +429,6 @@ msgstr "Skrifttypefamilie"
 
 msgid "labels.font-providers"
 msgstr "Skrifttype udbydere"
-
-msgid "labels.font-variant"
-msgstr "Stil"
 
 msgid "labels.fonts"
 msgstr "Skrifttyper"

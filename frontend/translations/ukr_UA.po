@@ -1,0 +1,879 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2022-10-04 18:22+0000\n"
+"Last-Translator: Denys M. <dector@dector.space>\n"
+"Language-Team: Ukrainian "
+"<https://hosted.weblate.org/projects/penpot/frontend/ukr_UA/>\n"
+"Language: ukr_UA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 4.14.1\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Уже маєте аккаунт?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Електронна пошта"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Забули пароль?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Повне ім'я"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Ввійдіть тут"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Вхід"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Раді бачити Вас знову!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Введіть новий пароль"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Я хочу підписатися на розсилку Penpot."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Невірний код відновлення."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Пароль успішно змінено"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Пароль"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Щонайменше 8 символів"
+
+msgid "common.publish"
+msgstr "Опублікувати"
+
+#, fuzzy
+msgid "common.share-link.current-tag"
+msgstr "(поточне)"
+
+msgid "common.unpublish"
+msgstr "Зняти з публікації"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Додати як Спільну Бібліотеку"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(копія)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "+ Створити нову команду"
+
+msgid "dashboard.download-binary-file"
+msgstr "Завантажити файл Penpot (.penpot)"
+
+msgid "dashboard.draft-title"
+msgstr "Чорновик"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Створити дублікат"
+
+msgid "dashboard.export-multi"
+msgstr "Експорт файлів Penpot (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Експорт"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Бібліотеки"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "завантажую ваші файли…"
+
+msgid "dashboard.loading-fonts"
+msgstr "завантажую ваші шрифти…"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Перемістити файли (%s)"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Перенести в іншу команду"
+
+msgid "dashboard.options"
+msgstr "Опції"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Закріпити/Відчепити"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Проекти"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "Видалити Спільну Бібліотеку"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "Пошук…"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.type-something"
+msgstr "Введіть для пошуку"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "Електронна пошта"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ок"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Увага"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "Відміна"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-ok"
+msgstr "Ок"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Провайдер для автентифікації не налаштований."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "Опис"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "Тема"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "Електронна пошта"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur"
+msgstr "Розмивання"
+
+#: src/app/main/ui/handoff/attributes/blur.cljs
+msgid "handoff.attributes.blur.value"
+msgstr "Значення"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/handoff/attributes/common.cljs
+msgid "handoff.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/handoff/attributes/fill.cljs
+msgid "handoff.attributes.fill"
+msgstr "Заливка"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.height"
+msgstr "Висота"
+
+#: src/app/main/ui/handoff/attributes/image.cljs
+msgid "handoff.attributes.image.width"
+msgstr "Ширина"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout"
+msgstr "Розміщення"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.height"
+msgstr "Висота"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.left"
+msgstr "Зліва"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.radius"
+msgstr "Радіус"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.rotation"
+msgstr "Обертання"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.top"
+msgstr "Зверху"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.layout.width"
+msgstr "Ширина"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow"
+msgstr "Тінь"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.blur"
+msgstr "Р"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-x"
+msgstr "X"
+
+#: src/app/main/ui/handoff/attributes/shadow.cljs
+msgid "handoff.attributes.shadow.shorthand.offset-y"
+msgstr "Y"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.center"
+msgstr "Центр"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.inner"
+msgstr "Всередину"
+
+#, permanent
+msgid "handoff.attributes.stroke.alignment.outer"
+msgstr "Назовні"
+
+msgid "handoff.attributes.stroke.style.dotted"
+msgstr "Точковий"
+
+msgid "handoff.attributes.stroke.style.mixed"
+msgstr "Змішаний"
+
+msgid "handoff.attributes.stroke.style.none"
+msgstr "Немає"
+
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Суцільний"
+
+#: src/app/main/ui/handoff/attributes/stroke.cljs
+msgid "handoff.attributes.stroke.width"
+msgstr "Товщина"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography"
+msgstr "Текст"
+
+msgid "handoff.attributes.typography.text-decoration.none"
+msgstr "Немає"
+
+msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgstr "Перечеркнутий"
+
+msgid "handoff.attributes.typography.text-decoration.underline"
+msgstr "Підчеркнутий"
+
+msgid "handoff.attributes.typography.text-transform.none"
+msgstr "Який є"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code"
+msgstr "Код"
+
+msgid "handoff.tabs.code.selected.circle"
+msgstr "Коло"
+
+msgid "handoff.tabs.code.selected.component"
+msgstr "Компонент"
+
+msgid "handoff.tabs.code.selected.curve"
+msgstr "Крива"
+
+msgid "handoff.tabs.code.selected.frame"
+msgstr "Кадр"
+
+msgid "handoff.tabs.code.selected.group"
+msgstr "Група"
+
+msgid "handoff.tabs.code.selected.image"
+msgstr "Зображення"
+
+msgid "handoff.tabs.code.selected.mask"
+msgstr "Маска"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.code.selected.multiple"
+msgstr "Виділено: %s"
+
+msgid "handoff.tabs.code.selected.path"
+msgstr "Контур"
+
+msgid "handoff.tabs.code.selected.rect"
+msgstr "Прямокутник"
+
+msgid "handoff.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "handoff.tabs.code.selected.text"
+msgstr "Текст"
+
+#: src/app/main/ui/handoff/right_sidebar.cljs
+msgid "handoff.tabs.info"
+msgstr "Інформація"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.about-penpot"
+msgstr "Про Penpot"
+
+msgid "labels.accept"
+msgstr "Прийняти"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "Адміністратор"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "Всі"
+
+msgid "labels.and"
+msgstr "і"
+
+msgid "labels.back"
+msgstr "Назад"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "Відміна"
+
+msgid "labels.centered"
+msgstr "По центру"
+
+msgid "labels.close"
+msgstr "Закрити"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "Коментарі"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Спільнота"
+
+msgid "labels.content"
+msgstr "Вміст"
+
+msgid "labels.continue"
+msgstr "Продовжити"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Створити"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "Панель управління"
+
+msgid "labels.default"
+msgstr "за умовчуванням"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "Видалити"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "Чорновики"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "Редагувати"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "Редактор"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.email"
+msgstr "Електронна пошта"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Протерміновано"
+
+msgid "labels.export"
+msgstr "Експорт"
+
+msgid "labels.font-variants"
+msgstr "Стилі"
+
+msgid "labels.fonts"
+msgstr "Шрифти"
+
+msgid "labels.icons"
+msgstr "Іконки"
+
+msgid "labels.images"
+msgstr "Зображення"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Запрошення"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "Мова"
+
+msgid "labels.link"
+msgstr "Посилання"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "Вийти"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Учасник"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "Учасники"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.name"
+msgstr "Ім'я"
+
+msgid "labels.next"
+msgstr "Далі"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "Халепа!"
+
+msgid "labels.or"
+msgstr "або"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.owner"
+msgstr "Власник"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "Пароль"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "Очікування"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.permissions"
+msgstr "Дозволи"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.profile"
+msgstr "Профіль"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "Проекти"
+
+msgid "labels.recent"
+msgstr "Нещодавні"
+
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove"
+msgstr "Видалити"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "Перейменувати"
+
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+msgid "labels.retry"
+msgstr "Повторити"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.role"
+msgstr "Роль"
+
+msgid "labels.save"
+msgstr "Зберегти"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.send"
+msgstr "Надіслати"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.sending"
+msgstr "Надсилаю…"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "Налаштування"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shared-libraries"
+msgstr "Бібліотеки"
+
+msgid "labels.skip"
+msgstr "Пропустити"
+
+msgid "labels.start"
+msgstr "Почати"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Статус"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Посібники"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "labels.update"
+msgstr "Оновити"
+
+msgid "labels.upload"
+msgstr "Завантаження"
+
+msgid "labels.uploading"
+msgstr "Завантажую…"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.viewer"
+msgstr "Спостерігач"
+
+msgid "labels.workspace"
+msgstr "Робоче поле"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(ви)"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Зняти з публікації"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.accept"
+msgstr "Оновити"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.cancel"
+msgstr "Відмінити"
+
+msgid "onboarding.welcome.alt"
+msgstr "Penpot"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "settings.multiple"
+msgstr "Змішаний"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Основи"
+
+msgid "shortcut-section.dashboard"
+msgstr "Панель управління"
+
+msgid "shortcut-section.viewer"
+msgstr "Переглядач"
+
+msgid "shortcut-section.workspace"
+msgstr "Робоче поле"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Вирівнювання"
+
+msgid "shortcut-subsection.edit"
+msgstr "Редагувати"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Загальний"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Загальний"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Навігація"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "Навігація"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "Навігація"
+
+msgid "shortcut-subsection.panels"
+msgstr "Панелі"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Контури"
+
+msgid "shortcut-subsection.shape"
+msgstr "Форми"
+
+msgid "shortcut-subsection.tools"
+msgstr "Інструменти"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Масштабування"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Масштабування"
+
+msgid "shortcuts.add-comment"
+msgstr "Коментарі"
+
+msgid "shortcuts.copy"
+msgstr "Скопіювати"
+
+msgid "shortcuts.cut"
+msgstr "Вирізати"
+
+msgid "shortcuts.delete"
+msgstr "Видалити"
+
+msgid "shortcuts.draw-curve"
+msgstr "Крива"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "Еліпс"
+
+msgid "shortcuts.draw-frame"
+msgstr "Рамка"
+
+msgid "shortcuts.draw-path"
+msgstr "Контур"
+
+msgid "shortcuts.draw-rect"
+msgstr "Прямокутник"
+
+msgid "shortcuts.draw-text"
+msgstr "Текст"
+
+msgid "shortcuts.duplicate"
+msgstr "Дублікат"
+
+msgid "shortcuts.escape"
+msgstr "Відмінити"
+
+msgid "shortcuts.go-to-search"
+msgstr "Пошук"
+
+msgid "shortcuts.group"
+msgstr "Група"
+
+msgid "shortcuts.mask"
+msgstr "Маска"
+
+msgid "shortcuts.move"
+msgstr "Перемістити"
+
+msgid "shortcuts.or"
+msgstr " або "
+
+msgid "shortcuts.paste"
+msgstr "Вставити"
+
+msgid "shortcuts.ungroup"
+msgstr "Розбити групу"
+
+msgid "viewer.breaking-change.message"
+msgstr "Упс!"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Інтеракції"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.sitemap"
+msgstr "Мапа сайту"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.assets"
+msgstr "Ресурси"
+
+msgid "workspace.assets.box-filter-graphics"
+msgstr "Графіка"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.colors"
+msgstr "Кольори"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.components"
+msgstr "Компоненти"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.delete"
+msgstr "Видалити"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.duplicate"
+msgstr "Створити дуплікат"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.edit"
+msgstr "Редагувати"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.graphics"
+msgstr "Графіка"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group"
+msgstr "Група"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.libraries"
+msgstr "Бібліотеки"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename"
+msgstr "Перейменувати"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared"
+msgstr "СПІЛЬНІ"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.typography"
+msgstr "Типографіка"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-id"
+msgstr "Шрифт"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-size"
+msgstr "Розмір"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-variant-id"
+msgstr "Варіант"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Розгрупувати"
+
+msgid "workspace.focus.selection"
+msgstr "Вибір"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "Редагувати"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "Файл"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Налаштування"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "Вид"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Скинути"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saved"
+msgstr "Збережено"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saving"
+msgstr "Збереження"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.add"
+msgstr "Додати"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.libraries"
+msgstr "БІБЛІОТЕКИ"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library"
+msgstr "БІБЛІОТЕКА"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.update"
+msgstr "Оновити"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.updates"
+msgstr "ОНОВЛЕННЯ"
+
+msgid "workspace.library.libraries"
+msgstr "Бібліотеки"
+
+msgid "workspace.options.blur-options.background-blur"
+msgstr "Фон"
+
+msgid "workspace.options.blur-options.layer-blur"
+msgstr "Шар"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title"
+msgstr "Розмиття"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.options.component"
+msgstr "Компонент"

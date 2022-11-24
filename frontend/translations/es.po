@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-06-23 12:19+0000\n"
-"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
+"PO-Revision-Date: 2022-09-23 20:54+0000\n"
+"Last-Translator: Dário <dariogomes@gmail.com>\n"
 "Language-Team: Spanish "
 "<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13.1-dev\n"
+"X-Generator: Weblate 4.14.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -242,8 +242,8 @@ msgstr "Gestión del equipo"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
 msgstr ""
-" Penpot está dirigido a equipos. Invita a personas para trabajar "
-"conjuntamente en proyectos y archivos."
+"Penpot está dirigido a equipos. Invita a personas para trabajar "
+"conjuntamente en proyectos y archivos"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
@@ -265,7 +265,7 @@ msgstr "Tutorial práctico"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.info"
-msgstr " Da un paseo por Penpot para conocer sus principales funcionalidades."
+msgstr "Da un paseo por Penpot para conocer sus principales funcionalidades."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
@@ -323,7 +323,6 @@ msgid "dashboard.empty-files"
 msgstr "Todavía no hay ningún archivo aquí"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "¡Oh, no! ¡Aún no tienes archivos! Si quieres probar con alguna plantilla ve "
@@ -392,8 +391,8 @@ msgstr "Exportar librerias compartidas"
 
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"Las librerias compartidas no se incluirán en la exportación y ningún "
-"recurso será incluido en la librería. "
+"Las biblioteca compartidas no se incluirán en la exportación y ningún "
+"recurso será incluido en la biblioteca. "
 
 msgid "dashboard.export.options.detach.title"
 msgstr "Usar los recursos como objetos básicos"
@@ -425,7 +424,6 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 fuente añadida"
 msgstr[1] "%s fuentes añadidas"
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Cualquier fuente personalizada añadida aquí aparecerá en la lista de "
@@ -434,7 +432,6 @@ msgstr ""
 "como una **única familia de fuentes**. Se pueden cargar fuentes con los "
 "siguientes formatos: **TTF, OTF and WOFF** (con uno es suficiente)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sólo deberías cargar fuentes que te pertenecen o de las que tienes una "
@@ -596,10 +593,6 @@ msgstr "Anclar/Desanclar"
 msgid "dashboard.projects-title"
 msgstr "Proyectos"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "Promover a dueño"
-
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
 msgstr "¿Quieres borrar tu cuenta?"
@@ -690,11 +683,13 @@ msgstr "Resultados de búsqueda"
 msgid "dashboard.type-something"
 msgstr "Escribe algo para buscar"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "Despublicar Biblioteca"
 
-#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/password.cljs,
+#: src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Actualizar opciones"
 
@@ -746,8 +741,18 @@ msgstr "¿Seguro?"
 msgid "ds.updated-at"
 msgstr "Actualizado: %s"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Proveedor de autenticación no configurado."
+
 msgid "errors.auth.unable-to-login"
 msgstr "Parece que no has iniciado sesión, o la sesión ha expirado."
+
+msgid "errors.bad-font"
+msgstr "No se ha podido cargar la fuente %s"
+
+msgid "errors.bad-font-plural"
+msgstr "No se han podido cargar las fuentes %s"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
@@ -841,6 +846,9 @@ msgstr "La contraseña de confirmación debe coincidir"
 msgid "errors.password-too-short"
 msgstr "La contraseña debe tener 8 caracteres como mínimo"
 
+msgid "errors.profile-blocked"
+msgstr "El perfil esta blockeado"
+
 #: src/app/main/ui/auth/recovery_request.cljs,
 #: src/app/main/ui/settings/change_email.cljs,
 #: src/app/main/ui/dashboard/team.cljs
@@ -868,10 +876,6 @@ msgstr ""
 
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Debes aceptar nuestros términos de servicio y política de privacidad."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.token-expired"
-msgstr "Token expirado"
 
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
@@ -918,18 +922,8 @@ msgid "feedback.discourse-title"
 msgstr "Comunidad de Penpot"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-go-to"
-msgstr "Ir a las discusiones"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-subtitle1"
 msgstr "Entra al foro colaborativo de Penpot."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discussions-subtitle2"
-msgstr ""
-"Puedes hacer preguntas y dar respuestas, participar en conversaciones "
-"abiertas y hacer seguimiento de decisones que afectan al proyecto."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discussions-title"
@@ -1050,6 +1044,10 @@ msgstr "Y"
 #: src/app/main/ui/handoff/attributes/shadow.cljs
 msgid "handoff.attributes.shadow.shorthand.spread"
 msgstr "S"
+
+#: src/app/main/ui/handoff/attributes/layout.cljs
+msgid "handoff.attributes.size"
+msgstr "Tamaño y posición"
 
 #: src/app/main/ui/handoff/attributes/stroke.cljs
 msgid "handoff.attributes.stroke"
@@ -1296,6 +1294,10 @@ msgstr "Eliminar invitation"
 msgid "labels.delete-multi-files"
 msgstr "Borrar %s archivos"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Despublicar %s archivos"
+
 #: src/app/main/ui/dashboard/projects.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs,
 #: src/app/main/ui/dashboard/files.cljs,
@@ -1516,6 +1518,10 @@ msgstr "Reciente"
 msgid "labels.release-notes"
 msgstr "Notas de versión"
 
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Recargar archivo"
+
 #: src/app/main/ui/workspace/libraries.cljs,
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
@@ -1730,27 +1736,27 @@ msgstr "Eliminar conversación"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.accept"
-msgstr "Eliminar archivo"
+msgstr "Borrar archivo"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.message"
-msgstr "¿Seguro que quieres eliminar este archivo?"
+msgstr "¿Seguro que quieres borrar este archivo?"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.title"
-msgstr "Eliminando archivo"
+msgstr "Borrando archivo"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.accept"
-msgstr "Eliminar archivos"
+msgstr "Borrar archivos"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.message"
-msgstr "¿Seguro que quieres eliminar %s archivos?"
+msgstr "¿Seguro que quieres borrar %s archivos?"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.title"
-msgstr "Eliminando %s archivos"
+msgstr "Borrando %s archivos"
 
 msgid "modals.delete-font-variant.message"
 msgstr ""
@@ -1789,10 +1795,10 @@ msgid "modals.delete-project-confirm.title"
 msgstr "Eliminar proyecto"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.accept"
-msgid_plural "modals.delete-shared-confirm.accept"
-msgstr[0] "Borrar archivo"
-msgstr[1] "Borrar archivos"
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Borrando archivo"
+msgstr[1] "Borrando archivos"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
@@ -1801,30 +1807,48 @@ msgstr[0] "¿Seguro que quieres borrar este archivo?"
 msgstr[1] "¿Seguro que quieres borrar estos archivos?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] ""
-"El archivo que quieres borrar tiene una librería que se está usando en este "
-"archivo:"
-msgstr[1] ""
-"El archivo que quieres borrar tiene una librería que se está usando en "
-"estos archivos:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-plural"
-msgid_plural "modals.delete-shared-confirm.scd-message-plural"
-msgstr[0] ""
-"Los archivos que quieres borrar tienen una librería que se está usando en "
-"este archivo:"
-msgstr[1] ""
-"Los archivos que quieres borrar tienen una librería que se está usando en "
-"estos archivos:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.title"
-msgid_plural "modals.delete-shared-confirm.title"
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Borrar archivo"
 msgstr[1] "Borrar archivos"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] "Ninguno de los elementos de su biblioteca están en uso. Se borrarán junto con el archivo."
+msgstr[1] "Ninguno de los elementos de sus bibliotecas están en uso. Se borrarán junto con los archivos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "Algunos elementos de su biblioteca están siendo usados por:"
+msgstr[1] "Algunos elementos de sus bibliotecas están siendo usados por:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "Algunos elementos de su biblioteca están siendo usados por:"
+msgstr[1] "Algunos elementos de sus bibliotecas están siendo usados por:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"Si lo borras, esos elementos pasarán a formar parte de la biblioteca local "
+"de este archivo. Cualquier elemento en desuso se perderá."
+msgstr[1] ""
+"Si los borras, esos elementos pasarán a formar parte de la biblioteca local "
+"de este archivo. Cualquier elemento en desuso se perderá."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"Si lo borras, esos elementos pasarán a formar parte de las bibliotecas locales "
+"de estos archivos. Cualquier elemento en desuso se perderá."
+msgstr[1] ""
+"Si los borras, esos elementos pasarán a formar parte de las bibliotecas locales "
+"de estos archivos. Cualquier elemento en desuso se perderá."
 
 #: src/app/main/ui/delete_shared.cljs
 msgid "modals.delete-shared.title"
@@ -1877,7 +1901,7 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "¿Seguro que quieres abandonar el equipo %s?"
 
-msgid "modals.leave-and-reassign.forbiden"
+msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "No puede abandonar el equipo si no hay otro miembro al que promocionar a "
 "dueño. Quizás quiere borrar el equipo."
@@ -1958,18 +1982,10 @@ msgid "modals.small-nudge"
 msgstr "Mínimo"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Despublicar"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Si la despublicas, los elementos pasarán a formar parte de la biblioteca "
-"del archivo."
-msgstr[1] ""
-"Si la despublicas, los elementos pasarán a formar parte de la biblioteca de "
-"los archivos."
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Despublicar biblioteca"
+msgstr[1] "Despublicar bibliotecas"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1978,28 +1994,60 @@ msgstr[0] "¿Seguro que quieres despublicar esta biblioteca?"
 msgstr[1] "¿Seguro que quieres despublicar estas bibliotecas?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Está siendo usada en este archivo:"
-msgstr[1] "Está siendo usada en estos archivos:"
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Despublicar"
+msgstr[1] "Despublicar"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.title"
-msgid_plural "modals.unpublish-shared-confirm.title"
-msgstr[0] "Despublicar biblioteca"
-msgstr[1] "Despublicar bibliotecas"
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "Ninguno de los elementos de esta biblioteca están en uso."
+msgstr[1] "Ninguno de los elementos de estas bibliotecas están en uso."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Algunos elementos de esta bibioteca están siendo usados por:"
+msgstr[1] "Algunos elementos de estas bibiotecas están siendo usados por:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
+msgstr[0] "Algunos elementos de esta bibioteca están siendo usados por:"
+msgstr[1] "Algunos elementos de estas bibiotecas están siendo usados por:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] ""
+"Si la despublicas, esos elementos pasarán a formar parte de la biblioteca local "
+"de este archivo."
+msgstr[1] ""
+"Si las despublicas, esos elementos pasarán a formar parte de la biblioteca local "
+"de este archivo."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] ""
+"Si la despublicas, esos elementos pasarán a formar parte de las bibliotecas locales "
+"de estos archivos."
+msgstr[1] ""
+"Si las despublicas, esos elementos pasarán a formar parte de las bibliotecas locales "
+"de estos archivos."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
-"Vas a actualizar componentes en una librería compartida. Esto puede afectar "
+"Vas a actualizar componentes en una biblioteca compartida. Esto puede afectar "
 "a otros archivos que la usen."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
-msgstr "Actualizar componentes en librería"
+msgstr "Actualizar componentes en biblioteca"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -2015,13 +2063,13 @@ msgstr "Cancelar"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
-"Vas a actualizar un componente en una librería compartida. Esto puede "
+"Vas a actualizar un componente en una biblioteca compartida. Esto puede "
 "afectar a otros archivos que la usen."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
-msgstr "Actualizar un componente en librería"
+msgstr "Actualizar un componente en biblioteca"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
@@ -2061,6 +2109,30 @@ msgstr "Tutoriales de video"
 msgid "onboarding-v2.before-start.title"
 msgstr "Antes de comenzar"
 
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Suscríbete a la newsletter de Penpot para estar al día de los progresos del "
+"producto y noticias."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Quiero recibir noticias sobre Penpot (artículos del blog, vídeo tutoriales, "
+"directos...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Nos importa la privacidad, aquí puedes leer nuestra "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en "
+"cualquier momento usando el vínculo de desuscripción en cualquiera de "
+"nuestras newsletters."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Quiero recibir información sobre actualizaciones del producto (nuevas "
+"funcionalidades, releases, mejoras...)."
+
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "Penpot es Código Abierto y está hecho por Kaleidos y la comunidad, donde ya "
@@ -2069,7 +2141,7 @@ msgstr ""
 msgid "onboarding-v2.welcome.desc2"
 msgstr ""
 "Un espacio público donde aprender, compatir y discutir sobre el presente y "
-"futuro de Penpot con toda la Comunidad y el el equipo de Penpot."
+"futuro con toda la Comunidad y el equipo de Penpot."
 
 msgid "onboarding-v2.welcome.desc2.title"
 msgstr "Participantdo en la Comunidad"
@@ -2148,26 +2220,6 @@ msgstr ""
 msgid "onboarding.newsletter.decline"
 msgstr "No, gracias"
 
-msgid "onboarding-v2.newsletter.desc"
-msgstr ""
-"Suscríbete a la newsletter de Penpot para estar al día de los progresos del "
-"producto y noticias."
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr "Quiero recibir información sobre actualizaciones del producto (nuevas funcionalidades, releases, mejoras...)."
-
-msgid "onboarding-v2.newsletter.news"
-msgstr "Quiero recibir noticias sobre Penpot (artículos del blog, vídeo tutoriales, directos...)."
-
-msgid "onboarding-v2.newsletter.privacy1"
-msgstr "Nos importa la privacidad, aquí puedes leer nuestra "
-
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"Sólo te enviaremos emails relevantes para ti. Puedes desuscribirte en "
-"cualquier momento usando el vínculo de desuscripción en "
-"cualquiera de nuestras newsletters."
-
 msgid "onboarding.newsletter.policy"
 msgstr "Política de Privacidad."
 
@@ -2230,9 +2282,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Una \"fuente de la verdad\" compartida"
 
-msgid "onboarding.team-input-placeholder"
-msgstr "Introduce el nuevo nombre del equipo"
-
 msgid "onboarding.team-modal.create-team"
 msgstr "Crea un equipo"
 
@@ -2256,30 +2305,16 @@ msgstr "Sin límite de integrantes"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "¡100% gratis!"
 
-msgid "onboarding.team.create.button"
-msgstr "Crea un equipo"
-
 msgid "onboarding.team.create.desc1"
 msgstr ""
 "¿Trabajando con alguien más? Crea un equipo donde compartir proyectos y "
 "elementos de diseño."
 
-msgid "onboarding.team.create.input-placeholder"
-msgstr "Introduce el nombre del equipo"
-
 msgid "onboarding.team.create.title"
 msgstr "Crear equipo"
 
-msgid "onboarding.team.skip-and-invite-later"
-msgstr "Saltar e invitar más tarde"
-
 msgid "onboarding.team.start.button"
 msgstr "Comenzar directamente"
-
-msgid "onboarding.team.start.desc1"
-msgstr ""
-"Entra directamente a Penpot y comienza a diseñar individualmente. Siempre "
-"tendrás la opción de crear equipos más adelante."
 
 msgid "onboarding.team.start.title"
 msgstr "Comienza a diseñar"
@@ -2293,19 +2328,11 @@ msgstr "Empezar a diseñar"
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-msgid "onboarding.welcome.desc1"
-msgstr "¡Hurra! Ya tienes tu cuenta en Penpot :)"
-
 msgid "onboarding.welcome.desc2"
 msgstr ""
 "Penpot está en su primera versión beta gracias a una combinación de "
 "funcionalidades, madurez, estabilidad y la fantástica validación de su "
 "comunidad, a la que te damos la bienvenida."
-
-msgid "onboarding.welcome.desc3"
-msgstr ""
-"Mientras disfrutas de Penpot seguiremos haciendo mejoras, lanzando "
-"iteraciones de nuestros esperanzadores planes."
 
 msgid "onboarding.welcome.title"
 msgstr "Te damos la bienvenida a Penpot"
@@ -3038,6 +3065,9 @@ msgstr "Interlineado"
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
+msgid "workspace.assets.typography.text-styles"
+msgstr "Estilos de texto"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
 msgstr "Transformar texto"
@@ -3111,16 +3141,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Ocultar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-assets"
-msgstr "Ocultar recursos"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-grid"
 msgstr "Ocultar rejillas"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-layers"
-msgstr "Ocultar capas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3166,16 +3188,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-assets"
-msgstr "Mostrar recursos"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-grid"
 msgstr "Mostrar rejilla"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-layers"
-msgstr "Mostrar capas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3452,15 +3466,18 @@ msgstr[1] "Exportar %s elementos"
 msgid "workspace.options.export.suffix"
 msgstr "Sufijo"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-complete"
 msgstr "Exportación completa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object"
 msgstr "Exportando…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "Exportación fallida"
 
@@ -3611,6 +3628,9 @@ msgstr "Empujar"
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Deslizar"
 
+msgid "workspace.options.interaction-auto"
+msgstr "automático"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
 msgstr "Añadir sombreado de fondo"
@@ -3752,6 +3772,10 @@ msgid "workspace.options.interaction-position"
 msgstr "Posición"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relativo a"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-preserve-scroll"
 msgstr "Conservar posición de desplazamiento"
 
@@ -3872,39 +3896,35 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Opciones avanzadas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-max-h"
-msgstr "AlturaMax."
+msgid "workspace.options.layout-item.layout-item-max-h"
+msgstr "Altura.Max"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-max-w"
-msgstr "AnchoMax."
+msgid "workspace.options.layout-item.layout-item-max-w"
+msgstr "Ancho.Max"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-h"
-msgstr "AlturaMin."
+msgid "workspace.options.layout-item.layout-item-min-h"
+msgstr "Altura.Min"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-w"
-msgstr "AnchoMin."
+msgid "workspace.options.layout-item.layout-item-min-w"
+msgstr "Ancho.Min"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title"
-msgstr "Redimensionado de elemento"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-max-h"
+msgid "workspace.options.layout-item.title.layout-item-max-h"
 msgstr "Altura máxima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-max-w"
+msgid "workspace.options.layout-item.title.layout-item-max-w"
 msgstr "Ancho máximo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
+msgid "workspace.options.layout-item.title.layout-item-min-h"
 msgstr "Altura mínima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-w"
+msgid "workspace.options.layout-item.title.layout-item-min-w"
 msgstr "Ancho mínimo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
@@ -3912,36 +3932,24 @@ msgid "workspace.options.layout.bottom"
 msgstr "Abajo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.bottom"
+msgid "workspace.options.layout.direction.column"
 msgstr "Columna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.left"
-msgstr "Fila"
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "Columna invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.right"
+msgid "workspace.options.layout.direction.reverse-row"
 msgstr "Fila invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Columna invertida"
+msgid "workspace.options.layout.direction.row"
+msgstr "Fila"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
 msgstr "Espacio"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.center"
-msgstr "centro"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.left"
-msgstr "izquierda"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.h.right"
-msgstr "derecha"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.left"
@@ -3960,16 +3968,12 @@ msgid "workspace.options.layout.margin-simple"
 msgstr "Margen sencillo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "no agrupar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.packed"
 msgstr "juntar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding"
-msgstr "Padding"
+msgstr "Distancia interna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.padding-all"
@@ -3992,28 +3996,8 @@ msgid "workspace.options.layout.space-between"
 msgstr "espaciar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "Layout"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.top"
 msgstr "Arriba"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.bottom"
-msgstr "abajo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.center"
-msgstr "centro"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.v.top"
-msgstr "arriba"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "agrupar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
@@ -4361,6 +4345,35 @@ msgstr "Separar nodos (%s)"
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Alinear nodos (%s)"
 
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "Actualizando %s..."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr ""
+"Desde ahora los gráficos de la librería serán componentes, lo cual"
+" los hará mucho más potentes."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "Esta actualización sólo ocurrirá una vez."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "Algunos gráficos no han podido ser actualizados."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr ""
+"Para intentarlo de nuevo, puedes recargar este archivo. Si el problema"
+" persiste, te sugerimos que compruebes la lista y consideres borrar los"
+" gráficos que estén mal."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "Convirtiendo %s/%s"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "Enviar al fondo"
@@ -4495,7 +4508,8 @@ msgstr "Seleccionar capa"
 msgid "workspace.shape.menu.show"
 msgstr "Mostrar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "Ver en el panel de recursos"
 
@@ -4539,6 +4553,20 @@ msgstr "Actualizar componentes"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "Actualizar componente principal"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Añadir layout flex"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Eliminar layout flex"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Cerrar barra lateral"
+
+msgid "workspace.sidebar.expand"
+msgstr "Abrir barra lateral"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
@@ -4758,7 +4786,7 @@ msgstr "Ignorar"
 
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.there-are-updates"
-msgstr "Hay actualizaciones en librerías compartidas"
+msgstr "Hay actualizaciones en bibliotecas compartidas"
 
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.update"
@@ -4766,12 +4794,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-msgid "errors.profile-blocked"
-msgstr "El perfil esta blockeado"
-
-msgid "errors.bad-font"
-msgstr "No se ha podido cargar la fuente %s"
-
-msgid "errors.bad-font-plural"
-msgstr "No se han podido cargar las fuentes %s"

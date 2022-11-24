@@ -1,0 +1,377 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2022-10-25 12:20+0000\n"
+"Last-Translator: Tummas Jóhan Sigvardsen <tummas@tummas.me>\n"
+"Language-Team: Faroese "
+"<https://hosted.weblate.org/projects/penpot/frontend/fo/>\n"
+"Language: fo\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.14.2-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Hevur tú longu ein brúkara?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Kanna tín teldupost og trýst á leinkina fyri at vátta og byrja at nýta "
+"Penpot."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Vátta loyniorðið"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Stovna royndarkonto"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Vilt tú royna tað?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Hetta er ein ROYNDAR tænasta, IKKI BRÚKA til veruligt arbeiði, "
+"verkætlanirnar verða slettaðar regluliga."
+
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Teldupostur"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Gloymt loyniorðið?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Fullfíggja navn"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Innrita her"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Rita inn"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Gott at síggja teg aftur!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Skriva eitt nýtt loyniorð"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Eg góðtakið skrásetingina á tíðindalistanum hjá Penpot."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Loyniorðið er broytt"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr ""
+"Vangamyndin er ikki váttað, vinarliga vátta vangamyndina áðrenn tú heldur "
+"áfram."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Sameinaðan í toymið var væleydnað"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Loyniorð"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Minst 8 stavir"
+
+msgid "auth.privacy-policy"
+msgstr "Privat politikkur"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Endurstovna loyniorð"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Vit senda tær ein teldupost við vegleiðing"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Gloymt loyniorð?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Broyt títt loyniorð"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Onga konto enn?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Stovna konto"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Stovna eina konto"
+
+msgid "auth.terms-of-service"
+msgstr "Treytir"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr "Tá tú stovnar ein brúkara, góðtekur tú okkara treytir og privat politikk."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Vit hava sent ein váttanar teldupost til"
+
+msgid "common.publish"
+msgstr "Gev út"
+
+msgid "common.share-link.all-users"
+msgstr "Allir Penpot brúkarar"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Ert tú vís(ur) í, at tú vilt strika hetta leinkið? Gert tú tað, er tað ikki "
+"longur tøkt hjá nøkrum"
+
+msgid "common.share-link.current-tag"
+msgstr "(núverandi)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Strika leinki"
+
+msgid "common.share-link.get-link"
+msgstr "Fá leinkið"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Leinkið avritað"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Leinkið er strikað"
+
+msgid "common.share-link.manage-ops"
+msgstr "Fyrisit heimildir"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 síða deild"
+msgstr[1] "%s síður deildar"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Kann viðmerkja"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Ein og hvør við leinkjuni hevur atgongd"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Síður deildar"
+
+msgid "common.share-link.placeholder"
+msgstr "Leinkja, ið kann deilast, verur at síggja her"
+
+msgid "common.share-link.team-members"
+msgstr "Einans limir í toymi"
+
+msgid "common.share-link.title"
+msgstr "Deil frumsnið"
+
+msgid "common.share-link.view-all"
+msgstr "Vel alt"
+
+msgid "common.unpublish"
+msgstr "Angra útgevan"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Toymisleiðsla"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr "Penpot er fyri toymum. Bjóða limum at arbeiða saman á verkætlanir og fílur"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Toyma upp!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Byrja undirvísingina"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Byrja rundferð"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Legg afturat sum Deilt Savn"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Broyt teldupost"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(avrita)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "Stovna nýtt toymi"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Títt Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Strika toymi"
+
+msgid "dashboard.download-binary-file"
+msgstr "Heinta Penpot fílu (.penpot)"
+
+msgid "dashboard.draft-title"
+msgstr "Kladda"
+
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Tvítøka"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Tvítak %s fílir"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "Tú hevur enn ongar fílir her"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Áh nei! Tú hevur ongar fílir enn! Um tú vilt royna við nøkrum skapilónum, "
+"vitja [Libraries & templates](https://penpot.app/libraries-templates.html)"
+
+msgid "dashboard.export-binary-multi"
+msgstr "Heinta %s Penpot fílur (.penpot)"
+
+msgid "dashboard.export-frames"
+msgstr "Útflyt borð sum PDF"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Útflyt til PDF"
+
+msgid "dashboard.export-multi"
+msgstr "Útflyt Penpot %s fílir"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s av %s lutum eru valdir"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Útflyt"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Har eru ongin lutir við útflytsstillingum."
+
+msgid "dashboard.export-single"
+msgstr "Útflyt Penpot fílu"
+
+msgid "dashboard.export.options.all.title"
+msgstr "Útflyt deild søvn"
+
+msgid "dashboard.export.title"
+msgstr "Útflyt fílur"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Bjóða við í toymi"
+
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Far úr toymu"
+
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Flyt til"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Flyt %s fílur til"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Flyt til eitt annað toymi"
+
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ Nýggja fílu"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Nýggja fílu"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Nýggj verkætlan"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Nýggj verkætlan"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s limir"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Lat fílu upp í nýggjum skiljiblaði"
+
+msgid "dashboard.options"
+msgstr "Valmøguleikar"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Broyt loyniorð"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Verkætlanir"
