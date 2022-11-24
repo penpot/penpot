@@ -12,9 +12,8 @@
    [app.common.files.features :as ffeat]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
-   [app.common.geom.proportions :as gpr]
+   [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.rect :as gpsr]
    [app.common.logging :as log]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
@@ -937,7 +936,7 @@
                 (if-not lock
                   (assoc shape :proportion-lock false)
                   (-> (assoc shape :proportion-lock true)
-                      (gpr/assign-proportions))))]
+                      (gpp/assign-proportions))))]
         (rx/of (dch/update-shapes [id] assign-proportions))))))
 
 (defn toggle-proportion-lock
@@ -1776,10 +1775,10 @@
             media     (vals (:media file-data'))
 
             media-points
-            (map #(assoc % :points (gpsr/rect->points {:x 0
-                                                       :y 0
-                                                       :width (:width %)
-                                                       :height (:height %)}))
+            (map #(assoc % :points (gsh/rect->points {:x 0
+                                                      :y 0
+                                                      :width (:width %)
+                                                      :height (:height %)}))
                  media)
 
             shape-grid

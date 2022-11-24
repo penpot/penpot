@@ -146,8 +146,8 @@
         (fn [id]
           (let [new-shape (get text-shapes id)
                 old-shape (get prev-text-shapes id)
-                old-modifiers (get prev-modifiers id)
-                new-modifiers (get modifiers id)
+                old-modifiers (ctm/select-geometry (get prev-modifiers id))
+                new-modifiers (ctm/select-geometry (get modifiers id))
 
                 remote? (some? (-> new-shape meta :session-id)) ]
 
@@ -155,10 +155,9 @@
                      (not (identical? old-shape new-shape))
                      (not= (dissoc old-shape :migrate)
                            (dissoc new-shape :migrate)))
+
                 (and (not= new-modifiers old-modifiers)
-                     (or (nil? new-modifiers)
-                         (nil? old-modifiers)
-                         (not (ctm/only-move? new-modifiers))
+                     (or (not (ctm/only-move? new-modifiers))
                          (not (ctm/only-move? old-modifiers))))
 
                 ;; When the position data is nil we force to recalculate

@@ -91,27 +91,34 @@
 
 (defn multiply
   ([^Matrix m1 ^Matrix m2]
-   (let [m1a (.-a m1)
-         m1b (.-b m1)
-         m1c (.-c m1)
-         m1d (.-d m1)
-         m1e (.-e m1)
-         m1f (.-f m1)
+   (cond
+     ;; nil matrixes are equivalent to unit-matrix
+     (and (nil? m1) (nil? m2)) (matrix)
+     (nil? m1) m2
+     (nil? m2) m1
 
-         m2a (.-a m2)
-         m2b (.-b m2)
-         m2c (.-c m2)
-         m2d (.-d m2)
-         m2e (.-e m2)
-         m2f (.-f m2)]
+     :else
+     (let [m1a (.-a m1)
+           m1b (.-b m1)
+           m1c (.-c m1)
+           m1d (.-d m1)
+           m1e (.-e m1)
+           m1f (.-f m1)
 
-     (Matrix.
-      (+ (* m1a m2a) (* m1c m2b))
-      (+ (* m1b m2a) (* m1d m2b))
-      (+ (* m1a m2c) (* m1c m2d))
-      (+ (* m1b m2c) (* m1d m2d))
-      (+ (* m1a m2e) (* m1c m2f) m1e)
-      (+ (* m1b m2e) (* m1d m2f) m1f))))
+           m2a (.-a m2)
+           m2b (.-b m2)
+           m2c (.-c m2)
+           m2d (.-d m2)
+           m2e (.-e m2)
+           m2f (.-f m2)]
+
+       (Matrix.
+        (+ (* m1a m2a) (* m1c m2b))
+        (+ (* m1b m2a) (* m1d m2b))
+        (+ (* m1a m2c) (* m1c m2d))
+        (+ (* m1b m2c) (* m1d m2d))
+        (+ (* m1a m2e) (* m1c m2f) m1e)
+        (+ (* m1b m2e) (* m1d m2f) m1f)))))
 
   ([m1 m2 & others]
    (reduce multiply (multiply m1 m2) others)))

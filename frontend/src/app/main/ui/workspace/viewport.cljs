@@ -429,6 +429,12 @@
                                :hover-top-frame-id @hover-top-frame-id
                                :zoom zoom}])
 
+       (when (debug? :parent-bounds)
+         [:& wvd/debug-parent-bounds {:selected-shapes selected-shapes
+                                      :objects objects-modified
+                                      :hover-top-frame-id @hover-top-frame-id
+                                      :zoom zoom}])
+
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
           [:defs

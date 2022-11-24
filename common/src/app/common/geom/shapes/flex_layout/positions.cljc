@@ -167,7 +167,7 @@
   "Calculates the position for the current shape given the layout-data context"
   [parent child
    child-width child-height
-   {:keys [start-p layout-gap-row layout-gap-col margin-x margin-y line-height line-width] :as layout-data}]
+   {:keys [start-p layout-gap-row layout-gap-col margin-x margin-y line-height line-width layout-bounds] :as layout-data}]
 
   (let [row?         (ctl/row? parent)
         col?         (ctl/col? parent)
@@ -193,9 +193,8 @@
 
         [margin-top margin-right margin-bottom margin-left] (ctl/child-margins child)
 
-        points (:points parent)
-        hv     (partial gpo/start-hv points)
-        vv     (partial gpo/start-vv points)
+        hv     (partial gpo/start-hv layout-bounds)
+        vv     (partial gpo/start-vv layout-bounds)
 
         corner-p
         (cond-> start-p
@@ -247,13 +246,13 @@
           (gpt/add (vv margin-y)))
 
         ;; Fix position when layout is flipped
-        corner-p
-        (cond-> corner-p
-          (:flip-x parent)
-          (gpt/add (hv child-width))
-
-          (:flip-y parent)
-          (gpt/add (vv child-height)))
+        ;;corner-p
+        ;;(cond-> corner-p
+        ;;  (:flip-x parent)
+        ;;  (gpt/add (hv child-width))
+        ;;
+        ;;  (:flip-y parent)
+        ;;  (gpt/add (vv child-height)))
 
         next-p
         (cond-> start-p

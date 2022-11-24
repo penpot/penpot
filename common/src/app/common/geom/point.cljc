@@ -189,6 +189,10 @@
 (defn angle-sign [v1 v2]
   (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1))
 
+(defn signed-angle-with-other
+  [v1 v2]
+  (* (angle-sign v1 v2) (angle-with-other v1 v2)))
+
 (defn update-angle
   "Update the angle of the point."
   [p angle]
