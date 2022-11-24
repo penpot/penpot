@@ -270,7 +270,7 @@ msgstr ""
 "templates](https://penpot.app/libraries-templates.html) をチェックしてみてください。"
 
 msgid "dashboard.export-frames"
-msgstr "PDFでエクスポート…"
+msgstr "PDFでエクスポート"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
@@ -397,10 +397,6 @@ msgstr "パスワードを変更"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.projects-title"
 msgstr "プロジェクト"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.promote-to-owner"
-msgstr "オーナーに昇格"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.remove-account"
