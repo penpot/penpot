@@ -418,7 +418,7 @@
         elem-name (obj/get child "type")
         position  (or (obj/get props "position") 0)
         render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-id))]
-    [:g {:id (dm/fmt "fills-%" (:id shape))}
+    [:g.fills {:id (dm/fmt "fills-%" (:id shape))}
      [:> elem-name (build-fill-props shape child position render-id)]]))
 
 (mf/defc shape-strokes
@@ -442,7 +442,7 @@
     [:*
      (when
       (d/not-empty? (:strokes shape))
-       [:> :g stroke-props
+       [:> :g.strokes stroke-props
         (for [[index value] (-> (d/enumerate (:strokes shape)) reverse)]
           (let [props (build-stroke-props index child value render-id)
                 shape (assoc value :points (:points shape))]

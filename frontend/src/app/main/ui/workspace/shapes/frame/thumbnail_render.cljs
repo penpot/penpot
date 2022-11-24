@@ -30,7 +30,6 @@
       (let [canvas-context (.getContext canvas-node "2d")
             canvas-width   (.-width canvas-node)
             canvas-height  (.-height canvas-node)]
-
         (.clearRect canvas-context 0 0 canvas-width canvas-height)
         (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
         true))
@@ -92,6 +91,8 @@
         ;; State variable to select whether we show the image thumbnail or the canvas thumbnail
         show-frame-thumbnail (mf/use-state (some? thumbnail-data))
 
+        disable-fills? (or @show-frame-thumbnail (some? @image-url))
+
         on-image-load
         (mf/use-callback
          (fn []
@@ -99,8 +100,6 @@
             #(let [canvas-node (mf/ref-val frame-canvas-ref)
                    img-node    (mf/ref-val frame-image-ref)]
                (when (draw-thumbnail-canvas! canvas-node img-node)
-                 (reset! image-url nil)
-
                  (when @show-frame-thumbnail
                    (reset! show-frame-thumbnail false))
                  ;; If we don't have the thumbnail data saved (normally the first load) we update the data
@@ -229,8 +228,11 @@
                     (some? thumbnail-data)
                     (assoc :thumbnail thumbnail-data))}])
 
-
-       [:foreignObject {:x x :y y :width width :height height}
+       [:foreignObject {:x x
+                        :y y
+                        :width width
+                        :height height
+                        :opacity (when disable-fills? 0)}
         [:canvas.thumbnail-canvas
          {:key (dm/str "thumbnail-canvas-" (:id shape))
           :ref frame-canvas-ref

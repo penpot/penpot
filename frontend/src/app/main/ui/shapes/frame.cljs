@@ -37,7 +37,7 @@
                           :height height
                           :transform transform}))
           path? (some? (.-d props))]
-      [:clipPath {:id (frame-clip-id shape render-id) :class "frame-clip"}
+      [:clipPath.frame-clip-def {:id (frame-clip-id shape render-id) :class "frame-clip"}
        (if path?
          [:> :path props]
          [:> :rect props])])))
