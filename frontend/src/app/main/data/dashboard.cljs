@@ -193,7 +193,7 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)
             params  (assoc params :team-id team-id)]
-        (->> (rp/query! :search-files params)
+        (->> (rp/cmd! :search-files params)
              (rx/map search-result-fetched))))))
 
 ;; --- EVENT: files
