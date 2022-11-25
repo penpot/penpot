@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :refer [max-safe-int min-safe-int]]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -184,12 +185,13 @@
                                 (assoc :x offset-x :y offset-y)))
         (cts/setup-rect-selrect))))
 
-(defn create-svg-root [frame-id svg-data]
+(defn create-svg-root [frame-id parent-id svg-data]
   (let [{:keys [name x y width height offset-x offset-y]} svg-data]
     (-> {:id (uuid/next)
          :type :group
          :name name
          :frame-id frame-id
+         :parent-id parent-id
          :width width
          :height height
          :x (+ x offset-x)
@@ -439,6 +441,11 @@
               frame-id (ctst/top-nested-frame objects position)
               selected (wsh/lookup-selected state)
 
+              page-objects  (wsh/lookup-page-objects state)
+              page-selected (wsh/lookup-selected state)
+              base      (cph/get-base-shape page-objects page-selected)
+              parent-id (:parent-id base)
+
               [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
               x (- x vb-x (/ vb-width 2))
               y (- y vb-y (/ vb-height 2))
@@ -464,7 +471,7 @@
 
               svg-data (assoc svg-data :defs def-nodes)
 
-              root-shape (create-svg-root frame-id svg-data)
+              root-shape (create-svg-root frame-id parent-id svg-data)
               root-id (:id root-shape)
 
               ;; In penpot groups have the size of their children. To respect the imported svg size and empty space let's create a transparent shape as background to respect the imported size
@@ -483,7 +490,8 @@
                            (assoc :content (into [base-background-shape] (:content svg-data))))
 
               ;; Creates the root shape
-              new-shape (dwsh/make-new-shape root-shape objects selected)
+              new-shape (-> (dwsh/make-new-shape root-shape objects selected)
+                            (assoc :parent-id parent-id))
 
               changes   (-> (pcb/empty-changes it page-id)
                             (pcb/with-objects objects)
