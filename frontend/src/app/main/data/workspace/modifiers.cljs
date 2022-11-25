@@ -78,7 +78,8 @@
 
       (-> (ctm/empty)
           (ctm/move translation)
-          (ctm/resize resize center)))))
+          (ctm/resize resize center)
+          (vary-meta assoc :copied-modifier? true)))))
 
 (defn- process-text-modifiers
   "For texts we only use the displacement because resize
@@ -379,7 +380,7 @@
    (ptk/reify ::set-rotation-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [objects     (wsh/lookup-page-objects state)
+       (let [objects (wsh/lookup-page-objects state)
              ids
              (->> shapes
                   (remove #(get % :blocked false))
@@ -416,25 +417,27 @@
              shapes            (map (d/getf objects) ids)
              ignore-tree       (->> (map #(get-ignore-tree object-modifiers objects %) shapes)
                                     (reduce merge {}))
-             undo-id (uuid/next)]
+             undo-id (uuid/next)
 
-         (rx/concat
-          (if undo-transation?
-            (rx/of (dwu/start-undo-transaction undo-id))
-            (rx/empty))
-          (rx/of (ptk/event ::dwg/move-frame-guides ids-with-children)
-                 (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
-                 (dch/update-shapes
-                  ids
-                  (fn [shape]
-                    (let [modif (get-in object-modifiers [(:id shape) :modifiers])
-                          text-shape? (cph/text-shape? shape)]
-                      (-> shape
-                          (gsh/transform-shape modif)
-                          (cond-> text-shape?
-                            (update-grow-type shape)))))
-                  {:reg-objects? true
+             update-fn
+             (fn [shape]
+               (let [modif (get-in object-modifiers [(:id shape) :modifiers])
+                     text-shape? (cph/text-shape? shape)]
+                 (-> shape
+                     (gsh/transform-shape modif)
+                     (cond-> text-shape?
+                       (update-grow-type shape)))))
+
+             ignore-touched-fn
+             (fn [shape-id]
+               ;; When a modifier comes from copying a main component to copies,
+               ;; do not set the touched flag, because this change is synced.
+               (let [modif (get-in object-modifiers [shape-id :modifiers])]
+                 (:copied-modifier? (meta modif))))
+
+             opts {:reg-objects? true
                    :ignore-tree ignore-tree
+                   :ignore-touched-fn ignore-touched-fn
                    ;; Attributes that can change in the transform. This way we don't have to check
                    ;; all the attributes
                    :attrs [:selrect
@@ -451,8 +454,15 @@
                            :flip-y
                            :grow-type
                            :layout-item-h-sizing
-                           :layout-item-v-sizing
-                           ]})
+                           :layout-item-v-sizing]}]
+
+         (rx/concat
+          (if undo-transation?
+            (rx/of (dwu/start-undo-transaction undo-id))
+            (rx/empty))
+          (rx/of (ptk/event ::dwg/move-frame-guides ids-with-children)
+                 (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
+                 (dch/update-shapes ids update-fn opts)
                  (clear-local-transform))
           (if undo-transation?
             (rx/of (dwu/commit-undo-transaction undo-id))

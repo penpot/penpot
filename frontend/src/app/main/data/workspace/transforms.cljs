@@ -683,7 +683,7 @@
               (rx/map
                (fn [[[pos mod?] shift?]]
                  (let [delta-angle (calculate-angle pos mod? shift?)]
-                   (set-rotation-modifiers delta-angle shapes group-center))))
+                   (dwm/set-rotation-modifiers delta-angle shapes group-center))))
               (rx/take-until stoper))
          (rx/of (dwm/apply-modifiers)
                 (finish-transform)))))))
@@ -699,7 +699,7 @@
             objects (wsh/lookup-page-objects state page-id)
             rotate-shape (fn [shape]
                            (let [delta (- rotation (:rotation shape))]
-                             (set-rotation-modifiers delta [shape])))]
+                             (dwm/set-rotation-modifiers delta [shape])))]
         (rx/concat
          (rx/from (->> ids (map #(get objects %)) (map rotate-shape)))
          (rx/of (dwm/apply-modifiers)))))))

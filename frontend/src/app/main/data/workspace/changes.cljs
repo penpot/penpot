@@ -37,7 +37,7 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? attrs ignore-tree page-id]
+  ([ids update-fn {:keys [reg-objects? save-undo? attrs ignore-tree page-id ignore-touched-fn]
                    :or {reg-objects? false save-undo? true}}]
 
    (us/assert ::coll-of-uuid ids)
@@ -52,7 +52,10 @@
 
              changes   (reduce
                          (fn [changes id]
-                           (let [opts {:attrs attrs :ignore-geometry? (get ignore-tree id)}]
+                           (let [opts {:attrs attrs
+                                       :ignore-geometry? (get ignore-tree id)
+                                       :ignore-touched (when ignore-touched-fn
+                                                         (ignore-touched-fn id))}]
                              (pcb/update-shapes changes [id] update-fn opts)))
                          (-> (pcb/empty-changes it page-id)
                              (pcb/set-save-undo? save-undo?)
