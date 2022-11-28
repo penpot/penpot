@@ -340,7 +340,8 @@
       (when (ex/ex-info? e)
         (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
         (println "Error on validating configuration:")
-        (println (us/pretty-explain (ex-data e)))
+        (println (some-> e ex-data ex/explain))
+        (println (ex/explain (ex-data e)))
         (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"))
       (throw e))))
 

@@ -534,4 +534,9 @@
 
 (defn -main
   [& _args]
-  (start))
+  (try
+    (start)
+    (catch Throwable cause
+      (l/error :hint (ex-message cause)
+               :cause cause)
+      (System/exit -1))))

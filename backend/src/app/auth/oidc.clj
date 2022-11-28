@@ -50,7 +50,7 @@
 (defn- discover-oidc-config
   [{:keys [http-client]} {:keys [base-uri] :as opts}]
   (let [discovery-uri (u/join base-uri ".well-known/openid-configuration")
-        response      (ex/try (http/req! http-client {:method :get :uri (str discovery-uri)} {:sync? true}))]
+        response      (ex/try! (http/req! http-client {:method :get :uri (str discovery-uri)} {:sync? true}))]
     (cond
       (ex/exception? response)
       (do

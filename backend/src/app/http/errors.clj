@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
    [app.http :as-alias http]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -64,7 +63,7 @@
   (let [{:keys [code] :as data} (ex-data err)]
     (cond
       (= code :spec-validation)
-      (let [explain (us/pretty-explain data)]
+      (let [explain (ex/explain data)]
         (yrs/response :status 400
                       :body   (-> data
                                   (dissoc ::s/problems ::s/value)
@@ -79,7 +78,7 @@
 (defmethod handle-exception :assertion
   [error request]
   (let [edata (ex-data error)
-        explain (us/pretty-explain edata)]
+        explain (ex/explain edata)]
     (l/error ::l/raw (str (ex-message error) "\n" explain)
              ::l/context (get-context request)
              :cause error)

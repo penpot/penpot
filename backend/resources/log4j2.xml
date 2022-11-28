@@ -2,7 +2,8 @@
 <Configuration status="info" monitorInterval="60">
   <Appenders>
     <Console name="console" target="SYSTEM_OUT">
-      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"/>
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"
+                     alwaysWriteExceptions="false" />
     </Console>
   </Appenders>
 

@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.svg-upload
   (:require
    [app.common.data :as d]
+   [app.common.spec :as us]
    [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -35,22 +36,24 @@
 (defonce default-image {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
 
 (defn- assert-valid-num [attr num]
-  (when (or (not (d/num? num))
-            (>= num max-safe-int )
-            (<= num  min-safe-int))
-    (ex/raise (str (d/name attr) " attribute invalid: " num)))
+  (us/verify!
+   :expr (and (d/num? num)
+              (<= num max-safe-int)
+              (>= num min-safe-int))
+   :hint (str/ffmt "%1 attribute has invalid value: %2" (d/name attr) num))
 
   ;; If the number is between 0-1 we round to 1 (same in negative form
   (cond
-    (and (> num 0) (< num 1))  1
-    (and (< num 0) (> num -1)) -1
-    :else                      num))
+    (and (> num 0) (< num 1))    1
+    (and (< num 0) (> num -1))  -1
+    :else                       num))
 
-(defn- assert-valid-pos-num [attr num]
-  (let [num (assert-valid-num attr num)]
-    (when (< num 0)
-      (ex/raise (str (d/name attr) " attribute invalid: " num)))
-    num))
+(defn- assert-valid-pos-num
+  [attr num]
+  (us/verify!
+   :expr (pos? num)
+   :hint (str/ffmt "%1 attribute should be positive" (d/name attr)))
+  num)
 
 (defn- svg-dimensions [data]
   (let [width (get-in data [:attrs :width] 100)

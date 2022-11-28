@@ -162,7 +162,7 @@
   [[r g b]]
   (cond
     (and (= 255 r) (= 255 g) (= 255 b))
-    (ex/raise "Cannot get next color")
+    (throw (ex-info "cannot get next color" {:r r :g g :b b}))
 
     (and (= 255 g) (= 255 b))
     [(inc r) 0 0]

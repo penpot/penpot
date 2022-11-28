@@ -375,7 +375,8 @@
       ;; argument is a qualified keyword.
       (= 2 pcnt)
       (let [[spec-or-expr value-or-msg] params]
-        (if (qualified-keyword? spec-or-expr)
+        (if (or (qualified-keyword? spec-or-expr)
+                (symbol? spec-or-expr))
           `(assert-spec* ~spec-or-expr ~value-or-msg nil)
           `(assert-expr* ~spec-or-expr ~value-or-msg)))
 
@@ -419,6 +420,8 @@
                       (spec-assert* ~spec params# ~message mdata#)
                       (apply origf# params#)))))))
 
+
+;; FIXME: REMOVE
 (defn pretty-explain
   ([data] (pretty-explain data nil))
   ([data {:keys [max-problems] :or {max-problems 10}}]
@@ -428,3 +431,11 @@
      (binding [s/*explain-out* expound/printer]
        (with-out-str
          (s/explain-out (update data ::s/problems #(take max-problems %))))))))
+
+(defn validation-error?
+  [cause]
+  (if (and (map? cause) (= :spec-validation (:type cause)))
+    cause
+    (when (ex/ex-info? cause)
+      (validation-error? (ex-data cause)))))
+

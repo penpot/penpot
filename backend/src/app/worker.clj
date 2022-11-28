@@ -501,8 +501,8 @@
       :spec-value    (some->> data ::s/value)
       :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))
       :params        item}
-     (when (and data (::s/problems data))
-       {:spec-explain (us/pretty-explain data)}))))
+     (when-let [explain (ex/explain data)]
+       {:spec-explain explain}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CRON
