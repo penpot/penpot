@@ -101,5 +101,5 @@
       [:div.links
        [:div.link-entry
         [:& lk/link {:action go-back
-                     :name (tr "labels.go-back")
-                     :data-test "go-back-link"}]]]]]))
+                     :data-test "go-back-link"}
+         (tr "labels.go-back")]]]]]))

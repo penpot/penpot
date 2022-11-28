@@ -12,7 +12,7 @@
 (mf/defc button-link [{:keys [action icon name klass]}]
   [:a.btn-primary.btn-large.button-link
    {:class klass
-    :tabindex "0"
+    :tab-index "0"
     :on-click action
     :on-key-down (fn [event]
                    (when (kbd/enter? event)

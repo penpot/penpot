@@ -40,11 +40,15 @@
 (def space? (is-key? " "))
 (def up-arrow? (is-key? "ArrowUp"))
 (def down-arrow? (is-key? "ArrowDown"))
+(def left-arrow? (is-key? "ArrowLeft"))
+(def right-arrow? (is-key? "ArrowRight"))
 (def alt-key? (is-key? "Alt"))
 (def ctrl-key? (is-key? "Control"))
 (def meta-key? (is-key? "Meta"))
 (def comma? (is-key? ","))
 (def backspace? (is-key? "Backspace"))
+(def home? (is-key? "Home"))
+(def tab? (is-key? "Tab"))
 
 (defn editing? [e]
   (.-editing ^js e))

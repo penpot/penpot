@@ -75,6 +75,7 @@
   .dashboard-title {
     display: flex;
     align-items: center;
+    margin-left: 13px;
 
     h1 {
       color: $color-black;
@@ -83,7 +84,6 @@
       font-size: $fs22;
       font-weight: 600;
       z-index: 10;
-      margin-left: 13px;
     }
 
     .context-menu.is-open {

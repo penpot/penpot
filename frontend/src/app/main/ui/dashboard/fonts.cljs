@@ -51,7 +51,7 @@
   (use-set-page-title team section)
 
   [:header.dashboard-header
-   [:div.dashboard-title
+   [:div.dashboard-title#dashboard-fonts-title
     [:h1 (tr "labels.fonts")]]
    [:nav
     #_[:ul
@@ -134,8 +134,9 @@
          [:& i18n/tr-html {:tag-name "span"
                            :label "dashboard.fonts.hero-text2"}]]]]
 
-      [:div.btn-primary
-       {:on-click on-click}
+      [:button.btn-primary
+       {:on-click on-click
+        :tab-index "0"}
        [:span (tr "labels.add-custom-font")]
        [:& file-uploader {:input-id "font-upload"
                           :accept cm/str-font-types

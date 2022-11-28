@@ -192,7 +192,7 @@
 
         on-menu-close
         (mf/use-fn
-          #(swap! local assoc :menu-open false))
+         #(swap! local assoc :menu-open false))
 
         on-select
         (fn [event]
@@ -215,31 +215,31 @@
 
         on-drag-start
         (mf/use-fn
-          (mf/deps selected-files)
-          (fn [event]
-            (let [offset          (dom/get-offset-position (.-nativeEvent event))
+         (mf/deps selected-files)
+         (fn [event]
+           (let [offset          (dom/get-offset-position (.-nativeEvent event))
 
-                  select-current? (not (contains? selected-files (:id file)))
+                 select-current? (not (contains? selected-files (:id file)))
 
-                  item-el         (mf/ref-val node-ref)
-                  counter-el      (create-counter-element item-el
-                                                          (if select-current?
-                                                            1
-                                                            (count selected-files)))]
-              (when select-current?
-                (st/emit! (dd/clear-selected-files))
-                (st/emit! (dd/toggle-file-select file)))
+                 item-el         (mf/ref-val node-ref)
+                 counter-el      (create-counter-element item-el
+                                                         (if select-current?
+                                                           1
+                                                           (count selected-files)))]
+             (when select-current?
+               (st/emit! (dd/clear-selected-files))
+               (st/emit! (dd/toggle-file-select file)))
 
-              (dnd/set-data! event "penpot/files" "dummy")
-              (dnd/set-allowed-effect! event "move")
+             (dnd/set-data! event "penpot/files" "dummy")
+             (dnd/set-allowed-effect! event "move")
 
               ;; set-drag-image requires that the element is rendered and
               ;; visible to the user at the moment of creating the ghost
               ;; image (to make a snapshot), but you may remove it right
               ;; afterwards, in the next render cycle.
-              (dom/append-child! item-el counter-el)
-              (dnd/set-drag-image! event item-el (:x offset) (:y offset))
-              (ts/raf #(.removeChild ^js item-el counter-el)))))
+             (dom/append-child! item-el counter-el)
+             (dnd/set-drag-image! event item-el (:x offset) (:y offset))
+             (ts/raf #(.removeChild ^js item-el counter-el)))))
 
         on-menu-click
         (mf/use-fn
@@ -276,44 +276,60 @@
       (when (and (not selected?) (:menu-open @local))
         (swap! local assoc :menu-open false)))
 
-    [:div.grid-item.project-th
-     {:class (dom/classnames :selected selected?
-                             :library library-view?)
-      :ref node-ref
-      :draggable true
-      :on-click on-select
-      :on-double-click on-navigate
-      :on-drag-start on-drag-start
-      :on-context-menu on-menu-click}
+    [:li.grid-item.project-th
+     [:a
+      {:tab-index "0"
+       :class (dom/classnames :selected selected?
+                              :library library-view?)
+       :ref node-ref
+       :draggable true
+       :on-click on-select
+       :on-key-down (fn [event]
+                      (dom/stop-propagation event)
+                      (when (kbd/enter? event)
+                        (on-navigate event))
+                      (when (kbd/shift? event)
+                        (when (or (kbd/down-arrow? event) (kbd/left-arrow? event) (kbd/up-arrow? event) (kbd/right-arrow? event))
+                          (on-select event)) ;; TODO Fix this
+                        ))
+       :on-double-click on-navigate
+       :on-drag-start on-drag-start
+       :on-context-menu on-menu-click}
 
-     [:div.overlay]
-     (if library-view?
-       [:& grid-item-library {:file file}]
-       [:& grid-item-thumbnail {:file file}])
-     (when (and (:is-shared file) (not library-view?))
-       [:div.item-badge i/library])
-     [:div.item-info
-      (if (:edition @local)
-        [:& inline-edition {:content (:name file)
-                            :on-end edit}]
-        [:h3 (:name file)])
-      [:& grid-item-metadata {:modified-at (:modified-at file)}]]
-     [:div.project-th-actions {:class (dom/classnames
-                                       :force-display (:menu-open @local))}
-      [:div.project-th-icon.menu
-       {:ref menu-ref
-        :on-click on-menu-click}
-       i/actions
-       (when selected?
-         [:& file-menu {:files (vals selected-files)
-                        :show? (:menu-open @local)
-                        :left (+ 24 (:x (:menu-pos @local)))
-                        :top (:y (:menu-pos @local))
-                        :navigate? navigate?
-                        :on-edit on-edit
-                        :on-menu-close on-menu-close
-                        :origin origin
-                        :dashboard-local dashboard-local}])]]]))
+      [:div.overlay]
+      (if library-view?
+        [:& grid-item-library {:file file}]
+        [:& grid-item-thumbnail {:file file}])
+      (when (and (:is-shared file) (not library-view?))
+        [:div.item-badge i/library])
+      [:div.item-info
+       (if (:edition @local)
+         [:& inline-edition {:content (:name file)
+                             :on-end edit}]
+         [:h3 (:name file)])
+       [:& grid-item-metadata {:modified-at (:modified-at file)}]]
+      [:div.project-th-actions {:class (dom/classnames
+                                        :force-display (:menu-open @local))}
+       [:div.project-th-icon.menu
+        {:tab-index "0"
+         :ref menu-ref
+         :on-click on-menu-click
+         :on-key-down (fn [event]
+                        (when (kbd/enter? event)
+                          (prn "entro en on-menu-click")
+                          (on-menu-click event)))}
+        i/actions
+        (when selected?
+          [:& file-menu {:files (vals selected-files)
+                         :show? (:menu-open @local)
+                         :left (+ 24 (:x (:menu-pos @local)))
+                         :top (:y (:menu-pos @local))
+                         :navigate? navigate?
+                         :on-edit on-edit
+                         :on-menu-close on-menu-close
+                         :origin origin
+                         :dashboard-local dashboard-local}])]]]]
+    ))
 
 
 (mf/defc grid
@@ -361,7 +377,7 @@
              (reset! dragging? false)
              (import-files (.-files (.-dataTransfer e))))))]
 
-    [:section.dashboard-grid
+    [:div.dashboard-grid
      {:on-drag-enter on-drag-enter
       :on-drag-over on-drag-over
       :on-drag-leave on-drag-leave
@@ -372,11 +388,11 @@
        [:& loading-placeholder]
 
        (seq files)
-       [:div.grid-row
+       [:ul.grid-row
         {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
 
         (when @dragging?
-          [:div.grid-item])
+          [:li.grid-item])
 
         (for [item files]
           [:& grid-item
@@ -396,11 +412,11 @@
   [{:keys [files selected-files dragging? limit] :as props}]
   (let [elements limit
         limit (if dragging? (dec limit) limit)]
-    [:div.grid-row.no-wrap
+    [:ul.grid-row.no-wrap
      {:style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
 
      (when dragging?
-       [:div.grid-item.dragged])
+       [:li.grid-item.dragged])
      (for [item (take limit files)]
        [:& grid-item
         {:id (:id item)
@@ -481,10 +497,10 @@
                       mdata {:on-success on-drop-success}]
                   (st/emit! (dd/move-files (with-meta data mdata))))))))]
 
-    [:section.dashboard-grid {:on-drag-enter on-drag-enter
-                              :on-drag-over on-drag-over
-                              :on-drag-leave on-drag-leave
-                              :on-drop on-drop}
+    [:div.dashboard-grid {:on-drag-enter on-drag-enter
+                          :on-drag-over on-drag-over
+                          :on-drag-leave on-drag-leave
+                          :on-drop on-drop}
      (cond
        (nil? files)
        [:& loading-placeholder]

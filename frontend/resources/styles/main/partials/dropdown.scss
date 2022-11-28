@@ -38,6 +38,10 @@
     &:hover {
       background-color: $color-primary-lighter;
     }
+
+    &:focus {
+      border: 1px black solid;
+    }
   }
 
   &.with-check {

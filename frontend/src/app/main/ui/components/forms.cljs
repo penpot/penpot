@@ -104,7 +104,7 @@
                          :placeholder label
                          :on-change on-change
                          :type @type'
-                         :tabindex "0")
+                         :tab-index "0")
                   (cond-> (and value is-checkbox?) (assoc :default-checked value))
                   (cond-> (and touched? (:message error)) (assoc "aria-invalid" "true"
                                                                  "aria-describedby" (dm/str "error-" input-name)))
@@ -224,7 +224,7 @@
      {:name "submit"
       :class (when (or (not (:valid @form)) (true? disabled)) "btn-disabled")
       :disabled (or (not (:valid @form)) (true? disabled))
-      :tabindex "0"
+      :tab-index "0"
       :on-click on-click
       :on-key-down (fn [event]
                      (when (kbd/enter? event)
