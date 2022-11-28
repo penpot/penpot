@@ -6,6 +6,7 @@
 
 (ns app.main.ui.auth.register
   (:require
+   [app.common.data :as d]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.messages :as dm]
@@ -14,6 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.auth.login :as login]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.i18n :refer [tr]]
@@ -31,11 +33,17 @@
 ;; --- PAGE: Register
 
 (defn- validate
-  [data]
+  [errors data]
   (let [password (:password data)]
-    (cond-> {}
+    (cond-> errors
       (> 8 (count password))
-      (assoc :password {:message "errors.password-too-short"}))))
+      (assoc :password {:message "errors.password-too-short"})
+      :always
+      (d/update-when :email
+                     (fn [{:keys [code] :as error}]
+                       (cond-> error
+                         (= code ::us/email)
+                         (assoc :message (tr "errors.email-invalid"))))))))
 
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::password ::us/not-empty-string)
@@ -106,13 +114,11 @@
      [:div.fields-row
       [:& fm/input {:type "email"
                     :name :email
-                    :tab-index "2"
                     :help-icon i/at
                     :label (tr "auth.email")
                     :data-test "email-input"}]]
      [:div.fields-row
       [:& fm/input {:name :password
-                    :tab-index "3"
                     :hint (tr "auth.password-length-hint")
                     :label (tr "auth.password")
                     :type "password"}]]
@@ -133,8 +139,7 @@
        [:span.text (tr "labels.continue-with")]
        [:span.line]]
 
-      [:div.buttons
-       [:& login/login-buttons {:params params}]]
+      [:& login/login-buttons {:params params}]
 
       (when (or (contains? @cf/flags :login)
                 (contains? @cf/flags :login-with-ldap))
@@ -160,17 +165,16 @@
    [:div.links
     [:div.link-entry
      [:span (tr "auth.already-have-account") " "]
-     [:a {:on-click #(st/emit! (rt/nav :auth-login {} params))
-          :tab-index "4"
-          :data-test "login-here-link"}
-      (tr "auth.login-here")]]
+
+     [:& lk/link {:action  #(st/emit! (rt/nav :auth-login {} params))
+                  :name (tr "auth.login-here")
+                  :data-test "login-here-link"}]]
 
     (when (contains? @cf/flags :demo-users)
       [:div.link-entry
        [:span (tr "auth.create-demo-profile") " "]
-       [:a {:on-click #(st/emit! (du/create-demo-profile))
-            :tab-index "5"}
-        (tr "auth.create-demo-account")]])]])
+       [:& lk/link {:action  #(st/emit! (du/create-demo-profile))
+                    :name (tr "auth.create-demo-account")}]])]])
 
 ;; --- PAGE: register validation
 
@@ -237,7 +241,6 @@
                  :form form}
      [:div.fields-row
       [:& fm/input {:name :fullname
-                    :tab-index "1"
                     :label (tr "auth.fullname")
                     :type "text"}]]
 
@@ -268,9 +271,8 @@
 
    [:div.links
     [:div.link-entry
-     [:a {:on-click #(st/emit! (rt/nav :auth-register {} {}))
-          :tab-index "4"}
-      (tr "labels.go-back")]]]])
+     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))
+                  :name    (tr "labels.go-back")}]]]])
 
 (mf/defc register-success-page
   [{:keys [params] :as props}]

@@ -767,6 +767,10 @@ msgstr "Looks like you are opening a file that has the feature '%s' enabled bug 
 msgid "errors.email-already-exists"
 msgstr "Email already used"
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Enter a valid email please"
+
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.email-already-validated"
 msgstr "Email already validated."
