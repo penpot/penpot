@@ -498,14 +498,29 @@
 
 (defn add-library-color
   [file color]
-
   (let [id (or (:id color) (uuid/next))]
     (-> file
         (commit-change
          {:type :add-color
-          :id id
           :color (assoc color :id id)})
         (assoc :last-id id))))
+
+(defn update-library-color
+  [file color]
+  (let [id (uuid/uuid (:id color))]
+    (-> file
+        (commit-change
+         {:type :mod-color
+          :color (assoc color :id id)})
+        (assoc :last-id (:id color)))))
+
+(defn delete-library-color
+  [file color-id]
+  (let [id (uuid/uuid color-id)]
+    (-> file
+        (commit-change
+         {:type :del-color
+          :id id}))))
 
 (defn add-library-typography
   [file typography]

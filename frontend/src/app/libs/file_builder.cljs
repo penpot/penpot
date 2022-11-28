@@ -27,7 +27,6 @@
              key (-> key d/name str/kebab keyword)]
          [key value])) $)))
 
-
 (defn export-file
   [file]
   (let [file (assoc file
@@ -51,6 +50,14 @@
              (rx/observe-on :async)
              (rx/flat-map e/get-page-data)
              (rx/share))
+
+        colors-stream
+        (->> files-stream
+             (rx/flat-map vals)
+             (rx/map #(vector (:id %) (get-in % [:data :colors])))
+             (rx/filter #(d/not-empty? (second %)))
+             (rx/map e/parse-library-color))
+
         pages-stream
         (->> render-stream
              (rx/map e/collect-page))]
@@ -64,7 +71,8 @@
 
      (->> (rx/merge
            manifest-stream
-           pages-stream)
+           pages-stream
+           colors-stream)
           (rx/reduce conj [])
           (rx/with-latest-from files-stream)
           (rx/flat-map (fn [[data _]]
@@ -132,6 +140,18 @@
 
   (closeSVG [_]
     (set! file (fb/close-svg-raw file)))
+
+  (addLibraryColor [_ data]
+    (set! file (fb/add-library-color file (parse-data data)))
+    (str (:last-id file)))
+
+  (updateLibraryColor [_ data]
+    (set! file (fb/update-library-color file (parse-data data)))
+    (str (:last-id file)))
+
+  (deleteLibraryColor [_ data]
+    (set! file (fb/delete-library-color file (parse-data data)))
+    (str (:last-id file)))
 
   (asMap [_]
     (clj->js file))
