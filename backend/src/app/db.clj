@@ -493,3 +493,18 @@
   (let [n   (xact-check-param n)
         row (exec-one! conn ["select pg_try_advisory_xact_lock(?::bigint) as lock" n])]
     (:lock row)))
+
+(defn sql-exception?
+  [cause]
+  (instance? java.sql.SQLException cause))
+
+(defn connection-error?
+  [cause]
+  (and (sql-exception? cause)
+       (contains? #{"08003" "08006" "08001" "08004"}
+                  (.getSQLState ^java.sql.SQLException cause))))
+
+(defn serialization-error?
+  [cause]
+  (and (sql-exception? cause)
+       (= "40001" (.getSQLState ^java.sql.SQLException cause))))

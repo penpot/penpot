@@ -9,8 +9,13 @@
    [app.auth.oidc]
    [app.common.logging :as l]
    [app.config :as cf]
+   [app.db :as-alias db]
+   [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
+   [app.redis :as-alias rds]
+   [app.storage :as-alias sto]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [cuerdas.core :as str]
    [integrant.core :as ig])
   (:gen-class))
@@ -120,91 +125,83 @@
     ::mdef/type :gauge}})
 
 (def system-config
-  {:app.db/pool
+  {::db/pool
    {:uri        (cf/get :database-uri)
     :username   (cf/get :database-username)
     :password   (cf/get :database-password)
     :read-only  (cf/get :database-readonly false)
-    :metrics    (ig/ref :app.metrics/metrics)
+    :metrics    (ig/ref ::mtx/metrics)
     :migrations (ig/ref :app.migrations/all)
     :name       :main
     :min-size   (cf/get :database-min-pool-size 0)
     :max-size   (cf/get :database-max-pool-size 60)}
 
    ;; Default thread pool for IO operations
-   [::default :app.worker/executor]
-   {:parallelism (cf/get :default-executor-parallelism 70)}
+   ::wrk/executor
+   {::wrk/parallelism (cf/get :default-executor-parallelism 100)}
 
-   ;; Dedicated thread pool for background tasks execution.
-   [::worker :app.worker/executor]
-   {:parallelism (cf/get :worker-executor-parallelism 20)}
+   ::wrk/scheduled-executor
+   {::wrk/parallelism (cf/get :scheduled-executor-parallelism 20)}
 
-   :app.worker/scheduler
-   {:parallelism 1
-    :prefix :scheduler}
-
-   :app.worker/executors
-   {:default (ig/ref [::default :app.worker/executor])
-    :worker  (ig/ref [::worker :app.worker/executor])}
-
-   :app.worker/executor-monitor
-   {:metrics   (ig/ref :app.metrics/metrics)
-    :executors (ig/ref :app.worker/executors)}
+   ::wrk/monitor
+   {::mtx/metrics  (ig/ref ::mtx/metrics)
+    ::wrk/name     "default"
+    ::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.migrations/migrations
    {}
 
-   :app.metrics/metrics
+   ::mtx/metrics
    {:default default-metrics}
 
    :app.migrations/all
    {:main (ig/ref :app.migrations/migrations)}
 
-   :app.redis/redis
-   {:uri     (cf/get :redis-uri)
-    :metrics (ig/ref :app.metrics/metrics)}
+   ::rds/redis
+   {::rds/uri     (cf/get :redis-uri)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    :app.msgbus/msgbus
    {:backend   (cf/get :msgbus-backend :redis)
-    :executor  (ig/ref [::default :app.worker/executor])
-    :redis     (ig/ref :app.redis/redis)}
+    :executor  (ig/ref ::wrk/executor)
+    :redis     (ig/ref ::rds/redis)}
 
    :app.storage.tmp/cleaner
-   {:executor (ig/ref [::worker :app.worker/executor])
-    :scheduler (ig/ref :app.worker/scheduler)}
+   {::wrk/executor (ig/ref ::wrk/executor)
+    ::wrk/scheduled-executor (ig/ref ::wrk/scheduled-executor)}
 
-   :app.storage/gc-deleted-task
-   {:pool     (ig/ref :app.db/pool)
-    :storage  (ig/ref :app.storage/storage)
-    :executor (ig/ref [::worker :app.worker/executor])}
+   ::sto/gc-deleted-task
+   {:pool     (ig/ref ::db/pool)
+    :storage  (ig/ref ::sto/storage)
+    :executor (ig/ref ::wrk/executor)}
 
-   :app.storage/gc-touched-task
-   {:pool (ig/ref :app.db/pool)}
+   ::sto/gc-touched-task
+   {:pool (ig/ref ::db/pool)}
 
    :app.http/client
-   {:executor (ig/ref [::default :app.worker/executor])}
+   {:executor (ig/ref ::wrk/executor)}
 
    :app.http.session/manager
-   {:pool     (ig/ref :app.db/pool)
+   {:pool     (ig/ref ::db/pool)
     :sprops   (ig/ref :app.setup/props)
-    :executor (ig/ref [::default :app.worker/executor])}
+    :executor (ig/ref ::wrk/executor)}
 
    :app.http.session/gc-task
-   {:pool        (ig/ref :app.db/pool)
+   {:pool        (ig/ref ::db/pool)
     :max-age     (cf/get :auth-token-cookie-max-age)}
 
    :app.http.awsns/handler
    {:sprops      (ig/ref :app.setup/props)
-    :pool        (ig/ref :app.db/pool)
+    :pool        (ig/ref ::db/pool)
     :http-client (ig/ref :app.http/client)
-    :executor    (ig/ref [::worker :app.worker/executor])}
+    :executor    (ig/ref ::wrk/executor)}
 
    :app.http/server
    {:port        (cf/get :http-server-port)
     :host        (cf/get :http-server-host)
     :router      (ig/ref :app.http/router)
-    :metrics     (ig/ref :app.metrics/metrics)
-    :executor    (ig/ref [::default :app.worker/executor])
+    :metrics     (ig/ref ::mtx/metrics)
+    :executor    (ig/ref ::wrk/executor)
     :io-threads  (cf/get :http-server-io-threads)
     :max-body-size           (cf/get :http-server-max-body-size)
     :max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}
@@ -264,10 +261,10 @@
                   :oidc   (ig/ref :app.auth.oidc/generic-provider)}
     :sprops      (ig/ref :app.setup/props)
     :http-client (ig/ref :app.http/client)
-    :pool        (ig/ref :app.db/pool)
+    :pool        (ig/ref ::db/pool)
     :session     (ig/ref :app.http.session/manager)
     :public-uri  (cf/get :public-uri)
-    :executor    (ig/ref [::default :app.worker/executor])}
+    :executor    (ig/ref ::wrk/executor)}
 
    ;; TODO: revisit the dependencies of this service, looks they are too much unused of them
    :app.http/router
@@ -278,61 +275,60 @@
     :debug-routes  (ig/ref :app.http.debug/routes)
     :oidc-routes   (ig/ref :app.auth.oidc/routes)
     :ws            (ig/ref :app.http.websocket/handler)
-    :metrics       (ig/ref :app.metrics/metrics)
+    :metrics       (ig/ref ::mtx/metrics)
     :public-uri    (cf/get :public-uri)
-    :storage       (ig/ref :app.storage/storage)
+    :storage       (ig/ref ::sto/storage)
     :audit-handler (ig/ref :app.loggers.audit/http-handler)
     :rpc-routes    (ig/ref :app.rpc/routes)
     :doc-routes    (ig/ref :app.rpc.doc/routes)
-    :executor      (ig/ref [::default :app.worker/executor])}
+    :executor      (ig/ref ::wrk/executor)}
 
    :app.http.debug/routes
-   {:pool     (ig/ref :app.db/pool)
-    :executor (ig/ref [::worker :app.worker/executor])
-    :storage  (ig/ref :app.storage/storage)
+   {:pool     (ig/ref ::db/pool)
+    :executor (ig/ref ::wrk/executor)
+    :storage  (ig/ref ::sto/storage)
     :session  (ig/ref :app.http.session/manager)}
 
    :app.http.websocket/handler
-   {:pool     (ig/ref :app.db/pool)
-    :metrics  (ig/ref :app.metrics/metrics)
+   {:pool     (ig/ref ::db/pool)
+    :metrics  (ig/ref ::mtx/metrics)
     :msgbus   (ig/ref :app.msgbus/msgbus)}
 
    :app.http.assets/handlers
-   {:metrics           (ig/ref :app.metrics/metrics)
+   {:metrics           (ig/ref ::mtx/metrics)
     :assets-path       (cf/get :assets-path)
-    :storage           (ig/ref :app.storage/storage)
-    :executor          (ig/ref [::default :app.worker/executor])
+    :storage           (ig/ref ::sto/storage)
+    :executor          (ig/ref ::wrk/executor)
     :cache-max-age     (dt/duration {:hours 24})
     :signature-max-age (dt/duration {:hours 24 :minutes 5})}
 
    :app.http.feedback/handler
-   {:pool     (ig/ref :app.db/pool)
-    :executor (ig/ref [::default :app.worker/executor])}
+   {:pool     (ig/ref ::db/pool)
+    :executor (ig/ref ::wrk/executor)}
 
    :app.rpc/climit
-   {:metrics  (ig/ref :app.metrics/metrics)
-    :executor (ig/ref [::default :app.worker/executor])}
+   {:metrics  (ig/ref ::mtx/metrics)
+    :executor (ig/ref ::wrk/executor)}
 
    :app.rpc/rlimit
-   {:executor  (ig/ref [::worker :app.worker/executor])
-    :scheduler (ig/ref :app.worker/scheduler)}
+   {:executor  (ig/ref ::wrk/executor)
+    :scheduled-executor (ig/ref ::wrk/scheduled-executor)}
 
    :app.rpc/methods
-   {:pool        (ig/ref :app.db/pool)
+   {:pool        (ig/ref ::db/pool)
     :session     (ig/ref :app.http.session/manager)
     :sprops      (ig/ref :app.setup/props)
-    :metrics     (ig/ref :app.metrics/metrics)
-    :storage     (ig/ref :app.storage/storage)
+    :metrics     (ig/ref ::mtx/metrics)
+    :storage     (ig/ref ::sto/storage)
     :msgbus      (ig/ref :app.msgbus/msgbus)
     :public-uri  (cf/get :public-uri)
-    :redis       (ig/ref :app.redis/redis)
+    :redis       (ig/ref ::rds/redis)
     :audit       (ig/ref :app.loggers.audit/collector)
     :ldap        (ig/ref :app.auth.ldap/provider)
     :http-client (ig/ref :app.http/client)
     :climit      (ig/ref :app.rpc/climit)
     :rlimit      (ig/ref :app.rpc/rlimit)
-    :executors   (ig/ref :app.worker/executors)
-    :executor    (ig/ref [::default :app.worker/executor])
+    :executor    (ig/ref ::wrk/executor)
     :templates   (ig/ref :app.setup/builtin-templates)
     }
 
@@ -342,15 +338,15 @@
    :app.rpc/routes
    {:methods (ig/ref :app.rpc/methods)}
 
-   :app.worker/registry
-   {:metrics (ig/ref :app.metrics/metrics)
+   ::wrk/registry
+   {:metrics (ig/ref ::mtx/metrics)
     :tasks
     {:sendmail           (ig/ref :app.emails/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
-     :storage-gc-deleted (ig/ref :app.storage/gc-deleted-task)
-     :storage-gc-touched (ig/ref :app.storage/gc-touched-task)
+     :storage-gc-deleted (ig/ref ::sto/gc-deleted-task)
+     :storage-gc-touched (ig/ref ::sto/gc-touched-task)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :session-gc         (ig/ref :app.http.session/gc-task)
@@ -370,24 +366,24 @@
 
    :app.emails/handler
    {:sendmail (ig/ref :app.emails/sendmail)
-    :metrics  (ig/ref :app.metrics/metrics)}
+    :metrics  (ig/ref ::mtx/metrics)}
 
    :app.tasks.tasks-gc/handler
-   {:pool    (ig/ref :app.db/pool)
+   {:pool    (ig/ref ::db/pool)
     :max-age cf/deletion-delay}
 
    :app.tasks.objects-gc/handler
-   {:pool    (ig/ref :app.db/pool)
-    :storage (ig/ref :app.storage/storage)}
+   {:pool    (ig/ref ::db/pool)
+    :storage (ig/ref ::sto/storage)}
 
    :app.tasks.file-gc/handler
-   {:pool (ig/ref :app.db/pool)}
+   {:pool (ig/ref ::db/pool)}
 
    :app.tasks.file-xlog-gc/handler
-   {:pool (ig/ref :app.db/pool)}
+   {:pool (ig/ref ::db/pool)}
 
    :app.tasks.telemetry/handler
-   {:pool        (ig/ref :app.db/pool)
+   {:pool        (ig/ref ::db/pool)
     :version     (:full cf/version)
     :uri         (cf/get :telemetry-uri)
     :sprops      (ig/ref :app.setup/props)
@@ -401,28 +397,28 @@
    {:http-client (ig/ref :app.http/client)}
 
    :app.setup/props
-   {:pool (ig/ref :app.db/pool)
+   {:pool (ig/ref ::db/pool)
     :key  (cf/get :secret-key)}
 
    :app.loggers.zmq/receiver
    {:endpoint (cf/get :loggers-zmq-uri)}
 
    :app.loggers.audit/http-handler
-   {:pool     (ig/ref :app.db/pool)
-    :executor (ig/ref [::default :app.worker/executor])}
+   {:pool     (ig/ref ::db/pool)
+    :executor (ig/ref ::wrk/executor)}
 
    :app.loggers.audit/collector
-   {:pool     (ig/ref :app.db/pool)
-    :executor (ig/ref [::worker :app.worker/executor])}
+   {:pool     (ig/ref ::db/pool)
+    :executor (ig/ref ::wrk/executor)}
 
    :app.loggers.audit/archive-task
    {:uri         (cf/get :audit-log-archive-uri)
     :sprops      (ig/ref :app.setup/props)
-    :pool        (ig/ref :app.db/pool)
+    :pool        (ig/ref ::db/pool)
     :http-client (ig/ref :app.http/client)}
 
    :app.loggers.audit/gc-task
-   {:pool (ig/ref :app.db/pool)}
+   {:pool (ig/ref ::db/pool)}
 
    :app.loggers.loki/reporter
    {:uri         (cf/get :loggers-loki-uri)
@@ -436,12 +432,12 @@
 
    :app.loggers.database/reporter
    {:receiver (ig/ref :app.loggers.zmq/receiver)
-    :pool     (ig/ref :app.db/pool)
-    :executor (ig/ref [::worker :app.worker/executor])}
+    :pool     (ig/ref ::db/pool)
+    :executor (ig/ref ::wrk/executor)}
 
-   :app.storage/storage
-   {:pool     (ig/ref :app.db/pool)
-    :executor (ig/ref [::default :app.worker/executor])
+   ::sto/storage
+   {:pool     (ig/ref ::db/pool)
+    :executor (ig/ref ::wrk/executor)
 
     :backends
     {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
@@ -455,7 +451,7 @@
    {:region   (cf/get :storage-assets-s3-region)
     :endpoint (cf/get :storage-assets-s3-endpoint)
     :bucket   (cf/get :storage-assets-s3-bucket)
-    :executor (ig/ref [::default :app.worker/executor])}
+    :executor (ig/ref ::wrk/executor)}
 
    [::assets :app.storage.fs/backend]
    {:directory (cf/get :storage-assets-fs-directory)}
@@ -463,12 +459,11 @@
 
 
 (def worker-config
-  {:app.worker/cron
-   {:executor   (ig/ref [::worker :app.worker/executor])
-    :scheduler  (ig/ref :app.worker/scheduler)
-    :tasks      (ig/ref :app.worker/registry)
-    :pool       (ig/ref :app.db/pool)
-    :entries
+  {::wrk/cron
+   {::wrk/scheduled-executor  (ig/ref ::wrk/scheduled-executor)
+    ::wrk/registry            (ig/ref ::wrk/registry)
+    ::db/pool                 (ig/ref ::db/pool)
+    ::wrk/entries
     [{:cron #app/cron "0 0 * * * ?" ;; hourly
       :task :file-xlog-gc}
 
@@ -501,11 +496,18 @@
        {:cron #app/cron "30 */5 * * * ?" ;; every 5m
         :task :audit-log-gc})]}
 
-   :app.worker/worker
-   {:executor (ig/ref [::worker :app.worker/executor])
-    :tasks    (ig/ref :app.worker/registry)
-    :metrics  (ig/ref :app.metrics/metrics)
-    :pool     (ig/ref :app.db/pool)}})
+   ::wrk/scheduler
+   {::rds/redis   (ig/ref ::rds/redis)
+    ::mtx/metrics (ig/ref ::mtx/metrics)
+    ::db/pool     (ig/ref ::db/pool)}
+
+   ::wrk/worker
+   {::wrk/parallelism (cf/get ::worker-parallelism 3)
+    ::wrk/queue       "default"
+    ::rds/redis       (ig/ref ::rds/redis)
+    ::wrk/registry    (ig/ref ::wrk/registry)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)}})
 
 (def system nil)
 

@@ -7,7 +7,7 @@
 #_:clj-kondo/ignore
 (ns app.common.data.macros
   "Data retrieval & manipulation specific macros."
-  (:refer-clojure :exclude [get-in select-keys str])
+  (:refer-clojure :exclude [get-in select-keys str with-open])
   #?(:cljs (:require-macros [app.common.data.macros]))
   (:require
    #?(:clj [clojure.core :as c]
@@ -94,5 +94,16 @@
   [s & params]
   `(str/ffmt ~s ~@params))
 
-
-
+(defmacro with-open
+  [bindings & body]
+  {:pre [(vector? bindings)
+         (even? (count bindings))
+         (pos? (count bindings))]}
+  (reduce (fn [acc bindings]
+            `(let ~(vec bindings)
+               (try
+                 ~acc
+                 (finally
+                   (d/close! ~(first bindings))))))
+          `(do ~@body)
+          (reverse (partition 2 bindings))))

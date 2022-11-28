@@ -12,6 +12,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.storage :as-alias sto]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.core.async :as a]
@@ -23,43 +24,43 @@
 (declare remove-temp-file)
 (defonce queue (a/chan 128))
 
-(s/def ::min-age ::dt/duration)
-
 (defmethod ig/pre-init-spec ::cleaner [_]
-  (s/keys :req-un [::min-age ::wrk/scheduler ::wrk/executor]))
+  (s/keys :req [::sto/min-age ::wrk/scheduled-executor]))
 
 (defmethod ig/prep-key ::cleaner
   [_ cfg]
-  (merge {:min-age (dt/duration {:minutes 30})}
+  (merge {::sto/min-age (dt/duration "30m")}
          (d/without-nils cfg)))
 
 (defmethod ig/init-key ::cleaner
-  [_ {:keys [scheduler executor min-age] :as cfg}]
-  (l/info :hint "starting tempfile cleaner service")
-  (let [cch (a/chan)]
-    (a/go-loop []
-      (let [[path port] (a/alts! [queue cch])]
-        (when (not= port cch)
+  [_ {:keys [::sto/min-age ::wrk/scheduled-executor] :as cfg}]
+  (px/thread
+    {:name "penpot/storage-tmp-cleaner"}
+    (try
+      (l/info :hint "started tmp file cleaner")
+      (loop []
+        (when-let [path (a/<!! queue)]
           (l/trace :hint "schedule tempfile deletion" :path path
                    :expires-at (dt/plus (dt/now) min-age))
-          (px/schedule! scheduler
+          (px/schedule! scheduled-executor
                         (inst-ms min-age)
-                        (partial remove-temp-file executor path))
-          (recur))))
-    cch))
+                        (partial remove-temp-file path))
+          (recur)))
+      (catch InterruptedException _
+        (l/debug :hint "interrupted"))
+      (finally
+        (l/info :hint "terminated tmp file cleaner")))))
 
 (defmethod ig/halt-key! ::cleaner
-  [_ close-ch]
-  (l/info :hint "stopping tempfile cleaner service")
-  (some-> close-ch a/close!))
+  [_ thread]
+  (px/interrupt! thread))
 
 (defn- remove-temp-file
   "Permanently delete tempfile"
-  [executor path]
-  (px/with-dispatch executor
-    (l/trace :hint "permanently delete tempfile" :path path)
-    (when (fs/exists? path)
-      (fs/delete path))))
+  [path]
+  (l/trace :hint "permanently delete tempfile" :path path)
+  (when (fs/exists? path)
+    (fs/delete path)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API

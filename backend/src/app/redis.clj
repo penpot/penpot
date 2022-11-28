@@ -21,13 +21,19 @@
    [promesa.core :as p])
   (:import
    clojure.lang.IDeref
+   clojure.lang.MapEntry
+   io.lettuce.core.KeyValue
    io.lettuce.core.RedisClient
+   io.lettuce.core.RedisCommandInterruptedException
+   io.lettuce.core.RedisCommandTimeoutException
+   io.lettuce.core.RedisException
    io.lettuce.core.RedisURI
    io.lettuce.core.ScriptOutputType
    io.lettuce.core.api.StatefulConnection
    io.lettuce.core.api.StatefulRedisConnection
    io.lettuce.core.api.async.RedisAsyncCommands
    io.lettuce.core.api.async.RedisScriptingAsyncCommands
+   io.lettuce.core.api.sync.RedisCommands
    io.lettuce.core.codec.ByteArrayCodec
    io.lettuce.core.codec.RedisCodec
    io.lettuce.core.codec.StringCodec
@@ -45,13 +51,12 @@
 
 (declare initialize-resources)
 (declare shutdown-resources)
-(declare connect)
-(declare close!)
+(declare connect*)
 
 (s/def ::timer
   #(instance? Timer %))
 
-(s/def ::connection
+(s/def ::default-connection
   #(or (instance? StatefulRedisConnection %)
        (and (instance? IDeref %)
             (instance? StatefulRedisConnection (deref %)))))
@@ -60,6 +65,13 @@
   #(or (instance? StatefulRedisPubSubConnection %)
        (and (instance? IDeref %)
             (instance? StatefulRedisPubSubConnection (deref %)))))
+
+(s/def ::connection
+  (s/or :default ::default-connection
+        :pubsub  ::pubsub-connection))
+
+(s/def ::connection-holder
+  (s/keys :req [::connection]))
 
 (s/def ::redis-uri
   #(instance? RedisURI %))
@@ -75,32 +87,37 @@
 (s/def ::connect? ::us/boolean)
 (s/def ::io-threads ::us/integer)
 (s/def ::worker-threads ::us/integer)
+(s/def ::cache #(instance? clojure.lang.Atom %))
 
 (s/def ::redis
-  (s/keys :req [::resources ::redis-uri ::timer ::mtx/metrics]
-          :opt [::connection]))
-
-(defmethod ig/pre-init-spec ::redis [_]
-  (s/keys :req-un [::uri ::mtx/metrics]
-          :opt-un [::timeout
-                   ::connect?
-                   ::io-threads
-                   ::worker-threads]))
+  (s/keys :req [::resources
+                ::redis-uri
+                ::timer
+                ::mtx/metrics]
+          :opt [::connection
+                ::cache]))
 
 (defmethod ig/prep-key ::redis
   [_ cfg]
   (let [runtime (Runtime/getRuntime)
         cpus    (.availableProcessors ^Runtime runtime)]
-    (merge {:timeout (dt/duration 5000)
-            :io-threads (max 3 cpus)
-            :worker-threads (max 3 cpus)}
-         (d/without-nils cfg))))
+    (merge {::timeout (dt/duration "10s")
+            ::io-threads (max 3 cpus)
+            ::worker-threads (max 3 cpus)}
+           (d/without-nils cfg))))
+
+(defmethod ig/pre-init-spec ::redis [_]
+  (s/keys :req [::uri ::mtx/metrics]
+          :opt [::timeout
+                ::connect?
+                ::io-threads
+                ::worker-threads]))
 
 (defmethod ig/init-key ::redis
-  [_ {:keys [connect?] :as cfg}]
-  (let [cfg (initialize-resources cfg)]
-    (cond-> cfg
-      connect? (assoc ::connection (connect cfg)))))
+  [_ {:keys [::connect?] :as cfg}]
+  (let [state (initialize-resources cfg)]
+    (cond-> state
+      connect? (assoc ::connection (connect* cfg {})))))
 
 (defmethod ig/halt-key! ::redis
   [_ state]
@@ -114,7 +131,7 @@
 
 (defn- initialize-resources
   "Initialize redis connection resources"
-  [{:keys [uri io-threads worker-threads connect? metrics] :as cfg}]
+  [{:keys [::uri ::io-threads ::worker-threads ::connect?] :as cfg}]
   (l/info :hint "initialize redis resources"
           :uri uri
           :io-threads io-threads
@@ -131,34 +148,32 @@
         redis-uri (RedisURI/create ^String uri)]
 
     (-> cfg
-        (assoc ::mtx/metrics metrics)
-        (assoc ::cache (atom {}))
+        (assoc ::resources resources)
         (assoc ::timer timer)
-        (assoc ::redis-uri redis-uri)
-        (assoc ::resources resources))))
+        (assoc ::cache (atom {}))
+        (assoc ::redis-uri redis-uri))))
 
 (defn- shutdown-resources
   [{:keys [::resources ::cache ::timer]}]
-  (run! close! (vals @cache))
+  (run! d/close! (vals @cache))
   (when resources
     (.shutdown ^ClientResources resources))
   (when timer
     (.stop ^Timer timer)))
 
-(defn connect
-  [{:keys [::resources ::redis-uri] :as cfg}
-   & {:keys [timeout codec type] :or {codec default-codec type :default}}]
+(defn connect*
+  [{:keys [::resources ::redis-uri] :as state}
+   {:keys [timeout codec type]
+    :or {codec default-codec type :default}}]
 
   (us/assert! ::resources resources)
-
   (let [client  (RedisClient/create ^ClientResources resources ^RedisURI redis-uri)
-        timeout (or timeout (:timeout cfg))
+        timeout (or timeout (::timeout state))
         conn    (case type
                   :default (.connect ^RedisClient client ^RedisCodec codec)
                   :pubsub  (.connectPubSub ^RedisClient client ^RedisCodec codec))]
 
     (.setTimeout ^StatefulConnection conn ^Duration timeout)
-
     (reify
       IDeref
       (deref [_] conn)
@@ -168,53 +183,113 @@
         (.close ^StatefulConnection conn)
         (.shutdown ^RedisClient client)))))
 
+(defn connect
+  [state & {:as opts}]
+  (let [connection (connect* state opts)]
+    (-> state
+        (assoc ::connection connection)
+        (dissoc ::cache)
+        (vary-meta assoc `d/close! (fn [_] (d/close! connection))))))
+
 (defn get-or-connect
   [{:keys [::cache] :as state} key options]
-  (assoc state ::connection
-         (or (get @cache key)
-             (-> (swap! cache (fn [cache]
-                                (when-let [prev (get cache key)]
-                                  (close! prev))
-                                (assoc cache key (connect state options))))
-                 (get key)))))
+  (-> state
+      (assoc ::connection
+             (or (get @cache key)
+                 (-> (swap! cache (fn [cache]
+                                    (when-let [prev (get cache key)]
+                                      (d/close! prev))
+                                    (assoc cache key (connect* state options))))
+                     (get key))))
+      (dissoc ::cache)))
 
 (defn add-listener!
-  [conn listener]
-  (us/assert! ::pubsub-connection @conn)
+  [{:keys [::connection] :as conn} listener]
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::pubsub-connection connection)
   (us/assert! ::pubsub-listener listener)
-
-  (.addListener ^StatefulRedisPubSubConnection @conn
+  (.addListener ^StatefulRedisPubSubConnection @connection
                 ^RedisPubSubListener listener)
   conn)
 
 (defn publish!
-  [conn topic message]
+  [{:keys [::connection] :as conn} topic message]
   (us/assert! ::us/string topic)
   (us/assert! ::us/bytes message)
-  (us/assert! ::connection @conn)
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::default-connection connection)
 
-  (let [pcomm (.async ^StatefulRedisConnection @conn)]
+  (let [pcomm (.async ^StatefulRedisConnection @connection)]
     (.publish ^RedisAsyncCommands pcomm ^String topic ^bytes message)))
 
 (defn subscribe!
-  "Blocking operation, intended to be used on a worker/agent thread."
-  [conn & topics]
-  (us/assert! ::pubsub-connection @conn)
-  (let [topics (into-array String (map str topics))
-        cmd    (.sync ^StatefulRedisPubSubConnection @conn)]
-    (.subscribe ^RedisPubSubCommands cmd topics)))
+  "Blocking operation, intended to be used on a thread/agent thread."
+  [{:keys [::connection] :as conn} & topics]
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::pubsub-connection connection)
+  (try
+    (let [topics (into-array String (map str topics))
+          cmd    (.sync ^StatefulRedisPubSubConnection @connection)]
+      (.subscribe ^RedisPubSubCommands cmd topics))
+    (catch RedisCommandInterruptedException cause
+      (throw (InterruptedException. (ex-message cause))))))
 
 (defn unsubscribe!
-  "Blocking operation, intended to be used on a worker/agent thread."
-  [conn & topics]
-  (us/assert! ::pubsub-connection @conn)
-  (let [topics (into-array String (map str topics))
-        cmd    (.sync ^StatefulRedisPubSubConnection @conn)]
-    (.unsubscribe ^RedisPubSubCommands cmd topics)))
+  "Blocking operation, intended to be used on a thread/agent thread."
+  [{:keys [::connection] :as conn} & topics]
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::pubsub-connection connection)
+  (try
+    (let [topics (into-array String (map str topics))
+          cmd    (.sync ^StatefulRedisPubSubConnection @connection)]
+      (.unsubscribe ^RedisPubSubCommands cmd topics))
+    (catch RedisCommandInterruptedException cause
+      (throw (InterruptedException. (ex-message cause))))))
+
+(defn rpush!
+  [{:keys [::connection] :as conn} key payload]
+  (us/assert! ::connection-holder conn)
+  (us/assert! (or (and (vector? payload)
+                       (every? bytes? payload))
+                  (bytes? payload)))
+  (try
+    (let [cmd  (.sync ^StatefulRedisConnection @connection)
+          data (if (vector? payload) payload [payload])
+          vals (make-array (. Class (forName "[B")) (count data))]
+
+      (loop [i 0 xs (seq data)]
+        (when xs
+          (aset ^"[[B" vals i ^bytes (first xs))
+          (recur (inc i) (next xs))))
+
+      (.rpush ^RedisCommands cmd
+              ^String key
+              ^"[[B" vals))
+
+    (catch RedisCommandInterruptedException cause
+      (throw (InterruptedException. (ex-message cause))))))
+
+(defn blpop!
+  [{:keys [::connection] :as conn} timeout & keys]
+  (us/assert! ::connection-holder conn)
+  (try
+    (let [keys    (into-array Object (map str keys))
+          cmd     (.sync ^StatefulRedisConnection @connection)
+          timeout (/ (double (inst-ms timeout)) 1000.0)]
+      (when-let [res (.blpop ^RedisCommands cmd
+                             ^double timeout
+                             ^"[Ljava.lang.String;" keys)]
+        (MapEntry/create
+         (.getKey ^KeyValue res)
+         (.getValue ^KeyValue res))))
+    (catch RedisCommandInterruptedException cause
+      (throw (InterruptedException. (ex-message cause))))))
 
 (defn open?
-  [conn]
-  (.isOpen ^StatefulConnection @conn))
+  [{:keys [::connection] :as conn}]
+  (us/assert! ::connection-holder conn)
+  (us/assert! ::pubsub-connection connection)
+  (.isOpen ^StatefulConnection @connection))
 
 (defn pubsub-listener
   [& {:keys [on-message on-subscribe on-unsubscribe]}]
@@ -243,10 +318,6 @@
       (when on-unsubscribe
         (on-unsubscribe nil topic count)))))
 
-(defn close!
-  [o]
-  (.close ^AutoCloseable o))
-
 (def ^:private scripts-cache (atom {}))
 (def noop-fn (constantly nil))
 
@@ -262,12 +333,12 @@
                 ::rscript/vals]))
 
 (defn eval!
-  [{:keys [::mtx/metrics] :as state} script]
-  (us/assert! ::rscript/script script)
+  [{:keys [::mtx/metrics ::connection] :as state} script]
   (us/assert! ::redis state)
+  (us/assert! ::connection-holder state)
+  (us/assert! ::rscript/script script)
 
-  (let [rconn (-> state ::connection deref)
-        cmd   (.async ^StatefulRedisConnection rconn)
+  (let [cmd   (.async ^StatefulRedisConnection @connection)
         keys  (into-array String (map str (::rscript/keys script)))
         vals  (into-array String (map str (::rscript/vals script)))
         sname (::rscript/name script)]
@@ -276,20 +347,20 @@
               (if (instance? io.lettuce.core.RedisNoScriptException cause)
                 (do
                   (l/error :hint "no script found" :name sname :cause cause)
-                  (-> (load-script)
-                      (p/then eval-script)))
+                  (->> (load-script)
+                       (p/mapcat eval-script)))
                 (if-let [on-error (::rscript/on-error script)]
                   (on-error cause)
                   (p/rejected cause))))
 
             (eval-script [sha]
               (let [tpoint (dt/tpoint)]
-                (-> (.evalsha ^RedisScriptingAsyncCommands cmd
-                              ^String sha
-                              ^ScriptOutputType ScriptOutputType/MULTI
-                              ^"[Ljava.lang.String;" keys
-                              ^"[Ljava.lang.String;" vals)
-                    (p/then (fn [result]
+                (->> (.evalsha ^RedisScriptingAsyncCommands cmd
+                               ^String sha
+                               ^ScriptOutputType ScriptOutputType/MULTI
+                               ^"[Ljava.lang.String;" keys
+                               ^"[Ljava.lang.String;" vals)
+                     (p/map (fn [result]
                               (let [elapsed (tpoint)]
                                 (mtx/run! metrics {:id :redis-eval-timing
                                                    :labels [(name sname)]
@@ -300,20 +371,28 @@
                                          :params (str/join "," (::rscript/vals script))
                                          :elapsed (dt/format-duration elapsed))
                                 result)))
-                    (p/catch on-error))))
+                     (p/error on-error))))
 
             (read-script []
               (-> script ::rscript/path io/resource slurp))
 
             (load-script []
               (l/trace :hint "load script" :name sname)
-              (-> (.scriptLoad ^RedisScriptingAsyncCommands cmd
+              (->> (.scriptLoad ^RedisScriptingAsyncCommands cmd
                                ^String (read-script))
-                  (p/then (fn [sha]
+                   (p/map (fn [sha]
                             (swap! scripts-cache assoc sname sha)
                             sha))))]
 
       (if-let [sha (get @scripts-cache sname)]
         (eval-script sha)
-        (-> (load-script)
-            (p/then eval-script))))))
+        (->> (load-script)
+             (p/mapcat eval-script))))))
+
+(defn timeout-exception?
+  [cause]
+  (instance? RedisCommandTimeoutException cause))
+
+(defn exception?
+  [cause]
+  (instance? RedisException cause))

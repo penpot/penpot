@@ -63,16 +63,16 @@
                    (l/trace :hint "enqueued"
                             :key (name bkey)
                             :skey (str skey)
-                            :queue-size (get instance :current-queue-size)
-                            :concurrency (get instance :current-concurrency)
+                            :queue-size (get instance ::pxb/current-queue-size)
+                            :concurrency (get instance ::pxb/current-concurrency))
                    (mtx/run! metrics
                              :id :rpc-climit-queue-size
-                             :val (get instance :current-queue-size)
+                             :val (get instance ::pxb/current-queue-size)
                              :labels labels)
                    (mtx/run! metrics
                              :id :rpc-climit-concurrency
-                             :val (get instance :current-concurrency)
-                             :labels labels)))
+                             :val (get instance ::pxb/current-concurrency)
+                             :labels labels))
 
         on-run   (fn [instance task]
                    (let [elapsed (- (inst-ms (dt/now))
@@ -87,11 +87,11 @@
                                :labels labels)
                      (mtx/run! metrics
                                :id :rpc-climit-queue-size
-                               :val (get instance :current-queue-size)
+                               :val (get instance ::pxb/current-queue-size)
                                :labels labels)
                      (mtx/run! metrics
                                :id :rpc-climit-concurrency
-                               :val (get instance :current-concurrency)
+                               :val (get instance ::pxb/current-concurrency)
                                :labels labels)))
 
         options  {:executor executor

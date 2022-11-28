@@ -5,7 +5,8 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.data
-  "Data manipulation and query helper functions."
+  "A collection if helpers for working with data structures and other
+  data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat])
   #?(:cljs
@@ -22,7 +23,9 @@
    [linked.set :as lks])
 
   #?(:clj
-     (:import linked.set.LinkedSet)))
+     (:import
+      linked.set.LinkedSet
+      java.lang.AutoCloseable)))
 
 (def boolean-or-nil?
   (some-fn nil? boolean?))
@@ -697,3 +700,16 @@
         (map (fn [key]
                [key (delay (generator-fn key))]))
         keys))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Util protocols
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defprotocol ICloseable
+  :extend-via-metadata true
+  (close! [_] "Close the resource."))
+
+#?(:clj
+   (extend-protocol ICloseable
+     AutoCloseable
+     (close! [this] (.close this))))

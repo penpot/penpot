@@ -68,7 +68,7 @@
                     :thumbnail-uri "test"
                     :path (-> "backend_tests/test_files/template.penpot" io/resource fs/path)}]
         system (-> (merge main/system-config main/worker-config)
-                   (assoc-in [:app.redis/redis :uri] (:redis-uri config))
+                   (assoc-in [:app.redis/redis :app.redis/uri] (:redis-uri config))
                    (assoc-in [:app.db/pool :uri] (:database-uri config))
                    (assoc-in [:app.db/pool :username] (:database-username config))
                    (assoc-in [:app.db/pool :password] (:database-password config))
@@ -324,7 +324,7 @@
    (run-task! name {}))
   ([name params]
    (let [tasks (:app.worker/registry *system*)]
-     (let [task-fn (get tasks name)]
+     (let [task-fn (get tasks (d/name name))]
        (task-fn params)))))
 
 ;; --- UTILS
