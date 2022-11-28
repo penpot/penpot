@@ -15,19 +15,26 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.http.client :as http]
+   [app.loggers.audit.tasks :as-alias tasks]
+   [app.main :as-alias main]
+   [app.metrics :as mtx]
    [app.tokens :as tokens]
-   [app.util.async :as aa]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
    [promesa.core :as p]
    [promesa.exec :as px]
+   [promesa.exec.bulkhead :as pxb]
    [yetti.request :as yrq]
    [yetti.response :as yrs]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn parse-client-ip
   [request]
@@ -49,10 +56,23 @@
                 (assoc (->> sk str/kebab (keyword "penpot")) v))))]
     (reduce-kv process-param {} params)))
 
+
+(def ^:private
+  profile-props
+  [:id
+   :is-active
+   :is-muted
+   :auth-backend
+   :email
+   :default-team-id
+   :default-project-id
+   :fullname
+   :lang])
+
 (defn profile->props
   [profile]
   (-> profile
-      (select-keys [:id :is-active :is-muted :auth-backend :email :default-team-id :default-project-id :fullname :lang])
+      (select-keys profile-props)
       (merge (:props profile))
       (d/without-nils)))
 
@@ -79,11 +99,7 @@
 
     (update event :props #(into {} xform %))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HTTP Handler
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(declare persist-http-events)
+;; --- SPECS
 
 (s/def ::profile-id ::us/uuid)
 (s/def ::name ::us/string)
@@ -98,161 +114,174 @@
 
 (s/def ::frontend-events (s/every ::frontend-event))
 
+(s/def ::ip-addr ::us/string)
+(s/def ::backend-event
+  (s/keys :req-un [::type ::name ::profile-id]
+          :opt-un [::ip-addr ::props]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HTTP HANDLER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::concurrency ::us/integer)
+
+(defmethod ig/pre-init-spec ::http-handler [_]
+  (s/keys :req [::wrk/executor ::db/pool ::mtx/metrics ::concurrency]))
+
+(defmethod ig/prep-key ::http-handler
+  [_ cfg]
+  (merge {::concurrency (cf/get :audit-log-http-handler-concurrency 8)}
+         (d/without-nils cfg)))
+
 (defmethod ig/init-key ::http-handler
-  [_  {:keys [executor pool] :as cfg}]
-  (if (or (db/read-only? pool) (not (contains? cf/flags :audit-log)))
+  [_ {:keys [::wrk/executor ::db/pool ::mtx/metrics ::concurrency] :as cfg}]
+  (if (or (db/read-only? pool)
+          (not (contains? cf/flags :audit-log)))
     (do
-      (l/warn :hint "audit log http handler disabled or db is read-only")
+      (l/warn :hint "audit: http handler disabled or db is read-only")
       (fn [_ respond _]
         (respond (yrs/response 204))))
 
-    (letfn [(handler [{:keys [profile-id] :as request}]
+    (letfn [(event->row [event]
+              [(uuid/next)
+               (:name event)
+               (:source event)
+               (:type event)
+               (:timestamp event)
+               (:profile-id event)
+               (db/inet (:ip-addr event))
+               (db/tjson (:props event))
+               (db/tjson (d/without-nils (:context event)))])
+
+            (handle-request [{:keys [profile-id] :as request}]
               (let [events  (->> (:events (:params request))
                                  (remove #(not= profile-id (:profile-id %)))
                                  (us/conform ::frontend-events))
-
                     ip-addr (parse-client-ip request)
-                    cfg     (-> cfg
-                                (assoc :source "frontend")
-                                (assoc :events events)
-                                (assoc :ip-addr ip-addr))]
-                (persist-http-events cfg)))
+                    xform   (comp
+                             (map #(assoc % :ip-addr ip-addr))
+                             (map #(assoc % :source "frontend"))
+                             (map event->row))
 
-            (handle-error [cause]
-              (let [xdata (ex-data cause)]
-                (if (= :spec-validation (:code xdata))
-                  (l/error ::l/raw (str "spec validation on persist-events:\n" (us/pretty-explain xdata)))
-                  (l/error :hint "error on persist-events" :cause cause))))]
+                    columns [:id :name :source :type :tracked-at
+                             :profile-id :ip-addr :props :context]]
+                (when (seq events)
+                  (->> (into [] xform events)
+                       (db/insert-multi! pool :audit-log columns)))))
 
-      (fn [request respond _]
-        ;; Fire and forget, log error in case of error
-        (-> (px/submit! executor #(handler request))
-            (p/catch handle-error))
+            (report-error! [cause]
+              (if-let [xdata (us/validation-error? cause)]
+                (l/error ::l/raw (str "audit: validation error frontend events request\n" (ex/explain xdata)))
+                (l/error :hint "audit: unexpected error on processing frontend events" :cause cause)))
 
-        (respond (yrs/response 204))))))
+            (on-queue [instance]
+              (l/trace :hint "http-handler: enqueued"
+                       :queue-size (get instance ::pxb/current-queue-size)
+                       :concurrency (get instance ::pxb/current-concurrency))
+              (mtx/run! metrics
+                        :id :audit-http-handler-queue-size
+                        :val (get instance ::pxb/current-queue-size))
+              (mtx/run! metrics
+                        :id :audit-http-handler-concurrency
+                        :val (get instance ::pxb/current-concurrency)))
 
-(defn- persist-http-events
-  [{:keys [pool events ip-addr source] :as cfg}]
-  (let [columns    [:id :name :source :type :tracked-at :profile-id :ip-addr :props :context]
-        prepare-xf (map (fn [event]
-                          [(uuid/next)
-                           (:name event)
-                           source
-                           (:type event)
-                           (:timestamp event)
-                           (:profile-id event)
-                           (db/inet ip-addr)
-                           (db/tjson (:props event))
-                           (db/tjson (d/without-nils (:context event)))]))]
-    (when (seq events)
-      (->> (into [] prepare-xf events)
-           (db/insert-multi! pool :audit-log columns)))))
+            (on-run [instance task]
+              (let [elapsed (- (inst-ms (dt/now))
+                               (inst-ms task))]
+                (l/trace :hint "http-handler: execute"
+                         :elapsed (str elapsed "ms"))
+                (mtx/run! metrics
+                          :id :audit-http-handler-timing
+                          :val elapsed)
+                (mtx/run! metrics
+                          :id :audit-http-handler-queue-size
+                          :val (get instance ::pxb/current-queue-size))
+                (mtx/run! metrics
+                          :id :audit-http-handler-concurrency
+                          :val (get instance ::pxb/current-concurrency))))]
+
+      (let [limiter (pxb/create :executor executor
+                                :concurrency concurrency
+                                :on-queue on-queue
+                                :on-run on-run)]
+        (fn [request respond _]
+          (->> (px/submit! limiter (partial handle-request request))
+               (p/fnly (fn [_ cause]
+                         (some-> cause report-error!)
+                         (respond (yrs/response 204))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Collector
+;; COLLECTOR
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Defines a service that collects the audit/activity log using
 ;; internal database. Later this audit log can be transferred to
 ;; an external storage and data cleared.
 
-(declare persist-events)
+(s/def ::collector
+  (s/nilable
+   (s/keys :req [::wrk/executor ::db/pool])))
 
 (defmethod ig/pre-init-spec ::collector [_]
-  (s/keys :req-un [::db/pool ::wrk/executor]))
-
-(s/def ::ip-addr string?)
-(s/def ::backend-event
-  (s/keys :req-un [::type ::name ::profile-id]
-          :opt-un [::ip-addr ::props]))
-
-(def ^:private backend-event-xform
-  (comp
-   (filter #(us/valid? ::backend-event %))
-   (map clean-props)))
+  (s/keys :req [::db/pool ::wrk/executor ::mtx/metrics]))
 
 (defmethod ig/init-key ::collector
-  [_ {:keys [pool] :as cfg}]
+  [_ {:keys [::db/pool] :as cfg}]
   (cond
     (not (contains? cf/flags :audit-log))
-    (do
-      (l/info :hint "audit log collection disabled")
-      (constantly nil))
+    (l/info :hint "audit: log collection disabled")
 
     (db/read-only? pool)
-    (do
-      (l/warn :hint "audit log collection disabled, db is read-only")
-      (constantly nil))
+    (l/warn :hint "audit: log collection disabled (db is read-only)")
 
     :else
-    (let [input  (a/chan 512 backend-event-xform)
-          buffer (aa/batch input {:max-batch-size 100
-                                  :max-batch-age (* 10 1000) ; 10s
-                                  :init []})]
-      (l/info :hint "audit log collector initialized")
-      (a/go-loop []
-        (when-let [[_type events] (a/<! buffer)]
-          (let [res (a/<! (persist-events cfg events))]
-            (when (ex/exception? res)
-              (l/error :hint "error on persisting events" :cause res))
-            (recur))))
+    cfg))
 
-      (fn [& {:keys [cmd] :as params}]
-        (case cmd
-          :stop
-          (a/close! input)
+(defn- persist-event!
+  [pool event]
+  (us/verify! ::backend-event event)
+  (db/insert! pool :audit-log
+              {:id (uuid/next)
+               :name (:name event)
+               :type (:type event)
+               :profile-id (:profile-id event)
+               :tracked-at (dt/now)
+               :ip-addr (some-> (:ip-addr event) db/inet)
+               :props (db/tjson (:props event))
+               :source "backend"}))
 
-          :submit
-          (let [params (-> params
-                           (dissoc :cmd)
-                           (assoc :tracked-at (dt/now)))]
-            (when-not (a/offer! input params)
-              (l/warn :hint "activity channel is full"))))))))
-
-(defn- persist-events
-  [{:keys [pool executor] :as cfg} events]
-  (letfn [(event->row [event]
-            [(uuid/next)
-             (:name event)
-             (:type event)
-             (:profile-id event)
-             (:tracked-at event)
-             (some-> (:ip-addr event) db/inet)
-             (db/tjson (:props event))
-             "backend"])]
-    (aa/with-thread executor
-      (when (seq events)
-        (db/with-atomic [conn pool]
-          (db/insert-multi! conn :audit-log
-                            [:id :name :type :profile-id :tracked-at :ip-addr :props :source]
-                            (sequence (keep event->row) events)))))))
+(defn submit!
+  "Submit audit event to the collector."
+  [{:keys [::wrk/executor ::db/pool]} params]
+  (->> (px/submit! executor (partial persist-event! pool (d/without-nils params)))
+       (p/err (fn [cause]
+                (l/error :hint "audit: unexpected error processing event" :cause cause)
+                (p/resolved nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Archive Task
+;; TASK: ARCHIVE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; This is a task responsible to send the accumulated events to an
+;; This is a task responsible to send the accumulated events to
 ;; external service for archival.
 
 (declare archive-events)
 
-(s/def ::http-client fn?)
-(s/def ::uri ::us/string)
-(s/def ::sprops map?)
+(s/def ::tasks/uri ::us/string)
 
-(defmethod ig/pre-init-spec ::archive-task [_]
-  (s/keys :req-un [::db/pool ::sprops ::http-client]
-          :opt-un [::uri]))
+(defmethod ig/pre-init-spec ::tasks/archive-task [_]
+  (s/keys :req [::db/pool ::main/props ::http/client]))
 
-(defmethod ig/init-key ::archive-task
-  [_ {:keys [uri] :as cfg}]
-  (fn [props]
+(defmethod ig/init-key ::tasks/archive
+  [_ cfg]
+  (fn [params]
     ;; NOTE: this let allows overwrite default configured values from
     ;; the repl, when manually invoking the task.
     (let [enabled (or (contains? cf/flags :audit-log-archive)
-                      (:enabled props false))
-          uri     (or uri (:uri props))
-          cfg     (assoc cfg :uri uri)]
+                      (:enabled params false))
+          uri     (cf/get :audit-log-archive-uri)
+          uri     (or uri (:uri params))
+          cfg     (assoc cfg ::uri uri)]
 
       (when (and enabled (not uri))
         (ex/raise :type :internal
@@ -264,20 +293,21 @@
           (let [n (archive-events cfg)]
             (if n
               (do
-                (aa/thread-sleep 100)
+                (px/sleep 100)
                 (recur (+ total n)))
               (when (pos? total)
-                (l/trace :hint "events chunk archived" :num total)))))))))
+                (l/debug :hint "events archived" :total total)))))))))
 
-(def sql:retrieve-batch-of-audit-log
-  "select * from audit_log
+(def ^:private sql:retrieve-batch-of-audit-log
+  "select *
+     from audit_log
     where archived_at is null
     order by created_at asc
     limit 256
       for update skip locked;")
 
 (defn archive-events
-  [{:keys [pool uri sprops http-client] :as cfg}]
+  [{:keys [::db/pool ::uri] :as cfg}]
   (letfn [(decode-row [{:keys [props ip-addr context] :as row}]
             (cond-> row
               (db/pgobject? props)
@@ -301,9 +331,11 @@
                               :context]))
 
           (send [events]
-            (let [token   (tokens/generate sprops {:iss "authentication"
-                                                   :iat (dt/now)
-                                                   :uid uuid/zero})
+            (let [token   (tokens/generate (::main/props cfg)
+                                           {:iss "authentication"
+                                            :iat (dt/now)
+                                            :uid uuid/zero})
+                  ;; FIXME tokens/generate
                   body    (t/encode {:events events})
                   headers {"content-type" "application/transit+json"
                            "origin" (cf/get :public-uri)
@@ -313,7 +345,7 @@
                            :method :post
                            :headers headers
                            :body body}
-                  resp    (http-client params {:sync? true})]
+                  resp    (http/req! cfg params {:sync? true})]
               (if (= (:status resp) 204)
                 true
                 (do
@@ -334,7 +366,7 @@
                          (map row->event))
             events (into [] xform rows)]
         (when-not (empty? events)
-          (l/debug :action "archive-events" :uri uri :events (count events))
+          (l/trace :hint "archive events chunk" :uri uri :events (count events))
           (when (send events)
             (mark-as-archived conn rows)
             (count events)))))))
@@ -343,7 +375,7 @@
 ;; GC Task
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def sql:clean-archived
+(def ^:private sql:clean-archived
   "delete from audit_log
     where archived_at is not null")
 
@@ -354,10 +386,10 @@
     (l/debug :hint "delete archived audit log entries" :deleted result)
     result))
 
-(defmethod ig/pre-init-spec ::gc-task [_]
-  (s/keys :req-un [::db/pool]))
+(defmethod ig/pre-init-spec ::tasks/gc [_]
+  (s/keys :req [::db/pool]))
 
-(defmethod ig/init-key ::gc-task
+(defmethod ig/init-key ::tasks/gc
   [_ cfg]
   (fn [_]
     (clean-archived cfg)))

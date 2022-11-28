@@ -41,6 +41,11 @@
   [& exprs]
   `(try* (^:once fn* [] ~@exprs) identity))
 
+(defn cause
+  "Retrieve chained cause if available of the exception."
+  [^Throwable throwable]
+  (.getCause throwable))
+
 (defn ex-info?
   [v]
   (instance? #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core.ExceptionInfo) v))

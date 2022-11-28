@@ -7,14 +7,12 @@
 (ns app.main.data.workspace.svg-upload
   (:require
    [app.common.data :as d]
-   [app.common.spec :as us]
-   [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :refer [max-safe-int min-safe-int]]
+   [app.common.spec :as us :refer [max-safe-int min-safe-int]]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]

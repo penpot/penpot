@@ -7,7 +7,6 @@
 (ns app.util.color
   "Color conversion utils."
   (:require
-   [app.common.exceptions :as ex]
    [app.util.object :as obj]
    [cuerdas.core :as str]
    [goog.color :as gcolor]))

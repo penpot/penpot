@@ -12,7 +12,9 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http.client :as http]
+   [app.main :as-alias main]
    [app.tokens :as tokens]
+   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
@@ -26,21 +28,21 @@
 (declare parse-notification)
 (declare process-report)
 
-(s/def ::http-client ::http/client)
-(s/def ::sprops map?)
-
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::http-client ::sprops]))
+  (s/keys :req [::http/client
+                ::main/props
+                ::db/pool
+                ::wrk/executor]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [executor] :as cfg}]
+  [_ {:keys [::wrk/executor] :as cfg}]
   (fn [request respond _]
     (let [data (-> request yrq/body slurp)]
       (px/run! executor #(handle-request cfg data)))
     (respond (yrs/response 200))))
 
 (defn handle-request
-  [{:keys [http-client] :as cfg} data]
+  [cfg data]
   (try
     (let [body  (parse-json data)
           mtype (get body "Type")]
@@ -49,7 +51,7 @@
         (let [surl   (get body "SubscribeURL")
               stopic (get body "TopicArn")]
           (l/info :action "subscription received" :topic stopic :url surl)
-          (http/req! http-client {:uri surl :method :post :timeout 10000} {:sync? true}))
+          (http/req! cfg {:uri surl :method :post :timeout 10000} {:sync? true}))
 
         (= mtype "Notification")
         (when-let [message (parse-json (get body "Message"))]
@@ -100,10 +102,11 @@
           (get mail "headers")))
 
 (defn- extract-identity
-  [{:keys [sprops]} headers]
+  [cfg headers]
   (let [tdata (get headers "x-penpot-data")]
     (when-not (str/empty? tdata)
-      (let [result (tokens/verify sprops {:token tdata :iss :profile-identity})]
+      (let [sprops (::main/props cfg)
+            result (tokens/verify sprops {:token tdata :iss :profile-identity})]
         (:profile-id result)))))
 
 (defn- parse-notification
@@ -136,7 +139,7 @@
    (j/read-value v)))
 
 (defn- register-bounce-for-profile
-  [{:keys [pool]} {:keys [type kind profile-id] :as report}]
+  [{:keys [::db/pool]} {:keys [type kind profile-id] :as report}]
   (when (= kind "permanent")
     (db/with-atomic [conn pool]
       (db/insert! conn :profile-complaint-report
@@ -165,7 +168,7 @@
                       {:id profile-id}))))))
 
 (defn- register-complaint-for-profile
-  [{:keys [pool]} {:keys [type profile-id] :as report}]
+  [{:keys [::db/pool]} {:keys [type profile-id] :as report}]
   (db/with-atomic [conn pool]
     (db/insert! conn :profile-complaint-report
                 {:profile-id profile-id

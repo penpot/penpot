@@ -288,10 +288,10 @@
                 ::queue
                 ::registry]))
 
+;; FIXME: define queue as set
 (defmethod ig/prep-key ::worker
   [_ cfg]
-  (merge {::queue "default"
-          ::parallelism 1}
+  (merge {::queue "default" ::parallelism 1}
          (d/without-nils cfg)))
 
 (defmethod ig/init-key ::worker
@@ -666,10 +666,10 @@
         props     (-> options extract-props db/tjson)
         id        (uuid/next)]
 
-    (l/debug :action "submit task"
+    (l/debug :hint "submit task"
              :name (d/name task)
              :queue queue
-             :in duration)
+             :in (dt/format-duration duration))
 
     (db/exec-one! conn [sql:insert-new-task id (d/name task) props
                         queue priority max-retries interval])

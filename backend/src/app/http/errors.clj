@@ -77,11 +77,11 @@
 
 (defmethod handle-exception :assertion
   [error request]
-  (let [edata (ex-data error)
+  (let [edata   (ex-data error)
         explain (ex/explain edata)]
-    (l/error ::l/raw (str (ex-message error) "\n" explain)
-             ::l/context (get-context request)
-             :cause error)
+    (l/error :hint (ex-message error)
+             :cause error
+             ::l/context (get-context request))
     (yrs/response :status 500
                   :body   {:type :server-error
                            :code :assertion
@@ -102,9 +102,9 @@
 
       :else
       (do
-        (l/error ::l/raw (ex-message error)
-                 ::l/context (get-context request)
-                 :cause error)
+        (l/error :hint (ex-message error)
+                 :cause error
+                 ::l/context (get-context request))
         (yrs/response 500 {:type :server-error
                            :code :unhandled
                            :hint (ex-message error)
@@ -113,9 +113,9 @@
 (defmethod handle-exception org.postgresql.util.PSQLException
   [error request]
   (let [state (.getSQLState ^java.sql.SQLException error)]
-    (l/error ::l/raw (ex-message error)
-             ::l/context (get-context request)
-             :cause error)
+    (l/error :hint (ex-message error)
+             :cause error
+             ::l/context (get-context request))
     (cond
       (= state "57014")
       (yrs/response 504 {:type :server-error
@@ -140,9 +140,9 @@
       ;; This means that exception is not a controlled exception.
       (nil? edata)
       (do
-        (l/error ::l/raw (ex-message error)
-                 ::l/context (get-context request)
-                 :cause error)
+        (l/error :hint (ex-message error)
+                 :cause error
+                 ::l/context (get-context request))
         (yrs/response 500 {:type :server-error
                            :code :unexpected
                            :hint (ex-message error)}))
@@ -158,9 +158,9 @@
 
       :else
       (do
-        (l/error ::l/raw (ex-message error)
-                 ::l/context (get-context request)
-                 :cause error)
+        (l/error :hint (ex-message error)
+                 :cause error
+                 ::l/context (get-context request))
         (yrs/response 500 {:type :server-error
                            :code :unhandled
                            :hint (ex-message error)

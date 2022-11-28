@@ -8,8 +8,10 @@
   "Initial data setup of instance."
   (:require
    [app.common.logging :as l]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.main :as-alias main]
    [app.setup.builtin-templates]
    [app.setup.keys :as keys]
    [buddy.core.codecs :as bc]
@@ -47,6 +49,9 @@
                       :instance-id instance-id
                       :cause cause))))
         instance-id)))
+
+(s/def ::main/props
+  (s/map-of ::us/keyword some?))
 
 (defmethod ig/pre-init-spec ::props [_]
   (s/keys :req-un [::db/pool]))

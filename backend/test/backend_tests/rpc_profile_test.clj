@@ -56,10 +56,10 @@
 ;; Test with good credentials but profile already activated
 (t/deftest profile-login-success
   (let [profile (th/create-profile* 1 {:is-active true})
-        data    {::th/type :login
+        data    {::th/type :login-with-password
                  :email "profile1.test@nodomain.com"
                  :password "123123"}
-        out     (th/mutation! data)]
+        out     (th/command! data)]
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
     (t/is (= (:id profile) (get-in out [:result :id])))))
@@ -198,7 +198,7 @@
   (let [data  {::th/type :prepare-register-profile
                :email "user@example.com"
                :password "foobar"}
-        out   (th/mutation! data)
+        out   (th/command! data)
         token (get-in out [:result :token])]
     (t/is (string? token))
 
@@ -207,7 +207,7 @@
     (let [data  {::th/type :register-profile
                  :fullname "foobar"
                  :accept-terms-and-privacy true}
-          out   (th/mutation! data)]
+          out   (th/command! data)]
       (let [error (:error out)]
         (t/is (th/ex-info? error))
         (t/is (th/ex-of-type? error :validation))
@@ -219,7 +219,8 @@
                  :fullname "foobar"
                  :accept-terms-and-privacy true
                  :accept-newsletter-subscription true}]
-      (let [{:keys [result error]} (th/mutation! data)]
+      (let [{:keys [result error] :as out} (th/command! data)]
+        ;; (th/print-result! out)
         (t/is (nil? error))))
     ))
 
@@ -302,7 +303,7 @@
                  :email "user@example.com"
                  :password "foobar"}
 
-          {:keys [result error] :as out} (th/mutation! data)]
+          {:keys [result error] :as out} (th/command! data)]
       (t/is (nil? error))
       (t/is (map? result))
       (t/is (string? (:token result)))
@@ -312,7 +313,7 @@
                     :token rtoken
                     :fullname "foobar"}
 
-            {:keys [result error] :as out} (th/mutation! data)]
+            {:keys [result error] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (map? result))
@@ -467,7 +468,7 @@
 
       ;; with valid email inactive user
       (let [data  (assoc data :email (:email profile1))
-            out   (th/mutation! data)
+            out   (th/command! data)
             error (:error out)]
         (t/is (= 0 (:call-count @mock)))
         (t/is (th/ex-info? error))
@@ -476,7 +477,7 @@
 
       ;; with valid email and active user
       (let [data  (assoc data :email (:email profile2))
-            out   (th/mutation! data)]
+            out   (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
         (t/is (= 1 (:call-count @mock))))
@@ -484,7 +485,7 @@
       ;; with valid email and active user with global complaints
       (th/create-global-complaint-for pool {:type :complaint :email (:email profile2)})
       (let [data  (assoc data :email (:email profile2))
-            out   (th/mutation! data)]
+            out   (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
         (t/is (= 2 (:call-count @mock))))
@@ -492,7 +493,7 @@
       ;; with valid email and active user with global bounce
       (th/create-global-complaint-for pool {:type :bounce :email (:email profile2)})
       (let [data  (assoc data :email (:email profile2))
-            out   (th/mutation! data)
+            out   (th/command! data)
             error (:error out)]
         ;; (th/print-result! out)
         (t/is (= 2 (:call-count @mock)))

@@ -15,7 +15,6 @@
    [app.emails :as eml]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
-   [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
@@ -138,8 +137,8 @@
 
         (-> response
             (rph/with-transform (session/create-fn session (:id profile)))
-            (vary-meta merge {::audit/props (audit/profile->props profile)
-                              ::audit/profile-id (:id profile)}))))))
+            (rph/with-meta {::audit/props (audit/profile->props profile)
+                            ::audit/profile-id (:id profile)}))))))
 
 (s/def ::login-with-password
   (s/keys :req-un [::email ::password]
@@ -163,8 +162,7 @@
   {:auth false
    ::doc/added "1.15"}
   [{:keys [session] :as cfg} _]
-  (with-meta {}
-    {::rpc/transform-response (session/delete-fn session)}))
+  (rph/with-transform {} (session/delete-fn session)))
 
 ;; ---- COMMAND: Recover Profile
 
@@ -378,8 +376,6 @@
                           (create-profile conn)
                           (create-profile-relations conn)
                           (profile/decode-profile-row)))
-        audit-fn   (:audit cfg)
-
         invitation (when-let [token (:invitation-token params)]
                      (tokens/verify sprops {:token token :iss :team-invitation}))]
 
@@ -388,10 +384,11 @@
     ;; accordingly.
     (when-let [id (:profile-id claims)]
       (db/update! conn :profile {:modified-at (dt/now)} {:id id})
-      (audit-fn :cmd :submit
-                :type "fact"
-                :name "register-profile-retry"
-                :profile-id id))
+      (when-let [collector (::audit/collector cfg)]
+        (audit/submit! collector
+                       {:type "fact"
+                        :name "register-profile-retry"
+                        :profile-id id})))
 
     (cond
       ;; If invitation token comes in params, this is because the
@@ -404,33 +401,33 @@
       (let [claims (assoc invitation :member-id  (:id profile))
             token  (tokens/generate sprops claims)
             resp   {:invitation-token token}]
-        (with-meta resp
-          {::rpc/transform-response (session/create-fn session (:id profile))
-           ::audit/replace-props (audit/profile->props profile)
-           ::audit/profile-id (:id profile)}))
+        (-> resp
+            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-meta {::audit/replace-props (audit/profile->props profile)
+                            ::audit/profile-id (:id profile)})))
 
       ;; If auth backend is different from "penpot" means user is
       ;; registering using third party auth mechanism; in this case
       ;; we need to mark this session as logged.
       (not= "penpot" (:auth-backend profile))
-      (with-meta (profile/strip-private-attrs profile)
-        {::rpc/transform-response (session/create-fn session (:id profile))
-         ::audit/replace-props (audit/profile->props profile)
-         ::audit/profile-id (:id profile)})
+      (-> (profile/strip-private-attrs profile)
+          (rph/with-transform (session/create-fn session (:id profile)))
+          (rph/with-meta {::audit/replace-props (audit/profile->props profile)
+                          ::audit/profile-id (:id profile)}))
 
       ;; If the `:enable-insecure-register` flag is set, we proceed
       ;; to sign in the user directly, without email verification.
       (true? is-active)
-      (with-meta (profile/strip-private-attrs profile)
-        {::rpc/transform-response (session/create-fn session (:id profile))
-         ::audit/replace-props (audit/profile->props profile)
-         ::audit/profile-id (:id profile)})
+      (-> (profile/strip-private-attrs profile)
+          (rph/with-transform (session/create-fn session (:id profile)))
+          (rph/with-meta {::audit/replace-props (audit/profile->props profile)
+                          ::audit/profile-id (:id profile)}))
 
       ;; In all other cases, send a verification email.
       :else
       (do
         (send-email-verification! conn sprops profile)
-        (with-meta profile
+        (rph/with-meta profile
           {::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})))))
 
