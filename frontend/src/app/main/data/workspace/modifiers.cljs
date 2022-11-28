@@ -45,14 +45,18 @@
                 (let [children (->> root-shape
                                     :shapes
                                     (map #(get objects %))
-                                    (map #(gsh/transform-shape % (get-in modif-tree [(:id %) :modifiers]))))
-                      root-shape (gsh/update-group-selrect root-shape children)]
-                  [(:id root-shape) [root-shape (ctn/get-instances objects root-shape)]]))))]
+                                    (map #(gsh/transform-shape % (get-in modif-tree [(:id %) :modifiers])))) ;; esto es para que funcione
+                      root-shape (gsh/update-group-selrect root-shape children)]                             ;; lo de que se mueve la raiz
+                  [(:id root-shape) [root-shape (ctn/get-instances objects root-shape)]]))))]                ;; al salirse la shape interna
 
     (into {} (map get-copies-one shapes))))
 
 (defn- reposition-shape
   [shape origin-root dest-root]
+  ;; (debug.logjs "+++" "")
+  ;; (debug.logjs "shape" shape)
+  ;; (debug.logjs "origin-root" origin-root)
+  ;; (debug.logjs "dest-root" dest-root)
   (let [shape-pos (fn [shape]
                     (gpt/point (get-in shape [:selrect :x])
                                (get-in shape [:selrect :y])))
@@ -66,20 +70,83 @@
   [main-shape copy-shape main-root copy-root]
   (if (ctk/touched-group? copy-shape :geometry-group)
     {}
-    (let [main-shape  (reposition-shape main-shape main-root copy-root)
+    (let [modif-shape (reposition-shape (:modif-shape main-shape) main-root copy-root)
 
-          translation (gpt/subtract (gsh/orig-pos main-shape)
+          ;; _ (when (not= (:name main-shape) "Rect-1xx")
+          ;;     (debug.logjs "+++" "")
+          ;;     (debug.logjs "main-shape" main-shape)
+          ;;     (debug.logjs "copy-shape" copy-shape)
+          ;;     (debug.logjs "main-root" main-root)
+          ;;     (debug.logjs "copy-root" copy-root)
+          ;;     (debug.logjs "modif-shape" modif-shape))
+          translation (gpt/subtract (gsh/orig-pos modif-shape)
                                     (gsh/orig-pos copy-shape))
 
-          center      (gsh/orig-pos copy-shape)
-          mult-w      (/ (gsh/width main-shape) (gsh/width copy-shape))
-          mult-h      (/ (gsh/height main-shape) (gsh/height copy-shape))
-          resize      (gpt/point mult-w mult-h)]
+          orig        (gsh/orig-pos copy-shape)
+          mult-w      (/ (gsh/width modif-shape) (gsh/width copy-shape))
+          mult-h      (/ (gsh/height modif-shape) (gsh/height copy-shape))
+          resize      (gpt/point mult-w mult-h)
 
-      (-> (ctm/empty)
-          (ctm/move translation)
-          (ctm/resize resize center)
-          (vary-meta assoc :copied-modifier? true)))))
+          center      (gsh/center-shape copy-shape)
+          rotation    (- (:rotation modif-shape)
+                         (:rotation copy-shape))]
+
+        ;; (debug/logjs "..." "")
+        ;; (debug/logjs "translation" translation)
+        ;; (debug/logjs "resize" resize)
+        ;; (debug/logjs "orig" orig)
+        ;; (debug/logjs "rotation" rotation)
+        ;; (debug/logjs "center" center)
+        (-> (ctm/empty)
+            (ctm/rotation center rotation)
+            (ctm/move translation)
+            (ctm/resize resize orig)
+            (vary-meta assoc :copied-modifier? true)))))
+
+;; =========nofun
+;; (defn- shape-delta
+;;   [origin-shape dest-shape]
+;;   (let [shape-pos (fn [shape]
+;;                     (gpt/point (get-in shape [:selrect :x])
+;;                                (get-in shape [:selrect :y])))
+;;
+;;         origin-pos (shape-pos origin-shape)
+;;         dest-pos   (shape-pos dest-shape)]
+;;     (gpt/subtract dest-pos origin-pos)))
+;;
+;; (defn- sync-shape
+;;   [main-shape copy-shape main-root copy-root]
+;;   (let [delta     (shape-delta main-root copy-root)
+;;         modifiers (:modifiers main-shape)
+;;
+;;         copy-geometry
+;;         (fn [ops op]
+;;           (let [copy-op (case (:type op)
+;;                           :move op
+;;                           :resize (update op :origin gpt/add delta)
+;;                           :rotation (update op :center gpt/add delta)
+;;                           nil)]
+;;             (if (some? copy-op)
+;;               (conj ops op)
+;;               ops)))
+;;
+;;         copy-structure
+;;         (fn [ops op]
+;;           (conj ops op))]
+;;
+;;     (cond-> {}
+;;       (:geometry-parent modifiers)
+;;       (assoc :geometry-parent (reduce copy-geometry [] (:geometry-parent modifiers)))
+;;
+;;       (:geometry-child modifiers)
+;;       (assoc :geometry-child (reduce copy-geometry [] (:geometry-child modifiers)))
+;;
+;;       (:structure-parent modifiers)
+;;       (assoc :structure-parent (reduce copy-structure [] (:structure-parent modifiers)))
+;;
+;;       (:structure-child modifiers)
+;;       (assoc :structure-child (reduce copy-structure [] (:structure-child modifiers))))))
+;; =========fin nofun
 
 (defn- process-text-modifiers
   "For texts we only use the displacement because resize
@@ -90,12 +157,12 @@
   ;;   (= :text (:type shape))
   ;;   (select-keys [:displacement :rotation])))
 
-(defn- add-copies-modifiers
+(defn- add-modifiers
   "Add modifiers to all necessary shapes inside the copies"
   [copies objects modif-tree]
-  (letfn [(add-copy-modifiers-one [modif-tree copy-shape copy-root main-root main-shapes main-shapes-modif]
-            (let [main-shape-modif (d/seek #(ctk/is-main-of? % copy-shape) main-shapes-modif)
-                  modifiers        (sync-shape main-shape-modif copy-shape main-root copy-root)
+  (letfn [(add-modifiers-shape [modif-tree copy-root copy-shape main-root main-shapes]
+            (let [main-shape       (d/seek #(ctk/is-main-of? % copy-shape) main-shapes)
+                  modifiers        (sync-shape main-shape copy-shape main-root copy-root)
                                    ;; %%(cond-> (sync-shape main-shape-modif copy-shape copy-root main-root)
                                    ;; %% (some? (:rotation (get-in modifiers [(:id main-shape-modif) :modifiers])))
                                    ;; %% (assoc :rotation (:rotation (get-in modifiers [(:id main-shape-modif) :modifiers])))
@@ -105,28 +172,46 @@
                 (assoc-in modif-tree [(:id copy-shape) :modifiers] modifiers)
                 modif-tree)))
 
-          (add-copy-modifiers [modif-tree copy-root main-root main-shapes main-shapes-modif]
+          (add-modifiers-copy [modif-tree copy-root main-root main-shapes]
+            ;; For each copy component, get all its shapes and proceed to sync with it
+            ;; the changes in the corresponding one in the main component.
             (let [copy-shapes (into [copy-root] (cph/get-children objects (:id copy-root)))]
-              (reduce #(add-copy-modifiers-one %1 %2 copy-root main-root main-shapes main-shapes-modif)
+              (reduce #(add-modifiers-shape %1 copy-root %2 main-root main-shapes)
                       modif-tree
                       copy-shapes)))
 
-          (add-copies-modifiers-one [modif-tree [main-root copy-roots]]
-            (let [main-shapes       (into [main-root] (cph/get-children objects (:id main-root)))
-                  main-shapes-modif (map (fn [shape]
-                                           (let [; shape (cond-> shape 
-                                                 ;         (some? (:transform-inverse shape))
-                                                 ;         (gsh/apply-transform (:transform-inverse shape)))
-                                                 ]
-                                                 (->> (get-in modif-tree [(:id shape) :modifiers])
-                                                      (process-text-modifiers shape)
-                                                      (gsh/transform-shape shape))))
-                                         main-shapes)]
-              (reduce #(add-copy-modifiers %1 %2 main-root main-shapes main-shapes-modif)
+          (add-modifiers-component [modif-tree [main-root copy-roots]]
+            ;; For each main component, get all its shapes, apply the modifiers to each one and
+            ;; then proceed to sync changes with all copies.
+            (let [main-shapes (->> (into [main-root] (cph/get-children objects (:id main-root)))
+                                   (map (fn [shape]
+                                          (let [modifiers (get-in modif-tree [(:id shape) :modifiers])]
+                                            (assoc shape
+                                                   :modifiers modifiers
+                                                   :modif-shape (gsh/transform-shape shape modifiers))))))]
+              (reduce #(add-modifiers-copy %1 %2 main-root main-shapes)
                       modif-tree
                       copy-roots)))]
 
-    (reduce add-copies-modifiers-one
+            ;; (let [main-shapes       (into [main-root] (cph/get-children objects (:id main-root)))
+            ;;       main-shapes-modif (map (fn [shape]
+            ;;                                (let [modifiers (get-in modif-tree [(:id shape) :modifiers])
+            ;;                                      points    (:points shape)
+            ;;                                      bounds    (gsh/transform-bounds points modifiers)]
+            ;;                                  (debug.logjs "..." "")
+            ;;                                  (debug.logjs "shape" shape)
+            ;;                                  (debug.logjs "modifiers" modifiers)
+            ;;                                  (debug.logjs "bounds" bounds)
+            ;;                                  (assoc shape :modif-bounds bounds)))
+            ;;                                  ;; (->> modifiers
+            ;;                                  ;;    (process-text-modifiers shape)
+            ;;                                  ;;    (gsh/transform-shape shape))))
+            ;;                              main-shapes)]
+            ;;   (reduce #(add-modifiers-copy %1 %2 main-root main-shapes-modif)
+            ;;           modif-tree
+            ;;           copy-roots)))]
+
+    (reduce add-modifiers-component
             modif-tree
             (vals copies))))
 
@@ -354,7 +439,7 @@
          (get-copies shapes objects modif-tree)
 
          ;; TODO: mark new modifiers to be ignored in apply-modifiers
-         modif-tree (add-copies-modifiers copies objects modif-tree)]
+         modif-tree (add-modifiers copies objects modif-tree)]
 
      modif-tree)))
 
@@ -393,10 +478,22 @@
 
              modif-tree
              (-> (build-modif-tree ids objects get-modifier)
-                 (gsh/set-objects-modifiers objects false false))]
+                 (gsh/set-objects-modifiers objects false false))
+
+             shapes
+             (->> (keys modif-tree)
+                  (map (d/getf objects)))
+
+             copies
+             (get-copies shapes objects modif-tree)
+
+             ;; _ (debug.logjs "==================" "")
+             ;; _ (debug.logjs "modif-tree" modif-tree)
+             ;; _ (debug.logjs "objects" objects)
+             ;; _ (debug.logjs "copies" copies)
+             modif-tree (add-modifiers copies objects modif-tree)]
 
          (assoc state :workspace-modifiers modif-tree))))))
-
 
 (defn apply-modifiers
   ([]
