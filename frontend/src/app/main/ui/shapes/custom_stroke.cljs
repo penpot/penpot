@@ -431,6 +431,7 @@
         stroke-id (dm/fmt "strokes-%" (:id shape))
         stroke-props (-> (obj/create)
                          (obj/set! "id" stroke-id)
+                         (obj/set! "class" "strokes")
                          (cond->
                           ;; There is a blur
                           (and (:blur shape) (not (cph/frame-shape? shape)) (-> shape :blur :hidden not))
@@ -442,7 +443,7 @@
     [:*
      (when
       (d/not-empty? (:strokes shape))
-       [:> :g.strokes stroke-props
+       [:> :g stroke-props
         (for [[index value] (-> (d/enumerate (:strokes shape)) reverse)]
           (let [props (build-stroke-props index child value render-id)
                 shape (assoc value :points (:points shape))]
