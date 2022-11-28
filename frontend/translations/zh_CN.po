@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-20 13:46+0000\n"
-"Last-Translator: Semon Xue <semonxue@gmail.com>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"PO-Revision-Date: 2022-11-28 14:06+0000\n"
+"Last-Translator: Maemolee <maemolee@gmail.com>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1127,7 +1127,7 @@ msgid "labels.cancel"
 msgstr "取消"
 
 msgid "labels.centered"
-msgstr "中心"
+msgstr "居中"
 
 msgid "labels.close"
 msgstr "关闭"
@@ -3092,11 +3092,11 @@ msgstr "约束"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.bottom"
-msgstr "底部"
+msgstr "底部固定"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.center"
-msgstr "中心"
+msgstr "居中"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.fix-when-scrolling"
@@ -3104,27 +3104,27 @@ msgstr "滚动时保持固定"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.left"
-msgstr "左侧"
+msgstr "靠左固定"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.leftright"
-msgstr "左右两侧"
+msgstr "左右固定"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.right"
-msgstr "右侧"
+msgstr "靠右固定"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.scale"
-msgstr "缩放"
+msgstr "跟随缩放"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.top"
-msgstr "顶部"
+msgstr "顶部固定"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.topbottom"
-msgstr "顶部与底部"
+msgstr "上下固定"
 
 #: src/app/main/ui/workspace/sidebar/options.cljs
 msgid "workspace.options.design"
@@ -3410,7 +3410,7 @@ msgstr "外"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-bottom-center"
-msgstr "底部中心"
+msgstr "底部居中"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-bottom-left"
@@ -3422,7 +3422,7 @@ msgstr "右下角"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-center"
-msgstr "中心"
+msgstr "居中"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-manual"
@@ -3430,7 +3430,7 @@ msgstr "手册"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-top-center"
-msgstr "顶部中心"
+msgstr "顶部居中"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-top-left"
@@ -3554,7 +3554,7 @@ msgstr "图层"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.title.group"
-msgstr "图层成组"
+msgstr "图层组"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.title.multiple"
@@ -3702,7 +3702,7 @@ msgstr "顶部"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.wrap"
-msgstr "底部"
+msgstr "换行"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
@@ -4430,3 +4430,37 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+msgid "errors.bad-font"
+msgstr "无法加载%s字体"
+
+#, fuzzy
+msgid "errors.bad-font-plural"
+msgstr "无法加载%s等字体"
+
+msgid "onboarding-v2.newsletter.news"
+msgstr "发给我有关Penpot的新闻（博客文章、视频教程、直播等）。"
+
+#, fuzzy
+msgid "errors.profile-blocked"
+msgstr "此档案已被屏蔽"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr "订阅Penpot通知邮件，跟进产品开发进度，获取最新消息。"
+
+msgid "workspace.sidebar.collapse"
+msgstr "收起侧边栏"
+
+#, fuzzy
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "我们关心隐私，您可在此阅读我们的 "
+
+#, fuzzy
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr "我们将仅发送与您有关的邮件，您可以随时在其中任意一封邮件中点击取消订阅。"
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr "向我发送一些产品更新（新功能，新版本，新修复等）。"
+
+msgid "workspace.sidebar.expand"
+msgstr "展开侧边栏"
