@@ -7,6 +7,7 @@
 (ns app.common.types.modifiers
   (:refer-clojure :exclude [empty empty?])
   (:require
+   [app.common.perf :as perf]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
@@ -217,15 +218,44 @@
                                       :property property
                                       :value value})))
 
+(defn- merge-geometry
+  [geometry other]
+
+  (cond
+    (c/empty? geometry)
+    other
+
+    (c/empty? other)
+    geometry
+
+    :else
+    (loop [result geometry
+           modifiers (seq other)]
+      (if (c/empty? modifiers)
+        result
+        (let [current (first modifiers)
+              result
+              (cond
+                (= :move (:type current))
+                (maybe-add-move result current)
+
+                (= :resize (:type current))
+                (maybe-add-resize result current)
+
+                :else
+                (conj result current))]
+
+          (recur result (rest modifiers)))))))
+
 (defn add-modifiers
   [modifiers new-modifiers]
 
   (cond-> modifiers
     (some? (:geometry-child new-modifiers))
-    (update :geometry-child #(d/concat-vec [] % (:geometry-child new-modifiers)))
+    (update :geometry-child merge-geometry (:geometry-child new-modifiers))
 
     (some? (:geometry-parent new-modifiers))
-    (update :geometry-parent #(d/concat-vec [] % (:geometry-parent new-modifiers)))
+    (update :geometry-parent merge-geometry (:geometry-parent new-modifiers))
 
     (some? (:structure-parent new-modifiers))
     (update :structure-parent #(d/concat-vec [] % (:structure-parent new-modifiers)))
@@ -426,39 +456,46 @@
 (defn modifiers->transform
   "Given a set of modifiers returns its transformation matrix"
   [modifiers]
-  (letfn [(apply-modifier [matrix {:keys [type vector rotation center origin transform transform-inverse] :as modifier}]
-            (case type
-              :move
-              (gmt/multiply (gmt/translate-matrix vector) matrix)
 
-              :resize
-              (let [origin (cond-> origin
-                             (or (some? transform-inverse)(some? transform))
-                             (gpt/transform transform-inverse))]
-                (gmt/multiply
-                 (-> (gmt/matrix)
-                     (cond-> (some? transform)
-                       (gmt/multiply transform))
-                     (gmt/translate origin)
-                     (gmt/scale vector)
-                     (gmt/translate (gpt/negate origin))
-                     (cond-> (some? transform-inverse)
-                       (gmt/multiply transform-inverse)))
-                 matrix))
+  (let [modifiers
+        (if (d/not-empty? (:geometry-parent modifiers))
+          (concat (:geometry-parent modifiers) (:geometry-child modifiers))
+          (:geometry-child modifiers))]
 
-              :rotation
-              (gmt/multiply
-               (-> (gmt/matrix)
-                   (gmt/translate center)
-                   (gmt/multiply (gmt/rotate-matrix rotation))
-                   (gmt/translate (gpt/negate center)))
-               matrix)))]
-    (let [modifiers (if (d/not-empty? (:geometry-parent modifiers))
-                      (d/concat-vec (:geometry-parent modifiers) (:geometry-child modifiers))
-                      (:geometry-child modifiers))]
-      (when (d/not-empty? modifiers)
-        (->> modifiers
-             (reduce apply-modifier (gmt/matrix)))))))
+    (when (d/not-empty? modifiers)
+      (loop [matrix (gmt/matrix)
+             modifiers (seq modifiers)]
+        (if (c/empty? modifiers)
+          matrix
+          (let [{:keys [type vector rotation center origin transform transform-inverse] :as modifier} (first modifiers)
+                matrix
+                (case type
+                  :move
+                  (gmt/multiply (gmt/translate-matrix vector) matrix)
+
+                  :resize
+                  (let [origin (cond-> origin
+                                 (or (some? transform-inverse)(some? transform))
+                                 (gpt/transform transform-inverse))]
+                    (gmt/multiply
+                     (-> (gmt/matrix)
+                         (cond-> (some? transform)
+                           (gmt/multiply transform))
+                         (gmt/translate origin)
+                         (gmt/scale vector)
+                         (gmt/translate (gpt/negate origin))
+                         (cond-> (some? transform-inverse)
+                           (gmt/multiply transform-inverse)))
+                     matrix))
+
+                  :rotation
+                  (gmt/multiply
+                   (-> (gmt/matrix)
+                       (gmt/translate center)
+                       (gmt/multiply (gmt/rotate-matrix rotation))
+                       (gmt/translate (gpt/negate center)))
+                   matrix))]
+            (recur matrix (rest modifiers))))))))
 
 (defn apply-structure-modifiers
   "Apply structure changes to a shape"
