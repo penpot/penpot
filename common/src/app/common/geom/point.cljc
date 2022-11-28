@@ -323,8 +323,9 @@
             (/ (dm/get-prop p1 :y) p-length))))
 
 (defn perpendicular
-  [{:keys [x y]}]
-  (Point. (- y) x))
+  [pt]
+  (Point. (- (dm/get-prop pt :y))
+          (dm/get-prop pt :x)))
 
 (defn project
   "V1 perpendicular projection on vector V2"

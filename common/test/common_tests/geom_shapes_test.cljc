@@ -140,7 +140,7 @@
   (t/testing "Transform shape with rotation modifiers"
     (t/are [type]
         (let [shape-before (create-test-shape type)
-              modifiers (ctm/rotation-modifiers shape-before (gsh/center-shape shape-before) 30 )
+              modifiers (ctm/rotation-modifiers shape-before (gsh/center-shape shape-before) 30)
               shape-before (assoc shape-before :modifiers modifiers)
               shape-after  (gsh/transform-shape shape-before)]
 

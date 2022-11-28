@@ -282,7 +282,7 @@
 (defn calc-child-modifiers
   [parent child modifiers ignore-constraints child-bounds parent-bounds transformed-parent-bounds]
 
-  (let [modifiers (ctm/select-child-modifiers modifiers)
+  (let [modifiers (ctm/select-child modifiers)
 
         constraints-h
         (if-not ignore-constraints
@@ -299,7 +299,7 @@
 
       (let [transformed-parent-bounds @transformed-parent-bounds
 
-            modifiers (ctm/select-child-modifiers modifiers)
+            modifiers (ctm/select-child modifiers)
             transformed-child-bounds (gtr/transform-bounds child-bounds modifiers)
             modifiers (normalize-modifiers constraints-h constraints-v
                                            modifiers parent

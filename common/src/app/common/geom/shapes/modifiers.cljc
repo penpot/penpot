@@ -107,7 +107,7 @@
 
       ;; Check the constraints, then resize
       (let [parent-id (:id parent)
-            parent-bounds (gtr/transform-bounds @(get bounds parent-id) (ctm/select-parent-modifiers modifiers))]
+            parent-bounds (gtr/transform-bounds @(get bounds parent-id) (ctm/select-parent modifiers))]
         (loop [modif-tree modif-tree
                children (seq children)]
           (if (empty? children)

@@ -483,9 +483,9 @@
 
   ([points center modifiers]
    (let [transform (ctm/modifiers->transform modifiers)]
-    (cond-> points
-      (some? transform)
-      (gco/transform-points center transform)))))
+     (cond-> points
+       (some? transform)
+       (gco/transform-points center transform)))))
 
 (defn transform-selrect
   [selrect modifiers]
