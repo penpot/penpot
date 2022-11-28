@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-11-28 14:06+0000\n"
+"PO-Revision-Date: 2022-11-29 14:48+0000\n"
 "Last-Translator: HIYIZI <smillence@hotmail.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -333,15 +333,15 @@ msgstr "导出"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to"
-msgstr "你可以在设计选项中为元素添加导出设置（位于右侧边栏底部）"
+msgstr "你可以在设计选项中为元素添加导出设置（位于右侧边栏底部）。"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
-msgstr "如何使用Penpot导出"
+msgstr "关于如何使用Penpot导出。"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.no-elements"
-msgstr "在导出设置中没找到任何元素"
+msgstr "在导出设置中没找到任何元素。"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
@@ -422,10 +422,10 @@ msgid "dashboard.import.import-error"
 msgstr "文件导入过程中出现未知问题，导入失败。"
 
 msgid "dashboard.import.import-message"
-msgstr "%s 个文件导入成功"
+msgstr "%s 个文件导入成功。"
 
 msgid "dashboard.import.import-warning"
-msgstr "一些包含无效对象的文档已被移除"
+msgstr "一些包含无效对象的文档已被移除。"
 
 msgid "dashboard.import.progress.process-colors"
 msgstr "处理颜色中"
@@ -696,7 +696,7 @@ msgid "errors.auth-provider-not-configured"
 msgstr "没有配置身份认证服务源."
 
 msgid "errors.auth.unable-to-login"
-msgstr "你似乎还没有登录或会话已过期"
+msgstr "你似乎还没有登录或会话已过期。"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
@@ -790,7 +790,7 @@ msgid "errors.registration-disabled"
 msgstr "当前禁止注册。"
 
 msgid "errors.team-leave.insufficient-members"
-msgstr "离开团队后成员不足，您是否要将其删除？"
+msgstr "离开团队后成员不足，您可能要将其删除。"
 
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "您尝试分配的成员不存在。"
@@ -1835,7 +1835,7 @@ msgstr[1] "批量取消发布库"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
-msgstr "你即将更新共享库中的组件，这可能会影响使用这些组件的其他文档"
+msgstr "你即将更新共享库中的组件，这可能会影响使用这些组件的其他文档。"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
@@ -1976,7 +1976,7 @@ msgid "onboarding.slide.0.alt"
 msgstr "创作设计"
 
 msgid "onboarding.slide.0.desc1"
-msgstr "在协作项目中与团队成员们一起创作好看的用户界面"
+msgstr "在协作项目中与团队成员们一起创作好看的用户界面。"
 
 msgid "onboarding.slide.0.desc2"
 msgstr "保持组件、库和设计系统规模上的一致性。"
@@ -4430,16 +4430,14 @@ msgstr "单击以闭合路径"
 msgid "errors.bad-font"
 msgstr "无法加载%s字体"
 
-#, fuzzy
 msgid "errors.bad-font-plural"
 msgstr "无法加载%s等字体"
 
 msgid "onboarding-v2.newsletter.news"
 msgstr "发给我有关Penpot的新闻（博客文章、视频教程、直播等）。"
 
-#, fuzzy
 msgid "errors.profile-blocked"
-msgstr "此档案已被屏蔽"
+msgstr "个人资料已被屏蔽"
 
 msgid "onboarding-v2.newsletter.desc"
 msgstr "订阅Penpot通知邮件，跟进产品开发进度，获取最新消息。"
@@ -4447,11 +4445,9 @@ msgstr "订阅Penpot通知邮件，跟进产品开发进度，获取最新消息
 msgid "workspace.sidebar.collapse"
 msgstr "收起侧边栏"
 
-#, fuzzy
 msgid "onboarding-v2.newsletter.privacy1"
 msgstr "我们关心隐私，您可在此阅读我们的 "
 
-#, fuzzy
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr "我们将仅发送与您有关的邮件，您可以随时在其中任意一封邮件中点击取消订阅。"
 
@@ -4464,3 +4460,7 @@ msgstr "展开侧边栏"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "在素材面板中显示"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "收起"
