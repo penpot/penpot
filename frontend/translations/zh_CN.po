@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-11-29 14:48+0000\n"
-"Last-Translator: HIYIZI <smillence@hotmail.com>\n"
+"Last-Translator: Dário <dariogomes@gmail.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -360,7 +360,7 @@ msgid "dashboard.export.explain"
 msgstr "你想导出的一个或多个文件用到了共享库。你想怎么处理它们的素材？"
 
 msgid "dashboard.export.options.all.message"
-msgstr "使用了共享库的文件将会在导出时保持引用关系"
+msgstr "使用了共享库的文件将会在导出时保持引用关系。"
 
 msgid "dashboard.export.options.all.title"
 msgstr "导出共享库"
