@@ -16,6 +16,7 @@
 (derive :get-file-object-thumbnails ::query)
 (derive :get-file-libraries ::query)
 (derive :get-file-fragment ::query)
+(derive :search-files ::query)
 
 (defn handle-response
   [{:keys [status body] :as response}]

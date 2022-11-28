@@ -9,6 +9,7 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.rpc.commands.files :as cmd.files]
+   [app.rpc.commands.search :as cmd.search]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.queries.projects :as projects]
@@ -169,3 +170,15 @@
     (cmd.files/check-read-permissions! conn profile-id file-id)
     (-> (cmd.files/get-file-thumbnail conn file-id revn)
         (rph/with-http-cache cmd.files/long-cache-duration))))
+
+
+;; --- QUERY: search files
+
+(s/def ::search-files ::cmd.search/search-files)
+
+(sv/defmethod ::search-files
+  {::doc/added "1.0"
+   ::doc/deprecated "1.17"}
+  [{:keys [pool]} {:keys [search-term] :as params}]
+  (when search-term
+    (cmd.search/search-files pool params)))
