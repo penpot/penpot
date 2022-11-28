@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-11-28 14:06+0000\n"
-"Last-Translator: Maemolee <maemolee@gmail.com>\n"
+"Last-Translator: HIYIZI <smillence@hotmail.com>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -3138,10 +3138,6 @@ msgstr "导出"
 msgid "workspace.options.export-multiple"
 msgstr "导出已选择"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
-msgid "workspace.options.export-object"
-msgstr "导出 1 个元素"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
 msgstr "后缀"
@@ -4464,3 +4460,7 @@ msgstr "向我发送一些产品更新（新功能，新版本，新修复等）
 
 msgid "workspace.sidebar.expand"
 msgstr "展开侧边栏"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "在素材面板中显示"
