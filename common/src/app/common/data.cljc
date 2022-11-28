@@ -688,3 +688,12 @@
      (if (contains? set value)
        (disj set value)
        (conj set value)))))
+
+(defn lazy-map
+  "Creates a map with lazy values given the generator function that receives as argument
+  the key for the value to be generated"
+  [keys generator-fn]
+  (into {}
+        (map (fn [key]
+               [key (delay (generator-fn key))]))
+        keys))

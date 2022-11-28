@@ -7,7 +7,8 @@
 (ns app.common.geom.shapes.points
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.intersect :as gsi]))
+   [app.common.geom.shapes.intersect :as gsi]
+   [app.common.math :as mth]))
 
 (defn origin
   [points]
@@ -70,45 +71,66 @@
        (-> p2 (gpt/add right-v) (gpt/add bottom-v))
        (-> p3 (gpt/add left-v)  (gpt/add bottom-v))])))
 
+(defn- project-t
+  "Given a point and a line returns the parametric t the cross point with the line going through the other axis projected"
+  [point [start end] other-axis-vec]
 
-
-#_(defn parent-coords-rect
-  [child-bounds parent-bounds]
-  #_(-> child-bounds
-      (gco/transform-points (:transform-inverse parent))
-      (gpr/points->rect)))
-
-(defn closest-first
-  "Reorders the points so the closest to the line start-end is the first"
-  [[a b c d] start end]
-
-  (let [da (gpt/point-line-distance a start end)
-        db (gpt/point-line-distance b start end)
-        dc (gpt/point-line-distance c start end)
-        dd (gpt/point-line-distance d start end)]
-
+  (let [line-vec    (gpt/to-vec start end)
+        pr-point (gsi/line-line-intersect point (gpt/add point other-axis-vec) start end)]
     (cond
-      (and (<= da db) (<= da dc) (<= da dd))
-      [a b c d]
+      (not (mth/almost-zero? (:x line-vec)))
+      (/ (- (:x pr-point) (:x start)) (:x line-vec))
 
-      (and (<= db da) (<= db dc) (<= db dd))
-      [b c d a]
+      (not (mth/almost-zero? (:y line-vec)))
+      (/ (- (:y pr-point) (:y start)) (:y line-vec))
 
-      (and (<= dc da) (<= dc db) (<= dc dd))
-      [c d a b]
-
+      ;; Vector is almost zero
       :else
-      [d a b c])))
+      0)))
 
 (defn parent-coords-bounds
-  [bounds [p1 p2 _ p4]]
+  [child-bounds [p1 p2 _ p4 :as parent-bounds]]
 
-  (let [[b1 b2 b3 b4] (closest-first bounds p1 p2)
-        hv (gpt/to-vec p1 p2)
-        vv (gpt/to-vec p1 p4)
+  (if (empty? child-bounds)
+    parent-bounds
 
-        i1 (gsi/line-line-intersect b1 (gpt/add hv b1) b4 (gpt/add b4 vv))
-        i2 (gsi/line-line-intersect b1 (gpt/add hv b1) b2 (gpt/add b2 vv))
-        i3 (gsi/line-line-intersect b3 (gpt/add hv b3) b2 (gpt/add b2 vv))
-        i4 (gsi/line-line-intersect b3 (gpt/add hv b3) b4 (gpt/add b4 vv))]
-    [i1 i2 i3 i4]))
+    (let [rh [p1 p2]
+          rv [p1 p4]
+
+          hv (gpt/to-vec p1 p2)
+          vv (gpt/to-vec p1 p4)
+
+          ph #(gpt/add p1 (gpt/scale hv %))
+          pv #(gpt/add p1 (gpt/scale vv %))
+
+          find-boundary-ts
+          (fn [[th-min th-max tv-min tv-max] current-point]
+            (let [cth (project-t current-point rh vv)
+                  ctv (project-t current-point rv hv)]
+              [(min th-min cth)
+               (max th-max cth)
+               (min tv-min ctv)
+               (max tv-max ctv)]))
+
+          [th-min th-max tv-min tv-max]
+          (->> child-bounds (reduce find-boundary-ts [##Inf ##-Inf ##Inf ##-Inf]))
+
+          minv-start (pv tv-min)
+          minv-end   (gpt/add minv-start hv)
+          minh-start (ph th-min)
+          minh-end   (gpt/add minh-start vv)
+
+          maxv-start (pv tv-max)
+          maxv-end   (gpt/add maxv-start hv)
+          maxh-start (ph th-max)
+          maxh-end   (gpt/add maxh-start vv)
+
+          i1 (gsi/line-line-intersect minv-start minv-end minh-start minh-end)
+          i2 (gsi/line-line-intersect minv-start minv-end maxh-start maxh-end)
+          i3 (gsi/line-line-intersect maxv-start maxv-end maxh-start maxh-end)
+          i4 (gsi/line-line-intersect maxv-start maxv-end minh-start minh-end)]
+      [i1 i2 i3 i4])))
+
+(defn merge-parent-coords-bounds
+  [bounds parent-bounds]
+  (parent-coords-bounds (flatten bounds) parent-bounds))

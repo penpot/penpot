@@ -463,18 +463,19 @@
        (apply-modifiers modifiers)))))
 
 (defn apply-objects-modifiers
-  [objects modifiers]
+  ([objects modifiers]
+   (apply-objects-modifiers objects modifiers (keys modifiers)))
 
-  (loop [objects objects
-         entry (first modifiers)
-         modifiers (rest modifiers)]
+  ([objects modifiers ids]
+   (loop [objects objects
+          ids (seq ids)]
+     (if (empty? ids)
+       objects
 
-    (if (nil? entry)
-      objects
-      (let [[id modifier] entry]
-        (recur (d/update-when objects id transform-shape (:modifiers modifier))
-               (first modifiers)
-               (rest modifiers))))))
+       (let [id (first ids)
+             modifier (dm/get-in modifiers [id :modifiers])]
+         (recur (d/update-when objects id transform-shape modifier)
+                (rest ids)))))))
 
 (defn transform-bounds
   ([points modifiers]

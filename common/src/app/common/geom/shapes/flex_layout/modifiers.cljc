@@ -16,12 +16,9 @@
 
 (defn normalize-child-modifiers
   "Apply the modifiers and then normalized them against the parent coordinates"
-  [modifiers {:keys [transform transform-inverse] :as parent} child transformed-parent-bounds]
+  [modifiers {:keys [transform transform-inverse] :as parent} child-bounds parent-bounds transformed-parent-bounds]
 
-  (let [child-bounds (:points child)
-        parent-bounds (:points parent)
-
-        transformed-child-bounds (gtr/transform-bounds child-bounds modifiers)
+  (let [transformed-child-bounds (gtr/transform-bounds child-bounds modifiers)
 
         child-bb-before (gpo/parent-coords-bounds child-bounds parent-bounds)
         child-bb-after  (gpo/parent-coords-bounds transformed-child-bounds transformed-parent-bounds)
@@ -30,7 +27,7 @@
         scale-y (/ (gpo/height-points child-bb-before) (gpo/height-points child-bb-after))
 
         resize-vector (gpt/point scale-x scale-y)
-        modif-transform (ctm/modifiers->transform modifiers)
+        modif-transform (or (ctm/modifiers->transform modifiers) (gmt/matrix))
         modif-transform-inverse (gmt/inverse modif-transform)
         resize-transform (gmt/multiply modif-transform transform)
         resize-transform-inverse (gmt/multiply transform-inverse modif-transform-inverse)

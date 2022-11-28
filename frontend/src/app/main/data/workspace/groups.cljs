@@ -14,6 +14,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes-update-layout :as dwul]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -174,15 +175,22 @@
                   (cph/frame-shape? shape)
                   (remove-frame-changes it page-id shape objects))))
 
+            selected (wsh/lookup-selected state)
             changes-list (sequence
                           (keep prepare)
-                          (wsh/lookup-selected state))
+                          selected)
+
+            parents (into #{}
+                          (comp (map #(cph/get-parent objects %))
+                                (keep :id))
+                          selected)
 
             changes {:redo-changes (vec (mapcat :redo-changes changes-list))
                      :undo-changes (vec (mapcat :undo-changes changes-list))
                      :origin it}]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (dwul/update-layout-positions parents))))))
 
 (def mask-group
   (ptk/reify ::mask-group

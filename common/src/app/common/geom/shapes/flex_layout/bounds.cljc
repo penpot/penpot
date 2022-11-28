@@ -7,21 +7,19 @@
 (ns app.common.geom.shapes.flex-layout.bounds
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.geom.shapes.rect :as gre]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]))
 
 (defn- child-layout-bound-points
   "Returns the bounds of the children as points"
-  [parent child]
+  [parent child parent-bounds child-bounds]
 
   (let [row? (ctl/row? parent)
         col? (ctl/col? parent)
 
-        hv   (partial gpo/start-hv (:points parent))
-        vv   (partial gpo/start-vv (:points parent))
+        hv   (partial gpo/start-hv parent-bounds)
+        vv   (partial gpo/start-vv parent-bounds)
 
         v-start? (ctl/v-start? parent)
         v-center? (ctl/v-center? parent)
@@ -30,10 +28,10 @@
         h-center? (ctl/h-center? parent)
         h-end? (ctl/h-end? parent)
 
-        base-p (first (:points child))
+        base-p (gpo/origin child-bounds)
 
-        width (-> child :selrect :width)
-        height (-> child :selrect :height)
+        width (gpo/width-points child-bounds)
+        height (gpo/height-points child-bounds)
 
         min-width (if (ctl/fill-width? child)
                     (ctl/child-min-width child)
@@ -91,22 +89,29 @@
               (gpt/subtract (vv min-height)))))))
 
 (defn layout-content-bounds
-  [{:keys [layout-padding] :as parent} children]
+  [bounds {:keys [layout-padding] :as parent} children]
 
-  (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
+  (let [parent-id (:id parent)
+        parent-bounds @(get bounds parent-id)
+
+        {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
         pad-top    (or pad-top 0)
         pad-right  (or pad-right 0)
         pad-bottom (or pad-bottom 0)
         pad-left   (or pad-left 0)
 
         child-bounds
-        (fn [{:keys [points] :as child}]
-          (if (or (ctl/fill-height? child) (ctl/fill-height? child))
-            (child-layout-bound-points parent child)
-            points))]
+        (fn [child]
+          (let [child-id (:id child)
+                child-bounds  @(get bounds child-id)
+                child-bounds
+                (if (or (ctl/fill-height? child) (ctl/fill-height? child))
+                  (child-layout-bound-points parent child parent-bounds parent-bounds)
+                  child-bounds)]
+            (gpo/parent-coords-bounds child-bounds parent-bounds)))]
 
-    (-> (mapcat child-bounds children)
-        (gco/transform-points (gco/center-shape parent) (:transform-inverse parent))
-        (gre/squared-points)
-        (gpo/pad-points (- pad-top) (- pad-right) (- pad-bottom) (- pad-left))
-        (gre/points->rect))))
+    (as-> children $
+      (map child-bounds $)
+      (gpo/merge-parent-coords-bounds $ parent-bounds)
+      (gpo/pad-points $ (- pad-top) (- pad-right) (- pad-bottom) (- pad-left)))))
+

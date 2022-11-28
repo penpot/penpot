@@ -252,6 +252,10 @@
   (let [v-length (length v)]
     (divide v (point v-length v-length))))
 
+(defn perpendicular
+  [{:keys [x y]}]
+  (Point. (- y) x))
+
 (defn project
   "V1 perpendicular projection on vector V2"
   [v1 v2]
