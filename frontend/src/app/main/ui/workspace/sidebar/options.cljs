@@ -68,7 +68,11 @@
         selected-shapes   (into [] (keep (d/getf objects)) selected)]
     [:div.tool-window
      [:div.tool-window-content
-      [:& tab-container {:on-change-tab #(st/emit! (udw/set-options-mode %))
+      [:& tab-container {:on-change-tab (fn [options-mode]
+                                          (st/emit! (udw/set-options-mode options-mode))
+                                          (if (= options-mode :prototype) ;;TODO remove, only for test palba
+                                            (st/emit! :interrupt (udw/deselect-all true) (udw/set-workspace-read-only true))
+                                            (st/emit! :interrupt (udw/set-workspace-read-only false))))
                          :selected section}
        [:& tab-element {:id :design
                         :title (tr "workspace.options.design")}

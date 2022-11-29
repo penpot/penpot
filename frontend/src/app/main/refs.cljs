@@ -261,6 +261,9 @@
 (def workspace-page-objects
   (l/derived wsh/lookup-page-objects st/state =))
 
+(def workspace-read-only?
+  (l/derived :read-only? workspace-global))
+
 (defn object-by-id
   [id]
   (l/derived #(get % id) workspace-page-objects))

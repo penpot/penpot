@@ -15,6 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -64,10 +65,11 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [layout            (obj/get props "layout")
-        selected-drawtool (mf/deref refs/selected-drawing-tool)
-        select-drawtool   #(st/emit! :interrupt (dw/select-for-drawing %))
-        edition           (mf/deref refs/selected-edition)]
+  (let [layout               (obj/get props "layout")
+        selected-drawtool    (mf/deref refs/selected-drawing-tool)
+        select-drawtool      #(st/emit! :interrupt (dw/select-for-drawing %))
+        edition              (mf/deref refs/selected-edition)
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)]
     [:aside.left-toolbar
      [:ul.left-toolbar-options
       [:li
@@ -78,56 +80,58 @@
                            (not edition)) "selected")
          :on-click #(st/emit! :interrupt)}
         i/pointer-inner]]
-      [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
-         :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
-         :class (when (= selected-drawtool :frame) "selected")
-         :on-click (partial select-drawtool :frame)
-         :data-test "artboard-btn"}
-        i/artboard]]
-      [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
-         :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
-         :class (when (= selected-drawtool :rect) "selected")
-         :on-click (partial select-drawtool :rect)
-         :data-test "rect-btn"}
-        i/box]]
-      [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
-         :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
-         :class (when (= selected-drawtool :circle) "selected")
-         :on-click (partial select-drawtool :circle)
-         :data-test "ellipse-btn"}
-        i/circle]]
-      [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
-         :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
-         :class (when (= selected-drawtool :text) "selected")
-         :on-click (partial select-drawtool :text)}
-        i/text]]
+      (when-not workspace-read-only?
+        [:*
+         [:li
+          [:button.tooltip.tooltip-right
+           {:alt (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
+            :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
+            :class (when (= selected-drawtool :frame) "selected")
+            :on-click (partial select-drawtool :frame)
+            :data-test "artboard-btn"}
+           i/artboard]]
+         [:li
+          [:button.tooltip.tooltip-right
+           {:alt (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
+            :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
+            :class (when (= selected-drawtool :rect) "selected")
+            :on-click (partial select-drawtool :rect)
+            :data-test "rect-btn"}
+           i/box]]
+         [:li
+          [:button.tooltip.tooltip-right
+           {:alt (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+            :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+            :class (when (= selected-drawtool :circle) "selected")
+            :on-click (partial select-drawtool :circle)
+            :data-test "ellipse-btn"}
+           i/circle]]
+         [:li
+          [:button.tooltip.tooltip-right
+           {:alt (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
+            :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
+            :class (when (= selected-drawtool :text) "selected")
+            :on-click (partial select-drawtool :text)}
+           i/text]]
 
-      [:& image-upload]
+         [:& image-upload]
 
-      [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
-         :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
-         :class (when (= selected-drawtool :curve) "selected")
-         :on-click (partial select-drawtool :curve)
-         :data-test "curve-btn"}
-        i/pencil]]
-      [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
-         :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
-         :class (when (= selected-drawtool :path) "selected")
-         :on-click (partial select-drawtool :path)
-         :data-test "path-btn"}
-        i/pen]]
+         [:li
+          [:button.tooltip.tooltip-right
+           {:alt (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
+            :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
+            :class (when (= selected-drawtool :curve) "selected")
+            :on-click (partial select-drawtool :curve)
+            :data-test "curve-btn"}
+           i/pencil]]
+         [:li
+          [:button.tooltip.tooltip-right
+           {:alt (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+            :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+            :class (when (= selected-drawtool :path) "selected")
+            :on-click (partial select-drawtool :path)
+            :data-test "path-btn"}
+           i/pen]]])
 
       [:li
        [:button.tooltip.tooltip-right
@@ -138,31 +142,33 @@
         i/chat]]]
 
      [:ul.left-toolbar-options.panels
-      [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-         :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
-         :class (when (contains? layout :textpalette) "selected")
-         :on-click (fn []
-                     (r/set-resize-type! :bottom)
-                     (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
-                     (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :colorpalette)
-                                                 (-> (dw/toggle-layout-flag :textpalette)
-                                                     (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
-        "Ag"]]
+      (when-not workspace-read-only?
+        [:*
+         [:li
+          [:button.tooltip.tooltip-right
+           {:alt (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+            :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+            :class (when (contains? layout :textpalette) "selected")
+            :on-click (fn []
+                        (r/set-resize-type! :bottom)
+                        (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
+                        (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :colorpalette)
+                                                    (-> (dw/toggle-layout-flag :textpalette)
+                                                        (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
+           "Ag"]]
 
-      [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-         :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
-         :class (when (contains? layout :colorpalette) "selected")
-         :on-click (fn []
-                     (r/set-resize-type! :bottom)
-                     (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
-                     (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
-                                                 (-> (dw/toggle-layout-flag :colorpalette)
-                                                     (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
-        i/palette]]
+         [:li
+          [:button.tooltip.tooltip-right
+           {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+            :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+            :class (when (contains? layout :colorpalette) "selected")
+            :on-click (fn []
+                        (r/set-resize-type! :bottom)
+                        (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
+                        (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
+                                                    (-> (dw/toggle-layout-flag :colorpalette)
+                                                        (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
+           i/palette]]])
       [:li
        [:button.tooltip.tooltip-right.separator
         {:alt (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))

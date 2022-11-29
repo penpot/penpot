@@ -16,6 +16,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
@@ -87,15 +88,17 @@
 (mf/defc frame-title
   {::mf/wrap [mf/memo]}
   [{:keys [frame selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
-  (let [on-mouse-down
+  (let [workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+        on-mouse-down
         (mf/use-callback
-         (mf/deps (:id frame) on-frame-select)
+         (mf/deps (:id frame) on-frame-select workspace-read-only?)
          (fn [bevent]
            (let [event  (.-nativeEvent bevent)]
              (when (= 1 (.-which event))
                (dom/prevent-default event)
                (dom/stop-propagation event)
-               (on-frame-select event (:id frame))))))
+               (when-not workspace-read-only?
+                 (on-frame-select event (:id frame)))))))
 
         on-double-click
         (mf/use-callback
@@ -105,13 +108,14 @@
 
         on-context-menu
         (mf/use-callback
-         (mf/deps frame)
+         (mf/deps frame workspace-read-only?)
          (fn [bevent]
            (let [event    (.-nativeEvent bevent)
                  position (dom/get-client-position event)]
              (dom/prevent-default event)
              (dom/stop-propagation event)
-             (st/emit! (dw/show-shape-context-menu {:position position :shape frame})))))
+             (when-not workspace-read-only?
+               (st/emit! (dw/show-shape-context-menu {:position position :shape frame}))))))
 
         on-pointer-enter
         (mf/use-callback
@@ -156,15 +160,15 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [objects         (unchecked-get props "objects")
-        zoom            (unchecked-get props "zoom")
-        selected        (or (unchecked-get props "selected") #{})
+  (let [objects              (unchecked-get props "objects")
+        zoom                 (unchecked-get props "zoom")
+        selected             (or (unchecked-get props "selected") #{})
         show-artboard-names? (unchecked-get props "show-artboard-names?")
-        on-frame-enter  (unchecked-get props "on-frame-enter")
-        on-frame-leave  (unchecked-get props "on-frame-leave")
-        on-frame-select (unchecked-get props "on-frame-select")
-        frames          (ctt/get-frames objects)
-        focus           (unchecked-get props "focus")]
+        on-frame-enter       (unchecked-get props "on-frame-enter")
+        on-frame-leave       (unchecked-get props "on-frame-leave")
+        on-frame-select      (unchecked-get props "on-frame-select")
+        frames               (ctt/get-frames objects)
+        focus                (unchecked-get props "focus")]
 
     [:g.frame-titles
      (for [frame frames]
