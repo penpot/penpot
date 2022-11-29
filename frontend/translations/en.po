@@ -3615,6 +3615,9 @@ msgstr "Position"
 msgid "workspace.options.prototype"
 msgstr "Prototype"
 
+msgid "workspace.options.inspect"
+msgstr "Inspect"
+
 msgid "workspace.options.radius"
 msgstr "Radius"
 

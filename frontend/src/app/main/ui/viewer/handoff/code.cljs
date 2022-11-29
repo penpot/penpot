@@ -7,7 +7,9 @@
 (ns app.main.ui.viewer.handoff.code
   (:require
    ["js-beautify" :as beautify]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.uuid :as uuid]
    [app.main.data.events :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -21,8 +23,10 @@
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
-(defn generate-markup-code [_type shapes]
-  (let [frame (dom/query js/document "#svg-frame")
+(defn generate-markup-code [_type shapes from]
+  (let [frame (if (= from :workspace)
+                (dom/query js/document (dm/str "#shape-" uuid/zero))
+                (dom/query js/document "#svg-frame"))
         markup-shape
         (fn [shape]
           (let [selector (str "#shape-" (:id shape) (when (= :text (:type shape)) " .root"))]
@@ -50,7 +54,7 @@
     (mf/deref get-layout-children-refs)))
 
 (mf/defc code
-  [{:keys [shapes frame on-expand]}]
+  [{:keys [shapes frame on-expand from]}]
   (let [style-type  (mf/use-state "css")
         markup-type (mf/use-state "svg")
         shapes      (->> shapes
@@ -62,7 +66,7 @@
         style-code (-> (cg/generate-style-code @style-type shapes)
                        (format-code "css"))
 
-        markup-code (-> (mf/use-memo (mf/deps shapes) #(generate-markup-code @markup-type shapes))
+        markup-code (-> (mf/use-memo (mf/deps shapes) #(generate-markup-code @markup-type shapes from))
                         (format-code "svg"))
 
         on-markup-copied

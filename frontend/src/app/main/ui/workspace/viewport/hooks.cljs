@@ -63,16 +63,16 @@
        ;; We schedule the event so it fires after `initialize-page` event
        (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
 
-(defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing?]
+(defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? workspace-read-only?]
   (mf/use-effect
-   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing?)
+   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? workspace-read-only?)
    (fn []
      (let [show-pen? (or (= drawing-tool :path)
                          (and drawing-path?
                               (not= drawing-tool :curve)))
            new-cursor
            (cond
-             (and @mod? @space?)            (utils/get-cursor :zoom)
+             (and @mod? @space?)             (utils/get-cursor :zoom)
              (or panning @space?)            (utils/get-cursor :hand)
              (= drawing-tool :comments)      (utils/get-cursor :comments)
              (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
@@ -81,7 +81,10 @@
              show-pen?                       (utils/get-cursor :pen)
              (= drawing-tool :curve)         (utils/get-cursor :pencil)
              drawing-tool                    (utils/get-cursor :create-shape)
-             (and @alt? (not path-editing?)) (utils/get-cursor :duplicate)
+             (and
+              @alt?
+              (not path-editing?)
+              (not workspace-read-only?))    (utils/get-cursor :duplicate)
              :else                           (utils/get-cursor :pointer-inner))]
 
        (when (not= @cursor new-cursor)
