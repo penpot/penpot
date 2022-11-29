@@ -8,11 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.viewer.handoff.right-sidebar :as hrs]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options]]
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu]]
@@ -62,17 +64,21 @@
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
   [{:keys [selected section shapes shapes-with-children page-id file-id]}]
-  (let [drawing           (mf/deref refs/workspace-drawing)
-        objects           (mf/deref refs/workspace-page-objects)
-        shared-libs       (mf/deref refs/workspace-libraries)
-        selected-shapes   (into [] (keep (d/getf objects)) selected)]
+  (let [drawing              (mf/deref refs/workspace-drawing)
+        objects              (mf/deref refs/workspace-page-objects)
+        shared-libs          (mf/deref refs/workspace-libraries)
+        selected-shapes      (into [] (keep (d/getf objects)) selected)
+        first-selected-shape (first selected-shapes)
+        shape-parent-frame   (cph/get-frame objects (:frame-id first-selected-shape))
+        on-change-tab
+        (fn [options-mode]
+          (st/emit! (udw/set-options-mode options-mode))
+          (if (= options-mode :inspect) ;;TODO maybe move this logic to set-options-mode
+            (st/emit! :interrupt (udw/set-workspace-read-only true))
+            (st/emit! :interrupt (udw/set-workspace-read-only false))))]
     [:div.tool-window
      [:div.tool-window-content
-      [:& tab-container {:on-change-tab (fn [options-mode]
-                                          (st/emit! (udw/set-options-mode options-mode))
-                                          (if (= options-mode :prototype) ;;TODO remove, only for test palba
-                                            (st/emit! :interrupt (udw/deselect-all true) (udw/set-workspace-read-only true))
-                                            (st/emit! :interrupt (udw/set-workspace-read-only false))))
+      [:& tab-container {:on-change-tab on-change-tab
                          :selected section}
        [:& tab-element {:id :design
                         :title (tr "workspace.options.design")}
@@ -99,7 +105,16 @@
        [:& tab-element {:id :prototype
                         :title (tr "workspace.options.prototype")}
         [:div.element-options
-         [:& interactions-menu {:shape (first shapes)}]]]]]]))
+         [:& interactions-menu {:shape (first shapes)}]]]
+
+       [:& tab-element {:id :inspect
+                        :title (tr "workspace.options.inspect")}
+        [:div.element-options
+         [:& hrs/right-sidebar {:page-id  page-id
+                                :file-id  file-id
+                                :frame    shape-parent-frame
+                                :shapes   selected-shapes
+                                :from :workspace}]]]]]]))
 
 ;; TODO: this need optimizations, selected-objects and
 ;; selected-objects-with-children are derefed always but they only

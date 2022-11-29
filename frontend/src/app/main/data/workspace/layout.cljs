@@ -44,7 +44,7 @@
    {:del #{:document-history :assets}
     :add #{:sitemap :layers}}})
 
-(s/def ::options-mode #{:design :prototype})
+(s/def ::options-mode #{:design :prototype :inspect})
 
 (def default-layout
   #{:sitemap

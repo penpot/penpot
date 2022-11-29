@@ -165,6 +165,12 @@
 (def options-mode
   (l/derived :options-mode workspace-local))
 
+(def options-mode-global
+  (l/derived :options-mode workspace-global))
+
+(def inspect-expanded
+  (l/derived :inspect-expanded workspace-local))
+
 (def vbox
   (l/derived :vbox workspace-local))
 
