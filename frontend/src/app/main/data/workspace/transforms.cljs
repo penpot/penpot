@@ -65,9 +65,6 @@
 
 (defn- sync-shape
   [main-shape copy-shape copy-root main-root]
-  ;; (js/console.log "+++")
-  ;; (js/console.log "main-shape" (clj->js main-shape))
-  ;; (js/console.log "copy-shape" (clj->js copy-shape))
   (if (ctk/touched-group? copy-shape :geometry-group)
     {}
     (let [main-shape  (reposition-shape main-shape main-root copy-root)
@@ -93,9 +90,6 @@
   needs to recalculate the text layout"
   [shape modifiers]
   modifiers)
-  ;; (cond-> modifiers
-  ;;   (= :text (:type shape))
-  ;;   (select-keys [:displacement :rotation])))
 
 (defn- add-copies-modifiers
   "Add modifiers to all necessary shapes inside the copies"
@@ -119,13 +113,9 @@
           (add-copies-modifiers-one [modifiers [main-root copy-roots]]
             (let [main-shapes       (into [main-root] (cph/get-children objects (:id main-root)))
                   main-shapes-modif (map (fn [shape]
-                                           (let [; shape (cond-> shape 
-                                                 ;         (some? (:transform-inverse shape))
-                                                 ;         (gsh/apply-transform (:transform-inverse shape)))
-                                                 ]
-                                                 (->> (get-in modifiers [(:id shape) :modifiers])
-                                                      (process-text-modifiers shape)
-                                                      (gsh/apply-modifiers shape))))
+                                           (->> (get-in modifiers [(:id shape) :modifiers])
+                                                (process-text-modifiers shape)
+                                                (gsh/apply-modifiers shape)))
                                          main-shapes)]
               (reduce #(add-copy-modifiers %1 %2 main-root main-shapes main-shapes-modif)
                       modifiers

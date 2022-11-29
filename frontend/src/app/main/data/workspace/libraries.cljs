@@ -850,7 +850,7 @@
             (fn [[event data]]
               (let [page (wsh/lookup-page state)
 
-                    [{:keys [changes save-undo?]} (deref event)
+                    {:keys [changes save-undo?]} (deref event)
                     components-changed (reduce #(into %1 (ch/components-changed data %2))
                                                #{}
                                                changes)
