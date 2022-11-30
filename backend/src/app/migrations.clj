@@ -262,6 +262,9 @@
 
    {:name "0084-add-features-column-to-file-change-table"
     :fn (mg/resource "app/migrations/sql/0084-add-features-column-to-file-change-table.sql")}
+
+   {:name "0085-add-webhook-table"
+    :fn (mg/resource "app/migrations/sql/0085-add-webhook-table.sql")}
    ])
 
 

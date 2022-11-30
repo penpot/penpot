@@ -431,4 +431,10 @@
 
 (defn reset-mock!
   [m]
-  (reset! m @(mk/make-mock {})))
+  (swap! m (fn [m]
+             (-> m
+                 (assoc :called? false)
+                 (assoc :call-count 0)
+                 (assoc :return-list [])
+                 (assoc :call-args nil)
+                 (assoc :call-args-list [])))))

@@ -296,6 +296,7 @@
    (let [row (get* ds table params opts)]
      (when (and (not row) check-deleted?)
        (ex/raise :type :not-found
+                 :code :object-not-found
                  :table table
                  :hint "database object not found"))
      row)))
@@ -308,6 +309,7 @@
    (let [row (get* ds table params (assoc opts :check-deleted? check-not-found))]
      (when (and (not row) check-not-found)
        (ex/raise :type :not-found
+                 :code :object-not-found
                  :table table
                  :hint "database object not found"))
      row)))

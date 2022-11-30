@@ -253,6 +253,7 @@
                      'app.rpc.commands.auth
                      'app.rpc.commands.ldap
                      'app.rpc.commands.demo
+                     'app.rpc.commands.webhooks
                      'app.rpc.commands.files
                      'app.rpc.commands.files.update
                      'app.rpc.commands.files.create
@@ -270,7 +271,9 @@
 
 (defmethod ig/pre-init-spec ::methods [_]
   (s/keys :req [::audit/collector
-                ::http.client/client]
+                ::http.client/client
+                ::db/pool
+                ::wrk/executor]
           :req-un [::sto/storage
                    ::http.session/session
                    ::sprops
