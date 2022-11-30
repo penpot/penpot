@@ -661,6 +661,40 @@
               shapes)
       (dissoc $ :current-component-id))))
 
+(defn create-component-instance
+  [file data]
+  (let [component-id     (uuid/uuid (:component-id data))
+        x                (:x data)
+        y                (:y data)
+        file             (assoc file :current-component-id component-id)
+        page-id          (:current-page-id file)
+        page             (ctpl/get-page (:data file) page-id)
+        component        (ctkl/get-component (:data file) component-id)
+        ;; main-instance-id (:main-instance-id component)
+
+        [shape shapes]
+        (ctn/make-component-instance page
+                                     component
+                                     (:id file)
+                                     (gpt/point x
+                                                y)
+                                     #_{:main-instance? true
+                                      :force-id main-instance-id})]
+
+    (as-> file $
+      (reduce #(commit-change %1
+                              {:type :add-obj
+                               :id (:id %2)
+                               :page-id (:id page)
+                               :parent-id (:parent-id %2)
+                               :frame-id (:frame-id %2)
+                               :obj %2})
+              $
+              shapes)
+
+      (assoc $ :last-id (:id shape))
+      (dissoc $ :current-component-id))))
+
 (defn delete-object
   [file id]
   (let [page-id (:current-page-id file)]
@@ -687,7 +721,8 @@
          {:type :mod-obj
           :operations (reduce generate-operation [] attrs)
           :page-id page-id
-          :id (:id old-obj)}))))
+          :id (:id old-obj)})
+        (assoc :last-id (:id old-obj)))))
 
 (defn get-current-page
   [file]

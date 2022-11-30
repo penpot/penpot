@@ -58,6 +58,12 @@
              (rx/filter #(d/not-empty? (second %)))
              (rx/map e/parse-library-color))
 
+        components-stream
+        (->> files-stream
+             (rx/flat-map vals)
+             (rx/filter #(d/not-empty? (get-in % [:data :components])))
+             (rx/flat-map e/parse-library-components))
+
         pages-stream
         (->> render-stream
              (rx/map e/collect-page))]
@@ -72,6 +78,7 @@
      (->> (rx/merge
            manifest-stream
            pages-stream
+           components-stream
            colors-stream)
           (rx/reduce conj [])
           (rx/with-latest-from files-stream)
@@ -153,16 +160,38 @@
     (set! file (fb/delete-library-color file (parse-data data)))
     (str (:last-id file)))
 
+  (startComponent [_ data]
+    (set! file (fb/start-component file (parse-data data)))
+    (str (:current-component-id file)))
+
+  (finishComponent [_]
+    (set! file (fb/finish-component file)))
+
+  (createComponentInstance [_ data]
+    (set! file (fb/create-component-instance file (parse-data data)))
+    (str (:last-id file)))
+
+  (lookupShape [_ shape-id]
+    (clj->js (fb/lookup-shape file (uuid/uuid shape-id))))
+
+  (updateObject [_ id new-obj]
+    (let [old-obj (fb/lookup-shape file (uuid/uuid id))
+          new-obj (d/deep-merge old-obj (parse-data new-obj))]
+      (set! file (fb/update-object file old-obj new-obj))))
+
+  (deleteObject [_ id]
+    (set! file (fb/delete-object file (uuid/uuid id))))
+
   (asMap [_]
     (clj->js file))
 
   (export [_]
-     (->> (export-file file)
-          (rx/subs
-           (fn [value]
-             (when  (not (contains? value :type))
-               (let [[file export-blob] value]
-                 (dom/trigger-download (:name file) export-blob))))))))
+    (->> (export-file file)
+         (rx/subs
+          (fn [value]
+            (when  (not (contains? value :type))
+              (let [[file export-blob] value]
+                (dom/trigger-download (:name file) export-blob))))))))
 
 (defn create-file-export [^string name]
   (File. (fb/create-file name)))
