@@ -8,8 +8,11 @@
   (:require
    [app.common.data :as d]
    [app.common.file-builder :as fb]
+   [app.common.media :as cm]
    [app.common.uuid :as uuid]
    [app.util.dom :as dom]
+   [app.util.json :as json]
+   [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.export :as e]
    [beicon.core :as rx]
@@ -26,6 +29,36 @@
                      value)
              key (-> key d/name str/kebab keyword)]
          [key value])) $)))
+
+(defn data-uri->blob
+  [data-uri]
+  (let [[mtype b64-data] (str/split data-uri ";base64,")
+        mtype   (subs mtype (inc (str/index-of mtype ":")))
+        decoded (.atob js/window b64-data)
+        size    (.-length ^js decoded)
+        content (js/Uint8Array. size)]
+
+    (doseq [i (range 0 size)]
+      (aset content i (.charCodeAt decoded i)))
+
+    (wapi/create-blob content mtype)))
+
+(defn parse-library-media
+  [[file-id media]]
+  (rx/merge
+   (let [markup
+         (->> (vals media)
+              (reduce e/collect-media {})
+              (json/encode))]
+     (rx/of (vector (str file-id "/media.json") markup)))
+
+   (->> (rx/from (vals media))
+        (rx/map #(assoc % :file-id file-id))
+        (rx/flat-map
+         (fn [media]
+           (let [file-path (str/concat file-id "/media/" (:id media) (cm/mtype->extension (:mtype media)))
+                 blob (data-uri->blob (:uri media))]
+             (rx/of (vector file-path blob))))))))
 
 (defn export-file
   [file]
@@ -58,6 +91,13 @@
              (rx/filter #(d/not-empty? (second %)))
              (rx/map e/parse-library-color))
 
+        media-stream
+        (->> files-stream
+             (rx/flat-map vals)
+             (rx/map #(vector (:id %) (get-in % [:data :media])))
+             (rx/filter #(d/not-empty? (second %)))
+             (rx/flat-map parse-library-media))
+
         components-stream
         (->> files-stream
              (rx/flat-map vals)
@@ -79,6 +119,7 @@
            manifest-stream
            pages-stream
            components-stream
+           media-stream
            colors-stream)
           (rx/reduce conj [])
           (rx/with-latest-from files-stream)
@@ -158,6 +199,14 @@
 
   (deleteLibraryColor [_ data]
     (set! file (fb/delete-library-color file (parse-data data)))
+    (str (:last-id file)))
+
+  (addLibraryMedia [_ data]
+    (set! file (fb/add-library-media file (parse-data data)))
+    (str (:last-id file)))
+
+  (deleteLibraryMedia [_ data]
+    (set! file (fb/delete-library-media file (parse-data data)))
     (str (:last-id file)))
 
   (startComponent [_ data]

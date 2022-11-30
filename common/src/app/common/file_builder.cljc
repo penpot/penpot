@@ -541,6 +541,14 @@
           :object (assoc media :id id)})
         (assoc :last-id id))))
 
+(defn delete-library-media
+  [file media-id]
+  (let [id (uuid/uuid media-id)]
+    (-> file
+        (commit-change
+         {:type :del-media
+          :id id}))))
+
 (defn start-component
   [file data]
 

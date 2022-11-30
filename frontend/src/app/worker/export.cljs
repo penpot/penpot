@@ -155,15 +155,14 @@
   (->> (r/render-components (:data file) :deleted-components)
        (rx/map #(vector (str (:id file) "/deleted-components.svg") %))))
 
-(defn fetch-file-with-libraries
-  [file-id components-v2]
-  (let [features (cond-> #{} components-v2 (conj "components/v2"))]
-    (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
-                 (rp/cmd! :get-file-libraries {:file-id file-id}))
-         (rx/map
-          (fn [[file file-libraries]]
-            (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
-              (assoc file :libraries libraries-ids)))))))
+(defn fetch-file-with-libraries [file-id components-v2]
+  (->> (rx/zip (rp/query :file {:id file-id :components-v2 components-v2})
+               (rp/query :file-libraries {:file-id file-id}))
+       (rx/map
+        (fn [[file file-libraries]]
+          (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
+            (-> file
+                (assoc :libraries libraries-ids)))))))
 
 (defn get-component-ref-file
   [objects shape]
