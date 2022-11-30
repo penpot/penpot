@@ -29,8 +29,10 @@
 (mf/defc left-sidebar
   {:wrap [mf/memo]}
   [{:keys [layout] :as props}]
-  (let [section    (cond (contains? layout :layers) :layers
-                         (contains? layout :assets) :assets)
+  (let [options-mode        (mf/deref refs/options-mode-global)
+        mode-inspect?       (= options-mode :inspect)
+        section             (cond (or mode-inspect? (contains? layout :layers)) :layers
+                                  (contains? layout :assets) :assets)
         shortcuts? (contains? layout :shortcuts)
 
         {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
@@ -68,8 +70,9 @@
                 [:& sitemap {:layout layout}]
                 [:& layers-toolbox]]]
 
-              [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
-               [:& assets-toolbox]]]])]]]))
+              (when-not mode-inspect?
+                [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
+                 [:& assets-toolbox]])]])]]]))
 
 ;; --- Right Sidebar (Component)
 
@@ -78,9 +81,10 @@
    ::mf/wrap [mf/memo]}
   [props]
   (let [layout (obj/get props "layout")
-        drawing-tool (:tool (mf/deref refs/workspace-drawing))]
+        drawing-tool (:tool (mf/deref refs/workspace-drawing))
+        expanded (mf/deref refs/inspect-expanded)]
 
-    [:aside.settings-bar.settings-bar-right
+    [:aside.settings-bar {:class (when expanded "expanded")}
      [:div.settings-bar-inside
       (cond
         (= drawing-tool :comments)

@@ -132,6 +132,7 @@
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
 
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+        mode-inspect?       (= options-mode :inspect)
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect)
         on-context-menu   (actions/on-context-menu hover hover-ids workspace-read-only?)
@@ -181,7 +182,9 @@
                                           (contains? layout :snap-grid))
                                       (or drawing-obj transform))
         show-selrect?            (and selrect (empty? drawing) (not text-editing?))
-        show-measures?           (and (not transform) (not node-editing?) show-distances?)
+        show-measures?           (and (not transform)
+                                      (not node-editing?)
+                                      (or show-distances? mode-inspect?))
         show-artboard-names?     (contains? layout :display-artboard-names)
         show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
 
@@ -190,7 +193,7 @@
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size viewport-ref)
-    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing?)
+    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? workspace-read-only?)
     (hooks/setup-keyboard alt? mod? space?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids hover-top-frame-id @hover-disabled? focus zoom)
     (hooks/setup-viewport-modifiers modifiers base-objects)

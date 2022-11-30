@@ -4019,6 +4019,9 @@ msgstr "Posición"
 msgid "workspace.options.prototype"
 msgstr "Prototipo"
 
+msgid "workspace.options.inspect"
+msgstr "Inspeccionar"
+
 msgid "workspace.options.radius"
 msgstr "Radio"
 

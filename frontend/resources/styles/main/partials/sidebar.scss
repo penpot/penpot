@@ -197,6 +197,24 @@
   height: 100%;
   width: 100%;
   overflow-y: auto;
+
+  &.inspect {
+    .tab-container-tabs {
+      padding-bottom: 0.5rem;
+      background-color: $color-gray-50;
+      border-bottom: 1px solid $color-gray-60;
+      height: 3rem;
+    }
+
+    .tab-container-tab-title {
+      border-radius: 4px;
+
+      &.current {
+        background-color: $color-primary;
+        color: black;
+      }
+    }
+  }
 }
 
 .element-list {

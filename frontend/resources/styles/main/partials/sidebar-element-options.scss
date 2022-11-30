@@ -53,6 +53,12 @@
     }
   }
 
+  &.inspect {
+    & > :first-child {
+      margin-top: 7px;
+    }
+  }
+
   .element-set {
     border-bottom: 1px solid $color-gray-60;
     color: $color-gray-20;
