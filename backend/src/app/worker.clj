@@ -409,7 +409,9 @@
                     {:status :retry :task task :error cause})))))
 
           (get-task [task-id]
-            (ex/try (db/get* pool :task {:id task-id})))
+            (ex/try!
+             (some-> (db/get* pool :task {:id task-id})
+                     (decode-task-row))))
 
           (run-task [task-id]
             (loop [task (get-task task-id)]
