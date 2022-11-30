@@ -110,7 +110,7 @@
 
         on-drag-start
         (fn [event]
-          (if disabled
+          (if (or disabled (not draggable?))
             (dom/prevent-default event)
             (do
               (dom/stop-propagation event)
