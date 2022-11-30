@@ -106,7 +106,7 @@
                 child-bounds  @(get bounds child-id)
                 child-bounds
                 (if (or (ctl/fill-height? child) (ctl/fill-height? child))
-                  (child-layout-bound-points parent child parent-bounds parent-bounds)
+                  (child-layout-bound-points parent child parent-bounds child-bounds)
                   child-bounds)]
             (gpo/parent-coords-bounds child-bounds parent-bounds)))]
 

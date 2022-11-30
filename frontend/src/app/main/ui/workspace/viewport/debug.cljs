@@ -152,7 +152,7 @@
   [props]
 
   (let [objects            (unchecked-get props "objects")
-        zoom               (unchecked-get props "objects")
+        zoom               (unchecked-get props "zoom")
         selected-shapes    (unchecked-get props "selected-shapes")
         hover-top-frame-id (unchecked-get props "hover-top-frame-id")
 
@@ -160,13 +160,26 @@
         (when (and (= (count selected-shapes) 1) (= :frame (-> selected-shapes first :type)))
           (first selected-shapes))
 
-        parent (or selected-frame (get objects hover-top-frame-id))]
+        parent (or selected-frame (get objects hover-top-frame-id))
+        parent-bounds (:points parent)]
 
     (when (and (some? parent) (not= uuid/zero (:id parent)))
       (let [children (cph/get-immediate-children objects (:id parent))]
         [:g.debug-parent-bounds {:pointer-events "none"}
          (for [[idx child] (d/enumerate children)]
-           [:> shape-parent-bound {:key (dm/str "bound-" idx)
-                                   :zoom zoom
-                                   :shape child
-                                   :parent parent}])]))))
+           [:*
+            [:> shape-parent-bound {:key (dm/str "bound-" idx)
+                                    :zoom zoom
+                                    :shape child
+                                    :parent parent}]
+
+            (let [child-bounds (:points child)
+                  points
+                  (if (or (ctl/fill-height? child) (ctl/fill-height? child))
+                    (gsl/child-layout-bound-points parent child parent-bounds child-bounds)
+                    child-bounds)]
+              (for [point points]
+                [:circle {:cx (:x point)
+                          :cy (:y point)
+                          :r (/ 2 zoom)
+                          :style {:fill "red"}}]))])]))))
