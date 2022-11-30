@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.math :as mth]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
@@ -120,16 +121,27 @@
        (effect-fn input)
        (rf result input)))))
 
+(defn prettify
+  "Prepare x fror cleaner output when logged."
+  [x]
+  (cond
+    (map? x) (d/mapm #(prettify %2) x)
+    (vector? x) (mapv prettify x)
+    (seq? x) (map prettify x)
+    (set? x) (into #{} (map prettify x))
+    (number? x) (mth/precision x 4)
+    (uuid? x) (str "#uuid " x)
+    :else x))
+
 (defn ^:export logjs
   ([str] (tap (partial logjs str)))
   ([str val]
-   (js/console.log str (clj->js val))
+   (js/console.log str (clj->js (prettify val)))
    val))
 
 (when (exists? js/window)
   (set! (.-dbg ^js js/window) clj->js)
   (set! (.-pp ^js js/window) pprint))
-
 
 (defonce widget-style "
   background: black;
