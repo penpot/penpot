@@ -12,6 +12,7 @@
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.flex-layout :as gcl]
    [app.common.geom.shapes.pixel-precision :as gpp]
+   [app.common.geom.shapes.points :as cpo]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.pages.helpers :as cph]
@@ -138,29 +139,34 @@
     (let [children (map (d/getf objects) (:shapes parent))]
       (reduce process-child modif-tree children))))
 
-
 (defn get-group-bounds
   [objects bounds modif-tree shape]
   (let [shape-id (:id shape)
         modifiers (-> (dm/get-in modif-tree [shape-id :modifiers])
                       (ctm/select-geometry))
 
-        children (cph/get-immediate-children objects shape-id)
-        group-bounds
-        (cond
-          (cph/group-shape? shape)
-          (let [children-bounds (->> children (mapv #(get-group-bounds objects bounds modif-tree %)))]
-            (gtr/group-bounds shape children-bounds))
+        children (cph/get-immediate-children objects shape-id)]
 
-          (cph/mask-shape? shape)
-          (get-group-bounds objects bounds modif-tree (-> children first))
+    (cond
+      (cph/group-shape? shape)
+      (let [;; Transform here to then calculate the bounds relative to the transform
+            current-bounds
+            (cond-> @(get bounds shape-id)
+              (not (ctm/empty? modifiers))
+              (gtr/transform-bounds modifiers))
 
-          :else
-          @(get bounds shape-id))]
+            children-bounds
+            (->> children
+                 (mapv #(get-group-bounds objects bounds modif-tree %)))]
+        (cpo/merge-parent-coords-bounds children-bounds current-bounds))
 
-    (cond-> group-bounds
-      (not (ctm/empty? modifiers))
-      (gtr/transform-bounds modifiers))))
+      (cph/mask-shape? shape)
+      (get-group-bounds objects bounds modif-tree (-> children first))
+
+      :else
+      (cond-> @(get bounds shape-id)
+        (not (ctm/empty? modifiers))
+        (gtr/transform-bounds modifiers)))))
 
 (defn- set-layout-modifiers
   [modif-tree objects bounds parent transformed-parent-bounds]
