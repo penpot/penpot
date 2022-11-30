@@ -414,9 +414,11 @@
 
         on-component-drag-start
         (mf/use-fn
-         (mf/deps component selected-components item-ref on-drag-start)
+         (mf/deps component selected-components item-ref on-drag-start workspace-read-only?)
          (fn [event]
-           (on-asset-drag-start event component selected-components item-ref :components on-drag-start)))]
+           (if workspace-read-only?
+             (dom/prevent-default event)
+             (on-asset-drag-start event component selected-components item-ref :components on-drag-start))))]
 
     [:div {:ref item-ref
            :class (dom/classnames
@@ -795,9 +797,11 @@
 
         on-grahic-drag-start
         (mf/use-fn
-         (mf/deps object selected-objects item-ref on-drag-start)
+         (mf/deps object selected-objects item-ref on-drag-start workspace-read-only?)
          (fn [event]
-           (on-asset-drag-start event object selected-objects item-ref :graphics on-drag-start)))]
+           (if workspace-read-only?
+             (dom/prevent-default event)
+             (on-asset-drag-start event object selected-objects item-ref :graphics on-drag-start))))]
 
     [:div {:ref item-ref
            :class-name (dom/classnames
@@ -1190,10 +1194,10 @@
            (if (or multi-colors? multi-assets?)
              (on-assets-delete)
              (let [undo-id (uuid/next)]
-              (st/emit! (dwu/start-undo-transaction undo-id)
-                       (dwl/delete-color color)
-                       (dwl/sync-file file-id file-id :colors (:id color))
-                       (dwu/commit-undo-transaction undo-id))))))
+               (st/emit! (dwu/start-undo-transaction undo-id)
+                         (dwl/delete-color color)
+                         (dwl/sync-file file-id file-id :colors (:id color))
+                         (dwu/commit-undo-transaction undo-id))))))
 
         rename-color-clicked
         (fn [event]
@@ -1262,9 +1266,11 @@
 
         on-color-drag-start
         (mf/use-fn
-         (mf/deps color selected-colors item-ref)
+         (mf/deps color selected-colors item-ref workspace-read-only?)
          (fn [event]
-           (on-asset-drag-start event color selected-colors item-ref :colors identity)))]
+           (if workspace-read-only?
+             (dom/prevent-default event)
+             (on-asset-drag-start event color selected-colors item-ref :colors identity))))]
 
     (mf/use-effect
      (mf/deps (:editing @state))
@@ -1574,9 +1580,11 @@
 
         on-typography-drag-start
         (mf/use-fn
-         (mf/deps typography selected-typographies item-ref)
+         (mf/deps typography selected-typographies item-ref workspace-read-only?)
          (fn [event]
-           (on-asset-drag-start event typography selected-typographies item-ref :typographies identity)))]
+           (if workspace-read-only?
+             (dom/prevent-default event)
+             (on-asset-drag-start event typography selected-typographies item-ref :typographies identity))))]
 
     [:div.typography-container {:ref item-ref
                                 :draggable (not workspace-read-only?)
