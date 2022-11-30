@@ -883,11 +883,12 @@
                         (map #(update-component-sync % (:id data))
                              components-changed)))))]
 
-        (when components-v2
-          (->> change-s
-               (rx/with-latest-from workspace-data-s)
-               (rx/map check-changes)
-               (rx/take-until stopper)))))))
+        ;; (when components-v2
+        ;;   (->> change-s
+        ;;        (rx/with-latest-from workspace-data-s)
+        ;;        (rx/map check-changes)
+        ;;        (rx/take-until stopper)))
+        ))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Backend interactions
