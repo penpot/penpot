@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-27 13:02+0000\n"
-"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
+"PO-Revision-Date: 2022-12-01 10:47+0000\n"
+"Last-Translator: GradelerM <marie.gradeler@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.14.2-dev\n"
+"X-Generator: Weblate 4.15-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4154,3 +4154,68 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Sachez qu’il existe de nombreuses ressources disponibles pour vous aider à "
+"démarrer avec Penpot, comme le Guide de l’utilisateur et notre chaîne "
+"Youtube."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Utilisé dans le fichier suivant :"
+msgstr[1] "Utilisé dans les fichiers suivants :"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Retirer la bibliothèque"
+msgstr[1] "Retirer les bibliothèques"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Abonnez-vous à la newsletter de Penpot pour être tenu informé du "
+"développement du produit et de notre actualité."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Envoyez-moi des nouvelles de Penpot (articles de blog, tutoriels vidéo, "
+"streamings...)."
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Nous ne vous enverrons que des e-mails pertinents. Vous pouvez vous "
+"désabonner à tout moment via votre profil d’utilisateur ou via le lien de "
+"désabonnement dans l’une de nos newsletters."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Envoyez-moi les mises à jour du produit (nouvelles fonctionnalités, "
+"versions, corrections...)."
+
+msgid "errors.bad-font"
+msgstr "La police %s n'a pas pu être chargée"
+
+msgid "errors.bad-font-plural"
+msgstr "Les polices %s n'ont pas pu être chargées"
+
+msgid "errors.profile-blocked"
+msgstr "Le profil est bloqué"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Annuler la publication"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr ""
+"Vous pouvez regarder nos tutoriels et les tutoriels réalisés par notre "
+"communauté."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Nous nous soucions de la vie privée, vous pouvez lire ici notre "
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot est un logiciel Open Source créé par Kaleidos et la communauté, où de "
+"nombreuses personnes s’entraident déjà. Tout le monde peut collaborer en :"
