@@ -24,8 +24,10 @@ goog.scope(function() {
       };
     } else if (typeof require === "function") {
       const crypto = require("crypto");
+      const randomBytes = crypto["randomBytes"];
+
       return (buf) => {
-        const bytes = crypto.randomBytes(buf.length);
+        const bytes = randomBytes(buf.length);
         buf.set(bytes)
         return buf;
       };

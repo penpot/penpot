@@ -47,10 +47,8 @@
 (defn process-shape [modifiers {:keys [id] :as shape}]
   (let [modifier (dm/get-in modifiers [id :modifiers])]
     (-> shape
-        (cond-> (and (some? modifier)
-                     (not (ctm/only-move? modifier)))
+        (cond-> (and (some? modifier) (not (ctm/only-move? modifier)))
           (fix-position modifier))
-
         (cond-> (nil? (:position-data shape))
           (assoc :migrate true))
         strip-position-data)))
@@ -132,6 +130,21 @@
                          :shape shape
                          :grow-type (:grow-type shape)}]))
 
+(defn text-properties-equal?
+  [shape other]
+  (or (identical? shape other)
+      (and
+       ;; Check if both shapes are equivalent removing their geometry data
+       (= (dissoc shape :migrate :points :selrect :height :width :x :y)
+          (dissoc other :migrate :points :selrect :height :width :x :y))
+
+       ;; Check if the position and size is close. If any of these changes the shape has changed
+       ;; and if not there is no geometry relevant change
+       (mth/close? (:x shape) (:x other))
+       (mth/close? (:y shape) (:y other))
+       (mth/close? (:width shape) (:width other))
+       (mth/close? (:height shape) (:height other)))))
+
 (mf/defc viewport-texts-wrapper
   {::mf/wrap-props false
    ::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
@@ -149,12 +162,9 @@
                 old-modifiers (ctm/select-geometry (get prev-modifiers id))
                 new-modifiers (ctm/select-geometry (get modifiers id))
 
-                remote? (some? (-> new-shape meta :session-id)) ]
-
+                remote? (some? (-> new-shape meta :session-id))]
             (or (and (not remote?)
-                     (not (identical? old-shape new-shape))
-                     (not= (dissoc old-shape :migrate)
-                           (dissoc new-shape :migrate)))
+                     (not (text-properties-equal? old-shape new-shape)))
 
                 (and (not= new-modifiers old-modifiers)
                      (or (not (ctm/only-move? new-modifiers))
@@ -172,6 +182,7 @@
 
         handle-update-modifier (mf/use-callback update-text-modifier)
         handle-update-shape (mf/use-callback update-text-shape)]
+
     [:*
      (for [{:keys [id] :as shape} changed-texts]
        [:& text-container {:shape shape

@@ -19,10 +19,13 @@
   #?(:cljs (js/isNaN v)
      :clj (Double/isNaN v)))
 
+;; NOTE: on cljs we don't need to check for `number?` so we explicitly
+;; ommit it for performance reasons.
+
 (defn finite?
   [v]
   #?(:cljs (and (not (nil? v)) (js/isFinite v))
-     :clj (and (not (nil? v)) (Double/isFinite v))))
+     :clj (and (not (nil? v)) (number? v) (Double/isFinite v))))
 
 (defn finite
   [v default]

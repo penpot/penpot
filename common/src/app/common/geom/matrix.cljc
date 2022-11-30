@@ -9,6 +9,7 @@
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.spec :as us]
@@ -123,6 +124,35 @@
   ([m1 m2 & others]
    (reduce multiply (multiply m1 m2) others)))
 
+(defn multiply!
+  [^Matrix m1 ^Matrix m2]
+  (let [m1a (.-a m1)
+        m1b (.-b m1)
+        m1c (.-c m1)
+        m1d (.-d m1)
+        m1e (.-e m1)
+        m1f (.-f m1)
+        m2a (.-a m2)
+        m2b (.-b m2)
+        m2c (.-c m2)
+        m2d (.-d m2)
+        m2e (.-e m2)
+        m2f (.-f m2)]
+    #?@(:cljs [(set! (.-a m1) (+ (* m1a m2a) (* m1c m2b)))
+               (set! (.-b m1) (+ (* m1b m2a) (* m1d m2b)))
+               (set! (.-c m1) (+ (* m1a m2c) (* m1c m2d)))
+               (set! (.-d m1) (+ (* m1b m2c) (* m1d m2d)))
+               (set! (.-e m1) (+ (* m1a m2e) (* m1c m2f) m1e))
+               (set! (.-f m1) (+ (* m1b m2e) (* m1d m2f) m1f))
+               m1]
+        :clj  [(Matrix.
+                (+ (* m1a m2a) (* m1c m2b))
+                (+ (* m1b m2a) (* m1d m2b))
+                (+ (* m1a m2c) (* m1c m2d))
+                (+ (* m1b m2c) (* m1d m2d))
+                (+ (* m1a m2e) (* m1c m2f) m1e)
+                (+ (* m1b m2e) (* m1d m2f) m1f))])))
+
 (defn add-translate
   "Given two TRANSLATE matrixes (only e and f have significative
   values), combine them. Quicker than multiplying them, for this
@@ -147,26 +177,31 @@
   (= v base))
 
 (defn translate-matrix
-  ([{x :x y :y :as pt}]
+  ([pt]
    (assert (gpt/point? pt))
-   (Matrix. 1 0 0 1 x y))
+   (Matrix. 1 0 0 1
+            (dm/get-prop pt :x)
+            (dm/get-prop pt :y)))
 
   ([x y]
-   (translate-matrix (gpt/point x y))))
+   (Matrix. 1 0 0 1 x y)))
 
 (defn scale-matrix
   ([pt center]
-   (multiply (translate-matrix center)
-             (scale-matrix pt)
-             (translate-matrix (gpt/negate center))))
-  ([{x :x y :y :as pt}]
+   (-> (matrix)
+       (multiply! (translate-matrix center))
+       (multiply! (scale-matrix pt))
+       (multiply! (translate-matrix (gpt/negate center)))))
+  ([pt]
    (assert (gpt/point? pt))
-   (Matrix. x 0 0 y 0 0)))
+   (Matrix. (dm/get-prop pt :x) 0 0 (dm/get-prop pt :y) 0 0)))
 
 (defn rotate-matrix
-  ([angle point] (multiply (translate-matrix point)
-                           (rotate-matrix angle)
-                           (translate-matrix (gpt/negate point))))
+  ([angle point]
+   (-> (matrix)
+       (multiply! (translate-matrix point))
+       (multiply! (rotate-matrix angle))
+       (multiply! (translate-matrix (gpt/negate point)))))
   ([angle]
    (let [a (mth/radians angle)]
      (Matrix. (mth/cos a)
@@ -200,10 +235,22 @@
   ([m scale center]
    (multiply m (scale-matrix scale center))))
 
+(defn scale!
+  "Apply scale transformation to the matrix."
+  ([m scale]
+   (multiply! m (scale-matrix scale)))
+  ([m scale center]
+   (multiply! m (scale-matrix scale center))))
+
 (defn translate
   "Apply translate transformation to the matrix."
   [m pt]
   (multiply m (translate-matrix pt)))
+
+(defn translate!
+  "Apply translate transformation to the matrix."
+  [m pt]
+  (multiply! m (translate-matrix pt)))
 
 (defn skew
   "Apply translate transformation to the matrix."

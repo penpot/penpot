@@ -34,7 +34,7 @@
         resize-origin (gpo/origin transformed-child-bounds)]
 
     (-> modifiers
-        (ctm/select-child-modifiers)
+        (ctm/select-child)
         (ctm/resize
          resize-vector
          resize-origin
