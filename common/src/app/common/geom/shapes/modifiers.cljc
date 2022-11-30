@@ -244,13 +244,11 @@
         modifiers      (-> (dm/get-in modif-tree [parent-id :modifiers])
                            (ctm/select-geometry))
         has-modifiers? (ctm/child-modifiers? modifiers)
-        layout?        (ctl/layout? parent)
         parent?        (or (cph/group-like-shape? parent) (cph/frame-shape? parent))
-
         transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))]
 
     (cond-> modif-tree
-      (and (not layout?) has-modifiers? parent? (not root?))
+      (and has-modifiers? parent? (not root?))
       (set-children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints))))
 
 (defn- propagate-modifiers-layout
@@ -312,7 +310,7 @@
   "Recalculates the layouts to adjust the sizing: auto new sizes"
   [modif-tree sizing-auto-layouts objects bounds ignore-constraints]
   (loop [modif-tree modif-tree
-         bounds (transform-bounds bounds objects modif-tree)
+         bounds bounds
          sizing-auto-layouts (reverse sizing-auto-layouts)]
     (if-let [current (first sizing-auto-layouts)]
       (let [parent-base (get objects current)
@@ -325,7 +323,7 @@
             [resize-modif-tree _]
             (reduce #(propagate-modifiers-layout objects bounds ignore-constraints %1 %2) [resize-modif-tree #{}] tree-seq)
 
-            bounds (transform-bounds bounds objects resize-modif-tree)
+            bounds (transform-bounds bounds objects resize-modif-tree tree-seq)
 
             modif-tree (merge-modif-tree modif-tree resize-modif-tree)]
         (recur modif-tree bounds (rest sizing-auto-layouts)))
@@ -335,20 +333,22 @@
   [modif-tree objects ignore-constraints snap-pixel?]
 
   (let [objects (apply-structure-modifiers objects modif-tree)
-        
+
         bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))
         shapes-tree (resolve-tree-sequence (-> modif-tree keys set) objects)
 
         ;; Calculate the input transformation and constraints
-        modif-tree' (reduce #(propagate-modifiers-constraints objects bounds ignore-constraints %1 %2) modif-tree shapes-tree)
-        bounds (transform-bounds bounds objects modif-tree' shapes-tree)
+        modif-tree (reduce #(propagate-modifiers-constraints objects bounds ignore-constraints %1 %2) modif-tree shapes-tree)
+        bounds (transform-bounds bounds objects modif-tree shapes-tree)
 
         [modif-tree-layout sizing-auto-layouts]
         (reduce #(propagate-modifiers-layout objects bounds ignore-constraints %1 %2) [{} #{}] shapes-tree)
 
-        modif-tree (merge-modif-tree modif-tree' modif-tree-layout)
+        modif-tree (merge-modif-tree modif-tree modif-tree-layout)
 
         ;; Calculate hug layouts positions
+        bounds (transform-bounds bounds objects modif-tree-layout shapes-tree)
+
         modif-tree
         (-> modif-tree
             (sizing-auto-modifiers sizing-auto-layouts objects bounds ignore-constraints))
