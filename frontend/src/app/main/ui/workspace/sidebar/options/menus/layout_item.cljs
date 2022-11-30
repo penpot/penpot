@@ -38,10 +38,9 @@
         margins (if (nil? (:layout-item-margin values))
                   {:m1 0 :m2 0 :m3 0 :m4 0}
                   (:layout-item-margin values))
-        rx (if (and (not (= :multiple (:layout-item-margin-type values)))
-                    (apply = (vals margins)))
-             (:m1 margins)
-             "--")]
+        rx (if (or (= :multiple margins) (not (apply = (vals margins))))
+             "--"
+             (:m1 margins))]
 
     [:div.margin-row
      [:div.margin-icons
