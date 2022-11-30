@@ -532,6 +532,14 @@
           :typography (assoc typography :id id)})
         (assoc :last-id id))))
 
+(defn delete-library-typography
+  [file typography-id]
+  (let [id (uuid/uuid typography-id)]
+    (-> file
+        (commit-change
+         {:type :del-typography
+          :id id}))))
+
 (defn add-library-media
   [file media]
   (let [id (or (:id media) (uuid/next))]

@@ -91,6 +91,13 @@
              (rx/filter #(d/not-empty? (second %)))
              (rx/map e/parse-library-color))
 
+        typographies-stream
+        (->> files-stream
+             (rx/flat-map vals)
+             (rx/map #(vector (:id %) (get-in % [:data :typographies])))
+             (rx/filter #(d/not-empty? (second %)))
+             (rx/map e/parse-library-typographies))
+
         media-stream
         (->> files-stream
              (rx/flat-map vals)
@@ -120,7 +127,8 @@
            pages-stream
            components-stream
            media-stream
-           colors-stream)
+           colors-stream
+           typographies-stream)
           (rx/reduce conj [])
           (rx/with-latest-from files-stream)
           (rx/flat-map (fn [[data _]]
@@ -207,6 +215,14 @@
 
   (deleteLibraryMedia [_ data]
     (set! file (fb/delete-library-media file (parse-data data)))
+    (str (:last-id file)))
+
+  (addLibraryTypography [_ data]
+    (set! file (fb/add-library-typography file (parse-data data)))
+    (str (:last-id file)))
+
+  (deleteLibraryTypography [_ data]
+    (set! file (fb/delete-library-typography file (parse-data data)))
     (str (:last-id file)))
 
   (startComponent [_ data]
