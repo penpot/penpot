@@ -72,10 +72,13 @@
    (make-file-data file-id (uuid/next)))
 
   ([file-id page-id]
-   (let [page (ctp/make-empty-page page-id "Page-1")]
+   (let [page (when (some? page-id)
+                (ctp/make-empty-page page-id "Page-1"))]
      (cond-> (-> empty-file-data
-                 (assoc :id file-id)
-                 (ctpl/add-page page))
+                 (assoc :id file-id))
+
+       (some? page-id)
+       (ctpl/add-page page)
 
        (contains? ffeat/*current* "components/v2")
        (assoc-in [:options :components-v2] true)))))

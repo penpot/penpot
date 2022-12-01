@@ -18,6 +18,7 @@
 - Fix some texts and a typo [Taiga #4215](https://tree.taiga.io/project/penpot/issue/4215)
 - Fix twitter support account link [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4279)
 - Fix lang autodetect issue [Taiga #4277](https://tree.taiga.io/project/penpot/issue/4277)
+- Fix adding an extra page on import [Taiga #4543](https://tree.taiga.io/project/penpot/task/4543)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)

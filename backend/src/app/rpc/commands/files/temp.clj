@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc.commands.files :as files]
@@ -22,7 +23,16 @@
 
 ;; --- MUTATION COMMAND: create-temp-file
 
-(s/def ::create-temp-file ::files.create/create-file)
+(s/def ::create-page ::us/boolean)
+
+(s/def ::create-temp-file
+  (s/keys :req-un [::files/profile-id
+                   ::files/name
+                   ::files/project-id]
+          :opt-un [::files/id
+                   ::files/is-shared
+                   ::files/features
+                   ::create-page]))
 
 (sv/defmethod ::create-temp-file
   {::doc/added "1.17"}

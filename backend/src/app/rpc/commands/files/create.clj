@@ -31,9 +31,9 @@
 
 (defn create-file
   [conn {:keys [id name project-id is-shared data revn
-                modified-at deleted-at
+                modified-at deleted-at create-page
                 ignore-sync-until features]
-         :or {is-shared false revn 0}
+         :or {is-shared false revn 0 create-page true}
          :as params}]
   (let [id       (or id (:id data) (uuid/next))
         features (-> (into files/default-features features)
@@ -43,7 +43,9 @@
                      (binding [ffeat/*current* features
                                ffeat/*wrap-with-objects-map-fn* (if (features "storate/objects-map") omap/wrap identity)
                                ffeat/*wrap-with-pointer-map-fn* (if (features "storage/pointer-map") pmap/wrap identity)]
-                       (ctf/make-file-data id)))
+                       (if create-page
+                         (ctf/make-file-data id)
+                         (ctf/make-file-data id nil))))
 
         features (db/create-array conn "text" features)
         file     (db/insert! conn :file
