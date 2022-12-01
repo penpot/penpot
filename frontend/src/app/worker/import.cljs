@@ -135,6 +135,7 @@
               :name (:name context)
               :is-shared (:shared context)
               :project-id (:project-id context)
+              :create-page false
               :features features})))
 
 (defn link-file-libraries
