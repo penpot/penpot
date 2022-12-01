@@ -84,7 +84,7 @@
         drawing-tool (:tool (mf/deref refs/workspace-drawing))
         expanded (mf/deref refs/inspect-expanded)]
 
-    [:aside.settings-bar {:class (when expanded "expanded")}
+    [:aside.settings-bar.settings-bar-right {:class (when expanded "expanded")}
      [:div.settings-bar-inside
       (cond
         (= drawing-tool :comments)
