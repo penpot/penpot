@@ -65,11 +65,6 @@
         flags (sequence (map keyword) (str/words flags))]
     (flags/parse flags/default default-flags flags)))
 
-(defn- parse-features
-  [global]
-  (when-let [features-str (obj/get global "penpotFeatures")]
-    (map keyword (str/words features-str))))
-
 (defn- parse-version
   [global]
   (-> (obj/get global "penpotVersion")
@@ -94,7 +89,6 @@
 
 (def build-date           (parse-build-date global))
 (def flags                (atom (parse-flags global)))
-(def features             (atom (parse-features global)))
 (def version              (atom (parse-version global)))
 (def target               (atom (parse-target global)))
 (def browser              (atom (parse-browser)))
