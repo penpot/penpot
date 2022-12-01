@@ -65,11 +65,15 @@
 ;; Read initial enabled features from config, if set
 (if-let [enabled-features @cfg/features]
   (doseq [f enabled-features]
+    (js/console.log "enabled feature" (pr-str f))
     (toggle-feature! f))
-  (when *assert*
+  (when false
     ;; By default, all features disabled, except in development
     ;; environment, that are enabled except components-v2
+    ;; (js/console.log "!!! *assert*" *assert*)
+
     (doseq [f features-list]
       (when (not= f :components-v2)
+        ;; (js/console.log "enabled feature" (pr-str f))
         (toggle-feature! f)))))
 

@@ -37,6 +37,7 @@
 (when (= :browser @cf/target)
   (log/info :message "Welcome to penpot"
             :version (:full @cf/version)
+            :asserts *assert*
             :build-date cf/build-date
             :public-uri (str @cf/public-uri)))
 
