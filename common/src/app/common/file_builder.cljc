@@ -498,14 +498,29 @@
 
 (defn add-library-color
   [file color]
-
   (let [id (or (:id color) (uuid/next))]
     (-> file
         (commit-change
          {:type :add-color
-          :id id
           :color (assoc color :id id)})
         (assoc :last-id id))))
+
+(defn update-library-color
+  [file color]
+  (let [id (uuid/uuid (:id color))]
+    (-> file
+        (commit-change
+         {:type :mod-color
+          :color (assoc color :id id)})
+        (assoc :last-id (:id color)))))
+
+(defn delete-library-color
+  [file color-id]
+  (let [id (uuid/uuid color-id)]
+    (-> file
+        (commit-change
+         {:type :del-color
+          :id id}))))
 
 (defn add-library-typography
   [file typography]
@@ -517,6 +532,14 @@
           :typography (assoc typography :id id)})
         (assoc :last-id id))))
 
+(defn delete-library-typography
+  [file typography-id]
+  (let [id (uuid/uuid typography-id)]
+    (-> file
+        (commit-change
+         {:type :del-typography
+          :id id}))))
+
 (defn add-library-media
   [file media]
   (let [id (or (:id media) (uuid/next))]
@@ -525,6 +548,14 @@
          {:type :add-media
           :object (assoc media :id id)})
         (assoc :last-id id))))
+
+(defn delete-library-media
+  [file media-id]
+  (let [id (uuid/uuid media-id)]
+    (-> file
+        (commit-change
+         {:type :del-media
+          :id id}))))
 
 (defn start-component
   [file data]
@@ -646,6 +677,40 @@
               shapes)
       (dissoc $ :current-component-id))))
 
+(defn create-component-instance
+  [file data]
+  (let [component-id     (uuid/uuid (:component-id data))
+        x                (:x data)
+        y                (:y data)
+        file             (assoc file :current-component-id component-id)
+        page-id          (:current-page-id file)
+        page             (ctpl/get-page (:data file) page-id)
+        component        (ctkl/get-component (:data file) component-id)
+        ;; main-instance-id (:main-instance-id component)
+
+        [shape shapes]
+        (ctn/make-component-instance page
+                                     component
+                                     (:id file)
+                                     (gpt/point x
+                                                y)
+                                     #_{:main-instance? true
+                                      :force-id main-instance-id})]
+
+    (as-> file $
+      (reduce #(commit-change %1
+                              {:type :add-obj
+                               :id (:id %2)
+                               :page-id (:id page)
+                               :parent-id (:parent-id %2)
+                               :frame-id (:frame-id %2)
+                               :obj %2})
+              $
+              shapes)
+
+      (assoc $ :last-id (:id shape))
+      (dissoc $ :current-component-id))))
+
 (defn delete-object
   [file id]
   (let [page-id (:current-page-id file)]
@@ -672,7 +737,8 @@
          {:type :mod-obj
           :operations (reduce generate-operation [] attrs)
           :page-id page-id
-          :id (:id old-obj)}))))
+          :id (:id old-obj)})
+        (assoc :last-id (:id old-obj)))))
 
 (defn get-current-page
   [file]
