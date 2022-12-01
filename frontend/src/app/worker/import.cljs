@@ -126,10 +126,10 @@
 
 (defn create-file
   "Create a new file on the back-end"
-  [context components-v2]
+  [context]
   (let [resolve-fn (:resolve context)
         file-id    (resolve-fn (:file-id context))
-        features   (cond-> #{} components-v2 (conj "components/v2"))]
+        features   (into #{} (:features context))]
     (rp/cmd! :create-temp-file
              {:id file-id
               :name (:name context)
@@ -563,14 +563,14 @@
           (rx/tap #(rx/end! progress-str)))]))
 
 (defn create-files
-  [context files components-v2]
+  [context files]
 
   (let [data (group-by :file-id files)]
     (rx/concat
      (->> (rx/from files)
           (rx/map #(merge context %))
           (rx/flat-map (fn [context]
-                         (->> (create-file context components-v2)
+                         (->> (create-file context)
                               (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
@@ -629,7 +629,7 @@
                                (rx/of {:uri (:uri file) :error error}))))))))))
 
 (defmethod impl/handler :import-files
-  [{:keys [project-id files components-v2]}]
+  [{:keys [project-id files]}]
 
   (let [context {:project-id project-id
                  :resolve    (resolve-factory)}
@@ -637,7 +637,7 @@
         binary-files (filter #(= "application/octet-stream" (:type %)) files)]
 
     (->> (rx/merge
-          (->> (create-files context zip-files components-v2)
+          (->> (create-files context zip-files)
                (rx/flat-map
                 (fn [[file data]]
                   (->> (uz/load-from-url (:uri data))
