@@ -384,6 +384,17 @@
   (-> (empty)
       (scale-content value)))
 
+(defn change-size
+  [{:keys [selrect points transform transform-inverse] :as shape} width height]
+  (let [old-width  (-> selrect :width)
+        old-height (-> selrect :height)
+        width      (or width old-width)
+        height     (or height old-height)
+        origin     (first points)
+        scalex     (/ width old-width)
+        scaley     (/ height old-height)]
+    (resize-modifiers (gpt/point scalex scaley) origin transform transform-inverse)))
+
 (defn change-dimensions-modifiers
   [{:keys [transform transform-inverse] :as shape} attr value]
   (us/assert map? shape)

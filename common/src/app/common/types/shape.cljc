@@ -375,7 +375,10 @@
   "Initializes the selrect and points for a shape."
   [shape]
   (let [selrect (gsh/rect->selrect shape)
-        points  (gsh/rect->points shape)]
+        points  (gsh/rect->points shape)
+        points  (cond-> points
+                  (:transform shape)
+                  (gsh/transform-points (gsh/center-points points) (:transform shape)))]
     (-> shape
         (assoc :selrect selrect
                :points points))))

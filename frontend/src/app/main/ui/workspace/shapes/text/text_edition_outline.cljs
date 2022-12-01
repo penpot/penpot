@@ -12,14 +12,19 @@
    [rumext.v2 :as mf]))
 
 (mf/defc text-edition-outline
-  [{:keys [shape zoom]}]
-  (let [text-modifier-ref
+  [{:keys [shape zoom modifiers]}]
+  (let [modifiers (get-in modifiers [(:id shape) :modifiers])
+
+        text-modifier-ref
         (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
 
         text-modifier
         (mf/deref text-modifier-ref)
 
         shape (cond-> shape
+                (some? modifiers)
+                (gsh/transform-shape modifiers)
+
                 (some? text-modifier)
                 (dwt/apply-text-modifier text-modifier))
 

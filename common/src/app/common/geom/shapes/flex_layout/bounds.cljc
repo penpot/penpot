@@ -11,7 +11,7 @@
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]))
 
-(defn- child-layout-bound-points
+(defn child-layout-bound-points
   "Returns the bounds of the children as points"
   [parent child parent-bounds child-bounds]
 
