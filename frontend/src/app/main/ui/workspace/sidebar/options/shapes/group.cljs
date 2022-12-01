@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.group
   (:require
    [app.common.data :as d]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -34,7 +33,6 @@
         shared-libs             (unchecked-get props "shared-libs")
         objects                 (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
         file-id                 (unchecked-get props "file-id")
-        layout-active?          (features/use-feature :auto-layout) 
         layout-container-values (select-keys shape layout-container-flex-attrs)
         ids                     [(:id shape)]
         is-layout-child-ref     (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
@@ -56,8 +54,8 @@
     [:div.options
      [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
      [:& component-menu {:ids comp-ids :values comp-values :shape-name (:name shape)}]
-     (when layout-active?
-       [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}])
+     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}]
+
      (when is-layout-child?
        [:& layout-item-menu
         {:type type
