@@ -1318,7 +1318,6 @@
     (watch [_ _ _]
       (try
         (let [clipboard-str (wapi/read-from-clipboard)
-
               paste-transit-str
               (->> clipboard-str
                    (rx/filter t/transit?)
@@ -1578,6 +1577,19 @@
     {:type "root"
      :children [{:type "paragraph-set" :children paragraphs}]}))
 
+(defn calculate-paste-position [state]
+  (cond
+    ;; Pasting inside a frame
+    (selected-frame? state)
+    (let [page-selected (wsh/lookup-selected state)
+          page-objects  (wsh/lookup-page-objects state)
+          frame-id (first page-selected)
+          frame-object (get page-objects frame-id)]
+      (gsh/center-shape frame-object))
+
+    :else
+    (deref ms/mouse-position)))
+
 (defn paste-text
   [text]
   (us/assert! (string? text) "expected string as first argument")
@@ -1585,28 +1597,23 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [id (uuid/next)
-            {:keys [x y]} @ms/mouse-position
             width (max 8 (min (* 7 (count text)) 700))
             height 16
-            page-id (:current-page-id state)
-            frame-id (-> (wsh/lookup-page-objects state page-id)
-                         (ctst/top-nested-frame @ms/mouse-position))
-            shape (cts/setup-rect-selrect
-                   {:id id
-                    :type :text
-                    :name "Text"
-                    :x x
-                    :y y
-                    :frame-id frame-id
-                    :width width
-                    :height height
-                    :grow-type (if (> (count text) 100) :auto-height :auto-width)
-                    :content (as-content text)})
-            undo-id (uuid/next)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dws/deselect-all)
-               (dwsh/add-shape shape)
-               (dwu/commit-undo-transaction undo-id))))))
+            {:keys [x y]} (calculate-paste-position state)
+
+            shape {:id id
+                   :type :text
+                   :name "Text"
+                   :x x
+                   :y y
+                   :width width
+                   :height height
+                   :grow-type (if (> (count text) 100) :auto-height :auto-width)
+                   :content (as-content text)}]
+
+        (rx/of (dwu/start-undo-transaction)
+               (dwsh/create-and-add-shape :text x y shape)
+               (dwu/commit-undo-transaction))))))
 
 ;; TODO: why not implement it in terms of upload-media-workspace?
 (defn- paste-svg
@@ -1615,7 +1622,7 @@
   (ptk/reify ::paste-svg
     ptk/WatchEvent
     (watch [_ state _]
-      (let [position (deref ms/mouse-position)
+      (let [position (calculate-paste-position state)
             file-id  (:current-file-id state)]
         (->> (dwm/svg->clj ["svg" text])
              (rx/map #(dwm/svg-uploaded % file-id position)))))))
@@ -1626,9 +1633,10 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (get-in state [:workspace-file :id])
+            position (calculate-paste-position state)
             params  {:file-id file-id
                      :blobs [image]
-                     :position @ms/mouse-position}]
+                     :position position}]
         (rx/of (dwm/upload-media-workspace params))))))
 
 (defn toggle-distances-display [value]

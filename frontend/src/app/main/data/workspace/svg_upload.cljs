@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :refer [max-safe-int min-safe-int]]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -186,12 +187,13 @@
                                 (assoc :x offset-x :y offset-y)))
         (cts/setup-rect-selrect))))
 
-(defn create-svg-root [frame-id svg-data]
+(defn create-svg-root [frame-id parent-id svg-data]
   (let [{:keys [name x y width height offset-x offset-y]} svg-data]
     (-> {:id (uuid/next)
          :type :group
          :name name
          :frame-id frame-id
+         :parent-id parent-id
          :width width
          :height height
          :x (+ x offset-x)
@@ -476,7 +478,7 @@
        (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})))
 
 (defn create-svg-shapes
-  [svg-data {:keys [x y] :as position} objects frame-id selected center?]
+  [svg-data {:keys [x y] :as position} objects frame-id parent-id selected center?]
   (try
     (let [[vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
           x (if center?
@@ -507,7 +509,7 @@
 
           svg-data (assoc svg-data :defs def-nodes)
 
-          root-shape (create-svg-root frame-id svg-data)
+          root-shape (create-svg-root frame-id parent-id svg-data)
           root-id (:id root-shape)
 
           ;; In penpot groups have the size of their children. To respect the imported svg size and empty space let's create a transparent shape as background to respect the imported size
@@ -553,19 +555,22 @@
             objects  (wsh/lookup-page-objects state page-id)
             frame-id (ctst/top-nested-frame objects position)
             selected (wsh/lookup-selected state)
-
+            page-objects  (wsh/lookup-page-objects state)
+            page-selected (wsh/lookup-selected state)
+            base      (cph/get-base-shape page-objects page-selected)
+            parent-id (:parent-id base)
+            
             [new-shape new-children]
-            (create-svg-shapes svg-data position objects frame-id selected true)
-
+            (create-svg-shapes svg-data position objects frame-id parent-id selected true)
             changes   (-> (pcb/empty-changes it page-id)
                           (pcb/with-objects objects)
                           (pcb/add-object new-shape))
 
             changes
             (reduce (fn [changes [index new-child]]
-                         (-> changes
-                             (pcb/add-object new-child)
-                             (pcb/change-parent (:parent-id new-child) [new-child] index)))
+                      (-> changes
+                          (pcb/add-object new-child)
+                          (pcb/change-parent (:parent-id new-child) [new-child] index)))
                     changes
                     (d/enumerate new-children))
 
@@ -579,4 +584,3 @@
 
       (rx/of (dch/commit-changes changes)
              (dws/select-shapes (d/ordered-set (:id new-shape))))))))
-

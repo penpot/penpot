@@ -66,6 +66,7 @@
 (if-let [enabled-features @cfg/features]
   (doseq [f enabled-features]
     (toggle-feature! f))
+
   (when *assert*
     ;; By default, all features disabled, except in development
     ;; environment, that are enabled except components-v2
