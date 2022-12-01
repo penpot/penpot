@@ -1609,11 +1609,12 @@
                    :width width
                    :height height
                    :grow-type (if (> (count text) 100) :auto-height :auto-width)
-                   :content (as-content text)}]
+                   :content (as-content text)}
+            undo-id (uuid/next)]
 
-        (rx/of (dwu/start-undo-transaction)
+        (rx/of (dwu/start-undo-transaction undo-id)
                (dwsh/create-and-add-shape :text x y shape)
-               (dwu/commit-undo-transaction))))))
+               (dwu/commit-undo-transaction undo-id))))))
 
 ;; TODO: why not implement it in terms of upload-media-workspace?
 (defn- paste-svg

@@ -559,7 +559,7 @@
             page-selected (wsh/lookup-selected state)
             base      (cph/get-base-shape page-objects page-selected)
             parent-id (:parent-id base)
-            
+
             [new-shape new-children]
             (create-svg-shapes svg-data position objects frame-id parent-id selected true)
             changes   (-> (pcb/empty-changes it page-id)

@@ -249,7 +249,7 @@
         process-svg
         (fn [svg-data]
           (let [[shape children]
-                (svg/create-svg-shapes svg-data pos objects uuid/zero #{} false)]
+                (svg/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)]
             [shape children]))]
 
     (->> (upload-images svg-data)
