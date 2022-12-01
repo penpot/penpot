@@ -8,38 +8,54 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.main.store :as st]
+   [app.util.timers :as tm]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
-(log/set-level! :debug)
+(log/set-level! :trace)
 
-(def available-features #{:auto-layout :components-v2})
+(def available-features
+  #{:auto-layout :components-v2})
 
 (defn- toggle-feature
   [feature]
   (ptk/reify ::toggle-feature
     ptk/UpdateEvent
     (update [_ state]
-      (log/debug :msg "toggle-feature"
-                 :feature (d/name feature)
-                 :result (if (not (contains? (:features state) feature))
-                           "enabled"
-                           "disabled"))
-      (-> state
-          (update :features
-                  (fn [features]
-                    (let [features (or features #{})]
-                      (if (contains? features feature)
-                        (disj features feature)
-                        (conj features feature)))))))))
+      (let [features (or (:features state) #{})]
+        (if (contains? features feature)
+          (do
+            (log/debug :hint "feature disabled" :feature (d/name feature))
+            (assoc state :features (disj features feature)))
+          (do
+            (log/debug :hint "feature enabled" :feature (d/name feature))
+            (assoc state :features (conj features feature))))))))
+
+(defn- enable-feature
+  [feature]
+  (ptk/reify ::enable-feature
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [features (or (:features state) #{})]
+        (if (contains? features feature)
+          state
+          (do
+            (log/debug :hint "feature enabled" :feature (d/name feature))
+            (assoc state :features (conj features feature))))))))
 
 (defn toggle-feature!
   [feature]
   (assert (contains? available-features feature) "Not supported feature")
-  (st/emit! (toggle-feature feature)))
+  (tm/schedule-on-idle #(st/emit! (toggle-feature feature))))
+
+(defn enable-feature!
+  [feature]
+  (assert (contains? available-features feature) "Not supported feature")
+  (tm/schedule-on-idle #(st/emit! (enable-feature feature))))
 
 (defn active-feature?
   ([feature]
@@ -62,14 +78,20 @@
         active-feature? (mf/deref active-feature-ref)]
     active-feature?))
 
-;; Read initial enabled features from config, if set
-(if-let [enabled-features @cfg/features]
-  (doseq [f enabled-features]
-    (toggle-feature! f))
+;; Enable all features set on the configuration
+(->> @cf/flags
+     (map str)
+     (keep (fn [flag]
+             (when (str/starts-with? flag "frontend-feature-")
+               (subs flag 17))))
+     (map keyword)
+     (run! enable-feature!))
 
-  (when *assert*
-    ;; By default, all features disabled, except in development
-    ;; environment, that are enabled except components-v2
-    (doseq [f available-features]
-      (when (not= f :components-v2)
-        (toggle-feature! f)))))
+;; Enable the rest of available configuration if we are on development
+;; environemnt (aka devenv).
+(when *assert*
+  ;; By default, all features disabled, except in development
+  ;; environment, that are enabled except components-v2
+  (->> available-features
+       (remove #(= % :components-v2))
+       (run! enable-feature!)))
