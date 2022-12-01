@@ -17,6 +17,8 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
+(set! *assert* js/goog.DEBUG)
+
 ;; --- Auxiliar Functions
 
 (s/def ::platform #{:windows :linux :macos :other})
