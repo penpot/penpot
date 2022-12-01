@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
    [app.common.types.shape.layout :as ctl]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
@@ -25,8 +24,6 @@
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
-
-        layout-active? (features/use-feature :auto-layout)
 
         stroke-values (select-keys shape stroke-attrs)
         layer-values (select-keys shape layer-attrs)
@@ -46,10 +43,9 @@
      (when (not is-layout-child?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
-     (when (or layout-active? is-layout-container?)
-       [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}])
+     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}]
 
-     (when (and layout-active? (or is-layout-child? is-layout-container?))
+     (when (or is-layout-child? is-layout-container?)
        [:& layout-item-menu
         {:ids ids
          :type type
