@@ -88,6 +88,7 @@
   (let [parent-id (-> file :parent-stack peek)
         change {:type :add-obj
                 :id (:id obj)
+                :ignore-touched true
                 :obj obj
                 :parent-id parent-id}
 
@@ -270,6 +271,7 @@
           (commit-change
            file
            {:type :del-obj
+            :ignore-touched true
             :id group-id}
            {:add-container? true})
 
@@ -280,14 +282,14 @@
              {:type :mod-obj
               :id group-id
               :operations
-              [{:type :set :attr :x :val (-> mask :selrect :x)}
-               {:type :set :attr :y :val (-> mask :selrect :y)}
-               {:type :set :attr :width :val (-> mask :selrect :width)}
-               {:type :set :attr :height :val (-> mask :selrect :height)}
-               {:type :set :attr :flip-x :val (-> mask :flip-x)}
-               {:type :set :attr :flip-y :val (-> mask :flip-y)}
-               {:type :set :attr :selrect :val (-> mask :selrect)}
-               {:type :set :attr :points :val (-> mask :points)}]}
+              [{:type :set :attr :x :val (-> mask :selrect :x) :ignore-touched true}
+               {:type :set :attr :y :val (-> mask :selrect :y) :ignore-touched true}
+               {:type :set :attr :width :val (-> mask :selrect :width) :ignore-touched true}
+               {:type :set :attr :height :val (-> mask :selrect :height) :ignore-touched true}
+               {:type :set :attr :flip-x :val (-> mask :flip-x) :ignore-touched true}
+               {:type :set :attr :flip-y :val (-> mask :flip-y) :ignore-touched true}
+               {:type :set :attr :selrect :val (-> mask :selrect) :ignore-touched true}
+               {:type :set :attr :points :val (-> mask :points) :ignore-touched true}]}
              {:add-container? true}))
 
           :else
@@ -297,12 +299,12 @@
              {:type :mod-obj
               :id group-id
               :operations
-              [{:type :set :attr :selrect :val (:selrect group')}
-               {:type :set :attr :points  :val (:points group')}
-               {:type :set :attr :x       :val (-> group' :selrect :x)}
-               {:type :set :attr :y       :val (-> group' :selrect :y)}
-               {:type :set :attr :width   :val (-> group' :selrect :width)}
-               {:type :set :attr :height  :val (-> group' :selrect :height)}]}
+              [{:type :set :attr :selrect :val (:selrect group') :ignore-touched true}
+               {:type :set :attr :points  :val (:points group') :ignore-touched true}
+               {:type :set :attr :x       :val (-> group' :selrect :x) :ignore-touched true}
+               {:type :set :attr :y       :val (-> group' :selrect :y) :ignore-touched true}
+               {:type :set :attr :width   :val (-> group' :selrect :width) :ignore-touched true}
+               {:type :set :attr :height  :val (-> group' :selrect :height) :ignore-touched true}]}
 
              {:add-container? true})))]
 
@@ -337,6 +339,7 @@
           (commit-change
            file
            {:type :del-obj
+            :ignore-touched true
             :id bool-id}
            {:add-container? true})
 
@@ -348,12 +351,12 @@
              {:type :mod-obj
               :id bool-id
               :operations
-              [{:type :set :attr :selrect :val (:selrect bool')}
-               {:type :set :attr :points  :val (:points bool')}
-               {:type :set :attr :x       :val (-> bool' :selrect :x)}
-               {:type :set :attr :y       :val (-> bool' :selrect :y)}
-               {:type :set :attr :width   :val (-> bool' :selrect :width)}
-               {:type :set :attr :height  :val (-> bool' :selrect :height)}]}
+              [{:type :set :attr :selrect :val (:selrect bool') :ignore-touched true}
+               {:type :set :attr :points  :val (:points bool') :ignore-touched true}
+               {:type :set :attr :x       :val (-> bool' :selrect :x) :ignore-touched true}
+               {:type :set :attr :y       :val (-> bool' :selrect :y) :ignore-touched true}
+               {:type :set :attr :width   :val (-> bool' :selrect :width) :ignore-touched true}
+               {:type :set :attr :height  :val (-> bool' :selrect :height) :ignore-touched true}]}
 
              {:add-container? true})))]
 
@@ -490,7 +493,7 @@
           :id from-id
 
           :operations
-          [{:type :set :attr :interactions :val interactions}]})))))
+          [{:type :set :attr :interactions :val interactions :ignore-touched true}]})))))
 
 (defn generate-changes
   [file]
@@ -610,14 +613,14 @@
              {:type :mod-obj
               :id component-id
               :operations
-              [{:type :set :attr :x :val (-> mask :selrect :x)}
-               {:type :set :attr :y :val (-> mask :selrect :y)}
-               {:type :set :attr :width :val (-> mask :selrect :width)}
-               {:type :set :attr :height :val (-> mask :selrect :height)}
-               {:type :set :attr :flip-x :val (-> mask :flip-x)}
-               {:type :set :attr :flip-y :val (-> mask :flip-y)}
-               {:type :set :attr :selrect :val (-> mask :selrect)}
-               {:type :set :attr :points :val (-> mask :points)}]}
+              [{:type :set :attr :x :val (-> mask :selrect :x) :ignore-touched true}
+               {:type :set :attr :y :val (-> mask :selrect :y) :ignore-touched true}
+               {:type :set :attr :width :val (-> mask :selrect :width) :ignore-touched true}
+               {:type :set :attr :height :val (-> mask :selrect :height) :ignore-touched true}
+               {:type :set :attr :flip-x :val (-> mask :flip-x) :ignore-touched true}
+               {:type :set :attr :flip-y :val (-> mask :flip-y) :ignore-touched true}
+               {:type :set :attr :selrect :val (-> mask :selrect) :ignore-touched true}
+               {:type :set :attr :points :val (-> mask :points) :ignore-touched true}]}
 
              {:add-container? true}))
 
@@ -628,12 +631,12 @@
              {:type :mod-obj
               :id component-id
               :operations
-              [{:type :set :attr :selrect :val (:selrect component')}
-               {:type :set :attr :points  :val (:points component')}
-               {:type :set :attr :x      :val (-> component' :selrect :x)}
-               {:type :set :attr :y      :val (-> component' :selrect :y)}
-               {:type :set :attr :width  :val (-> component' :selrect :width)}
-               {:type :set :attr :height :val (-> component' :selrect :height)}]}
+              [{:type :set :attr :selrect :val (:selrect component') :ignore-touched true}
+               {:type :set :attr :points  :val (:points component') :ignore-touched true}
+               {:type :set :attr :x      :val (-> component' :selrect :x) :ignore-touched true}
+               {:type :set :attr :y      :val (-> component' :selrect :y) :ignore-touched true}
+               {:type :set :attr :width  :val (-> component' :selrect :width) :ignore-touched true}
+               {:type :set :attr :height :val (-> component' :selrect :height) :ignore-touched true}]}
 
              {:add-container? true})))]
 
@@ -665,6 +668,7 @@
                                :page-id (:id page)
                                :parent-id (:parent-id %2)
                                :frame-id (:frame-id %2)
+                               :ignore-touched true
                                :obj %2})
               $
               shapes)
@@ -672,6 +676,7 @@
                         :id component-id})
       (reduce #(commit-change %1 {:type :del-obj
                                   :page-id page-id
+                                  :ignore-touched true
                                   :id (:id %2)})
               $
               shapes)
@@ -704,6 +709,7 @@
                                :page-id (:id page)
                                :parent-id (:parent-id %2)
                                :frame-id (:frame-id %2)
+                               :ignore-touched true
                                :obj %2})
               $
               shapes)
@@ -718,6 +724,7 @@
      file
      {:type :del-obj
       :page-id page-id
+      :ignore-touched true
       :id id})))
 
 (defn update-object
@@ -731,7 +738,7 @@
                 new-val (get new-obj attr)]
             (if (= old-val new-val)
               changes
-              (conj changes {:type :set :attr attr :val new-val}))))]
+              (conj changes {:type :set :attr attr :val new-val :ignore-touched true}))))]
     (-> file
         (commit-change
          {:type :mod-obj
