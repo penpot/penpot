@@ -442,9 +442,13 @@
               selected (wsh/lookup-selected state)
 
               page-objects  (wsh/lookup-page-objects state)
-              page-selected (wsh/lookup-selected state)
-              base      (cph/get-base-shape page-objects page-selected)
-              parent-id (:parent-id base)
+              base      (cph/get-base-shape page-objects selected)
+              selected-frame? (and (= 1 (count selected))
+                                   (= :frame (get-in objects [(first selected) :type])))
+
+              parent-id (if
+                         (or selected-frame? (empty? selected)) frame-id
+                         (:parent-id base))
 
               [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
               x (- x vb-x (/ vb-width 2))

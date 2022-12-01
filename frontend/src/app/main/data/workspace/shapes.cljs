@@ -283,12 +283,17 @@
             x (:x data (- vbc-x (/ width 2)))
             y (:y data (- vbc-y (/ height 2)))
             page-id (:current-page-id state)
+            objects  (wsh/lookup-page-objects state page-id)
             frame-id (-> (wsh/lookup-page-objects state page-id)
                          (ctst/top-nested-frame {:x frame-x :y frame-y}))
+            selected (wsh/lookup-selected state)
             page-objects  (wsh/lookup-page-objects state)
-            page-selected (wsh/lookup-selected state)
-            base      (cph/get-base-shape page-objects page-selected)
-            parent-id (:parent-id base)
+            base      (cph/get-base-shape page-objects selected)
+            selected-frame? (and (= 1 (count selected))
+                                 (= :frame (get-in objects [(first selected) :type])))
+            parent-id (if
+                       (or selected-frame? (empty? selected)) frame-id
+                       (:parent-id base))
 
             shape (-> (cts/make-minimal-shape type)
                       (merge data)
