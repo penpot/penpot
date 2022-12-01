@@ -80,7 +80,7 @@
 
 ;; Enable all features set on the configuration
 (->> @cf/flags
-     (map str)
+     (map name)
      (keep (fn [flag]
              (when (str/starts-with? flag "frontend-feature-")
                (subs flag 17))))
