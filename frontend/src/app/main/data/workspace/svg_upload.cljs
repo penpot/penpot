@@ -556,9 +556,13 @@
             frame-id (ctst/top-nested-frame objects position)
             selected (wsh/lookup-selected state)
             page-objects  (wsh/lookup-page-objects state)
-            page-selected (wsh/lookup-selected state)
-            base      (cph/get-base-shape page-objects page-selected)
-            parent-id (:parent-id base)
+            base      (cph/get-base-shape page-objects selected)
+            selected-frame? (and (= 1 (count selected))
+                                 (= :frame (get-in objects [(first selected) :type])))
+
+            parent-id (if
+                       (or selected-frame? (empty? selected)) frame-id
+                       (:parent-id base))
 
             [new-shape new-children]
             (create-svg-shapes svg-data position objects frame-id parent-id selected true)
