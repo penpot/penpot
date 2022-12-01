@@ -12,7 +12,6 @@
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.flex-layout :as gcl]
    [app.common.geom.shapes.pixel-precision :as gpp]
-   [app.common.geom.shapes.points :as cpo]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.pages.helpers :as cph]
@@ -158,7 +157,7 @@
             children-bounds
             (->> children
                  (mapv #(get-group-bounds objects bounds modif-tree %)))]
-        (cpo/merge-parent-coords-bounds children-bounds current-bounds))
+        (gpo/merge-parent-coords-bounds children-bounds current-bounds))
 
       (cph/mask-shape? shape)
       (get-group-bounds objects bounds modif-tree (-> children first))

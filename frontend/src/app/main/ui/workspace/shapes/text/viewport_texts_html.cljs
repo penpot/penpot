@@ -36,13 +36,11 @@
       (dissoc :position-data)))
 
 (defn fix-position [shape modifier]
-  (let [shape' (-> shape
-                   (assoc :grow-type :fixed)
-                   (gsh/transform-shape modifier))
-
+  (let [shape' (gsh/transform-shape shape modifier)
+        ;; We need to remove the movement because the dynamic modifiers will have move it
         deltav (gpt/to-vec (gpt/point (:selrect shape'))
                            (gpt/point (:selrect shape)))]
-    (gsh/transform-shape shape' (ctm/move-modifiers deltav))))
+    (gsh/transform-shape shape (ctm/move modifier deltav))))
 
 (defn process-shape [modifiers {:keys [id] :as shape}]
   (let [modifier (dm/get-in modifiers [id :modifiers])]

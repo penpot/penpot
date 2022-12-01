@@ -130,12 +130,15 @@
                  rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
              (if (mf/ref-val hover-disabled-ref)
                (rx/of nil)
-               (uw/ask-buffered!
-                 {:cmd :selection/query
-                  :page-id page-id
-                  :rect rect
-                  :include-frames? true
-                  :clip-children? (not mod?)})))))
+               (->> (uw/ask-buffered!
+                     {:cmd :selection/query
+                      :page-id page-id
+                      :rect rect
+                      :include-frames? true
+                      :clip-children? (not mod?)})
+                    ;; When the ask-buffered is canceled returns null. We filter them
+                    ;; to improve the behavior
+                    (rx/filter some?))))))
 
         over-shapes-stream
         (mf/use-memo

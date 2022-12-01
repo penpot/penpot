@@ -204,9 +204,9 @@
      [:div.viewport-overlays
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
-      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity 0}}
+      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (debug? :html-text) 0)}}
        [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
-        [:div {:style {:pointer-events "none"}}
+        [:div {:style {:pointer-events (when-not (debug? :html-text) "none")}}
          [:& stvh/viewport-texts
           {:key (dm/str "texts-" page-id)
            :page-id page-id
@@ -289,7 +289,8 @@
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-text-editor?
-         [:& editor/text-editor-svg {:shape editing-shape}])
+         [:& editor/text-editor-svg {:shape editing-shape
+                                     :modifiers modifiers}])
 
        (when show-frame-outline?
          [:& outline/shape-outlines
@@ -298,7 +299,8 @@
                          (filter #(cph/frame-shape? (get base-objects %)))
                          (remove selected)
                          (first))}
-           :zoom zoom}])
+           :zoom zoom
+           :modifiers modifiers}])
 
        (when show-outlines?
          [:& outline/shape-outlines
@@ -307,7 +309,8 @@
            :hover #{(:id @hover) @frame-hover}
            :highlighted highlighted
            :edition edition
-           :zoom zoom}])
+           :zoom zoom
+           :modifiers modifiers}])
 
        (when show-selection-handlers?
          [:& selection/selection-area
@@ -321,7 +324,8 @@
        (when show-text-editor?
          [:& text-edition-outline
           {:shape (get base-objects edition)
-           :zoom zoom}])
+           :zoom zoom
+           :modifiers modifiers}])
 
        (when show-measures?
          [:& msr/measurement

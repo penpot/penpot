@@ -257,7 +257,9 @@
 (mf/defc text-editor-svg
   {::mf/wrap-props false}
   [props]
-  (let [shape        (obj/get props "shape")
+  (let [shape     (obj/get props "shape")
+        modifiers (obj/get props "modifiers")
+        modifiers (get-in modifiers [(:id shape) :modifiers])
 
         clip-id
         (dm/str "text-edition-clip" (:id shape))
@@ -270,7 +272,10 @@
 
         shape (cond-> shape
                 (some? text-modifier)
-                (dwt/apply-text-modifier text-modifier))
+                (dwt/apply-text-modifier text-modifier)
+
+                (some? modifiers)
+                (gsh/transform-shape modifiers))
 
         bounding-box (gsht/position-data-selrect shape)
 

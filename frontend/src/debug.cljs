@@ -83,6 +83,9 @@
 
     ;; Show the bounds relative to the parent
     :parent-bounds
+
+    ;; Show html text
+    :html-text
     })
 
 ;; These events are excluded when we activate the :events flag
