@@ -56,7 +56,7 @@
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.shapes-update-layout :as dwul]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
@@ -177,6 +177,7 @@
           (->> (rx/merge
                 ;; Initialize notifications & load team fonts
                 (rx/of (dwn/initialize team-id id)
+                       (dwsl/initialize)
                        (df/load-team-fonts team-id))
 
                 ;; Load all pages, independently if they are pointers or already
@@ -316,7 +317,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwn/finalize file-id)))))
+      (rx/of (dwn/finalize file-id)
+             (dwsl/finalize)))))
 
 (declare go-to-page)
 (declare ^:private preload-data-uris)
@@ -808,7 +810,7 @@
 
         (rx/of (dch/commit-changes changes)
                (dwco/expand-collapse parent-id)
-               (dwul/update-layout-positions layouts-to-update))))))
+               (ptk/data-event :layout/update layouts-to-update))))))
 
 (defn relocate-selected-shapes
   [parent-id to-index]
@@ -1554,7 +1556,7 @@
 
               (rx/of (dch/commit-changes changes)
                      (dws/select-shapes selected)
-                     (dwul/update-layout-positions [frame-id]))))]
+                     (ptk/data-event :layout/update [frame-id]))))]
 
     (ptk/reify ::paste-shape
       ptk/WatchEvent

@@ -9,13 +9,14 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.colors :as cl]
+   [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dwse]
    [app.main.data.workspace.shapes :as dws]
-   [app.main.data.workspace.shapes-update-layout :as wsul]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [beicon.core :as rx]
@@ -64,8 +65,37 @@
       (let [objects (wsh/lookup-page-objects state)
             children-ids (into [] (mapcat #(get-in objects [% :shapes])) ids)]
         (rx/of (dwc/update-shapes ids (get-layout-initializer type))
-               (wsul/update-layout-positions ids)
+               (ptk/data-event :layout/update ids)
                (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v)))))))
+
+
+;; Never call this directly but through the data-event `:layout/update`
+;; Otherwise a lot of cycle dependencies could be generated
+(defn- update-layout-positions
+  [ids]
+  (ptk/reify ::update-layout-positions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if (d/not-empty? ids)
+        (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+          (rx/of (dwm/apply-modifiers {:modifiers modif-tree})))
+        (rx/empty)))))
+
+(defn initialize
+  []
+  (ptk/reify ::initialize
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (let [stopper (rx/filter (ptk/type? ::finalize) stream)]
+        (->> stream
+             (rx/filter (ptk/type? :layout/update))
+             (rx/map deref)
+             (rx/map #(update-layout-positions %))
+             (rx/take-until stopper))))))
+
+(defn finalize
+  []
+  (ptk/reify ::finalize))
 
 (defn create-layout-from-selection
   [type]
@@ -115,7 +145,7 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dwc/update-shapes ids #(apply dissoc % layout-keys))
-         (wsul/update-layout-positions ids)
+         (ptk/data-event :layout/update ids)
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn create-layout
@@ -163,7 +193,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dwc/update-shapes ids #(d/deep-merge % changes))
-             (wsul/update-layout-positions ids)))))
+             (ptk/data-event :layout/update ids)))))
 
 (defn update-layout-child
   [ids changes]
@@ -174,4 +204,4 @@
             parent-ids (->> ids (map #(cph/get-parent-id objects %)))
             layout-ids (->> ids (filter (comp ctl/layout? (d/getf objects))))]
         (rx/of (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
-               (wsul/update-layout-positions (d/concat-vec layout-ids parent-ids)))))))
+               (ptk/data-event :layout/update (d/concat-vec layout-ids parent-ids)))))))

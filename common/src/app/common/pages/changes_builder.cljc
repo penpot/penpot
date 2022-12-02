@@ -276,6 +276,21 @@
          (update :undo-changes #(reduce mk-undo-change % shapes))
          (apply-changes-local)))))
 
+
+(defn changed-attrs
+  [object update-fn {:keys [attrs]}]
+  (let [changed?
+        (fn [old new attr]
+          (let [old-val (get old attr)
+                new-val (get new attr)]
+            (not= old-val new-val)))]
+    (let [new-obj (update-fn object)]
+      (if (= object new-obj)
+        '()
+
+        (let [attrs (or attrs (d/concat-set (keys object) (keys new-obj)))]
+          (filter (partial changed? object new-obj) attrs))))))
+
 (defn update-shapes
   "Calculate the changes and undos to be done when a function is applied to a
   single object"

@@ -24,7 +24,6 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.shapes-update-layout :as dwsul]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
@@ -105,7 +104,7 @@
 
          (rx/concat
           (rx/of (dch/commit-changes changes)
-                 (dwsul/update-layout-positions [(:parent-id shape)])
+                 (ptk/data-event :layout/update [(:parent-id shape)])
                  (when-not no-select?
                    (dws/select-shapes (d/ordered-set id))))
           (when (= :text (:type attrs))
@@ -310,9 +309,9 @@
                                                             (reduce ctp/remove-flow flows))))))]
 
     (rx/of (dc/detach-comment-thread ids)
-           (dwsul/update-layout-positions all-parents)
+           (ptk/data-event :layout/update all-parents)
            (dch/commit-changes changes)
-           (dwsul/update-layout-positions layout-ids))))
+           (ptk/data-event :layout/update layout-ids))))
 
 (defn create-and-add-shape
   [type frame-x frame-y data]

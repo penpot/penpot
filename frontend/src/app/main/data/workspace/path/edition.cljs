@@ -21,7 +21,6 @@
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.undo :as undo]
-   [app.main.data.workspace.shapes-update-layout :as dwul]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [app.util.path.tools :as upt]
@@ -316,7 +315,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwul/update-layout-positions [id])))))
+      (rx/of (ptk/data-event :layout/update [id])))))
 
 (defn split-segments
   [{:keys [from-p to-p t]}]
