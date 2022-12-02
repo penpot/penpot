@@ -74,6 +74,9 @@
 (def dashboard-team-invitations
   (l/derived :dashboard-team-invitations st/state))
 
+(def dashboard-team-webhooks
+  (l/derived :dashboard-team-webhooks st/state))
+
 (def dashboard-selected-project
   (l/derived (fn [state]
                (dm/get-in state [:dashboard-local :selected-project]))

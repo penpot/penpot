@@ -27,6 +27,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc header
@@ -35,13 +36,15 @@
   (let [go-members           (mf/use-fn #(st/emit! (dd/go-to-team-members)))
         go-settings          (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
         go-invitations       (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
-        invite-member        (mf/use-fn 
+        go-webhooks          (mf/use-fn #(st/emit! (dd/go-to-team-webhooks)))
+        invite-member        (mf/use-fn
                               (mf/deps team)
                               #(st/emit! (modal/show {:type :invite-members :team team :origin :team})))
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
         invitations-section? (= section :dashboard-team-invitations)
+        webhooks-section?    (= section :dashboard-team-webhooks)
         permissions          (:permissions team)]
 
     [:header.dashboard-header.team
@@ -50,6 +53,7 @@
              members-section? (tr "labels.members")
              settings-section? (tr "labels.settings")
              invitations-section? (tr "labels.invitations")
+             webhooks-section? (tr "labels.webhooks")
              :else nil)]]
      [:nav.dashboard-header-menu
       [:ul.dashboard-header-options
@@ -57,6 +61,8 @@
         [:a {:on-click go-members} (tr "labels.members")]]
        [:li {:class (when invitations-section? "active")}
         [:a {:on-click go-invitations} (tr "labels.invitations")]]
+       [:li {:class (when webhooks-section? "active")}
+        [:a {:on-click go-webhooks} (tr "labels.webhooks")]]
        [:li {:class (when settings-section? "active")}
         [:a {:on-click go-settings} (tr "labels.settings")]]]]
      [:div.dashboard-buttons
@@ -570,6 +576,238 @@
      [:section.dashboard-container.dashboard-team-invitations
       [:& invitation-section {:team team
                               :invitations invitations}]]]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; WEBHOOKS SECTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::uri ::us/not-empty-string)
+(s/def ::mtype ::us/not-empty-string)
+(s/def ::webhook-form
+  (s/keys :req-un [::uri ::mtype]))
+
+(mf/defc webhook-modal {::mf/register modal/components
+                          ::mf/register-as :webhook}
+  [{:keys [webhook] :as props}]
+  (let [initial (mf/use-memo (fn [] (or webhook {:is-active false :mtype "application/json"})))
+        form    (fm/use-form :spec ::webhook-form
+                             :initial initial)
+        mtypes [{:label "application/json" :value "application/json"}
+                {:label "application/x-www-form-urlencoded" :value "application/x-www-form-urlencoded"}
+                {:label "application/transit+json" :value "application/transit+json"}]
+
+        on-success
+        (fn [message]
+          (st/emit! (dd/fetch-team-webhooks)
+                    (msg/success message)
+                    (modal/hide)))
+
+        on-error
+        (fn [message {:keys [type code hint] :as error}]
+          (let [message (if (and (= type :validation) (= code :webhook-validation))
+                          (str message " "
+                               (case hint
+                                 "ssl-validation" (tr "errors.webhooks.ssl-validation")
+                                 "")) ;; TODO Add more error codes when back defines them
+                          message)]
+            (rx/of (msg/error message))))
+
+        on-create-submit
+        (fn []
+          (let [mdata   {:on-success #(on-success (tr "dashboard.webhooks.create.success"))
+                         :on-error   (partial on-error (tr "dashboard.webhooks.create.error"))}
+                webhook {:uri        (get-in @form [:clean-data :uri])
+                         :mtype      (get-in @form [:clean-data :mtype])
+                         :is-active  (get-in @form [:clean-data :is-active])}]
+            (st/emit! (dd/create-team-webhook (with-meta webhook mdata)))))
+
+        on-update-submit
+        (fn []
+          (let [mdata   {:on-success #(on-success (tr "dashboard.webhooks.update.success"))
+                         :on-error   (partial on-error (tr "dashboard.webhooks.update.error"))}
+                webhook (get @form :clean-data)]
+            (st/emit! (dd/update-team-webhook (with-meta webhook mdata)))))
+
+        on-submit
+        #(let [data (:clean-data @form)]
+           (if (:id data)
+             (on-update-submit)
+             (on-create-submit)))]
+
+    [:div.modal-overlay
+     [:div.modal-container.webhooks-modal
+      [:& fm/form {:form form :on-submit on-submit}
+
+       [:div.modal-header
+        [:div.modal-header-title
+         (if webhook
+           [:h2 (tr "modals.edit-webhook.title")]
+           [:h2 (tr "modals.create-webhook.title")])]
+
+        [:div.modal-close-button
+         {:on-click #(st/emit! (modal/hide))} i/close]]
+
+       [:div.modal-content.generic-form
+        [:div.fields-container
+         [:div.fields-row
+          [:& fm/input {:type "text"
+                        :auto-focus? true
+                        :form form
+                        :name :uri
+                        :label (tr "modals.create-webhook.url.label")
+                        :placeholder (tr "modals.create-webhook.url.placeholder")}]]
+
+         [:div.fields-row
+          [:& fm/select {:options mtypes
+                         :label (tr "dashboard.webhooks.content-type")
+                         :default "application/json"
+                         :name :mtype}]]]
+        [:div.fields-row
+         [:div.input-checkbox.check-primary
+          [:& fm/input {:type "checkbox"
+                        :form form
+                        :name :is-active
+                        :label (tr "dashboard.webhooks.active")}]
+          ]
+         [:div.explain (tr "dashboard.webhooks.active.explain")]]]
+
+
+
+       [:div.modal-footer
+        [:div.action-buttons
+         [:input.btn-gray.btn-large
+          {:type "button"
+           :value (tr "labels.cancel")
+           :on-click #(modal/hide!)}]
+         [:& fm/submit-button
+          {:label (if webhook
+                    (tr "modals.edit-webhook.submit-label")
+                    (tr "modals.create-webhook.submit-label"))}]]]]]]))
+
+
+(mf/defc webhooks-hero
+  []
+  [:div.banner
+   [:div.title (tr "labels.webhooks")
+    [:div.description (tr "dashboard.webhooks.description")]]
+   [:div.create-container
+    [:div.create (tr "dashboard.webhooks.create")]]]
+
+  [:div.webhooks-hero-container
+   [:div.webhooks-hero
+    [:div.desc
+     [:h2 (tr "labels.webhooks")]
+     [:& i18n/tr-html {:label "dashboard.webhooks.description"}]]
+
+    [:div.btn-primary
+     {:on-click #(st/emit! (modal/show :webhook {}))}
+     [:span (tr "dashboard.webhooks.create")]]]])
+
+
+  (mf/defc webhook-actions
+    [{:keys [on-edit on-delete] :as props}]
+    (let [show? (mf/use-state false)]
+      [:*
+       [:span.icon {:on-click #(reset! show? true)} [i/actions]]
+       [:& dropdown {:show @show?
+                     :on-close #(reset! show? false)}
+        [:ul.dropdown.actions-dropdown
+         [:li {:on-click on-edit} (tr "labels.edit")]
+         [:li {:on-click on-delete} (tr "labels.delete")]]]]))
+
+  (mf/defc last-delivery-icon
+    [{:keys [success? text] :as props}]
+    [:div.last-delivery-icon
+     [:div.tooltip
+      [:div.label text]
+      [:div.arrow-down]]
+     (if success?
+       [:span.icon.success i/msg-success]
+       [:span.icon.failure i/msg-warning])])
+
+  (mf/defc webhook-item
+    {::mf/wrap [mf/memo]}
+    [{:keys [webhook] :as props}]
+    (let [on-edit #(st/emit! (modal/show :webhook {:webhook webhook}))
+          error-code (:error-code webhook)
+          extract-status
+          (fn [error-code]
+            (let [status (-> error-code
+                             (str/split  "-")
+                             last
+                             parse-long)]
+              (if (nil? status)
+                ""
+                status)))
+          delete-fn
+          (fn []
+            (let [params {:id (:id webhook)}
+                  mdata  {:on-success #(st/emit! (dd/fetch-team-webhooks))}]
+              (st/emit! (dd/delete-team-webhook (with-meta params mdata)))))
+          on-delete #(st/emit! (modal/show
+                                {:type :confirm
+                                 :title (tr "modals.delete-webhook.title")
+                                 :message (tr "modals.delete-webhook.message")
+                                 :accept-label (tr "modals.delete-webhook.accept")
+                                 :on-accept delete-fn}))
+          last-delivery-text (cond
+                               (nil? error-code)
+                               (tr "webhooks.last-delivery.success")
+
+                               (= error-code "ssl-validation")
+                               (str (tr "errors.webhooks.last-delivery") " " (tr "errors.webhooks.ssl-validation"))
+
+                               (str/starts-with? error-code "unexpected-status")
+                               (str (tr "errors.webhooks.last-delivery")
+                                    " "
+                                    (tr "errors.webhooks.unexpected-status" (extract-status error-code)))
+
+                               :else
+                               (tr "errors.webhooks.last-delivery"))]
+      [:div.table-row
+       [:div.table-field.last-delivery
+        [:div.icon-container
+         [:& last-delivery-icon {:success? (nil? error-code) :text last-delivery-text}]]]
+       [:div.table-field.uri
+        [:div (:uri webhook)]]
+       [:div.table-field.active
+        [:div (if (:is-active webhook) (tr "labels.active") (tr "labels.inactive"))]]
+       [:div.table-field.actions
+        [:& webhook-actions {:on-edit on-edit
+                             :on-delete on-delete}]]]))
+
+
+(mf/defc webhooks-list
+  [{:keys [webhooks] :as props}]
+  [:div.dashboard-table
+   [:div.table-rows
+    (for [webhook webhooks]
+      [:& webhook-item {:webhook webhook :key (:id webhook)}])]])
+
+(mf/defc team-webhooks-page
+  [{:keys [team] :as props}]
+  (let [webhooks (mf/deref refs/dashboard-team-webhooks)]
+
+    (mf/with-effect [team]
+      (dom/set-html-title
+       (tr "title.team-webhooks"
+           (if (:is-default team)
+             (tr "dashboard.your-penpot")
+             (:name team)))))
+
+    (mf/with-effect [team]
+      (st/emit! (dd/fetch-team-webhooks)))
+
+    [:*
+     [:& header {:team team :section :dashboard-team-webhooks}]
+     [:section.dashboard-container.dashboard-team-webhooks
+      [:div
+       [:& webhooks-hero]
+       (if (empty? webhooks)
+         [:div.webhooks-empty
+          [:div (tr "dashboard.webhooks.empty.no-webhooks")]
+          [:div (tr "dashboard.webhooks.empty.add-one")]]
+         [:& webhooks-list {:webhooks webhooks}])]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SETTINGS SECTION

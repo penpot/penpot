@@ -669,6 +669,51 @@ msgstr "Your name"
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
 
+msgid "dashboard.webhooks.description"
+msgstr "Webhooks are a simple way to allow other websites and apps to be notified when certain events happen at Penpot. We’ll send a POST request to each of the URLs you provide."
+
+msgid "dashboard.webhooks.create"
+msgstr "Create webhook"
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "No webhooks created so far."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Press the button \"Add webhook\" to add one."
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Content type"
+
+msgid "dashboard.webhooks.active"
+msgstr "Is active"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "When this hook is triggered event details will be delivered"
+
+msgid "webhooks.last-delivery.success"
+msgstr "Last delivery was successfull."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Last delivery was not successfull."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Error on SSL validation."
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Unexpected status %s"
+
+msgid "dashboard.webhooks.update.error"
+msgstr "Error on updating webhook."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook updated successfully."
+
+msgid "dashboard.webhooks.create.error"
+msgstr "Error on creating webhook."
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook created successfully."
+
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -1468,6 +1513,15 @@ msgstr "(you)"
 msgid "labels.your-account"
 msgstr "Your account"
 
+msgid "labels.webhooks"
+msgstr "Webhooks"
+
+msgid "labels.active"
+msgstr "Active"
+
+msgid "labels.inactive"
+msgstr "Inactive"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Loading image…"
@@ -1681,6 +1735,33 @@ msgstr "Are you sure you want to delete this member from the team?"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Delete team member"
+
+msgid "modals.delete-webhook.title"
+msgstr "Deleting webhook"
+
+msgid "modals.delete-webhook.message"
+msgstr "Are you sure you want to delete this webhook?"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Delete webhook"
+
+msgid "modals.create-webhook.title"
+msgstr "Create webhook"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Create webhook"
+
+msgid "modals.create-webhook.url.label"
+msgstr "Payload URL"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
+
+msgid "modals.edit-webhook.title"
+msgstr "Edit webhook"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Edit webhook"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"
@@ -2488,6 +2569,9 @@ msgstr "Profile - Penpot"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-invitations"
 msgstr "Invitations - %s - Penpot"
+
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-members"

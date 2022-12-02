@@ -245,6 +245,7 @@
   [{:keys [team profile] :as props}]
   (let [go-members     #(st/emit! (dd/go-to-team-members))
         go-invitations #(st/emit! (dd/go-to-team-invitations))
+        go-webhooks    #(st/emit! (dd/go-to-team-webhooks))
         go-settings    #(st/emit! (dd/go-to-team-settings))
 
         members-map    (mf/deref refs/dashboard-team-members)
@@ -323,6 +324,7 @@
     [:ul.dropdown.options-dropdown
      [:li {:on-click go-members :data-test "team-members"} (tr "labels.members")]
      [:li {:on-click go-invitations :data-test "team-invitations"} (tr "labels.invitations")]
+     [:li {:on-click go-webhooks :data-test "team-webhooks"} (tr "labels.webhooks")]
      [:li {:on-click go-settings :data-test "team-settings"} (tr "labels.settings")]
      [:hr]
      (when can-rename?
