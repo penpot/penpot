@@ -147,6 +147,9 @@
         children (cph/get-immediate-children objects shape-id)]
 
     (cond
+      (cph/mask-shape? shape)
+      (get-group-bounds objects bounds modif-tree (-> children first))
+
       (cph/group-shape? shape)
       (let [;; Transform here to then calculate the bounds relative to the transform
             current-bounds
@@ -158,9 +161,6 @@
             (->> children
                  (mapv #(get-group-bounds objects bounds modif-tree %)))]
         (gpo/merge-parent-coords-bounds children-bounds current-bounds))
-
-      (cph/mask-shape? shape)
-      (get-group-bounds objects bounds modif-tree (-> children first))
 
       :else
       (cond-> @(get bounds shape-id)
