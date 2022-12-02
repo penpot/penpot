@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-16 13:49+0000\n"
-"Last-Translator: ascarida <ascarida@proton.me>\n"
+"PO-Revision-Date: 2022-12-03 14:47+0000\n"
+"Last-Translator: María Ozámiz <ozamiz.m@gmail.com>\n"
 "Language-Team: Galician <https://hosted.weblate.org/projects/penpot/frontend/"
 "gl/>\n"
 "Language: gl\n"
@@ -230,9 +230,6 @@ msgstr "Compartir prototipos"
 
 msgid "common.share-link.view-all"
 msgstr "Seleccionar todas"
-
-msgid "common.share-link.view-current-page"
-msgstr "Só esta páxina"
 
 msgid "common.unpublish"
 msgstr "Cancelar publicación"
@@ -1434,3 +1431,31 @@ msgstr "Nada"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.edit"
 msgstr "Editar"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s integrantes"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Abrir ficheiro nunha nova lapela"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Cambiar contrasinal"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Queres borrar a túa conta?"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Percorrido pola interface"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Os proxectos fixados aparecerán aquí"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "Contrasinal gardado correctamente!"
