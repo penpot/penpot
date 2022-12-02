@@ -72,7 +72,7 @@
 
         manifest-stream
         (->> files-stream
-             (rx/map #(e/create-manifest (uuid/next) (:id file) :all %))
+             (rx/map #(e/create-manifest (uuid/next) (:id file) :all % false))
              (rx/map (fn [a]
                        (vector "manifest.json" a))))
 
