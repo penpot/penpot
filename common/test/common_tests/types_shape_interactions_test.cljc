@@ -30,8 +30,8 @@
         (t/is (= :mouse-press (:event-type new-interaction)))))
 
     (t/testing "Set after delay on non-frame"
-      (let [result (ex/try
-                     (ctsi/set-event-type interaction :after-delay shape))]
+      (let [result (ex/try!
+                    (ctsi/set-event-type interaction :after-delay shape))]
         (t/is (ex/exception? result))))
 
     (t/testing "Set after delay on frame"

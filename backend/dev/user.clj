@@ -12,6 +12,7 @@
    [app.common.logging :as l]
    [app.common.perf :as perf]
    [app.common.pprint :as pp]
+   [app.common.spec :as us]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
@@ -29,11 +30,13 @@
    [clojure.pprint :refer [pprint print-table]]
    [clojure.repl :refer :all]
    [clojure.spec.alpha :as s]
+   [clojure.stacktrace :as trace]
    [clojure.test :as test]
    [clojure.test.check.generators :as gen]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
    [criterium.core  :as crit]
+   [cuerdas.core :as str]
    [datoteka.core]
    [integrant.core :as ig]))
 
@@ -78,12 +81,15 @@
 
 (defn- start
   []
-  (alter-var-root #'system (fn [sys]
-                             (when sys (ig/halt! sys))
-                             (-> (merge main/system-config main/worker-config)
-                                 (ig/prep)
-                                 (ig/init))))
-  :started)
+  (try
+    (alter-var-root #'system (fn [sys]
+                               (when sys (ig/halt! sys))
+                               (-> (merge main/system-config main/worker-config)
+                                   (ig/prep)
+                                   (ig/init))))
+    :started
+    (catch Throwable cause
+      (ex/print-throwable cause))))
 
 (defn- stop
   []

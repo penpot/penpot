@@ -32,19 +32,30 @@
 (def ^:private reserved-props
   #{:level :cause ::logger ::async ::raw ::context})
 
-(def ^:private props-xform
-  (comp (partition-all 2)
-        (remove (fn [[k]] (contains? reserved-props k)))
-        (map vec)))
-
-(defn build-message
+(defn build-message-kv
   [props]
-  (loop [pairs  (sequence props-xform props)
+  (loop [pairs  (remove (fn [[k]] (contains? reserved-props k)) props)
          result []]
     (if-let [[k v] (first pairs)]
       (recur (rest pairs)
              (conj result (str/concat (d/name k) "=" (pr-str v))))
-      result)))
+      (str/join ", " result))))
+
+(defn build-message-cause
+  [props]
+  #?(:clj (when-let [[_ cause] (d/seek (fn [[k]] (= k :cause)) props)]
+            (with-out-str
+              (ex/print-throwable cause)))
+     :cljs nil))
+
+(defn build-message
+  [props]
+  (let [props      (sequence (comp (partition-all 2) (map vec)) props)
+        message-kv (build-message-kv props)
+        message-ex (build-message-cause props)]
+    (cond-> message-kv
+      (some? message-ex)
+      (str "\n" message-ex))))
 
 #?(:clj
    (def logger-context
@@ -169,8 +180,8 @@
          :spec-problems (some->> data ::s/problems (take 10) seq vec)
          :spec-value    (some->> data ::s/value)
          :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))}
-        (when (and data (::s/problems data))
-          {:spec-explain (us/pretty-explain data)})))))
+        (when-let [explain (ex/explain data)]
+          {:spec-explain explain})))))
 
 (defmacro log
   [& props]

@@ -11,8 +11,8 @@
    [app.db :as db]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
-   [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.tokens :as tokens]
@@ -48,7 +48,7 @@
               {:email email}
               {:id profile-id})
 
-  (with-meta claims
+  (rph/with-meta claims
     {::audit/name "update-profile-email"
      ::audit/props {:email email}
      ::audit/profile-id profile-id}))
@@ -68,11 +68,11 @@
                   {:is-active true}
                   {:id (:id profile)}))
 
-    (with-meta claims
-      {::rpc/transform-response (session/create-fn session profile-id)
-       ::audit/name "verify-profile-email"
-       ::audit/props (audit/profile->props profile)
-       ::audit/profile-id (:id profile)})))
+    (-> claims
+        (rph/with-transform (session/create-fn session profile-id))
+        (rph/with-meta {::audit/name "verify-profile-email"
+                        ::audit/props (audit/profile->props profile)
+                        ::audit/profile-id (:id profile)}))))
 
 (defmethod process-token :auth
   [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
@@ -148,14 +148,13 @@
         ;; proceed with accepting the invitation and joining the
         ;; current profile to the invited team.
         (let [profile (accept-invitation cfg claims invitation profile)]
-          (with-meta
-            (assoc claims :state :created)
-            {::audit/name "accept-team-invitation"
-             ::audit/props (merge
-                            (audit/profile->props profile)
-                            {:team-id (:team-id claims)
-                             :role (:role claims)})
-             ::audit/profile-id profile-id}))
+          (-> (assoc claims :state :created)
+              (rph/with-meta {::audit/name "accept-team-invitation"
+                              ::audit/props (merge
+                                             (audit/profile->props profile)
+                                             {:team-id (:team-id claims)
+                                              :role (:role claims)})
+                              ::audit/profile-id profile-id})))
 
         (ex/raise :type :validation
                   :code :invalid-token
@@ -171,15 +170,14 @@
                                  {:email member-email})
                                {:columns [:id :email]})]
         (let [profile (accept-invitation cfg claims invitation member)]
-          (with-meta
-            (assoc claims :state :created)
-            {::rpc/transform-response (session/create-fn session (:id profile))
-             ::audit/name "accept-team-invitation"
-             ::audit/props (merge
-                            (audit/profile->props profile)
-                            {:team-id (:team-id claims)
-                             :role (:role claims)})
-             ::audit/profile-id member-id}))
+          (-> (assoc claims :state :created)
+              (rph/with-transform (session/create-fn session (:id profile)))
+              (rph/with-meta {::audit/name "accept-team-invitation"
+                              ::audit/props (merge
+                                             (audit/profile->props profile)
+                                             {:team-id (:team-id claims)
+                                              :role (:role claims)})
+                              ::audit/profile-id member-id})))
 
         {:invitation-token token
          :iss :team-invitation

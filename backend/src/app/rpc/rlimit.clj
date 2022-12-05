@@ -358,7 +358,7 @@
 (defn- on-refresh-error
   [_ cause]
   (when-not (instance? java.util.concurrent.RejectedExecutionException cause)
-    (if-let [explain (-> cause ex-data us/pretty-explain)]
+    (if-let [explain (-> cause ex-data ex/explain)]
       (l/warn ::l/raw (str "unable to refresh config, invalid format:\n" explain)
               ::l/async false)
       (l/warn :hint "unexpected exception on loading config"

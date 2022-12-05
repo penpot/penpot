@@ -6,6 +6,7 @@
 
 (ns app.rpc.helpers
   "General purpose RPC helpers."
+  (:refer-clojure :exclude [with-meta])
   (:require
    [app.common.data.macros :as dm]
    [app.http :as-alias http]
@@ -58,6 +59,10 @@
   "Defer execution of the function until request is finished."
   [mdw hook-fn]
   (vary-meta mdw update ::rpc/before-complete-fns conj hook-fn))
+
+(defn with-meta
+  [mdw mdata]
+  (vary-meta mdw merge mdata))
 
 (defn with-http-cache
   [mdw max-age]

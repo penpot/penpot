@@ -360,18 +360,18 @@
                                ^ScriptOutputType ScriptOutputType/MULTI
                                ^"[Ljava.lang.String;" keys
                                ^"[Ljava.lang.String;" vals)
-                     (p/map (fn [result]
-                              (let [elapsed (tpoint)]
-                                (mtx/run! metrics {:id :redis-eval-timing
-                                                   :labels [(name sname)]
-                                                   :val (inst-ms elapsed)})
-                                (l/trace :hint "eval script"
-                                         :name (name sname)
-                                         :sha sha
-                                         :params (str/join "," (::rscript/vals script))
-                                         :elapsed (dt/format-duration elapsed))
-                                result)))
-                     (p/error on-error))))
+                     (p/fmap (fn [result]
+                               (let [elapsed (tpoint)]
+                                 (mtx/run! metrics {:id :redis-eval-timing
+                                                    :labels [(name sname)]
+                                                    :val (inst-ms elapsed)})
+                                 (l/trace :hint "eval script"
+                                          :name (name sname)
+                                          :sha sha
+                                          :params (str/join "," (::rscript/vals script))
+                                          :elapsed (dt/format-duration elapsed))
+                                 result)))
+                     (p/merr on-error))))
 
             (read-script []
               (-> script ::rscript/path io/resource slurp))

@@ -7,7 +7,6 @@
 (ns app.util.color
   "Color conversion utils."
   (:require
-   [app.common.exceptions :as ex]
    [app.util.object :as obj]
    [cuerdas.core :as str]
    [goog.color :as gcolor]))
@@ -162,7 +161,7 @@
   [[r g b]]
   (cond
     (and (= 255 r) (= 255 g) (= 255 b))
-    (ex/raise "Cannot get next color")
+    (throw (ex-info "cannot get next color" {:r r :g g :b b}))
 
     (and (= 255 g) (= 255 b))
     [(inc r) 0 0]

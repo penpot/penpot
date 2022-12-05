@@ -19,6 +19,7 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.storage :as sto]
@@ -48,6 +49,7 @@
           :opt-un [::lang ::theme]))
 
 (sv/defmethod ::update-profile
+  {::doc/added "1.0"}
   [{:keys [pool] :as cfg} {:keys [profile-id fullname lang theme] :as params}]
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use
@@ -70,8 +72,11 @@
                    :props (db/tjson (:props profile))}
                   {:id profile-id})
 
-      (with-meta (-> profile profile/strip-private-attrs d/without-nils)
-        {::audit/props (audit/profile->props profile)}))))
+      (-> profile
+          profile/strip-private-attrs
+          d/without-nils
+          (rph/with-meta {::audit/props (audit/profile->props profile)})))))
+
 
 ;; --- MUTATION: Update Password
 
@@ -133,7 +138,7 @@
     (update-profile-photo cfg params)))
 
 (defn update-profile-photo
-  [{:keys [pool storage executor] :as cfg} {:keys [profile-id] :as params}]
+  [{:keys [pool storage executor] :as cfg} {:keys [profile-id file] :as params}]
   (p/let [profile (px/with-dispatch executor
                     (db/get-by-id pool :profile profile-id))
           photo   (teams/upload-photo cfg params)]
@@ -146,7 +151,13 @@
     (db/update! pool :profile
                 {:photo-id (:id photo)}
                 {:id profile-id})
-    nil))
+
+    (-> (rph/wrap)
+        (rph/with-meta {::audit/replace-props
+                        {:file-name (:filename file)
+                         :file-size (:size file)
+                         :file-path (str (:path file))
+                         :file-mtype (:mtype file)}}))))
 
 ;; --- MUTATION: Request Email Change
 
@@ -278,8 +289,7 @@
                   {:deleted-at deleted-at}
                   {:id profile-id})
 
-      (with-meta {}
-        {::rpc/transform-response (session/delete-fn session)}))))
+      (rph/with-transform {} (session/delete-fn session)))))
 
 (def sql:owned-teams
   "with owner_teams as (
@@ -298,77 +308,3 @@
 (defn- get-owned-teams-with-participants
   [conn profile-id]
   (db/exec! conn [sql:owned-teams profile-id profile-id]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; DEPRECATED METHODS (TO BE REMOVED ON 1.16.x)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- MUTATION: Login
-
-(s/def ::login ::cmd.auth/login-with-password)
-
-(sv/defmethod ::login
-  {:auth false
-   ::climit/queue :auth
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [cfg params]
-  (cmd.auth/login-with-password cfg params))
-
-;; --- MUTATION: Logout
-
-(s/def ::logout ::cmd.auth/logout)
-
-(sv/defmethod ::logout
-  {:auth false
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [{:keys [session] :as cfg} _]
-  (with-meta {}
-    {::rpc/transform-response (session/delete-fn session)}))
-
-;; --- MUTATION: Recover Profile
-
-(s/def ::recover-profile ::cmd.auth/recover-profile)
-
-(sv/defmethod ::recover-profile
-  {::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [cfg params]
-  (cmd.auth/recover-profile cfg params))
-
-;; --- MUTATION: Prepare Register
-
-(s/def ::prepare-register-profile ::cmd.auth/prepare-register-profile)
-
-(sv/defmethod ::prepare-register-profile
-  {:auth false
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [cfg params]
-  (cmd.auth/prepare-register cfg params))
-
-;; --- MUTATION: Register Profile
-
-(s/def ::register-profile ::cmd.auth/register-profile)
-
-(sv/defmethod ::register-profile
-  {:auth false
-   ::climit/queue :auth
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [{:keys [pool] :as cfg} params]
-  (db/with-atomic [conn pool]
-    (-> (assoc cfg :conn conn)
-        (cmd.auth/register-profile params))))
-
-;; --- MUTATION: Request Profile Recovery
-
-(s/def ::request-profile-recovery ::cmd.auth/request-profile-recovery)
-
-(sv/defmethod ::request-profile-recovery
-  {:auth false
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [cfg params]
-  (cmd.auth/request-profile-recovery cfg params))

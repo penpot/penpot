@@ -75,8 +75,10 @@
 (defmethod impl/get-object-bytes :fs
   [backend object]
   (p/let [input (impl/get-object-data backend object)]
-    (ex/with-always (io/close! input)
-      (io/read-as-bytes input))))
+    (try
+      (io/read-as-bytes input)
+      (finally
+        (io/close! input)))))
 
 (defmethod impl/get-object-url :fs
   [{:keys [uri executor] :as backend} {:keys [id] :as object} _]

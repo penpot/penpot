@@ -12,9 +12,9 @@
    [app.db :as db]
    [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
-   [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.queries.profile :as profile]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -63,15 +63,16 @@
                             :member-id  (:id profile)
                             :member-email (:email profile))
               token  (tokens :generate claims)]
-          (with-meta {:invitation-token token}
-            {::rpc/transform-response (session/create-fn session (:id profile))
-             ::audit/props (:props profile)
-             ::audit/profile-id (:id profile)}))
 
-        (with-meta profile
-          {::rpc/transform-response (session/create-fn session (:id profile))
-           ::audit/props (:props profile)
-           ::audit/profile-id (:id profile)})))))
+          (-> {:invitation-token token}
+              (rph/with-transform (session/create-fn session (:id profile)))
+              (rph/with-meta {::audit/props (:props profile)
+                              ::audit/profile-id (:id profile)})))
+
+        (-> profile
+            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-meta {::audit/props (:props profile)
+                            ::audit/profile-id (:id profile)}))))))
 
 (defn- login-or-register
   [{:keys [pool] :as cfg} info]

@@ -100,6 +100,7 @@
 (s/def ::telemetry-enabled ::us/boolean)
 
 (s/def ::audit-log-archive-uri ::us/string)
+(s/def ::audit-log-http-handler-concurrency ::us/integer)
 
 (s/def ::admins ::us/set-of-strings)
 (s/def ::file-change-snapshot-every ::us/integer)
@@ -205,6 +206,7 @@
                    ::admins
                    ::allow-demo-users
                    ::audit-log-archive-uri
+                   ::audit-log-http-handler-concurrency
                    ::auth-token-cookie-name
                    ::auth-token-cookie-max-age
                    ::authenticated-cookie-name
@@ -340,7 +342,8 @@
       (when (ex/ex-info? e)
         (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
         (println "Error on validating configuration:")
-        (println (us/pretty-explain (ex-data e)))
+        (println (some-> e ex-data ex/explain))
+        (println (ex/explain (ex-data e)))
         (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"))
       (throw e))))
 

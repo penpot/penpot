@@ -39,22 +39,21 @@
 
 (defn invoke!
   [limiter f]
-  (p/handle
-   (px/submit! limiter f)
-   (fn [result cause]
-     (cond
-       (capacity-exception? cause)
-       (p/rejected
-        (ex/error :type :internal
-                  :code :concurrency-limit-reached
-                  :queue (-> limiter meta :bkey name)
-                  :cause cause))
+  (->> (px/submit! limiter f)
+       (p/hcat (fn [result cause]
+                 (cond
+                   (capacity-exception? cause)
+                   (p/rejected
+                    (ex/error :type :internal
+                              :code :concurrency-limit-reached
+                              :queue (-> limiter meta :bkey name)
+                              :cause cause))
 
-       (some? cause)
-       (p/rejected cause)
+                   (some? cause)
+                   (p/rejected cause)
 
-       :else
-       (p/resolved result)))))
+                   :else
+                   (p/resolved result))))))
 
 (defn- create-limiter
   [{:keys [executor metrics concurrency queue-size bkey skey]}]

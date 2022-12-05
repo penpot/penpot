@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.http.client :as http]
    [app.media :as media]
    [app.rpc.climit :as climit]
    [app.rpc.queries.teams :as teams]
@@ -186,7 +187,7 @@
     (create-file-media-object-from-url cfg params)))
 
 (defn- create-file-media-object-from-url
-  [{:keys [http-client] :as cfg} {:keys [url name] :as params}]
+  [cfg {:keys [url name] :as params}]
   (letfn [(parse-and-validate-size [headers]
             (let [size     (some-> (get headers "content-length") d/parse-integer)
                   mtype    (get headers "content-type")
@@ -215,7 +216,7 @@
                :format format}))
 
           (download-media [uri]
-            (-> (http-client {:method :get :uri uri} {:response-type :input-stream})
+            (-> (http/req! cfg {:method :get :uri uri} {:response-type :input-stream})
                 (p/then process-response)))
 
           (process-response [{:keys [body headers] :as response}]

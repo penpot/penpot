@@ -288,10 +288,10 @@
                 ::queue
                 ::registry]))
 
+;; FIXME: define queue as set
 (defmethod ig/prep-key ::worker
   [_ cfg]
-  (merge {::queue "default"
-          ::parallelism 1}
+  (merge {::queue "default" ::parallelism 1}
          (d/without-nils cfg)))
 
 (defmethod ig/init-key ::worker
@@ -501,8 +501,8 @@
       :spec-value    (some->> data ::s/value)
       :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))
       :params        item}
-     (when (and data (::s/problems data))
-       {:spec-explain (us/pretty-explain data)}))))
+     (when-let [explain (ex/explain data)]
+       {:spec-explain explain}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CRON
@@ -666,10 +666,10 @@
         props     (-> options extract-props db/tjson)
         id        (uuid/next)]
 
-    (l/debug :action "submit task"
+    (l/debug :hint "submit task"
              :name (d/name task)
              :queue queue
-             :in duration)
+             :in (dt/format-duration duration))
 
     (db/exec-one! conn [sql:insert-new-task id (d/name task) props
                         queue priority max-retries interval])

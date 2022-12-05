@@ -11,9 +11,11 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.loggers.audit :as-alias audit]
    [app.media :as media]
    [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
    [app.util.services :as sv]
@@ -104,10 +106,13 @@
                          :ttf-file-id (:id ttf)}))
           ]
 
-    (-> (generate-fonts data)
-        (p/then validate-data)
-        (p/then persist-fonts executor)
-        (p/then insert-into-db executor))))
+    (->> (generate-fonts data)
+         (p/map validate-data)
+         (p/mcat executor persist-fonts)
+         (p/map executor insert-into-db)
+         (p/map (fn [result]
+                  (let [params (update params :data (comp vec keys))]
+                    (rph/with-meta result {::audit/replace-props params})))))))
 
 ;; --- UPDATE FONT FAMILY
 

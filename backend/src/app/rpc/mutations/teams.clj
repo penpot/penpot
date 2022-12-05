@@ -474,7 +474,6 @@
   [{:keys [pool] :as cfg} {:keys [profile-id emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [team     (create-team conn params)
-          audit-fn (:audit cfg)
           profile  (db/get-by-id conn :profile profile-id)]
 
       ;; Create invitations for all provided emails.
@@ -490,14 +489,15 @@
       (-> team
           (vary-meta assoc ::audit/props {:invitations (count emails)})
           (rph/with-defer
-            #(audit-fn :cmd :submit
-                       :type "mutation"
-                       :name "invite-team-member"
-                       :profile-id profile-id
-                       :props {:emails emails
-                               :role role
+            #(when-let [collector (::audit/collector cfg)]
+               (audit/submit! collector
+                              {:type "mutation"
+                               :name "invite-team-member"
                                :profile-id profile-id
-                               :invitations (count emails)}))))))
+                               :props {:emails emails
+                                       :role role
+                                       :profile-id profile-id
+                                       :invitations (count emails)}})))))))
 
 ;; --- Mutation: Update invitation role
 
