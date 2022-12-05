@@ -169,9 +169,7 @@
 
           (print-all [cause]
             (print-summary cause)
-            (newline)
             (println "DETAIL:")
-
             (when trace?
               (print-trace cause))
 
