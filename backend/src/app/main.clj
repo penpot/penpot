@@ -494,19 +494,27 @@
        {:cron #app/cron "30 */5 * * * ?" ;; every 5m
         :task :audit-log-gc})]}
 
-   ::wrk/scheduler
+   ::wrk/dispatcher
    {::rds/redis   (ig/ref ::rds/redis)
     ::mtx/metrics (ig/ref ::mtx/metrics)
     ::db/pool     (ig/ref ::db/pool)}
 
-   ::wrk/worker
-   {::wrk/parallelism (cf/get ::worker-parallelism 1)
-    ;; FIXME: read queues from configuration
-    ::wrk/queue       "default"
+   [::default ::wrk/worker]
+   {::wrk/parallelism (cf/get ::worker-default-parallelism 1)
+    ::wrk/queue       :default
+    ::rds/redis       (ig/ref ::rds/redis)
+    ::wrk/registry    (ig/ref ::wrk/registry)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)}
+
+   [::webhook ::wrk/worker]
+   {::wrk/parallelism (cf/get ::worker-webhook-parallelism 1)
+    ::wrk/queue       :webhooks
     ::rds/redis       (ig/ref ::rds/redis)
     ::wrk/registry    (ig/ref ::wrk/registry)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::db/pool         (ig/ref ::db/pool)}})
+
 
 (def system nil)
 
