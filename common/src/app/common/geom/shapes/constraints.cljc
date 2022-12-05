@@ -13,6 +13,7 @@
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
 
 ;; Auxiliary methods to work in an specifica axis
@@ -285,13 +286,25 @@
   (let [modifiers (ctm/select-child modifiers)
 
         constraints-h
-        (if-not ignore-constraints
+        (cond
+          (ctl/layout? parent)
+          :left
+
+          (not ignore-constraints)
           (:constraints-h child (default-constraints-h child))
+
+          :else
           :scale)
 
         constraints-v
-        (if-not ignore-constraints
+        (cond
+          (ctl/layout? parent)
+          :top
+
+          (not ignore-constraints)
           (:constraints-v child (default-constraints-v child))
+
+          :else
           :scale)]
 
     (if (and (= :scale constraints-h) (= :scale constraints-v))
