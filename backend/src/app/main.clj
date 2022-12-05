@@ -281,7 +281,6 @@
     :metrics       (ig/ref ::mtx/metrics)
     :public-uri    (cf/get :public-uri)
     :storage       (ig/ref ::sto/storage)
-    :audit-handler (ig/ref ::audit/http-handler)
     :rpc-routes    (ig/ref :app.rpc/routes)
     :doc-routes    (ig/ref :app.rpc.doc/routes)
     :executor      (ig/ref ::wrk/executor)}
@@ -407,11 +406,6 @@
 
    ::lzmq/receiver
    {}
-
-   ::audit/http-handler
-   {::db/pool           (ig/ref ::db/pool)
-    ::wrk/executor      (ig/ref ::wrk/executor)
-    ::mtx/metrics       (ig/ref ::mtx/metrics)}
 
    ::audit/collector
    {::db/pool           (ig/ref ::db/pool)

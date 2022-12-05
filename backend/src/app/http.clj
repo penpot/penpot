@@ -116,7 +116,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::assets map?)
-(s/def ::audit-handler fn?)
 (s/def ::awsns-handler fn?)
 (s/def ::debug-routes (s/nilable vector?))
 (s/def ::doc-routes (s/nilable vector?))
@@ -138,7 +137,6 @@
                    ::awsns-handler
                    ::debug-routes
                    ::oidc-routes
-                   ::audit-handler
                    ::rpc-routes
                    ::doc-routes]))
 
@@ -173,8 +171,6 @@
 
      ["/api" {:middleware [[mw/cors]
                            [session/middleware-2 session]]}
-      ["/audit/events" {:handler (:audit-handler cfg)
-                        :allowed-methods #{:post}}]
       ["/feedback" {:handler feedback
                     :allowed-methods #{:post}}]
       (:doc-routes cfg)

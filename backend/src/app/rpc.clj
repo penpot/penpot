@@ -167,6 +167,7 @@
                                 :profile-id profile-id
                                 :ip-addr (some-> request audit/parse-client-ip)
                                 :props (d/without-qualified props)}]
+
                 (audit/submit! collector event)))
 
             (handle-request [cfg params]
@@ -174,8 +175,9 @@
                    (p/mcat (fn [result]
                              (->> (handle-audit params result)
                                   (p/map (constantly result)))))))]
-
-      (with-meta handle-request mdata))
+      (if-not (::audit/skip mdata)
+        (with-meta handle-request mdata)
+        f))
     f))
 
 (defn- wrap
@@ -254,6 +256,7 @@
                      'app.rpc.commands.ldap
                      'app.rpc.commands.demo
                      'app.rpc.commands.webhooks
+                     'app.rpc.commands.audit
                      'app.rpc.commands.files
                      'app.rpc.commands.files.update
                      'app.rpc.commands.files.create

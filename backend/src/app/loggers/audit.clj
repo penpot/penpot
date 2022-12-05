@@ -28,9 +28,7 @@
    [lambdaisland.uri :as u]
    [promesa.core :as p]
    [promesa.exec :as px]
-   [promesa.exec.bulkhead :as pxb]
-   [yetti.request :as yrq]
-   [yetti.response :as yrs]))
+   [yetti.request :as yrq]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -55,7 +53,6 @@
                 (str/starts-with? sk "mtm_")
                 (assoc (->> sk str/kebab (keyword "penpot")) v))))]
     (reduce-kv process-param {} params)))
-
 
 (def ^:private
   profile-props
@@ -105,110 +102,11 @@
 (s/def ::name ::us/string)
 (s/def ::type ::us/string)
 (s/def ::props (s/map-of ::us/keyword any?))
-(s/def ::timestamp dt/instant?)
-(s/def ::context (s/map-of ::us/keyword any?))
-
-(s/def ::frontend-event
-  (s/keys :req-un [::type ::name ::props ::timestamp ::profile-id]
-          :opt-un [::context]))
-
-(s/def ::frontend-events (s/every ::frontend-event))
-
 (s/def ::ip-addr ::us/string)
-(s/def ::backend-event
+
+(s/def ::event
   (s/keys :req-un [::type ::name ::profile-id]
           :opt-un [::ip-addr ::props]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HTTP HANDLER
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def ::concurrency ::us/integer)
-
-(defmethod ig/pre-init-spec ::http-handler [_]
-  (s/keys :req [::wrk/executor ::db/pool ::mtx/metrics ::concurrency]))
-
-(defmethod ig/prep-key ::http-handler
-  [_ cfg]
-  (merge {::concurrency (cf/get :audit-log-http-handler-concurrency 8)}
-         (d/without-nils cfg)))
-
-(defmethod ig/init-key ::http-handler
-  [_ {:keys [::wrk/executor ::db/pool ::mtx/metrics ::concurrency] :as cfg}]
-  (if (or (db/read-only? pool)
-          (not (contains? cf/flags :audit-log)))
-    (do
-      (l/warn :hint "audit: http handler disabled or db is read-only")
-      (fn [_ respond _]
-        (respond (yrs/response 204))))
-
-    (letfn [(event->row [event]
-              [(uuid/next)
-               (:name event)
-               (:source event)
-               (:type event)
-               (:timestamp event)
-               (:profile-id event)
-               (db/inet (:ip-addr event))
-               (db/tjson (:props event))
-               (db/tjson (d/without-nils (:context event)))])
-
-            (handle-request [{:keys [profile-id] :as request}]
-              (let [events  (->> (:events (:params request))
-                                 (remove #(not= profile-id (:profile-id %)))
-                                 (us/conform ::frontend-events))
-                    ip-addr (parse-client-ip request)
-                    xform   (comp
-                             (map #(assoc % :ip-addr ip-addr))
-                             (map #(assoc % :source "frontend"))
-                             (map event->row))
-
-                    columns [:id :name :source :type :tracked-at
-                             :profile-id :ip-addr :props :context]]
-                (when (seq events)
-                  (->> (into [] xform events)
-                       (db/insert-multi! pool :audit-log columns)))))
-
-            (report-error! [cause]
-              (if-let [xdata (us/validation-error? cause)]
-                (l/error ::l/raw (str "audit: validation error frontend events request\n" (ex/explain xdata)))
-                (l/error :hint "audit: unexpected error on processing frontend events" :cause cause)))
-
-            (on-queue [instance]
-              (l/trace :hint "http-handler: enqueued"
-                       :queue-size (get instance ::pxb/current-queue-size)
-                       :concurrency (get instance ::pxb/current-concurrency))
-              (mtx/run! metrics
-                        :id :audit-http-handler-queue-size
-                        :val (get instance ::pxb/current-queue-size))
-              (mtx/run! metrics
-                        :id :audit-http-handler-concurrency
-                        :val (get instance ::pxb/current-concurrency)))
-
-            (on-run [instance task]
-              (let [elapsed (- (inst-ms (dt/now))
-                               (inst-ms task))]
-                (l/trace :hint "http-handler: execute"
-                         :elapsed (str elapsed "ms"))
-                (mtx/run! metrics
-                          :id :audit-http-handler-timing
-                          :val elapsed)
-                (mtx/run! metrics
-                          :id :audit-http-handler-queue-size
-                          :val (get instance ::pxb/current-queue-size))
-                (mtx/run! metrics
-                          :id :audit-http-handler-concurrency
-                          :val (get instance ::pxb/current-concurrency))))]
-
-      (let [limiter (pxb/create :executor executor
-                                :concurrency concurrency
-                                :on-queue on-queue
-                                :on-run on-run)]
-        (fn [request respond _]
-          (->> (px/submit! limiter (partial handle-request request))
-               (p/fnly (fn [_ cause]
-                         (some-> cause report-error!)
-                         (respond (yrs/response 204))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COLLECTOR
@@ -239,7 +137,7 @@
 
 (defn- persist-event!
   [pool event]
-  (us/verify! ::backend-event event)
+  (us/verify! ::event event)
   (db/insert! pool :audit-log
               {:id (uuid/next)
                :name (:name event)
@@ -335,7 +233,6 @@
                                            {:iss "authentication"
                                             :iat (dt/now)
                                             :uid uuid/zero})
-                  ;; FIXME tokens/generate
                   body    (t/encode {:events events})
                   headers {"content-type" "application/transit+json"
                            "origin" (cf/get :public-uri)
