@@ -254,9 +254,9 @@
   "Submit audit event to the collector."
   [{:keys [::wrk/executor ::db/pool]} params]
   (->> (px/submit! executor (partial persist-event! pool (d/without-nils params)))
-       (p/err (fn [cause]
-                (l/error :hint "audit: unexpected error processing event" :cause cause)
-                (p/resolved nil)))))
+       (p/merr (fn [cause]
+                 (l/error :hint "audit: unexpected error processing event" :cause cause)
+                 (p/resolved nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASK: ARCHIVE
