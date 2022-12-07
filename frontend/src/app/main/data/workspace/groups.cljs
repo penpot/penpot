@@ -14,7 +14,6 @@
    [app.common.types.shape-tree :as ctt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.shapes-update-layout :as dwul]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -190,7 +189,7 @@
                      :origin it}]
 
         (rx/of (dch/commit-changes changes)
-               (dwul/update-layout-positions parents))))))
+               (ptk/data-event :layout/update parents))))))
 
 (def mask-group
   (ptk/reify ::mask-group

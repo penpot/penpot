@@ -113,7 +113,7 @@
 
      (reduce set-child ignore-tree children))))
 
-(defn- update-grow-type
+(defn update-grow-type
   [shape old-shape]
   (let [auto-width? (= :auto-width (:grow-type shape))
         auto-height? (= :auto-height (:grow-type shape))
@@ -226,6 +226,22 @@
           (recur (rest modifiers)
                  (update objects id apply-path-modifier path-modifier)))))))
 
+(defn- calculate-modifiers
+  ([state modif-tree]
+   (calculate-modifiers state false false modif-tree))
+
+  ([state ignore-constraints ignore-snap-pixel modif-tree]
+   (let [objects
+         (wsh/lookup-page-objects state)
+
+         snap-pixel?
+         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
+
+     (as-> objects $
+       (apply-text-modifiers $ (get state :workspace-text-modifier))
+       ;;(apply-path-modifiers $ (get-in state [:workspace-local :edit-path]))
+       (gsh/set-objects-modifiers modif-tree $ ignore-constraints snap-pixel?)))))
+
 (defn set-modifiers
   ([modif-tree]
    (set-modifiers modif-tree false))
@@ -237,19 +253,7 @@
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [objects
-             (wsh/lookup-page-objects state)
-
-             snap-pixel?
-             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
-
-             modif-tree
-             (as-> objects $
-               (apply-text-modifiers $ (get state :workspace-text-modifier))
-               ;;(apply-path-modifiers $ (get-in state [:workspace-local :edit-path]))
-               (gsh/set-objects-modifiers modif-tree $ ignore-constraints snap-pixel?))]
-
-         (assoc state :workspace-modifiers modif-tree))))))
+       (assoc state :workspace-modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree))))))
 
 ;; Rotation use different algorithm to calculate children modifiers (and do not use child constraints).
 (defn set-rotation-modifiers
@@ -282,12 +286,14 @@
   ([]
    (apply-modifiers nil))
 
-  ([{:keys [undo-transation?] :or {undo-transation? true}}]
+  ([{:keys [undo-transation? modifiers] :or {undo-transation? true}}]
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
      (watch [_ state _]
        (let [objects           (wsh/lookup-page-objects state)
-             object-modifiers  (get state :workspace-modifiers)
+             object-modifiers  (if modifiers
+                                 (calculate-modifiers state modifiers)
+                                 (get state :workspace-modifiers))
 
              ids (or (keys object-modifiers) [])
              ids-with-children (into (vec ids) (mapcat #(cph/get-children-ids objects %)) ids)
@@ -326,7 +332,6 @@
                            :transform
                            :transform-inverse
                            :rotation
-                           :position-data
                            :flip-x
                            :flip-y
                            :grow-type

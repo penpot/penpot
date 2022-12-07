@@ -18,4 +18,4 @@
 (dm/export fdr/layout-drop-areas)
 (dm/export fli/calc-layout-data)
 (dm/export fmo/layout-child-modifiers)
-(dm/export fmo/normalize-child-modifiers)
+

@@ -91,6 +91,10 @@
 ;; These events are excluded when we activate the :events flag
 (def debug-exclude-events
   #{:app.main.data.workspace.notifications/handle-pointer-update
+    :app.main.data.workspace.notifications/handle-pointer-send
+    :app.main.data.workspace.persistence/update-persistence-status
+    :app.main.data.workspace.changes/update-indices
+    :app.main.data.websocket/send-message
     :app.main.data.workspace.selection/change-hover-state})
 
 (defonce ^:dynamic *debug* (atom #{#_:events}))

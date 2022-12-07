@@ -29,15 +29,20 @@
 
       :else
       (let [subject (rx/subject)]
-        (swap! pending assoc key subject)
-        (->> observable
-             (rx/catch #(do (rx/error! subject %)
-                            (swap! pending dissoc key)
-                            (rx/throw %)))
-             (rx/tap
-              (fn [data]
-                (let [entry {:created-at (dt/now) :data data}]
-                  (swap! cache assoc key entry))
-                (rx/push! subject data)
-                (rx/end! subject)
-                (swap! pending dissoc key))))))))
+        (do
+          (swap! pending assoc key subject)
+
+          (rx/subscribe
+           observable
+
+           (fn [data]
+             (let [entry {:created-at (dt/now) :data data}]
+               (swap! cache assoc key entry))
+             (swap! pending dissoc key)
+             (rx/push! subject data)
+             (rx/end! subject))
+
+           #(do
+              (swap! pending dissoc key)
+              (rx/error! subject %))))
+        subject))))
