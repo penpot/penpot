@@ -442,22 +442,25 @@
 
 (defn inet
   [ip-addr]
-  (doto (org.postgresql.util.PGobject.)
-    (.setType "inet")
-    (.setValue (str ip-addr))))
+  (when ip-addr
+    (doto (org.postgresql.util.PGobject.)
+      (.setType "inet")
+      (.setValue (str ip-addr)))))
 
 (defn decode-inet
   [^PGobject o]
-  (if (= "inet" (.getType o))
-    (.getValue o)
-    nil))
+  (when o
+    (if (= "inet" (.getType o))
+      (.getValue o)
+      nil)))
 
 (defn tjson
   "Encode as transit json."
   [data]
-  (doto (org.postgresql.util.PGobject.)
-    (.setType "jsonb")
-    (.setValue (t/encode-str data {:type :json-verbose}))))
+  (when data
+    (doto (org.postgresql.util.PGobject.)
+      (.setType "jsonb")
+      (.setValue (t/encode-str data {:type :json-verbose})))))
 
 (defn json
   "Encode as plain json."
