@@ -8,6 +8,7 @@
   (:require
    [app.common.attrs :as attrs]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
@@ -380,23 +381,36 @@
 
     new-shape))
 
+(defn update-text-modifier-state
+  [id props]
+  (ptk/reify ::update-text-modifier-state
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-text-modifier id] (fnil merge {}) props))))
+
 (defn update-text-modifier
   [id props]
   (ptk/reify ::update-text-modifier
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-text-modifier id] (fnil merge {}) props))
-
     ptk/WatchEvent
     (watch [_ state _]
-      (let [shape (wsh/lookup-shape state id)]
-        (when (or (and (some? (:width props))
-                       (not (mth/close? (:width props) (:width shape))))
-                  (and (some? (:height props))
-                       (not (mth/close? (:height props) (:height shape)))))
+      (let [shape (wsh/lookup-shape state id)
 
-          (let [modif-tree (dwm/create-modif-tree [id] (ctm/reflow-modifiers))]
-            (rx/of (dwm/set-modifiers modif-tree))))))))
+            text-modifier (dm/get-in state [:workspace-text-modifier id])
+
+            current-width (or (:width text-modifier) (:width shape))
+            current-height (or (:height text-modifier) (:height shape))]
+        (rx/concat
+         (rx/of (update-text-modifier-state id props))
+
+         (if (or (and (some? (:width props))
+                      (not (mth/close? (:width props) current-width)))
+                 (and (some? (:height props))
+                      (not (mth/close? (:height props) current-height))))
+
+           (let [modif-tree (dwm/create-modif-tree [id] (ctm/reflow-modifiers))]
+             (->> (rx/of (dwm/set-modifiers modif-tree))
+                  (rx/observe-on :async)))
+           (rx/empty)))))))
 
 (defn clean-text-modifier
   [id]

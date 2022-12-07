@@ -40,13 +40,15 @@
 ;;     * change-properties
 
 (defrecord Modifiers
-    [geometry-parent
+    [last-order ;; Last `order` attribute in the geometry list
+     geometry-parent
      geometry-child
      structure-parent
      structure-child])
 
 (defrecord GeometricOperation
-    [type
+    [order ;; Need the order to keep consistent between geometry-parent and geometry-child
+     type
      vector
      origin
      transform
@@ -62,41 +64,42 @@
 
 ;; Record constructors
 
-(defn move-op
-  [vector]
-  (GeometricOperation. :move vector nil nil nil nil nil))
+(defn- move-op
+  [order vector]
+  (GeometricOperation. order :move vector nil nil nil nil nil))
 
-(defn resize-op
-  ([vector origin]
-   (GeometricOperation. :resize vector origin nil nil nil nil))
-  ([vector origin transform transform-inverse]
-   (GeometricOperation. :resize vector origin transform transform-inverse nil nil)))
+(defn- resize-op
+  ([order vector origin]
+   (GeometricOperation. order :resize vector origin nil nil nil nil))
 
-(defn rotation-geom-op
-  [center angle]
-  (GeometricOperation. :rotation nil nil nil nil angle center))
+  ([order vector origin transform transform-inverse]
+   (GeometricOperation. order :resize vector origin transform transform-inverse nil nil)))
 
-(defn rotation-struct-op
+(defn- rotation-geom-op
+  [order center angle]
+  (GeometricOperation. order :rotation nil nil nil nil angle center))
+
+(defn- rotation-struct-op
   [angle]
   (StructureOperation. :rotation nil angle nil))
 
-(defn remove-children-op
+(defn- remove-children-op
   [shapes]
   (StructureOperation. :remove-children nil shapes nil))
 
-(defn add-children-op
+(defn- add-children-op
   [shapes index]
   (StructureOperation. :add-children nil shapes index))
 
-(defn reflow-op
+(defn- reflow-op
   []
   (StructureOperation. :reflow nil nil nil))
 
-(defn scale-content-op
+(defn- scale-content-op
   [value]
   (StructureOperation. :scale-content nil value nil))
 
-(defn change-property-op
+(defn- change-property-op
   [property value]
   (StructureOperation. :change-property property value nil))
 
@@ -142,8 +145,9 @@
 (defn- merge-move
   [op1 op2]
   (let [vector-op1 (dm/get-prop op1 :vector)
-        vector-op2 (dm/get-prop op2 :vector)]
-    (move-op (gpt/add vector-op1 vector-op2))))
+        vector-op2 (dm/get-prop op2 :vector)
+        vector     (gpt/add vector-op1 vector-op2)]
+    (assoc op1 :vector vector)))
 
 (defn- merge-resize
   [op1 op2]
@@ -197,7 +201,7 @@
 ;; Public builder API
 
 (defn empty []
-  (Modifiers. [] [] [] []))
+  (Modifiers. 0 [] [] [] []))
 
 (defn move-parent
   ([modifiers x y]
@@ -205,22 +209,31 @@
 
   ([modifiers vector]
    (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
-   (cond-> (or modifiers (empty))
-     (move-vec? vector)
-     (update :geometry-parent maybe-add-move (move-op vector)))))
+   (let [modifiers (or modifiers (empty))
+         order     (inc (dm/get-prop modifiers :last-order))
+         modifiers (assoc modifiers :last-order order)]
+     (cond-> modifiers
+       (move-vec? vector)
+       (update :geometry-parent maybe-add-move (move-op order vector))))))
 
 (defn resize-parent
   ([modifiers vector origin]
    (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
-   (cond-> (or modifiers (empty))
-     (resize-vec? vector)
-     (update :geometry-parent maybe-add-resize (resize-op vector origin))))
+   (let [modifiers (or modifiers (empty))
+         order     (inc (dm/get-prop modifiers :last-order))
+         modifiers (assoc modifiers :last-order order)]
+     (cond-> modifiers
+       (resize-vec? vector)
+       (update :geometry-parent maybe-add-resize (resize-op order vector origin)))))
 
   ([modifiers vector origin transform transform-inverse]
    (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
-   (cond-> (or modifiers (empty))
-     (resize-vec? vector)
-     (update :geometry-parent maybe-add-resize (resize-op vector origin transform transform-inverse)))))
+   (let [modifiers (or modifiers (empty))
+         order     (inc (dm/get-prop modifiers :last-order))
+         modifiers (assoc modifiers :last-order order)]
+     (cond-> modifiers
+       (resize-vec? vector)
+       (update :geometry-parent maybe-add-resize (resize-op order vector origin transform transform-inverse))))))
 
 (defn move
   ([modifiers x y]
@@ -228,29 +241,41 @@
 
   ([modifiers vector]
    (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
-   (cond-> (or modifiers (empty))
-     (move-vec? vector)
-     (update :geometry-child maybe-add-move (move-op vector)))))
+   (let [modifiers (or modifiers (empty))
+         order     (inc (dm/get-prop modifiers :last-order))
+         modifiers (assoc modifiers :last-order order)]
+     (cond-> modifiers
+       (move-vec? vector)
+       (update :geometry-child maybe-add-move (move-op order vector))))))
 
 (defn resize
   ([modifiers vector origin]
    (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
-   (cond-> (or modifiers (empty))
-     (resize-vec? vector)
-     (update :geometry-child maybe-add-resize (resize-op vector origin))))
+   (let [modifiers (or modifiers (empty))
+         order     (inc (dm/get-prop modifiers :last-order))
+         modifiers (assoc modifiers :last-order order)]
+     (cond-> modifiers
+       (resize-vec? vector)
+       (update :geometry-child maybe-add-resize (resize-op order vector origin)))))
 
   ([modifiers vector origin transform transform-inverse]
    (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
-   (cond-> (or modifiers (empty))
-     (resize-vec? vector)
-     (update :geometry-child maybe-add-resize (resize-op vector origin transform transform-inverse)))))
+   (let [modifiers (or modifiers (empty))
+         order     (inc (dm/get-prop modifiers :last-order))
+         modifiers (assoc modifiers :last-order order)]
+     (cond-> modifiers
+       (resize-vec? vector)
+       (update :geometry-child maybe-add-resize (resize-op order vector origin transform transform-inverse))))))
 
 (defn rotation
   [modifiers center angle]
-  (cond-> (or modifiers (empty))
-    (not (mth/close? angle 0))
-    (-> (update :structure-child conj (rotation-struct-op angle))
-        (update :geometry-child conj (rotation-geom-op center angle)))))
+  (let [modifiers (or modifiers (empty))
+        order     (inc (dm/get-prop modifiers :last-order))
+        modifiers (assoc modifiers :last-order order)]
+    (cond-> modifiers
+      (not (mth/close? angle 0))
+      (-> (update :structure-child conj (rotation-struct-op angle))
+          (update :geometry-child conj (rotation-geom-op order center angle))))))
 
 (defn remove-children
   [modifiers shapes]
@@ -279,8 +304,8 @@
   (-> (or modifiers (empty))
       (update :structure-child conj (change-property-op property value))))
 
-(defn- merge-geometry
-  [operations other]
+(defn- concat-geometry
+  [operations other merge?]
 
   (cond
     (c/empty? operations)
@@ -297,10 +322,10 @@
         (let [current (first operations)
               result
               (cond
-                (= :move (dm/get-prop current :type))
+                (and merge? (= :move (dm/get-prop current :type)))
                 (maybe-add-move result current)
 
-                (= :resize (dm/get-prop current :type))
+                (and merge? (= :resize (dm/get-prop current :type)))
                 (maybe-add-resize result current)
 
                 :else
@@ -308,15 +333,37 @@
 
           (recur result (rest operations)))))))
 
+(defn increase-order
+  [operations last-order]
+  (->> operations
+       (mapv #(update % :order + last-order))))
+
 (defn add-modifiers
   [modifiers new-modifiers]
+
   (let [modifiers (or modifiers (empty))
-        new-modifiers (or new-modifiers (empty))]
+        new-modifiers (or new-modifiers (empty))
+        last-order (dm/get-prop modifiers :last-order)
+        new-last-order (dm/get-prop new-modifiers :last-order)
+
+
+        old-geom-child (dm/get-prop modifiers :geometry-child)
+        new-geom-child (-> (dm/get-prop new-modifiers :geometry-child)
+                           (increase-order last-order))
+
+        old-geom-parent (dm/get-prop modifiers :geometry-parent)
+        new-geom-parent (-> (dm/get-prop new-modifiers :geometry-parent)
+                            (increase-order last-order))
+
+        ;; We can only merge if the result will respect the global order in modifiers
+        merge-child? (and (c/empty? new-geom-parent) (c/empty? old-geom-parent))
+        merge-parent? (and (c/empty? new-geom-child) (c/empty? old-geom-child))]
     (-> modifiers
-        (update :geometry-child merge-geometry (dm/get-prop new-modifiers :geometry-child))
-        (update :geometry-parent merge-geometry (dm/get-prop new-modifiers :geometry-parent))
+        (assoc  :last-order       (+ last-order new-last-order))
+        (update :geometry-child   #(concat-geometry % new-geom-child merge-child?))
+        (update :geometry-parent  #(concat-geometry % new-geom-parent merge-parent?))
         (update :structure-parent #(d/concat-vec [] % (dm/get-prop new-modifiers :structure-parent)))
-        (update :structure-child #(d/concat-vec [] % (dm/get-prop new-modifiers :structure-child))))))
+        (update :structure-child  #(d/concat-vec [] % (dm/get-prop new-modifiers :structure-child))))))
 
 
 ;; These are convenience methods to create single operation modifiers without the builder
@@ -522,8 +569,9 @@
 (defn modifiers->transform
   "Given a set of modifiers returns its transformation matrix"
   [modifiers]
-  (let [modifiers (concat (dm/get-prop modifiers :geometry-parent)
-                          (dm/get-prop modifiers :geometry-child))]
+  (let [modifiers (->> (concat (dm/get-prop modifiers :geometry-parent)
+                               (dm/get-prop modifiers :geometry-child))
+                       (sort-by :order))]
 
     (loop [matrix    (gmt/matrix)
            modifiers (seq modifiers)]

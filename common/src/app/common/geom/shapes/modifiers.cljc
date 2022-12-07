@@ -121,7 +121,7 @@
                        (update-in [child-id :modifiers] ctm/add-modifiers child-modifiers))
                      (rest children)))))))))
 
-(defn- process-layout-children
+#_(defn- process-layout-children
   [modif-tree objects bounds parent transformed-parent-bounds]
   (letfn [(process-child [modif-tree child]
             (let [child-id        (:id child)
@@ -275,7 +275,7 @@
        (set-children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints)
 
        layout?
-       (-> (process-layout-children objects bounds parent transformed-parent-bounds)
+       (-> #_(process-layout-children objects bounds parent transformed-parent-bounds)
            (set-layout-modifiers objects bounds parent transformed-parent-bounds)))
 
      ;; Auto-width/height can change the positions in the parent so we need to recalculate
