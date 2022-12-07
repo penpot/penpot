@@ -17,6 +17,7 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.loggers.audit.tasks :as-alias tasks]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.main :as-alias main]
    [app.metrics :as mtx]
    [app.tokens :as tokens]
@@ -103,10 +104,11 @@
 (s/def ::type ::us/string)
 (s/def ::props (s/map-of ::us/keyword any?))
 (s/def ::ip-addr ::us/string)
+(s/def ::webhooks/event? ::us/boolean)
 
 (s/def ::event
   (s/keys :req-un [::type ::name ::profile-id]
-          :opt-un [::ip-addr ::props]))
+          :opt-un [::ip-addr ::props ::webhooks/event?]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COLLECTOR
@@ -117,8 +119,7 @@
 ;; an external storage and data cleared.
 
 (s/def ::collector
-  (s/nilable
-   (s/keys :req [::wrk/executor ::db/pool])))
+  (s/keys :req [::wrk/executor ::db/pool]))
 
 (defmethod ig/pre-init-spec ::collector [_]
   (s/keys :req [::db/pool ::wrk/executor ::mtx/metrics]))
@@ -126,11 +127,8 @@
 (defmethod ig/init-key ::collector
   [_ {:keys [::db/pool] :as cfg}]
   (cond
-    (not (contains? cf/flags :audit-log))
-    (l/info :hint "audit: log collection disabled")
-
     (db/read-only? pool)
-    (l/warn :hint "audit: log collection disabled (db is read-only)")
+    (l/warn :hint "audit: disabled (db is read-only)")
 
     :else
     cfg))
@@ -138,19 +136,35 @@
 (defn- persist-event!
   [pool event]
   (us/verify! ::event event)
-  (db/insert! pool :audit-log
-              {:id (uuid/next)
-               :name (:name event)
-               :type (:type event)
-               :profile-id (:profile-id event)
-               :tracked-at (dt/now)
-               :ip-addr (some-> (:ip-addr event) db/inet)
-               :props (db/tjson (:props event))
-               :source "backend"}))
+  (let [params {:id (uuid/next)
+                :name (:name event)
+                :type (:type event)
+                :profile-id (:profile-id event)
+                :tracked-at (dt/now)
+                :ip-addr (:ip-addr event)
+                :props (:props event)}]
+
+    (when (contains? cf/flags :audit-log)
+      (db/insert! pool :audit-log
+                  (-> params
+                      (update :props db/tjson)
+                      (update :ip-addr db/inet)
+                      (assoc :source "backend"))))
+
+    (when (and (contains? cf/flags :webhooks)
+               (::webhooks/event? event))
+      (wrk/submit! ::wrk/conn pool
+                   ::wrk/task :process-webhook-event
+                   ::wrk/queue :webhooks
+                   ::wrk/max-retries 0
+                   ::webhooks/event (-> params
+                                        (dissoc :ip-addr)
+                                        (dissoc :type))))))
 
 (defn submit!
   "Submit audit event to the collector."
-  [{:keys [::wrk/executor ::db/pool]} params]
+  [{:keys [::wrk/executor ::db/pool] :as collector} params]
+  (us/assert! ::collector collector)
   (->> (px/submit! executor (partial persist-event! pool (d/without-nils params)))
        (p/merr (fn [cause]
                  (l/error :hint "audit: unexpected error processing event" :cause cause)

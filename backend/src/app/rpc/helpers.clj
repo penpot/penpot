@@ -64,6 +64,10 @@
   [mdw mdata]
   (vary-meta mdw merge mdata))
 
+(defn assoc-meta
+  [mdw k v]
+  (vary-meta mdw assoc k v))
+
 (defn with-http-cache
   [mdw max-age]
   (vary-meta mdw update ::rpc/response-transform-fns conj

@@ -16,6 +16,7 @@
    [app.http.client :as-alias http.client]
    [app.http.session :as-alias http.session]
    [app.loggers.audit :as audit]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as mtx]
    [app.msgbus :as-alias mbus]
    [app.rpc.climit :as climit]
@@ -155,18 +156,24 @@
                                    (:profile-id result)
                                    (:profile-id params)
                                    uuid/zero)
+
                     props      (or (::audit/replace-props resultm)
                                    (-> params
+                                       (d/without-qualified)
                                        (merge (::audit/props resultm))
                                        (dissoc :profile-id)
                                        (dissoc :type)))
+
                     event      {:type (or (::audit/type resultm)
                                           (::type cfg))
                                 :name (or (::audit/name resultm)
                                           (::sv/name mdata))
                                 :profile-id profile-id
                                 :ip-addr (some-> request audit/parse-client-ip)
-                                :props (d/without-qualified props)}]
+                                :props props
+                                ::webhooks/event? (or (::webhooks/event? mdata)
+                                                      (::webhooks/event? resultm)
+                                                      false)}]
 
                 (audit/submit! collector event)))
 

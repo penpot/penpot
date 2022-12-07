@@ -15,6 +15,7 @@
    [app.http.session :as-alias http.session]
    [app.loggers.audit :as-alias audit]
    [app.loggers.audit.tasks :as-alias audit.tasks]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.loggers.zmq :as-alias lzmq]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
@@ -357,7 +358,12 @@
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :session-gc         (ig/ref :app.http.session/gc-task)
      :audit-log-archive  (ig/ref ::audit.tasks/archive)
-     :audit-log-gc       (ig/ref ::audit.tasks/gc)}}
+     :audit-log-gc       (ig/ref ::audit.tasks/gc)
+
+     :process-webhook-event
+     (ig/ref ::webhooks/process-event-handler)
+     :run-webhook
+     (ig/ref ::webhooks/run-webhook-handler)}}
 
 
    :app.emails/sendmail
@@ -419,6 +425,14 @@
 
    ::audit.tasks/gc
    {::db/pool (ig/ref ::db/pool)}
+
+   ::webhooks/process-event-handler
+   {::db/pool            (ig/ref ::db/pool)
+    ::http.client/client (ig/ref ::http.client/client)}
+
+   ::webhooks/run-webhook-handler
+   {::db/pool            (ig/ref ::db/pool)
+    ::http.client/client (ig/ref ::http.client/client)}
 
    :app.loggers.loki/reporter
    {::lzmq/receiver      (ig/ref ::lzmq/receiver)
