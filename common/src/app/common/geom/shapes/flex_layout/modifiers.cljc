@@ -6,40 +6,11 @@
 
 (ns app.common.geom.shapes.flex-layout.modifiers
   (:require
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.flex-layout.positions :as fpo]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.geom.shapes.transforms :as gtr]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]))
-
-(defn normalize-child-modifiers
-  "Apply the modifiers and then normalized them against the parent coordinates"
-  [modifiers {:keys [transform transform-inverse] :as parent} child-bounds parent-bounds transformed-parent-bounds]
-
-  (let [transformed-child-bounds (gtr/transform-bounds child-bounds modifiers)
-
-        child-bb-before (gpo/parent-coords-bounds child-bounds parent-bounds)
-        child-bb-after  (gpo/parent-coords-bounds transformed-child-bounds transformed-parent-bounds)
-
-        scale-x (/ (gpo/width-points child-bb-before) (gpo/width-points child-bb-after))
-        scale-y (/ (gpo/height-points child-bb-before) (gpo/height-points child-bb-after))
-
-        resize-vector (gpt/point scale-x scale-y)
-        modif-transform (or (ctm/modifiers->transform modifiers) (gmt/matrix))
-        modif-transform-inverse (gmt/inverse modif-transform)
-        resize-transform (gmt/multiply modif-transform transform)
-        resize-transform-inverse (gmt/multiply transform-inverse modif-transform-inverse)
-        resize-origin (gpo/origin transformed-child-bounds)]
-
-    (-> modifiers
-        (ctm/select-child)
-        (ctm/resize
-         resize-vector
-         resize-origin
-         resize-transform
-         resize-transform-inverse))))
 
 (defn calc-fill-width-data
   "Calculates the size and modifiers for the width of an auto-fill child"

@@ -121,23 +121,6 @@
                        (update-in [child-id :modifiers] ctm/add-modifiers child-modifiers))
                      (rest children)))))))))
 
-#_(defn- process-layout-children
-  [modif-tree objects bounds parent transformed-parent-bounds]
-  (letfn [(process-child [modif-tree child]
-            (let [child-id        (:id child)
-                  parent-id       (:id parent)
-                  modifiers       (dm/get-in modif-tree [parent-id :modifiers])
-                  child-bounds    @(get bounds child-id)
-                  parent-bounds   @(get bounds parent-id)
-                  child-modifiers (-> modifiers
-                                      (ctm/select-child-geometry-modifiers)
-                                      (gcl/normalize-child-modifiers parent child-bounds parent-bounds @transformed-parent-bounds))]
-              (cond-> modif-tree
-                (not (ctm/empty? child-modifiers))
-                (update-in [child-id :modifiers] ctm/add-modifiers child-modifiers))))]
-    (let [children (map (d/getf objects) (:shapes parent))]
-      (reduce process-child modif-tree children))))
-
 (defn get-group-bounds
   [objects bounds modif-tree shape]
   (let [shape-id (:id shape)
@@ -275,8 +258,7 @@
        (set-children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints)
 
        layout?
-       (-> #_(process-layout-children objects bounds parent transformed-parent-bounds)
-           (set-layout-modifiers objects bounds parent transformed-parent-bounds)))
+       (set-layout-modifiers objects bounds parent transformed-parent-bounds))
 
      ;; Auto-width/height can change the positions in the parent so we need to recalculate
      (cond-> autolayouts auto? (conj (:id parent)))]))
