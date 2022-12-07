@@ -93,7 +93,8 @@
 }
 
 .dashboard-team-members,
-.dashboard-team-invitations {
+.dashboard-team-invitations,
+.dashboard-team-webhooks {
   .empty-invitations {
     height: 156px;
     max-width: 1040px;
@@ -195,6 +196,71 @@
         .status-label {
           font-size: $fs12;
         }
+      }
+    }
+
+    &.uri,
+    &.active {
+      width: 48%;
+      min-width: 300px;
+    }
+
+    &.last-delivery {
+      display: flex;
+      justify-content: center;
+      width: 50px;
+      position: relative;
+      .success svg {
+        fill: $color-primary;
+        width: 16px;
+        height: 16px;
+      }
+      .failure svg {
+        fill: $color-warning;
+        width: 16px;
+        height: 16px;
+      }
+
+      .icon-container {
+        width: 16px;
+        height: 16px;
+        overflow-x: visible;
+      }
+
+      .icon {
+        padding: 0;
+      }
+    }
+
+    .tooltip {
+      display: none;
+      position: absolute;
+      top: -58px;
+      left: 50%;
+      transform: translate(-50%, 0);
+      text-align: center;
+
+      .label {
+        border-radius: 3px;
+        color: $color-white;
+        background-color: $color-black;
+        white-space: nowrap;
+        padding: 12px 20px;
+      }
+
+      .arrow-down {
+        margin: 0 auto;
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 8px solid $color-black;
+      }
+    }
+
+    .last-delivery-icon:hover {
+      .tooltip {
+        display: block;
       }
     }
   }
@@ -378,5 +444,98 @@
         }
       }
     }
+  }
+}
+
+.dashboard-team-webhooks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .webhooks-hero-container {
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .upload-button {
+      width: 100px;
+    }
+
+    .btn-secondary {
+      margin-left: 10px;
+    }
+  }
+
+  .webhooks-hero {
+    font-size: $fs14;
+
+    padding: $size-6;
+    background-color: $color-white;
+    margin-top: $size-6;
+    display: flex;
+    justify-content: space-between;
+
+    .banner {
+      background-color: unset;
+
+      display: flex;
+
+      .icon {
+        display: flex;
+        align-items: center;
+        padding-left: 0px;
+        padding-right: 10px;
+        svg {
+          fill: $color-info;
+        }
+      }
+    }
+
+    .desc {
+      h2 {
+        margin-bottom: $size-4;
+        color: $color-black;
+      }
+      width: 80%;
+      color: $color-gray-40;
+      p {
+        font-size: 16px;
+      }
+    }
+
+    .btn-primary {
+      flex-shrink: 0;
+    }
+  }
+
+  .webhooks-empty {
+    text-align: center;
+    max-width: 1000px;
+    width: 100%;
+    padding: $size-6;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px dashed $color-gray-20;
+    color: $color-gray-40;
+    margin-top: 12px;
+    min-height: 136px;
+  }
+}
+
+.webhooks-modal {
+  .action-buttons {
+    gap: 10px;
+  }
+  .input-checkbox label {
+    font-size: 14px;
+    color: $color-black;
+  }
+
+  .explain {
+    font-size: 12px;
+    color: $color-gray-40;
   }
 }

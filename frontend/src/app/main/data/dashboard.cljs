@@ -149,6 +149,24 @@
         (->> (rp/query! :team-invitations {:team-id team-id})
              (rx/map team-invitations-fetched))))))
 
+;; --- EVENT: fetch-team-webhooks
+
+(defn team-webhooks-fetched
+  [webhooks]
+  (ptk/reify ::team-webhooks-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :dashboard-team-webhooks webhooks))))
+
+(defn fetch-team-webhooks
+  []
+  (ptk/reify ::fetch-team-webhooks
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (->> (rp/command! :get-webhooks {:team-id team-id})
+             (rx/map team-webhooks-fetched))))))
+
 ;; --- EVENT: fetch-projects
 
 (defn projects-fetched
@@ -519,6 +537,61 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
         (->> (rp/mutation! :delete-team-invitation params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+(defn delete-team-webhook
+  [{:keys [id] :as params}]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::delete-team-webhook
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)
+            params  (assoc params :team-id team-id)
+            {:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/command! :delete-webhook params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+(s/def ::mtype
+  #{"application/json"
+    "application/x-www-form-urlencoded"
+    "application/transit+json"})
+
+(defn update-team-webhook
+  [{:keys [id uri mtype is-active] :as params}]
+  (us/assert ::us/uuid id)
+  (us/assert ::us/uri uri)
+  (us/assert ::mtype mtype)
+  (us/assert ::us/boolean is-active)
+  (ptk/reify ::update-team-webhook
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)
+            params  (assoc params :team-id team-id)
+            {:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/command! :update-webhook params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+(defn create-team-webhook
+  [{:keys [uri mtype is-active] :as params}]
+  (us/assert ::us/uri uri)
+  (us/assert ::mtype mtype)
+  (us/assert ::us/boolean is-active)
+  (ptk/reify ::create-team-webhook
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)
+            params  (assoc params :team-id team-id)
+            {:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/command! :create-webhook params)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -912,6 +985,14 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (rx/of (rt/nav :dashboard-team-invitations {:team-id team-id}))))))
+
+(defn go-to-team-webhooks
+  []
+  (ptk/reify ::go-to-team-webhooks
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (rx/of (rt/nav :dashboard-team-webhooks {:team-id team-id}))))))
 
 (defn go-to-team-settings
   []

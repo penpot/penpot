@@ -12,7 +12,7 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.teams :refer [check-edition-permissions!]]
+   [app.rpc.queries.teams :refer [check-edition-permissions! check-read-permissions!]]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
@@ -49,7 +49,7 @@
               (instance? javax.net.ssl.SSLHandshakeException exception)
               (ex/raise :type :validation
                         :code :webhook-validation
-                        :hint "ssl-validaton")
+                        :hint "ssl-validation")
 
               :else
               (ex/raise :type :validation
@@ -118,3 +118,19 @@
       (check-edition-permissions! conn profile-id (:team-id whook))
       (db/delete! conn :webhook {:id id})
       nil)))
+
+;; --- Query: Webhooks
+
+(s/def ::team-id ::us/uuid)
+(s/def ::get-webhooks
+  (s/keys :req-un [::profile-id ::team-id]))
+
+(def sql:get-webhooks
+  "select id, uri, mtype, is_active, error_code, error_count
+   from webhook where team_id = ? order by uri")
+
+(sv/defmethod ::get-webhooks
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
+  (with-open [conn (db/open pool)]
+    (check-read-permissions! conn profile-id team-id)
+    (db/exec! conn [sql:get-webhooks team-id])))

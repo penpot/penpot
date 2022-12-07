@@ -25,7 +25,7 @@
    [app.main.ui.dashboard.projects :refer [projects-section]]
    [app.main.ui.dashboard.search :refer [search-page]]
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
-   [app.main.ui.dashboard.team :refer [team-settings-page team-members-page team-invitations-page]]
+   [app.main.ui.dashboard.team :refer [team-settings-page team-members-page team-invitations-page team-webhooks-page]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -235,6 +235,9 @@
 
        :dashboard-team-invitations
        [:& team-invitations-page {:team team}]
+
+       :dashboard-team-webhooks
+       [:& team-webhooks-page {:team team}]
 
        :dashboard-team-settings
        [:& team-settings-page {:team team :profile profile}]
