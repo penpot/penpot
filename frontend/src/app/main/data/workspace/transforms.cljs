@@ -778,8 +778,10 @@
                   (recursive-find-empty-parents parents))))
 
             empty-parents
-            ;; Any parent whose children are moved should be deleted
-            (into (d/ordered-set) (find-all-empty-parents #{}))
+            ;; Any empty parent whose children are moved to another frame should be deleted
+            (if (empty? moving-shapes)
+              #{}
+              (into (d/ordered-set) (find-all-empty-parents #{})))
 
             changes
             (-> (pcb/empty-changes it page-id)
