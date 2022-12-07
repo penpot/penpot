@@ -690,6 +690,21 @@ msgstr "Is active"
 msgid "dashboard.webhooks.active.explain"
 msgstr "When this hook is triggered event details will be delivered"
 
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook updated successfully."
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook created successfully."
+
+msgid "errors.webhooks.unexpected"
+msgstr "Unexpected error on validating"
+
+msgid "errors.webhooks.timeout"
+msgstr "Timeout"
+
+msgid "errors.webhooks.connection"
+msgstr "Connection error, url not reacheable"
+
 msgid "webhooks.last-delivery.success"
 msgstr "Last delivery was successfull."
 
@@ -701,18 +716,6 @@ msgstr "Error on SSL validation."
 
 msgid "errors.webhooks.unexpected-status"
 msgstr "Unexpected status %s"
-
-msgid "dashboard.webhooks.update.error"
-msgstr "Error on updating webhook."
-
-msgid "dashboard.webhooks.update.success"
-msgstr "Webhook updated successfully."
-
-msgid "dashboard.webhooks.create.error"
-msgstr "Error on creating webhook."
-
-msgid "dashboard.webhooks.create.success"
-msgstr "Webhook created successfully."
 
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"

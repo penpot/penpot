@@ -737,6 +737,21 @@ msgstr "Cuando se active este webhook se enviarán detalles del evento"
 msgid "webhooks.last-delivery.success"
 msgstr "El último envío fue correcto."
 
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook modificado con éxito"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook creado con éxito"
+
+msgid "errors.webhooks.timeout"
+msgstr "Timeout"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Error inesperado al validar"
+
+msgid "errors.webhooks.connection"
+msgstr "Error de conexion, la url no es alcanzable"
+
 msgid "errors.webhooks.last-delivery"
 msgstr "Hubo un problema en el último envío."
 
@@ -745,18 +760,6 @@ msgstr "Error en la validación SSL."
 
 msgid "errors.webhooks.unexpected-status"
 msgstr "Estado inesperado %s"
-
-msgid "dashboard.webhooks.update.error"
-msgstr "Error modificando el webhook"
-
-msgid "dashboard.webhooks.update.success"
-msgstr "Webhook modificado con éxito"
-
-msgid "dashboard.webhooks.create.error"
-msgstr "Error creando con éxito"
-
-msgid "dashboard.webhooks.create.success"
-msgstr "Webhook creado con éxito"
 
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"
