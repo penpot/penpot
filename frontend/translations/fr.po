@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-12-01 10:47+0000\n"
+"PO-Revision-Date: 2022-12-10 15:48+0000\n"
 "Last-Translator: GradelerM <marie.gradeler@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -4219,3 +4219,133 @@ msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "Penpot est un logiciel Open Source créé par Kaleidos et la communauté, où de "
 "nombreuses personnes s’entraident déjà. Tout le monde peut collaborer en :"
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Masquer la grille de pixels"
+
+msgid "viewer.header.comments-section"
+msgstr "Commentaires (%s)"
+
+msgid "viewer.header.interactions-section"
+msgstr "Interactions (%s)"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Guide du contributeur"
+
+#, fuzzy
+msgid "shortcut-subsection.panels"
+msgstr "Panneaux"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Une équipe vous permet de collaborer avec d'autres utilisateurs de Penpot "
+"travaillant sur les mêmes fichiers et projets."
+
+msgid "shortcuts.zoom-selected"
+msgstr "Zoomer sur la sélection"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Invitations - %s - Penpot"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Désactiver l’alignement sur les guides"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "Aligner sur les guides"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Préférences"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Déplacer vers le bas"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Aligner sur la grille"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Aligner sur les guides"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Activer/désactiver le plein écran"
+
+msgid "shortcuts.undo"
+msgstr "Annuler"
+
+msgid "shortcuts.v-distribute"
+msgstr "Distribuer verticalement"
+
+msgid "viewer.breaking-change.description"
+msgstr ""
+"Ce lien de partage n'est plus valide. Créez-en un nouveau ou demandez-en un "
+"nouveau au propriétaire."
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Désactiver l’accrochage au pixel"
+
+msgid "workspace.focus.selection"
+msgstr "Sélection"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Activer l’alignement au pixel"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Afficher la grille de pixels"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Verrou sélectionné"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Afficher/masquer la palette de texte"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Afficher/masquer l’élément"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Alterner le style de zoom"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Édition multijoueur"
+
+msgid "workspace.assets.local-library"
+msgstr "Bibliothèque locale"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "Aide et information"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "Vue"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Un espace public pour apprendre, partager et échanger autour de Penpot, de "
+"son présent et de son avenir avec l'ensemble de la communauté et l'équipe "
+"centrale de Penpot."
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Participation à la Communauté"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Vous y trouverez comment collaborer avec des traductions, des demandes de "
+"fonctionnalités (feature requests), des contributions au code, la recherche "
+"de bugs…"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Créer une équipe plus tard"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"N'oubliez pas d'inclure tout le monde. Développeurs, concepteurs, "
+"gestionnaires... la diversité fait la force :)"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Inviter avec le rôle :"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Gestion des rôles"
