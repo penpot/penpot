@@ -46,7 +46,7 @@
 
                 (str/starts-with? header "application/json")
                 (with-open [is (yrq/body request)]
-                  (let [params (json/read is)]
+                  (let [params (json/decode is)]
                     (-> request
                         (assoc :body-params params)
                         (update :params merge params))))

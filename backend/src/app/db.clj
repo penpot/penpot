@@ -427,7 +427,7 @@
           val (.getValue o)]
       (if (or (= typ "json")
               (= typ "jsonb"))
-        (json/read val)
+        (json/decode val)
         val))))
 
 (defn decode-transit-pgobject
@@ -462,9 +462,10 @@
 (defn json
   "Encode as plain json."
   [data]
-  (doto (org.postgresql.util.PGobject.)
-    (.setType "jsonb")
-    (.setValue (json/write-str data))))
+  (when data
+    (doto (org.postgresql.util.PGobject.)
+      (.setType "jsonb")
+      (.setValue (json/encode-str data)))))
 
 ;; --- Locks
 

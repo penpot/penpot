@@ -29,7 +29,7 @@
                         {:uri (cf/get :error-report-webhook)
                          :method :post
                          :headers {"content-type" "application/json"}
-                         :body (json/write-str {:text text})}
+                         :body (json/encode-str {:text text})}
                         {:sync? true})]
 
     (when (not= 200 (:status resp))

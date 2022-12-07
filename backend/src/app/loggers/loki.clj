@@ -73,7 +73,7 @@
               :timeout 3000
               :method :post
               :headers {"content-type" "application/json"}
-              :body (json/write payload)}
+              :body (json/encode payload)}
              {:sync? true}))
 
 (defn- handle-event

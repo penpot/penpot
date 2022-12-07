@@ -92,7 +92,7 @@
       (.. socket (setReceiveTimeOut 5000))
       (loop []
         (let [msg (.recv ^ZMQ$Socket socket)
-              msg (ex/ignoring (json/read msg json-mapper))
+              msg (ex/ignoring (json/decode msg json-mapper))
               msg (if (nil? msg) :empty msg)]
           (when (a/>!! output msg)
             (recur))))
