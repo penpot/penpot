@@ -103,10 +103,10 @@
                           (let [features (cond-> #{} components-v2 (conj "components/v2"))]
                             (->> (rx/zip
                                   (repo/query! :font-variants {:file-id file-id})
-                                  (repo/cmd! :page {:file-id file-id
-                                                    :page-id page-id
-                                                    :object-id object-id
-                                                    :features features}))
+                                  (repo/cmd! :get-page {:file-id file-id
+                                                        :page-id page-id
+                                                        :object-id object-id
+                                                        :features features}))
                                  (rx/tap (fn [[fonts]]
                                            (when (seq fonts)
                                              (st/emit! (df/fonts-fetched fonts)))))
