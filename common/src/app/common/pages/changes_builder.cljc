@@ -278,6 +278,7 @@
 
 
 (defn changed-attrs
+  "Returns the list of attributes that will change when `update-fn` is applied"
   [object update-fn {:keys [attrs]}]
   (let [changed?
         (fn [old new attr]
@@ -285,9 +286,7 @@
                 new-val (get new attr)]
             (not= old-val new-val)))
         new-obj (update-fn object)]
-    (if (= object new-obj)
-      '()
-
+    (when-not (= object new-obj)
       (let [attrs (or attrs (d/concat-set (keys object) (keys new-obj)))]
         (filter (partial changed? object new-obj) attrs)))))
 
