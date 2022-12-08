@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-12-06 21:48+0000\n"
+"PO-Revision-Date: 2022-12-10 15:48+0000\n"
 "Last-Translator: Alex Howell <business.2agames@gmail.com>\n"
 "Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ro/>\n"
@@ -711,7 +711,7 @@ msgid "handoff.attributes.typography.text-transform.none"
 msgstr "Niciunul"
 
 msgid "handoff.attributes.typography.text-transform.titlecase"
-msgstr "Title Case"
+msgstr "Majuscule Titlu"
 
 msgid "handoff.attributes.typography.text-transform.uppercase"
 msgstr "Majuscule"
@@ -2883,7 +2883,7 @@ msgid "shortcuts.draw-ellipse"
 msgstr "Elipsă"
 
 msgid "shortcuts.draw-frame"
-msgstr "Placă"
+msgstr "Tablă"
 
 msgid "shortcuts.draw-path"
 msgstr "Drum"
@@ -3253,7 +3253,7 @@ msgstr ""
 "biblioteci partajate. Ce vrei să faci cu activele lor*?"
 
 msgid "dashboard.export-frames"
-msgstr "Exportați panouri în PDF"
+msgstr "Exportați table în PDF"
 
 msgid "dashboard.export-multi"
 msgstr "Exportați %s fișiere Penpot"
@@ -3579,7 +3579,7 @@ msgid "onboarding.team-modal.create-team"
 msgstr "Creați o echipă"
 
 msgid "shortcuts.artboard-selection"
-msgstr "Creează placă din selecție"
+msgstr "Creează tablă din selecție"
 
 msgid "shortcuts.bool-difference"
 msgstr "Diferența booleană"
@@ -3589,3 +3589,997 @@ msgstr "Exclude boolean"
 
 msgid "shortcuts.bring-backward"
 msgstr "Trimite în spate"
+
+msgid "shortcuts.redo"
+msgstr "Refaceți"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "Componente"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Plăci"
+
+msgid "workspace.options.show-in-viewer"
+msgstr "Afișare în modul de vizualizare"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "Marcator cerc"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "Marcator diamant"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Săgeată linie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "Marcator pătrat"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flow-start"
+msgstr "Pornirea fluxului"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Detașați instanțele"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "Restaurați componenta principală"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Setați ca miniatură"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Actualizați componentele principale"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Forme"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "Durată"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Întoarceți pe verticală"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Accesați schițele"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Mutați sus rapid"
+
+msgid "shortcuts.opacity-9"
+msgstr "Setați opacitatea la 90%"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Accesați tabloul de bord"
+
+msgid "shortcuts.open-workspace"
+msgstr "Accesați spațiul de lucru"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Comutați vizibilitatea"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Comutați stilul zoomului"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Comutați la ecran complet"
+
+msgid "shortcuts.undo"
+msgstr "Anulați"
+
+msgid "shortcuts.ungroup"
+msgstr "Degrupați"
+
+msgid "viewer.breaking-change.description"
+msgstr ""
+"Acest link care poate fi partajat nu mai este valid. Creați unul nou sau "
+"cereți proprietarului unul nou."
+
+msgid "viewer.breaking-change.message"
+msgstr "Scuze!"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "Fișier"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "Ajutor & info"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Preferințe"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Potrivire - Scalare în jos a se potrivi"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "RGB Complementar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.bottom"
+msgstr "Jos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "Fixat la parcurgere"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.leftright"
+msgstr "Stânga & Dreapta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.scale"
+msgstr "Scală"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Exportați selecția"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-error"
+msgstr "Export eșuat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Adăugați început flux"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-action"
+msgstr "Acțiune"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "Dizolvare"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "Nimic"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-delay"
+msgstr "Întârziere"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to"
+msgstr "Navigați la"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-none"
+msgstr "(nedefinit)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Efect de offset"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "Plecarea mouse-ului"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "Deschideți suprapunerea: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "Deschideți adresa URL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "Centru jos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-pressing"
+msgstr "În timp ce este apăsat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-h"
+msgstr "Înălțime maximă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-h"
+msgstr "Înălțime minimă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-max-w"
+msgstr "Lățime maximă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-min-w"
+msgstr "Lățime minimă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-w"
+msgstr "Lățime maximă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-h"
+msgstr "Înălțime minimă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-min-w"
+msgstr "Lățime minimă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Spațiu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.left"
+msgstr "stânga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.right"
+msgstr "dreapta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Căptușeală"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "Toate laturile"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "Căptușeală simplă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "spațiu în jur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.bottom"
+msgstr "jos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Mai multe culori de bibliotecă"
+
+msgid "workspace.options.search-font"
+msgstr "Căutați font"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Culoare umbră"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "Rotund"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "Pătrat"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Săgeată triunghi"
+
+msgid "workspace.options.stroke-color"
+msgstr "Culoare contur"
+
+msgid "workspace.options.stroke-width"
+msgstr "Lățimea conturului"
+
+msgid "workspace.options.width"
+msgstr "Lăţime"
+
+msgid "workspace.options.x"
+msgstr "X"
+
+msgid "workspace.options.y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "Ștergeți începutul fluxului"
+
+msgid "shortcuts.join-nodes"
+msgstr "Uniți noduri"
+
+msgid "shortcuts.make-corner"
+msgstr "Faceți colț"
+
+msgid "shortcuts.make-curve"
+msgstr "Faceți o curbă"
+
+msgid "shortcuts.go-to-search"
+msgstr "Căutați"
+
+msgid "shortcuts.mask"
+msgstr "Mască"
+
+msgid "shortcuts.insert-image"
+msgstr "Inserați imagine"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Mutați în dreapta rapid"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Mutați jos"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Îmbinați nodurile"
+
+msgid "shortcuts.move"
+msgstr "Mutați"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Mutați în stânga"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Mutați în dreapta"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Mutați sus"
+
+msgid "shortcuts.next-frame"
+msgstr "Următoarea tablă"
+
+msgid "shortcuts.not-found"
+msgstr "Nu s-au găsit comenzi rapide"
+
+msgid "shortcuts.opacity-0"
+msgstr "Setați opacitatea la 100%"
+
+msgid "shortcuts.opacity-3"
+msgstr "Setați opacitatea la 30%"
+
+msgid "shortcuts.opacity-4"
+msgstr "Setați opacitatea la 40%"
+
+msgid "shortcuts.opacity-5"
+msgstr "Setați opacitatea la 50%"
+
+msgid "shortcuts.open-comments"
+msgstr "Accesați secțiunea de comentarii ale spectatorului"
+
+msgid "shortcuts.open-color-picker"
+msgstr "Selector de culoare"
+
+msgid "shortcuts.or"
+msgstr " sau "
+
+msgid "shortcuts.open-interactions"
+msgstr "Accesați secțiunea de interacțiuni ale spectatorului"
+
+msgid "shortcuts.open-viewer"
+msgstr "Accesați secțiunea de interacțiuni ale spectatorului"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "Afișați/ascundeți comenzile rapide"
+
+msgid "shortcuts.prev-frame"
+msgstr "Tabla anterioară"
+
+msgid "shortcuts.paste"
+msgstr "Lipește"
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "Afișați/ascundeți grila de pixeli"
+
+msgid "shortcuts.start-measure"
+msgstr "Începeți măsurarea"
+
+msgid "shortcuts.start-editing"
+msgstr "Începeți editarea"
+
+msgid "shortcuts.stop-measure"
+msgstr "Opriți măsurarea"
+
+msgid "shortcuts.snap-nodes"
+msgstr "Fixare la noduri"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Fixare la grila de pixeli"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Comutați alinierea dinamică"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Setați miniaturile"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Comutați paleta de culori"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Comutați modul de focus"
+
+msgid "shortcuts.toggle-grid"
+msgstr "Afișați/ascundeți grila"
+
+msgid "shortcuts.toggle-history"
+msgstr "Comutați istoricul"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Comutați obiectele"
+
+msgid "shortcuts.toggle-scale-text"
+msgstr "Comută scalarea textului"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Comutați straturile"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Blocați selecția"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Blocați proporțiile"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Afișați/ascundeți rigle"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Fixare la grilă"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Mărește la selecție"
+
+msgid "shortcuts.unmask"
+msgstr "Demascați"
+
+msgid "shortcuts.v-distribute"
+msgstr "Distribuiți vertical"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "Redenumiți grupul"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "Vezi"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+msgid "workspace.options.clip-content"
+msgstr "Conținutul clipului"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.top"
+msgstr "Sus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Export neașteptat de lent"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.topbottom"
+msgstr "Sus & Jos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "Grilă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "Împinge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-linear"
+msgstr "Liniar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "Intrarea mouse-ului"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "În"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "Centru sus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-manual"
+msgstr "Manual"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "Stânga sus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "Comutați suprapunerea: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "Dreapta sus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Jos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title"
+msgstr "Redimensionare elementelor"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.right"
+msgstr "Rând invers"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "Toate laturile"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Stânga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Margine simplă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.no-wrap"
+msgstr "fără înveliș"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "plin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Dreapta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.wrap"
+msgstr "înfășurare"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.center"
+msgstr "centru"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.v.top"
+msgstr "sus"
+
+msgid "workspace.options.opacity"
+msgstr "Opacitate"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "Afișați în exporturi"
+
+msgid "workspace.shape.menu.difference"
+msgstr "Diferență"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Transformați în drum"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "Imagini"
+
+msgid "workspace.sidebar.layers.search"
+msgstr "Căutați straturi"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Accesați bibliotecile partajate"
+
+msgid "shortcuts.h-distribute"
+msgstr "Distribuiți pe orizontală"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.add-interaction"
+msgstr "Faceți clic pe butonul + pentru a adăuga interacțiuni."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-self"
+msgstr "sine"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "Comutare suprapunere"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions"
+msgstr "Interacțiuni"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "Mai multe culori"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "Selecție la planșă"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "Excludeți"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "Aplatizați"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "Selectați stratul"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Eliminați miniatura"
+
+msgid "workspace.shape.menu.union"
+msgstr "Uniune"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "Grupuri"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "Texte"
+
+msgid "shortcuts.opacity-6"
+msgstr "Setați opacitatea la 60%"
+
+msgid "shortcuts.opacity-8"
+msgstr "Setați opacitatea la 80%"
+
+msgid "shortcuts.open-handoff"
+msgstr "Accesați secțiunea de transfer al vizualizatorului"
+
+msgid "shortcuts.reset-zoom"
+msgstr "Resetați zoomul"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "Fixare la ghiduri"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "Nimic"
+
+msgid "workspace.options.height"
+msgstr "Înălțime"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Alunecă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay"
+msgstr "Închideți suprapunerea"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "Închideți suprapunerea: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "Navigați la: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-position"
+msgstr "Poziție"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "Păstrați poziția derulării"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-prev-screen"
+msgstr "Ecranul anterior"
+
+msgid "shortcuts.search-placeholder"
+msgstr "Căutați comenzi rapide"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "Comenzi rapide de la tastatură"
+
+msgid "shortcuts.group"
+msgstr "Grup"
+
+msgid "shortcuts.hide-ui"
+msgstr "Arată/ascunde interfața"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Măriți"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Mutați în stânga rapid"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Mutați jos rapid"
+
+msgid "shortcuts.opacity-1"
+msgstr "Setați opacitatea la 10%"
+
+msgid "shortcuts.opacity-2"
+msgstr "Setați opacitatea la 20%"
+
+msgid "shortcuts.opacity-7"
+msgstr "Setați opacitatea la 70%"
+
+msgid "viewer.header.handoff-section"
+msgstr "Transfer (%s)"
+
+msgid "workspace.assets.local-library"
+msgstr "biblioteca locală"
+
+msgid "workspace.focus.focus-on"
+msgstr "Focus pornit"
+
+msgid "workspace.focus.selection"
+msgstr "Selecție"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Activați fixarea la pixel"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Ascundeți numele tablelor"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Afișați numele tablelor"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Dezactivați fixarea la ghiduri"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Dezactivați fixarea la pixel"
+
+msgid "viewer.header.comments-section"
+msgstr "Comentarii (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.left"
+msgstr "Stânga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-starts"
+msgstr "Fluxul începe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-start"
+msgstr "Pornirea fluxului"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-after-delay"
+msgstr "După întârziere"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-background"
+msgstr "Adăugați suprapunere de fundal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-outside"
+msgstr "Închideți atunci când faceți clic în exterior"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "Zoom la selecție"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-complete"
+msgstr "Export finalizat"
+
+msgid "workspace.options.grid.params.color"
+msgstr "Culoare"
+
+msgid "shortcuts.export-shapes"
+msgstr "Exportați formele"
+
+msgid "shortcuts.move-nodes"
+msgstr "Mutați noduri"
+
+msgid "shortcuts.select-all"
+msgstr "Selectează tot"
+
+msgid "shortcuts.separate-nodes"
+msgstr "Noduri separate"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Comutați paleta de text"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Fixare la ghiduri"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Invitații -%s - Penpot"
+
+msgid "viewer.header.interactions-section"
+msgstr "Interacțiuni (%s)"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Mod focus"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "Degrupați"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "Editați"
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Ascundeți grila de pixeli"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "Ascundeți paleta de fonturi"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "Umplere - Scalare pentru a umple"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "Zoom pentru a potrivi tot"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-full-screen"
+msgstr "Ecran complet"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Resetați"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Afișați grila de pixeli"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Afișați paleta de fonturi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "Constrângeri"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.right"
+msgstr "Dreapta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-center"
+msgstr "Centru"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-trigger"
+msgstr "Declanșator"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Afișați/ Ascundeți UI"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "Intersecție"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Restrângeți bara laterală"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.title"
+msgstr "Aspect"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Sus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "Culori selectate"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "spațiu între"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-destination"
+msgstr "Destinație"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay"
+msgstr "Deschideți suprapunerea"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "Dreapta jos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-on-click"
+msgstr "La clic"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-out"
+msgstr "Afară"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "Stânga jos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-hovering"
+msgstr "În timp ce plutește"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.bottom"
+msgstr "Coloană"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.top"
+msgstr "Coloană inversă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-max-h"
+msgstr "Înălțime maximă"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.left"
+msgstr "Rând"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.h.center"
+msgstr "centru"
+
+msgid "shortcuts.fit-all"
+msgstr "Măriți pentru a încăpea tot"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Întoarceți pe orizontală"
+
+msgid "workspace.shape.menu.path"
+msgstr "Drum"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Afișați în panoul de obiecte"
+
+msgid "workspace.sidebar.expand"
+msgstr "Extindeți bara laterală"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "Măști"
+
+msgid "workspace.focus.focus-off"
+msgstr "Focus oprit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.center"
+msgstr "Centru"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation"
+msgstr "Animație"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "Opțiuni avansate"
+
+msgid "workspace.options.recent-fonts"
+msgstr "Recente"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "Reîncercați"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Margine"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Comenzi rapide (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "Tipografii (%s)"
