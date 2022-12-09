@@ -123,10 +123,10 @@
             page-id (:id page)
             objects (wsh/lookup-page-objects state page-id)
             new-frame-id (if (nil? frame-id)
-                           (ctst/frame-id-by-position objects {:x new-x :y new-y})
+                           (ctst/frame-id-by-position objects (gpt/point new-x new-y))
                            (:frame-id thread))
             thread (assoc thread
-                          :position {:x new-x :y new-y}
+                          :position (gpt/point new-x new-y)
                           :frame-id new-frame-id)
 
             changes
