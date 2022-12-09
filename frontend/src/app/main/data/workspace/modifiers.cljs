@@ -80,15 +80,15 @@
         ;shape-modif (-> modif-tree (:id main-shape) :modifiers)
         orig (fn [obj] (gpt/point (:x obj) (:y obj)))
 
-        get-displacement (fn [shape]
-                           ;; Accumulate all :move modifiers of a shape
-                           (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
-                             (reduce (fn [move modifier]
-                                       (if (= (:type modifier) :move)
-                                         (gpt/add move (:vector modifier))
-                                         move))
-                                     (gpt/point 0 0)
-                                     (:geometry-child modifiers))))
+        ;; get-displacement (fn [shape]
+        ;;                    ;; Accumulate all :move modifiers of a shape
+        ;;                    (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
+        ;;                      (reduce (fn [move modifier]
+        ;;                                (if (= (:type modifier) :move)
+        ;;                                  (gpt/add move (:vector modifier))
+        ;;                                  move))
+        ;;                              (gpt/point 0 0)
+        ;;                              (:geometry-child modifiers))))
 
         ;; Distance from main-root to copy-root
         root-delta (gpt/subtract (orig copy-root) (orig main-root))
@@ -97,9 +97,9 @@
         root-displacement (gpt/subtract (orig (:modif-selrect main-root))
                                         (orig (:selrect main-root)))
 
-        ;; Displacement to apply to the copy shape
-        shape-displacement (gpt/subtract (get-displacement main-shape)
-                                         root-displacement)
+        ;; ;; Displacement to apply to the copy shape
+        ;; shape-displacement (gpt/subtract (get-displacement main-shape)
+        ;;                                  root-displacement)
 
         copy-rotation (fn [acc shape]
                        (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
@@ -114,14 +114,24 @@
                                      acc))
                                  acc
                                  (:geometry-child modifiers))))
+
+        copy-move (fn [acc shape]
+                    (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
+                      (reduce (fn [acc modifier]
+                                (if (= (:type modifier) :move)
+                                  (let [vector (:vector modifier)]
+                                    (ctm/move acc (gpt/subtract vector root-displacement)))
+                                  acc))
+                              acc
+                              (:geometry-child modifiers))))
         ]
+    (debug/logjs "root-delta" root-delta)
     (debug/logjs "root-displacement" root-displacement)
-    (debug/logjs "shape-displacement (antes)" (get-displacement main-shape))
-    (debug/logjs "shape-displacement" shape-displacement)
     (-> (ctm/empty)
         ;; (ctm/rotation center rotation)
-        (ctm/move shape-displacement)
+        ;; (ctm/move shape-displacement)
         (copy-rotation main-shape)
+        (copy-move main-shape)
         (vary-meta assoc :copied-modifier? true))))
 
 ;; $$ algoritmo tipo component sync (reposicionando la shape)
@@ -247,6 +257,7 @@
                                    ;; %% (assoc :rotation (:rotation (get-in modifiers [(:id main-shape-modif) :modifiers])))
                                    ;; %% )
                                    ]
+              (debug/logjs "new modifiers" modifiers)
               (if (seq modifiers)
                 (assoc-in modif-tree [(:id copy-shape) :modifiers] modifiers)
                 modif-tree)))
