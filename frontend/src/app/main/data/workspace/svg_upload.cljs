@@ -249,20 +249,16 @@
   (let [points (-> (gsh/rect->points rect-data)
                    (gsh/transform-points transform))
 
-        center      (gsh/center-points points)
-        rect-shape  (gsh/center->rect center (:width rect-data) (:height rect-data))
-        selrect     (gsh/rect->selrect rect-shape)
-        rect-points (gsh/rect->points rect-shape)
+        [selrect transform transform-inverse] (gsh/calculate-geometry points)]
 
-        [shape-transform shape-transform-inv rotation]
-        (gsh/calculate-adjust-matrix points rect-points (neg? (:a transform)) (neg? (:d transform)))]
-
-    (merge rect-shape
-           {:selrect selrect
-            :points points
-            :rotation rotation
-            :transform shape-transform
-            :transform-inverse shape-transform-inv})))
+    {:x (:x selrect)
+     :y (:y selrect)
+     :width (:width selrect)
+     :height (:height selrect)
+     :selrect selrect
+     :points points
+     :transform transform
+     :transform-inverse transform-inverse}))
 
 
 (defn create-rect-shape [name frame-id svg-data {:keys [attrs] :as data}]

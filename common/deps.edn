@@ -33,6 +33,7 @@
 
   funcool/datoteka {:mvn/version "3.0.66"}
   com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
+  org.la4j/la4j {:mvn/version "0.6.0"}
 
   ;; exception printing
   fipp/fipp {:mvn/version "0.6.26"}
