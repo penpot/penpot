@@ -15,13 +15,9 @@
 (def conjv (fnil conj []))
 
 (defn layout-bounds
-  [{:keys [layout-padding layout-padding-type] :as shape} shape-bounds]
+  [{:keys [layout-padding] :as shape} shape-bounds]
   (let [;; Add padding to the bounds
-        {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
-        [pad-top pad-right pad-bottom pad-left]
-        (if (= layout-padding-type :multiple)
-          [pad-top pad-right pad-bottom pad-left]
-          [pad-top pad-top pad-top pad-top])]
+        {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding]
     (gpo/pad-points shape-bounds pad-top pad-right pad-bottom pad-left)))
 
 (defn init-layout-lines

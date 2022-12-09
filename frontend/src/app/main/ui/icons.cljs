@@ -68,6 +68,7 @@
 (def auto-margin (icon-xref :auto-margin))
 (def auto-padding (icon-xref :auto-padding))
 (def auto-padding-side (icon-xref :auto-padding-side))
+(def auto-padding-both-sides (icon-xref :auto-padding-both-sides))
 (def auto-width (icon-xref :auto-width))
 (def auto-wrap (icon-xref :auto-wrap))
 (def bool-difference (icon-xref :boolean-difference))

@@ -61,7 +61,7 @@
       {:p1 p1 :p2 p2 :p3 p3}
       
       :else
-      {:p1 p1 :p2 p2 :p3 p3})))
+      {:p1 p1 :p2 p2 :p3 p3 :p4 p4})))
 
 (defn format-size [type value shape]
   (let [sizing (if (= type :width)
