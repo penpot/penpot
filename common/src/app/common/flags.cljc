@@ -12,7 +12,8 @@
 (def default
   "A common flags that affects both: backend and frontend."
   [:enable-registration
-   :enable-login])
+   :enable-login
+   :enable-webhooks])
 
 (defn parse
   [& flags]

@@ -324,7 +324,8 @@
     [:ul.dropdown.options-dropdown
      [:li {:on-click go-members :data-test "team-members"} (tr "labels.members")]
      [:li {:on-click go-invitations :data-test "team-invitations"} (tr "labels.invitations")]
-     [:li {:on-click go-webhooks :data-test "team-webhooks"} (tr "labels.webhooks")]
+     (when (contains? @cf/flags :webhooks)
+       [:li {:on-click go-webhooks :data-test "team-webhooks"} (tr "labels.webhooks")])
      [:li {:on-click go-settings :data-test "team-settings"} (tr "labels.settings")]
      [:hr]
      (when can-rename?
