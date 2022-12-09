@@ -1221,6 +1221,15 @@ msgstr "Texto"
 msgid "handoff.tabs.info"
 msgstr "Información"
 
+msgid "handoff.empty.select"
+msgstr "Elige una forma, tablero o grupo para inspeccionar sus propiedades y código"
+
+msgid "handoff.empty.help"
+msgstr "Si quieres saber más sobre la inspección puedes visitar el centro de ayuda de Penpot"
+
+msgid "handoff.empty.more-info"
+msgstr "Más información sobre la inspección"
+
 msgid "history.alert-message"
 msgstr "Estás viendo la versión %s"
 
