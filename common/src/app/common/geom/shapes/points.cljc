@@ -7,7 +7,9 @@
 (ns app.common.geom.shapes.points
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gsi]
+   [app.common.geom.shapes.rect :as gre]
    [app.common.math :as mth]))
 
 (defn origin
@@ -134,3 +136,10 @@
 (defn merge-parent-coords-bounds
   [bounds parent-bounds]
   (parent-coords-bounds (flatten bounds) parent-bounds))
+
+(defn points->selrect
+  [points]
+  (let [width (width-points points)
+        height (height-points points)
+        center (gco/center-points points)]
+    (gre/center->selrect center width height)))
