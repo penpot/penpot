@@ -164,6 +164,7 @@
                   (swap! storage dissoc :redirect-url)
                   (.replace js/location redirect-url))
                 (rt/nav' :dashboard-projects {:team-id team-id}))))]
+
     (ptk/reify ::logged-in
       IDeref
       (-deref [_] profile)
