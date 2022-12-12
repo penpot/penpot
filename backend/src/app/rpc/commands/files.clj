@@ -17,6 +17,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.rpc.commands.files.thumbnails :as-alias thumbs]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
@@ -762,7 +763,8 @@
   (s/keys :req-un [::profile-id ::name ::id]))
 
 (sv/defmethod ::rename-file
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
@@ -806,7 +808,8 @@
   (s/keys :req-un [::profile-id ::id ::is-shared]))
 
 (sv/defmethod ::set-file-shared
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id is-shared] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
@@ -829,13 +832,13 @@
   (s/keys :req-un [::id ::profile-id]))
 
 (sv/defmethod ::delete-file
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
     (absorb-library conn params)
     (mark-file-deleted conn params)))
-
 
 ;; --- MUTATION COMMAND: link-file-to-library
 
@@ -852,7 +855,8 @@
   (s/keys :req-un [::profile-id ::file-id ::library-id]))
 
 (sv/defmethod ::link-file-to-library
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id library-id] :as params}]
   (when (= file-id library-id)
     (ex/raise :type :validation
@@ -862,7 +866,6 @@
     (check-edition-permissions! conn profile-id file-id)
     (check-edition-permissions! conn profile-id library-id)
     (link-file-to-library conn params)))
-
 
 ;; --- MUTATION COMMAND: unlink-file-from-library
 
@@ -876,7 +879,8 @@
   (s/keys :req-un [::profile-id ::file-id ::library-id]))
 
 (sv/defmethod ::unlink-file-from-library
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
