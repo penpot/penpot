@@ -43,6 +43,12 @@
       max-width: 11vw;
       height: 80px;
     }
+    .hidden-name {
+      visibility: hidden;
+      width: 0;
+      height: 0;
+      float: left;
+    }
   }
 }
 

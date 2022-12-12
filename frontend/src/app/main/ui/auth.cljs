@@ -39,11 +39,13 @@
         params  (:query-params route)]
 
     (mf/use-effect
-      #(dom/set-html-title (tr "title.default")))
+     #(dom/set-html-title (tr "title.default")))
 
     [:main.auth
      [:section.auth-sidebar
-      [:span.logo {:aria-hidden "true"} i/logo]
+      [:a.logo {:href "#/"}
+       [:span {:aria-hidden true} i/logo]
+       [:span.hidden-name "Home"]]
       [:span.tagline (tr "auth.sidebar-tagline")]]
 
      [:section.auth-content
