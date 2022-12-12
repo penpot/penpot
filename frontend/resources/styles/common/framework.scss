@@ -396,6 +396,10 @@ ul.slider-dots {
     width: 43px;
   }
 
+  &.auto {
+    width: auto;
+  }
+
   // Input amounts
 
   &.pixels {

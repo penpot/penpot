@@ -1612,11 +1612,23 @@
       align-items: center;
       margin-right: 5px;
       font-family: "worksans", sans-serif;
+
+      &.justify-content {
+        align-items: start;
+        margin-top: 4px;
+      }
     }
     .btn-wrapper {
       display: flex;
       width: 100%;
       max-width: 185px;
+
+      &.justify-content {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
       .direction,
       .wrap-type,
       .align-items-style,
@@ -1711,7 +1723,8 @@
     margin-bottom: 8px;
     height: 26px;
     .gap-row,
-    .gap-column {
+    .gap-column,
+    .padding-row {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -1751,6 +1764,13 @@
       border: none;
       cursor: pointer;
       border-radius: $br-small;
+
+      &.lock {
+        border: 1px solid $color-gray-60;
+        border-radius: $br-small;
+        width: 30px;
+        height: 30px;
+      }
       &.active {
         svg {
           fill: $color-primary;
@@ -1765,10 +1785,17 @@
     }
   }
 
+  .padding-row {
+    grid-template-columns: auto 30px;
+  }
+
+  .margin-row {
+    grid-template-columns: 65px auto;
+  }
+
   .padding-row,
   .margin-row {
     display: grid;
-    grid-template-columns: 65px auto;
     height: 26px;
     .padding-icons,
     .margin-icons {
@@ -1799,15 +1826,27 @@
           fill: $color-gray-30;
         }
       }
+
       :last-child {
         border: none;
       }
     }
+
+    .padding-icons {
+      margin-bottom: 8px;
+      margin-top: 3px;
+      margin-right: 1px;
+      height: 30px;
+      width: 30px;
+    }
+
     .wrapper {
       display: flex;
       height: 26px;
+
       .input-element {
         margin: 0;
+        margin-top: 3px;
         height: 26px;
       }
     }

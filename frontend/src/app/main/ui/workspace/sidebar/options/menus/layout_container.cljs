@@ -12,7 +12,6 @@
             [app.main.ui.components.numeric-input :refer [numeric-input]]
             [app.main.ui.icons :as i]
             [app.util.dom :as dom]
-            [app.util.i18n :as i18n :refer [tr]]
             [cuerdas.core :as str]
             [rumext.v2 :as mf]))
 
@@ -154,53 +153,70 @@
 
 (mf/defc justify-content-row
   [{:keys [is-col? justify-content set-justify] :as props}]
-  [:div.justify-content-style
-   (for [justify [:start :center :end :space-around :space-between]]
-     [:button.justify.tooltip
-      {:class    (dom/classnames :active  (= justify-content justify)
-                                 :tooltip-bottom-left (not= justify :start)
-                                 :tooltip-bottom (= justify :start))
-       :alt      (dm/str "Justify content " (d/name justify))
-       :on-click #(set-justify justify)
-       :key (dm/str "justify-content" (d/name justify))}
-      (get-layout-flex-icon :justify-content justify is-col?)])])
+  [:*
+   [:div.justify-content-style
+    (for [justify [:start :center :end]]
+      [:button.justify.tooltip
+       {:class    (dom/classnames :active  (= justify-content justify)
+                                  :tooltip-bottom-left (not= justify :start)
+                                  :tooltip-bottom (= justify :start))
+        :alt      (dm/str "Justify content " (d/name justify))
+        :on-click #(set-justify justify)
+        :key (dm/str "justify-content" (d/name justify))}
+       (get-layout-flex-icon :justify-content justify is-col?)])]
+   [:div.justify-content-style
+    (for [justify [:space-around :space-between]]
+      [:button.justify.tooltip
+       {:class    (dom/classnames :active  (= justify-content justify)
+                                  :tooltip-bottom-left (not= justify :start)
+                                  :tooltip-bottom (= justify :start))
+        :alt      (dm/str "Justify content " (d/name justify))
+        :on-click #(set-justify justify)
+        :key (dm/str "justify-content" (d/name justify))}
+       (get-layout-flex-icon :justify-content justify is-col?)])]])
 
 
 (mf/defc padding-section
   [{:keys [values on-change-style on-change] :as props}]
 
   (let [padding-type (:layout-padding-type values)
-        rx (if (and (not (= :multiple (:layout-padding values)))
-                    (apply = (vals (:layout-padding values))))
-             (:p1 (:layout-padding values))
+        p1 (if (and (not (= :multiple (:layout-padding values)))
+                    (= (dm/get-in values [:layout-padding :p1])
+                       (dm/get-in values [:layout-padding :p3])))
+             (dm/get-in values [:layout-padding :p1])
+             "--")
+
+        p2 (if (and (not (= :multiple (:layout-padding values)))
+                    (= (dm/get-in values [:layout-padding :p2])
+                       (dm/get-in values [:layout-padding :p4])))
+             (dm/get-in values [:layout-padding :p2])
              "--")]
 
     [:div.padding-row
-     [:div.padding-icons
-      [:div.padding-icon.tooltip.tooltip-bottom
-       {:class (dom/classnames :selected (= padding-type :simple))
-        :alt "Padding"
-        :on-click #(on-change-style :simple)}
-       i/auto-padding]
-      [:div.padding-icon.tooltip.tooltip-bottom
-       {:class (dom/classnames :selected (= padding-type :multiple))
-        :alt "Padding - sides"
-        :on-click #(on-change-style :multiple)}
-       i/auto-padding-side]]
-     [:div.wrapper
-      (cond
-        (= padding-type :simple)
-        [:div.tooltip.tooltip-bottom
-         {:alt (tr "workspace.options.layout.padding-all")}
-         [:div.input-element.mini
+     (cond
+       (= padding-type :simple)
 
-          [:> numeric-input
-           {:placeholder "--"
-            :on-click #(dom/select-target %)
-            :on-change (partial on-change :simple)
-            :value rx}]]]
+       [:div.gap-group
+        [:div.gap-row.tooltip.tooltip-bottom-left
+         {:alt "Vertical padding"}
+         [:span.icon.rotated i/auto-padding-both-sides]
+         [:> numeric-input
+          {:placeholder "--"
+           :on-click #(dom/select-target %)
+           :on-change (partial on-change :simple :p1)
+           :value p1}]]
 
-        (= padding-type :multiple)
+        [:div.gap-column.tooltip.tooltip-bottom-left
+         {:alt "Horizontal padding"}
+         [:span.icon i/auto-padding-both-sides]
+         [:> numeric-input
+          {:placeholder "--"
+           :on-click #(dom/select-target %)
+           :on-change (partial on-change :simple :p2)
+           :value p2}]]]
+
+       (= padding-type :multiple)
+       [:div.wrapper
         (for [num [:p1 :p2 :p3 :p4]]
           [:div.tooltip.tooltip-bottom
            {:key (dm/str "padding-" (d/name num))
@@ -209,12 +225,19 @@
                    :p2 "Right"
                    :p3 "Bottom"
                    :p4 "Left")}
-           [:div.input-element.mini
+           [:div.input-element.auto
             [:> numeric-input
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-change num)
-              :value (num (:layout-padding values))}]]]))]]))
+              :on-change (partial on-change :multiple num)
+              :value (num (:layout-padding values))}]]])])
+
+     [:div.padding-icons
+      [:div.padding-icon.tooltip.tooltip-bottom
+       {:class (dom/classnames :selected (= padding-type :multiple))
+        :alt "Padding - multiple"
+        :on-click #(on-change-style (if (= padding-type :multiple) :simple :multiple))}
+       i/auto-padding-side]]]))
 
 (mf/defc gap-section
   [{:keys [gap-selected? set-gap gap-value toggle-gap-type gap-type]}]
@@ -358,10 +381,17 @@
           (st/emit! (dwsl/update-layout ids {:layout-padding-type type})))
 
         on-padding-change
-        (fn [type val]
-          (if (= type :simple)
-            (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p2 val :p3 val :p4 val}}))
-            (st/emit! (dwsl/update-layout ids {:layout-padding {type val}}))))]
+        (fn [type prop val]
+          (prn "??" type prop val)
+          (cond
+            (and (= type :simple) (= prop :p1))
+            (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
+
+            (and (= type :simple) (= prop :p2))
+            (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
+
+            :else
+            (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))]
 
     [:div.element-set
      [:div.element-set-title
@@ -415,7 +445,7 @@
 
           [:div.layout-row
            [:div.justify-content.row-title "Justify"]
-           [:div.btn-wrapper
+           [:div.btn-wrapper.justify-content
             [:& justify-content-row {:is-col? is-col?
                                      :justify-content justify-content
                                      :set-justify set-justify-content}]]]
