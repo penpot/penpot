@@ -11,6 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.rect :as gpr]
+   [app.common.geom.shapes.points :as gpo]
    [app.common.math :as mth]
    [app.common.pages.common :as cpc]
    [app.common.pages.helpers :as cph]
@@ -53,17 +54,27 @@
 
                       get-bounds (fn [shape]
                                    (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
+                                     ;; (if (some? modifiers)
+                                     ;;   (-> (:points shape)
+                                     ;;       (gsh/transform-bounds modifiers)
+                                     ;;       (gpo/points->selrect))
+                                     ;;   (:selrect shape))))
                                      (cond-> (:points shape)
                                        (some? modifiers)
-                                       (gsh/transform-bounds modifiers))))
+                                       (-> (gsh/transform-bounds modifiers)
+                                           ;; (gpo/points->selrect)
+                                           ))))
 
+                      _ (debug/logjs "points" (map get-bounds children))
                       ;; ;; Update the bounds of the root group to accomodate the moved shapes,
                       ;; ;; so its position is also synced to the copy root later.
                       ;; root-shape (gsh/update-group-selrect root-shape children)
                       root-shape (assoc root-shape
                                        :modif-selrect
+                                       ;; (gpr/join-rects (map get-bounds children))
                                        (-> (mapcat get-bounds children)
                                            (gpr/points->selrect)))
+                                           ;; (gpo/points->selrect)))
                       ]
                   [(:id root-shape) [root-shape (ctn/get-instances objects root-shape)]]))))]
 
@@ -80,15 +91,15 @@
         ;shape-modif (-> modif-tree (:id main-shape) :modifiers)
         orig (fn [obj] (gpt/point (:x obj) (:y obj)))
 
-        ;; get-displacement (fn [shape]
-        ;;                    ;; Accumulate all :move modifiers of a shape
-        ;;                    (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
-        ;;                      (reduce (fn [move modifier]
-        ;;                                (if (= (:type modifier) :move)
-        ;;                                  (gpt/add move (:vector modifier))
-        ;;                                  move))
-        ;;                              (gpt/point 0 0)
-        ;;                              (:geometry-child modifiers))))
+        get-displacement (fn [shape]
+                           ;; Accumulate all :move modifiers of a shape
+                           (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
+                             (reduce (fn [move modifier]
+                                       (if (= (:type modifier) :move)
+                                         (gpt/add move (:vector modifier))
+                                         move))
+                                     (gpt/point 0 0)
+                                     (:geometry-child modifiers))))
 
         ;; Distance from main-root to copy-root
         root-delta (gpt/subtract (orig copy-root) (orig main-root))
@@ -97,9 +108,9 @@
         root-displacement (gpt/subtract (orig (:modif-selrect main-root))
                                         (orig (:selrect main-root)))
 
-        ;; ;; Displacement to apply to the copy shape
-        ;; shape-displacement (gpt/subtract (get-displacement main-shape)
-        ;;                                  root-displacement)
+        ;; Displacement to apply to the copy shape
+        shape-displacement (gpt/subtract (get-displacement main-shape)
+                                         root-displacement)
 
         copy-rotation (fn [acc shape]
                        (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
@@ -115,23 +126,23 @@
                                  acc
                                  (:geometry-child modifiers))))
 
-        copy-move (fn [acc shape]
-                    (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
-                      (reduce (fn [acc modifier]
-                                (if (= (:type modifier) :move)
-                                  (let [vector (:vector modifier)]
-                                    (ctm/move acc (gpt/subtract vector root-displacement)))
-                                  acc))
-                              acc
-                              (:geometry-child modifiers))))
+        ;; copy-move (fn [acc shape]
+        ;;             (let [modifiers (-> (get modif-tree (:id shape)) :modifiers)]
+        ;;               (reduce (fn [acc modifier]
+        ;;                         (if (= (:type modifier) :move)
+        ;;                           (let [vector (:vector modifier)]
+        ;;                             (ctm/move acc (gpt/subtract vector root-displacement)))
+        ;;                           acc))
+        ;;                       acc
+        ;;                       (:geometry-child modifiers))))
         ]
     (debug/logjs "root-delta" root-delta)
     (debug/logjs "root-displacement" root-displacement)
     (-> (ctm/empty)
         ;; (ctm/rotation center rotation)
-        ;; (ctm/move shape-displacement)
+        (ctm/move shape-displacement)
         (copy-rotation main-shape)
-        (copy-move main-shape)
+        ;; (copy-move main-shape)
         (vary-meta assoc :copied-modifier? true))))
 
 ;; $$ algoritmo tipo component sync (reposicionando la shape)
