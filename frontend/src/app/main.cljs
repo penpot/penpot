@@ -60,6 +60,7 @@
       (rx/merge
        (rx/of (ev/initialize)
               (du/initialize-profile))
+
        (->> stream
             (rx/filter du/profile-fetched?)
             (rx/take 1)
