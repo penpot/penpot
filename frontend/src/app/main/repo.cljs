@@ -60,6 +60,7 @@
                           http/conditional-decode-transit)]
      (->> (http/send! {:method :get
                        :uri (u/join @cf/public-uri "api/rpc/query/" (name id))
+                       :headers {"accept" "application/transit+json"}
                        :credentials "include"
                        :query params})
           (rx/map decode-transit)
@@ -71,6 +72,7 @@
   [id params]
   (->> (http/send! {:method :post
                     :uri (u/join @cf/public-uri "api/rpc/mutation/" (name id))
+                    :headers {"accept" "application/transit+json"}
                     :credentials "include"
                     :body (http/transit-data params)})
        (rx/map http/conditional-decode-transit)
@@ -88,6 +90,7 @@
     (->> (http/send! {:method method
                       :uri (u/join @cf/public-uri "api/rpc/command/" (name id))
                       :credentials "include"
+                      :headers {"accept" "application/transit+json"}
                       :body (when (= method :post)
                               (if form-data?
                                 (http/form-data params)
