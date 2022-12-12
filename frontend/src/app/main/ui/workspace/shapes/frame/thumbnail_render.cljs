@@ -32,6 +32,7 @@
             canvas-height  (.-height canvas-node)]
         (.clearRect canvas-context 0 0 canvas-width canvas-height)
         (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
+        (dom/set-property! canvas-node "data-ready" "true")
         true))
     (catch :default err
       (.error js/console err)
@@ -95,11 +96,13 @@
 
         on-image-load
         (mf/use-callback
+         (mf/deps @show-frame-thumbnail)
          (fn []
            (ts/raf
             #(let [canvas-node (mf/ref-val frame-canvas-ref)
                    img-node    (mf/ref-val frame-image-ref)]
                (when (draw-thumbnail-canvas! canvas-node img-node)
+                 (reset! image-url nil)
                  (when @show-frame-thumbnail
                    (reset! show-frame-thumbnail false))
                  ;; If we don't have the thumbnail data saved (normally the first load) we update the data
@@ -129,12 +132,13 @@
                      (dom/set-property! "fill" "none")
                      (obj/set! "innerHTML" (dm/str style-str frame-html)))
                  img-src  (-> svg-node dom/node->xml dom/svg->data-uri)]
+
              (reset! image-url img-src))))
 
         on-change-frame
         (mf/use-callback
          (fn []
-           (when (and (some? @node-ref) @regenerate-thumbnail)
+           (when (and (some? @node-ref) @rendered? @regenerate-thumbnail)
              (let [loading-images? (some? (dom/query @node-ref "[data-loading='true']"))
                    loading-fonts? (some? (dom/query (dm/str "#frame-container-" (:id shape) " > style[data-loading='true']")))]
                (when (and (not loading-images?) (not loading-fonts?))
@@ -237,7 +241,6 @@
          {:key (dm/str "thumbnail-canvas-" (:id shape))
           :ref frame-canvas-ref
           :data-object-id (dm/str page-id (:id shape))
-          :data-empty @show-frame-thumbnail
           :width fixed-width
           :height fixed-height
           ;; DEBUG

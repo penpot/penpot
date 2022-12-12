@@ -431,7 +431,7 @@
         stroke-id (dm/fmt "strokes-%" (:id shape))
         stroke-props (-> (obj/create)
                          (obj/set! "id" stroke-id)
-                         (obj/set! "class" "strokes")
+                         (obj/set! "className" "strokes")
                          (cond->
                           ;; There is a blur
                           (and (:blur shape) (not (cph/frame-shape? shape)) (-> shape :blur :hidden not))

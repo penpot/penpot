@@ -34,7 +34,7 @@
    (fn [subs]
      ;; We look in the DOM a canvas that 1) matches the id and 2) that it's not empty
      ;; will be empty on first rendering before drawing the thumbnail and we don't want to store that
-     (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'][data-empty='false']" object-id))]
+     (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'][data-ready='true']" object-id))]
        (if (some? node)
          (.toBlob node (fn [blob]
                          (rx/push! subs blob)
@@ -79,7 +79,9 @@
                    (let [params {:file-id file-id :object-id object-id :data data}]
                      (rx/merge
                       ;; Update the local copy of the thumbnails so we don't need to request it again
-                      (rx/of #(update % :workspace-thumbnails assoc object-id data))
+                      (if (some? data)
+                        (rx/of #(update % :workspace-thumbnails assoc object-id data))
+                        (rx/empty))
                       (->> (rp/cmd! :upsert-file-object-thumbnail params)
                            (rx/ignore))))
 
