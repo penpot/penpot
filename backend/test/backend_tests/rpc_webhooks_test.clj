@@ -12,8 +12,6 @@
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [datoteka.fs :as fs]
-   [datoteka.io :as io]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
@@ -51,7 +49,6 @@
             (t/is (= (:team-id params) (:team-id result)))
             (t/is (= (:mtype params) (:mtype result)))
             (vreset! whook result))))
-
 
       (th/reset-mock! http-mock)
 
@@ -144,3 +141,41 @@
             (t/is (= (:code error-data) :object-not-found)))))
 
       )))
+
+(t/deftest webhooks-quotes
+  (with-mocks [http-mock {:target 'app.http.client/req!
+                          :return {:status 200}}]
+
+    (let [prof    (th/create-profile* 1 {:is-active true})
+          team-id (:default-team-id prof)
+          params  {::th/type :create-webhook
+                   :profile-id (:id prof)
+                   :team-id team-id
+                   :uri "http://example.com"
+                   :mtype "application/json"}
+          out1    (th/command! params)
+          out2    (th/command! params)
+          out3    (th/command! params)
+          out4    (th/command! params)
+          out5    (th/command! params)
+          out6    (th/command! params)
+          out7    (th/command! params)
+          out8    (th/command! params)
+          out9    (th/command! params)]
+
+      (t/is (= 8 (:call-count @http-mock)))
+
+      (t/is (nil? (:error out1)))
+      (t/is (nil? (:error out2)))
+      (t/is (nil? (:error out3)))
+      (t/is (nil? (:error out4)))
+      (t/is (nil? (:error out5)))
+      (t/is (nil? (:error out6)))
+      (t/is (nil? (:error out7)))
+      (t/is (nil? (:error out8)))
+
+      (let [error      (:error out9)
+            error-data (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type error-data) :restriction))
+        (t/is (= (:code error-data) :webhooks-quote-reached))))))

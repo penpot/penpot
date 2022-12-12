@@ -22,11 +22,11 @@
 
 ;; --- PROC
 
-(defn lookup-webhooks-by-team
+(defn- lookup-webhooks-by-team
   [pool team-id]
   (db/exec! pool ["select * from webhook where team_id=? and is_active=true" team-id]))
 
-(defn lookup-webhooks-by-project
+(defn- lookup-webhooks-by-project
   [pool project-id]
   (let [sql [(str "select * from webhook as w"
                   "  join project as p on (p.team_id = w.team_id)"
@@ -34,7 +34,7 @@
              project-id]]
     (db/exec! pool sql)))
 
-(defn lookup-webhooks-by-file
+(defn- lookup-webhooks-by-file
   [pool file-id]
   (let [sql [(str "select * from webhook as w"
                   "  join project as p on (p.team_id = w.team_id)"
@@ -43,7 +43,7 @@
              file-id]]
     (db/exec! pool sql)))
 
-(defn lookup-webhooks
+(defn- lookup-webhooks
   [{:keys [::db/pool]} {:keys [props] :as event}]
   (or (some->> (:team-id props) (lookup-webhooks-by-team pool))
       (some->> (:project-id props) (lookup-webhooks-by-project pool))
@@ -77,7 +77,7 @@
 (declare interpret-exception)
 (declare interpret-response)
 
-(def ^:private mapper
+(def ^:private json-mapper
   (json/mapper
    {:encode-key-fn str/camel
     :decode-key-fn (comp keyword str/kebab)
@@ -123,7 +123,7 @@
             whook (::config props)
 
             body  (case (:mtype whook)
-                    "application/json" (json/encode-str event mapper)
+                    "application/json" (json/encode-str event json-mapper)
                     "application/transit+json" (t/encode-str event)
                     "application/x-www-form-urlencoded" (uri/map->query-string event))]
 

@@ -99,8 +99,8 @@
   {::doc/added "1.17"}
   [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id team-id] :as params}]
   (check-edition-permissions! pool profile-id team-id)
-  (->> (validate-webhook! cfg nil params)
-       (p/fmap executor (fn [_] (validate-quotes! cfg params)))
+  (->> (validate-quotes! cfg params)
+       (p/fmap executor (fn [_] (validate-webhook! cfg nil params)))
        (p/fmap executor (fn [_] (insert-webhook! cfg params)))))
 
 (s/def ::update-webhook
