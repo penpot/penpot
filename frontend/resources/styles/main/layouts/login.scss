@@ -87,7 +87,6 @@
   .btn-large {
     flex-grow: 1;
     font-size: 14px;
-    font-family: sourcesanspro;
     font-style: normal;
     font-weight: normal;
   }
@@ -102,7 +101,8 @@
       height: 20px;
       margin-right: 1rem;
     }
-    &:hover {
+    &:hover,
+    &:focus {
       background-color: #2065d7;
       color: $color-white;
     }
@@ -120,7 +120,8 @@
       margin-right: 1rem;
     }
 
-    &:hover {
+    &:hover,
+    &:focus {
       background-color: #ee5f18;
       color: $color-white;
     }
@@ -138,7 +139,8 @@
       margin-right: 1rem;
     }
 
-    &:hover {
+    &:hover,
+    &:focus {
       background-color: #2f2f2f;
       color: $color-white;
     }
@@ -186,7 +188,12 @@
       margin-bottom: 10px;
       a {
         font-size: $fs14;
-        color: $color-primary-dark;
+        font-weight: 500;
+        color: $color-gray-50;
+        &:hover,
+        &:focus {
+          text-decoration: underline;
+        }
       }
     }
   }
@@ -198,6 +205,7 @@
 
     span {
       margin: 0 $size-2;
+      color: $color-gray-40;
     }
   }
 }

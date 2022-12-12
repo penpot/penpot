@@ -99,7 +99,9 @@ textarea {
   }
 
   a {
-    text-decoration: underline;
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   p {
@@ -146,7 +148,7 @@ textarea {
 
   label {
     font-size: $fs12;
-    color: $color-gray-30;
+    color: $color-gray-50;
     position: absolute;
     left: 15px;
     top: 6px;
@@ -216,6 +218,7 @@ textarea {
   }
 
   .hint {
+    color: $color-gray-40;
     padding: 4px;
     font-size: $fs12;
   }

@@ -41,9 +41,9 @@
     (mf/use-effect
       #(dom/set-html-title (tr "title.default")))
 
-    [:div.auth
+    [:main.auth
      [:section.auth-sidebar
-      [:a.logo {:href "#/"} i/logo]
+      [:span.logo {:aria-hidden "true"} i/logo]
       [:span.tagline (tr "auth.sidebar-tagline")]]
 
      [:section.auth-content

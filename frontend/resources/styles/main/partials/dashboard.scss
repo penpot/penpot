@@ -89,9 +89,9 @@
         margin-bottom: 8px;
       }
       .info {
-        color: $color-gray-30;
+        color: $color-gray-50;
         margin-bottom: 20px;
-        font-size: $fs16;
+        font-size: $fs14;
       }
     }
     .action {
@@ -551,6 +551,10 @@
           width: 16px;
           height: 16px;
         }
+        span {
+          font-weight: 500;
+          font-size: $fs14;
+        }
       }
 
       .template-link {
@@ -567,7 +571,8 @@
 
       .template-link-text {
         font-size: 12px;
-        color: $color-gray-30;
+        margin-top: $size-2;
+        color: $color-gray-50;
       }
 
       &:hover {

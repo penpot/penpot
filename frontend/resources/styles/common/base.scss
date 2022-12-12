@@ -54,17 +54,13 @@ svg {
   }
 }
 
-*:focus {
-  outline: none;
-  box-shadow: 0;
-}
-
 a {
   cursor: pointer;
-  color: $color-primary-dark;
+  font-weight: 500;
+  color: $color-gray-50;
 
   &:hover {
-    color: $color-primary;
+    text-decoration: underline;
   }
 }
 

@@ -812,6 +812,10 @@ msgstr "Este fichero ya se ha usado con los Componentes V2 activados."
 msgid "errors.email-already-exists"
 msgstr "Este correo ya está en uso"
 
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Por favor, escribe un email válido"
+
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.email-already-validated"
 msgstr "Este correo ya está validado."

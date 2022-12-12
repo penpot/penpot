@@ -24,10 +24,10 @@
 (s/def ::email-2 ::us/email)
 
 (defn- email-equality
-  [data]
+  [errors data]
   (let [email-1 (:email-1 data)
         email-2 (:email-2 data)]
-    (cond-> {}
+    (cond-> errors
       (and email-1 email-2 (not= email-1 email-2))
       (assoc :email-2 {:message (tr "errors.email-invalid-confirmation")}))))
 
