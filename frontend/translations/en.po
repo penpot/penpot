@@ -1118,6 +1118,15 @@ msgstr "Text"
 msgid "handoff.tabs.info"
 msgstr "Info"
 
+msgid "handoff.empty.select"
+msgstr "Select a shape, board or group to inspect their properties and code"
+
+msgid "handoff.empty.help"
+msgstr "If you want to know more about design inspect visit Penpot's help center"
+
+msgid "handoff.empty.more-info"
+msgstr "More info about inspect"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
 msgstr "Shortcuts"
@@ -4449,3 +4458,4 @@ msgstr "The font %s could not be loaded"
 
 msgid "errors.bad-font-plural"
 msgstr "The fonts %s could not be loaded"
+

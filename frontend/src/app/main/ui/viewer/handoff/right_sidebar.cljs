@@ -13,6 +13,7 @@
    [app.main.ui.viewer.handoff.attributes :refer [attributes]]
    [app.main.ui.viewer.handoff.code :refer [code]]
    [app.main.ui.viewer.handoff.selection-feedback :refer [resolve-shapes]]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -30,7 +31,7 @@
 
     [:aside.settings-bar.settings-bar-right {:class (when @expanded "expanded")}
      [:div.settings-bar-inside
-      (when (seq shapes)
+      (if (seq shapes)
         [:div.tool-window
          [:div.tool-window-bar.big
           (if (> (count shapes) 1)
@@ -69,8 +70,15 @@
            [:& tab-element {:id :code :title (tr "handoff.tabs.code")}
             [:& code {:frame frame
                       :shapes shapes
-                      :on-expand (fn[]
+                      :on-expand (fn []
                                    (when (= from :workspace)
                                      (dw/set-inspect-expanded (not expanded)))
                                    (swap! expanded not))
-                      :from from}]]]]])]]))
+                      :from from}]]]]]
+        [:div.empty
+         [:span.tool-window-bar-icon i/code]
+         [:div (tr "handoff.empty.select")]
+         [:span.tool-window-bar-icon i/help]
+         [:div (tr "handoff.empty.help")]
+         [:button.btn-primary.action {:on-click #(dom/open-new-window "https://help.penpot.app/user-guide/inspect/")} (tr "handoff.empty.more-info")]
+         ])]]))

@@ -174,6 +174,42 @@
     }
   }
 
+  .empty {
+    color: $color-gray-20;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+    padding: 0 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 12px;
+
+    .tool-window-bar-icon {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 16px;
+    }
+
+    svg {
+      width: 32px;
+      height: 32px;
+      fill: $color-gray-30;
+    }
+
+    .btn-primary {
+      margin-top: 10px;
+      background-color: $color-gray-60;
+      color: $color-gray-10;
+      &:hover {
+        background-color: $color-primary;
+        color: $color-black;
+      }
+    }
+  }
+
   & > .resize-area {
     position: absolute;
     width: 8px;
