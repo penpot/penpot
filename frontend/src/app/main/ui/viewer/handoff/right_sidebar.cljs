@@ -65,7 +65,8 @@
             [:& attributes {:page-id page-id
                             :file-id file-id
                             :frame frame
-                            :shapes shapes}]]
+                            :shapes shapes
+                            :from from}]]
 
            [:& tab-element {:id :code :title (tr "handoff.tabs.code")}
             [:& code {:frame frame
