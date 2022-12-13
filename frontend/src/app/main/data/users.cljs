@@ -87,7 +87,7 @@
   (ptk/reify ::fetch-teams
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/query! :teams)
+      (->> (rp/cmd! :get-teams)
            (rx/map teams-fetched)))))
 
 ;; --- EVENT: fetch-profile
@@ -446,7 +446,7 @@
     (ptk/reify ::fetch-team-users
       ptk/WatchEvent
       (watch [_ _ _]
-        (->> (rp/query! :team-users {:team-id team-id})
+        (->> (rp/cmd! :get-team-users {:team-id team-id})
              (rx/map #(partial fetched %)))))))
 
 (defn fetch-file-comments-users

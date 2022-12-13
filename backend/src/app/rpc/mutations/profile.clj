@@ -17,10 +17,10 @@
    [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
-   [app.rpc.commands.auth :as cmd.auth]
+   [app.rpc.commands.auth :as auth]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.storage :as sto]
    [app.tokens :as tokens]
@@ -111,7 +111,7 @@
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
   (let [profile (db/get-by-id conn :profile profile-id)]
-    (when-not (:valid (cmd.auth/verify-password old-password (:password profile)))
+    (when-not (:valid (auth/verify-password old-password (:password profile)))
       (ex/raise :type :validation
                 :code :old-password-not-match))
     profile))
@@ -119,7 +119,7 @@
 (defn update-profile-password!
   [conn {:keys [id password] :as profile}]
   (db/update! conn :profile
-              {:password (cmd.auth/derive-password password)}
+              {:password (auth/derive-password password)}
               {:id id}))
 
 ;; --- MUTATION: Update Photo
@@ -182,7 +182,7 @@
 (defn- change-email-immediately
   [{:keys [conn]} {:keys [profile email] :as params}]
   (when (not= email (:email profile))
-    (cmd.auth/check-profile-existence! conn params))
+    (auth/check-profile-existence! conn params))
   (db/update! conn :profile
               {:email email}
               {:id (:id profile)})
@@ -201,7 +201,7 @@
                                   :exp (dt/in-future {:days 30})})]
 
     (when (not= email (:email profile))
-      (cmd.auth/check-profile-existence! conn params))
+      (auth/check-profile-existence! conn params))
 
     (when-not (eml/allow-send-emails? conn profile)
       (ex/raise :type :validation

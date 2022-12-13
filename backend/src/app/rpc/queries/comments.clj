@@ -9,8 +9,8 @@
    [app.db :as db]
    [app.rpc.commands.comments :as cmd.comments]
    [app.rpc.commands.files :as cmd.files]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
