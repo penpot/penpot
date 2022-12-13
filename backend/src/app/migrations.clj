@@ -268,6 +268,9 @@
 
    {:name "0086-add-webhook-delivery-table"
     :fn (mg/resource "app/migrations/sql/0086-add-webhook-delivery-table.sql")}
+
+   {:name "0087-mod-task-table"
+    :fn (mg/resource "app/migrations/sql/0087-mod-task-table.sql")}
    ])
 
 
