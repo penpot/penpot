@@ -10,6 +10,7 @@
    [app.db :as db]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.queries.projects :as projects]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -30,6 +31,7 @@
          (contains? o :project-id)))))
 
 (sv/defmethod ::font-variants
+  {::doc/added "1.7"}
   [{:keys [pool] :as cfg} {:keys [profile-id team-id file-id project-id] :as params}]
   (with-open [conn (db/open pool)]
     (cond
