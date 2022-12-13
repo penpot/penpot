@@ -63,6 +63,16 @@
         (t/is (th/success? out))
         (t/is (= 1 (:call-count (deref mock)))))
 
+      ;; get invitation token
+      (let [params {::th/type :get-team-invitation-token
+                    :profile-id (:id profile1)
+                    :team-id (:id team)
+                    :email "foo@bar.com"}
+            out    (th/command! params)]
+        (t/is (th/success? out))
+        (let [result (:result out)]
+          (contains? result :token)))
+
       ;; invite user with bounce
       (th/reset-mock! mock)
 
@@ -234,8 +244,6 @@
           (t/is (= :invalid-token (:code edata)))))
 
       )))
-
-
 
 (t/deftest invite-team-member-with-email-verification-disabled
   (with-mocks [mock {:target 'app.emails/send! :return nil}]

@@ -322,7 +322,7 @@
     ::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::wrk/executor       (ig/ref ::wrk/executor)
-
+    ::props              (ig/ref :app.setup/props)
     :pool                (ig/ref ::db/pool)
     :session             (ig/ref :app.http.session/manager)
     :sprops              (ig/ref :app.setup/props)

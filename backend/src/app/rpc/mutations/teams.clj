@@ -153,21 +153,20 @@
                   :code :profile-is-muted
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
 
-      (let [invitations (->> emails
+      (let [cfg         (assoc cfg ::cmd.teams/conn conn)
+            invitations (->> emails
                              (map (fn [email]
-                                    (assoc cfg
-                                           :email email
-                                           :conn conn
-                                           :team team
-                                           :profile profile
-                                           :role role)))
-                             (map #'cmd.teams/create-invitation))]
+                                    {:email (str/lower email)
+                                     :team team
+                                     :profile profile
+                                     :role role}))
+                             (map (partial #'cmd.teams/create-invitation cfg)))]
         (with-meta (vec invitations)
           {::audit/props {:invitations (count invitations)}})))))
 
 ;; --- Mutation: Create Team & Invite Members
 
-(s/def ::create-team-and-invite-members ::cmd.teams/create-team-and-invitations)
+(s/def ::create-team-and-invite-members ::cmd.teams/create-team-with-invitations)
 
 (sv/defmethod ::create-team-and-invite-members
   {::doc/added "1.0"
@@ -175,17 +174,17 @@
   [{:keys [::db/pool] :as cfg} {:keys [profile-id emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [team     (cmd.teams/create-team conn params)
-          profile  (db/get-by-id conn :profile profile-id)]
+          profile  (db/get-by-id conn :profile profile-id)
+          cfg      (assoc cfg ::cmd.teams/conn conn)]
 
       ;; Create invitations for all provided emails.
-      (doseq [email emails]
-        (#'cmd.teams/create-invitation
-         (assoc cfg
-                :conn conn
-                :team team
-                :profile profile
-                :email email
-                :role role)))
+      (->> emails
+           (map (fn [email]
+                  {:team team
+                   :profile profile
+                   :email (str/lower email)
+                   :role role}))
+           (run! (partial #'cmd.teams/create-invitation cfg)))
 
       (-> team
           (vary-meta assoc ::audit/props {:invitations (count emails)})

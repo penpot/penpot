@@ -1606,6 +1606,10 @@ msgstr "Renombra el equipo"
 msgid "labels.resend-invitation"
 msgstr "Reenviar invitacion"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Copiar link de invitación"
+
 #: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "Reintentar"
@@ -2171,6 +2175,11 @@ msgstr "Actualizar un componente en biblioteca"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Invitación enviada con éxito"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Enlace de invitacion copiado"
+
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
