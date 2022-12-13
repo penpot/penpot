@@ -17,14 +17,13 @@
    [app.main :as main]
    [app.media]
    [app.migrations]
-   [app.rpc.helpers :as rph]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files.create :as files.create]
    [app.rpc.commands.files.update :as files.update]
+   [app.rpc.commands.teams :as teams]
+   [app.rpc.helpers :as rph]
    [app.rpc.mutations.profile :as profile]
-   [app.rpc.mutations.projects :as projects]
-   [app.rpc.mutations.teams :as teams]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -172,7 +171,7 @@
      (->> (merge {:id (mk-uuid "project" i)
                   :name (str "project" i)}
                  params)
-          (#'projects/create-project conn)))))
+          (#'teams/create-project conn)))))
 
 (defn create-file*
   ([i params]
@@ -254,7 +253,7 @@
   ([params] (create-project-role* *pool* params))
   ([pool {:keys [project-id profile-id role] :or {role :owner}}]
    (with-open [conn (db/open pool)]
-     (#'projects/create-project-role conn {:project-id project-id
+     (#'teams/create-project-role conn {:project-id project-id
                                            :profile-id profile-id
                                            :role role}))))
 

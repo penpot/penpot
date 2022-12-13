@@ -9,13 +9,14 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.queries.projects :as projects]
-   [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 ;; --- Query: Team Font Variants
 
+;; FIXME: PLEASE RIGHT NOW
 ;; TODO: deprecated, should be removed on 1.7.x
 
 (s/def ::team-id ::us/uuid)

@@ -8,8 +8,8 @@
   (:require
    [app.common.spec :as us]
    [app.db :as db]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.permissions :as perms]
-   [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 

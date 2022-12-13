@@ -268,6 +268,7 @@
                      'app.rpc.commands.management
                      'app.rpc.commands.verify-token
                      'app.rpc.commands.search
+                     'app.rpc.commands.teams
                      'app.rpc.commands.auth
                      'app.rpc.commands.ldap
                      'app.rpc.commands.demo
