@@ -22,7 +22,8 @@
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
 
-#?(:clj (set! *warn-on-reflection* true))
+#?(:clj (set! *warn-on-reflection* true)
+   :cljs (ex/ignoring nil))
 
 ;; --- Relative Movement
 
