@@ -14,24 +14,6 @@
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
-;; --- Query: Team Font Variants
-
-;; FIXME: PLEASE RIGHT NOW
-;; TODO: deprecated, should be removed on 1.7.x
-
-(s/def ::team-id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
-(s/def ::team-font-variants
-  (s/keys :req-un [::profile-id ::team-id]))
-
-(sv/defmethod ::team-font-variants
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
-  (with-open [conn (db/open pool)]
-    (teams/check-read-permissions! conn profile-id team-id)
-    (db/query conn :team-font-variant
-              {:team-id team-id
-               :deleted-at nil})))
-
 ;; --- Query: Font Variants
 
 (s/def ::file-id ::us/uuid)
