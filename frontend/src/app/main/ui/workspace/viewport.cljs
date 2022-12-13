@@ -154,7 +154,7 @@
 
         on-frame-enter    (actions/on-frame-enter frame-hover)
         on-frame-leave    (actions/on-frame-leave frame-hover)
-        on-frame-select   (actions/on-frame-select selected)
+        on-frame-select   (actions/on-frame-select selected workspace-read-only?)
 
         disable-events?          (contains? layout :comments)
         show-comments?           (= drawing-tool :comments)

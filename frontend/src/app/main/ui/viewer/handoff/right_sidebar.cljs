@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.handoff.right-sidebar
   (:require
    [app.main.data.workspace :as dw]
+   [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.icons :as i]
@@ -73,7 +74,7 @@
                       :shapes shapes
                       :on-expand (fn []
                                    (when (= from :workspace)
-                                     (dw/set-inspect-expanded (not expanded)))
+                                     (st/emit! (dw/set-inspect-expanded (not @expanded))))
                                    (swap! expanded not))
                       :from from}]]]]]
         [:div.empty
@@ -81,5 +82,4 @@
          [:div (tr "handoff.empty.select")]
          [:span.tool-window-bar-icon i/help]
          [:div (tr "handoff.empty.help")]
-         [:button.btn-primary.action {:on-click #(dom/open-new-window "https://help.penpot.app/user-guide/inspect/")} (tr "handoff.empty.more-info")]
-         ])]]))
+         [:button.btn-primary.action {:on-click #(dom/open-new-window "https://help.penpot.app/user-guide/inspect/")} (tr "handoff.empty.more-info")]])]]))
