@@ -125,16 +125,16 @@
            (st/emit! (dw/start-move-selected))))))))
 
 (defn on-frame-select
-  [selected]
+  [selected workspace-read-only?]
   (mf/use-callback
-   (mf/deps selected)
+   (mf/deps selected workspace-read-only?)
    (fn [event id]
      (let [shift? (kbd/shift? event)
            selected? (contains? selected id)
            selected-drawtool (deref refs/selected-drawing-tool)]
        (st/emit! (when (or shift? (not selected?))
                    (dw/select-shape id shift?))
-                 (when (and (nil? selected-drawtool) (not shift?))
+                 (when (and (nil? selected-drawtool) (not shift?) (not workspace-read-only?))
                    (dw/start-move-selected)))))))
 
 (defn on-frame-enter

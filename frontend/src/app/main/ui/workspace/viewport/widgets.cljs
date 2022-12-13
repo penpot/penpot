@@ -97,8 +97,7 @@
              (when (= 1 (.-which event))
                (dom/prevent-default event)
                (dom/stop-propagation event)
-               (when-not workspace-read-only?
-                 (on-frame-select event (:id frame)))))))
+                 (on-frame-select event (:id frame))))))
 
         on-double-click
         (mf/use-callback
