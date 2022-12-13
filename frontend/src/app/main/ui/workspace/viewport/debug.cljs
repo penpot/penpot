@@ -75,8 +75,8 @@
                  points [start-p
                          (-> start-p (gpt/add (xv line-width)))
                          (-> start-p (gpt/add (xv line-width)) (gpt/add (yv line-height)))
-                         (-> start-p (gpt/add (yv line-height)))
-                         ]]
+                         (-> start-p (gpt/add (yv line-height)))]]
+
              [:g.layout-line {:key (dm/str "line-" idx)}
               [:polygon {:points (->> points (map #(dm/fmt "%, %" (:x %) (:y %))) (str/join " "))
                          :style {:stroke "red" :stroke-width (/ 2 zoom) :stroke-dasharray (dm/str (/ 10 zoom) " " (/ 5 zoom))}}]]))]))))
