@@ -46,10 +46,12 @@
     (cond-> code
       (= type "svg") (beautify/html #js {"indent_size" 2}))))
 
-(defn get-flex-elements [page-id shapes]
+(defn get-flex-elements [page-id shapes from]
   (let [ids (mapv :id shapes)
         ids (hooks/use-equal-memo ids)
-        get-layout-children-refs (mf/use-memo (mf/deps ids page-id) #(refs/get-flex-child-viewer ids page-id))]
+        get-layout-children-refs (mf/use-memo (mf/deps ids page-id from) #(if (= from :workspace)
+                                                                            (refs/workspace-get-flex-child ids)
+                                                                            (refs/get-flex-child-viewer ids page-id)))]
 
     (mf/deref get-layout-children-refs)))
 
@@ -61,7 +63,7 @@
                          (map #(gsh/translate-to-frame % frame)))
         route      (mf/deref refs/route)
         page-id    (:page-id (:query-params route))
-        flex-items (get-flex-elements page-id shapes)
+        flex-items (get-flex-elements page-id shapes from)
         shapes     (map #(assoc % :flex-items flex-items) shapes)
         style-code (-> (cg/generate-style-code @style-type shapes)
                        (format-code "css"))

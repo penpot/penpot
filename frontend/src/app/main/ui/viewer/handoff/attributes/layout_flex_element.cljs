@@ -90,7 +90,7 @@
         [:div.attributes-label "Margin"]
         [:& manage-margin {:margin merged-margin :type "margin"}]
         [:& copy-button {:data (copy-data shape :layout-item-margin)}]])
-     
+
      (when (:layout-item-h-sizing shape)
        [:div.attributes-unit-row
         [:div.attributes-label "Horizontal sizing"]
@@ -102,7 +102,7 @@
         [:div.attributes-label "Vertical sizing"]
         [:div.attributes-value (manage-sizing (:layout-item-v-sizing shape) :v)]
         [:& copy-button {:data (copy-data shape :layout-item-v-sizing)}]])
-     
+
      (when (= :fill (:layout-item-h-sizing shape))
        [:*
         (when (some? (:layout-item-max-w shape))
@@ -132,10 +132,10 @@
            [:& copy-button {:data (copy-data shape :layout-item-min-h)}]])])]))
 
 (mf/defc layout-flex-element-panel
-  [{:keys [shapes]}]
+  [{:keys [shapes from]}]
   (let [route        (mf/deref refs/route)
         page-id      (:page-id (:query-params route))
-        mod-shapes   (cd/get-flex-elements page-id shapes)
+        mod-shapes   (cd/get-flex-elements page-id shapes from)
         shape        (first mod-shapes)
         has-margin?  (some? (:layout-item-margin shape))
         has-values?  (or (some? (:layout-item-max-w shape))

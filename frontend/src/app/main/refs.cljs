@@ -384,6 +384,17 @@
 (def workspace-focus-selected
   (l/derived :workspace-focus-selected st/state))
 
+(defn workspace-get-flex-child
+  [ids]
+  (l/derived
+   (fn [state]
+     (let [objects  (wsh/lookup-page-objects state)]
+       (into []
+             (comp (map (d/getf objects))
+                   (filter (partial ctl/layout-child? objects)))
+             ids)))
+   st/state =))
+
 ;; Remove this when deprecating components-v2
 (def remove-graphics
   (l/derived :remove-graphics st/state))

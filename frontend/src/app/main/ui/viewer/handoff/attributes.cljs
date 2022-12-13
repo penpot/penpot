@@ -32,7 +32,7 @@
    :text     [:layout :text :shadow :blur :stroke :layout-flex-item]})
 
 (mf/defc attributes
-  [{:keys [page-id file-id shapes frame]}]
+  [{:keys [page-id file-id shapes frame from]}]
   (let [shapes  (hooks/use-equal-memo shapes)
         shapes  (mf/with-memo [shapes]
                   (mapv #(gsh/translate-to-frame % frame) shapes))
@@ -52,7 +52,8 @@
              :text             text-panel
              :svg              svg-panel)
         {:shapes shapes
-         :frame frame}])
+         :frame frame
+         :from from}])
      [:& exports
       {:shapes shapes
        :type type
