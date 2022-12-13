@@ -237,7 +237,6 @@
     (->> (sv/scan-ns 'app.rpc.queries.projects
                      'app.rpc.queries.files
                      'app.rpc.queries.teams
-                     'app.rpc.queries.comments
                      'app.rpc.queries.profile
                      'app.rpc.queries.viewer
                      'app.rpc.queries.fonts)
@@ -250,13 +249,10 @@
     (->> (sv/scan-ns 'app.rpc.mutations.media
                      'app.rpc.mutations.profile
                      'app.rpc.mutations.files
-                     'app.rpc.mutations.comments
                      'app.rpc.mutations.projects
                      'app.rpc.mutations.teams
-                     'app.rpc.mutations.management
                      'app.rpc.mutations.fonts
-                     'app.rpc.mutations.share-link
-                     'app.rpc.mutations.verify-token)
+                     'app.rpc.mutations.share-link)
          (map (partial process-method cfg))
          (into {}))))
 

@@ -179,7 +179,7 @@
                    :valid-until (dt/in-future "48h")})
 
       (let [data {::th/type :verify-token :token token}
-            out  (th/mutation! data)]
+            out  (th/command! data)]
         ;; (th/print-result! out)
         (t/is (th/success? out))
         (let [result (:result out)]
@@ -205,7 +205,7 @@
                    :valid-until (dt/in-future "48h")})
 
       (let [data {::th/type :verify-token :token token :profile-id (:id profile2)}
-            out  (th/mutation! data)]
+            out  (th/command! data)]
         ;; (th/print-result! out)
         (t/is (th/success? out))
         (let [result (:result out)]
@@ -226,7 +226,7 @@
                    :valid-until (dt/in-future "48h")})
 
       (let [data {::th/type :verify-token :token token :profile-id (:id profile1)}
-            out  (th/mutation! data)]
+            out  (th/command! data)]
         ;; (th/print-result! out)
         (t/is (not (th/success? out)))
         (let [edata (-> out :error ex-data)]
