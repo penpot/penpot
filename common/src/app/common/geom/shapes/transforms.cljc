@@ -7,11 +7,10 @@
 (ns app.common.geom.shapes.transforms
   #?(:clj (:import (org.la4j Matrix LinearAlgebra))
      :cljs (:import goog.math.Matrix))
-
   (:require
+   #?(:clj [app.common.exceptions :as ex])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bool :as gshb]
@@ -22,8 +21,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
 
-#?(:clj (set! *warn-on-reflection* true)
-   :cljs (ex/ignoring nil))
+#?(:clj (set! *warn-on-reflection* true))
 
 ;; --- Relative Movement
 
