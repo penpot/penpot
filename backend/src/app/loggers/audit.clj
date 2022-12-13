@@ -104,11 +104,18 @@
 (s/def ::type ::us/string)
 (s/def ::props (s/map-of ::us/keyword any?))
 (s/def ::ip-addr ::us/string)
+
 (s/def ::webhooks/event? ::us/boolean)
+(s/def ::webhooks/batch-timeout ::dt/duration)
+(s/def ::webhooks/batch-key
+  (s/or :fn fn? :str string? :kw keyword?))
 
 (s/def ::event
   (s/keys :req-un [::type ::name ::profile-id]
-          :opt-un [::ip-addr ::props ::webhooks/event?]))
+          :opt-un [::ip-addr ::props]
+          :opt [::webhooks/event?
+                ::webhooks/batch-timeout
+                ::webhooks/batch-key]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COLLECTOR
@@ -153,13 +160,22 @@
 
     (when (and (contains? cf/flags :webhooks)
                (::webhooks/event? event))
-      (wrk/submit! ::wrk/conn pool
-                   ::wrk/task :process-webhook-event
-                   ::wrk/queue :webhooks
-                   ::wrk/max-retries 0
-                   ::webhooks/event (-> params
-                                        (dissoc :ip-addr)
-                                        (dissoc :type))))))
+      (let [batch-key     (::webhooks/batch-key event)
+            batch-timeout (::webhooks/batch-timeout event)]
+        (wrk/submit! ::wrk/conn pool
+                     ::wrk/task :process-webhook-event
+                     ::wrk/queue :webhooks
+                     ::wrk/max-retries 0
+                     ::wrk/delay (or batch-timeout 0)
+                     ::wrk/label (cond
+                                   (fn? batch-key)        (batch-key (:props event))
+                                   (keyword? batch-key)   (name batch-key)
+                                   (string? batch-key)    batch-key
+                                   :else                  "default")
+                     ::wrk/dedupe true
+                     ::webhooks/event (-> params
+                                          (dissoc :ip-addr)
+                                          (dissoc :type)))))))
 
 (defn submit!
   "Submit audit event to the collector."

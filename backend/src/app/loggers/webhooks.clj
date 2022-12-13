@@ -11,6 +11,7 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.common.uri :as uri]
+   [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
    [app.util.json :as json]
@@ -56,6 +57,7 @@
   [_ {:keys [::db/pool] :as cfg}]
   (fn [{:keys [props] :as task}]
     (let [event (::event props)]
+
       (l/debug :hint "process webhook event"
                :name (:name event))
 
@@ -134,7 +136,8 @@
                  :webhook-mtype (:mtype whook))
 
         (let [req {:uri (:uri whook)
-                   :headers {"content-type" (:mtype whook)}
+                   :headers {"content-type" (:mtype whook)
+                             "user-agent" (str/ffmt "penpot/%" (:main cf/version))}
                    :timeout (dt/duration "4s")
                    :method :post
                    :body body}]

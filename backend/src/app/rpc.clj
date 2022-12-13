@@ -171,9 +171,18 @@
                                 :profile-id profile-id
                                 :ip-addr (some-> request audit/parse-client-ip)
                                 :props props
-                                ::webhooks/event? (or (::webhooks/event? mdata)
-                                                      (::webhooks/event? resultm)
-                                                      false)}]
+                                ::webhooks/batch-key
+                                (or (::webhooks/batch-key mdata)
+                                    (::webhooks/batch-key resultm))
+
+                                ::webhooks/batch-timeout
+                                (or (::webhooks/batch-timeout mdata)
+                                    (::webhooks/batch-timeout resultm))
+
+                                ::webhooks/event?
+                                (or (::webhooks/event? mdata)
+                                    (::webhooks/event? resultm)
+                                    false)}]
 
                 (audit/submit! collector event)))
 
