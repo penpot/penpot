@@ -143,11 +143,13 @@
 (defn- persist-event!
   [pool event]
   (us/verify! ::event event)
-  (let [params {:id (uuid/next)
+  (let [now    (dt/now)
+        params {:id (uuid/next)
                 :name (:name event)
                 :type (:type event)
                 :profile-id (:profile-id event)
-                :tracked-at (dt/now)
+                :created-at now
+                :tracked-at now
                 :ip-addr (:ip-addr event)
                 :props (:props event)}]
 
