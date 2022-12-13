@@ -129,7 +129,7 @@
   [{:keys [conn session] :as cfg} {:keys [profile-id token]}
    {:keys [member-id team-id member-email] :as claims}]
 
-  (us/assert ::team-invitation-claims claims)
+  (us/verify! ::team-invitation-claims claims)
 
   (let [invitation (db/get* conn :team-invitation
                             {:team-id team-id :email-to member-email})

@@ -15,6 +15,7 @@
    [app.db :as db]
    [app.emails :as eml]
    [app.loggers.audit :as audit]
+   [app.main :as-alias main]
    [app.media :as media]
    [app.rpc.climit :as climit]
    [app.rpc.doc :as-alias doc]
@@ -260,7 +261,7 @@
 
 (def sql:team-invitations
   "select email_to as email, role, (valid_until < now()) as expired
-   from team_invitation where team_id = ? order by valid_until desc")
+   from team_invitation where team_id = ? order by valid_until desc, created_at desc")
 
 (defn get-team-invitations
   [conn team-id]
@@ -628,25 +629,37 @@
   "insert into team_invitation(team_id, email_to, role, valid_until)
    values (?, ?, ?, ?)
        on conflict(team_id, email_to) do
-          update set role = ?, valid_until = ?, updated_at = now();")
+          update set role = ?, updated_at = now();")
+
+(defn- create-invitation-token
+  [cfg {:keys [expire profile-id team-id member-id member-email role]}]
+  (tokens/generate (::main/props cfg)
+                   {:iss :team-invitation
+                    :exp expire
+                    :profile-id profile-id
+                    :role role
+                    :team-id team-id
+                    :member-email member-email
+                    :member-id member-id}))
+
+(defn- create-profile-identity-token
+  [cfg profile]
+  (tokens/generate (::main/props cfg)
+                   {:iss :profile-identity
+                    :profile-id (:id profile)
+                    :exp (dt/in-future {:days 30})}))
 
 (defn- create-invitation
-  [{:keys [conn sprops team profile role email] :as cfg}]
-  (let [member    (profile/retrieve-profile-data-by-email conn email)
-        token-exp (dt/in-future "168h") ;; 7 days
-        email     (str/lower email)
-        itoken    (tokens/generate sprops
-                                   {:iss :team-invitation
-                                    :exp token-exp
-                                    :profile-id (:id profile)
-                                    :role role
-                                    :team-id (:id team)
-                                    :member-email (:email member email)
-                                    :member-id (:id member)})
-        ptoken    (tokens/generate sprops
-                                   {:iss :profile-identity
-                                    :profile-id (:id profile)
-                                    :exp (dt/in-future {:days 30})})]
+  [{:keys [::conn] :as cfg} {:keys [team profile role email] :as params}]
+  (let [member (profile/retrieve-profile-data-by-email conn email)
+        expire (dt/in-future "168h") ;; 7 days
+        itoken (create-invitation-token cfg {:profile-id (:id profile)
+                                             :expire expire
+                                             :team-id (:id team)
+                                             :member-email (or (:email member) email)
+                                             :member-id (:id member)
+                                             :role role})
+        ptoken (create-profile-identity-token cfg profile)]
 
     (when (and member (not (eml/allow-send-emails? conn member)))
       (ex/raise :type :validation
@@ -687,11 +700,10 @@
                       {:id (:id member)})))
       (do
         (db/exec-one! conn [sql:upsert-team-invitation
-                            (:id team) (str/lower email) (name role)
-                            token-exp (name role) token-exp])
+                            (:id team) (str/lower email) (name role) expire (name role)])
         (eml/send! {::eml/conn conn
                     ::eml/factory eml/invite-to-team
-                    :public-uri (:public-uri cfg)
+                    :public-uri (cf/get :public-uri)
                     :to email
                     :invited-by (:fullname profile)
                     :team (:name team)
@@ -727,15 +739,14 @@
                   :code :profile-is-muted
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
 
-      (let [invitations (->> emails
+      (let [cfg         (assoc cfg ::conn conn)
+            invitations (->> emails
                              (map (fn [email]
-                                    (assoc cfg
-                                           :email email
-                                           :conn conn
-                                           :team team
-                                           :profile profile
-                                           :role role)))
-                             (map create-invitation))]
+                                    {:email (str/lower email)
+                                     :team team
+                                     :profile profile
+                                     :role role}))
+                             (map (partial create-invitation cfg)))]
         (with-meta (vec invitations)
           {::audit/props {:invitations (count invitations)}})))))
 
@@ -743,26 +754,26 @@
 ;; --- Mutation: Create Team & Invite Members
 
 (s/def ::emails ::us/set-of-valid-emails)
-(s/def ::create-team-and-invitations
+(s/def ::create-team-with-invitations
   (s/merge ::create-team
            (s/keys :req-un [::emails ::role])))
 
-(sv/defmethod ::create-team-and-invitations
+(sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"}
   [{:keys [pool] :as cfg} {:keys [profile-id emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [team     (create-team conn params)
-          profile  (db/get-by-id conn :profile profile-id)]
+          profile  (db/get-by-id conn :profile profile-id)
+          cfg      (assoc cfg ::conn conn)]
 
       ;; Create invitations for all provided emails.
-      (doseq [email emails]
-        (create-invitation
-         (assoc cfg
-                :conn conn
-                :team team
-                :profile profile
-                :email email
-                :role role)))
+      (->> emails
+           (map (fn [email]
+                  {:team team
+                   :profile profile
+                   :email (str/lower email)
+                   :role role}))
+           (run! (partial create-invitation cfg)))
 
       (-> team
           (vary-meta assoc ::audit/props {:invitations (count emails)})
@@ -776,6 +787,28 @@
                                        :role role
                                        :profile-id profile-id
                                        :invitations (count emails)}})))))))
+
+;; --- Query: get-team-invitation-token
+
+(s/def ::get-team-invitation-token
+  (s/keys :req-un [::profile-id ::team-id ::email]))
+
+(sv/defmethod ::get-team-invitation-token
+  {::doc/added "1.17"}
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id team-id email] :as params}]
+  (check-read-permissions! pool profile-id team-id)
+  (let [invit (-> (db/get pool :team-invitation
+                          {:team-id team-id
+                           :email-to (str/lower email)})
+                  (update :role keyword))
+        member (profile/retrieve-profile-data-by-email pool (:email invit))
+        token  (create-invitation-token cfg {:team-id (:team-id invit)
+                                             :profile-id profile-id
+                                             :expire (:expire invit)
+                                             :role (:role invit)
+                                             :member-id (:id member)
+                                             :member-email (or (:email member) (:email-to invit))})]
+    {:token token}))
 
 ;; --- Mutation: Update invitation role
 

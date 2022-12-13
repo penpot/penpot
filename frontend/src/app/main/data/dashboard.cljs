@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
@@ -18,6 +19,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as tm]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -403,7 +405,7 @@
             params {:name name
                     :emails #{emails}
                     :role role}]
-        (->> (rp/cmd! :create-team-and-invitations params)
+        (->> (rp/cmd! :create-team-with-invitations params)
              (rx/tap on-success)
              (rx/map team-created)
              (rx/catch on-error))))))
@@ -508,6 +510,36 @@
         (->> (rp/cmd! :create-team-invitations params)
              (rx/tap on-success)
              (rx/catch on-error))))))
+
+
+(defn copy-invitation-link
+  [{:keys [email team-id] :as params}]
+  (us/assert! ::us/email email)
+  (us/assert! ::us/uuid team-id)
+
+  (ptk/reify ::copy-invitation-link
+    IDeref
+    (-deref [_] {:email email :team-id team-id})
+
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)
+            router (:router state)]
+
+        (->> (rp/cmd! :get-team-invitation-token params)
+             (rx/map (fn [params]
+                       (rt/resolve router :auth-verify-token {} params)))
+             (rx/map (fn [fragment]
+                       (assoc @cf/public-uri :fragment fragment)))
+             (rx/tap (fn [uri]
+                       (wapi/write-to-clipboard (str uri))))
+             (rx/tap on-success)
+             (rx/ignore)
+             (rx/catch on-error))))))
+
 
 (defn update-team-invitation-role
   [{:keys [email team-id role] :as params}]
