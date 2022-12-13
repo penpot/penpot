@@ -528,6 +528,19 @@
 .webhooks-modal {
   .action-buttons {
     gap: 10px;
+
+    .cancel-button {
+      border: 1px solid $color-gray-30;
+      background: $color-canvas;
+      border-radius: 3px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      margin-right: 8px;
+
+      &:hover {
+        background: $color-gray-20;
+      }
+    }
   }
   .input-checkbox label {
     font-size: 14px;

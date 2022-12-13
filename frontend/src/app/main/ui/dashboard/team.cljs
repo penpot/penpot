@@ -676,7 +676,7 @@
 
        [:div.modal-footer
         [:div.action-buttons
-         [:input.btn-gray.btn-large
+         [:input.cancel-button
           {:type "button"
            :value (tr "labels.cancel")
            :on-click #(modal/hide!)}]
