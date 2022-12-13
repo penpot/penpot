@@ -76,7 +76,6 @@
    :layout                :layout-container
    :layout-dir            :layout-container
    :layout-gap            :layout-container
-   :layout-type           :layout-container
    :layout-wrap-type      :layout-container
    :layout-padding-type   :layout-container
    :layout-padding        :layout-container
