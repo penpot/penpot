@@ -21,6 +21,7 @@
    [app.main :as-alias main]
    [app.metrics :as mtx]
    [app.tokens :as tokens]
+   [app.util.retry :as rtry]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
@@ -143,22 +144,29 @@
 (defn- persist-event!
   [pool event]
   (us/verify! ::event event)
-  (let [now    (dt/now)
-        params {:id (uuid/next)
+  (let [params {:id (uuid/next)
                 :name (:name event)
                 :type (:type event)
                 :profile-id (:profile-id event)
-                :created-at now
-                :tracked-at now
                 :ip-addr (:ip-addr event)
                 :props (:props event)}]
 
     (when (contains? cf/flags :audit-log)
-      (db/insert! pool :audit-log
-                  (-> params
-                      (update :props db/tjson)
-                      (update :ip-addr db/inet)
-                      (assoc :source "backend"))))
+
+      ;; NOTE: this operation may cause primary key conflicts on inserts
+      ;; because of the timestamp precission (two concurrent requests), in
+      ;; this case we just retry the operation.
+      (rtry/with-retry {::rtry/when rtry/conflict-exception?
+                        ::rtry/max-retries 6
+                        ::rtry/label "persist-audit-log-event"}
+        (let [now (dt/now)]
+          (db/insert! pool :audit-log
+                      (-> params
+                          (update :props db/tjson)
+                          (update :ip-addr db/inet)
+                          (assoc :created-at now)
+                          (assoc :tracked-at now)
+                          (assoc :source "backend"))))))
 
     (when (and (contains? cf/flags :webhooks)
                (::webhooks/event? event))
