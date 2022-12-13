@@ -9,6 +9,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.transforms :as gsht]
    [app.common.math :as mth :refer [close?]]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
@@ -128,13 +129,10 @@
         (let [modifiers (ctm/resize-modifiers (gpt/point 0 0) (gpt/point 0 0))
               shape-before (create-test-shape type {:modifiers modifiers})
               shape-after  (gsh/transform-shape shape-before)]
-          (t/is (> (get-in shape-before [:selrect :width])
-                   (get-in shape-after  [:selrect :width])))
-          (t/is (> (get-in shape-after  [:selrect :width]) 0))
-
-          (t/is (> (get-in shape-before [:selrect :height])
-                   (get-in shape-after  [:selrect :height])))
-          (t/is (> (get-in shape-after  [:selrect :height]) 0)))
+          (t/is (close? (get-in shape-before [:selrect :width])
+                        (get-in shape-after  [:selrect :width])))
+          (t/is (close? (get-in shape-before [:selrect :height])
+                        (get-in shape-after  [:selrect :height]))))
       :rect :path))
 
   (t/testing "Transform shape with rotation modifiers"
@@ -195,6 +193,50 @@
     (t/is (= (:x expect) (:x result)))
     (t/is (= (:y expect) (:y result)))
     (t/is (= (:width expect) (:width result)))
-    (t/is (= (:height expect) (:height result)))
-    ))
+    (t/is (= (:height expect) (:height result)))))
 
+(def g45 (mth/radians 45))
+
+(t/deftest points-transform-matrix
+  (t/testing "Transform matrix"
+    (t/are [selrect points expected]
+        (let [result (gsht/transform-points-matrix selrect points)]
+          (t/is (gmt/close? expected result)))
+
+      ;; No transformation
+      (gsh/make-selrect 0 0 10 10)
+      (-> (gsh/make-selrect 0 0 10 10)
+          (gsh/rect->points))
+      (gmt/matrix)
+
+      ;; Displacement
+      (gsh/make-selrect 0 0 10 10)
+      (-> (gsh/make-selrect 20 20 10 10)
+          (gsh/rect->points ))
+      (gmt/matrix 1 0 0 1 20 20)
+
+      ;; Resize
+      (gsh/make-selrect 0 0 10 10)
+      (-> (gsh/make-selrect 0 0 20 40)
+          (gsh/rect->points))
+      (gmt/matrix 2 0 0 4 0 0)
+
+      ;; Displacement+Resize
+      (gsh/make-selrect 0 0 10 10)
+      (-> (gsh/make-selrect 10 10 20 40)
+          (gsh/rect->points))
+      (gmt/matrix 2 0 0 4 10 10)
+      
+      ;; Rotation
+      (gsh/make-selrect 0 0 10 10)
+      (-> (gsh/make-selrect 0 0 10 10)
+          (gsh/rect->points)
+          (gsh/transform-points (gmt/rotate-matrix 45)))
+      (gmt/matrix (mth/cos g45) (mth/sin g45) (- (mth/sin g45)) (mth/cos g45) 0 0)
+
+      ;; Rotation + Resize
+      (gsh/make-selrect 0 0 10 10)
+      (-> (gsh/make-selrect 0 0 20 40)
+          (gsh/rect->points)
+          (gsh/transform-points (gmt/rotate-matrix 45)))
+      (gmt/matrix (* (mth/cos g45) 2) (* (mth/sin g45) 2) (* (- (mth/sin g45)) 4) (* (mth/cos g45) 4) 0 0))))
