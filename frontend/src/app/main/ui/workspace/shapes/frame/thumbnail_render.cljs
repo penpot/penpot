@@ -149,6 +149,7 @@
         (mf/use-callback
          (fn []
            (when (not @disable-ref?)
+             (reset! render-frame? true)
              (reset! regenerate-thumbnail true))))
 
         on-load-frame-dom
@@ -167,12 +168,6 @@
      (fn []
        (when (and (some? prev-thumbnail-data) (nil? thumbnail-data))
          (rx/push! updates-str :update))))
-
-    (mf/use-effect
-     (mf/deps @render-frame? thumbnail-data)
-     (fn []
-       (when (and (some? thumbnail-data) @render-frame?)
-         (reset! render-frame? false))))
 
     (mf/use-effect
      (mf/deps force-render)

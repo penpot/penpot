@@ -64,28 +64,30 @@
      (watch [_ state _]
        (let [object-id   (dm/str page-id frame-id)
              file-id     (or file-id (:current-file-id state))
-             blob-result (thumbnail-stream object-id)]
+             blob-result (thumbnail-stream object-id)
+             params {:file-id file-id :object-id object-id :data nil}]
 
-         (->> blob-result
-              (rx/merge-map
-               (fn [blob]
-                 (if (some? blob)
-                   (wapi/read-file-as-data-url blob)
-                   (rx/of nil))))
+         (rx/concat
+          ;; Delete the thumbnail first so if we interrupt we can regenerate after
+          (rp/cmd! :upsert-file-object-thumbnail params)
+          (->> blob-result
+               (rx/merge-map
+                (fn [blob]
+                  (if (some? blob)
+                    (wapi/read-file-as-data-url blob)
+                    (rx/of nil))))
 
-              (rx/merge-map
-               (fn [data]
-                 (if (some? file-id)
-                   (let [params {:file-id file-id :object-id object-id :data data}]
-                     (rx/merge
-                      ;; Update the local copy of the thumbnails so we don't need to request it again
-                      (if (some? data)
-                        (rx/of #(update % :workspace-thumbnails assoc object-id data))
-                        (rx/empty))
-                      (->> (rp/cmd! :upsert-file-object-thumbnail params)
-                           (rx/ignore))))
+               (rx/merge-map
+                (fn [data]
+                  (if (some? file-id)
+                    (let [params (assoc params :data data)]
+                      (rx/merge
+                       ;; Update the local copy of the thumbnails so we don't need to request it again
+                       (rx/of #(update % :workspace-thumbnails assoc object-id data))
+                       (->> (rp/cmd! :upsert-file-object-thumbnail params)
+                            (rx/ignore))))
 
-                   (rx/empty))))))))))
+                    (rx/empty)))))))))))
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"

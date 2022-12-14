@@ -232,7 +232,7 @@
            (dom/remove-attribute! (dom/get-parent shape-node) "display")))
 
        (doseq [{:keys [frame shape]} add-children]
-         (let [frame-node (get-shape-node node frame)
+         (let [frame-node (get-shape-node frame)
                shape-node (get-shape-node shape)
 
                use-node
