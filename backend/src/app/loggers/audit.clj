@@ -152,7 +152,6 @@
                 :props (:props event)}]
 
     (when (contains? cf/flags :audit-log)
-
       ;; NOTE: this operation may cause primary key conflicts on inserts
       ;; because of the timestamp precission (two concurrent requests), in
       ;; this case we just retry the operation.

@@ -386,7 +386,7 @@
        [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
                        :shortcut (sc/get-tooltip :toogle-layout-flex)
                        :on-click add-flex}]]
-      
+
       is-flex-container?
       [:*
        [:& menu-separator]
