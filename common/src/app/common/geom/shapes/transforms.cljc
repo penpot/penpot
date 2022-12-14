@@ -399,39 +399,42 @@
   (empty? (dissoc modifiers :ignore-geometry?)))
 
 (defn resize-modifiers
-  [shape attr value]
-  (us/assert map? shape)
-  (us/assert #{:width :height} attr)
-  (us/assert number? value)
-  (let [{:keys [proportion proportion-lock]} shape
-        size (select-keys (:selrect shape) [:width :height])
-        new-size (if-not proportion-lock
-                   (assoc size attr value)
-                   (if (= attr :width)
-                     (-> size
-                         (assoc :width value)
-                         (assoc :height (/ value proportion)))
-                     (-> size
-                         (assoc :height value)
-                         (assoc :width (* value proportion)))))
-        width (:width new-size)
-        height (:height new-size)
+  ([shape attr value]
+   (resize-modifiers shape attr value nil))
 
-        shape-transform (:transform shape)
-        shape-transform-inv (:transform-inverse shape)
-        shape-center (gco/center-shape shape)
-        {sr-width :width sr-height :height} (:selrect shape)
+  ([shape attr value {:keys [ignore-lock?] :or {ignore-lock? false}}]
+   (us/assert map? shape)
+   (us/assert #{:width :height} attr)
+   (us/assert number? value)
+   (let [{:keys [proportion proportion-lock]} shape
+         size (select-keys (:selrect shape) [:width :height])
+         new-size (if-not (and (not ignore-lock?) proportion-lock)
+                    (assoc size attr value)
+                    (if (= attr :width)
+                      (-> size
+                          (assoc :width value)
+                          (assoc :height (/ value proportion)))
+                      (-> size
+                          (assoc :height value)
+                          (assoc :width (* value proportion)))))
+         width (:width new-size)
+         height (:height new-size)
 
-        origin (cond-> (gpt/point (:selrect shape))
-                 (some? shape-transform)
-                 (transform-point-center shape-center shape-transform))
+         shape-transform (:transform shape)
+         shape-transform-inv (:transform-inverse shape)
+         shape-center (gco/center-shape shape)
+         {sr-width :width sr-height :height} (:selrect shape)
 
-        scalev (gpt/divide (gpt/point width height)
-                           (gpt/point sr-width sr-height))]
-    {:resize-vector scalev
-     :resize-origin origin
-     :resize-transform shape-transform
-     :resize-transform-inverse shape-transform-inv}))
+         origin (cond-> (gpt/point (:selrect shape))
+                  (some? shape-transform)
+                  (transform-point-center shape-center shape-transform))
+
+         scalev (gpt/divide (gpt/point width height)
+                            (gpt/point sr-width sr-height))]
+     {:resize-vector scalev
+      :resize-origin origin
+      :resize-transform shape-transform
+      :resize-transform-inverse shape-transform-inv})))
 
 (defn change-orientation-modifiers
   [shape orientation]

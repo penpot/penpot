@@ -319,8 +319,11 @@
       (letfn [(update-fn [shape]
                 (let [{:keys [selrect grow-type]} shape
                       {shape-width :width shape-height :height} selrect
-                      modifier-width (gsh/resize-modifiers shape :width new-width)
-                      modifier-height (gsh/resize-modifiers shape :height new-height)]
+
+                      ;; Ignore lock proportions otherwise the auto-width/auto-height cannot correctly set
+                      ;; the sizes
+                      modifier-width (gsh/resize-modifiers shape :width new-width {:ignore-lock? true})
+                      modifier-height (gsh/resize-modifiers shape :height new-height {:ignore-lock? true})]
                   (cond-> shape
                     (and (not-changed? shape-width new-width) (= grow-type :auto-width))
                     (-> (assoc :modifiers modifier-width)
@@ -346,8 +349,8 @@
 (defn apply-text-modifier
   [shape {:keys [width height position-data]}]
 
-  (let [modifier-width (when width (gsh/resize-modifiers shape :width width))
-        modifier-height (when height (gsh/resize-modifiers shape :height height))
+  (let [modifier-width (when width (gsh/resize-modifiers shape :width width {:ignore-lock? true}))
+        modifier-height (when height (gsh/resize-modifiers shape :height height {:ignore-lock? true}))
 
         new-shape
         (cond-> shape
