@@ -57,7 +57,7 @@
         do-detach-component
         #(st/emit! (dwl/detach-component id))
 
-        _do-reset-component
+        do-reset-component
         #(st/emit! (dwl/reset-component id))
 
         do-update-component
@@ -66,7 +66,7 @@
         do-restore-component
         #(st/emit! (dwl/restore-component library-id component-id))
 
-        _do-update-remote-component
+        do-update-remote-component
         #(st/emit! (modal/show
                     {:type :confirm
                      :message ""
@@ -100,27 +100,27 @@
           ;;          app/main/ui/workspace/context_menu.cljs
           [:& context-menu {:on-close on-menu-close
                             :show (:menu-open @local)
-                            :options 
+                            :options
                             (if main-instance?
                               [[(tr "workspace.shape.menu.show-in-assets") do-show-in-assets]]
                               (if local-component?
                                 (if is-dangling?
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
                                    (when components-v2
                                      [(tr "workspace.shape.menu.restore-main") do-restore-component])]
 
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
                                    [(tr "workspace.shape.menu.update-main") do-update-component]
                                    [(tr "workspace.shape.menu.show-main") do-show-component]])
 
                                 (if is-dangling?
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
+                                   [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
                                    (when components-v2
                                      [(tr "workspace.shape.menu.restore-main") do-restore-component])]
                                   [[(tr "workspace.shape.menu.detach-instance") do-detach-component]
-                                   [(tr "workspace.shape.menu.reset-overrides") _do-reset-component]
-                                   [(tr "workspace.shape.menu.update-main") _do-update-remote-component]
+                                   [(tr "workspace.shape.menu.reset-overrides") do-reset-component]
+                                   [(tr "workspace.shape.menu.update-main") do-update-remote-component]
                                    [(tr "workspace.shape.menu.go-main") do-navigate-component-file]])))}]]]]])))
