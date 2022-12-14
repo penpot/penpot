@@ -761,6 +761,9 @@ msgstr "Error en la validación SSL."
 msgid "errors.webhooks.unexpected-status"
 msgstr "Estado inesperado %s"
 
+msgid "errors.webhooks.invalid-uri"
+msgstr "La URL no pasa la validacion."
+
 #: src/app/main/ui/alert.cljs
 msgid "ds.alert-ok"
 msgstr "Ok"

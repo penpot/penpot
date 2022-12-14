@@ -620,7 +620,7 @@
 ;; WEBHOOKS SECTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::uri ::us/not-empty-string)
+(s/def ::uri ::us/uri)
 (s/def ::mtype ::us/not-empty-string)
 (s/def ::webhook-form
   (s/keys :req-un [::uri ::mtype]))
@@ -657,6 +657,8 @@
              (let [message (cond
                              (= hint "unknown")
                              (tr "errors.webhooks.unexpected")
+                             (= hint "invalid-uri")
+                             (tr "errors.webhooks.invalid-uri")
                              (= hint "ssl-validation-error")
                              (tr "errors.webhooks.ssl-validation")
                              (= hint "timeout")

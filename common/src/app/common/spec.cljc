@@ -135,7 +135,7 @@
 (letfn [(conformer [s]
           (cond
             (u/uri? s) s
-            (string? s) (u/uri s)
+            (string? s) (u/uri (str/trim s))
             :else ::s/invalid))
         (unformer [v]
           (dm/str v))]

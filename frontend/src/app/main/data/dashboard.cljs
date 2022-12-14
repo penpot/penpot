@@ -620,7 +620,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)
-            params  (assoc params :team-id team-id)
+            params  (-> params
+                        (assoc :team-id team-id)
+                        (update :uri str))
             {:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
