@@ -696,6 +696,9 @@ msgstr "Webhook updated successfully."
 msgid "dashboard.webhooks.create.success"
 msgstr "Webhook created successfully."
 
+msgid "webhooks.last-delivery.success"
+msgstr "Last delivery was successfull."
+
 msgid "errors.webhooks.unexpected"
 msgstr "Unexpected error on validating"
 
@@ -705,14 +708,14 @@ msgstr "Timeout"
 msgid "errors.webhooks.connection"
 msgstr "Connection error, url not reacheable"
 
-msgid "webhooks.last-delivery.success"
-msgstr "Last delivery was successfull."
-
 msgid "errors.webhooks.last-delivery"
 msgstr "Last delivery was not successfull."
 
 msgid "errors.webhooks.ssl-validation"
 msgstr "Error on SSL validation."
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "URL does not passes validation."
 
 msgid "errors.webhooks.unexpected-status"
 msgstr "Unexpected status %s"

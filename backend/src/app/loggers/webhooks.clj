@@ -169,6 +169,9 @@
     (instance? java.net.ConnectException cause)
     "connection-error"
 
+    (instance? java.lang.IllegalArgumentException cause)
+    "invalid-uri"
+
     (instance? java.net.http.HttpConnectTimeoutException cause)
     "timeout"
     ))
