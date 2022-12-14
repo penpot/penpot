@@ -11,7 +11,8 @@
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.loggers.audit :as audit]
+   [app.loggers.audit :as-alias audit]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
@@ -75,7 +76,8 @@
                    ::files/features]))
 
 (sv/defmethod ::create-file
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)

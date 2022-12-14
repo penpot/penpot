@@ -38,7 +38,7 @@
 (defn- collect-context
   []
   (let [uagent (UAParser.)]
-    (d/merge
+    (merge
      {:app-version (:full @cf/version)
       :locale @i18n/locale}
      (let [browser (.getBrowser uagent)]
@@ -215,12 +215,17 @@
 (defn- persist-events
   [events]
   (if (seq events)
-    (let [uri    (u/join @cf/public-uri "api/audit/events")
+    (let [uri    (u/join @cf/public-uri "api/rpc/command/push-audit-events")
           params {:uri uri
                   :method :post
+                  :credentials "include"
                   :body (http/transit-data {:events events})}]
       (->> (http/send! params)
-           (rx/mapcat rp/handle-response)))
+           (rx/mapcat rp/handle-response)
+           (rx/catch (fn [_]
+                       (l/error :hint "unexpected error on persisting audit events")
+                       (rx/of nil)))))
+
     (rx/of nil)))
 
 (defn initialize
@@ -274,7 +279,7 @@
                (rx/map (fn [event]
                          (let [session* (or @session (dt/now))
                                context  (-> @context
-                                            (d/merge (:context event))
+                                            (merge (:context event))
                                             (assoc :session session*))]
                            (reset! session session*)
                            (-> event

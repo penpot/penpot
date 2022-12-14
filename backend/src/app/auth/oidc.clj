@@ -64,7 +64,7 @@
         nil)
 
       (= 200 (:status response))
-      (let [data (json/read (:body response))]
+      (let [data (json/decode (:body response))]
         {:token-uri (get data :token_endpoint)
          :auth-uri  (get data :authorization_endpoint)
          :user-uri  (get data :userinfo_endpoint)})
@@ -172,7 +172,7 @@
                                 :hint "unable to retrieve github emails"
                                 :http-status status
                                 :http-body body))
-                    (->> response :body json/read (filter :primary) first :email))))))
+                    (->> response :body json/decode (filter :primary) first :email))))))
 
 (defmethod ig/pre-init-spec ::providers/github [_]
   (s/keys :req [::http/client]))
@@ -278,7 +278,7 @@
     (->> (http/req! cfg req)
          (p/map (fn [{:keys [status body] :as res}]
                   (if (= status 200)
-                    (let [data (json/read body)]
+                    (let [data (json/decode body)]
                       {:token (get data :access_token)
                        :type (get data :token_type)})
                     (ex/raise :type :internal
@@ -316,7 +316,7 @@
               (get info attr-kw)))
 
           (process-response [response]
-            (p/let [info  (-> response :body json/read)
+            (p/let [info  (-> response :body json/decode)
                     email (get-email info)]
               {:backend  (:name provider)
                :email    email

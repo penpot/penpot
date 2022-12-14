@@ -17,6 +17,7 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.loggers.audit.tasks :as-alias tasks]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.main :as-alias main]
    [app.metrics :as mtx]
    [app.tokens :as tokens]
@@ -28,9 +29,7 @@
    [lambdaisland.uri :as u]
    [promesa.core :as p]
    [promesa.exec :as px]
-   [promesa.exec.bulkhead :as pxb]
-   [yetti.request :as yrq]
-   [yetti.response :as yrs]))
+   [yetti.request :as yrq]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -55,7 +54,6 @@
                 (str/starts-with? sk "mtm_")
                 (assoc (->> sk str/kebab (keyword "penpot")) v))))]
     (reduce-kv process-param {} params)))
-
 
 (def ^:private
   profile-props
@@ -105,110 +103,19 @@
 (s/def ::name ::us/string)
 (s/def ::type ::us/string)
 (s/def ::props (s/map-of ::us/keyword any?))
-(s/def ::timestamp dt/instant?)
-(s/def ::context (s/map-of ::us/keyword any?))
-
-(s/def ::frontend-event
-  (s/keys :req-un [::type ::name ::props ::timestamp ::profile-id]
-          :opt-un [::context]))
-
-(s/def ::frontend-events (s/every ::frontend-event))
-
 (s/def ::ip-addr ::us/string)
-(s/def ::backend-event
+
+(s/def ::webhooks/event? ::us/boolean)
+(s/def ::webhooks/batch-timeout ::dt/duration)
+(s/def ::webhooks/batch-key
+  (s/or :fn fn? :str string? :kw keyword?))
+
+(s/def ::event
   (s/keys :req-un [::type ::name ::profile-id]
-          :opt-un [::ip-addr ::props]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HTTP HANDLER
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def ::concurrency ::us/integer)
-
-(defmethod ig/pre-init-spec ::http-handler [_]
-  (s/keys :req [::wrk/executor ::db/pool ::mtx/metrics ::concurrency]))
-
-(defmethod ig/prep-key ::http-handler
-  [_ cfg]
-  (merge {::concurrency (cf/get :audit-log-http-handler-concurrency 8)}
-         (d/without-nils cfg)))
-
-(defmethod ig/init-key ::http-handler
-  [_ {:keys [::wrk/executor ::db/pool ::mtx/metrics ::concurrency] :as cfg}]
-  (if (or (db/read-only? pool)
-          (not (contains? cf/flags :audit-log)))
-    (do
-      (l/warn :hint "audit: http handler disabled or db is read-only")
-      (fn [_ respond _]
-        (respond (yrs/response 204))))
-
-    (letfn [(event->row [event]
-              [(uuid/next)
-               (:name event)
-               (:source event)
-               (:type event)
-               (:timestamp event)
-               (:profile-id event)
-               (db/inet (:ip-addr event))
-               (db/tjson (:props event))
-               (db/tjson (d/without-nils (:context event)))])
-
-            (handle-request [{:keys [profile-id] :as request}]
-              (let [events  (->> (:events (:params request))
-                                 (remove #(not= profile-id (:profile-id %)))
-                                 (us/conform ::frontend-events))
-                    ip-addr (parse-client-ip request)
-                    xform   (comp
-                             (map #(assoc % :ip-addr ip-addr))
-                             (map #(assoc % :source "frontend"))
-                             (map event->row))
-
-                    columns [:id :name :source :type :tracked-at
-                             :profile-id :ip-addr :props :context]]
-                (when (seq events)
-                  (->> (into [] xform events)
-                       (db/insert-multi! pool :audit-log columns)))))
-
-            (report-error! [cause]
-              (if-let [xdata (us/validation-error? cause)]
-                (l/error ::l/raw (str "audit: validation error frontend events request\n" (ex/explain xdata)))
-                (l/error :hint "audit: unexpected error on processing frontend events" :cause cause)))
-
-            (on-queue [instance]
-              (l/trace :hint "http-handler: enqueued"
-                       :queue-size (get instance ::pxb/current-queue-size)
-                       :concurrency (get instance ::pxb/current-concurrency))
-              (mtx/run! metrics
-                        :id :audit-http-handler-queue-size
-                        :val (get instance ::pxb/current-queue-size))
-              (mtx/run! metrics
-                        :id :audit-http-handler-concurrency
-                        :val (get instance ::pxb/current-concurrency)))
-
-            (on-run [instance task]
-              (let [elapsed (- (inst-ms (dt/now))
-                               (inst-ms task))]
-                (l/trace :hint "http-handler: execute"
-                         :elapsed (str elapsed "ms"))
-                (mtx/run! metrics
-                          :id :audit-http-handler-timing
-                          :val elapsed)
-                (mtx/run! metrics
-                          :id :audit-http-handler-queue-size
-                          :val (get instance ::pxb/current-queue-size))
-                (mtx/run! metrics
-                          :id :audit-http-handler-concurrency
-                          :val (get instance ::pxb/current-concurrency))))]
-
-      (let [limiter (pxb/create :executor executor
-                                :concurrency concurrency
-                                :on-queue on-queue
-                                :on-run on-run)]
-        (fn [request respond _]
-          (->> (px/submit! limiter (partial handle-request request))
-               (p/fnly (fn [_ cause]
-                         (some-> cause report-error!)
-                         (respond (yrs/response 204))))))))))
+          :opt-un [::ip-addr ::props]
+          :opt [::webhooks/event?
+                ::webhooks/batch-timeout
+                ::webhooks/batch-key]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COLLECTOR
@@ -219,8 +126,7 @@
 ;; an external storage and data cleared.
 
 (s/def ::collector
-  (s/nilable
-   (s/keys :req [::wrk/executor ::db/pool])))
+  (s/keys :req [::wrk/executor ::db/pool]))
 
 (defmethod ig/pre-init-spec ::collector [_]
   (s/keys :req [::db/pool ::wrk/executor ::mtx/metrics]))
@@ -228,31 +134,53 @@
 (defmethod ig/init-key ::collector
   [_ {:keys [::db/pool] :as cfg}]
   (cond
-    (not (contains? cf/flags :audit-log))
-    (l/info :hint "audit: log collection disabled")
-
     (db/read-only? pool)
-    (l/warn :hint "audit: log collection disabled (db is read-only)")
+    (l/warn :hint "audit: disabled (db is read-only)")
 
     :else
     cfg))
 
 (defn- persist-event!
   [pool event]
-  (us/verify! ::backend-event event)
-  (db/insert! pool :audit-log
-              {:id (uuid/next)
-               :name (:name event)
-               :type (:type event)
-               :profile-id (:profile-id event)
-               :tracked-at (dt/now)
-               :ip-addr (some-> (:ip-addr event) db/inet)
-               :props (db/tjson (:props event))
-               :source "backend"}))
+  (us/verify! ::event event)
+  (let [params {:id (uuid/next)
+                :name (:name event)
+                :type (:type event)
+                :profile-id (:profile-id event)
+                :tracked-at (dt/now)
+                :ip-addr (:ip-addr event)
+                :props (:props event)}]
+
+    (when (contains? cf/flags :audit-log)
+      (db/insert! pool :audit-log
+                  (-> params
+                      (update :props db/tjson)
+                      (update :ip-addr db/inet)
+                      (assoc :source "backend"))))
+
+    (when (and (contains? cf/flags :webhooks)
+               (::webhooks/event? event))
+      (let [batch-key     (::webhooks/batch-key event)
+            batch-timeout (::webhooks/batch-timeout event)]
+        (wrk/submit! ::wrk/conn pool
+                     ::wrk/task :process-webhook-event
+                     ::wrk/queue :webhooks
+                     ::wrk/max-retries 0
+                     ::wrk/delay (or batch-timeout 0)
+                     ::wrk/label (cond
+                                   (fn? batch-key)        (batch-key (:props event))
+                                   (keyword? batch-key)   (name batch-key)
+                                   (string? batch-key)    batch-key
+                                   :else                  "default")
+                     ::wrk/dedupe true
+                     ::webhooks/event (-> params
+                                          (dissoc :ip-addr)
+                                          (dissoc :type)))))))
 
 (defn submit!
   "Submit audit event to the collector."
-  [{:keys [::wrk/executor ::db/pool]} params]
+  [{:keys [::wrk/executor ::db/pool] :as collector} params]
+  (us/assert! ::collector collector)
   (->> (px/submit! executor (partial persist-event! pool (d/without-nils params)))
        (p/merr (fn [cause]
                  (l/error :hint "audit: unexpected error processing event" :cause cause)
@@ -335,7 +263,6 @@
                                            {:iss "authentication"
                                             :iat (dt/now)
                                             :uid uuid/zero})
-                  ;; FIXME tokens/generate
                   body    (t/encode {:events events})
                   headers {"content-type" "application/transit+json"
                            "origin" (cf/get :public-uri)

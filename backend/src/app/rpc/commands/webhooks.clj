@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http.client :as http]
+   [app.loggers.webhooks :as webhooks]
    [app.rpc.doc :as-alias doc]
    [app.rpc.queries.teams :refer [check-edition-permissions! check-read-permissions!]]
    [app.util.services :as sv]
@@ -35,77 +36,83 @@
   (s/keys :req-un [::profile-id ::team-id ::uri ::mtype]
           :opt-un [::is-active]))
 
-;; FIXME: validate
-;; FIXME: default ratelimit
-;; FIXME: quotes
+;; NOTE: for now the quote is hardcoded but this need to be solved in
+;; a more universal way for handling properly object quotes
+(def max-hooks-for-team 8)
 
 (defn- validate-webhook!
   [cfg whook params]
   (letfn [(handle-exception [exception]
-            (cond
-              (instance? java.util.concurrent.CompletionException exception)
-              (handle-exception (ex/cause exception))
-
-              (instance? javax.net.ssl.SSLHandshakeException exception)
+            (if-let [hint (webhooks/interpret-exception exception)]
               (ex/raise :type :validation
                         :code :webhook-validation
-                        :hint "ssl-validation")
-
-              :else
-              (ex/raise :type :validation
+                        :hint hint)
+              (ex/raise :type :internal
                         :code :webhook-validation
-                        :hint "unknown"
                         :cause exception)))
 
-          (handle-response [{:keys [status] :as response}]
-            (when (not= status 200)
+          (handle-response [response]
+            (when-let [hint (webhooks/interpret-response response)]
               (ex/raise :type :validation
                         :code :webhook-validation
-                        :hint (str/ffmt "unexpected-status-%" (:status response)))))]
+                        :hint hint)))]
 
     (if (not= (:uri whook) (:uri params))
       (->> (http/req! cfg {:method :head
                            :uri (:uri params)
-                           :timeout (dt/duration "2s")})
+                           :timeout (dt/duration "3s")})
            (p/hmap (fn [response exception]
                      (if exception
                        (handle-exception exception)
                        (handle-response response)))))
       (p/resolved nil))))
 
+(defn- validate-quotes!
+  [{:keys [::db/pool]} {:keys [team-id]}]
+  (let [sql   ["select count(*) as total from webhook where team_id = ?" team-id]
+        total (:total (db/exec-one! pool sql))]
+    (when (>= total max-hooks-for-team)
+      (ex/raise :type :restriction
+                :code :webhooks-quote-reached
+                :hint (str/ffmt "can't create more than % webhooks per team" max-hooks-for-team)))))
+
+(defn- insert-webhook!
+  [{:keys [::db/pool]} {:keys [team-id uri mtype is-active] :as params}]
+  (db/insert! pool :webhook
+              {:id (uuid/next)
+               :team-id team-id
+               :uri uri
+               :is-active is-active
+               :mtype mtype}))
+
+(defn- update-webhook!
+  [{:keys [::db/pool] :as cfg} {:keys [id] :as wook} {:keys [uri mtype is-active] :as params}]
+  (db/update! pool :webhook
+              {:uri uri
+               :is-active is-active
+               :mtype mtype
+               :error-code nil
+               :error-count 0}
+              {:id id}))
+
 (sv/defmethod ::create-webhook
   {::doc/added "1.17"}
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id team-id uri mtype is-active] :as params}]
+  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id team-id] :as params}]
   (check-edition-permissions! pool profile-id team-id)
-  (letfn [(insert-webhook [_]
-            (db/insert! pool :webhook
-                        {:id (uuid/next)
-                         :team-id team-id
-                         :uri uri
-                         :is-active is-active
-                         :mtype mtype}))]
-    (->> (validate-webhook! cfg nil params)
-         (p/fmap executor insert-webhook))))
+  (->> (validate-quotes! cfg params)
+       (p/fmap executor (fn [_] (validate-webhook! cfg nil params)))
+       (p/fmap executor (fn [_] (insert-webhook! cfg params)))))
 
 (s/def ::update-webhook
   (s/keys :req-un [::id ::uri ::mtype ::is-active]))
 
 (sv/defmethod ::update-webhook
   {::doc/added "1.17"}
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id id uri mtype is-active] :as params}]
-  (let [whook     (db/get pool :webhook {:id id})
-        update-fn (fn [_]
-                    (db/update! pool :webhook
-                                {:uri uri
-                                 :is-active is-active
-                                 :mtype mtype
-                                 :error-code nil
-                                 :error-count 0}
-                                {:id id}))]
+  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [id profile-id] :as params}]
+  (let [whook (db/get pool :webhook {:id id})]
     (check-edition-permissions! pool profile-id (:team-id whook))
-
     (->> (validate-webhook! cfg whook params)
-         (p/fmap executor update-fn))))
+         (p/fmap executor (fn [_] (update-webhook! cfg whook params))))))
 
 (s/def ::delete-webhook
   (s/keys :req-un [::profile-id ::id]))

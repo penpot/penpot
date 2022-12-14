@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
    [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
@@ -43,6 +44,8 @@
                    ::font-id ::font-family ::font-weight ::font-style]))
 
 (sv/defmethod ::create-font-variant
+  {::doc/added "1.3"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id] :as params}]
   (let [cfg (update cfg :storage media/configure-assets-storage)]
     (teams/check-edition-permissions! pool profile-id team-id)
@@ -119,19 +122,16 @@
 (s/def ::update-font
   (s/keys :req-un [::profile-id ::team-id ::id ::name]))
 
-(def sql:update-font
-  "update team_font_variant
-      set font_family = ?
-    where team_id = ?
-      and font_id = ?")
-
 (sv/defmethod ::update-font
-  {::climit/queue :process-font}
+  {::doc/added "1.3"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id id name] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
-    (db/exec-one! conn [sql:update-font name team-id id])
-    nil))
+    (db/update! conn :team-font-variant
+                {:font-family name}
+                {:font-id id
+                 :team-id team-id})))
 
 ;; --- DELETE FONT
 
@@ -139,10 +139,11 @@
   (s/keys :req-un [::profile-id ::team-id ::id]))
 
 (sv/defmethod ::delete-font
+  {::doc/added "1.3"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
-
     (db/update! conn :team-font-variant
                 {:deleted-at (dt/now)}
                 {:font-id id :team-id team-id})
@@ -154,7 +155,8 @@
   (s/keys :req-un [::profile-id ::team-id ::id]))
 
 (sv/defmethod ::delete-font-variant
-  {::doc/added "1.3"}
+  {::doc/added "1.3"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)

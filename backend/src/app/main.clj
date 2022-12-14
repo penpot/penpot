@@ -15,6 +15,7 @@
    [app.http.session :as-alias http.session]
    [app.loggers.audit :as-alias audit]
    [app.loggers.audit.tasks :as-alias audit.tasks]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.loggers.zmq :as-alias lzmq]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
@@ -281,7 +282,6 @@
     :metrics       (ig/ref ::mtx/metrics)
     :public-uri    (cf/get :public-uri)
     :storage       (ig/ref ::sto/storage)
-    :audit-handler (ig/ref ::audit/http-handler)
     :rpc-routes    (ig/ref :app.rpc/routes)
     :doc-routes    (ig/ref :app.rpc.doc/routes)
     :executor      (ig/ref ::wrk/executor)}
@@ -358,7 +358,12 @@
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :session-gc         (ig/ref :app.http.session/gc-task)
      :audit-log-archive  (ig/ref ::audit.tasks/archive)
-     :audit-log-gc       (ig/ref ::audit.tasks/gc)}}
+     :audit-log-gc       (ig/ref ::audit.tasks/gc)
+
+     :process-webhook-event
+     (ig/ref ::webhooks/process-event-handler)
+     :run-webhook
+     (ig/ref ::webhooks/run-webhook-handler)}}
 
 
    :app.emails/sendmail
@@ -408,11 +413,6 @@
    ::lzmq/receiver
    {}
 
-   ::audit/http-handler
-   {::db/pool           (ig/ref ::db/pool)
-    ::wrk/executor      (ig/ref ::wrk/executor)
-    ::mtx/metrics       (ig/ref ::mtx/metrics)}
-
    ::audit/collector
    {::db/pool           (ig/ref ::db/pool)
     ::wrk/executor      (ig/ref ::wrk/executor)
@@ -425,6 +425,14 @@
 
    ::audit.tasks/gc
    {::db/pool (ig/ref ::db/pool)}
+
+   ::webhooks/process-event-handler
+   {::db/pool            (ig/ref ::db/pool)
+    ::http.client/client (ig/ref ::http.client/client)}
+
+   ::webhooks/run-webhook-handler
+   {::db/pool            (ig/ref ::db/pool)
+    ::http.client/client (ig/ref ::http.client/client)}
 
    :app.loggers.loki/reporter
    {::lzmq/receiver      (ig/ref ::lzmq/receiver)
@@ -500,19 +508,27 @@
        {:cron #app/cron "30 */5 * * * ?" ;; every 5m
         :task :audit-log-gc})]}
 
-   ::wrk/scheduler
+   ::wrk/dispatcher
    {::rds/redis   (ig/ref ::rds/redis)
     ::mtx/metrics (ig/ref ::mtx/metrics)
     ::db/pool     (ig/ref ::db/pool)}
 
-   ::wrk/worker
-   {::wrk/parallelism (cf/get ::worker-parallelism 1)
-    ;; FIXME: read queues from configuration
-    ::wrk/queue       "default"
+   [::default ::wrk/worker]
+   {::wrk/parallelism (cf/get ::worker-default-parallelism 1)
+    ::wrk/queue       :default
+    ::rds/redis       (ig/ref ::rds/redis)
+    ::wrk/registry    (ig/ref ::wrk/registry)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::db/pool         (ig/ref ::db/pool)}
+
+   [::webhook ::wrk/worker]
+   {::wrk/parallelism (cf/get ::worker-webhook-parallelism 1)
+    ::wrk/queue       :webhooks
     ::rds/redis       (ig/ref ::rds/redis)
     ::wrk/registry    (ig/ref ::wrk/registry)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::db/pool         (ig/ref ::db/pool)}})
+
 
 (def system nil)
 

@@ -16,6 +16,7 @@
    [app.http.client :as-alias http.client]
    [app.http.session :as-alias http.session]
    [app.loggers.audit :as audit]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as mtx]
    [app.msgbus :as-alias mbus]
    [app.rpc.climit :as climit]
@@ -155,18 +156,34 @@
                                    (:profile-id result)
                                    (:profile-id params)
                                    uuid/zero)
+
                     props      (or (::audit/replace-props resultm)
                                    (-> params
+                                       (d/without-qualified)
                                        (merge (::audit/props resultm))
                                        (dissoc :profile-id)
                                        (dissoc :type)))
+
                     event      {:type (or (::audit/type resultm)
                                           (::type cfg))
                                 :name (or (::audit/name resultm)
                                           (::sv/name mdata))
                                 :profile-id profile-id
                                 :ip-addr (some-> request audit/parse-client-ip)
-                                :props (d/without-qualified props)}]
+                                :props props
+                                ::webhooks/batch-key
+                                (or (::webhooks/batch-key mdata)
+                                    (::webhooks/batch-key resultm))
+
+                                ::webhooks/batch-timeout
+                                (or (::webhooks/batch-timeout mdata)
+                                    (::webhooks/batch-timeout resultm))
+
+                                ::webhooks/event?
+                                (or (::webhooks/event? mdata)
+                                    (::webhooks/event? resultm)
+                                    false)}]
+
                 (audit/submit! collector event)))
 
             (handle-request [cfg params]
@@ -174,8 +191,9 @@
                    (p/mcat (fn [result]
                              (->> (handle-audit params result)
                                   (p/map (constantly result)))))))]
-
-      (with-meta handle-request mdata))
+      (if-not (::audit/skip mdata)
+        (with-meta handle-request mdata)
+        f))
     f))
 
 (defn- wrap
@@ -254,6 +272,7 @@
                      'app.rpc.commands.ldap
                      'app.rpc.commands.demo
                      'app.rpc.commands.webhooks
+                     'app.rpc.commands.audit
                      'app.rpc.commands.files
                      'app.rpc.commands.files.update
                      'app.rpc.commands.files.create

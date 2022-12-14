@@ -81,7 +81,7 @@
                             {:method :post
                              :uri (cf/get :telemetry-uri)
                              :headers {"content-type" "application/json"}
-                             :body (json/write-str data)}
+                             :body (json/encode-str data)}
                             {:sync? true})]
     (when (> (:status response) 206)
       (ex/raise :type :internal

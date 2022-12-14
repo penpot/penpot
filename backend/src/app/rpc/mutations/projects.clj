@@ -9,6 +9,10 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.loggers.audit :as-alias audit]
+   [app.loggers.webhooks :as-alias webhooks]
+   [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as proj]
    [app.rpc.queries.teams :as teams]
@@ -22,7 +26,6 @@
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
 
-
 ;; --- Mutation: Create Project
 
 (declare create-project)
@@ -35,6 +38,8 @@
           :opt-un [::id]))
 
 (sv/defmethod ::create-project
+  {::doc/added "1.0"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
@@ -122,10 +127,13 @@
 ;; this is not allowed.
 
 (sv/defmethod ::delete-project
+  {::doc/added "1.0"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id id)
-    (db/update! conn :project
-                {:deleted-at (dt/now)}
-                {:id id :is-default false})
-    nil))
+    (let [project (db/update! conn :project
+                              {:deleted-at (dt/now)}
+                              {:id id :is-default false})]
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:team-id (:team-id project)}}))))

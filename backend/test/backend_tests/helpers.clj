@@ -284,6 +284,19 @@
                                   :session-id session-id
                                   :profile-id profile-id})))))
 
+(defn create-webhook*
+  ([params] (create-webhook* *pool* params))
+  ([pool {:keys [team-id id uri mtype is-active]
+          :or {is-active true
+               mtype "application/json"
+               uri "http://example.com/webhook"}}]
+   (db/insert! pool :webhook
+               {:id (or id (uuid/next))
+                :team-id team-id
+                :uri uri
+                :is-active is-active
+                :mtype mtype})))
+
 ;; --- RPC HELPERS
 
 (defn handle-error
@@ -416,6 +429,10 @@
 (defn db-query
   [& params]
   (apply db/query *pool* params))
+
+(defn db-get
+  [& params]
+  (apply db/get* *pool* params))
 
 (defn sleep
   [ms-or-duration]

@@ -17,6 +17,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
    [app.rpc.climit :as-alias climit]
@@ -122,12 +123,18 @@
 ;; set is different than the persisted one, update it on the
 ;; database.
 
+(defn webhook-batch-keyfn
+  [props]
+  (str "rpc:update-file:" (:id props)))
+
 (sv/defmethod ::update-file
   {::climit/queue :update-file
    ::climit/key-fn :id
+   ::webhooks/event? true
+   ::webhooks/batch-timeout (dt/duration "2s")
+   ::webhooks/batch-key webhook-batch-keyfn
    ::doc/added "1.17"}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
-
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (db/xact-lock! conn id)
@@ -173,8 +180,12 @@
                         {:id id})))
 
         (-> (update-fn cfg params)
-            (vary-meta assoc ::audit/props {:project-id (:project-id file)
-                                            :team-id    (:team-id file)}))))))
+            (vary-meta assoc ::audit/replace-props
+                       {:id (:id file)
+                        :name (:name file)
+                        :features (:features file)
+                        :project-id (:project-id file)
+                        :team-id    (:team-id file)}))))))
 
 (defn- update-file*
   [{:keys [conn] :as cfg} {:keys [file changes session-id profile-id] :as params}]

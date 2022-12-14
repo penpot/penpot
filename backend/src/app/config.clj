@@ -108,7 +108,9 @@
 
 (s/def ::default-executor-parallelism ::us/integer)
 (s/def ::scheduled-executor-parallelism ::us/integer)
-(s/def ::worker-parallelism ::us/integer)
+
+(s/def ::worker-default-parallelism ::us/integer)
+(s/def ::worker-webhook-parallelism ::us/integer)
 
 (s/def ::authenticated-cookie-domain ::us/string)
 (s/def ::authenticated-cookie-name ::us/string)
@@ -222,7 +224,8 @@
                    ::error-report-webhook
                    ::default-executor-parallelism
                    ::scheduled-executor-parallelism
-                   ::worker-parallelism
+                   ::worker-default-parallelism
+                   ::worker-webhook-parallelism
                    ::file-change-snapshot-every
                    ::file-change-snapshot-timeout
                    ::user-feedback-destination

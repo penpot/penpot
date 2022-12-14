@@ -587,53 +587,78 @@
 (s/def ::webhook-form
   (s/keys :req-un [::uri ::mtype]))
 
-(mf/defc webhook-modal {::mf/register modal/components
-                          ::mf/register-as :webhook}
+(def valid-webhook-mtypes
+  [{:label "application/json" :value "application/json"}
+   {:label "application/x-www-form-urlencoded" :value "application/x-www-form-urlencoded"}
+   {:label "application/transit+json" :value "application/transit+json"}])
+
+(defn- extract-status
+  [error-code]
+  (-> error-code (str/split #":") second))
+
+(mf/defc webhook-modal
+  {::mf/register modal/components
+   ::mf/register-as :webhook}
   [{:keys [webhook] :as props}]
   (let [initial (mf/use-memo (fn [] (or webhook {:is-active false :mtype "application/json"})))
         form    (fm/use-form :spec ::webhook-form
                              :initial initial)
-        mtypes [{:label "application/json" :value "application/json"}
-                {:label "application/x-www-form-urlencoded" :value "application/x-www-form-urlencoded"}
-                {:label "application/transit+json" :value "application/transit+json"}]
-
         on-success
-        (fn [message]
-          (st/emit! (dd/fetch-team-webhooks)
-                    (msg/success message)
-                    (modal/hide)))
+        (mf/use-fn
+         (fn [_]
+           (let [message (tr "dashboard.webhooks.create.success")]
+             (st/emit! (dd/fetch-team-webhooks)
+                       (msg/success message)
+                       (modal/hide)))))
 
         on-error
-        (fn [message {:keys [type code hint] :as error}]
-          (let [message (if (and (= type :validation) (= code :webhook-validation))
-                          (str message " "
-                               (case hint
-                                 "ssl-validation" (tr "errors.webhooks.ssl-validation")
-                                 "")) ;; TODO Add more error codes when back defines them
-                          message)]
-            (rx/of (msg/error message))))
+        (mf/use-fn
+         (fn [form {:keys [type code hint] :as error}]
+           (if (and (= type :validation)
+                    (= code :webhook-validation))
+             (let [message (cond
+                             (= hint "unknown")
+                             (tr "errors.webhooks.unexpected")
+                             (= hint "ssl-validation-error")
+                             (tr "errors.webhooks.ssl-validation")
+                             (= hint "timeout")
+                             (tr "errors.webhooks.timeout")
+                             (= hint "connection-error")
+                             (tr "errors.webhooks.connection")
+                             (str/starts-with? hint "unexpected-status")
+                             (tr "errors.webhooks.unexpected-status" (extract-status hint)))]
+               (swap! form assoc-in [:errors :uri] {:message message}))
+             (rx/throw error))))
 
         on-create-submit
-        (fn []
-          (let [mdata   {:on-success #(on-success (tr "dashboard.webhooks.create.success"))
-                         :on-error   (partial on-error (tr "dashboard.webhooks.create.error"))}
-                webhook {:uri        (get-in @form [:clean-data :uri])
-                         :mtype      (get-in @form [:clean-data :mtype])
-                         :is-active  (get-in @form [:clean-data :is-active])}]
-            (st/emit! (dd/create-team-webhook (with-meta webhook mdata)))))
+        (mf/use-fn
+         (fn [form]
+           (let [cdata  (:clean-data @form)
+                 mdata  {:on-success (partial on-success form)
+                         :on-error   (partial on-error form)}
+                 params {:uri        (:uri cdata)
+                         :mtype      (:mtype cdata)
+                         :is-active  (:is-active cdata)}]
+             (st/emit! (dd/create-team-webhook
+                        (with-meta params mdata))))))
 
         on-update-submit
-        (fn []
-          (let [mdata   {:on-success #(on-success (tr "dashboard.webhooks.update.success"))
-                         :on-error   (partial on-error (tr "dashboard.webhooks.update.error"))}
-                webhook (get @form :clean-data)]
-            (st/emit! (dd/update-team-webhook (with-meta webhook mdata)))))
+        (mf/use-fn
+         (fn [form]
+           (let [params (:clean-data @form)
+                 mdata  {:on-success (partial on-success form)
+                         :on-error   (partial on-error form)}]
+             (st/emit! (dd/update-team-webhook
+                        (with-meta params mdata))))))
 
         on-submit
-        #(let [data (:clean-data @form)]
-           (if (:id data)
-             (on-update-submit)
-             (on-create-submit)))]
+        (mf/use-fn
+         (fn [form]
+           (prn @form)
+           (let [data (:clean-data @form)]
+             (if (:id data)
+               (on-update-submit form)
+               (on-create-submit form)))))]
 
     [:div.modal-overlay
      [:div.modal-container.webhooks-modal
@@ -659,7 +684,7 @@
                         :placeholder (tr "modals.create-webhook.url.placeholder")}]]
 
          [:div.fields-row
-          [:& fm/select {:options mtypes
+          [:& fm/select {:options valid-webhook-mtypes
                          :label (tr "dashboard.webhooks.content-type")
                          :default "application/json"
                          :name :mtype}]]]
@@ -704,79 +729,75 @@
      {:on-click #(st/emit! (modal/show :webhook {}))}
      [:span (tr "dashboard.webhooks.create")]]]])
 
+(mf/defc webhook-actions
+  [{:keys [on-edit on-delete] :as props}]
+  (let [show? (mf/use-state false)]
+    [:*
+     [:span.icon {:on-click #(reset! show? true)} [i/actions]]
+     [:& dropdown {:show @show?
+                   :on-close #(reset! show? false)}
+      [:ul.dropdown.actions-dropdown
+       [:li {:on-click on-edit} (tr "labels.edit")]
+       [:li {:on-click on-delete} (tr "labels.delete")]]]]))
 
-  (mf/defc webhook-actions
-    [{:keys [on-edit on-delete] :as props}]
-    (let [show? (mf/use-state false)]
-      [:*
-       [:span.icon {:on-click #(reset! show? true)} [i/actions]]
-       [:& dropdown {:show @show?
-                     :on-close #(reset! show? false)}
-        [:ul.dropdown.actions-dropdown
-         [:li {:on-click on-edit} (tr "labels.edit")]
-         [:li {:on-click on-delete} (tr "labels.delete")]]]]))
+(mf/defc last-delivery-icon
+  [{:keys [success? text] :as props}]
+  [:div.last-delivery-icon
+   [:div.tooltip
+    [:div.label text]
+    [:div.arrow-down]]
+   (if success?
+     [:span.icon.success i/msg-success]
+     [:span.icon.failure i/msg-warning])])
 
-  (mf/defc last-delivery-icon
-    [{:keys [success? text] :as props}]
-    [:div.last-delivery-icon
-     [:div.tooltip
-      [:div.label text]
-      [:div.arrow-down]]
-     (if success?
-       [:span.icon.success i/msg-success]
-       [:span.icon.failure i/msg-warning])])
+(mf/defc webhook-item
+  {::mf/wrap [mf/memo]}
+  [{:keys [webhook] :as props}]
+  (let [on-edit #(st/emit! (modal/show :webhook {:webhook webhook}))
+        error-code (:error-code webhook)
 
-  (mf/defc webhook-item
-    {::mf/wrap [mf/memo]}
-    [{:keys [webhook] :as props}]
-    (let [on-edit #(st/emit! (modal/show :webhook {:webhook webhook}))
-          error-code (:error-code webhook)
-          extract-status
-          (fn [error-code]
-            (let [status (-> error-code
-                             (str/split  "-")
-                             last
-                             parse-long)]
-              (if (nil? status)
-                ""
-                status)))
-          delete-fn
-          (fn []
-            (let [params {:id (:id webhook)}
-                  mdata  {:on-success #(st/emit! (dd/fetch-team-webhooks))}]
-              (st/emit! (dd/delete-team-webhook (with-meta params mdata)))))
-          on-delete #(st/emit! (modal/show
-                                {:type :confirm
-                                 :title (tr "modals.delete-webhook.title")
-                                 :message (tr "modals.delete-webhook.message")
-                                 :accept-label (tr "modals.delete-webhook.accept")
-                                 :on-accept delete-fn}))
-          last-delivery-text (cond
-                               (nil? error-code)
-                               (tr "webhooks.last-delivery.success")
+        delete-fn
+        (fn []
+          (let [params {:id (:id webhook)}
+                mdata  {:on-success #(st/emit! (dd/fetch-team-webhooks))}]
+            (st/emit! (dd/delete-team-webhook (with-meta params mdata)))))
 
-                               (= error-code "ssl-validation")
-                               (str (tr "errors.webhooks.last-delivery") " " (tr "errors.webhooks.ssl-validation"))
+        on-delete
+        (fn []
+          (st/emit! (modal/show
+                     {:type :confirm
+                      :title (tr "modals.delete-webhook.title")
+                      :message (tr "modals.delete-webhook.message")
+                      :accept-label (tr "modals.delete-webhook.accept")
+                      :on-accept delete-fn})))
 
-                               (str/starts-with? error-code "unexpected-status")
-                               (str (tr "errors.webhooks.last-delivery")
-                                    " "
-                                    (tr "errors.webhooks.unexpected-status" (extract-status error-code)))
+        last-delivery-text
+        (if (nil? error-code)
+          (tr "webhooks.last-delivery.success")
+          (str (tr "errors.webhooks.last-delivery")
+               (cond
+                 (= error-code "ssl-validation-error")
+                 (dm/str " " (tr "errors.webhooks.ssl-validation"))
 
-                               :else
-                               (tr "errors.webhooks.last-delivery"))]
-      [:div.table-row
-       [:div.table-field.last-delivery
-        [:div.icon-container
-         [:& last-delivery-icon {:success? (nil? error-code) :text last-delivery-text}]]]
-       [:div.table-field.uri
-        [:div (:uri webhook)]]
-       [:div.table-field.active
-        [:div (if (:is-active webhook) (tr "labels.active") (tr "labels.inactive"))]]
-       [:div.table-field.actions
-        [:& webhook-actions {:on-edit on-edit
-                             :on-delete on-delete}]]]))
+                 (str/starts-with? error-code "unexpected-status")
+                 (dm/str " " (tr "errors.webhooks.unexpected-status" (extract-status error-code))))))]
 
+    [:div.table-row
+     [:div.table-field.last-delivery
+      [:div.icon-container
+       [:& last-delivery-icon
+        {:success? (nil? error-code)
+         :text last-delivery-text}]]]
+     [:div.table-field.uri
+      [:div (:uri webhook)]]
+     [:div.table-field.active
+      [:div (if (:is-active webhook)
+              (tr "labels.active")
+              (tr "labels.inactive"))]]
+     [:div.table-field.actions
+      [:& webhook-actions
+       {:on-edit on-edit
+        :on-delete on-delete}]]]))
 
 (mf/defc webhooks-list
   [{:keys [webhooks] :as props}]
