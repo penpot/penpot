@@ -443,33 +443,36 @@
     (resize-modifiers (gpt/point scalex scaley) origin transform transform-inverse)))
 
 (defn change-dimensions-modifiers
-  [{:keys [transform transform-inverse] :as shape} attr value]
-  (us/assert map? shape)
-  (us/assert #{:width :height} attr)
-  (us/assert number? value)
+  ([shape attr value]
+   (change-dimensions-modifiers shape attr value nil))
 
-  (let [{:keys [proportion proportion-lock]} shape
-        size (select-keys (:selrect shape) [:width :height])
-        new-size (if-not proportion-lock
-                   (assoc size attr value)
-                   (if (= attr :width)
-                     (-> size
-                         (assoc :width value)
-                         (assoc :height (/ value proportion)))
-                     (-> size
-                         (assoc :height value)
-                         (assoc :width (* value proportion)))))
+  ([{:keys [transform transform-inverse] :as shape} attr value {:keys [ignore-lock?] :or {ignore-lock? false}}]
+   (us/assert map? shape)
+   (us/assert #{:width :height} attr)
+   (us/assert number? value)
 
-        width (:width new-size)
-        height (:height new-size)
+   (let [{:keys [proportion proportion-lock]} shape
+         size (select-keys (:selrect shape) [:width :height])
+         new-size (if-not (and (not ignore-lock?) proportion-lock)
+                    (assoc size attr value)
+                    (if (= attr :width)
+                      (-> size
+                          (assoc :width value)
+                          (assoc :height (/ value proportion)))
+                      (-> size
+                          (assoc :height value)
+                          (assoc :width (* value proportion)))))
 
-        {sr-width :width sr-height :height} (:selrect shape)
+         width (:width new-size)
+         height (:height new-size)
 
-        origin (-> shape :points first)
-        scalex (/ width sr-width)
-        scaley (/ height sr-height)]
+         {sr-width :width sr-height :height} (:selrect shape)
 
-    (resize-modifiers (gpt/point scalex scaley) origin transform transform-inverse)))
+         origin (-> shape :points first)
+         scalex (/ width sr-width)
+         scaley (/ height sr-height)]
+
+     (resize-modifiers (gpt/point scalex scaley) origin transform transform-inverse))))
 
 (defn change-orientation-modifiers
   [shape orientation]

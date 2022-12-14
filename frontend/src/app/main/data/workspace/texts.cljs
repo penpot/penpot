@@ -331,13 +331,13 @@
                         shape
                         (cond-> shape
                           (and (not-changed? shape-width new-width) (= grow-type :auto-width))
-                          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width new-width)))
+                          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width new-width {:ignore-lock? true})))
 
                         shape
                         (cond-> shape
                          (and (not-changed? shape-height new-height)
                               (or (= grow-type :auto-height) (= grow-type :auto-width)))
-                         (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height new-height)))]
+                         (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height new-height {:ignore-lock? true})))]
 
                     shape))]
 
@@ -364,10 +364,10 @@
   (let [new-shape
         (cond-> shape
           (some? width)
-          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width width))
+          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width width {:ignore-lock? true}))
 
           (some? height)
-          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height height))
+          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height height {:ignore-lock? true}))
 
           (some? position-data)
           (assoc :position-data position-data))

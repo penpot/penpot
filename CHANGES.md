@@ -43,6 +43,7 @@
 - Fix bad behaviour on hovering and click nested artboards [Taiga #4018](https://tree.taiga.io/project/penpot/issue/4018) and [Taiga #4269](https://tree.taiga.io/project/penpot/us/4269)
 - Fix lang autodetect issue [Taiga #4277](https://tree.taiga.io/project/penpot/issue/4277)
 - Fix colorpicker does not close upon switching to Dashboard [Taiga #4408](https://tree.taiga.io/project/penpot/issue/4408)
+- Fix problem with auto-width/auto-height + lock-proportions
 
 ## 1.16.0-beta
 
