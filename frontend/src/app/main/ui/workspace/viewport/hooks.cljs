@@ -278,8 +278,9 @@
                 (> zoom 1.3)
 
                 ;; Zoom >= 25% will show frames hovering
+                ;; Also, if we're moving a shape over the frame we need to remove the thumbnail
                 (and
-                 (>= zoom 0.25)
+                 (or (= :move transform) (>= zoom 0.25))
                  (or (contains? hover-ids? id) (contains? @last-hover-ids id)))
 
                 ;; Otherwise, if it's a selected frame
