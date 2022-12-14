@@ -131,7 +131,7 @@
   {::climit/queue :update-file
    ::climit/key-fn :id
    ::webhooks/event? true
-   ::webhooks/batch-timeout (dt/duration "2s")
+   ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key webhook-batch-keyfn
    ::doc/added "1.17"}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
