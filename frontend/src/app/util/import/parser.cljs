@@ -869,6 +869,54 @@
           :style
           parse-style))))
 
+(defn add-layout-container-data [props node]
+  (if-let [data (get-data node :penpot:layout)]
+    (merge props
+           (d/without-nils
+            {:layout (get-meta data :layout keyword)
+             :layout-flex-dir (get-meta data :layout-flex-dir keyword)
+             :layout-wrap-type (get-meta data :layout-wrap-type keyword)
+
+             :layout-gap-type (get-meta data :layout-gap-type keyword)
+             :layout-gap
+             (d/without-nils
+              {:row-gap (get-meta data :layout-gap-row d/parse-double)
+               :column-gap (get-meta data :layout-gap-column d/parse-double)})
+
+             :layout-padding-type (get-meta data :layout-padding-type keyword)
+             :layout-padding
+             (d/without-nils
+              {:p1 (get-meta data :layout-padding-p1 d/parse-double)
+               :p2 (get-meta data :layout-padding-p2 d/parse-double)
+               :p3 (get-meta data :layout-padding-p3 d/parse-double)
+               :p4 (get-meta data :layout-padding-p4 d/parse-double)})
+
+             :layout-justify-content (get-meta data :layout-justify-content keyword)
+             :layout-align-items (get-meta data :layout-align-items keyword)
+             :layout-align-content (get-meta data :layout-align-content keyword)}))
+    props))
+
+(defn add-layout-item-data [props node]
+  (if-let [data (get-data node :penpot:layout-item)]
+    (merge props
+           (d/without-nils
+            {:layout-item-margin
+             (d/without-nils
+              {:m1 (get-meta data :layout-item-margin-m1 d/parse-double)
+               :m2 (get-meta data :layout-item-margin-m2 d/parse-double)
+               :m3 (get-meta data :layout-item-margin-m3 d/parse-double)
+               :m4 (get-meta data :layout-item-margin-m4 d/parse-double)})
+
+             :layout-item-margin-type (get-meta data :layout-item-margin-type keyword)
+             :layout-item-h-sizing (get-meta data :layout-item-h-sizing keyword)
+             :layout-item-v-sizing (get-meta data :layout-item-v-sizing keyword)
+             :layout-item-max-h (get-meta data :layout-item-max-h d/parse-double)
+             :layout-item-min-h (get-meta data :layout-item-min-h d/parse-double)
+             :layout-item-max-w (get-meta data :layout-item-max-w d/parse-double)
+             :layout-item-min-w (get-meta data :layout-item-min-w d/parse-double)
+             :layout-item-align-self (get-meta data :layout-item-align-self keyword)}))
+    props))
+
 (defn parse-data
   [type node]
 
@@ -894,7 +942,10 @@
             (add-svg-content node))
 
           (cond-> (= :frame type)
-            (add-frame-data node))
+            (-> (add-frame-data node)
+                (add-layout-container-data node)))
+
+          (add-layout-item-data node)
 
           (cond-> (= :group type)
             (add-group-data node))

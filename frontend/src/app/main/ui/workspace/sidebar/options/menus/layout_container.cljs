@@ -382,7 +382,6 @@
 
         on-padding-change
         (fn [type prop val]
-          (prn "??" type prop val)
           (cond
             (and (= type :simple) (= prop :p1))
             (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))

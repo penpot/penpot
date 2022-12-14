@@ -8,7 +8,6 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]))
 
 (defn child-layout-bound-points
@@ -55,38 +54,32 @@
                  (gpt/add (hv (/ width 2)))
 
                  (and col? h-end?)
-                 (gpt/add (hv width)))]
+                 (gpt/add (hv width)))
 
-    (cond-> [base-p]
-      (and (mth/almost-zero? min-width) (mth/almost-zero? min-height))
-      (conj (cond-> base-p
-              row?
-              (gpt/add (hv width))
+        ;; We need some height/width to calculate the bounds. We stablish the minimum
+        min-width (max min-width 0.01)
+        min-height (max min-height 0.01)]
 
-              col?
-              (gpt/add (vv height))))
+    (-> [base-p]
+        (conj (cond-> base-p
+                (or row? h-start?)
+                (gpt/add (hv min-width))
 
-      (not (mth/almost-zero? min-width))
-      (conj (cond-> base-p
-              (or row? h-start?)
-              (gpt/add (hv min-width))
+                (and col? h-center?)
+                (gpt/add (hv (/ min-width 2)))
 
-              (and col? h-center?)
-              (gpt/add (hv (/ min-width 2)))
+                (and col? h-center?)
+                (gpt/subtract (hv min-width))))
 
-              (and col? h-center?)
-              (gpt/subtract (hv min-width))))
+        (conj (cond-> base-p
+                (or col? v-start?)
+                (gpt/add (vv min-height))
 
-      (not (mth/almost-zero? min-height))
-      (conj (cond-> base-p
-              (or col? v-start?)
-              (gpt/add (vv min-height))
+                (and row? v-center?)
+                (gpt/add (vv (/ min-height 2)))
 
-              (and row? v-center?)
-              (gpt/add (vv (/ min-height 2)))
-
-              (and row? v-end?)
-              (gpt/subtract (vv min-height)))))))
+                (and row? v-end?)
+                (gpt/subtract (vv min-height)))))))
 
 (defn layout-content-bounds
   [bounds {:keys [layout-padding] :as parent} children]
@@ -107,8 +100,11 @@
                 child-bounds
                 (if (or (ctl/fill-height? child) (ctl/fill-height? child))
                   (child-layout-bound-points parent child parent-bounds child-bounds)
-                  child-bounds)]
-            (gpo/parent-coords-bounds child-bounds parent-bounds)))]
+                  child-bounds)
+
+                [margin-top margin-right margin-bottom margin-left] (ctl/child-margins child)]
+            (-> (gpo/parent-coords-bounds child-bounds parent-bounds)
+                (gpo/pad-points (- margin-top) (- margin-right) (- margin-bottom) (- margin-left)))))]
 
     (as-> children $
       (map child-bounds $)

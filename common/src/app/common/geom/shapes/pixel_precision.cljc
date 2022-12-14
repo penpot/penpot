@@ -32,6 +32,7 @@
         ratio-width  (/ target-width curr-width)
         ratio-height (/ target-height curr-height)
         scalev       (gpt/point ratio-width ratio-height)]
+
     (-> modifiers
         (ctm/resize scalev origin transform transform-inverse))))
 
@@ -41,7 +42,6 @@
         corner        (gpt/point bounds)
         target-corner (gpt/round corner)
         deltav        (gpt/to-vec corner target-corner)]
-
     (ctm/move modifiers deltav)))
 
 (defn set-pixel-precision
@@ -56,8 +56,10 @@
                 has-resize? (size-pixel-precision shape points))
 
               points
-              (cond-> (:points shape)
-                has-resize? (gco/transform-points (ctm/modifiers->transform modifiers)))]
+              (if has-resize?
+                (-> (:points shape)
+                    (gco/transform-points (ctm/modifiers->transform modifiers)) )
+                points)]
           [modifiers points])]
     (position-pixel-precision modifiers shape points)))
 

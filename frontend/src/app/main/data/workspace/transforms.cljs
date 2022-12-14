@@ -28,6 +28,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
+   [app.util.dom :as dom]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -415,6 +416,14 @@
            (rx/take 1)
            (rx/map #(start-move from-position))))))
 
+(defn set-ghost-displacement
+  [move-vector]
+  (ptk/reify ::set-ghost-displacement
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (when-let [node (dom/get-element-by-class "ghost-outline")]
+        (dom/set-property! node "transform" (gmt/translate-matrix move-vector))))))
+
 (defn- start-move
   ([from-position] (start-move from-position nil))
   ([from-position ids]
@@ -501,6 +510,9 @@
                           (dwm/build-change-frame-modifiers objects selected target-frame drop-index)
                           (dwm/set-modifiers)))))
 
+              (->> move-stream
+                   (rx/map (comp set-ghost-displacement first)))
+
               ;; Last event will write the modifiers creating the changes
               (->> move-stream
                    (rx/last)
@@ -508,10 +520,10 @@
                     (fn [[_ target-frame drop-index]]
                       (let [undo-id (uuid/next)]
                         (rx/of (dwu/start-undo-transaction undo-id)
-                             (move-shapes-to-frame ids target-frame drop-index)
-                             (dwm/apply-modifiers {:undo-transation? false})
-                             (finish-transform)
-                             (dwu/commit-undo-transaction undo-id))))))))))))))
+                               (move-shapes-to-frame ids target-frame drop-index)
+                               (dwm/apply-modifiers {:undo-transation? false})
+                               (finish-transform)
+                               (dwu/commit-undo-transaction undo-id))))))))))))))
 
 (s/def ::direction #{:up :down :right :left})
 

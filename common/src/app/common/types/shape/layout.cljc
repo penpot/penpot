@@ -50,7 +50,6 @@
 
 (s/def ::row-gap ::us/safe-number)
 (s/def ::column-gap ::us/safe-number)
-(s/def ::layout-type #{:flex :grid})
 
 (s/def ::layout-gap
   (s/keys :opt-un [::row-gap ::column-gap]))
@@ -60,7 +59,6 @@
                    ::layout-flex-dir
                    ::layout-gap
                    ::layout-gap-type
-                   ::layout-type
                    ::layout-wrap-type
                    ::layout-padding-type
                    ::layout-padding
