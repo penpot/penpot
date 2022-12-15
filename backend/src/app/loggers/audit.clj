@@ -170,21 +170,24 @@
     (when (and (contains? cf/flags :webhooks)
                (::webhooks/event? event))
       (let [batch-key     (::webhooks/batch-key event)
-            batch-timeout (::webhooks/batch-timeout event)]
+            batch-timeout (::webhooks/batch-timeout event)
+            label-suffix  (when (ifn? batch-key)
+                            (str/ffmt ":%" (batch-key (:props params))))
+            dedupe?       (boolean
+                           (and batch-key batch-timeout))]
         (wrk/submit! ::wrk/conn pool
                      ::wrk/task :process-webhook-event
                      ::wrk/queue :webhooks
                      ::wrk/max-retries 0
                      ::wrk/delay (or batch-timeout 0)
-                     ::wrk/label (cond
-                                   (fn? batch-key)        (batch-key (:props event))
-                                   (keyword? batch-key)   (name batch-key)
-                                   (string? batch-key)    batch-key
-                                   :else                  "default")
-                     ::wrk/dedupe true
-                     ::webhooks/event (-> params
-                                          (dissoc :ip-addr)
-                                          (dissoc :type)))))))
+                     ::wrk/dedupe dedupe?
+                     ::wrk/label
+                     (str/ffmt "rpc:%1%2" (:name params) label-suffix)
+
+                     ::webhooks/event
+                     (-> params
+                         (dissoc :ip-addr)
+                         (dissoc :type)))))))
 
 (defn submit!
   "Submit audit event to the collector."
