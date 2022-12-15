@@ -25,11 +25,11 @@
 
 (defn- lookup-webhooks-by-team
   [pool team-id]
-  (db/exec! pool ["select * from webhook where team_id=? and is_active=true" team-id]))
+  (db/exec! pool ["select w.* from webhook as w where team_id=? and is_active=true" team-id]))
 
 (defn- lookup-webhooks-by-project
   [pool project-id]
-  (let [sql [(str "select * from webhook as w"
+  (let [sql [(str "select w.* from webhook as w"
                   "  join project as p on (p.team_id = w.team_id)"
                   " where p.id = ? and w.is_active = true")
              project-id]]
@@ -37,7 +37,7 @@
 
 (defn- lookup-webhooks-by-file
   [pool file-id]
-  (let [sql [(str "select * from webhook as w"
+  (let [sql [(str "select w.* from webhook as w"
                   "  join project as p on (p.team_id = w.team_id)"
                   "  join file as f on (f.project_id = p.id)"
                   " where f.id = ? and w.is_active = true")
