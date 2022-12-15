@@ -207,9 +207,9 @@
    {::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.http.session/manager
-   {:pool     (ig/ref ::db/pool)
-    :sprops   (ig/ref :app.setup/props)
-    :executor (ig/ref ::wrk/executor)}
+   {::db/pool      (ig/ref ::db/pool)
+    ::wrk/executor (ig/ref ::wrk/executor)
+    ::props        (ig/ref :app.setup/props)}
 
    :app.http.session/gc-task
    {:pool        (ig/ref ::db/pool)
