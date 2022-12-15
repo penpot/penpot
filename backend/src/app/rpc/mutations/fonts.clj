@@ -110,12 +110,12 @@
           ]
 
     (->> (generate-fonts data)
-         (p/map validate-data)
+         (p/fmap validate-data)
          (p/mcat executor persist-fonts)
-         (p/map executor insert-into-db)
-         (p/map (fn [result]
-                  (let [params (update params :data (comp vec keys))]
-                    (rph/with-meta result {::audit/replace-props params})))))))
+         (p/fmap executor insert-into-db)
+         (p/fmap (fn [result]
+                   (let [params (update params :data (comp vec keys))]
+                     (rph/with-meta result {::audit/replace-props params})))))))
 
 ;; --- UPDATE FONT FAMILY
 
@@ -128,10 +128,15 @@
   [{:keys [pool] :as cfg} {:keys [team-id profile-id id name] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
-    (db/update! conn :team-font-variant
-                {:font-family name}
-                {:font-id id
-                 :team-id team-id})))
+    (rph/with-meta
+      (db/update! conn :team-font-variant
+                  {:font-family name}
+                  {:font-id id
+                   :team-id team-id})
+      {::audit/replace-props {:id id
+                              :name name
+                              :team-id team-id
+                              :profile-id profile-id}})))
 
 ;; --- DELETE FONT
 
@@ -144,10 +149,14 @@
   [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
-    (db/update! conn :team-font-variant
-                {:deleted-at (dt/now)}
-                {:font-id id :team-id team-id})
-    nil))
+    (let [font (db/update! conn :team-font-variant
+                           {:deleted-at (dt/now)}
+                           {:font-id id :team-id team-id})]
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:id id
+                        :team-id team-id
+                        :name (:font-family font)
+                        :profile-id profile-id}}))))
 
 ;; --- DELETE FONT VARIANT
 
@@ -160,8 +169,9 @@
   [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
-
-    (db/update! conn :team-font-variant
-                {:deleted-at (dt/now)}
-                {:id id :team-id team-id})
-    nil))
+    (let [variant (db/update! conn :team-font-variant
+                              {:deleted-at (dt/now)}
+                              {:id id :team-id team-id})]
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:font-family (:font-family variant)
+                        :font-id (:font-id variant)}}))))
