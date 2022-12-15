@@ -14,8 +14,8 @@
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.retry :as retry]
    [app.util.blob :as blob]
+   [app.util.retry :as rtry]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
@@ -245,14 +245,16 @@
           :opt-un [::share-id]))
 
 (sv/defmethod ::create-comment-thread
-  {::retry/max-retries 3
-   ::retry/matches retry/conflict-db-insert?
-   ::doc/added "1.15"
+  {::doc/added "1.15"
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-comment-permissions! conn profile-id file-id share-id)
-    (create-comment-thread conn params)))
+
+    (rtry/with-retry {::rtry/when rtry/conflict-exception?
+                      ::rtry/max-retries 3
+                      ::rtry/label "create-comment-thread"}
+      (create-comment-thread conn params))))
 
 (defn- retrieve-next-seqn
   [conn file-id]
