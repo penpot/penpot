@@ -6,14 +6,21 @@
     <div class="tags">
       {% if item.deprecated %}
         <span class="tag">
-          <span>Deprecated:</span>
-          <span>since v{{item.deprecated}}</span>,
+          <span>DEPRECATED</span>
         </span>
       {% endif %}
-      <span class="tag">
-        <span>Auth:</span>
-        <span>{% if item.auth %}YES{% else %}NO{% endif %}</span>
-      </span>
+
+      {% if item.auth %}
+        <span class="tag">
+          <span>AUTH</span>
+        </span>
+      {% endif %}
+      
+      {% if item.webhook %}
+        <span class="tag">
+          <span>WEBHOOK</span>
+        </span>
+      {% endif %}
     </div>
   </div>
   <div class="rpc-row-detail hidden">
