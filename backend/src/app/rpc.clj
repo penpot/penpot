@@ -221,8 +221,8 @@
            (ex/raise :type :authentication
                      :code :authentication-required
                      :hint "authentication required for this endpoint")
-           (let [params (us/conform spec (dissoc params ::request))]
-             (f cfg (assoc params ::request request))))))
+           (let [params (us/conform spec params)]
+             (f cfg params)))))
       mdata)))
 
 (defn- process-method
