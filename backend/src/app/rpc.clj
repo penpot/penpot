@@ -157,12 +157,12 @@
                                    (:profile-id params)
                                    uuid/zero)
 
-                    props      (or (::audit/replace-props resultm)
-                                   (-> params
-                                       (d/without-qualified)
-                                       (merge (::audit/props resultm))
-                                       (dissoc :profile-id)
-                                       (dissoc :type)))
+                    props      (-> (or (::audit/replace-props resultm)
+                                       (-> params
+                                           (merge (::audit/props resultm))
+                                           (dissoc :profile-id)
+                                           (dissoc :type)))
+                                   (d/without-qualified))
 
                     event      {:type (or (::audit/type resultm)
                                           (::type cfg))
