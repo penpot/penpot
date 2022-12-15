@@ -71,12 +71,15 @@
   (s/keys :req-un [::profile-id ::id ::team-id ::is-pinned]))
 
 (sv/defmethod ::update-project-pin
+  {::doc/added "1.0"
+   ::webhooks/batch-timeout (dt/duration "5s")
+   ::webhooks/batch-key :id
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id team-id is-pinned] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id id)
     (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
     nil))
-
 
 ;; --- Mutation: Rename Project
 
@@ -86,13 +89,19 @@
   (s/keys :req-un [::profile-id ::name ::id]))
 
 (sv/defmethod ::rename-project
+  {::doc/added "1.0"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id name] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id id)
-    (db/update! conn :project
-                {:name name}
-                {:id id})
-    nil))
+    (let [project (db/get-by-id conn :project id)]
+      (db/update! conn :project
+                  {:name name}
+                  {:id id})
+
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:team-id (:team-id project)
+                        :prev-name (:name project)}}))))
 
 ;; --- Mutation: Delete Project
 
