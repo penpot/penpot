@@ -86,6 +86,7 @@
   (s/keys :req-un [::profile-id ::team-id]))
 
 (sv/defmethod ::get-unread-comment-threads
+  {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
   (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
@@ -133,6 +134,7 @@
           :opt-un [::share-id]))
 
 (sv/defmethod ::get-comment-thread
+  {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
@@ -160,6 +162,7 @@
           :opt-un [::share-id]))
 
 (sv/defmethod ::get-comments
+  {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id thread-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (let [thread (db/get-by-id conn :comment-thread thread-id)]
