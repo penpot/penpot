@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## 1.16.2-beta
+- Fix strage cursor behaviour after clicking viewport with text pool [Github #2447](https://github.com/penpot/penpot/issues/2447)
 
 ## 1.16.1-beta
 
