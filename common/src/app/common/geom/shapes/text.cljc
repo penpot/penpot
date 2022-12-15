@@ -22,7 +22,9 @@
   (let [points    (->> shape
                        :position-data
                        (mapcat (comp gpr/rect->points position-data->rect)))]
-    (-> points (gpr/points->selrect))))
+    (if (empty? points)
+      (:selrect shape)
+      (-> points (gpr/points->selrect)))))
 
 (defn position-data-bounding-box
   [shape]
