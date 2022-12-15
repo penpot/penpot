@@ -1342,7 +1342,7 @@ msgstr "New password"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "You have no pending comment notifications"
+msgstr "You're all caught up! New comment notifications will appear here."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
