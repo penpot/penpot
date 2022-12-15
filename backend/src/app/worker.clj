@@ -217,7 +217,7 @@
               (l/debug :hist "dispatcher: queue tasks"
                        :queue queue
                        :tasks (count ids)
-                       :total-queued res)))
+                       :queued res)))
 
           (run-batch! [rconn]
             (db/with-atomic [conn pool]
@@ -446,10 +446,11 @@
                 :else
                 (try
                   (l/debug :hint "worker: executing task"
+                           :name (:name task)
+                           :id (:id task)
+                           :queue queue
                            :worker-id worker-id
-                           :task-id (:id task)
-                           :task-name (:name task)
-                           :task-retry (:retry-num task))
+                           :retry (:retry-num task))
                   (handle-task task)
                   (catch InterruptedException cause
                     (throw cause))
