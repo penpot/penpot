@@ -62,7 +62,6 @@
                :name (:name event))
 
       (when-let [items (lookup-webhooks cfg event)]
-        ;; (app.common.pprint/pprint items)
         (l/trace :hint "webhooks found for event" :total (count items))
 
         (db/with-atomic [conn pool]
