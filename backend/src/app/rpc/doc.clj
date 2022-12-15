@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.config :as cf]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.util.services :as sv]
    [app.util.template :as tmpl]
@@ -35,6 +36,7 @@
                :name (d/name name)
                :module (-> (:ns mdata) (str/split ".") last)
                :auth (:auth mdata true)
+               :webhook (::webhooks/event? mdata false)
                :docs (::sv/docstring mdata)
                :deprecated (::deprecated mdata)
                :added (::added mdata)
@@ -51,6 +53,7 @@
      (->> (:queries methods)
           (map (partial gen-doc :query))
           (sort-by (juxt :module :name)))
+
      :mutation-methods
      (->> (:mutations methods)
           (map (partial gen-doc :query))
