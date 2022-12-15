@@ -105,7 +105,7 @@
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
   [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (let [cmd    (keyword (:command params))
+  (let [cmd    (keyword (:type params))
         etag   (yrq/get-header request "if-none-match")
         data   (into {::http/request request ::cond/key etag} params)
         data   (if profile-id
@@ -212,7 +212,7 @@
 
     (l/debug :hint "register method" :name (::sv/name mdata))
     (with-meta
-      (fn [{:keys [::request] :as params}]
+      (fn [params]
         ;; Raise authentication error when rpc method requires auth but
         ;; no profile-id is found in the request.
 
@@ -328,7 +328,7 @@
 (defmethod ig/init-key ::routes
   [_ {:keys [methods] :as cfg}]
   [["/rpc"
-    ["/command/:command" {:handler (partial rpc-command-handler (:commands methods))}]
+    ["/command/:type" {:handler (partial rpc-command-handler (:commands methods))}]
     ["/query/:type" {:handler (partial rpc-query-handler (:queries methods))}]
     ["/mutation/:type" {:handler (partial rpc-mutation-handler (:mutations methods))
                         :allowed-methods #{:post}}]]])
