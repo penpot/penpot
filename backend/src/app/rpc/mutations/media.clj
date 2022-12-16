@@ -16,7 +16,7 @@
    [app.http.client :as http]
    [app.media :as media]
    [app.rpc.climit :as climit]
-   [app.rpc.queries.teams :as teams]
+   [app.rpc.commands.teams :as teams]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]

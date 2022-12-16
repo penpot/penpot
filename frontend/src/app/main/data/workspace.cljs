@@ -265,7 +265,7 @@
         (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
                      (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
                      (rp/query! :project {:id project-id})
-                     (rp/query! :team-users {:file-id file-id})
+                     (rp/cmd! :get-team-users {:file-id file-id})
                      (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
              (rx/take 1)
              (rx/map (partial bundle-fetched features))

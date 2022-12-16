@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
@@ -18,6 +19,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.timers :as tm]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -110,7 +112,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/query! :team-members {:team-id team-id})
+        (->> (rp/cmd! :get-team-members {:team-id team-id})
              (rx/map team-members-fetched))))))
 
 ;; --- EVENT: fetch-team-stats
@@ -128,7 +130,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/query! :team-stats {:team-id team-id})
+        (->> (rp/cmd! :get-team-stats {:team-id team-id})
              (rx/map team-stats-fetched))))))
 
 ;; --- EVENT: fetch-team-invitations
@@ -146,7 +148,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/query! :team-invitations {:team-id team-id})
+        (->> (rp/cmd! :get-team-invitations {:team-id team-id})
              (rx/map team-invitations-fetched))))))
 
 ;; --- EVENT: fetch-team-webhooks
@@ -384,13 +386,12 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/mutation! :create-team {:name name})
+        (->> (rp/cmd! :create-team {:name name})
              (rx/tap on-success)
              (rx/map team-created)
              (rx/catch on-error))))))
 
 ;; --- EVENT: create-team-with-invitations
-
 
 (defn create-team-with-invitations
   [{:keys [name emails role] :as params}]
@@ -404,7 +405,7 @@
             params {:name name
                     :emails #{emails}
                     :role role}]
-        (->> (rp/mutation! :create-team-and-invite-members params)
+        (->> (rp/cmd! :create-team-with-invitations params)
              (rx/tap on-success)
              (rx/map team-created)
              (rx/catch on-error))))))
@@ -421,7 +422,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/mutation! :update-team params)
+      (->> (rp/cmd! :update-team params)
            (rx/ignore)))))
 
 (defn update-team-photo
@@ -440,7 +441,7 @@
         (->> (rx/of file)
              (rx/map di/validate-file)
              (rx/map prepare)
-             (rx/mapcat #(rp/mutation :update-team-photo %))
+             (rx/mapcat #(rp/cmd! :update-team-photo %))
              (rx/do on-success)
              (rx/map du/fetch-teams)
              (rx/catch on-error))))))
@@ -454,7 +455,7 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)
             params  (assoc params :team-id team-id)]
-        (->> (rp/mutation! :update-team-member-role params)
+        (->> (rp/cmd! :update-team-member-role params)
              (rx/mapcat (fn [_]
                           (rx/of (fetch-team-members)
                                  (du/fetch-teams)))))))))
@@ -467,7 +468,7 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)
             params  (assoc params :team-id team-id)]
-        (->> (rp/mutation! :delete-team-member params)
+        (->> (rp/cmd! :delete-team-member params)
              (rx/mapcat (fn [_]
                           (rx/of (fetch-team-members)
                                  (du/fetch-teams)))))))))
@@ -487,7 +488,7 @@
             params  (cond-> {:id team-id}
                       (uuid? reassign-to)
                       (assoc :reassign-to reassign-to))]
-        (->> (rp/mutation! :leave-team params)
+        (->> (rp/cmd! :leave-team params)
              (rx/tap #(tm/schedule on-success))
              (rx/catch on-error))))))
 
@@ -506,9 +507,39 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)
             params (dissoc params :resend?)]
-        (->> (rp/mutation! :invite-team-member params)
+        (->> (rp/cmd! :create-team-invitations params)
              (rx/tap on-success)
              (rx/catch on-error))))))
+
+
+(defn copy-invitation-link
+  [{:keys [email team-id] :as params}]
+  (us/assert! ::us/email email)
+  (us/assert! ::us/uuid team-id)
+
+  (ptk/reify ::copy-invitation-link
+    IDeref
+    (-deref [_] {:email email :team-id team-id})
+
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)
+            router (:router state)]
+
+        (->> (rp/cmd! :get-team-invitation-token params)
+             (rx/map (fn [params]
+                       (rt/resolve router :auth-verify-token {} params)))
+             (rx/map (fn [fragment]
+                       (assoc @cf/public-uri :fragment fragment)))
+             (rx/tap (fn [uri]
+                       (wapi/write-to-clipboard (str uri))))
+             (rx/tap on-success)
+             (rx/ignore)
+             (rx/catch on-error))))))
+
 
 (defn update-team-invitation-role
   [{:keys [email team-id role] :as params}]
@@ -524,7 +555,7 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/mutation! :update-team-invitation-role params)
+        (->> (rp/cmd! :update-team-invitation-role params)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -538,7 +569,7 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/mutation! :delete-team-invitation params)
+        (->> (rp/cmd! :delete-team-invitation params)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -589,7 +620,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)
-            params  (assoc params :team-id team-id)
+            params  (-> params
+                        (assoc :team-id team-id)
+                        (update :uri str))
             {:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
@@ -608,7 +641,7 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/mutation! :delete-team {:id id})
+        (->> (rp/cmd! :delete-team {:id id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 

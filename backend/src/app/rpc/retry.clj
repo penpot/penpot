@@ -5,23 +5,23 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.rpc.retry
-  "A fault tolerance helpers. Allow retry some operations that we know
-  we can retry."
+  "A fault tolerance RPC middleware. Allow retry some operations that we
+  know we can retry."
   (:require
    [app.common.logging :as l]
+   [app.util.retry :refer [conflict-exception?]]
    [app.util.services :as sv]
    [promesa.core :as p]))
 
 (defn conflict-db-insert?
   "Check if exception matches a insertion conflict on postgresql."
   [e]
-  (and (instance? org.postgresql.util.PSQLException e)
-       (= "23505" (.getSQLState e))))
+  (conflict-exception? e))
+
+(def always-false (constantly false))
 
 (defn wrap-retry
-  [_ f {:keys [::matches ::sv/name]
-        :or {matches (constantly false)}
-        :as mdata}]
+  [_ f {:keys [::matches ::sv/name] :or {matches always-false} :as mdata}]
 
   (when (::enabled mdata)
     (l/debug :hint "wrapping retry" :name name))
@@ -29,8 +29,8 @@
   (if-let [max-retries (::max-retries mdata)]
     (fn [cfg params]
       (letfn [(run [retry]
-                (-> (f cfg params)
-                    (p/catch (partial handle-error retry))))
+                (->> (f cfg params)
+                     (p/merr (partial handle-error retry))))
 
               (handle-error [retry cause]
                 (if (matches cause)
@@ -40,6 +40,6 @@
                       (run current-retry)
                       (throw cause)))
                   (throw cause)))]
-        (run 0)))
+        (run 1)))
     f))
 

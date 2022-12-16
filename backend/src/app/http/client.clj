@@ -11,7 +11,8 @@
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
-   [java-http-clj.core :as http])
+   [java-http-clj.core :as http]
+   [promesa.core :as p])
   (:import
    java.net.http.HttpClient))
 
@@ -34,7 +35,10 @@
    (us/assert! ::client client)
    (if sync?
      (http/send req {:client client :as response-type})
-     (http/send-async req {:client client :as response-type}))))
+     (try
+       (http/send-async req {:client client :as response-type})
+       (catch Throwable cause
+         (p/rejected cause))))))
 
 (defn req!
   "A convencience toplevel function for gradual migration to a new API

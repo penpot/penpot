@@ -696,6 +696,9 @@ msgstr "Webhook updated successfully."
 msgid "dashboard.webhooks.create.success"
 msgstr "Webhook created successfully."
 
+msgid "webhooks.last-delivery.success"
+msgstr "Last delivery was successfull."
+
 msgid "errors.webhooks.unexpected"
 msgstr "Unexpected error on validating"
 
@@ -705,14 +708,14 @@ msgstr "Timeout"
 msgid "errors.webhooks.connection"
 msgstr "Connection error, url not reacheable"
 
-msgid "webhooks.last-delivery.success"
-msgstr "Last delivery was successfull."
-
 msgid "errors.webhooks.last-delivery"
 msgstr "Last delivery was not successfull."
 
 msgid "errors.webhooks.ssl-validation"
 msgstr "Error on SSL validation."
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "URL does not pass validation."
 
 msgid "errors.webhooks.unexpected-status"
 msgstr "Unexpected status %s"
@@ -1436,6 +1439,10 @@ msgstr "Rename team"
 msgid "labels.resend-invitation"
 msgstr "Resend invitation"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Copy invitation link"
+
 #: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "Retry"
@@ -1956,6 +1963,10 @@ msgstr "Update a component in a shared library"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Invitation sent successfully"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Invitation link copied"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
@@ -4461,4 +4472,3 @@ msgstr "The font %s could not be loaded"
 
 msgid "errors.bad-font-plural"
 msgstr "The fonts %s could not be loaded"
-

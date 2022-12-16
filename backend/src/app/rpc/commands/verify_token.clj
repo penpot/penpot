@@ -11,9 +11,9 @@
    [app.db :as db]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.tokens :as tokens]
    [app.tokens.spec.team-invitation :as-alias spec.team-invitation]
@@ -129,7 +129,7 @@
   [{:keys [conn session] :as cfg} {:keys [profile-id token]}
    {:keys [member-id team-id member-email] :as claims}]
 
-  (us/assert ::team-invitation-claims claims)
+  (us/verify! ::team-invitation-claims claims)
 
   (let [invitation (db/get* conn :team-invitation
                             {:team-id team-id :email-to member-email})

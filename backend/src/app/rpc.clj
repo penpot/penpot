@@ -105,7 +105,7 @@
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
   [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (let [cmd    (keyword (:command params))
+  (let [cmd    (keyword (:type params))
         etag   (yrq/get-header request "if-none-match")
         data   (into {::http/request request ::cond/key etag} params)
         data   (if profile-id
@@ -157,12 +157,13 @@
                                    (:profile-id params)
                                    uuid/zero)
 
-                    props      (or (::audit/replace-props resultm)
-                                   (-> params
-                                       (d/without-qualified)
-                                       (merge (::audit/props resultm))
-                                       (dissoc :profile-id)
-                                       (dissoc :type)))
+                    props      (-> (or (::audit/replace-props resultm)
+                                       (-> params
+                                           (merge (::audit/props resultm))
+                                           (dissoc :profile-id)
+                                           (dissoc :type)))
+                                   (d/without-qualified)
+                                   (d/without-nils))
 
                     event      {:type (or (::audit/type resultm)
                                           (::type cfg))
@@ -212,7 +213,7 @@
 
     (l/debug :hint "register method" :name (::sv/name mdata))
     (with-meta
-      (fn [{:keys [::request] :as params}]
+      (fn [params]
         ;; Raise authentication error when rpc method requires auth but
         ;; no profile-id is found in the request.
 
@@ -221,8 +222,8 @@
            (ex/raise :type :authentication
                      :code :authentication-required
                      :hint "authentication required for this endpoint")
-           (let [params (us/conform spec (dissoc params ::request))]
-             (f cfg (assoc params ::request request))))))
+           (let [params (us/conform spec params)]
+             (f cfg params)))))
       mdata)))
 
 (defn- process-method
@@ -237,7 +238,6 @@
     (->> (sv/scan-ns 'app.rpc.queries.projects
                      'app.rpc.queries.files
                      'app.rpc.queries.teams
-                     'app.rpc.queries.comments
                      'app.rpc.queries.profile
                      'app.rpc.queries.viewer
                      'app.rpc.queries.fonts)
@@ -250,13 +250,10 @@
     (->> (sv/scan-ns 'app.rpc.mutations.media
                      'app.rpc.mutations.profile
                      'app.rpc.mutations.files
-                     'app.rpc.mutations.comments
                      'app.rpc.mutations.projects
                      'app.rpc.mutations.teams
-                     'app.rpc.mutations.management
                      'app.rpc.mutations.fonts
-                     'app.rpc.mutations.share-link
-                     'app.rpc.mutations.verify-token)
+                     'app.rpc.mutations.share-link)
          (map (partial process-method cfg))
          (into {}))))
 
@@ -268,6 +265,7 @@
                      'app.rpc.commands.management
                      'app.rpc.commands.verify-token
                      'app.rpc.commands.search
+                     'app.rpc.commands.teams
                      'app.rpc.commands.auth
                      'app.rpc.commands.ldap
                      'app.rpc.commands.demo
@@ -331,7 +329,7 @@
 (defmethod ig/init-key ::routes
   [_ {:keys [methods] :as cfg}]
   [["/rpc"
-    ["/command/:command" {:handler (partial rpc-command-handler (:commands methods))}]
+    ["/command/:type" {:handler (partial rpc-command-handler (:commands methods))}]
     ["/query/:type" {:handler (partial rpc-query-handler (:queries methods))}]
     ["/mutation/:type" {:handler (partial rpc-mutation-handler (:mutations methods))
                         :allowed-methods #{:post}}]]])

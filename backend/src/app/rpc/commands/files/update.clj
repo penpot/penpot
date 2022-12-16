@@ -123,16 +123,12 @@
 ;; set is different than the persisted one, update it on the
 ;; database.
 
-(defn webhook-batch-keyfn
-  [props]
-  (str "rpc:update-file:" (:id props)))
-
 (sv/defmethod ::update-file
   {::climit/queue :update-file
    ::climit/key-fn :id
    ::webhooks/event? true
-   ::webhooks/batch-timeout (dt/duration "2s")
-   ::webhooks/batch-key webhook-batch-keyfn
+   ::webhooks/batch-timeout (dt/duration "2m")
+   ::webhooks/batch-key :id
    ::doc/added "1.17"}
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]

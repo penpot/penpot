@@ -45,6 +45,15 @@
   :redundant-do
   {:level :off}
 
+  :earmuffed-var-not-dynamic
+  {:level :off}
+
+  :dynamic-var-not-earmuffed
+  {:level :off}
+
+  :used-underscored-binding
+  {:level :warning}
+
   :unused-binding
   {:exclude-destructured-as true
    :exclude-destructured-keys-in-fn-args false

@@ -448,81 +448,113 @@
                                 :pending (= status :pending))}
      [:span.status-label (tr status-label)]]))
 
-(mf/defc invitation-actions [{:keys [can-modify? delete resend] :as props}]
-  (let [show? (mf/use-state false)]
-    (when can-modify?
-      [:*
-       [:span.icon {:on-click #(reset! show? true)} [i/actions]]
-       [:& dropdown {:show @show?
-                     :on-close #(reset! show? false)}
-        [:ul.dropdown.actions-dropdown
-         [:li {:on-click resend} (tr "labels.resend-invitation")]
-         [:li {:on-click delete} (tr "labels.delete-invitation")]]]])))
+(mf/defc invitation-actions
+  [{:keys [invitation team] :as props}]
+  (let [show?   (mf/use-state false)
+
+        team-id (:id team)
+        email   (:email invitation)
+        role    (:role invitation)
+
+        on-resend-success
+        (mf/use-fn
+         (fn []
+           (st/emit! (msg/success (tr "notifications.invitation-email-sent"))
+                     (modal/hide))))
+
+        on-copy-success
+        (mf/use-fn
+         (fn []
+           (st/emit! (msg/success (tr "notifications.invitation-link-copied"))
+                     (modal/hide))))
+
+        on-error
+        (mf/use-fn
+         (mf/deps email)
+         (fn [{:keys [type code] :as error}]
+           (cond
+             (and (= :validation type)
+                  (= :profile-is-muted code))
+             (rx/of (msg/error (tr "errors.profile-is-muted")))
+
+             (and (= :validation type)
+                  (= :member-is-muted code))
+             (rx/of (msg/error (tr "errors.member-is-muted")))
+
+             (and (= :validation type)
+                  (= :email-has-permanent-bounces code))
+             (rx/of (msg/error (tr "errors.email-has-permanent-bounces" email)))
+
+             :else
+             (rx/throw error))))
+
+        delete-fn
+        (mf/use-fn
+         (mf/deps email team-id)
+         (fn []
+           (let [params {:email email :team-id team-id}
+                 mdata  {:on-success #(st/emit! (dd/fetch-team-invitations))}]
+             (st/emit! (dd/delete-team-invitation (with-meta params mdata))))))
+
+        resend-fn
+        (mf/use-fn
+         (mf/deps email team-id)
+         (fn []
+           (let [params (with-meta {:emails [email]
+                                    :team-id team-id
+                                    :resend? true
+                                    :role role}
+                          {:on-success on-resend-success
+                           :on-error on-error})]
+             (st/emit!
+              (-> (dd/invite-team-members params)
+                  (with-meta {::ev/origin :team}))))))
+
+        copy-fn
+        (mf/use-fn
+         (mf/deps email team-id)
+         (fn []
+           (let [params (with-meta {:email email :team-id team-id}
+                          {:on-success on-copy-success
+                           :on-error on-error})]
+             (prn "KKK1")
+             (st/emit!
+              (-> (dd/copy-invitation-link params)
+                  (with-meta {::ev/origin :team}))))))]
+
+
+    [:*
+     [:span.icon {:on-click #(reset! show? true)} [i/actions]]
+     [:& dropdown {:show @show?
+                   :on-close #(reset! show? false)}
+      [:ul.dropdown.actions-dropdown
+       [:li {:on-click copy-fn}   (tr "labels.copy-invitation-link")]
+       [:li {:on-click resend-fn} (tr "labels.resend-invitation")]
+       [:li {:on-click delete-fn} (tr "labels.delete-invitation")]]]]))
 
 (mf/defc invitation-row
   {::mf/wrap [mf/memo]}
   [{:keys [invitation can-invite? team] :as props}]
 
-  (let [expired?          (:expired invitation)
-        email             (:email invitation)
-        invitation-role   (:role invitation)
-        status            (if expired?
-                            :expired
-                            :pending)
-
-        on-success
-        #(st/emit! (msg/success (tr "notifications.invitation-email-sent"))
-                   (modal/hide)
-                   (dd/fetch-team-invitations))
-
-
-        on-error
-        (fn [email {:keys [type code] :as error}]
-          (cond
-            (and (= :validation type)
-                 (= :profile-is-muted code))
-            (msg/error (tr "errors.profile-is-muted"))
-
-            (and (= :validation type)
-                 (= :member-is-muted code))
-            (msg/error (tr "errors.member-is-muted"))
-
-            (and (= :validation type)
-                 (= :email-has-permanent-bounces code))
-            (msg/error (tr "errors.email-has-permanent-bounces" email))
-
-            :else
-            (msg/error (tr "errors.generic"))))
+  (let [expired? (:expired invitation)
+        email    (:email invitation)
+        role     (:role invitation)
+        status   (if expired? :expired :pending)
 
         change-rol
-        (fn [role]
-          (let [params {:email email :team-id (:id team) :role role}
-                mdata  {:on-success #(st/emit! (dd/fetch-team-invitations))}]
-            (st/emit! (dd/update-team-invitation-role (with-meta params mdata)))))
+        (mf/use-fn
+         (mf/deps team email)
+         (fn [role]
+           (let [params {:email email :team-id (:id team) :role role}
+                 mdata  {:on-success #(st/emit! (dd/fetch-team-invitations))}]
+             (st/emit! (dd/update-team-invitation-role (with-meta params mdata))))))]
 
-        delete-invitation
-        (fn []
-          (let [params {:email email :team-id (:id team)}
-                mdata  {:on-success #(st/emit! (dd/fetch-team-invitations))}]
-            (st/emit! (dd/delete-team-invitation (with-meta params mdata)))))
-
-        resend-invitation
-        (fn []
-          (let [params {:emails [email]
-                        :team-id (:id team)
-                        :resend? true
-                        :role invitation-role}
-                mdata  {:on-success on-success
-                        :on-error (partial on-error email)}]
-            (st/emit! (-> (dd/invite-team-members (with-meta params mdata))
-                          (with-meta {::ev/origin :team}))
-                      (dd/fetch-team-invitations))))]
     [:div.table-row
      [:div.table-field.mail email]
      [:div.table-field.roles
       [:& invitation-role-selector
        {:can-invite? can-invite?
-        :role invitation-role
+        :role role
         :status status
         :change-to-editor (partial change-rol :editor)
         :change-to-admin (partial change-rol :admin)}]]
@@ -530,20 +562,22 @@
      [:div.table-field.status
       [:& invitation-status-badge {:status status}]]
      [:div.table-field.actions
-      [:& invitation-actions
-       {:can-modify? can-invite?
-        :delete delete-invitation
-        :resend resend-invitation}]]]))
+      (when can-invite?
+        [:& invitation-actions
+         {:invitation invitation
+          :team team}])]]))
 
-(mf/defc empty-invitation-table [can-invite?]
+(mf/defc empty-invitation-table
+  [{:keys [can-invite?] :as props}]
   [:div.empty-invitations
    [:span (tr "labels.no-invitations")]
-   (when (:can-invite? can-invite?) [:span (tr "labels.no-invitations-hint")])])
+   (when can-invite?
+     [:span (tr "labels.no-invitations-hint")])])
 
 (mf/defc invitation-section
   [{:keys [team invitations] :as props}]
-  (let [owner? (get-in team [:permissions :is-owner])
-        admin? (get-in team [:permissions :is-admin])
+  (let [owner?      (dm/get-in team [:permissions :is-owner])
+        admin?      (dm/get-in team [:permissions :is-admin])
         can-invite? (or owner? admin?)]
 
     [:div.dashboard-table.invitations
@@ -555,7 +589,11 @@
        [:& empty-invitation-table {:can-invite? can-invite?}]
        [:div.table-rows
         (for [invitation invitations]
-          [:& invitation-row {:key (:email invitation) :invitation invitation :can-invite? can-invite? :team team}])])]))
+          [:& invitation-row
+           {:key (:email invitation)
+            :invitation invitation
+            :can-invite? can-invite?
+            :team team}])])]))
 
 (mf/defc team-invitations-page
   [{:keys [team] :as props}]
@@ -568,7 +606,7 @@
              (tr "dashboard.your-penpot")
              (:name team)))))
 
-    (mf/with-effect
+    (mf/with-effect []
       (st/emit! (dd/fetch-team-invitations)))
 
     [:*
@@ -582,7 +620,7 @@
 ;; WEBHOOKS SECTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::uri ::us/not-empty-string)
+(s/def ::uri ::us/uri)
 (s/def ::mtype ::us/not-empty-string)
 (s/def ::webhook-form
   (s/keys :req-un [::uri ::mtype]))
@@ -619,6 +657,8 @@
              (let [message (cond
                              (= hint "unknown")
                              (tr "errors.webhooks.unexpected")
+                             (= hint "invalid-uri")
+                             (tr "errors.webhooks.invalid-uri")
                              (= hint "ssl-validation-error")
                              (tr "errors.webhooks.ssl-validation")
                              (= hint "timeout")

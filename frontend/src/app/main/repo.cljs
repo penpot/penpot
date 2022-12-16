@@ -17,6 +17,11 @@
 (derive :get-file-libraries ::query)
 (derive :get-file-fragment ::query)
 (derive :search-files ::query)
+(derive :get-teams ::query)
+(derive :get-team-users ::query)
+(derive :get-team-members ::query)
+(derive :get-team-stats ::query)
+(derive :get-team-invitations ::query)
 
 (defn handle-response
   [{:keys [status body] :as response}]

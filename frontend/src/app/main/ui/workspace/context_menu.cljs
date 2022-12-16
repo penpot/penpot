@@ -386,7 +386,7 @@
        [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
                        :shortcut (sc/get-tooltip :toogle-layout-flex)
                        :on-click add-flex}]]
-      
+
       is-flex-container?
       [:*
        [:& menu-separator]
@@ -432,7 +432,7 @@
         do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
         do-restore-component #(st/emit! (dwl/restore-component component-file component-id))
 
-        _do-update-remote-component
+        do-update-remote-component
         #(st/emit! (modal/show
                     {:type :confirm
                      :message ""
@@ -516,7 +516,7 @@
                [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
                                :on-click do-reset-component}]
                [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
-                               :on-click _do-update-remote-component}]
+                               :on-click do-update-remote-component}]
                [:& menu-entry {:title (tr "workspace.shape.menu.go-main")
                                :on-click do-navigate-component-file}]])))])
      [:& menu-separator]]))

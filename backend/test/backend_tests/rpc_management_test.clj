@@ -53,7 +53,7 @@
                 :profile-id (:id profile)
                 :file-id (:id file1)
                 :name "file 1 (copy)"}
-          out  (th/mutation! data)]
+          out  (th/command! data)]
 
       ;; (th/print-result! out)
 
@@ -125,7 +125,7 @@
                 :profile-id (:id profile)
                 :file-id (:id file1)
                 :name "file 1 (copy)"}
-          out  (th/mutation! data)]
+          out  (th/command! data)]
 
       ;; (th/print-result! out)
 
@@ -187,7 +187,7 @@
                 :profile-id (:id profile)
                 :project-id (:id project)
                 :name "project 1 (copy)"}
-          out  (th/mutation! data)]
+          out  (th/command! data)]
 
       ;; Check that result is correct
       (t/is (nil? (:error out)))
@@ -253,7 +253,7 @@
                 :profile-id (:id profile)
                 :project-id (:id project)
                 :name "project 1 (copy)"}
-          out  (th/mutation! data)]
+          out  (th/command! data)]
 
       ;; Check that result is correct
       (t/is (nil? (:error out)))
@@ -317,7 +317,7 @@
                  :project-id (:id project1)
                  :ids #{(:id file1)}}
 
-          out   (th/mutation! data)
+          out   (th/command! data)
           error (:error out)]
       (t/is (th/ex-info? error))
       (t/is (th/ex-of-type? error :validation))
@@ -337,7 +337,7 @@
                 :project-id (:id project2)
                 :ids #{(:id file1)}}
 
-          out  (th/mutation! data)]
+          out  (th/command! data)]
 
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
@@ -419,7 +419,7 @@
                 :profile-id (:id profile)
                 :project-id (:id project2)
                 :ids #{(:id file1)}}
-          out  (th/mutation! data)]
+          out  (th/command! data)]
 
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
@@ -492,7 +492,7 @@
                 :profile-id (:id profile)
                 :project-id (:id project2)
                 :ids #{(:id file2)}}
-          out  (th/mutation! data)]
+          out  (th/command! data)]
 
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
@@ -578,7 +578,7 @@
                 :profile-id (:id profile)
                 :project-id (:id project1)
                 :team-id (:id team)}
-          out  (th/mutation! data)]
+          out  (th/command! data)]
 
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))

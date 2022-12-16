@@ -12,8 +12,8 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.loggers.webhooks :as webhooks]
+   [app.rpc.commands.teams :refer [check-edition-permissions! check-read-permissions!]]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.teams :refer [check-edition-permissions! check-read-permissions!]]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
@@ -74,7 +74,8 @@
     (when (>= total max-hooks-for-team)
       (ex/raise :type :restriction
                 :code :webhooks-quote-reached
-                :hint (str/ffmt "can't create more than % webhooks per team" max-hooks-for-team)))))
+                :hint (str/ffmt "can't create more than % webhooks per team"
+                                max-hooks-for-team)))))
 
 (defn- insert-webhook!
   [{:keys [::db/pool]} {:keys [team-id uri mtype is-active] :as params}]
@@ -99,8 +100,8 @@
   {::doc/added "1.17"}
   [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id team-id] :as params}]
   (check-edition-permissions! pool profile-id team-id)
-  (->> (validate-quotes! cfg params)
-       (p/fmap executor (fn [_] (validate-webhook! cfg nil params)))
+  (validate-quotes! cfg params)
+  (->> (validate-webhook! cfg nil params)
        (p/fmap executor (fn [_] (insert-webhook! cfg params)))))
 
 (s/def ::update-webhook

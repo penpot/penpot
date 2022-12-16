@@ -7,15 +7,13 @@
 (ns app.rpc.mutations.projects
   (:require
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as proj]
-   [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
@@ -28,9 +26,7 @@
 
 ;; --- Mutation: Create Project
 
-(declare create-project)
-(declare create-project-role)
-(declare create-team-project-profile)
+(declare create-project-profile-state)
 
 (s/def ::team-id ::us/uuid)
 (s/def ::create-project
@@ -43,40 +39,21 @@
   [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
-    (let [project (create-project conn params)
+    (let [project (teams/create-project conn params)
           params  (assoc params
                          :project-id (:id project)
                          :role :owner)]
-      (create-project-role conn params)
-      (create-team-project-profile conn params)
+      (teams/create-project-role conn params)
+      (create-project-profile-state conn params)
       (assoc project :is-pinned true))))
 
-(defn create-project
-  [conn {:keys [id team-id name is-default] :as params}]
-  (let [id         (or id (uuid/next))
-        is-default (if (boolean? is-default) is-default false)]
-    (db/insert! conn :project
-                {:id id
-                 :name name
-                 :team-id team-id
-                 :is-default is-default})))
-
-(defn create-project-role
-  [conn {:keys [project-id profile-id role]}]
-  (let [params {:project-id project-id
-                :profile-id profile-id}]
-    (->> (perms/assign-role-flags params role)
-         (db/insert! conn :project-profile-rel))))
-
-;; TODO: pending to be refactored
-(defn create-team-project-profile
+(defn create-project-profile-state
   [conn {:keys [team-id project-id profile-id] :as params}]
   (db/insert! conn :team-project-profile-rel
               {:project-id project-id
                :profile-id profile-id
                :team-id team-id
                :is-pinned true}))
-
 
 ;; --- Mutation: Toggle Project Pin
 
@@ -94,12 +71,15 @@
   (s/keys :req-un [::profile-id ::id ::team-id ::is-pinned]))
 
 (sv/defmethod ::update-project-pin
+  {::doc/added "1.0"
+   ::webhooks/batch-timeout (dt/duration "5s")
+   ::webhooks/batch-key :id
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id team-id is-pinned] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id id)
     (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
     nil))
-
 
 ;; --- Mutation: Rename Project
 
@@ -109,13 +89,19 @@
   (s/keys :req-un [::profile-id ::name ::id]))
 
 (sv/defmethod ::rename-project
+  {::doc/added "1.0"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id profile-id name] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id id)
-    (db/update! conn :project
-                {:name name}
-                {:id id})
-    nil))
+    (let [project (db/get-by-id conn :project id)]
+      (db/update! conn :project
+                  {:name name}
+                  {:id id})
+
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:team-id (:team-id project)
+                        :prev-name (:name project)}}))))
 
 ;; --- Mutation: Delete Project
 

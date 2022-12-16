@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.main :as-alias main]
    [app.tokens :as tokens]
    [app.util.time :as dt]
    [app.worker :as wrk]
@@ -56,13 +57,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- prepare-session-params
-  [sprops data]
+  [props data]
   (let [profile-id (:profile-id data)
         user-agent (:user-agent data)
         created-at (or (:created-at data) (dt/now))
-        token      (tokens/generate sprops {:iss "authentication"
-                                            :iat created-at
-                                            :uid profile-id})]
+        token      (tokens/generate props {:iss "authentication"
+                                           :iat created-at
+                                           :uid profile-id})]
     {:user-agent user-agent
      :profile-id profile-id
      :created-at created-at
@@ -70,7 +71,7 @@
      :id token}))
 
 (defn- database-manager
-  [{:keys [pool sprops executor]}]
+  [{:keys [::db/pool ::wrk/executor ::main/props]}]
   (reify ISessionManager
     (read [_ token]
       (px/with-dispatch executor
@@ -78,11 +79,11 @@
 
     (decode [_ token]
       (px/with-dispatch executor
-        (tokens/verify sprops {:token token :iss "authentication"})))
+        (tokens/verify props {:token token :iss "authentication"})))
 
     (write! [_ _ data]
       (px/with-dispatch executor
-        (let [params (prepare-session-params sprops data)]
+        (let [params (prepare-session-params props data)]
           (db/insert! pool :http-session params)
           params)))
 
@@ -100,7 +101,7 @@
         nil))))
 
 (defn inmemory-manager
-  [{:keys [sprops executor]}]
+  [{:keys [::wrk/executor ::main/props]}]
   (let [cache (atom {})]
     (reify ISessionManager
       (read [_ token]
@@ -108,11 +109,11 @@
 
       (decode [_ token]
         (px/with-dispatch executor
-          (tokens/verify sprops {:token token :iss "authentication"})))
+          (tokens/verify props {:token token :iss "authentication"})))
 
       (write! [_ _ data]
         (p/do
-          (let [{:keys [token] :as params} (prepare-session-params sprops data)]
+          (let [{:keys [token] :as params} (prepare-session-params props data)]
             (swap! cache assoc token params)
             params)))
 
@@ -127,12 +128,11 @@
           (swap! cache dissoc token)
           nil)))))
 
-(s/def ::sprops map?)
 (defmethod ig/pre-init-spec ::manager [_]
-  (s/keys :req-un [::db/pool ::wrk/executor ::sprops]))
+  (s/keys :req [::db/pool ::wrk/executor ::main/props]))
 
 (defmethod ig/init-key ::manager
-  [_ {:keys [pool] :as cfg}]
+  [_ {:keys [::db/pool] :as cfg}]
   (if (db/read-only? pool)
     (inmemory-manager cfg)
     (database-manager cfg)))
@@ -179,17 +179,13 @@
 
 (def middleware-1
   (letfn [(wrap-handler [manager handler request respond raise]
-            (try
-              (let [claims  (some->> (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
-                                     (yrq/get-cookie request)
-                                     (decode manager))
-                    request (cond-> request
-                              (some? claims)
-                              (assoc :session-token-claims claims))]
-                (handler request respond raise))
-              (catch Throwable _
-                (handler request respond raise))))]
-
+            (when-let [cookie (some->> (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
+                                       (yrq/get-cookie request))]
+              (->> (decode manager (:value cookie))
+                   (p/fnly (fn [claims _]
+                             (cond-> request
+                               (some? claims) (assoc :session-token-claims claims)
+                               :always        (handler respond raise)))))))]
     {:name :session-1
      :compile (fn [& _]
                 (fn [handler manager]

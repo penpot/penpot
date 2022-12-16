@@ -13,12 +13,12 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.rpc.commands.binfile :as binfile]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams :refer [create-project-role create-project]]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.mutations.projects :refer [create-project-role create-project]]
    [app.rpc.queries.projects :as proj]
-   [app.rpc.queries.teams :as teams]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -43,7 +43,8 @@
 
 (sv/defmethod ::duplicate-file
   "Duplicate a single file in the same team."
-  {::doc/added "1.16"}
+  {::doc/added "1.16"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (duplicate-file conn params)))
@@ -216,7 +217,8 @@
 
 (sv/defmethod ::duplicate-project
   "Duplicate an entire project with all the files"
-  {::doc/added "1.16"}
+  {::doc/added "1.16"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (duplicate-project conn params)))
@@ -324,7 +326,8 @@
 
 (sv/defmethod ::move-files
   "Move a set of files from one project to other."
-  {::doc/added "1.16"}
+  {::doc/added "1.16"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (move-files conn params)))
@@ -363,7 +366,8 @@
 
 (sv/defmethod ::move-project
   "Move projects between teams."
-  {::doc/added "1.16"}
+  {::doc/added "1.16"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (move-project conn params)))
@@ -378,7 +382,8 @@
 
 (sv/defmethod ::clone-template
   "Clone into the specified project the template by its id."
-  {::doc/added "1.16"}
+  {::doc/added "1.16"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)

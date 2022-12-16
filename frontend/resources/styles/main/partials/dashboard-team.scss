@@ -199,10 +199,12 @@
       }
     }
 
-    &.uri,
+    &.uri {
+      flex-grow: 1;
+    }
+
     &.active {
-      width: 48%;
-      min-width: 300px;
+      min-width: 100px;
     }
 
     &.last-delivery {

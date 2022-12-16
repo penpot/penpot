@@ -44,8 +44,9 @@
 (defn build-message-cause
   [props]
   #?(:clj (when-let [[_ cause] (d/seek (fn [[k]] (= k :cause)) props)]
-            (with-out-str
-              (ex/print-throwable cause)))
+            (when cause
+              (with-out-str
+                (ex/print-throwable cause))))
      :cljs nil))
 
 (defn build-message
