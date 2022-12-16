@@ -103,7 +103,7 @@
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize [shape objects initial layout [point lock? center? point-snap]]
+  (letfn [(resize [shape initial layout [point lock? center? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
 
@@ -169,22 +169,11 @@
 
                   ;; When the horizontal/vertical scale a flex children with auto/fill
                   ;; we change it too fixed
-                  layout? (ctl/layout? shape)
-                  layout-child? (ctl/layout-child? objects shape)
-                  auto-width? (ctl/auto-width? shape)
-                  fill-width? (ctl/fill-width? shape)
-                  auto-height? (ctl/auto-height? shape)
-                  fill-height? (ctl/fill-height? shape)
-
                   set-fix-width?
-                  (and (not (mth/close? (:x scalev) 1))
-                       (or (and (or layout? layout-child?) auto-width?)
-                           (and layout-child? fill-width?)))
+                  (not (mth/close? (:x scalev) 1))
 
                   set-fix-height?
-                  (and (not (mth/close? (:y scalev) 1))
-                       (or (and (or layout? layout-child?) auto-height?)
-                           (and layout-child? fill-height?)))
+                  (not (mth/close? (:y scalev) 1))
 
                   modifiers
                   (-> (ctm/empty)
@@ -193,10 +182,10 @@
                       (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
                       (cond-> set-fix-width?
-                        (ctm/change-property :layout-item-h-sizing :fix))
+                        (ctm/change-parent-property :layout-item-h-sizing :fix))
 
                       (cond-> set-fix-height?
-                        (ctm/change-property :layout-item-v-sizing :fix))
+                        (ctm/change-parent-property :layout-item-v-sizing :fix))
 
                       (cond-> scale-text
                         (ctm/scale-content (:x scalev))))
@@ -234,7 +223,7 @@
                 (rx/switch-map (fn [[point _ _ :as current]]
                                  (->> (snap/closest-snap-point page-id resizing-shapes objects layout zoom focus point)
                                       (rx/map #(conj current %)))))
-                (rx/mapcat (partial resize shape objects initial-position layout))
+                (rx/mapcat (partial resize shape initial-position layout))
                 (rx/take-until stoper))
            (rx/of (dwm/apply-modifiers)
                   (finish-transform))))))))

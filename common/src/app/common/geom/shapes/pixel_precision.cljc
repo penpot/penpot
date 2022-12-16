@@ -12,15 +12,18 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.rect :as gpr]
+   [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]))
 
 (defn size-pixel-precision
-  [modifiers {:keys [transform transform-inverse] :as shape} points]
+  [modifiers shape points]
   (let [origin        (gpo/origin points)
         curr-width    (gpo/width-points points)
         curr-height   (gpo/height-points points)
+
+        [_ transform transform-inverse] (gtr/calculate-geometry points)
 
         path?            (cph/path-shape? shape)
         vertical-line?   (and path? (<= curr-width 0.01))

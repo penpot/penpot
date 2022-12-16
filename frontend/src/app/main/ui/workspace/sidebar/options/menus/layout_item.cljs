@@ -143,7 +143,7 @@
         (get-layout-flex-icon :align-self align is-col?)])]))
 
 (mf/defc layout-item-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type"]))]}
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "is-layout-child?"]))]}
   [{:keys [ids values is-layout-child? is-layout-container?] :as props}]
 
   (let [open?             (mf/use-state false)
