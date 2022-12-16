@@ -10,8 +10,9 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctt]
+   [app.common.types.shape-tree :as ctst]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -71,8 +72,8 @@
                            (= (count shapes) 1)
                            (= (:type (first shapes)) :group))
                     (:name (first shapes))
-                    (-> (ctt/retrieve-used-names objects)
-                        (ctt/generate-unique-name base-name)))
+                    (-> (ctst/retrieve-used-names objects)
+                        (ctst/generate-unique-name base-name)))
 
         selrect   (gsh/selection-rect shapes)
         group     (-> (cts/make-minimal-group frame-id selrect gname)
@@ -82,6 +83,10 @@
                              :frame-id frame-id
                              :index (::index (first shapes))))
 
+        ;; Shapes that are in a component, but are not root, must be detached,
+        ;; because they will be now children of a non instance group.
+        shapes-to-detach (filter ctk/in-component-instance-not-root? shapes)
+
         ;; Look at the `get-empty-groups-after-group-creation`
         ;; docstring to understand the real purpose of this code
         ids-to-delete (get-empty-groups-after-group-creation objects parent-id shapes)
@@ -90,6 +95,7 @@
                       (pcb/with-objects objects)
                       (pcb/add-object group {:index (::index (first shapes))})
                       (pcb/change-parent (:id group) shapes)
+                      (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape)
                       (pcb/remove-objects ids-to-delete))]
 
     [group changes]))
@@ -106,25 +112,16 @@
              (filter #(#{(:id group)} (second %)))
              (ffirst))
 
-        ids-to-detach (when (:component-id group)
-                        (cph/get-children-ids objects (:id group)))
+        ;; Shapes that are in a component (including root) must be detached,
+        ;; because cannot be easyly synchronized back to the main component.
+        shapes-to-detach (filter ctk/in-component-instance? 
+                                 (cph/get-children-with-self objects (:id group)))]
 
-        detach-fn (fn [attrs]
-                    (dissoc attrs
-                            :component-id
-                            :component-file
-                            :component-root?
-                            :remote-synced?
-                            :shape-ref
-                            :touched))]
-
-    (cond-> (-> (pcb/empty-changes it page-id)
-                (pcb/with-objects objects)
-                (pcb/change-parent parent-id children index-in-parent)
-                (pcb/remove-objects [(:id group)]))
-
-      (some? ids-to-detach)
-      (pcb/update-shapes ids-to-detach detach-fn))))
+    (-> (pcb/empty-changes it page-id)
+        (pcb/with-objects objects)
+        (pcb/change-parent parent-id children index-in-parent)
+        (pcb/remove-objects [(:id group)])
+        (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape))))
 
 (defn remove-frame-changes
   [it page-id frame objects]

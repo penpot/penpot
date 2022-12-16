@@ -945,7 +945,7 @@
 
         changes' (reduce add-undo-change
                          changes'
-                         (map :id children))]
+                         children)]
 
     (if (and (cph/touched-group? parent :shapes-group) omit-touched?)
       changes
