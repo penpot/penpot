@@ -1286,7 +1286,7 @@
                                        #(on-asset-click % (:id color)
                                                         (partial apply-color (:id color))))
                            :ref item-ref
-                           :draggable (not workspace-read-only?)
+                           :draggable (and (not workspace-read-only?) (not (:editing @state)))
                            :on-drag-start on-color-drag-start
                            :on-drag-enter on-drag-enter
                            :on-drag-leave on-drag-leave
@@ -1557,6 +1557,8 @@
   (let [item-ref             (mf/use-ref)
         dragging?            (mf/use-state false)
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+        editing?             (= editing-id (:id typography))
+        open?                (mf/use-state editing?)
         on-drop
         (mf/use-fn
          (mf/deps typography dragging? selected-typographies selected-typographies-full selected-typographies-paths move-typography)
@@ -1587,7 +1589,7 @@
              (on-asset-drag-start event typography selected-typographies item-ref :typographies identity))))]
 
     [:div.typography-container {:ref item-ref
-                                :draggable (not workspace-read-only?)
+                                :draggable (and (not workspace-read-only?) (not @open?))
                                 :on-drag-start on-typography-drag-start
                                 :on-drag-enter on-drag-enter
                                 :on-drag-leave on-drag-leave
@@ -1603,8 +1605,9 @@
        :selected? (contains? selected-typographies (:id typography))
        :on-click  #(on-asset-click % (:id typography)
                                    (partial apply-typography typography))
-       :editing? (= editing-id (:id typography))
-       :focus-name? (= (:rename-typography local-data) (:id typography))}]
+       :editing? editing?
+       :focus-name? (= (:rename-typography local-data) (:id typography))
+       :open? open?}]
      (when @dragging?
        [:div.dragging])]))
 

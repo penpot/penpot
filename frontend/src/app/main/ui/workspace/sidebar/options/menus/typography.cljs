@@ -456,9 +456,8 @@
 ;; In summary, this need to a good UX/UI/IMPL rework.
 
 (mf/defc typography-entry
-  [{:keys [typography local? selected? on-click on-change on-detach on-context-menu editing? focus-name? file]}]
-  (let [open?                (mf/use-state editing?)
-        hover-detach         (mf/use-state false)
+  [{:keys [typography local? selected? on-click on-change on-detach on-context-menu editing? focus-name? file open?]}]
+  (let [hover-detach         (mf/use-state false)
         name-input-ref       (mf/use-ref)
         on-change-ref        (mf/use-ref nil)
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
