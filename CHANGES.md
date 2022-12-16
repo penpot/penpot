@@ -3,6 +3,7 @@
 ## :rocket: Next (1.17)
 
 ### :boom: Breaking changes & Deprecations
+
 ### :sparkles: New features
 
 - Adds layout flex functionality for boards
@@ -20,9 +21,12 @@
 - Fix lang autodetect issue [Taiga #4277](https://tree.taiga.io/project/penpot/issue/4277)
 - Fix adding an extra page on import [Taiga #4543](https://tree.taiga.io/project/penpot/task/4543)
 - Fix unable to select text at assets inputs in firefox [Taiga #4572](https://tree.taiga.io/project/penpot/issue/4572)
+- Fix component sync when converting to path [Taiga #3642](https://tree.taiga.io/project/penpot/issue/3642)
 
 ### :arrow_up: Deps updates
+
 ### :heart: Community contributions by (Thank you!)
+
 ## 1.16.2-beta
 - Fix strage cursor behaviour after clicking viewport with text pool [Github #2447](https://github.com/penpot/penpot/issues/2447)
 

@@ -50,6 +50,7 @@
    :r2                    :radius-group
    :r3                    :radius-group
    :r4                    :radius-group
+   :type                  :geometry-group
    :selrect               :geometry-group
    :points                :geometry-group
    :locked                :geometry-group
@@ -90,8 +91,7 @@
    :layout-item-min-h          :layout-item
    :layout-item-max-w          :layout-item
    :layout-item-min-w          :layout-item
-   :layout-item-align-self     :layout-item
-   })
+   :layout-item-align-self     :layout-item})
 
 ;; Attributes that may directly be edited by the user with forms
 (def editable-attrs
