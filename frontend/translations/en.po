@@ -715,7 +715,7 @@ msgid "errors.webhooks.ssl-validation"
 msgstr "Error on SSL validation."
 
 msgid "errors.webhooks.invalid-uri"
-msgstr "URL does not passes validation."
+msgstr "URL does not pass validation."
 
 msgid "errors.webhooks.unexpected-status"
 msgstr "Unexpected status %s"
@@ -4472,4 +4472,3 @@ msgstr "The font %s could not be loaded"
 
 msgid "errors.bad-font-plural"
 msgstr "The fonts %s could not be loaded"
-
