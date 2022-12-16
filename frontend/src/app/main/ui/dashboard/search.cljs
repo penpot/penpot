@@ -64,7 +64,7 @@
            (rx/dispose! sub)))))
     [:*
      [:header.dashboard-header
-      [:div.dashboard-title
+      [:div.dashboard-title#dashboard-search-title
        [:h1 (tr "dashboard.title-search")]]]
 
      [:section.dashboard-container.search.no-bg {:ref rowref}

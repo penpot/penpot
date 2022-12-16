@@ -9,6 +9,7 @@
   height: 100%;
   overflow: hidden;
   overflow-y: auto;
+  margin-bottom: 0;
 
   .grid-row {
     display: grid;
@@ -26,6 +27,9 @@
     margin: $size-3 $size-4 $size-4 $size-2;
     position: relative;
     text-align: center;
+    a {
+      width: 100%;
+    }
     @media #{$bp-max-1366} {
       height: 200px;
       flex: 1 0 230px;
@@ -193,13 +197,15 @@
     &.project-th {
       background-color: $color-white;
 
-      &:hover {
+      &:hover,
+      &:focus,
+      &:focus-within {
         .project-th-actions {
           opacity: 1;
         }
       }
 
-      &.selected {
+      .selected {
         .grid-item-th {
           border: 2px solid $color-primary;
         }
@@ -241,7 +247,8 @@
               width: 18px;
             }
 
-            &:hover {
+            &:hover,
+            &:focus {
               > svg {
                 fill: $color-primary-dark;
               }
@@ -312,7 +319,7 @@
     background-repeat: no-repeat;
     border-top-left-radius: $br-small;
     border-top-right-radius: $br-small;
-    height: 70%;
+    height: 230px;
     max-height: 160px;
     overflow: hidden;
     position: relative;
@@ -430,6 +437,7 @@
   background-color: rgba(227, 227, 227, 0.3);
   padding: 13px;
   margin-right: 13px;
+  height: 230px;
   &.loader {
     justify-items: center;
   }

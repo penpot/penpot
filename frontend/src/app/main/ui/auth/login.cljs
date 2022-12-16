@@ -250,20 +250,20 @@
      (when (contains? @cf/flags :login)
        [:div.link-entry
         [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
-                     :name (tr "auth.forgot-password")
-                     :data-test "forgot-password"}]])
+                     :data-test "forgot-password"}
+         (tr "auth.forgot-password")]])
 
      (when (contains? @cf/flags :registration)
        [:div.link-entry
         [:span (tr "auth.register") " "]
         [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
-                     :name (tr "auth.register-submit")
-                     :data-test "register-submit"}]])]
+                     :data-test "register-submit"}
+         (tr "auth.register-submit")]])]
 
     (when (contains? @cf/flags :demo-users)
       [:div.links.demo
        [:div.link-entry
         [:span (tr "auth.create-demo-profile") " "]
         [:& lk/link {:action #(st/emit! (du/create-demo-profile))
-                     :name (tr "auth.create-demo-account")
-                     :data-test "demo-account-link"}]]])]])
+                     :data-test "demo-account-link"}
+         (tr "auth.create-demo-account")]]])]])

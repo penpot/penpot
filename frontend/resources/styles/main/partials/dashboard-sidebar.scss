@@ -7,13 +7,10 @@
 .dashboard-sidebar {
   background-color: $color-white;
   z-index: 1;
-
-  .sidebar-inside {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding-top: $size-2;
-  }
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-top: $size-2;
 
   .sidebar-content {
     display: flex;
@@ -67,7 +64,8 @@
       justify-content: center;
       align-items: center;
       cursor: pointer;
-
+      background-color: transparent;
+      border: none;
       svg {
         width: 15px;
         height: 13px;
@@ -78,15 +76,18 @@
     .current-team {
       cursor: pointer;
       display: flex;
+      align-items: center;
       flex-grow: 1;
       font-size: $fs14;
       padding: 0px 10px;
+      background-color: transparent;
+      border: none;
     }
 
     .team-name {
       flex-grow: 1;
       display: flex;
-      height: 48px;
+      height: 40px;
       align-items: center;
 
       &.action {
@@ -151,7 +152,7 @@
     .switch-icon {
       display: flex;
       align-items: center;
-
+      justify-content: center;
       svg {
         width: 10px;
         height: 10px;
@@ -200,6 +201,9 @@
       display: flex;
       flex-shrink: 0;
       padding: $size-2;
+      a {
+        width: 100%;
+      }
 
       svg {
         fill: $color-black;

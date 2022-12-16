@@ -167,14 +167,14 @@
      [:span (tr "auth.already-have-account") " "]
 
      [:& lk/link {:action  #(st/emit! (rt/nav :auth-login {} params))
-                  :name (tr "auth.login-here")
-                  :data-test "login-here-link"}]]
+                  :data-test "login-here-link"}
+      (tr "auth.login-here")]]
 
     (when (contains? @cf/flags :demo-users)
       [:div.link-entry
        [:span (tr "auth.create-demo-profile") " "]
-       [:& lk/link {:action  #(st/emit! (du/create-demo-profile))
-                    :name (tr "auth.create-demo-account")}]])]])
+       [:& lk/link {:action  #(st/emit! (du/create-demo-profile))}
+        (tr "auth.create-demo-account")]])]])
 
 ;; --- PAGE: register validation
 
@@ -271,8 +271,8 @@
 
    [:div.links
     [:div.link-entry
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))
-                  :name    (tr "labels.go-back")}]]]])
+     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))}
+      (tr "labels.go-back")]]]])
 
 (mf/defc register-success-page
   [{:keys [params] :as props}]

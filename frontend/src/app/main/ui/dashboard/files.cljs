@@ -17,6 +17,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -63,7 +64,7 @@
 
     [:header.dashboard-header
      (if (:is-default project)
-       [:div.dashboard-title
+       [:div.dashboard-title#dashboard-drafts-title 
         [:h1 (tr "labels.drafts")]]
 
        (if (:edition @local)
@@ -75,7 +76,9 @@
                                                          (with-meta {::ev/origin "project"}))))
                                          (swap! local assoc :edition false)))}]
          [:div.dashboard-title
-          [:h1 {:on-double-click on-edit :data-test "project-title"}
+          [:h1 {:on-double-click on-edit
+                :data-test "project-title"
+                :id (:id project)}
            (:name project)]]))
 
      [:& project-menu {:project project
@@ -87,19 +90,35 @@
                        :on-import on-import}]
 
      [:div.dashboard-header-actions
-      [:a.btn-secondary.btn-small {:on-click on-create-click :data-test "new-file"}
+      [:a.btn-secondary.btn-small 
+       {:tab-index "0"
+        :on-click on-create-click
+        :data-test "new-file"
+        :on-key-down (fn [event]
+                       (when (kbd/enter? event)
+                         (on-create-click event)))}
        (tr "dashboard.new-file")]
 
       (when-not (:is-default project)
-        [:div.icon.pin-icon.tooltip.tooltip-bottom
-         {:class (when (:is-pinned project) "active")
-         :on-click toggle-pin :alt (tr "dashboard.pin-unpin")}
+        [:button.icon.pin-icon.tooltip.tooltip-bottom
+         {:tab-index "0"
+          :class (when (:is-pinned project) "active")
+          :on-click toggle-pin
+          :alt (tr "dashboard.pin-unpin")
+          :on-key-down (fn [event]
+                         (when (kbd/enter? event)
+                           (toggle-pin event)))}
          (if (:is-pinned project)
            i/pin-fill
            i/pin)])
 
       [:div.icon.tooltip.tooltip-bottom-left
-       {:on-click on-menu-click :alt (tr "dashboard.options")}
+       {:tab-index "0"
+        :on-click on-menu-click 
+        :alt (tr "dashboard.options")
+        :on-key-down (fn [event]
+                       (when (kbd/enter? event)
+                         (on-menu-click event)))}
        i/actions]]]))
 
 (mf/defc files-section

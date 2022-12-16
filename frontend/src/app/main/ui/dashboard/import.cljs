@@ -51,7 +51,7 @@
   [{:keys [project-id on-finish-import]} external-ref]
 
   (let [on-file-selected (use-import-file project-id on-finish-import)]
-    [:form.import-file
+    [:form.import-file {:aria-hidden "true"}
      [:& file-uploader {:accept ".penpot,.zip"
                         :multi true
                         :ref external-ref

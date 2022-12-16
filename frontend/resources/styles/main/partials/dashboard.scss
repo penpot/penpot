@@ -72,7 +72,7 @@
     border-radius: 8px;
     min-height: 211px;
 
-    .img {
+    .thumbnail {
       border-top-left-radius: 6px;
       border-bottom-left-radius: 6px;
       padding: 30px;
@@ -133,15 +133,10 @@
         display: none;
         width: 0;
       }
-      .text {
-        .info {
-          // font-size: $fs12;
-        }
-      }
     }
   }
   .walkthrough {
-    .img {
+    .thumbnail {
       background-image: url("/images/walkthrough-cover.png");
       background-position: center;
       background-repeat: no-repeat;
@@ -149,7 +144,7 @@
     }
   }
   .tutorial {
-    .img {
+    .thumbnail {
       background-image: url("/images/hands-on-tutorial.png");
       background-position: center;
       background-repeat: no-repeat;
@@ -258,7 +253,8 @@
     }
 
     .project-actions {
-      display: none;
+      display: flex;
+      opacity: 0;
       margin-left: $size-6;
 
       .btn-small {
@@ -273,6 +269,8 @@
       display: flex;
       align-items: center;
       margin-right: 14px;
+      background-color: transparent;
+      border: none;
       svg {
         width: 15px;
         height: 15px;
@@ -286,9 +284,12 @@
       }
     }
   }
-  &:hover {
+
+  &:hover,
+  &:focus,
+  &:focus-within {
     .project-actions {
-      display: flex;
+      opacity: 1;
     }
   }
 }
@@ -439,7 +440,8 @@
     width: 100%;
     text-align: right;
     height: 56px;
-    div {
+    button {
+      border: none;
       cursor: pointer;
       height: 58px;
       display: inline-block;
@@ -518,11 +520,13 @@
 
     .card-container {
       width: 275px;
-      height: 100%;
       margin-top: 20px;
       display: inline-block;
       text-align: center;
       vertical-align: top;
+      background-color: transparent;
+      border: none;
+      padding: 0;
     }
 
     .template-card {
