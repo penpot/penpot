@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-12-10 15:48+0000\n"
+"PO-Revision-Date: 2022-12-17 16:49+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.15-dev\n"
+"X-Generator: Weblate 4.15.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2901,3 +2901,18 @@ msgstr "محدودیت‌ها"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/handoff/attributes/text.cljs, src/app/main/ui/handoff/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
 msgstr "مثال"
+
+msgid "workspace.undo.entry.single.color"
+msgstr "دارایی رنگ"
+
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "دارایی‌های تایپوگرافی"
+
+msgid "workspace.undo.entry.multiple.media"
+msgstr "دارایی‌های گرافیکی"
+
+msgid "workspace.undo.entry.multiple.color"
+msgstr "دارایی‌های رنگ"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "دارایی گرافیکی"
