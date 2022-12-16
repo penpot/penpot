@@ -496,8 +496,7 @@
   (s/keys :req-un [::profile-id ::id]))
 
 (sv/defmethod ::delete-comment
-  {::doc/added "1.15"
-   ::webhooks/event? true}
+  {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [comment (db/get-by-id conn :comment id {:for-update true})]

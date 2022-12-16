@@ -15,6 +15,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
@@ -840,10 +841,10 @@
 (defn import!
   [{:keys [::input] :as cfg}]
   (let [id (uuid/next)
-        ts (dt/now)
+        tp (dt/tpoint)
         cs (volatile! nil)]
+    (l/info :hint "import: started" :import-id id)
     (try
-      (l/info :hint "start importation" :import-id id)
       (binding [*position* (atom 0)]
         (with-open [^AutoCloseable input (io/input-stream input)]
           (read-import! (assoc cfg ::input input))))
@@ -853,10 +854,12 @@
         (throw cause))
 
       (finally
-        (l/info :hint "importation finished" :import-id id
-                :elapsed (str (inst-ms (dt/diff ts (dt/now))) "ms")
+        (l/info :hint "import: terminated"
+                :import-id id
+                :elapsed (dt/format-duration (tp))
                 :error? (some? @cs)
-                :cause @cs)))))
+                :cause @cs
+                )))))
 
 ;; --- Command: export-binfile
 
@@ -870,7 +873,8 @@
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
-  {::doc/added "1.15"}
+  {::doc/added "1.15"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id include-libraries? embed-assets?] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
   (let [body (reify yrs/StreamableResponseBody
@@ -890,7 +894,8 @@
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."
-  {::doc/added "1.15"}
+  {::doc/added "1.15"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [profile-id project-id file] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-read-permissions! conn profile-id project-id)
