@@ -78,13 +78,12 @@
               (raise cause)))]
 
     (fn [request respond raise]
-      (when-let [request (try
-                           (process-request request)
-                           (catch RuntimeException cause
-                             (handle-error raise (or (.getCause cause) cause)))
-                           (catch Throwable cause
-                             (handle-error raise cause)))]
-        (handler request respond raise)))))
+      (let [request (ex/try! (process-request request))]
+        (if (ex/exception? request)
+          (if (instance? RuntimeException request)
+            (handle-error raise (or (ex/cause request) request))
+            (handle-error raise request))
+          (handler request respond raise))))))
 
 (def parse-request
   {:name ::parse-request

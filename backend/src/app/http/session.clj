@@ -178,10 +178,15 @@
             (clear-authenticated-cookie))))))
 
 (def middleware-1
-  (letfn [(wrap-handler [manager handler request respond raise]
-            (when-let [cookie (some->> (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
-                                       (yrq/get-cookie request))]
-              (->> (decode manager (:value cookie))
+  (letfn [(decode-cookie [manager cookie]
+            (if-let [value (:value cookie)]
+              (decode manager value)
+              (p/resolved nil)))
+
+          (wrap-handler [manager handler request respond raise]
+            (let [cookie (some->> (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
+                                  (yrq/get-cookie request))]
+              (->> (decode-cookie manager cookie)
                    (p/fnly (fn [claims _]
                              (cond-> request
                                (some? claims) (assoc :session-token-claims claims)
