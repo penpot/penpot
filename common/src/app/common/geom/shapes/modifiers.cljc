@@ -160,7 +160,7 @@
 
           (set-child-modifiers [[layout-line modif-tree] [child-bounds child]]
             (let [[modifiers layout-line]
-                  (gcl/layout-child-modifiers parent child child-bounds layout-line)
+                  (gcl/layout-child-modifiers parent transformed-parent-bounds child child-bounds layout-line)
 
                   modif-tree
                   (cond-> modif-tree
