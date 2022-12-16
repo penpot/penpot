@@ -19,6 +19,7 @@
 - Fix twitter support account link [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4279)
 - Fix lang autodetect issue [Taiga #4277](https://tree.taiga.io/project/penpot/issue/4277)
 - Fix adding an extra page on import [Taiga #4543](https://tree.taiga.io/project/penpot/task/4543)
+- Fix unable to select text at assets inputs in firefox [Taiga #4572](https://tree.taiga.io/project/penpot/issue/4572)
 
 ### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
