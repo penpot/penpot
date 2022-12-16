@@ -10,10 +10,12 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
    [app.util.retry :as rtry]
    [app.util.services :as sv]
@@ -426,7 +428,9 @@
       (upsert-comment-thread-status! conn profile-id thread-id)
 
       ;; Return the created comment object.
-      comment)))
+      (rph/with-meta comment
+        {::audit/props {:file-id (:file-id thread)
+                        :share-id nil}}))))
 
 ;; --- COMMAND: Update Comment
 
