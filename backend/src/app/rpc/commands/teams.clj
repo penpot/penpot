@@ -632,10 +632,10 @@
           update set role = ?, updated_at = now();")
 
 (defn- create-invitation-token
-  [cfg {:keys [expire profile-id team-id member-id member-email role]}]
+  [cfg {:keys [valid-until profile-id team-id member-id member-email role]}]
   (tokens/generate (::main/props cfg)
                    {:iss :team-invitation
-                    :exp expire
+                    :exp valid-until
                     :profile-id profile-id
                     :role role
                     :team-id team-id
@@ -654,7 +654,7 @@
   (let [member (profile/retrieve-profile-data-by-email conn email)
         expire (dt/in-future "168h") ;; 7 days
         itoken (create-invitation-token cfg {:profile-id (:id profile)
-                                             :expire expire
+                                             :valid-until expire
                                              :team-id (:id team)
                                              :member-email (or (:email member) email)
                                              :member-id (:id member)
@@ -804,7 +804,7 @@
         member (profile/retrieve-profile-data-by-email pool (:email invit))
         token  (create-invitation-token cfg {:team-id (:team-id invit)
                                              :profile-id profile-id
-                                             :expire (:expire invit)
+                                             :valid-until (:valid-until invit)
                                              :role (:role invit)
                                              :member-id (:id member)
                                              :member-email (or (:email member) (:email-to invit))})]
