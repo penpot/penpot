@@ -17,6 +17,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc.commands.files.thumbnails :as-alias thumbs]
    [app.rpc.commands.teams :as teams]
@@ -753,11 +754,10 @@
 
 (defn rename-file
   [conn {:keys [id name] :as params}]
-  (-> (db/update! conn :file
-                  {:name name
-                   :modified-at (dt/now)}
-                  {:id id})
-      (select-keys [:id :name :created-at :modified-at])))
+  (db/update! conn :file
+              {:name name
+               :modified-at (dt/now)}
+              {:id id}))
 
 (s/def ::rename-file
   (s/keys :req-un [::profile-id ::name ::id]))
@@ -768,8 +768,12 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
-    (rename-file conn params)))
-
+    (let [file (rename-file conn params)]
+      (rph/with-meta
+        (select-keys file [:id :name :created-at :modified-at])
+        {::audit/props {:project-id (:project-id file)
+                        :created-at (:created-at file)
+                        :modified-at (:modified-at file)}}))))
 
 ;; --- MUTATION COMMAND: set-file-shared
 
@@ -779,10 +783,9 @@
 
 (defn set-file-shared
   [conn {:keys [id is-shared] :as params}]
-  (-> (db/update! conn :file
-                  {:is-shared is-shared}
-                  {:id id})
-      (select-keys [:id :name :is-shared])))
+  (db/update! conn :file
+              {:is-shared is-shared}
+              {:id id}))
 
 (defn absorb-library
   "Find all files using a shared library, and absorb all library assets
@@ -816,8 +819,13 @@
     (when-not is-shared
       (absorb-library conn params)
       (unlink-files conn params))
-    (set-file-shared conn params)))
 
+    (let [file (set-file-shared conn params)]
+      (rph/with-meta
+        (select-keys file [:id :name :is-shared])
+        {::audit/props {:name (:name file)
+                        :project-id (:project-id file)
+                        :is-shared (:is-shared file)}}))))
 
 ;; --- MUTATION COMMAND: delete-file
 
@@ -825,8 +833,7 @@
   [conn {:keys [id] :as params}]
   (db/update! conn :file
               {:deleted-at (dt/now)}
-              {:id id})
-  nil)
+              {:id id}))
 
 (s/def ::delete-file
   (s/keys :req-un [::id ::profile-id]))
@@ -838,7 +845,12 @@
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
     (absorb-library conn params)
-    (mark-file-deleted conn params)))
+    (let [file (mark-file-deleted conn params)]
+      (rph/with-meta (rph/wrap)
+        {::audit/props {:project-id (:project-id file)
+                        :name (:name file)
+                        :created-at (:created-at file)
+                        :modified-at (:modified-at file)}}))))
 
 ;; --- MUTATION COMMAND: link-file-to-library
 

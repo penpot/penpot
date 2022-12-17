@@ -122,4 +122,7 @@
                               {:deleted-at (dt/now)}
                               {:id id :is-default false})]
       (rph/with-meta (rph/wrap)
-        {::audit/props {:team-id (:team-id project)}}))))
+        {::audit/props {:team-id (:team-id project)
+                        :name (:name project)
+                        :created-at (:created-at project)
+                        :modified-at (:modified-at project)}}))))
