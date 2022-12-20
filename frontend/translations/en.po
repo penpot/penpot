@@ -305,8 +305,8 @@ msgstr "Duplicate %s files"
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Oh no! You have no files yet! If you want to try with some templates go to "
-"[Libraries & templates](https://penpot.app/libraries-templates.html)"
+"Files added to Libraries will appear here. Try sharing your files or add from our "
+"[Libraries & templates](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Download %s Penpot files (.penpot)"
