@@ -410,7 +410,7 @@ msgid "dashboard.fonts.dismiss-all"
 msgstr "Dismiss all"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "You still have no custom fonts installed."
+msgstr "Custom fonts you upload will appear here."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
