@@ -6,6 +6,7 @@
 
 (ns app.rpc.mutations.profile
   (:require
+   [app.auth :as auth]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
@@ -17,7 +18,7 @@
    [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
-   [app.rpc.commands.auth :as auth]
+   [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
@@ -182,7 +183,7 @@
 (defn- change-email-immediately
   [{:keys [conn]} {:keys [profile email] :as params}]
   (when (not= email (:email profile))
-    (auth/check-profile-existence! conn params))
+    (cmd.auth/check-profile-existence! conn params))
   (db/update! conn :profile
               {:email email}
               {:id (:id profile)})
@@ -201,7 +202,7 @@
                                   :exp (dt/in-future {:days 30})})]
 
     (when (not= email (:email profile))
-      (auth/check-profile-existence! conn params))
+      (cmd.auth/check-profile-existence! conn params))
 
     (when-not (eml/allow-send-emails? conn profile)
       (ex/raise :type :validation

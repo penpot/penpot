@@ -10,6 +10,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.util.time :as dt]
+   [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
@@ -37,7 +38,7 @@
 
           params  {::th/type :push-audit-events
                    :app.http/request http-request
-                   :profile-id (:id prof)
+                   ::rpc/profile-id (:id prof)
                    :events [{:name "navigate"
                              :props {:project-id proj-id
                                      :team-id team-id
@@ -67,7 +68,7 @@
 
           params  {::th/type :push-audit-events
                    :app.http/request http-request
-                   :profile-id (:id prof)
+                   ::rpc/profile-id (:id prof)
                    :events [{:name "navigate"
                              :props {:project-id proj-id
                                      :team-id team-id

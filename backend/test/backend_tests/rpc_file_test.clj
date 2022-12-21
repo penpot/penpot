@@ -583,6 +583,7 @@
                   :object-id (str page-id frame1-id)
                   :data nil}
             {:keys [error result] :as out} (th/mutation! data)]
+        ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (nil? result)))
 

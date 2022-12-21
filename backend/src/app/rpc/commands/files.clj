@@ -19,6 +19,7 @@
    [app.db.sql :as sql]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.files.thumbnails :as-alias thumbs]
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
@@ -52,7 +53,6 @@
 (s/def ::id ::us/uuid)
 (s/def ::is-shared ::us/boolean)
 (s/def ::name ::us/string)
-(s/def ::profile-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
 (s/def ::search-term ::us/string)
 (s/def ::team-id ::us/uuid)
@@ -257,7 +257,8 @@
   (str (dt/format-instant modified-at :iso) "-" revn))
 
 (s/def ::get-file
-  (s/keys :req-un [::profile-id ::id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id]
           :opt-un [::features]))
 
 (sv/defmethod ::get-file
@@ -265,7 +266,7 @@
   {::doc/added "1.17"
    ::cond/get-object #(get-minimal-file %1 (:id %2))
    ::cond/key-fn get-file-etag}
-  [{:keys [pool] :as cfg} {:keys [profile-id id features] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id features] :as params}]
   (with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id id)]
       (check-read-permissions! perms)
@@ -286,13 +287,14 @@
 
 (s/def ::get-file-fragment
   (s/keys :req-un [::file-id ::fragment-id]
-          :opt-un [::share-id ::profile-id]))
+          :opt [::rpc/profile-id]
+          :opt-un [::share-id]))
 
 (sv/defmethod ::get-file-fragment
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
-   :auth false}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id fragment-id share-id] :as params}]
+   ::rpc/:auth false}
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id fragment-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id file-id share-id)]
       (check-read-permissions! perms)
@@ -320,7 +322,7 @@
           (d/index-by :object-id :data)))))
 
 (s/def ::get-file-object-thumbnails
-  (s/keys :req-un [::profile-id ::file-id]))
+  (s/keys :req [::rpc/profile-id] :req-un [::file-id]))
 
 (sv/defmethod ::get-file-object-thumbnails
   "Retrieve a file object thumbnails."
@@ -328,7 +330,7 @@
    ::cond/get-object #(get-minimal-file %1 (:file-id %2))
    ::cond/reuse-key? true
    ::cond/key-fn get-file-etag}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (get-object-thumbnails conn file-id)))
@@ -350,7 +352,7 @@
     order by f.modified_at desc")
 
 (s/def ::get-project-files
-  (s/keys :req-un [::profile-id ::project-id]))
+  (s/keys :req [::rpc/profile-id] :req-un [::project-id]))
 
 (defn get-project-files
   [conn project-id]
@@ -359,7 +361,7 @@
 (sv/defmethod ::get-project-files
   "Get all files for the specified project."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (with-open [conn (db/open pool)]
     (projects/check-read-permissions! conn profile-id project-id)
     (get-project-files conn project-id)))
@@ -370,15 +372,14 @@
 (declare get-has-file-libraries)
 
 (s/def ::file-id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
 
 (s/def ::has-file-libraries
-  (s/keys :req-un [::profile-id ::file-id]))
+  (s/keys :req [::rpc/profile-id] :req-un [::file-id]))
 
 (sv/defmethod ::has-file-libraries
   "Checks if the file has libraries. Returns a boolean"
   {::doc/added "1.15.1"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! pool profile-id file-id)
     (get-has-file-libraries conn params)))
@@ -426,7 +427,8 @@
 (s/def ::object-id ::us/uuid)
 (s/def ::get-page
   (s/and
-   (s/keys :req-un [::profile-id ::file-id]
+   (s/keys :req [::rpc/profile-id]
+           :req-un [::file-id]
            :opt-un [::page-id ::object-id ::features])
    (fn [obj]
      (if (contains? obj :object-id)
@@ -444,7 +446,7 @@
 
   Mainly used for rendering purposes."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (get-page conn params)))
@@ -493,7 +495,7 @@
     (into #{} xform (db/exec! conn [sql:team-shared-files team-id]))))
 
 (s/def ::get-team-shared-files
-  (s/keys :req-un [::profile-id ::team-id]))
+  (s/keys :req [::rpc/profile-id] :req-un [::team-id]))
 
 (sv/defmethod ::get-team-shared-files
   "Get all file (libraries) for the specified team."
@@ -542,13 +544,14 @@
                      (handle-file-features client-features)))))))
 
 (s/def ::get-file-libraries
-  (s/keys :req-un [::profile-id ::file-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id]
           :opt-un [::features]))
 
 (sv/defmethod ::get-file-libraries
   "Get libraries used by the specified file."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id features] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id features] :as params}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (get-file-libraries conn file-id features)))
@@ -569,12 +572,12 @@
   (db/exec! conn [sql:library-using-files file-id]))
 
 (s/def ::get-library-file-references
-  (s/keys :req-un [::profile-id ::file-id]))
+  (s/keys :req [::rpc/profile-id] :req-un [::file-id]))
 
 (sv/defmethod ::get-library-file-references
   "Returns all the file references that use specified file (library) id."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (get-library-file-references conn file-id)))
@@ -607,11 +610,12 @@
   (db/exec! conn [sql:team-recent-files team-id]))
 
 (s/def ::get-team-recent-files
-  (s/keys :req-un [::profile-id ::team-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::team-id]))
 
 (sv/defmethod ::get-team-recent-files
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (get-team-recent-files conn team-id)))
@@ -639,12 +643,13 @@
 (s/def ::revn ::us/integer)
 
 (s/def ::get-file-thumbnail
-  (s/keys :req-un [::profile-id ::file-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id]
           :opt-un [::revn]))
 
 (sv/defmethod ::get-file-thumbnail
   {::doc/added "1.17"}
-  [{:keys [pool]} {:keys [profile-id file-id revn]}]
+  [{:keys [pool]} {:keys [::rpc/profile-id file-id revn]}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (-> (get-file-thumbnail conn file-id revn)
@@ -730,14 +735,15 @@
         (update :objects assoc-thumbnails page-id thumbs)))))
 
 (s/def ::get-file-data-for-thumbnail
-  (s/keys :req-un [::profile-id ::file-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id]
           :opt-un [::features]))
 
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
   mainly for render thumbnails on dashboard."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id features] :as props}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id features] :as props}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (let [file (get-file conn file-id features)]
@@ -760,12 +766,13 @@
               {:id id}))
 
 (s/def ::rename-file
-  (s/keys :req-un [::profile-id ::name ::id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::name ::id]))
 
 (sv/defmethod ::rename-file
   {::doc/added "1.17"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
     (let [file (rename-file conn params)]
@@ -808,12 +815,13 @@
                                    {:id id})))))))))
 
 (s/def ::set-file-shared
-  (s/keys :req-un [::profile-id ::id ::is-shared]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id ::is-shared]))
 
 (sv/defmethod ::set-file-shared
   {::doc/added "1.17"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [id profile-id is-shared] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id is-shared] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
     (when-not is-shared
@@ -836,16 +844,18 @@
               {:id id}))
 
 (s/def ::delete-file
-  (s/keys :req-un [::id ::profile-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id]))
 
 (sv/defmethod ::delete-file
   {::doc/added "1.17"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
     (absorb-library conn params)
     (let [file (mark-file-deleted conn params)]
+
       (rph/with-meta (rph/wrap)
         {::audit/props {:project-id (:project-id file)
                         :name (:name file)
@@ -864,12 +874,13 @@
   (db/exec-one! conn [sql:link-file-to-library file-id library-id]))
 
 (s/def ::link-file-to-library
-  (s/keys :req-un [::profile-id ::file-id ::library-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::library-id]))
 
 (sv/defmethod ::link-file-to-library
   {::doc/added "1.17"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id library-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id library-id] :as params}]
   (when (= file-id library-id)
     (ex/raise :type :validation
               :code :invalid-library
@@ -888,12 +899,13 @@
                :library-file-id library-id}))
 
 (s/def ::unlink-file-from-library
-  (s/keys :req-un [::profile-id ::file-id ::library-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::library-id]))
 
 (sv/defmethod ::unlink-file-from-library
   {::doc/added "1.17"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
     (unlink-file-from-library conn params)))
@@ -909,14 +921,15 @@
                :library-file-id library-id}))
 
 (s/def ::update-file-library-sync-status
-  (s/keys :req-un [::profile-id ::file-id ::library-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::library-id]))
 
 ;; TODO: improve naming
 
 (sv/defmethod ::update-file-library-sync-status
   "Update the synchronization statos of a file->library link"
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
     (update-sync conn params)))
@@ -931,13 +944,14 @@
               {:id file-id}))
 
 (s/def ::ignore-file-library-sync-status
-  (s/keys :req-un [::profile-id ::file-id ::date]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::date]))
 
 ;; TODO: improve naming
 (sv/defmethod ::ignore-file-library-sync-status
   "Ignore updates in linked files"
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
     (ignore-sync conn params)))
@@ -960,11 +974,13 @@
 (s/def ::data (s/nilable ::us/string))
 (s/def ::thumbs/object-id ::us/string)
 (s/def ::upsert-file-object-thumbnail
-  (s/keys :req-un [::profile-id ::file-id ::thumbs/object-id ::data]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::thumbs/object-id]
+          :opt-un [::data]))
 
 (sv/defmethod ::upsert-file-object-thumbnail
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
     (upsert-file-object-thumbnail! conn params)
@@ -987,13 +1003,14 @@
 (s/def ::revn ::us/integer)
 (s/def ::props map?)
 (s/def ::upsert-file-thumbnail
-  (s/keys :req-un [::profile-id ::file-id ::revn ::data ::props]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::revn ::data ::props]))
 
 (sv/defmethod ::upsert-file-thumbnail
   "Creates or updates the file thumbnail. Mainly used for paint the
   grid thumbnails."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
     (upsert-file-thumbnail conn params)

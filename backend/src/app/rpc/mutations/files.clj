@@ -81,7 +81,8 @@
   (db/with-atomic [conn pool]
     (cmd.files/check-edition-permissions! conn profile-id id)
     (cmd.files/absorb-library conn params)
-    (cmd.files/mark-file-deleted conn params)))
+    (cmd.files/mark-file-deleted conn params)
+    nil))
 
 ;; --- Mutation: Link file to library
 
