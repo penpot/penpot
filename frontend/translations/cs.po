@@ -1,6 +1,754 @@
 msgid ""
 msgstr ""
-"X-Generator: Weblate\n"
+"PO-Revision-Date: 2022-12-22 00:45+0000\n"
+"Last-Translator: matl-17 <lmlmlmlmlm71@gmail.com>\n"
+"Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
+">\n"
+"Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"X-Generator: Weblate 4.15.1-dev\n"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Potvrďte heslo"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Chcete si to jen vyzkoušet?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Toto je DEMO služba, NEPOUŽÍVEJTE ji pro skutečnou práci, projekty budou "
+"pravidelně mazány."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Jméno a příjmení"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Přihlaste se zde"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Zadejte nové heslo"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Heslo bylo úspěšně změněno"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "Profil není ověřen, před pokračováním prosím ověřte profil."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.newsletter-subscription"
+msgstr "Souhlasím s přihlášením k odběru e-mailových zpráv."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Připojení k týmu proběhlo úspěšně"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Heslo"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Minimálně 8 znaků"
+
+msgid "auth.privacy-policy"
+msgstr "Zásady ochrany osobních údajů"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Pošleme vám e-mail s pokyny"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Zapomněli jste heslo?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Změnit heslo"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Ještě nemáte účet?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Vytvořit účet"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Je to zdarma, je to open source"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Open source řešení pro design a prototypování."
+
+msgid "auth.terms-of-service"
+msgstr "Všeobecné podmínky poskytování služeb"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Ověřovací e-mail jsme odeslali na adresu"
+
+msgid "common.publish"
+msgstr "Zveřejnit"
+
+msgid "common.share-link.all-users"
+msgstr "Všichni uživatelé Penpotu"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Opravdu chcete tento odkaz odstranit? Pokud to uděláte, nebude už pro nikoho "
+"dostupný"
+
+msgid "common.share-link.get-link"
+msgstr "Získat odkaz"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Odkaz byl úspěšně zkopírován"
+
+msgid "common.share-link.manage-ops"
+msgstr "Spravovat oprávnění"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Sdílené stránky"
+
+msgid "common.share-link.placeholder"
+msgstr "Odkaz ke sdílení se zobrazí zde"
+
+msgid "common.share-link.team-members"
+msgstr "Pouze členové týmu"
+
+msgid "common.share-link.title"
+msgstr "Sdílet prototypy"
+
+msgid "common.share-link.view-all"
+msgstr "Vybrat vše"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot je určený pro týmy. Pozvěte členy ke spolupráci na projektech a "
+"souborech"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Vytvořte tým!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Praktický tutoriál"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Začít prohlídku"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Průvodce rozhraním"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Přidat jako sdílenou knihovnu"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(zkopírovat)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "Vytvořit nový tým"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Váš Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Smazat tým"
+
+msgid "dashboard.download-binary-file"
+msgstr "Stáhnout soubor Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Stáhnout standardní soubor (.svg + .json)"
+
+msgid "dashboard.draft-title"
+msgstr "Koncept"
+
+msgid "dashboard.export-frames"
+msgstr "Exportovat tabule do PDF"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Exportovat do PDF"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exportovat"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Nastavení exportu můžete přidat k prvkům ve vlastnostech návrhu (v dolní "
+"části pravého postranního panelu)."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s z %s prvků vybráno"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Neexistují žádné prvky s nastavením exportu."
+
+msgid "dashboard.export.detail"
+msgstr "* Může obsahovat komponenty, grafiku, barvy a/nebo typografii."
+
+msgid "dashboard.export.title"
+msgstr "Exportovat soubory"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Písmo odstraněno"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Nahrát vše"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Odejít z týmu"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Přesunout do jiného týmu"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ Nový soubor"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Nový soubor"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "Nebyly nalezeny žádné shody pro “%s“"
+
+msgid "dashboard.options"
+msgstr "Možnosti"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "Odstranit jako sdílenou knihovnu"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Uložit nastavení"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "Vyhledat…"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "Projekty týmu"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-info"
+msgstr "Informace o týmu"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.title-search"
+msgstr "Výsledky vyhledávání"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "Vaše jméno"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "OK"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.generic"
+msgstr "Něco se pokazilo."
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Chybná barva"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-mismatch"
+msgstr "Zdá se, že obsah obrázku neodpovídá příponě souboru."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr ""
+"Nedostatečný počet členů pro opuštění týmu, pravděpodobně jste chtěli tým "
+"smazat."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "Předmět"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Knihovny a šablony"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Prozkoumejte je víc a zjistěte, jak přispět"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Při importu šablony došlo k problému. Šablona nebyla importována."
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "načítání vašich souborů …"
+
+msgid "dashboard.loading-fonts"
+msgstr "načítání vašich písem …"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "Heslo bylo úspěšně uloženo!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Projekty"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Jakékoli webové písmo, které sem nahrajete, bude přidáno do seznamu rodin "
+"písem dostupného ve vlastnostech textu souborů tohoto týmu. Písma se stejným "
+"názvem rodiny písem budou seskupena jako **jedna rodina písem**. Můžete "
+"nahrávat písma v následujících formátech: **TTF, OTF a WOFF** (bude potřeba "
+"pouze jeden)."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Nový projekt"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Nový projekt"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Připnuté projekty se zobrazí zde"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Vaše e-mailová adresa byla úspěšně ověřena"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Vaše e-mailová adresa byla úspěšně aktualizována"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Změnit heslo"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Chcete odstranit svůj účet?"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "Hledá se “%s“…"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.show-all-files"
+msgstr "Zobrazit všechny soubory"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "Váš projekt byl úspěšně duplikován"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "Vybrat jazyk uživatelského rozhraní"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "Členové týmu"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Komponenty k aktualizaci:"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "Váš projekt byl úspěšně smazán"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "Váš soubor byl úspěšně smazán"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "Váš soubor byl úspěšně přesunut"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "Váš soubor byl úspěšně duplikován"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "Vaše soubory byly úspěšně přesunuty"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "Váš projekt byl úspěšně přesunut"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "Váš Penpot"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Zrušit zveřejnění knihovny"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+msgid "dashboard.update-settings"
+msgstr "Aktualizovat nastavení"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "Zrušit"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Zprostředkovatel ověřování není nakonfigurován."
+
+#: src/app/main/data/workspace.cljs
+msgid "errors.clipboard-not-implemented"
+msgstr "Váš prohlížeč tuto operaci nedokáže provést"
+
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "Váš účet"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "E-mail"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "ds.updated-at"
+msgstr "Aktualizováno: %s"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "Jste si jisti?"
+
+msgid "errors.email-as-password"
+msgstr "Jako heslo nelze použít váš e-mail"
+
+msgid "errors.media-format-unsupported"
+msgstr "Formát není podporován (musí být svg, jpg nebo png)."
+
+msgid "errors.network"
+msgstr "Nepodařilo se připojit k backend serveru."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-invalid-confirmation"
+msgstr "Potvrzovací heslo se musí shodovat"
+
+msgid "errors.terms-privacy-agreement-invalid"
+msgstr ""
+"Musíte souhlasit s našimi podmínkami služeb a zásadami ochrany osobních "
+"údajů."
+
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+msgid "errors.unexpected-error"
+msgstr "Došlo k neočekávané chybě."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "Neznámý token"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.wrong-credentials"
+msgstr "Uživatelské jméno nebo heslo se zdá být chybné."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-subtitle"
+msgstr "Chcete si popovídat? Chatujte s námi na Gitteru"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.wrong-old-password"
+msgstr "Staré heslo je nesprávné"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.chat-start"
+msgstr "Připojit se k chatu"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Přejít na Penpot fórum"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Jsme rádi, že jste tady. Pokud potřebujete pomoc, zkuste nejdříve "
+"vyhledávání, než napíšete příspěvek."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Přejít na Twitter"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Zde vám pomůžeme s vašimi technickými dotazy."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Penpot komunita"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"Popište důvod svého e-mailu a uveďte, zda se jedná o problém, nápad nebo "
+"pochybnost. Člen našeho týmu vám co nejdříve odpoví."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "E-mail"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Už máte účet?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Rádi vás znovu vidíme!"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Vytvořit demo účet"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Email"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Přihlásit se"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Zapomněli jste heslo?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Token pro obnovení je neplatný."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Odkaz na obnovení hesla byl zaslán na váš e-mail."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Obnovit heslo"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Zkontrolujte svůj e-mail a klikněte na odkaz pro ověření, abyste mohli začít "
+"používat Penpot."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Vytvořit účet"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Vytvořením nového účtu souhlasíte s všeobecnými podmínkami poskytování "
+"služeb a zásadami ochrany osobních údajů."
+
+msgid "common.share-link.permissions-hint"
+msgstr "Kdokoliv s odkazem bude mít přístup"
+
+msgid "common.share-link.destroy-link"
+msgstr "Zničit odkaz"
+
+msgid "common.share-link.link-deleted-success"
+msgstr "Odkaz byl úspěšně smazán"
+
+msgid "common.unpublish"
+msgstr "Zrušit zveřejnění"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Správa týmu"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Spustit tutoriál"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Naučte se základy Penpotu a pobavte se zároveň v tomto tutoriálu."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Projděte si Penpot a seznamte se s jeho hlavními funkcemi."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Změnit e-mail"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Duplikovat"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.empty-files"
+msgstr "Stále zde nemáte žádné soubory"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "Účet podpory na Twitteru"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "generic.error"
+msgstr "Došlo k chybě"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Informace o nastavování exportů v Penpotu."
+
+msgid "dashboard.export-single"
+msgstr "Exportovat Penpot soubor"
+
+msgid "dashboard.export.options.all.title"
+msgstr "Exportovat sdílené knihovny"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Výběr exportu"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"soubory se sdílenými knihovnami budou zahrnuty do exportu, čímž se zachová "
+"jejich propojení."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Odmítnout vše"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Ups! Tento soubor se nepodařilo importovat"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Stále nemáte nainstalované žádné vlastní písma."
+
+msgid "dashboard.import"
+msgstr "Importovat Penpot soubory"
+
+msgid "dashboard.import.import-error"
+msgstr "Při importu souboru došlo k problému. Soubor nebyl importován."
+
+msgid "dashboard.import.import-warning"
+msgstr "Některé soubory obsahovaly neplatné objekty, které byly odstraněny."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Zpracovávání barev"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Zpracovávání komponentů"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Pozvat do týmu"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Zpracovávání médií"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Zpracovávání typografií"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Nahrávání dat na server (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Nahrávání souboru: %s"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Knihovny"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-ok"
+msgstr "OK"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-already-exists"
+msgstr "Již použitá e-mailová adresa"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.email-already-validated"
+msgstr "E-mail byl již ověřen."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-invalid-confirmation"
+msgstr "Potvrzovací e-mail se musí shodovat"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Neplatná pozvánka"
+
+msgid "errors.invite-invalid.info"
+msgstr "Tato pozvánka byla pravděpodobně zrušena nebo vypršela její platnost."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "Obrázek je příliš velký na to, aby mohl být vložen."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-too-short"
+msgstr "Heslo by mělo mít nejméně 8 znaků"
+
+msgid "errors.bad-font"
+msgstr "Písmo %s se nepodařilo načíst"
+
+msgid "errors.bad-font-plural"
+msgstr "Písma %s se nepodařilo načíst"
+
+msgid "errors.profile-blocked"
+msgstr "Profil je zablokován"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "Vlastník nemůže opustit tým, musíte přeřadit roli vlastníka."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "Popisek"
