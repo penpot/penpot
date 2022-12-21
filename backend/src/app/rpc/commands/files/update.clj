@@ -20,6 +20,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
+   [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
@@ -52,7 +53,8 @@
 (s/def ::revn ::us/integer)
 (s/def ::update-file
   (s/and
-   (s/keys :req-un [::files/id ::files/profile-id ::session-id ::revn]
+   (s/keys :req [::rpc/profile-id]
+           :req-un [::files/id ::session-id ::revn]
            :opt-un [::changes ::changes-with-metadata ::features])
    (fn [o]
      (or (contains? o :changes)
@@ -130,19 +132,20 @@
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key :id
    ::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (db/xact-lock! conn id)
 
     (let [cfg    (assoc cfg :conn conn)
+          params (assoc params :profile-id profile-id)
           tpoint (dt/tpoint)]
       (-> (update-file cfg params)
           (rph/with-defer #(let [elapsed (tpoint)]
                              (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))
 
 (defn update-file
-  [{:keys [conn metrics] :as cfg} {:keys [id profile-id changes changes-with-metadata] :as params}]
+  [{:keys [conn metrics] :as cfg} {:keys [profile-id id changes changes-with-metadata] :as params}]
   (let [file     (get-file conn id)
         features (->> (concat (:features file)
                               (:features params))
@@ -184,7 +187,7 @@
                         :team-id    (:team-id file)}))))))
 
 (defn- update-file*
-  [{:keys [conn] :as cfg} {:keys [file changes session-id profile-id] :as params}]
+  [{:keys [conn] :as cfg} {:keys [profile-id file changes session-id] :as params}]
   (when (> (:revn params)
            (:revn file))
     (ex/raise :type :validation

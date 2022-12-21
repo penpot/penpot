@@ -6,13 +6,14 @@
 
 (ns backend-tests.rpc-team-test
   (:require
-   [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
+   [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.time :as dt]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.core :as fs]
    [mockery.core :refer [with-mocks]]))
@@ -65,7 +66,7 @@
 
       ;; get invitation token
       (let [params {::th/type :get-team-invitation-token
-                    :profile-id (:id profile1)
+                    ::rpc/profile-id (:id profile1)
                     :team-id (:id team)
                     :email "foo@bar.com"}
             out    (th/command! params)]
@@ -214,7 +215,7 @@
                    :role "editor"
                    :valid-until (dt/in-future "48h")})
 
-      (let [data {::th/type :verify-token :token token :profile-id (:id profile2)}
+      (let [data {::th/type :verify-token :token token ::rpc/profile-id (:id profile2)}
             out  (th/command! data)]
         ;; (th/print-result! out)
         (t/is (th/success? out))
@@ -235,7 +236,7 @@
                    :role "editor"
                    :valid-until (dt/in-future "48h")})
 
-      (let [data {::th/type :verify-token :token token :profile-id (:id profile1)}
+      (let [data {::th/type :verify-token :token token ::rpc/profile-id (:id profile1)}
             out  (th/command! data)]
         ;; (th/print-result! out)
         (t/is (not (th/success? out)))

@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams :refer [create-project-role create-project]]
@@ -31,14 +32,14 @@
 (declare duplicate-file)
 
 (s/def ::id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::name ::us/string)
 
 (s/def ::duplicate-file
-  (s/keys :req-un [::profile-id ::file-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id]
           :opt-un [::name]))
 
 (sv/defmethod ::duplicate-file
@@ -47,7 +48,7 @@
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (duplicate-file conn params)))
+    (duplicate-file conn (assoc params :profile-id (::rpc/profile-id params)))))
 
 (defn- remap-id
   [item index key]
@@ -212,7 +213,8 @@
 (declare duplicate-project)
 
 (s/def ::duplicate-project
-  (s/keys :req-un [::profile-id ::project-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::project-id]
           :opt-un [::name]))
 
 (sv/defmethod ::duplicate-project
@@ -221,7 +223,7 @@
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (duplicate-project conn params)))
+    (duplicate-project conn (assoc params :profile-id (::rpc/profile-id params)))))
 
 (defn duplicate-project
   [conn {:keys [profile-id project-id name] :as params}]
@@ -249,9 +251,7 @@
     ;; create the duplicated project and assign the current profile as
     ;; a project owner
     (create-project conn project)
-    (create-project-role conn {:project-id (:id project)
-                               :profile-id profile-id
-                               :role :owner})
+    (create-project-role conn profile-id (:id project) :owner)
 
     ;; duplicate all files
     (let [index  (reduce #(assoc %1 (:id %2) (uuid/next)) {} files)
@@ -322,7 +322,8 @@
 
 (s/def ::ids (s/every ::us/uuid :kind set?))
 (s/def ::move-files
-  (s/keys :req-un [::profile-id ::ids ::project-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::ids ::project-id]))
 
 (sv/defmethod ::move-files
   "Move a set of files from one project to other."
@@ -330,7 +331,7 @@
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (move-files conn params)))
+    (move-files conn (assoc params :profile-id (::rpc/profile-id params)))))
 
 
 ;; --- COMMAND: Move project
@@ -362,7 +363,8 @@
 
 
 (s/def ::move-project
-  (s/keys :req-un [::profile-id ::team-id ::project-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::team-id ::project-id]))
 
 (sv/defmethod ::move-project
   "Move projects between teams."
@@ -370,7 +372,7 @@
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (move-project conn params)))
+    (move-project conn (assoc params :profile-id (::rpc/profile-id params)))))
 
 ;; --- COMMAND: Clone Template
 
@@ -378,7 +380,8 @@
 
 (s/def ::template-id ::us/not-empty-string)
 (s/def ::clone-template
-  (s/keys :req-un [::profile-id ::project-id ::template-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::project-id ::template-id]))
 
 (sv/defmethod ::clone-template
   "Clone into the specified project the template by its id."
@@ -387,7 +390,7 @@
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)
-        (clone-template params))))
+        (clone-template (assoc params :profile-id (::rpc/profile-id params))))))
 
 (defn- clone-template
   [{:keys [conn templates] :as cfg} {:keys [profile-id template-id project-id]}]

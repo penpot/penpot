@@ -6,12 +6,13 @@
 
 (ns backend-tests.rpc-management-test
   (:require
-   [backend-tests.storage-test :refer [configure-storage-backend]]
-   [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
+   [app.rpc :as-alias rpc]
    [app.storage :as sto]
+   [backend-tests.helpers :as th]
+   [backend-tests.storage-test :refer [configure-storage-backend]]
    [buddy.core.bytes :as b]
    [clojure.test :as t]
    [datoteka.core :as fs]))
@@ -50,7 +51,7 @@
                  :object (select-keys mobj [:id :width :height :mtype :name])}]})
 
     (let [data {::th/type :duplicate-file
-                :profile-id (:id profile)
+                ::rpc/profile-id (:id profile)
                 :file-id (:id file1)
                 :name "file 1 (copy)"}
           out  (th/command! data)]
@@ -122,7 +123,7 @@
     @(sto/del-object! storage sobject)
 
     (let [data {::th/type :duplicate-file
-                :profile-id (:id profile)
+                ::rpc/profile-id (:id profile)
                 :file-id (:id file1)
                 :name "file 1 (copy)"}
           out  (th/command! data)]
@@ -184,7 +185,7 @@
 
 
     (let [data {::th/type :duplicate-project
-                :profile-id (:id profile)
+                ::rpc/profile-id (:id profile)
                 :project-id (:id project)
                 :name "project 1 (copy)"}
           out  (th/command! data)]
@@ -250,7 +251,7 @@
     (th/mark-file-deleted* {:id (:id file1)})
 
     (let [data {::th/type :duplicate-project
-                :profile-id (:id profile)
+                ::rpc/profile-id (:id profile)
                 :project-id (:id project)
                 :name "project 1 (copy)"}
           out  (th/command! data)]
@@ -313,7 +314,7 @@
 
     ;; Try to move to same project
     (let [data  {::th/type :move-files
-                 :profile-id (:id profile)
+                 ::rpc/profile-id (:id profile)
                  :project-id (:id project1)
                  :ids #{(:id file1)}}
 
@@ -333,7 +334,7 @@
 
     ;; move a file1 to project2 (in the same team)
     (let [data {::th/type :move-files
-                :profile-id (:id profile)
+                ::rpc/profile-id (:id profile)
                 :project-id (:id project2)
                 :ids #{(:id file1)}}
 
@@ -416,7 +417,7 @@
 
     ;; move to other project in other team
     (let [data {::th/type :move-files
-                :profile-id (:id profile)
+                ::rpc/profile-id (:id profile)
                 :project-id (:id project2)
                 :ids #{(:id file1)}}
           out  (th/command! data)]
@@ -489,7 +490,7 @@
 
     ;; move the library to other project
     (let [data {::th/type :move-files
-                :profile-id (:id profile)
+                ::rpc/profile-id (:id profile)
                 :project-id (:id project2)
                 :ids #{(:id file2)}}
           out  (th/command! data)]
@@ -575,7 +576,7 @@
     ;; move project1 to other team
     ;; TODO: correct team change of project
     (let [data {::th/type :move-project
-                :profile-id (:id profile)
+                ::rpc/profile-id (:id profile)
                 :project-id (:id project1)
                 :team-id (:id team)}
           out  (th/command! data)]
@@ -608,7 +609,7 @@
 (t/deftest clone-template
   (let [prof    (th/create-profile* 1 {:is-active true})
         data    {::th/type :clone-template
-                 :profile-id (:id prof)
+                 ::rpc/profile-id (:id prof)
                  :project-id (:default-project-id prof)
                  :template-id "test"}
 
@@ -624,7 +625,7 @@
 (t/deftest retrieve-list-of-buitin-templates
   (let [prof (th/create-profile* 1 {:is-active true})
         data {::th/type :retrieve-list-of-builtin-templates
-              :profile-id (:id prof)}
+              ::rpc/profile-id (:id prof)}
         out  (th/command! data)]
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))

@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.main :as-alias main]
    [app.setup.builtin-templates]
+   [app.setup.initial-user]
    [app.setup.keys :as keys]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]

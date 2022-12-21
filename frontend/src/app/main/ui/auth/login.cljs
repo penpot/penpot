@@ -102,6 +102,10 @@
                  (= :profile-blocked (:code cause)))
             (reset! error (tr "errors.profile-blocked"))
 
+            (and (= :restriction (:type cause))
+                 (= :admin-only-profile (:code cause)))
+            (reset! error (tr "errors.profile-blocked"))
+
             (and (= :validation (:type cause))
                  (= :wrong-credentials (:code cause)))
             (reset! error (tr "errors.wrong-credentials"))

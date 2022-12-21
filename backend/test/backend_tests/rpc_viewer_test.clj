@@ -100,6 +100,7 @@
             out  (th/query! data)]
 
         ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
         (let [result (:result out)]
           (t/is (contains? result :file))
           (t/is (contains? result :project)))))

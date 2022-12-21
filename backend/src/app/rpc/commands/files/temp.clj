@@ -11,6 +11,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files.create :as files.create]
    [app.rpc.commands.files.update :as files.update]
@@ -26,8 +27,8 @@
 (s/def ::create-page ::us/boolean)
 
 (s/def ::create-temp-file
-  (s/keys :req-un [::files/profile-id
-                   ::files/name
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::files/name
                    ::files/project-id]
           :opt-un [::files/id
                    ::files/is-shared
@@ -36,7 +37,7 @@
 
 (sv/defmethod ::create-temp-file
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)
     (files.create/create-file conn (assoc params :deleted-at (dt/in-future {:days 1})))))
@@ -44,7 +45,7 @@
 ;; --- MUTATION COMMAND: update-temp-file
 
 (defn update-temp-file
-  [conn {:keys [profile-id session-id id revn changes] :as params}]
+  [conn {:keys [::rpc/profile-id session-id id revn changes] :as params}]
   (db/insert! conn :file-change
               {:id (uuid/next)
                :session-id session-id
@@ -95,12 +96,12 @@
     nil))
 
 (s/def ::persist-temp-file
-  (s/keys :req-un [::files/id
-                   ::files/profile-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::files/id]))
 
 (sv/defmethod ::persist-temp-file
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (persist-temp-file conn params)))

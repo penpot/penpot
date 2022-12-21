@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
@@ -68,8 +69,8 @@
     (files/decode-row file)))
 
 (s/def ::create-file
-  (s/keys :req-un [::files/profile-id
-                   ::files/name
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::files/name
                    ::files/project-id]
           :opt-un [::files/id
                    ::files/is-shared
@@ -78,10 +79,11 @@
 (sv/defmethod ::create-file
   {::doc/added "1.17"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)
-    (let [team-id (files/get-team-id conn project-id)]
+    (let [team-id (files/get-team-id conn project-id)
+          params  (assoc params :profile-id profile-id)]
       (-> (create-file conn params)
           (vary-meta assoc ::audit/props {:team-id team-id})))))
 

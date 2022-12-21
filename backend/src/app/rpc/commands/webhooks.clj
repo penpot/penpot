@@ -12,6 +12,7 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.loggers.webhooks :as webhooks]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :refer [check-edition-permissions! check-read-permissions!]]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
@@ -23,7 +24,6 @@
 
 ;; --- Mutation: Create Webhook
 
-(s/def ::profile-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::uri ::us/not-empty-string)
 (s/def ::is-active ::us/boolean)
@@ -33,7 +33,8 @@
     "application/transit+json"})
 
 (s/def ::create-webhook
-  (s/keys :req-un [::profile-id ::team-id ::uri ::mtype]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::team-id ::uri ::mtype]
           :opt-un [::is-active]))
 
 ;; NOTE: for now the quote is hardcoded but this need to be solved in
@@ -98,7 +99,7 @@
 
 (sv/defmethod ::create-webhook
   {::doc/added "1.17"}
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
   (check-edition-permissions! pool profile-id team-id)
   (validate-quotes! cfg params)
   (->> (validate-webhook! cfg nil params)
@@ -109,18 +110,19 @@
 
 (sv/defmethod ::update-webhook
   {::doc/added "1.17"}
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [id profile-id] :as params}]
+  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (let [whook (db/get pool :webhook {:id id})]
     (check-edition-permissions! pool profile-id (:team-id whook))
     (->> (validate-webhook! cfg whook params)
          (p/fmap executor (fn [_] (update-webhook! cfg whook params))))))
 
 (s/def ::delete-webhook
-  (s/keys :req-un [::profile-id ::id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id]))
 
 (sv/defmethod ::delete-webhook
   {::doc/added "1.17"}
-  [{:keys [::db/pool] :as cfg} {:keys [profile-id id]}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
   (db/with-atomic [conn pool]
     (let [whook (db/get conn :webhook {:id id})]
       (check-edition-permissions! conn profile-id (:team-id whook))
@@ -131,14 +133,15 @@
 
 (s/def ::team-id ::us/uuid)
 (s/def ::get-webhooks
-  (s/keys :req-un [::profile-id ::team-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::team-id]))
 
 (def sql:get-webhooks
   "select id, uri, mtype, is_active, error_code, error_count
    from webhook where team_id = ? order by uri")
 
 (sv/defmethod ::get-webhooks
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (db/exec! conn [sql:get-webhooks team-id])))

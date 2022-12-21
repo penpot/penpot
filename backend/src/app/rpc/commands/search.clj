@@ -8,6 +8,7 @@
   (:require
    [app.common.spec :as us]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -47,18 +48,18 @@
     order by f.created_at asc")
 
 (defn search-files
-  [conn {:keys [profile-id team-id search-term] :as params}]
+  [conn {:keys [::rpc/profile-id team-id search-term] :as params}]
   (db/exec! conn [sql:search-files
                   profile-id team-id
                   profile-id team-id
                   search-term]))
 
-(s/def ::profile-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::search-files ::us/string)
 
 (s/def ::search-files
-  (s/keys :req-un [::profile-id ::team-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::team-id]
           :opt-un [::search-term]))
 
 (sv/defmethod ::search-files

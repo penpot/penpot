@@ -146,7 +146,12 @@
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age (dt/duration "-1m")})]
-      (t/is (= 1 (:processed result))))
+      (t/is (= 2 (:processed result))))
+
+    (let [row (th/db-get :team
+                         {:id (:default-team-id prof)}
+                         {:check-deleted? false})]
+      (t/is (dt/instant? (:deleted-at row))))
 
     ;; query profile after delete
     (let [params {::th/type :profile

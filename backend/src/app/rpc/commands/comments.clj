@@ -12,6 +12,7 @@
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -41,7 +42,7 @@
 (s/def ::share-id (s/nilable ::us/uuid))
 
 (s/def ::get-comment-threads
-  (s/and (s/keys :req-un [::profile-id]
+  (s/and (s/keys :req [::rpc/profile-id]
                  :opt-un [::file-id ::share-id ::team-id])
          #(or (:file-id %) (:team-id %))))
 
@@ -74,7 +75,7 @@
    window w as (partition by c.thread_id order by c.created_at asc)")
 
 (defn retrieve-comment-threads
-  [conn {:keys [profile-id file-id share-id]}]
+  [conn {:keys [::rpc/profile-id file-id share-id]}]
   (files/check-comment-permissions! conn profile-id file-id share-id)
   (->> (db/exec! conn [sql:comment-threads profile-id file-id])
        (into [] (map decode-row))))
@@ -85,11 +86,12 @@
 
 (s/def ::team-id ::us/uuid)
 (s/def ::get-unread-comment-threads
-  (s/keys :req-un [::profile-id ::team-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::team-id]))
 
 (sv/defmethod ::get-unread-comment-threads
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
   (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (retrieve-unread-comment-threads conn params)))
@@ -122,7 +124,7 @@
        "select * from threads where count_unread_comments > 0"))
 
 (defn retrieve-unread-comment-threads
-  [conn {:keys [profile-id team-id]}]
+  [conn {:keys [::rpc/profile-id team-id]}]
   (->> (db/exec! conn [sql:unread-comment-threads-by-team profile-id team-id])
        (into [] (map decode-row))))
 
@@ -132,12 +134,13 @@
 (s/def ::id ::us/uuid)
 (s/def ::share-id (s/nilable ::us/uuid))
 (s/def ::get-comment-thread
-  (s/keys :req-un [::profile-id ::file-id ::id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::id]
           :opt-un [::share-id]))
 
 (sv/defmethod ::get-comment-thread
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (let [sql (str "with threads as (" sql:comment-threads ")"
@@ -146,7 +149,7 @@
           (decode-row)))))
 
 (defn get-comment-thread
-  [conn {:keys [profile-id file-id id] :as params}]
+  [conn {:keys [::rpc/profile-id file-id id] :as params}]
   (let [sql (str "with threads as (" sql:comment-threads ")"
                  "select * from threads where id = ?")]
     (-> (db/exec-one! conn [sql profile-id file-id id])
@@ -160,12 +163,13 @@
 (s/def ::share-id (s/nilable ::us/uuid))
 (s/def ::thread-id ::us/uuid)
 (s/def ::get-comments
-  (s/keys :req-un [::profile-id ::thread-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::thread-id]
           :opt-un [::share-id]))
 
 (sv/defmethod ::get-comments
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id thread-id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id thread-id share-id] :as params}]
   (with-open [conn (db/open pool)]
     (let [thread (db/get-by-id conn :comment-thread thread-id)]
       (files/check-comment-permissions! conn profile-id (:file-id thread) share-id))
@@ -191,7 +195,8 @@
 (s/def ::share-id (s/nilable ::us/uuid))
 
 (s/def ::get-profiles-for-file-comments
-  (s/keys :req-un [::profile-id ::file-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id]
           :opt-un [::share-id]))
 
 (sv/defmethod ::get-profiles-for-file-comments
@@ -199,7 +204,7 @@
   participants on comment threads of the file."
   {::doc/added "1.15"
    ::doc/changes ["1.15" "Imported from queries and renamed."]}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id]}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id share-id]}]
   (with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (get-file-comments-users conn file-id profile-id)))
@@ -240,19 +245,19 @@
 (s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::share-id (s/nilable ::us/uuid))
-(s/def ::profile-id ::us/uuid)
 (s/def ::position ::gpt/point)
 (s/def ::content ::us/string)
 (s/def ::frame-id ::us/uuid)
 
 (s/def ::create-comment-thread
-  (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id ::frame-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::position ::content ::page-id ::frame-id]
           :opt-un [::share-id]))
 
 (sv/defmethod ::create-comment-thread
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id share-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-comment-permissions! conn profile-id file-id share-id)
 
@@ -268,7 +273,7 @@
     (:next-seqn res)))
 
 (defn create-comment-thread
-  [conn {:keys [profile-id file-id page-id position content frame-id] :as params}]
+  [conn {:keys [::rpc/profile-id file-id page-id position content frame-id] :as params}]
   (let [seqn    (retrieve-next-seqn conn file-id)
         now     (dt/now)
         pname   (retrieve-page-name conn params)
@@ -316,12 +321,13 @@
 (s/def ::share-id (s/nilable ::us/uuid))
 
 (s/def ::update-comment-thread-status
-  (s/keys :req-un [::profile-id ::id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id]
           :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread-status
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [cthr (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not cthr
@@ -346,12 +352,13 @@
 
 (s/def ::is-resolved ::us/boolean)
 (s/def ::update-comment-thread
-  (s/keys :req-un [::profile-id ::id ::is-resolved]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id ::is-resolved]
           :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id id is-resolved share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id is-resolved share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not thread
@@ -370,7 +377,8 @@
 (declare create-comment)
 
 (s/def ::create-comment
-  (s/keys :req-un [::profile-id ::thread-id ::content]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::thread-id ::content]
           :opt-un [::share-id]))
 
 (sv/defmethod ::create-comment
@@ -381,7 +389,7 @@
     (create-comment conn params)))
 
 (defn create-comment
-  [conn {:keys [profile-id thread-id content share-id] :as params}]
+  [conn {:keys [::rpc/profile-id thread-id content share-id] :as params}]
   (let [thread (-> (db/get-by-id conn :comment-thread thread-id {:for-update true})
                    (decode-row))
         pname  (retrieve-page-name conn thread)]
@@ -437,7 +445,8 @@
 (declare update-comment)
 
 (s/def ::update-comment
-  (s/keys :req-un [::profile-id ::id ::content]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id ::content]
           :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment
@@ -447,7 +456,7 @@
     (update-comment conn params)))
 
 (defn update-comment
-  [conn {:keys [profile-id id content share-id] :as params}]
+  [conn {:keys [::rpc/profile-id id content share-id] :as params}]
   (let [comment (db/get-by-id conn :comment id {:for-update true})
         _       (when-not comment (ex/raise :type :not-found))
         thread  (db/get-by-id conn :comment-thread (:thread-id comment) {:for-update true})
@@ -476,11 +485,12 @@
 ;; --- COMMAND: Delete Comment Thread
 
 (s/def ::delete-comment-thread
-  (s/keys :req-un [::profile-id ::id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id]))
 
 (sv/defmethod ::delete-comment-thread
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not (= (:owner-id thread) profile-id)
@@ -493,11 +503,12 @@
 ;; --- COMMAND: Delete comment
 
 (s/def ::delete-comment
-  (s/keys :req-un [::profile-id ::id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id]))
 
 (sv/defmethod ::delete-comment
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [comment (db/get-by-id conn :comment id {:for-update true})]
       (when-not (= (:owner-id comment) profile-id)
@@ -509,12 +520,13 @@
 ;; --- COMMAND: Update comment thread position
 
 (s/def ::update-comment-thread-position
-  (s/keys :req-un [::profile-id ::id ::position ::frame-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id ::position ::frame-id]
           :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread-position
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id id position frame-id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id position frame-id share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
       (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
@@ -528,12 +540,13 @@
 ;; --- COMMAND: Update comment frame
 
 (s/def ::update-comment-thread-frame
-  (s/keys :req-un [::profile-id ::id ::frame-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id ::frame-id]
           :opt-un [::share-id]))
 
 (sv/defmethod ::update-comment-thread-frame
   {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id id frame-id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id frame-id share-id] :as params}]
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
       (files/check-comment-permissions! conn profile-id (:file-id thread) share-id)
