@@ -1,9 +1,52 @@
+FROM ubuntu:22.04 as jre-build
+
+RUN set -eux; \
+    apt-get -qq update; \
+    apt-get -qqy --no-install-recommends install curl ca-certificates binutils; \
+    rm -rf /var/lib/apt/lists/*; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         ESUM='262be608e266fd76d7496af83b2832be853c3aaf7460d6a4da198cd40db74553'; \
+         BINARY_URL='https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18.0.2.1%2B1/OpenJDK18U-jdk_aarch64_linux_hotspot_18.0.2.1_1.tar.gz'; \
+         ;; \
+       armhf|armv7l) \
+         ESUM='4cd49b92d13847bfad7b3bf635cca349e2c89c7641748c5288bc40d612cdbbd6'; \
+         BINARY_URL='https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18.0.2.1%2B1/OpenJDK18U-jdk_arm_linux_hotspot_18.0.2.1_1.tar.gz'; \
+         ;; \
+       amd64|x86_64) \
+         ESUM='7d6beba8cfc0a8347f278f7414351191a95a707d46b6586e9a786f2669af0f8b'; \
+         BINARY_URL='https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18.0.2.1%2B1/OpenJDK18U-jdk_x64_linux_hotspot_18.0.2.1_1.tar.gz'; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/openjdk.tar.gz ${BINARY_URL}; \
+    echo "${ESUM} */tmp/openjdk.tar.gz" | sha256sum -c -; \
+    mkdir -p /opt/jdk; \
+    cd /opt/jdk; \
+    tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
+    rm -rf /tmp/openjdk.tar.gz;
+
+RUN /opt/jdk/bin/jlink \
+    --verbose \
+    --module-path /opt/jdk/jmods \
+    --strip-debug \
+    --no-man-pages \
+    --no-header-files \
+    --compress 0 \
+    --add-modules java.base,java.naming,java.xml,java.logging,java.net.http,java.sql,java.management,java.desktop,jdk.jfr,jdk.unsupported,jdk.management.jfr \
+    --output /opt/jre
+
+
 FROM ubuntu:22.04
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
-
-ENV LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
-
+ENV LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8' JAVA_HOME="/opt/jre" PATH="${JAVA_HOME}/bin:${PATH}"
 WORKDIR /root
+
+COPY --from=jre-build /opt/jre /opt/jre
 
 RUN set -ex; \
     apt-get -qq update; \
@@ -23,34 +66,6 @@ RUN set -ex; \
     locale-gen; \
     rm -rf /var/lib/apt/lists/*;
 
-RUN set -eux; \
-    ARCH="$(dpkg --print-architecture)"; \
-    case "${ARCH}" in \
-       aarch64|arm64) \
-         ESUM='37ceaf232a85cce46bcccfd71839854e8b14bf3160e7ef72a676b9cae45ee8af'; \
-         BINARY_URL='https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18.0.1%2B10/OpenJDK18U-jdk_aarch64_linux_hotspot_18.0.1_10.tar.gz'; \
-         ;; \
-       armhf|armv7l) \
-         ESUM='0ddec3c165ab0b662a57a845db3fdaeb840660b493f164696b03df76aadf61c8'; \
-         BINARY_URL='https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18.0.1%2B10/OpenJDK18U-jdk_arm_linux_hotspot_18.0.1_10.tar.gz'; \
-         ;; \
-       amd64|x86_64) \
-         ESUM='16b1d9d75f22c157af04a1fd9c664324c7f4b5163c022b382a2f2e8897c1b0a2'; \
-         BINARY_URL='https://github.com/adoptium/temurin18-binaries/releases/download/jdk-18.0.1%2B10/OpenJDK18U-jdk_x64_linux_hotspot_18.0.1_10.tar.gz'; \
-         ;; \
-       *) \
-         echo "Unsupported arch: ${ARCH}"; \
-         exit 1; \
-         ;; \
-    esac; \
-    curl -LfsSo /tmp/openjdk.tar.gz ${BINARY_URL}; \
-    echo "${ESUM} */tmp/openjdk.tar.gz" | sha256sum -c -; \
-    mkdir -p /usr/lib/jvm/openjdk; \
-    cd /usr/lib/jvm/openjdk; \
-    tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
-    rm -rf /tmp/openjdk.tar.gz;
-
-ENV JAVA_HOME=/usr/lib/jvm/openjdk PATH="/usr/lib/jvm/openjdk/bin:$PATH"
 ADD ./bundle-backend/ /opt/penpot/backend/
 WORKDIR /opt/penpot/backend
 CMD ["/bin/bash", "run.sh"]
