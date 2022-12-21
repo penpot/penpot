@@ -78,13 +78,21 @@ function log-devenv {
     docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml logs -f --tail=50
 }
 
-function run-devenv {
+function run-devenv-tmux {
     if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
         start-devenv
     fi
 
     docker exec -ti penpot-devenv-main sudo -EH -u penpot /home/start-tmux.sh
 }
+
+function run-devenv-shell {
+    if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
+        start-devenv
+    fi
+    docker exec -ti penpot-devenv-main sudo -EH -u penpot bash
+}
+
 
 function build {
     echo ">> build start: $1"
@@ -164,6 +172,20 @@ function build-exporter-bundle {
     echo ">> bundle exporter end";
 }
 
+function build-docker-images {
+    rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
+    rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
+    rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
+
+    pushd ./docker/images;
+
+    docker build -t penpotapp/backend:$CURRENT_BRANCH -f Dockerfile.backend .;
+    docker build -t penpotapp/frontend:$CURRENT_BRANCH -f Dockerfile.frontend .;
+    docker build -t penpotapp/exporter:$CURRENT_BRANCH -f Dockerfile.exporter .;
+
+    popd;
+}
+
 function usage {
     echo "PENPOT build & release manager"
     echo "USAGE: $0 OPTION"
@@ -203,7 +225,10 @@ case $1 in
         start-devenv ${@:2}
         ;;
     run-devenv)
-        run-devenv ${@:2}
+        run-devenv-tmux ${@:2}
+        ;;
+    run-devenv-shell)
+        run-devenv-shell ${@:2}
         ;;
     stop-devenv)
         stop-devenv ${@:2}
@@ -216,6 +241,12 @@ case $1 in
         ;;
 
     # production builds
+    build-bundle)
+        build-frontend-bundle;
+        build-backend-bundle;
+        build-exporter-bundle;
+        ;;
+
     build-frontend-bundle)
         build-frontend-bundle;
         ;;
@@ -226,6 +257,10 @@ case $1 in
 
     build-exporter-bundle)
         build-exporter-bundle;
+        ;;
+
+    build-docker-images)
+        build-docker-images
         ;;
 
     # Docker Image Tasks
