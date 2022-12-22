@@ -294,7 +294,7 @@
 
 (defn- retrieve-file
   [pool file-id]
-  (with-open [conn (db/open pool)]
+  (with-open [^AutoCloseable conn (db/open pool)]
     (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
       (some-> (db/get* conn :file {:id file-id})
               (files/decode-row)

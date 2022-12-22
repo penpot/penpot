@@ -132,7 +132,7 @@
 
 (defmethod run-collector! :counter
   [{:keys [::mdef/instance]} {:keys [inc labels] :or {inc 1 labels default-empty-labels}}]
-  (let [instance (.labels instance (if (is-array? labels) labels (into-array String labels)))]
+  (let [instance (.labels ^Counter instance (if (is-array? labels) labels (into-array String labels)))]
     (.inc ^Counter$Child instance (double inc))))
 
 (defmethod run-collector! :gauge
