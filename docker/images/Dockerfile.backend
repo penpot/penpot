@@ -1,9 +1,18 @@
 FROM ubuntu:22.04 as jre-build
 
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=Etc/UTC
+
 RUN set -eux; \
     apt-get -qq update; \
-    apt-get -qqy --no-install-recommends install curl ca-certificates binutils; \
-    rm -rf /var/lib/apt/lists/*; \
+    apt-get -qqy --no-install-recommends install \
+      curl \
+      ca-certificates \
+      binutils \
+    ; \
+    rm -rf /var/lib/apt/lists/*;
+
+RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
@@ -42,13 +51,18 @@ RUN /opt/jdk/bin/jlink \
 
 
 FROM ubuntu:22.04
+
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
-ENV LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8' JAVA_HOME="/opt/jre" PATH="${JAVA_HOME}/bin:${PATH}"
-WORKDIR /root
+ENV LANG='en_US.UTF-8' \
+    LC_ALL='en_US.UTF-8' \
+    JAVA_HOME="/opt/jre" \
+    PATH=/opt/jre/bin:$PATH \
+    TZ=Etc/UTC
 
 COPY --from=jre-build /opt/jre /opt/jre
 
 RUN set -ex; \
+    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     apt-get -qq update; \
     apt-get -qqy --no-install-recommends install \
         curl \
@@ -66,6 +80,8 @@ RUN set -ex; \
     locale-gen; \
     rm -rf /var/lib/apt/lists/*;
 
-ADD ./bundle-backend/ /opt/penpot/backend/
+COPY --chown=penpot:penpot ./bundle-backend/ /opt/penpot/backend/
+
+USER penpot:penpot
 WORKDIR /opt/penpot/backend
 CMD ["/bin/bash", "run.sh"]
