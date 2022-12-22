@@ -71,7 +71,8 @@
 (defn login-with-password
   [{:keys [::db/pool session] :as cfg} {:keys [email password scope] :as params}]
 
-  (when-not (contains? cf/flags :login)
+  (when-not (or (contains? cf/flags :login)
+                (contains? cf/flags :login-with-password))
     (ex/raise :type :restriction
               :code :login-disabled
               :hint "login is disabled in this instance"))
