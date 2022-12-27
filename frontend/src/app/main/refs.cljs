@@ -183,6 +183,12 @@
 (def context-menu
   (l/derived :context-menu workspace-local))
 
+(def file-library-listing-thumbs?
+  (l/derived :file-library-listing-thumbs workspace-global))
+
+(def file-library-reverse-sort?
+  (l/derived :file-library-reverse-sort workspace-global))
+
 (def current-hover-ids
   (l/derived :hover-ids context-menu))
 

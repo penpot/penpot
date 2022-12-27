@@ -316,7 +316,6 @@
          :on-click on-menu-click
          :on-key-down (fn [event]
                         (when (kbd/enter? event)
-                          (prn "entro en on-menu-click")
                           (on-menu-click event)))}
         i/actions
         (when selected?

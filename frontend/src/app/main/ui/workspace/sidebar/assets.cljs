@@ -423,8 +423,8 @@
     [:div {:ref item-ref
            :class (dom/classnames
                    :selected (contains? selected-components (:id component))
-                   :grid-cell @listing-thumbs?
-                   :enum-item (not @listing-thumbs?))
+                   :grid-cell listing-thumbs?
+                   :enum-item (not listing-thumbs?))
            :id (str "component-shape-id-" (:id component))
            :draggable (not workspace-read-only?)
            :on-click on-component-click
@@ -441,12 +441,12 @@
        [:*
         [:& editable-label
          {:class-name (dom/classnames
-                        :cell-name @listing-thumbs?
-                        :item-name (not @listing-thumbs?)
+                        :cell-name listing-thumbs?
+                        :item-name (not listing-thumbs?)
                         :editing renaming?)
           :value (cph/merge-path-item (:path component) (:name component))
           :tooltip (cph/merge-path-item (:path component) (:name component))
-          :display-value (if @listing-thumbs?
+          :display-value (if listing-thumbs?
                            (:name component)
                            (cph/compact-name (:path component)
                                              (:name component)))
@@ -504,9 +504,9 @@
        [:*
         (let [components (get groups "" [])]
           [:div {:class-name (dom/classnames
-                              :asset-grid @listing-thumbs?
-                              :big @listing-thumbs?
-                              :asset-enum (not @listing-thumbs?)
+                              :asset-grid listing-thumbs?
+                              :big listing-thumbs?
+                              :asset-enum (not listing-thumbs?)
                               :drop-space (and
                                            (empty? components)
                                            (some? groups)
@@ -806,8 +806,8 @@
     [:div {:ref item-ref
            :class-name (dom/classnames
                         :selected (contains? selected-objects (:id object))
-                        :grid-cell @listing-thumbs?
-                        :enum-item (not @listing-thumbs?))
+                        :grid-cell listing-thumbs?
+                        :enum-item (not listing-thumbs?))
            :draggable (not workspace-read-only?)
            :on-click #(on-asset-click % (:id object) nil)
            :on-context-menu (on-context-menu (:id object))
@@ -826,12 +826,12 @@
           [:*
            [:& editable-label
             {:class-name (dom/classnames
-                          :cell-name @listing-thumbs?
-                          :item-name (not @listing-thumbs?)
+                          :cell-name listing-thumbs?
+                          :item-name (not listing-thumbs?)
                           :editing renaming?)
              :value (cph/merge-path-item (:path object) (:name object))
              :tooltip (cph/merge-path-item (:path object) (:name object))
-             :display-value (if @listing-thumbs?
+             :display-value (if listing-thumbs?
                               (:name object)
                               (cph/compact-name (:path object)
                                                 (:name object)))
@@ -890,8 +890,8 @@
        [:*
         (let [objects (get groups "" [])]
           [:div {:class-name (dom/classnames
-                              :asset-grid @listing-thumbs?
-                              :asset-enum (not @listing-thumbs?)
+                              :asset-grid listing-thumbs?
+                              :asset-enum (not listing-thumbs?)
                               :drop-space (and
                                            (empty? objects)
                                            (some? groups)
@@ -1983,8 +1983,11 @@
         shared?              (:is-shared file)
         router               (mf/deref refs/router)
 
-        reverse-sort?        (mf/use-state false)
-        listing-thumbs?      (mf/use-state true)
+        reverse-sort?      (mf/deref refs/file-library-reverse-sort?)
+        reverse-sort?      (if (nil? reverse-sort?) false reverse-sort?)
+
+        listing-thumbs?      (mf/deref refs/file-library-listing-thumbs?)
+        listing-thumbs?      (if (nil? listing-thumbs?) true listing-thumbs?)
 
         selected-assets      (mf/deref refs/selected-assets)
 
@@ -1998,31 +2001,33 @@
         toggle-open          #(st/emit! (dwl/set-assets-box-open (:id file) :library (not open?)))
 
         url                  (rt/resolve router :workspace
-                                    {:project-id (:project-id file)
-                                     :file-id (:id file)}
-                                    {:page-id (get-in file [:data :pages 0])})
+                                         {:project-id (:project-id file)
+                                          :file-id (:id file)}
+                                         {:page-id (get-in file [:data :pages 0])})
 
         colors-ref           (mf/use-memo (mf/deps (:id file)) #(file-colors-ref (:id file)))
-        colors               (apply-filters (mf/deref colors-ref) filters @reverse-sort?)
+        colors               (apply-filters (mf/deref colors-ref) filters reverse-sort?)
 
         typography-ref       (mf/use-memo (mf/deps (:id file)) #(file-typography-ref (:id file)))
-        typographies         (apply-filters (mf/deref typography-ref) filters @reverse-sort?)
+        typographies         (apply-filters (mf/deref typography-ref) filters reverse-sort?)
 
         media-ref            (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
-        media                (apply-filters (mf/deref media-ref) filters @reverse-sort?)
+        media                (apply-filters (mf/deref media-ref) filters reverse-sort?)
 
         components-ref       (mf/use-memo (mf/deps (:id file)) #(file-components-ref (:id file)))
-        components           (apply-filters (mf/deref components-ref) filters @reverse-sort?)
+        components           (apply-filters (mf/deref components-ref) filters reverse-sort?)
 
         toggle-sort
         (mf/use-fn
+         (mf/deps reverse-sort?)
          (fn [_]
-           (swap! reverse-sort? not)))
+           (st/emit! (dw/set-file-library-reverse-sort (not reverse-sort?)))))
 
         toggle-listing
         (mf/use-fn
+         (mf/deps listing-thumbs?)
          (fn [_]
-           (swap! listing-thumbs? not)))
+           (st/emit! (dw/set-file-library-listing-thumbs (not listing-thumbs?)))))
 
         extend-selected-assets
         (mf/use-fn
@@ -2084,20 +2089,20 @@
          (mf/deps selected-assets)
          (fn []
            (let [undo-id (uuid/next)]
-            (st/emit! (dwu/start-undo-transaction undo-id))
-           (apply st/emit! (map #(dwl/delete-component {:id %})
-                                (:components selected-assets)))
-           (apply st/emit! (map #(dwl/delete-media {:id %})
-                                (:graphics selected-assets)))
-           (apply st/emit! (map #(dwl/delete-color {:id %})
-                                (:colors selected-assets)))
-           (apply st/emit! (map #(dwl/delete-typography %)
-                                (:typographies selected-assets)))
-           (when (or (d/not-empty? (:components selected-assets))
-                     (d/not-empty? (:colors selected-assets))
-                     (d/not-empty? (:typographies selected-assets)))
-             (st/emit! (dwl/sync-file (:id file) (:id file))))
-           (st/emit! (dwu/commit-undo-transaction undo-id)))))]
+             (st/emit! (dwu/start-undo-transaction undo-id))
+             (apply st/emit! (map #(dwl/delete-component {:id %})
+                                  (:components selected-assets)))
+             (apply st/emit! (map #(dwl/delete-media {:id %})
+                                  (:graphics selected-assets)))
+             (apply st/emit! (map #(dwl/delete-color {:id %})
+                                  (:colors selected-assets)))
+             (apply st/emit! (map #(dwl/delete-typography %)
+                                  (:typographies selected-assets)))
+             (when (or (d/not-empty? (:components selected-assets))
+                       (d/not-empty? (:colors selected-assets))
+                       (d/not-empty? (:typographies selected-assets)))
+               (st/emit! (dwl/sync-file (:id file) (:id file))))
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))]
 
     [:div.tool-window {:on-context-menu #(dom/prevent-default %)
                        :on-click unselect-all}
@@ -2144,11 +2149,11 @@
              [:span.selected-count
               (tr "workspace.assets.selected-count" (i18n/c selected-count))])
            [:div.listing-option-btn.first {:on-click toggle-sort}
-            (if @reverse-sort?
+            (if reverse-sort?
               i/sort-ascending
               i/sort-descending)]
            [:div.listing-option-btn {:on-click toggle-listing}
-            (if @listing-thumbs?
+            (if listing-thumbs?
               i/listing-enum
               i/listing-thumbs)]]
 
@@ -2159,7 +2164,7 @@
                                 :listing-thumbs? listing-thumbs?
                                 :open? (open-box? :components)
                                 :open-groups (open-groups :components)
-                                :reverse-sort? @reverse-sort?
+                                :reverse-sort? reverse-sort?
                                 :selected-assets selected-assets
                                 :on-asset-click (partial on-asset-click :components)
                                 :on-assets-delete on-assets-delete
@@ -2173,7 +2178,7 @@
                               :listing-thumbs? listing-thumbs?
                               :open? (open-box? :graphics)
                               :open-groups (open-groups :graphics)
-                              :reverse-sort? @reverse-sort?
+                              :reverse-sort? reverse-sort?
                               :selected-assets selected-assets
                               :on-asset-click (partial on-asset-click :graphics)
                               :on-assets-delete on-assets-delete
@@ -2184,7 +2189,7 @@
                             :colors colors
                             :open? (open-box? :colors)
                             :open-groups (open-groups :colors)
-                            :reverse-sort? @reverse-sort?
+                            :reverse-sort? reverse-sort?
                             :selected-assets selected-assets
                             :on-asset-click (partial on-asset-click :colors)
                             :on-assets-delete on-assets-delete
@@ -2197,7 +2202,7 @@
                                   :typographies typographies
                                   :open? (open-box? :typographies)
                                   :open-groups (open-groups :typographies)
-                                  :reverse-sort? @reverse-sort?
+                                  :reverse-sort? reverse-sort?
                                   :selected-assets selected-assets
                                   :on-asset-click (partial on-asset-click :typographies)
                                   :on-assets-delete on-assets-delete
