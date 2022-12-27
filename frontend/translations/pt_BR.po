@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-12-06 21:48+0000\n"
-"Last-Translator: Ally Tiago <allytiagomail@gmail.com>\n"
+"PO-Revision-Date: 2022-12-27 22:22+0000\n"
+"Last-Translator: Fernando Krik <fernandokrik@hotmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.15-dev\n"
+"X-Generator: Weblate 4.15.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -260,11 +260,11 @@ msgstr "Tutorial prático"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.info"
-msgstr "Faça um passeio pelo Penpot e conheça suas principais características."
+msgstr "Faça um tour pelo Penpot e conheça suas principais características."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
-msgstr "Comece o passeio"
+msgstr "Começar tour"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.title"
@@ -4587,3 +4587,6 @@ msgstr "Recolher a barra lateral"
 
 msgid "workspace.sidebar.expand"
 msgstr "Expandir a barra lateral"
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Sua privacidade é importante para nós, saiba mais aqui "
