@@ -148,12 +148,7 @@
           (->> (rp/cmd! :update-file params)
                (rx/mapcat (fn [lagged]
                             (log/debug :hint "changes persisted" :lagged (count lagged))
-                            (let [lagged-updates
-                                  (cond->> lagged
-                                    (= #{sid} (into #{} (map :session-id) lagged))
-                                    (map #(assoc % :changes [])))
-
-                                  frame-updates
+                            (let [frame-updates
                                   (-> (group-by :page-id changes)
                                       (update-vals #(into #{} (mapcat :frames) %)))]
 
@@ -162,9 +157,13 @@
                                     (rx/mapcat (fn [[page-id frames]]
                                                  (->> frames (map #(vector page-id %)))))
                                     (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail (:id file) page-id frame-id))))
-                               (->> (rx/of lagged-updates)
-                                    (rx/mapcat seq)
-                                    (rx/map #(shapes-changes-persisted file-id %)))))))
+                               (->> (rx/from lagged)
+                                    (rx/merge-map (fn [{:keys [changes] :as entry}]
+                                                    (rx/merge
+                                                     (rx/from
+                                                      (for [[page-id changes] (group-by :page-id changes)]
+                                                        (dch/update-indices page-id changes)))
+                                                     (rx/of (shapes-changes-persisted file-id entry))))))))))
                (rx/catch (fn [cause]
                            (rx/concat
                             (if (= :authentication (:type cause))
