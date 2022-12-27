@@ -302,7 +302,10 @@
    {:name "0097-mod-profile-table"
     :fn (mg/resource "app/migrations/sql/0097-mod-profile-table.sql")}
 
-   ])
+   {:name "0098-add-quotes-table"
+    :fn (mg/resource "app/migrations/sql/0098-add-quotes-table.sql")}
+
+  ])
 
 
 (defmethod ig/init-key ::migrations [_ _] migrations)

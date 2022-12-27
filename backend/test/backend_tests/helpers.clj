@@ -59,7 +59,8 @@
 (def default-flags
   [:enable-secure-session-cookies
    :enable-email-verification
-   :enable-smtp])
+   :enable-smtp
+   :enable-quotes])
 
 (defn state-init
   [next]

@@ -18,6 +18,7 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as proj]
+   [app.rpc.quotes :as quotes]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
@@ -84,6 +85,14 @@
     (proj/check-edition-permissions! conn profile-id project-id)
     (let [team-id (files/get-team-id conn project-id)
           params  (assoc params :profile-id profile-id)]
+
+      (run! (partial quotes/check-quote! conn)
+            (list {::quotes/id ::quotes/files-per-project
+                   ::quotes/profile-id profile-id
+                   ::quotes/project-id project-id}
+                  {::quotes/id ::quotes/files-per-team
+                   ::quotes/profile-id profile-id
+                   ::quotes/team-id team-id}))
+
       (-> (create-file conn params)
           (vary-meta assoc ::audit/props {:team-id team-id})))))
-
