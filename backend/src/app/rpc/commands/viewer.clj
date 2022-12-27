@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.comments :as comments]
    [app.rpc.commands.files :as files]
    [app.rpc.cond :as-alias cond]
@@ -73,16 +74,16 @@
 
 (s/def ::get-view-only-bundle
   (s/keys :req-un [::files/file-id]
-          :opt-un [::files/profile-id
-                   ::files/share-id
-                   ::files/features]))
+          :opt-un [::files/share-id
+                   ::files/features]
+          :opt [::rpc/profile-id]))
 
 (sv/defmethod ::get-view-only-bundle
-  {:auth false
+  {::rpc/auth false
    ::cond/get-object #(files/get-minimal-file %1 (:file-id %2))
    ::cond/key-fn files/get-file-etag
    ::cond/reuse-key? true
    ::doc/added "1.17"}
   [{:keys [pool]} params]
   (with-open [conn (db/open pool)]
-    (get-view-only-bundle conn params)))
+    (get-view-only-bundle conn (assoc params :profile-id (::rpc/profile-id params)))))

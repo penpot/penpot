@@ -10,6 +10,7 @@
    [app.db :as db]
    [app.http :as http]
    [app.storage :as sto]
+   [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))
@@ -28,7 +29,7 @@
 
       (t/testing "create webhook"
         (let [params {::th/type :create-webhook
-                      :profile-id (:id prof)
+                      ::rpc/profile-id (:id prof)
                       :team-id team-id
                       :uri "http://example.com"
                       :mtype "application/json"}
@@ -54,7 +55,7 @@
 
       (t/testing "update webhook 1 (success)"
         (let [params {::th/type :update-webhook
-                      :profile-id (:id prof)
+                      ::rpc/profile-id (:id prof)
                       :id (:id @whook)
                       :uri (:uri @whook)
                       :mtype "application/transit+json"
@@ -82,7 +83,7 @@
 
       (t/testing "update webhook 2 (change uri)"
         (let [params {::th/type :update-webhook
-                      :profile-id (:id prof)
+                      ::rpc/profile-id (:id prof)
                       :id (:id @whook)
                       :uri (str (:uri @whook) "/test")
                       :mtype "application/transit+json"
@@ -97,7 +98,7 @@
 
       (t/testing "update webhook 3 (not authorized)"
         (let [params {::th/type :update-webhook
-                      :profile-id uuid/zero
+                      ::rpc/profile-id uuid/zero
                       :id (:id @whook)
                       :uri (str (:uri @whook) "/test")
                       :mtype "application/transit+json"
@@ -115,7 +116,7 @@
 
       (t/testing "delete webhook (success)"
         (let [params {::th/type :delete-webhook
-                      :profile-id (:id prof)
+                      ::rpc/profile-id (:id prof)
                       :id (:id @whook)}
               out    (th/command! params)]
 
@@ -128,7 +129,7 @@
 
       (t/testing "delete webhook (unauthorozed)"
         (let [params {::th/type :delete-webhook
-                      :profile-id uuid/zero
+                      ::rpc/profile-id uuid/zero
                       :id (:id @whook)}
               out    (th/command! params)]
 
@@ -149,7 +150,7 @@
     (let [prof    (th/create-profile* 1 {:is-active true})
           team-id (:default-team-id prof)
           params  {::th/type :create-webhook
-                   :profile-id (:id prof)
+                   ::rpc/profile-id (:id prof)
                    :team-id team-id
                    :uri "http://example.com"
                    :mtype "application/json"}

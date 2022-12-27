@@ -8,6 +8,7 @@
   "A  main namespace for server repl."
   #_:clj-kondo/ignore
   (:require
+   [app.auth :refer [derive-password]]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -20,7 +21,6 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.main :refer [system]]
-   [app.rpc.commands.auth :refer [derive-password]]
    [app.rpc.queries.profile :as prof]
    [app.util.blob :as blob]
    [app.util.time :as dt]

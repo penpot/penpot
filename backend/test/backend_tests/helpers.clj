@@ -6,6 +6,7 @@
 
 (ns backend-tests.helpers
   (:require
+   [app.auth]
    [app.common.data :as d]
    [app.common.flags :as flags]
    [app.common.pages :as cp]
@@ -17,6 +18,7 @@
    [app.main :as main]
    [app.media]
    [app.migrations]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files.create :as files.create]
@@ -101,8 +103,9 @@
                 *pool*   (:app.db/pool system)]
         (with-redefs [app.config/flags (flags/parse flags/default default-flags (:flags config))
                       app.config/config config
-                      app.rpc.commands.auth/derive-password identity
-                      app.rpc.commands.auth/verify-password (fn [a b] {:valid (= a b)})]
+                      app.loggers.audit/submit! (constantly nil)
+                      app.auth/derive-password identity
+                      app.auth/verify-password (fn [a b] {:valid (= a b)})]
           (next)))
       (finally
         (ig/halt! system)))))
@@ -322,14 +325,21 @@
     (try-on! (method-fn (dissoc data ::type)))))
 
 (defn mutation!
-  [{:keys [::type] :as data}]
+  [{:keys [::type profile-id] :as data}]
   (let [method-fn (get-in *system* [:app.rpc/methods :mutations type])]
-    (try-on! (method-fn (dissoc data ::type)))))
+    (try-on! (method-fn (-> data
+                            (dissoc ::type)
+                            (assoc ::rpc/profile-id profile-id)
+                            (d/without-nils))))))
 
 (defn query!
-  [{:keys [::type] :as data}]
+  [{:keys [::type profile-id] :as data}]
   (let [method-fn (get-in *system* [:app.rpc/methods :queries type])]
-    (try-on! (method-fn (dissoc data ::type)))))
+    (try-on! (method-fn (-> data
+                            (dissoc ::type)
+                            (assoc ::rpc/profile-id profile-id)
+                            (d/without-nils))))))
+
 
 (defn run-task!
   ([name]

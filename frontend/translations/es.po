@@ -1611,7 +1611,7 @@ msgstr "Reenviar invitacion"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.copy-invitation-link"
-msgstr "Copiar link de invitación"
+msgstr "Copiar enlace"
 
 #: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"

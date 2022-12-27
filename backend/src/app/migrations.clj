@@ -271,6 +271,37 @@
 
    {:name "0087-mod-task-table"
     :fn (mg/resource "app/migrations/sql/0087-mod-task-table.sql")}
+
+   {:name "0088-mod-team-profile-rel-table"
+    :fn (mg/resource "app/migrations/sql/0088-mod-team-profile-rel-table.sql")}
+
+   {:name "0089-mod-project-profile-rel-table"
+    :fn (mg/resource "app/migrations/sql/0089-mod-project-profile-rel-table.sql")}
+
+   {:name "0090-mod-http-session-table"
+    :fn (mg/resource "app/migrations/sql/0090-mod-http-session-table.sql")}
+
+   {:name "0091-mod-team-project-profile-rel-table"
+    :fn (mg/resource "app/migrations/sql/0091-mod-team-project-profile-rel-table.sql")}
+
+   {:name "0092-mod-team-invitation-table"
+    :fn (mg/resource "app/migrations/sql/0092-mod-team-invitation-table.sql")}
+
+   {:name "0093-del-file-share-tokens-table"
+    :fn (mg/resource "app/migrations/sql/0093-del-file-share-tokens-table.sql")}
+
+   {:name "0094-del-profile-attr-table"
+    :fn (mg/resource "app/migrations/sql/0094-del-profile-attr-table.sql")}
+
+   {:name "0095-del-storage-data-table"
+    :fn (mg/resource "app/migrations/sql/0095-del-storage-data-table.sql")}
+
+   {:name "0096-del-storage-pending-table"
+    :fn (mg/resource "app/migrations/sql/0096-del-storage-pending-table.sql")}
+
+   {:name "0097-mod-profile-table"
+    :fn (mg/resource "app/migrations/sql/0097-mod-profile-table.sql")}
+
    ])
 
 

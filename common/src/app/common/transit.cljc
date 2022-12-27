@@ -14,6 +14,7 @@
    [lambdaisland.uri :as luri]
    [linked.core :as lk]
    [linked.set :as lks]
+   #?(:clj  [datoteka.fs :as fs])
    #?(:cljs ["luxon" :as lxn]))
   #?(:clj
      (:import
@@ -22,6 +23,7 @@
       java.io.ByteArrayInputStream
       java.io.ByteArrayOutputStream
       java.io.File
+      java.nio.file.Path
       java.time.Duration
       java.time.Instant
       java.time.OffsetDateTime
@@ -102,11 +104,15 @@
 ;; --- HANDLERS
 
 (add-handlers!
- #?(:clj
-    {:id "file"
-     :class File
-     :wfn str
-     :rfn identity})
+ #?@(:clj
+     [{:id "file"
+       :class File
+       :wfn str
+       :rfn identity}
+      {:id "path"
+       :class Path
+       :wfn str
+       :rfn fs/path}])
 
  #?(:cljs
     {:id "n"

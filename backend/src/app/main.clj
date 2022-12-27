@@ -290,7 +290,11 @@
    {:pool     (ig/ref ::db/pool)
     :executor (ig/ref ::wrk/executor)
     :storage  (ig/ref ::sto/storage)
-    :session  (ig/ref :app.http.session/manager)}
+    :session  (ig/ref :app.http.session/manager)
+
+    ::db/pool      (ig/ref ::db/pool)
+    ::wrk/executor (ig/ref ::wrk/executor)
+    ::sto/storage  (ig/ref ::sto/storage)}
 
    :app.http.websocket/handler
    {:pool     (ig/ref ::db/pool)
@@ -385,8 +389,8 @@
     :max-age cf/deletion-delay}
 
    :app.tasks.objects-gc/handler
-   {:pool    (ig/ref ::db/pool)
-    :storage (ig/ref ::sto/storage)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
 
    :app.tasks.file-gc/handler
    {:pool (ig/ref ::db/pool)}
@@ -402,6 +406,9 @@
    :app.srepl/server
    {:port (cf/get :srepl-port)
     :host (cf/get :srepl-host)}
+
+   :app.setup/initial-profile
+   {::db/pool (ig/ref ::db/pool)}
 
    :app.setup/builtin-templates
    {::http.client/client (ig/ref ::http.client/client)}

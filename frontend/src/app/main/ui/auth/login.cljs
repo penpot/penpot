@@ -102,6 +102,10 @@
                  (= :profile-blocked (:code cause)))
             (reset! error (tr "errors.profile-blocked"))
 
+            (and (= :restriction (:type cause))
+                 (= :admin-only-profile (:code cause)))
+            (reset! error (tr "errors.profile-blocked"))
+
             (and (= :validation (:type cause))
                  (= :wrong-credentials (:code cause)))
             (reset! error (tr "errors.wrong-credentials"))
@@ -167,7 +171,8 @@
          :label (tr "auth.password")}]]
 
       [:div.buttons-stack
-       (when (contains? @cf/flags :login)
+       (when (or (contains? @cf/flags :login)
+                 (contains? @cf/flags :login-with-password))
          [:& fm/submit-button
           {:label (tr "auth.login-submit")
            :data-test "login-submit"}])
@@ -228,6 +233,7 @@
       [:& login-buttons {:params params}]
 
       (when (or (contains? @cf/flags :login)
+                (contains? @cf/flags :login-with-password)
                 (contains? @cf/flags :login-with-ldap))
         [:span.separator
          [:span.line]
@@ -235,6 +241,7 @@
          [:span.line]])])
 
    (when (or (contains? @cf/flags :login)
+             (contains? @cf/flags :login-with-password)
              (contains? @cf/flags :login-with-ldap))
      [:& login-form {:params params :on-success-callback on-success-callback}])])
 
@@ -247,7 +254,8 @@
     [:& login-methods {:params params}]
 
     [:div.links
-     (when (contains? @cf/flags :login)
+     (when (or (contains? @cf/flags :login)
+               (contains? @cf/flags :login-with-password))
        [:div.link-entry
         [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
                      :data-test "forgot-password"}

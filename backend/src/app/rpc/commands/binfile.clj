@@ -15,10 +15,13 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.queries.projects :as projects]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
@@ -291,7 +294,7 @@
 
 (defn- retrieve-file
   [pool file-id]
-  (with-open [conn (db/open pool)]
+  (with-open [^AutoCloseable conn (db/open pool)]
     (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
       (some-> (db/get* conn :file {:id file-id})
               (files/decode-row)
@@ -864,18 +867,17 @@
 ;; --- Command: export-binfile
 
 (s/def ::file-id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
 (s/def ::include-libraries? ::us/boolean)
 (s/def ::embed-assets? ::us/boolean)
 
 (s/def ::export-binfile
-  (s/keys :req-un [::profile-id ::file-id ::include-libraries? ::embed-assets?]))
+  (s/keys :req [::rpc/profile-id] :req-un [::file-id ::include-libraries? ::embed-assets?]))
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id include-libraries? embed-assets?] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id include-libraries? embed-assets?] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
   (let [body (reify yrs/StreamableResponseBody
                (-write-body-to-stream [_ _ output-stream]
@@ -890,16 +892,18 @@
 
 (s/def ::file ::media/upload)
 (s/def ::import-binfile
-  (s/keys :req-un [::profile-id ::project-id ::file]))
+  (s/keys :req [::rpc/profile-id] :req-un [::project-id ::file]))
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id file] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-read-permissions! conn profile-id project-id)
-    (import! (assoc cfg
-                    ::input (:path file)
-                    ::project-id project-id
-                    ::ignore-index-errors? true))))
+    (let [ids (import! (assoc cfg
+                              ::input (:path file)
+                              ::project-id project-id
+                              ::ignore-index-errors? true))]
+      (rph/with-meta ids
+        {::audit/props {:file nil :file-ids ids}}))))

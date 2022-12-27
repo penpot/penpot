@@ -8,6 +8,7 @@
   (:require
    [app.common.spec :as us]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.viewer :as viewer]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
@@ -19,7 +20,7 @@
          (s/keys :opt-un [::components-v2])))
 
 (sv/defmethod ::view-only-bundle
-  {:auth false
+  {::rpc/auth false
    ::doc/added "1.3"
    ::doc/deprecated "1.17"}
   [{:keys [pool] :as cfg} {:keys [features components-v2] :as params}]

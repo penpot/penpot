@@ -65,8 +65,7 @@
 
       ;; Refresh webhook
       (let [whk' (th/db-get :webhook {:id (:id whk)})]
-        (t/is (nil? (:error-code whk')))
-        (prn whk'))
+        (t/is (nil? (:error-code whk'))))
 
       )))
 

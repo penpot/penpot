@@ -1441,7 +1441,7 @@ msgstr "Resend invitation"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.copy-invitation-link"
-msgstr "Copy invitation link"
+msgstr "Copy link"
 
 #: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"

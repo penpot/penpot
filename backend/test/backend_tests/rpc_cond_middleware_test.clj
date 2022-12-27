@@ -6,12 +6,13 @@
 
 (ns backend-tests.rpc-cond-middleware-test
   (:require
-   [backend-tests.storage-test :refer [configure-storage-backend]]
-   [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
+   [app.rpc :as-alias rpc]
    [app.rpc.cond :as cond]
+   [backend-tests.helpers :as th]
+   [backend-tests.storage-test :refer [configure-storage-backend]]
    [clojure.test :as t]
    [datoteka.core :as fs]))
 
@@ -24,7 +25,9 @@
                                        :profile-id (:id profile)})
         file1   (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:id project)})
-        params  {::th/type :get-file :id (:id file1) :profile-id (:id profile)}]
+        params  {::th/type :get-file
+                 :id (:id file1)
+                 ::rpc/profile-id (:id profile)}]
 
     (binding [cond/*enabled* true]
       (let [{:keys [error result]} (th/command! params)]

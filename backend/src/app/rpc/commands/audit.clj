@@ -15,6 +15,7 @@
    [app.db :as db]
    [app.http :as-alias http]
    [app.loggers.audit :as audit]
+   [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
@@ -41,7 +42,7 @@
    :profile-id :ip-addr :props :context])
 
 (defn- handle-events
-  [{:keys [::db/pool]} {:keys [profile-id events ::http/request] :as params}]
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id events ::http/request] :as params}]
   (let [ip-addr (audit/parse-client-ip request)
         xform   (comp
                  (map #(assoc % :profile-id profile-id))
@@ -53,7 +54,6 @@
     (when (seq events)
       (db/insert-multi! pool :audit-log event-columns events))))
 
-(s/def ::profile-id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::type ::us/string)
 (s/def ::props (s/map-of ::us/keyword any?))
@@ -67,7 +67,8 @@
 (s/def ::events (s/every ::event))
 
 (s/def ::push-audit-events
-  (s/keys :req-un [::events ::profile-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::events]))
 
 (sv/defmethod ::push-audit-events
   {::climit/queue :push-audit-events
