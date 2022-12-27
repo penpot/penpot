@@ -150,14 +150,15 @@
 
 (defn- bundle-fetched
   [features [{:keys [id data] :as file} thumbnails project users comments-users]]
-  (letfn [(resolve-pointer [[key pointer]]
-            (->> (rp/cmd! :get-file-fragment {:file-id id :fragment-id @pointer})
+  (letfn [(resolve-pointer [file-id [key pointer]]
+            (->> (rp/cmd! :get-file-fragment {:file-id file-id :fragment-id @pointer})
                  (rx/map :content)
                  (rx/map #(vector key %))))
-          (resolve-pointers [in-to coll]
+
+          (resolve-pointers [file-id coll]
             (->> (rx/from (seq coll))
-                 (rx/merge-map resolve-pointer)
-                 (rx/reduce conj in-to)))]
+                 (rx/merge-map (partial resolve-pointer file-id))
+                 (rx/reduce conj {})))]
 
     (ptk/reify ::bundle-fetched
       ptk/UpdateEvent
@@ -186,7 +187,7 @@
                      (rx/merge-map
                       (fn [[_ page :as kp]]
                         (if (t/pointer? page)
-                          (resolve-pointer kp)
+                          (resolve-pointer id kp)
                           (rx/of kp))))
                      (rx/merge-map
                       (fn [[id page]]
@@ -212,15 +213,17 @@
 
                          (->> data
                               (filter (comp t/pointer? val))
-                              (resolve-pointers {})
+                              (resolve-pointers id)
                               (rx/map workspace-data-pointers-loaded))
 
                          (->> (rp/cmd! :get-file-libraries {:file-id id :features features})
                               (rx/mapcat identity)
                               (rx/mapcat
-                               (fn [file]
-                                 (->> (filter (comp t/pointer? val) file)
-                                      (resolve-pointers file))))
+                               (fn [{:keys [id data] :as file}]
+                                 (->> (filter (comp t/pointer? val) data)
+                                      (resolve-pointers id)
+                                      (rx/map #(update file :data merge %)))))
+                              (rx/reduce conj [])
                               (rx/map libraries-fetched)))))))
 
                (rx/take-until stoper)))))))

@@ -22,6 +22,7 @@
 (derive :get-team-members ::query)
 (derive :get-team-stats ::query)
 (derive :get-team-invitations ::query)
+(derive :get-team-shared-files ::query)
 
 (defn handle-response
   [{:keys [status body] :as response}]

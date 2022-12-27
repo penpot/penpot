@@ -241,7 +241,6 @@
   [conn id client-features]
   ;; here we check if client requested features are supported
   (check-features-compatibility! client-features)
-
   (binding [pmap/*load-fn* (partial load-pointer conn id)]
     (-> (db/get-by-id conn :file id)
         (decode-row)
@@ -533,12 +532,14 @@
   [conn file-id client-features]
   (check-features-compatibility! client-features)
   (->> (db/exec! conn [sql:file-libraries file-id])
-       (mapv (fn [{:keys [id] :as row}]
-               (binding [pmap/*load-fn* (partial load-pointer conn id)]
-                 (-> (decode-row row)
-                     (assoc :is-indirect false)
-                     (update :data dissoc :pages-index)
-                     (handle-file-features client-features)))))))
+       (map decode-row)
+       (map #(assoc % :is-indirect false))
+       (map (fn [{:keys [id] :as row}]
+              (binding [pmap/*load-fn* (partial load-pointer conn id)]
+                (-> row
+                    (update :data dissoc :pages-index)
+                    (handle-file-features client-features)))))
+       (vec)))
 
 (s/def ::get-file-libraries
   (s/keys :req [::rpc/profile-id]
@@ -708,28 +709,30 @@
 
                 objects)))]
 
-    (let [frame     (get-thumbnail-frame data)
-          frame-id  (:id frame)
-          page-id   (or (:page-id frame)
-                        (-> data :pages first))
+    (binding [pmap/*load-fn* (partial load-pointer conn id)]
+      (let [frame     (get-thumbnail-frame data)
+            frame-id  (:id frame)
+            page-id   (or (:page-id frame)
+                          (-> data :pages first))
 
-          page      (dm/get-in data [:pages-index page-id])
-          frame-ids (if (some? frame) (list frame-id) (map :id (ctt/get-frames (:objects page))))
+            page      (dm/get-in data [:pages-index page-id])
+            page      (cond-> page (pmap/pointer-map? page) deref)
+            frame-ids (if (some? frame) (list frame-id) (map :id (ctt/get-frames (:objects page))))
 
-          obj-ids   (map #(str page-id %) frame-ids)
-          thumbs    (get-object-thumbnails conn id obj-ids)]
+            obj-ids   (map #(str page-id %) frame-ids)
+            thumbs    (get-object-thumbnails conn id obj-ids)]
 
-      (cond-> page
-        ;; If we have frame, we need to specify it on the page level
-        ;; and remove the all other unrelated objects.
-        (some? frame-id)
-        (-> (assoc :thumbnail-frame-id frame-id)
-            (update :objects filter-objects frame-id))
+        (cond-> page
+          ;; If we have frame, we need to specify it on the page level
+          ;; and remove the all other unrelated objects.
+          (some? frame-id)
+          (-> (assoc :thumbnail-frame-id frame-id)
+              (update :objects filter-objects frame-id))
 
-        ;; Assoc the available thumbnails and prune not visible shapes
-        ;; for avoid transfer unnecessary data.
-        :always
-        (update :objects assoc-thumbnails page-id thumbs)))))
+          ;; Assoc the available thumbnails and prune not visible shapes
+          ;; for avoid transfer unnecessary data.
+          :always
+          (update :objects assoc-thumbnails page-id thumbs))))))
 
 (s/def ::get-file-data-for-thumbnail
   (s/keys :req [::rpc/profile-id]
@@ -743,11 +746,14 @@
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id features] :as props}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
-    (let [file (get-file conn file-id features)]
+    ;; NOTE: we force here the "storage/pointer-map" feature, because
+    ;; it used internally only and is independent if user supports it
+    ;; or not.
+    (let [feat (into #{"storage/pointer-map"} features)
+          file (get-file conn file-id feat)]
       {:file-id file-id
        :revn (:revn file)
        :page (get-file-data-for-thumbnail conn file)})))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
