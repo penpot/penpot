@@ -473,26 +473,23 @@
 
 (defn get-team-shared-files
   [conn {:keys [team-id] :as params}]
-  (let [assets-sample
-        (fn [assets limit]
-          (let [sorted-assets (->> (vals assets)
-                                   (sort-by #(str/lower (:name %))))]
+  (letfn [(assets-sample [assets limit]
+            (let [sorted-assets (->> (vals assets)
+                                     (sort-by #(str/lower (:name %))))]
+              {:count (count sorted-assets)
+               :sample (into [] (take limit sorted-assets))}))
 
-            {:count (count sorted-assets)
-             :sample (into [] (take limit sorted-assets))}))
+          (library-summary [{:keys [id data] :as file}]
+            (binding [pmap/*load-fn* (partial load-pointer conn id)]
+              {:components (assets-sample (:components data) 4)
+               :colors (assets-sample (:colors data) 3)
+               :typographies (assets-sample (:typographies data) 3)}))]
 
-        library-summary
-        (fn [data]
-          {:components (assets-sample (:components data) 4)
-           :colors (assets-sample (:colors data) 3)
-           :typographies (assets-sample (:typographies data) 3)})
-
-        xform (comp
-               (map decode-row)
-               (map #(assoc % :library-summary (library-summary (:data %))))
-               (map #(dissoc % :data)))]
-
-    (into #{} xform (db/exec! conn [sql:team-shared-files team-id]))))
+    (->> (db/exec! conn [sql:team-shared-files team-id])
+         (into #{} (comp
+                    (map decode-row)
+                    (map #(assoc % :library-summary (library-summary %)))
+                    (map #(dissoc % :data)))))))
 
 (s/def ::get-team-shared-files
   (s/keys :req [::rpc/profile-id] :req-un [::team-id]))
