@@ -183,6 +183,7 @@
 
 .dashboard-project-row {
   margin-bottom: $size-5;
+  position: relative;
 
   .project {
     align-items: center;
@@ -211,6 +212,8 @@
       font-size: $fs14;
       justify-content: space-between;
       cursor: pointer;
+      background-color: transparent;
+      border: none;
       .placeholder-icon {
         transform: rotate(-90deg);
         margin-left: 10px;
@@ -295,6 +298,35 @@
   &:focus-within {
     .project-actions {
       opacity: 1;
+    }
+  }
+
+  .show-more {
+    align-items: center;
+    color: $color-gray-30;
+    display: flex;
+    font-size: $fs14;
+    justify-content: space-between;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    position: absolute;
+    top: 9px;
+    right: 53px;
+    .placeholder-icon {
+      transform: rotate(-90deg);
+      margin-left: 10px;
+      svg {
+        height: 14px;
+        width: 14px;
+        fill: $color-gray-30;
+      }
+    }
+    &:hover {
+      color: $color-primary-dark;
+      svg {
+        fill: $color-primary-dark;
+      }
     }
   }
 }
