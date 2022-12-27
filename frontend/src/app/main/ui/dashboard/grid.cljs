@@ -258,10 +258,10 @@
              (if (and (nil? (:y position)) (nil? (:x position)))
                (let [target-element (dom/get-target event)
                      points (dom/get-bounding-rect target-element)
-                     position? (let [y (:top points)
-                                     x (:left points)]
                                  (gpt/point x y))]
 
+                 (.log js/console "target" (clj->js target-element))
+                 (.log js/console "position?" (clj->js position?))
                  (swap! local assoc
                         :menu-open true
                         :menu-pos position?))
