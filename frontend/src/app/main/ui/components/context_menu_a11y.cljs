@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.components.context-menu
+(ns app.main.ui.components.context-menu-a11y
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -17,7 +17,7 @@
    [goog.object :as gobj]
    [rumext.v2 :as mf]))
 
-(mf/defc context-menu
+(mf/defc context-menu-a11y
   {::mf/wrap-props false}
   [props]
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
@@ -58,17 +58,11 @@
                    {node-height :height node-width :width} bounding_rect
                    {window-height :height window-width :width} window_size
                    target-offset-y (if (> (+ top node-height) window-height)
-                                   (- node-height)
-                                   0)
+                                     (- node-height)
+                                     0)
                    target-offset-x (if (> (+ left node-width) window-width)
                                      (- node-width)
-                                     0)
-                   _ (prn "top" top)
-                   _ (prn "left" left)
-                   _ (prn "node-height" node-height)
-                   _ (prn "node-width" node-width)
-                   _ (prn "y" target-offset-y)
-                   _ (prn "x" target-offset-y)]
+                                     0)]
 
                (when (or (not= target-offset-y (:offset-y @local)) (not= target-offset-x (:offset-x @local)))
                  (swap! local assoc :offset-y target-offset-y :offset-x target-offset-x))))))
@@ -92,9 +86,9 @@
         props (obj/merge props #js {:on-close on-local-close})]
 
     (mf/use-effect
-      (mf/deps options)
-      #(swap! local assoc :levels [{:parent-option nil
-                                    :options options}]))
+     (mf/deps options)
+     #(swap! local assoc :levels [{:parent-option nil
+                                   :options options}]))
 
     (when (and open? (some? (:levels @local)))
       [:> dropdown' props

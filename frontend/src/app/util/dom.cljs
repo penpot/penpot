@@ -309,6 +309,14 @@
    (when (some? el)
      (.querySelectorAll el selector))))
 
+(defn get-element-offset-position
+  [^js node]
+  (when (some? node)
+    (let [x (.-offsetTop node)
+          y (.-offsetLeft node)]
+      (gpt/point x y))
+    ))
+
 (defn get-client-position
   [^js event]
   (let [x (.-clientX event)

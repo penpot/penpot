@@ -211,6 +211,8 @@
       font-size: $fs14;
       justify-content: space-between;
       cursor: pointer;
+      background-color: transparent;
+      border: none;
       .placeholder-icon {
         transform: rotate(-90deg);
         margin-left: 10px;
