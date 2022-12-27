@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.features :as ffeat]
+   [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as msg]
@@ -252,9 +253,23 @@
              (st/emit! (dd/toggle-file-select file)))
 
            (let [position (dom/get-client-position event)]
-             (swap! local assoc
-                    :menu-open true
-                    :menu-pos position))))
+             (.log js/console "event" (clj->js event))
+             (prn "position" position)
+             (if (and (nil? (:y position)) (nil? (:x position)))
+               (let [target-element (dom/get-target event)
+                     points (dom/get-bounding-rect target-element)
+                     position? (let [x (:top points)
+                                     y (:left points)]
+                                 (gpt/point x y))]
+
+                 (.log js/console "target" (clj->js target-element))
+                 (.log js/console "position?" (clj->js position?))
+                 (swap! local assoc
+                        :menu-open true
+                        :menu-pos position?))
+               (swap! local assoc
+                      :menu-open true
+                      :menu-pos position)))))
 
         edit
         (mf/use-fn
