@@ -291,7 +291,7 @@
         (when-not (:is-default project)
           [:button.pin-icon.tooltip.tooltip-bottom
            {:class (when (:is-pinned project) "active")
-            :on-click toggle-pin 
+            :on-click toggle-pin
             :alt (tr "dashboard.pin-unpin")
             :aria-label (tr "dashboard.pin-unpin")
             :on-key-down (fn [event]
@@ -326,7 +326,11 @@
 
       (when (and (> limit 0)
                  (> file-count limit))
-        [:div.show-more {:on-click on-nav}
+        [:button.show-more {:on-click on-nav
+                            :tab-index "0"
+                            :on-key-down (fn [event]
+                                           (when (kbd/enter? event)
+                                             (on-nav)))}
          [:div.placeholder-label
           (tr "dashboard.show-all-files")]
          [:div.placeholder-icon i/arrow-down]])]
