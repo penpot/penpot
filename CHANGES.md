@@ -1,6 +1,8 @@
 # CHANGELOG
 
-## :rocket: Next (1.17)
+## :rocket: Next (1.18)
+
+## 1.17.0
 
 ### :boom: Breaking changes & Deprecations
 
