@@ -26,7 +26,7 @@
 
 (mf/defc frame-clip-def
   [{:keys [shape render-id]}]
-  (when (= :frame (:type shape))
+  (when (and (= :frame (:type shape)) (not (:show-content shape)))
     (let [{:keys [x y width height]} shape
           transform (gsh/transform-str shape)
           props (-> (attrs/extract-style-attrs shape)
@@ -66,8 +66,7 @@
 
     [:*
      [:g {:clip-path (when (not show-content) (frame-clip-url shape render-id))}
-      (when (not show-content)
-        [:& frame-clip-def {:shape shape :render-id render-id}])
+      [:& frame-clip-def {:shape shape :render-id render-id}]
 
       [:& shape-fills {:shape shape}
        (if path?

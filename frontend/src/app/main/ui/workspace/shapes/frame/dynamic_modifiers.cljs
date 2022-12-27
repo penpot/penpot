@@ -224,16 +224,18 @@
     (mf/use-effect
      (mf/deps add-children)
      (fn []
-       (doseq [{:keys [frame shape]} add-children-prev]
-         (let [frame-node (get-shape-node node frame)
-               shape-node (get-shape-node shape)
-               mirror-node (dom/query frame-node (dm/fmt ".mirror-shape[href='#shape-%'" shape))]
+       (doseq [{:keys [shape]} add-children-prev]
+         (let [shape-node (get-shape-node shape)
+               mirror-node (dom/query (dm/fmt ".mirror-shape[href='#shape-%'" shape))]
            (when mirror-node (.remove mirror-node))
            (dom/remove-attribute! (dom/get-parent shape-node) "display")))
 
        (doseq [{:keys [frame shape]} add-children]
          (let [frame-node (get-shape-node frame)
                shape-node (get-shape-node shape)
+
+               clip-id
+               (dom/get-attribute (dom/query frame-node ":scope > defs > .frame-clip-def") "id")
 
                use-node
                (.createElementNS globals/document "http://www.w3.org/2000/svg" "use")
@@ -242,6 +244,7 @@
                (or (dom/query frame-node ".frame-children") frame-node)]
 
            (dom/set-attribute! use-node "href" (dm/fmt "#shape-%" shape))
+           (dom/set-attribute! use-node "clip-path" (dm/fmt "url(#%)" clip-id))
            (dom/add-class! use-node "mirror-shape")
            (dom/append-child! contents-node use-node)
            (dom/set-attribute! (dom/get-parent shape-node) "display" "none")))))
