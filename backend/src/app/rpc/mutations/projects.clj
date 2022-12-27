@@ -14,6 +14,7 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.queries.projects :as proj]
+   [app.rpc.quotes :as quotes]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
@@ -37,6 +38,10 @@
   [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
+    (quotes/check-quote! conn {::quotes/id ::quotes/projects-per-team
+                               ::quotes/profile-id profile-id
+                               ::quotes/team-id team-id})
+
     (let [project (teams/create-project conn params)]
       (teams/create-project-role conn profile-id (:id project) :owner)
 

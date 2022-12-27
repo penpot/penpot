@@ -102,7 +102,7 @@
 (s/def ::audit-log-archive-uri ::us/string)
 (s/def ::audit-log-http-handler-concurrency ::us/integer)
 
-(s/def ::admins ::us/set-of-strings)
+(s/def ::admins ::us/set-of-valid-emails)
 (s/def ::file-change-snapshot-every ::us/integer)
 (s/def ::file-change-snapshot-timeout ::dt/duration)
 
@@ -129,6 +129,14 @@
 (s/def ::database-readonly ::us/boolean)
 (s/def ::database-min-pool-size ::us/integer)
 (s/def ::database-max-pool-size ::us/integer)
+
+(s/def ::quotes-teams-per-profile ::us/integer)
+(s/def ::quotes-projects-per-team ::us/integer)
+(s/def ::quotes-invitations-per-team ::us/integer)
+(s/def ::quotes-profiles-per-team ::us/integer)
+(s/def ::quotes-files-per-project ::us/integer)
+(s/def ::quotes-files-per-team ::us/integer)
+(s/def ::quotes-font-variants-per-team ::us/integer)
 
 (s/def ::default-blob-version ::us/integer)
 (s/def ::error-report-webhook ::us/string)
@@ -272,6 +280,15 @@
                    ::profile-complaint-max-age
                    ::profile-complaint-threshold
                    ::public-uri
+
+                   ::quotes-teams-per-profile
+                   ::quotes-projects-per-team
+                   ::quotes-invitations-per-team
+                   ::quotes-profiles-per-team
+                   ::quotes-files-per-project
+                   ::quotes-files-per-team
+                   ::quotes-font-variants-per-team
+
                    ::redis-uri
                    ::registration-domain-whitelist
                    ::rpc-rlimit-config
@@ -311,7 +328,8 @@
   [:enable-backend-api-doc
    :enable-backend-worker
    :enable-secure-session-cookies
-   :enable-email-verification])
+   :enable-email-verification
+   :enable-quotes])
 
 (defn- parse-flags
   [config]

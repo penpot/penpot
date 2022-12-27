@@ -766,6 +766,10 @@ msgid "errors.feature-not-supported"
 msgstr "Feature '%s' is not supported."
 
 #: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "You have reached the '%s' quote. Contact with support."
+
+#: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
 msgstr "Looks like you are opening a file that has the feature '%s' enabled bug your penpot frontend does not supports it or has it disabled."
 
