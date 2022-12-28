@@ -17,6 +17,7 @@
 
 ;; --- Query: Font Variants
 
+(s/def ::team-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
 (s/def ::font-variants
