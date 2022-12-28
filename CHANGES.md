@@ -23,6 +23,7 @@
 - Fix unable to select text at assets inputs in firefox [Taiga #4572](https://tree.taiga.io/project/penpot/issue/4572)
 - Fix component sync when converting to path [Taiga #3642](https://tree.taiga.io/project/penpot/issue/3642)
 - Fix style for team invite in deutsch [Taiga #4614](https://tree.taiga.io/project/penpot/issue/4614)
+- Fix problem with text edition in Safari [Taiga #4046](https://tree.taiga.io/project/penpot/issue/4046)
 
 ### :arrow_up: Deps updates
 
