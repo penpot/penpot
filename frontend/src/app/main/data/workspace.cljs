@@ -1845,6 +1845,26 @@
       (assoc-in state [:workspace-local :inspect-expanded] expanded?))))
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; File Library persistent settings
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn set-file-library-listing-thumbs
+  [listing-thumbs?]
+  (ptk/reify ::set-file-library-listing-thumbs
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :file-library-listing-thumbs] listing-thumbs?))))
+
+(defn set-file-library-reverse-sort
+  [reverse-sort?]
+  (ptk/reify ::set-file-library-reverse-sort
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :file-library-reverse-sort] reverse-sort?))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
