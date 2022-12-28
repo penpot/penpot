@@ -104,11 +104,17 @@
                             :on-blur on-blur
                             :on-focus on-focus
                             :on-change on-change}]
-     (when (or @show-buttons?
-               (seq @content))
+     (when (or @show-buttons? (seq @content))
        [:div.buttons
-        [:input.btn-primary {:type "button" :value "Post" :on-click on-submit :disabled (str/empty-or-nil? @content)}]
-        [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]])]))
+        [:input.btn-primary
+         {:type "button"
+          :value "Post"
+          :on-click on-submit
+          :disabled (str/empty-or-nil? @content)}]
+        [:input.btn-secondary
+         {:type "button"
+          :value "Cancel"
+          :on-click on-cancel}]])]))
 
 (mf/defc draft-thread
   [{:keys [draft zoom on-cancel on-submit position-modifier]}]

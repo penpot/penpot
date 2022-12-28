@@ -146,5 +146,5 @@
             [:g.frame-thumbnail-wrapper
              {:id (dm/str "thumbnail-container-" (:id shape))
               ;; Hide the thumbnail when not displaying
-              :opacity (when (and @rendered? (not thumbnail?) (not render-frame?)) 0)}
+              :opacity (when-not thumbnail? 0)}
              thumbnail-renderer]]])))))
