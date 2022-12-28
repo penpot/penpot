@@ -65,6 +65,7 @@
 (def auto-height (icon-xref :auto-height))
 (def auto-hug (icon-xref :auto-hug))
 (def auto-margin-side (icon-xref :auto-margin-side))
+(def auto-margin-both-sides (icon-xref :auto-margin-both-sides))
 (def auto-margin (icon-xref :auto-margin))
 (def auto-padding (icon-xref :auto-padding))
 (def auto-padding-side (icon-xref :auto-padding-side))

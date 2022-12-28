@@ -35,39 +35,43 @@
   [{:keys [values change-margin-style on-margin-change] :as props}]
 
   (let [margin-type (or (:layout-item-margin-type values) :simple)
-        margins (if (nil? (:layout-item-margin values))
-                  {:m1 0 :m2 0 :m3 0 :m4 0}
-                  (:layout-item-margin values))
-        rx (if (or (= :multiple margins) (not (apply = (vals margins))))
-             "--"
-             (:m1 margins))]
+        m1 (if (and (not (= :multiple (:layout-item-margin values)))
+                    (= (dm/get-in values [:layout-item-margin :m1])
+                       (dm/get-in values [:layout-item-margin :m3])))
+             (dm/get-in values [:layout-item-margin :m1])
+             "--")
 
-    [:div.margin-row
-     [:div.margin-icons
-      [:div.margin-icon.tooltip.tooltip-bottom
-       {:class (dom/classnames :selected (= margin-type :simple))
-        :alt (tr "workspace.options.layout.margin-simple")
-        :on-click #(change-margin-style :simple)}
-       i/auto-margin]
-      [:div.margin-icon.tooltip.tooltip-bottom
-       {:class (dom/classnames :selected (= margin-type :multiple))
-        :alt (tr "workspace.options.layout.margin")
-        :on-click #(change-margin-style :multiple)}
-       i/auto-margin-side]]
-     [:div.wrapper
-      (cond
-        (= margin-type :simple)
-        [:div.tooltip.tooltip-bottom
-         {:alt (tr "workspace.options.layout.margin-all")}
-         [:div.input-element.mini
+        m2 (if (and (not (= :multiple (:layout-item-margin values)))
+                    (= (dm/get-in values [:layout-item-margin :m2])
+                       (dm/get-in values [:layout-item-margin :m4])))
+             (dm/get-in values [:layout-item-margin :m2])
+             "--")]
 
-          [:> numeric-input
-           {:placeholder "--"
-            :on-click #(dom/select-target %)
-            :on-change (partial on-margin-change :simple)
-            :value rx}]]]
+    [:div.layout-row.margin-item-row
+     (cond
+       (= margin-type :simple)
 
-        (= margin-type :multiple)
+       [:div.margin-item-group
+        [:div.margin-item-row.tooltip.tooltip-bottom-left
+         {:alt "Vertical margin"}
+         [:span.icon i/auto-margin-both-sides]
+         [:> numeric-input
+          {:placeholder "--"
+           :on-click #(dom/select-target %)
+           :on-change (partial on-margin-change :simple :m1)
+           :value m1}]]
+
+        [:div.margin-item-column.tooltip.tooltip-bottom-left
+         {:alt "Horizontal margin"}
+         [:span.icon.rotated i/auto-margin-both-sides]
+         [:> numeric-input
+          {:placeholder "--"
+           :on-click #(dom/select-target %)
+           :on-change (partial on-margin-change :simple :m2)
+           :value m2}]]]
+
+       (= margin-type :multiple)
+       [:div.wrapper
         (for [num [:m1 :m2 :m3 :m4]]
           [:div.tooltip.tooltip-bottom
            {:key (dm/str "margin-" (d/name num))
@@ -76,12 +80,19 @@
                    :m2 "Right"
                    :m3 "Bottom"
                    :m4 "Left")}
-           [:div.input-element.mini
+           [:div.input-element.auto
             [:> numeric-input
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-margin-change num)
-              :value (or (-> values :layout-item-margin num) 0)}]]]))]]))
+              :on-change (partial on-margin-change :multiple num)
+              :value (num (:layout-item-margin values))}]]])])
+
+     [:div.margin-item-icons
+      [:div.margin-item-icon.tooltip.tooltip-bottom
+       {:class (dom/classnames :selected (= margin-type :multiple))
+        :alt "Margin - multiple"
+        :on-click #(change-margin-style (if (= margin-type :multiple) :simple :multiple))}
+       i/auto-margin]]]))
 
 (mf/defc element-behavior
   [{:keys [is-layout-container? is-layout-child? layout-item-h-sizing layout-item-v-sizing on-change-behavior] :as props}]
@@ -146,10 +157,7 @@
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "is-layout-child?"]))]}
   [{:keys [ids values is-layout-child? is-layout-container?] :as props}]
 
-  (let [open?             (mf/use-state false)
-        toggle-open       (fn [] (swap! open? not))
-
-        selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
+  (let [selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
 
         change-margin-style
@@ -165,10 +173,16 @@
         is-col? (every? ctl/col? selection-parents)
 
         on-margin-change
-        (fn [type val]
-          (if (= type :simple)
-            (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m1 val :m2 val :m3 val :m4 val}}))
-            (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {type val}}))))
+        (fn [type prop val]
+          (cond
+            (and (= type :simple) (= prop :m1))
+            (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m1 val :m3 val}}))
+
+            (and (= type :simple) (= prop :m2))
+            (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m2 val :m4 val}}))
+
+            :else
+            (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {prop val}}))))
 
         on-change-behavior
         (fn [dir value]
@@ -199,39 +213,38 @@
                             :change-margin-style change-margin-style
                             :on-margin-change on-margin-change}])
 
-      [:div.advanced-ops-container
-       [:button.advanced-ops.toltip.tooltip-bottom
-        {:on-click toggle-open
-         :alt (tr "workspace.options.layout-item.advanced-ops")}
-        [:span.icon i/actions]
-        [:span (tr "workspace.options.layout-item.advanced-ops")]]]
+      (when is-layout-child?
+        [:div.layout-row
+         [:div.row-title "Align"]
+         [:div.btn-wrapper
+          [:& align-self-row {:is-col? is-col?
+                              :align-self align-self
+                              :set-align-self set-align-self}]]])
 
-      (when @open?
-        [:div.advanced-ops-body
-         (when is-layout-child?
-           [:div.layout-row
-            [:div.direction-wrap.row-title "Align"]
-            [:div.btn-wrapper
-             [:& align-self-row {:is-col? is-col?
-                                 :align-self align-self
-                                 :set-align-self set-align-self}]]])
-         [:div.input-wrapper
-          (for  [item [:layout-item-max-h :layout-item-min-h :layout-item-max-w :layout-item-min-w]]
-            [:div.tooltip.tooltip-bottom
-             {:key   (d/name item)
-              :alt   (tr (dm/str "workspace.options.layout-item.title." (d/name item)))
-              :class (dom/classnames "maxH" (= item :layout-item-max-h)
-                                     "minH" (= item :layout-item-min-h)
-                                     "maxW" (= item :layout-item-max-w)
-                                     "minW" (= item :layout-item-min-w))}
-             [:div.input-element
-              {:alt   (tr (dm/str "workspace.options.layout-item." (d/name item)))}
-              [:> numeric-input
-               {:no-validate true
-                :min 0
-                :data-wrap true
-                :placeholder "--"
-                :on-click #(dom/select-target %)
-                :on-change (partial on-size-change item)
-                :value (get values item)
-                :nillable true}]]])]])]]))
+      [:div.advanced-ops-body
+       [:div.input-wrapper
+        (for  [item (cond-> []
+                      (= (:layout-item-h-sizing values) :fill)
+                      (conj :layout-item-min-w :layout-item-max-w)
+
+                      (= (:layout-item-v-sizing values) :fill)
+                      (conj :layout-item-min-h :layout-item-max-h))]
+
+          [:div.tooltip.tooltip-bottom
+           {:key   (d/name item)
+            :alt   (tr (dm/str "workspace.options.layout-item.title." (d/name item)))
+            :class (dom/classnames "maxH" (= item :layout-item-max-h)
+                                   "minH" (= item :layout-item-min-h)
+                                   "maxW" (= item :layout-item-max-w)
+                                   "minW" (= item :layout-item-min-w))}
+           [:div.input-element
+            {:alt   (tr (dm/str "workspace.options.layout-item." (d/name item)))}
+            [:> numeric-input
+             {:no-validate true
+              :min 0
+              :data-wrap true
+              :placeholder "--"
+              :on-click #(dom/select-target %)
+              :on-change (partial on-size-change item)
+              :value (get values item)
+              :nillable true}]]])]]]]))
