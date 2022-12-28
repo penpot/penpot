@@ -484,5 +484,18 @@
              ids)))
    st/state =))
 
+
+(defn get-viewer-objects
+  ([]
+   (let [route      (deref route)
+         page-id    (:page-id (:query-params route))]
+     (get-viewer-objects page-id)))
+  ([page-id]
+   (l/derived
+    (fn [state]
+      (let [objects (wsh/lookup-viewer-objects state page-id)]
+        objects))
+    st/state =)))
+
 (def colorpicker
   (l/derived :colorpicker st/state))
