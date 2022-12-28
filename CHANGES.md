@@ -24,6 +24,14 @@
 - Fix adding an extra page on import [Taiga #4543](https://tree.taiga.io/project/penpot/task/4543)
 - Fix unable to select text at assets inputs in firefox [Taiga #4572](https://tree.taiga.io/project/penpot/issue/4572)
 - Fix component sync when converting to path [Taiga #3642](https://tree.taiga.io/project/penpot/issue/3642)
+- Fix style for team invite in deutsch [Taiga #4614](https://tree.taiga.io/project/penpot/issue/4614)
+- Fix problem with text edition in Safari [Taiga #4046](https://tree.taiga.io/project/penpot/issue/4046)
+- Fix show outline with rounded corners on rects [Taiga #4053](https://tree.taiga.io/project/penpot/issue/4053)
+- Fix wrong interaction between comments and panning modes [Taiga #4297](https://tree.taiga.io/project/penpot/issue/4297)
+- Fix bad element positioning on interaction with fixed scroll [Github #2660](https://github.com/penpot/penpot/issues/2660)
+- Fix display type of component library not persistent [Taiga #4512](https://tree.taiga.io/project/penpot/issue/4512)
+- Fix problem when moving texts with keyboard [#2690](https://github.com/penpot/penpot/issues/2690)
+- Fix problem when drawing boxes won't detect mouse-up [Taiga #4618](https://tree.taiga.io/project/penpot/issue/4618)
 
 ### :arrow_up: Deps updates
 

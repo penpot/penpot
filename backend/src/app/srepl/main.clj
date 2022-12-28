@@ -110,10 +110,10 @@
             (if (contains? features "storage/objects-map")
               file
               (-> file
-                  (update :data migrate-to-omap)
+                  (update :data migrate)
                   (update :features conj "storage/objects-map"))))
 
-          (migrate-to-omap [data]
+          (migrate [data]
             (-> data
                 (update :pages-index update-vals #(update % :objects omap/wrap))
                 (update :components update-vals #(update % :objects omap/wrap))))]
@@ -125,24 +125,17 @@
 
 (defn enable-pointer-map-feature-on-file!
   [system & {:keys [save? id]}]
-  (letfn [(update-file [{:keys [features id] :as file}]
+  (letfn [(update-file [{:keys [features] :as file}]
             (if (contains? features "storage/pointer-map")
               file
               (-> file
-                  (update :data migrate-to-omap id)
+                  (update :data migrate)
                   (update :features conj "storage/pointer-map"))))
 
-          (migrate-to-omap [data file-id]
-            (binding [pmap/*tracked* (atom {})]
-              (let [data (-> data
-                             (update :pages-index update-vals pmap/wrap)
-                             (update :components pmap/wrap))]
-                (doseq [[id item] @pmap/*tracked*]
-                  (db/insert! h/*conn* :file-data-fragment
-                              {:id id
-                               :file-id file-id
-                               :content (-> item deref blob/encode)}))
-                data)))]
+          (migrate [data]
+            (-> data
+                (update :pages-index update-vals pmap/wrap)
+                (update :components pmap/wrap)))]
 
     (h/update-file! system
                     :id id

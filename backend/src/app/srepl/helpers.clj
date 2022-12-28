@@ -11,6 +11,7 @@
    [app.auth :refer [derive-password]]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.features :as ffeat]
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
@@ -21,8 +22,11 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.main :refer [system]]
+   [app.rpc.commands.files :as files]
    [app.rpc.queries.profile :as prof]
    [app.util.blob :as blob]
+   [app.util.objects-map :as omap]
+   [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [clojure.stacktrace :as strace]
@@ -66,23 +70,33 @@
   [system & {:keys [update-fn id save? migrate? inc-revn?]
              :or {save? false migrate? true inc-revn? true}}]
   (db/with-atomic [conn (:app.db/pool system)]
-    (let [file (db/get-by-id conn :file id {:for-update true})
-          file (-> file
-                   (update :features db/decode-pgarray #{})
-                   (update :data blob/decode)
-                   (cond-> migrate? (update :data pmg/migrate-data)))
-          file (binding [*conn* conn]
-                 (-> (update-fn file)
-                     (cond-> inc-revn? (update :revn inc))))]
-      (when save?
-        (let [features (db/create-array conn "text" (:features file))
-              data     (blob/encode (:data file))]
-          (db/update! conn :file
-                      {:data data
-                       :revn (:revn file)
-                       :features features}
-                      {:id id})))
-      file)))
+    (let [file (-> (db/get-by-id conn :file id {:for-update true})
+                   (update :features db/decode-pgarray #{}))]
+      (binding [*conn* conn
+                pmap/*tracked* (atom {})
+                pmap/*load-fn* (partial files/load-pointer conn id)
+                ffeat/*wrap-with-pointer-map-fn*
+                (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
+                ffeat/*wrap-with-objects-map-fn*
+                (if (contains? (:features file) "storage/objectd-map") omap/wrap identity)]
+        (let [file (-> file
+                       (update :data blob/decode)
+                       (cond-> migrate? (update :data pmg/migrate-data))
+                       (update-fn)
+                       (cond-> inc-revn? (update :revn inc)))]
+          (when save?
+            (let [features (db/create-array conn "text" (:features file))
+                  data     (blob/encode (:data file))]
+              (db/update! conn :file
+                          {:data data
+                           :revn (:revn file)
+                           :features features}
+                          {:id id})
+
+              (when (contains? (:features file) "storage/pointer-map")
+                (files/persist-pointers! conn id))))
+
+          (dissoc file :data))))))
 
 (def ^:private sql:retrieve-files-chunk
   "SELECT id, name, created_at, data FROM file

@@ -168,6 +168,10 @@
                      (not (text-properties-equal? old-shape new-shape)))
 
                 (and (not= new-modifiers old-modifiers)
+                     (or (ctm/empty? new-modifiers)
+                         (ctm/empty? old-modifiers)))
+
+                (and (not= new-modifiers old-modifiers)
                      (or (not (ctm/only-move? new-modifiers))
                          (not (ctm/only-move? old-modifiers))))
 

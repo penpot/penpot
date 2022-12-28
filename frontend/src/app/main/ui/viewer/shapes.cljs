@@ -58,7 +58,8 @@
 
     :open-overlay
     (let [dest-frame-id              (:destination interaction)
-          dest-frame                 (get objects dest-frame-id)
+          viewer-objects             (deref (refs/get-viewer-objects))
+          dest-frame                 (get viewer-objects dest-frame-id)
           relative-to-id             (if (= :manual (:overlay-pos-type interaction))
                                        (:id shape) ;; manual interactions are allways from "self"
                                        (:position-relative-to interaction))

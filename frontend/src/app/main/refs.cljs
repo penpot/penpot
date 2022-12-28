@@ -183,6 +183,12 @@
 (def context-menu
   (l/derived :context-menu workspace-local))
 
+(def file-library-listing-thumbs?
+  (l/derived :file-library-listing-thumbs workspace-global))
+
+(def file-library-reverse-sort?
+  (l/derived :file-library-reverse-sort workspace-global))
+
 (def current-hover-ids
   (l/derived :hover-ids context-menu))
 
@@ -483,6 +489,19 @@
                    (filter (partial ctl/layout-child? objects)))
              ids)))
    st/state =))
+
+
+(defn get-viewer-objects
+  ([]
+   (let [route      (deref route)
+         page-id    (:page-id (:query-params route))]
+     (get-viewer-objects page-id)))
+  ([page-id]
+   (l/derived
+    (fn [state]
+      (let [objects (wsh/lookup-viewer-objects state page-id)]
+        objects))
+    st/state =)))
 
 (def colorpicker
   (l/derived :colorpicker st/state))

@@ -517,7 +517,6 @@
            (let [params (with-meta {:email email :team-id team-id}
                           {:on-success on-copy-success
                            :on-error on-error})]
-             (prn "KKK1")
              (st/emit!
               (-> (dd/copy-invitation-link params)
                   (with-meta {::ev/origin :team}))))))]
@@ -694,7 +693,6 @@
         on-submit
         (mf/use-fn
          (fn [form]
-           (prn @form)
            (let [data (:clean-data @form)]
              (if (:id data)
                (on-update-submit form)

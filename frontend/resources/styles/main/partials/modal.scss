@@ -1472,6 +1472,13 @@
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 8px;
+        .btn-large {
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .btn-primary {
+          max-width: 250px;
+        }
       }
     }
     .skip-action {

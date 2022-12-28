@@ -94,19 +94,22 @@
          (rx/of #(assoc-in state [:workspace-drawing :object] shape))
 
          ;; Initial SNAP
-         (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus initial)
-              (rx/map move-drawing))
+         (->>
+          (rx/concat
+           (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus initial)
+                (rx/map move-drawing))
 
-         (->> ms/mouse-position
-              (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
-              (rx/with-latest vector ms/mouse-position-shift)
-              (rx/switch-map
-               (fn [[point :as current]]
-                 (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus point)
-                      (rx/map #(conj current %)))))
-              (rx/map
-               (fn [[_ shift? point]]
-                 #(update-drawing % initial (cond-> point snap-pixel? gpt/round) shift?)))
+           (->> ms/mouse-position
+                (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
+                (rx/with-latest vector ms/mouse-position-shift)
+                (rx/switch-map
+                 (fn [[point :as current]]
+                   (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus point)
+                        (rx/map #(conj current %)))))
+                (rx/map
+                 (fn [[_ shift? point]]
+                   #(update-drawing % initial (cond-> point snap-pixel? gpt/round) shift?)))))
+          (rx/take-until stoper))
 
-              (rx/take-until stoper))
-         (rx/of (common/handle-finish-drawing)))))))
+         (->> (rx/of (common/handle-finish-drawing))
+              (rx/delay 100)))))))

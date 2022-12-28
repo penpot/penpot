@@ -56,7 +56,7 @@
              middle-click? (and (not panning) (= 2 (.-which event)))]
 
          (cond
-           middle-click?
+           (or middle-click? (and left-click? @space?))
            (do
              (dom/prevent-default bevent)
              (if mod?
@@ -84,15 +84,6 @@
                  ;; Handle path node area selection
                  (when-not workspace-read-only?
                    (st/emit! (dwdp/handle-area-selection shift?)))
-
-                 (and @space? mod?)
-                 (let [raw-pt   (dom/get-client-position event)
-                       viewport (mf/ref-val viewport-ref)
-                       pt       (utils/translate-point-to-viewport viewport zoom raw-pt)]
-                   (st/emit! (dw/start-zooming pt)))
-
-                 @space?
-                 (st/emit! (dw/start-panning))
 
                  drawing-tool
                  (when-not workspace-read-only?
