@@ -25,6 +25,7 @@
 - Fix style for team invite in deutsch [Taiga #4614](https://tree.taiga.io/project/penpot/issue/4614)
 - Fix problem with text edition in Safari [Taiga #4046](https://tree.taiga.io/project/penpot/issue/4046)
 - Fix show outline with rounded corners on rects [Taiga #4053](https://tree.taiga.io/project/penpot/issue/4053)
+- Fix bad element positioning on interaction with fixed scroll [Github #2660](https://github.com/penpot/penpot/issues/2660)
 
 
 ### :arrow_up: Deps updates
