@@ -32,6 +32,7 @@
 - Fix problem when drawing boxes won't detect mouse-up [Taiga #4618](https://tree.taiga.io/project/penpot/issue/4618)
 - Fix missing loading icon on shared libraries [Taiga #4148](https://tree.taiga.io/project/penpot/issue/4148)
 - Fix selection stroke missing in properties of multiple texts [Taiga #4048](https://tree.taiga.io/project/penpot/issue/4048)
+- Fix missing create component menu for frames [Github #2670](https://github.com/penpot/penpot/issues/2670)
 
 ### :arrow_up: Deps updates
 
