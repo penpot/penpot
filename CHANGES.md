@@ -28,6 +28,7 @@
 - Fix wrong interaction between comments and panning modes [Taiga #4297](https://tree.taiga.io/project/penpot/issue/4297)
 - Fix bad element positioning on interaction with fixed scroll [Github #2660](https://github.com/penpot/penpot/issues/2660)
 - Fix display type of component library not persistent [Taiga #4512](https://tree.taiga.io/project/penpot/issue/4512)
+- Fix problem when moving texts with keyboard [#2690](https://github.com/penpot/penpot/issues/2690)
 
 ### :arrow_up: Deps updates
 
