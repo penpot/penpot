@@ -24,6 +24,8 @@
 - Fix component sync when converting to path [Taiga #3642](https://tree.taiga.io/project/penpot/issue/3642)
 - Fix style for team invite in deutsch [Taiga #4614](https://tree.taiga.io/project/penpot/issue/4614)
 - Fix problem with text edition in Safari [Taiga #4046](https://tree.taiga.io/project/penpot/issue/4046)
+- Fix show outline with rounded corners on rects [Taiga #4053](https://tree.taiga.io/project/penpot/issue/4053)
+
 
 ### :arrow_up: Deps updates
 

@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
    [app.util.path.format :as upf]
    [clojure.set :as set]
@@ -34,12 +35,16 @@
             (or (ex/ignoring (upf/format-path (:content shape)))
                 "")))
 
-        {:keys [x y width height selrect]} shape
+        {:keys [x y width height selrect rx ry]} shape
+
+        border-radius-attrs (.-d (attrs/extract-border-radius shape))
+
+        path? (some? border-radius-attrs)
 
         outline-type (case (:type shape)
                        :circle "ellipse"
                        :path "path"
-                       "rect")
+                       (if path? "path" "rect"))
 
         common {:fill "none"
                 :stroke color
@@ -61,7 +66,10 @@
                 {:x (:x selrect)
                  :y (:y selrect)
                  :width (:width selrect)
-                 :height (:height selrect)})]
+                 :height (:height selrect)
+                 :rx rx
+                 :ry ry
+                 :d border-radius-attrs})]
 
     [:> outline-type (map->obj (merge common props))]))
 
