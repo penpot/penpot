@@ -537,6 +537,7 @@
            :blocked
            :hidden
 
+           :fills
            :fill-color
            :fill-opacity
            :fill-color-ref-id

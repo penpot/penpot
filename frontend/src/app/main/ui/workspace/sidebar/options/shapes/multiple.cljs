@@ -247,12 +247,28 @@
     (= (:type shape) :path)
     (dissoc :content)))
 
+(defn- is-bool-descendant?
+  [shape all-shapes selected-shape-ids]
+  (let [parent-id (:parent-id shape)
+        parent (->> all-shapes
+                    (filter #(= (:id %) parent-id))
+                    first)]
+    (cond
+      (nil? shape) false                                                   ;; failsafe
+      (some #{(:id shape)} selected-shape-ids) false                       ;; if it is one of the selected shapes, it is considerer not a bool descendant
+      (= :bool (:type parent)) true                                        ;; if its parent is of type bool, it is a bool descendant
+      :else (is-bool-descendant? parent all-shapes selected-shape-ids))))  ;; else, check its parent
+
 (mf/defc options
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children" "page-id" "file-id"]))]
    ::mf/wrap-props false}
   [props]
   (let [shapes (unchecked-get props "shapes")
         shapes-with-children (unchecked-get props "shapes-with-children")
+
+        ;; remove children from bool shapes
+        shape-ids (map :id shapes)
+        shapes-with-children (filter #(not (is-bool-descendant? % shapes-with-children shape-ids)) shapes-with-children)
 
         workspace-modifiers (mf/deref refs/workspace-modifiers)
         shapes (map #(gsh/transform-shape % (get-in workspace-modifiers [(:id %) :modifiers])) shapes)
@@ -278,7 +294,6 @@
         has-text? (contains? all-types :text)
 
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
-
 
         [layer-ids            layer-values
          constraint-ids       constraint-values
