@@ -193,7 +193,7 @@
         m4 (or m4 0)]
     (if (= layout-item-margin-type :multiple)
       [m1 m2 m3 m4]
-      [m1 m1 m1 m1])))
+      [m1 m2 m1 m2])))
 
 (defn child-height-margin
   [child]
