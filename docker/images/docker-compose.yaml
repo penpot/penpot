@@ -243,20 +243,22 @@ services:
   ## An optional admin application for pentpot. It allows manage
   ## users, teams and inspect some parts of the database. You can read
   ## more about it on: https://github.com/penpot/penpot-admin
+  ##
+  ## Status: EXPERIMENTAL
 
   # penpot-admin:
   #   image: "penpotapp/admin:alpha"
   #   networks:
   #     - penpot
-
+  #
   #   depends_on:
   #     - penpot-postgres
   #     - penpot-backend
-
+  #
   #   environment:
   #     - PENPOT_PUBLIC_URI=http://localhost:9001
   #     - PENPOT_API_URI=http://penpot-frontend/
-
+  #
   #     - PENPOT_DATABASE_HOST=penpot-postgres
   #     - PENPOT_DATABASE_NAME=penpot
   #     - PENPOT_DATABASE_USERNAME=penpot
