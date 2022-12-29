@@ -146,11 +146,14 @@
             [:input.item-button {:type "button"
                                  :value (tr "workspace.libraries.add")
                                  :on-click #(link-library (:id file))}]])]
+
         [:div.section-list-empty
-         i/library
-         (if (str/empty? @search-term)
-           (tr "workspace.libraries.no-shared-libraries-available")
-           (tr "workspace.libraries.no-matches-for" @search-term))])]]))
+         (if (nil? shared-files)
+           i/loader-pencil
+         [:* i/library
+          (if (str/empty? @search-term)
+            (tr "workspace.libraries.no-shared-libraries-available")
+            (tr "workspace.libraries.no-matches-for" @search-term))])])]]))
 
 
 (mf/defc updates-tab

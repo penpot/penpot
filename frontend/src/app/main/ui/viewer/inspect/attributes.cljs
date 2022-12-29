@@ -4,21 +4,21 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes
+(ns app.main.ui.viewer.inspect.attributes
   (:require
    [app.common.geom.shapes :as gsh]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.viewer.handoff.attributes.blur :refer [blur-panel]]
-   [app.main.ui.viewer.handoff.attributes.fill :refer [fill-panel]]
-   [app.main.ui.viewer.handoff.attributes.image :refer [image-panel]]
-   [app.main.ui.viewer.handoff.attributes.layout :refer [layout-panel]]
-   [app.main.ui.viewer.handoff.attributes.layout-flex :refer [layout-flex-panel]]
-   [app.main.ui.viewer.handoff.attributes.layout-flex-element :refer [layout-flex-element-panel]]
-   [app.main.ui.viewer.handoff.attributes.shadow :refer [shadow-panel]]
-   [app.main.ui.viewer.handoff.attributes.stroke :refer [stroke-panel]]
-   [app.main.ui.viewer.handoff.attributes.svg :refer [svg-panel]]
-   [app.main.ui.viewer.handoff.attributes.text :refer [text-panel]]
-   [app.main.ui.viewer.handoff.exports :refer [exports]]
+   [app.main.ui.viewer.inspect.attributes.blur :refer [blur-panel]]
+   [app.main.ui.viewer.inspect.attributes.fill :refer [fill-panel]]
+   [app.main.ui.viewer.inspect.attributes.image :refer [image-panel]]
+   [app.main.ui.viewer.inspect.attributes.layout :refer [layout-panel]]
+   [app.main.ui.viewer.inspect.attributes.layout-flex :refer [layout-flex-panel]]
+   [app.main.ui.viewer.inspect.attributes.layout-flex-element :refer [layout-flex-element-panel]]
+   [app.main.ui.viewer.inspect.attributes.shadow :refer [shadow-panel]]
+   [app.main.ui.viewer.inspect.attributes.stroke :refer [stroke-panel]]
+   [app.main.ui.viewer.inspect.attributes.svg :refer [svg-panel]]
+   [app.main.ui.viewer.inspect.attributes.text :refer [text-panel]]
+   [app.main.ui.viewer.inspect.exports :refer [exports]]
    [rumext.v2 :as mf]))
 
 (def type->options

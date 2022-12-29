@@ -231,82 +231,82 @@ msgstr "Beskrivelse"
 msgid "feedback.subject"
 msgstr "Emne"
 
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur.value"
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur.value"
 msgstr "Verdi"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.download"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.download"
 msgstr "Last ned kildebilde"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
 msgstr "Høyde"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.width"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.width"
 msgstr "Bredde"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.height"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.height"
 msgstr "Høyde"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.left"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.left"
 msgstr "Venstre"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
 msgstr "Bredde"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow"
 msgstr "Skygge"
 
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke.width"
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke.width"
 msgstr "Bredde"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography"
 msgstr "Typografi"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-family"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-family"
 msgstr "Skriftfamilie"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-size"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-size"
 msgstr "Skriftstørrelse"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-style"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-style"
 msgstr "Skriftstil"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code"
 msgstr "Kode"
 
-msgid "handoff.tabs.code.selected.circle"
+msgid "inspect.tabs.code.selected.circle"
 msgstr "Sirkel"
 
-msgid "handoff.tabs.code.selected.group"
+msgid "inspect.tabs.code.selected.group"
 msgstr "Gruppe"
 
-msgid "handoff.tabs.code.selected.image"
+msgid "inspect.tabs.code.selected.image"
 msgstr "Bilde"
 
-msgid "handoff.tabs.code.selected.path"
+msgid "inspect.tabs.code.selected.path"
 msgstr "Sti"
 
-msgid "handoff.tabs.code.selected.svg-raw"
+msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-msgid "handoff.tabs.code.selected.text"
+msgid "inspect.tabs.code.selected.text"
 msgstr "Tekst"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.info"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.info"
 msgstr "Info"
 
 msgid "labels.accept"
@@ -712,7 +712,7 @@ msgstr "Komponent"
 msgid "workspace.options.design"
 msgstr "Design"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.exporting-object"
 msgstr "Eksporterer …"
 

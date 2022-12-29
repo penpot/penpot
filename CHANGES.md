@@ -32,6 +32,7 @@
 - Fix display type of component library not persistent [Taiga #4512](https://tree.taiga.io/project/penpot/issue/4512)
 - Fix problem when moving texts with keyboard [#2690](https://github.com/penpot/penpot/issues/2690)
 - Fix problem when drawing boxes won't detect mouse-up [Taiga #4618](https://tree.taiga.io/project/penpot/issue/4618)
+- Fix missing loading icon on shared libraries [Taiga #4148](https://tree.taiga.io/project/penpot/issue/4148)
 
 ### :arrow_up: Deps updates
 

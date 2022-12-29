@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.shadow
+(ns app.main.ui.viewer.inspect.attributes.shadow
   (:require
    [app.common.data :as d]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
+   [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -59,7 +59,7 @@
     (when (and (seq shapes) (> (count shapes) 0))
       [:div.attributes-block
        [:div.attributes-block-title
-        [:div.attributes-block-title-text (tr "handoff.attributes.shadow")]]
+        [:div.attributes-block-title-text (tr "inspect.attributes.shadow")]]
 
        [:div.attributes-shadow-blocks
         (for [shape shapes]

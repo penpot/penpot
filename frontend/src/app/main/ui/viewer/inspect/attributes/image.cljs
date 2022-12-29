@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.image
+(ns app.main.ui.viewer.inspect.attributes.image
   (:require
    [app.common.media :as cm]
    [app.common.pages.helpers :as cph]
@@ -27,12 +27,12 @@
        [:img {:src (cf/resolve-file-media (-> shape :metadata))}]]]
 
      [:div.attributes-unit-row
-      [:div.attributes-label (tr "handoff.attributes.image.width")]
+      [:div.attributes-label (tr "inspect.attributes.image.width")]
       [:div.attributes-value (-> shape :metadata :width) "px"]
       [:& copy-button {:data (cg/generate-css-props shape :width)}]]
 
      [:div.attributes-unit-row
-      [:div.attributes-label (tr "handoff.attributes.image.height")]
+      [:div.attributes-label (tr "inspect.attributes.image.height")]
       [:div.attributes-value (-> shape :metadata :height) "px"]
       [:& copy-button {:data (cg/generate-css-props shape :height)}]]
 
@@ -42,4 +42,4 @@
        [:a.download-button {:target "_blank"
                             :download (cond-> name extension (str/concat extension))
                             :href (cf/resolve-file-media (-> shape :metadata))}
-        (tr "handoff.attributes.image.download")])]))
+        (tr "inspect.attributes.image.download")])]))

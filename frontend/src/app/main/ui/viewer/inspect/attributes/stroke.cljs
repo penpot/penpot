@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.stroke
+(ns app.main.ui.viewer.inspect.attributes.stroke
   (:require
    [app.common.data :as d]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
+   [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
@@ -65,19 +65,19 @@
            stroke-style (if (= stroke-style :svg) :solid stroke-style)
            stroke-alignment (or stroke-alignment :center)]
        [:div.attributes-stroke-row
-        [:div.attributes-label (tr "handoff.attributes.stroke.width")]
+        [:div.attributes-label (tr "inspect.attributes.stroke.width")]
         [:div.attributes-value (:stroke-width shape) "px"]
         ;; Execution time translation strings:
-        ;;   handoff.attributes.stroke.style.dotted
-        ;;   handoff.attributes.stroke.style.mixed
-        ;;   handoff.attributes.stroke.style.none
-        ;;   handoff.attributes.stroke.style.solid
-        [:div.attributes-value (->> stroke-style d/name (str "handoff.attributes.stroke.style.") (tr))]
+        ;;   inspect.attributes.stroke.style.dotted
+        ;;   inspect.attributes.stroke.style.mixed
+        ;;   inspect.attributes.stroke.style.none
+        ;;   inspect.attributes.stroke.style.solid
+        [:div.attributes-value (->> stroke-style d/name (str "inspect.attributes.stroke.style.") (tr))]
         ;; Execution time translation strings:
-        ;;   handoff.attributes.stroke.alignment.center
-        ;;   handoff.attributes.stroke.alignment.inner
-        ;;   handoff.attributes.stroke.alignment.outer
-        [:div.attributes-label (->> stroke-alignment d/name (str "handoff.attributes.stroke.alignment.") (tr))]
+        ;;   inspect.attributes.stroke.alignment.center
+        ;;   inspect.attributes.stroke.alignment.inner
+        ;;   inspect.attributes.stroke.alignment.outer
+        [:div.attributes-label (->> stroke-alignment d/name (str "inspect.attributes.stroke.alignment.") (tr))]
         [:& copy-button {:data (copy-stroke-data shape)}]])]))
 
 (mf/defc stroke-panel
@@ -86,7 +86,7 @@
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
-        [:div.attributes-block-title-text (tr "handoff.attributes.stroke")]
+        [:div.attributes-block-title-text (tr "inspect.attributes.stroke")]
         (when (= (count shapes) 1)
           [:& copy-button {:data (copy-stroke-data (first shapes))}])]
 

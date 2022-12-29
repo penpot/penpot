@@ -550,7 +550,7 @@ msgstr "目前並不開放註冊。"
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "您必須接受我們的服務條款和隱私權政策。"
 
-#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "發生了預料之外的錯誤。"
 
@@ -578,70 +578,70 @@ msgstr "狀況描述"
 msgid "feedback.title"
 msgstr "電子郵件"
 
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur.value"
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur.value"
 msgstr "數值"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hex"
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hsla"
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.rgba"
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.download"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.download"
 msgstr "下載原始圖片"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
 msgstr "高度"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.width"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.width"
 msgstr "寬度"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout"
 msgstr "樣式"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.height"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.height"
 msgstr "高度"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.left"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.left"
 msgstr "左"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.blur"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.blur"
 msgstr "B"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-x"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.offset-x"
 msgstr "X"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-y"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.offset-y"
 msgstr "Y"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.spread"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.spread"
 msgstr "S"
 
-msgid "handoff.tabs.code.selected.svg-raw"
+msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-msgid "handoff.tabs.code.selected.text"
+msgid "inspect.tabs.code.selected.text"
 msgstr "文字"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.info"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.info"
 msgstr "資訊"
 
 msgid "labels.accept"
@@ -934,7 +934,7 @@ msgstr "成員 - %s - Penpot"
 msgid "title.team-settings"
 msgstr "設定 - %s - Penpot"
 
-#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
 msgstr "%s - 檢視模式 - Penpot"
 
@@ -1004,11 +1004,11 @@ msgstr "HSV"
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export"
 msgstr "匯出"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.exporting-object"
 msgstr "正在匯出…"
 

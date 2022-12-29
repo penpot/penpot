@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.svg
+(ns app.main.ui.viewer.inspect.attributes.svg
   (:require
    [app.common.data :as d]
    [app.main.ui.components.copy-button :refer [copy-button]]

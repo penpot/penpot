@@ -468,10 +468,10 @@
                           :subsections [:navigation-workspace]
                           :fn #(st/emit! (dw/go-to-viewer))}
 
-   :open-handoff         {:tooltip "G H"
-                          :command "g h"
+   :open-inspect         {:tooltip "G I"
+                          :command "g i"
                           :subsections [:navigation-workspace]
-                          :fn #(st/emit! (dw/go-to-viewer {:section :handoff}))}
+                          :fn #(st/emit! (dw/go-to-viewer {:section :inspect}))}
 
    :open-comments        {:tooltip "G C"
                           :command "g c"

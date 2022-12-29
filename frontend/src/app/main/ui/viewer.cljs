@@ -26,8 +26,8 @@
    [app.main.ui.icons :as i]
    [app.main.ui.static :as static]
    [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar]]
-   [app.main.ui.viewer.handoff :as handoff]
    [app.main.ui.viewer.header :as header]
+   [app.main.ui.viewer.inspect :as inspect]
    [app.main.ui.viewer.interactions :as interactions]
    [app.main.ui.viewer.login]
    [app.main.ui.viewer.share-link]
@@ -222,7 +222,7 @@
                       (or (:can-edit permissions)
                           (and (true? (:is-logged permissions))
                                (= (:who-comment permissions) "all"))))
-                 (and (= section :handoff)
+                 (and (= section :inspect)
                       (or (:can-edit permissions)
                           (and (true? (:is-logged permissions))
                                (= (:who-inspect permissions) "all")))))
@@ -458,8 +458,8 @@
     [:div#viewer-layout
      {:class (dom/classnames
               :force-visible (:show-thumbnails local)
-              :viewer-layout (not= section :handoff)
-              :handoff-layout (= section :handoff)
+              :viewer-layout (not= section :inspect)
+              :inspect-layout (= section :inspect)
               :fullscreen fullscreen?)}
 
      [:div.viewer-content
@@ -493,8 +493,8 @@
             [:span (tr "viewer.frame-not-found")])]
 
          (some? frame)
-         (if (= :handoff section)
-           [:& handoff/viewport
+         (if (= :inspect section)
+           [:& inspect/viewport
             {:frame frame
              :page page
              :file file
