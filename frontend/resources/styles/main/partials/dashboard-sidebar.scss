@@ -139,6 +139,7 @@
         color: $color-gray-60;
         @include text-ellipsis;
         width: 130px;
+        text-align: left;
       }
 
       .icon {

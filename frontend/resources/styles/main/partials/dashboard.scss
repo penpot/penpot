@@ -250,6 +250,9 @@
       font-weight: 400;
       color: $color-gray-60;
       margin-left: 0.75rem;
+      @media (max-width: 760px) {
+        display: none;
+      }
     }
 
     .project-actions {
@@ -299,6 +302,9 @@
   line-height: 1rem;
   font-size: $fs14;
   font-weight: 400;
+  @media (max-width: 880px) {
+    display: none;
+  }
 }
 
 .dashboard-table {
