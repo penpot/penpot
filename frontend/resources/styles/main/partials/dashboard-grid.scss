@@ -29,6 +29,7 @@
     text-align: center;
     a {
       width: 100%;
+      font-weight: normal;
     }
     @media #{$bp-max-1366} {
       height: 200px;
@@ -103,6 +104,10 @@
       width: 90px;
       height: 90px;
     }
+    .info-wrapper {
+      display: grid;
+      grid-template-columns: 1fr auto;
+    }
 
     .item-info {
       display: grid;
@@ -132,7 +137,6 @@
 
       span.date {
         color: $color-gray-30;
-        font-size: $fs13;
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
@@ -203,6 +207,9 @@
         .project-th-actions {
           opacity: 1;
         }
+        a {
+          text-decoration: none;
+        }
       }
 
       .selected {
@@ -213,14 +220,12 @@
 
       .project-th-actions {
         align-items: center;
-        bottom: 14px;
         opacity: 0;
         display: flex;
         right: 5px;
         justify-content: center;
-        position: absolute;
         width: 30px;
-        height: 30px;
+        height: 100%;
 
         span {
           color: $color-black;
@@ -238,7 +243,8 @@
             align-items: flex-end;
             flex-direction: column;
             width: 100%;
-            height: 100%;
+            height: 30px;
+            margin-top: 20px;
 
             > svg {
               fill: $color-gray-60;
