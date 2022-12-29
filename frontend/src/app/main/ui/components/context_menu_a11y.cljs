@@ -17,7 +17,28 @@
    [goog.object :as gobj]
    [rumext.v2 :as mf]))
 
-(mf/defc context-menu-a11y
+(mf/defc context-menu-item
+  {::mf/wrap-props false}
+  [props]
+
+  (let [children    (gobj/get props "children")
+        on-click    (gobj/get props "on-click")
+        on-key-down (gobj/get props "on-key-down")
+        id          (gobj/get props "id")
+        klass       (gobj/get props "klass")
+        key         (gobj/get props "key")
+        data-test   (gobj/get props "data-test")]
+    [:li {:id id
+          :class klass
+          :tab-index "0"
+          :on-key-down on-key-down
+          :on-click on-click
+          :key key
+          :role "menuitem"
+          :data-test data-test}
+     children]))
+
+(mf/defc context-menu-a11y'
   {::mf/wrap-props false}
   [props]
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
@@ -51,7 +72,6 @@
         (mf/use-callback
          (mf/deps top (:offset-y @local) left (:offset-x @local))
          (fn [node]
-           (.log js/console (clj->js node))
            (when (some? node)
              (let [bounding_rect (dom/get-bounding-rect node)
                    window_size (dom/get-window-size)
@@ -99,6 +119,7 @@
                                    :left (+ left (:offset-x @local))}}
         (let [level (-> @local :levels peek)]
           [:ul.context-menu-items {:class (dom/classnames :min-width min-width?)
+                                   :role "menu"
                                    :ref check-menu-offscreen}
            (when-let [parent-option (:parent-option level)]
              [:*
@@ -109,12 +130,13 @@
                 [:span i/arrow-slide]
                 parent-option]]
               [:li.separator]])
-           (for [[index [option-name option-handler sub-options data-test]] (d/enumerate (:options level))]
+           (for [[index [option-name id option-handler sub-options data-test]] (d/enumerate (:options level))]
              (when option-name
                (if (= option-name :separator)
                  [:li.separator {:key (dm/str "context-item-" index)}]
                  [:li.context-menu-item
-                  {:class (dom/classnames :is-selected (and selected (= option-name selected)))
+                  {:id id
+                   :class (dom/classnames :is-selected (and selected (= option-name selected)))
                    :key (dm/str "context-item-" index)}
                   (if-not sub-options
                     [:a.context-menu-action {:on-click #(do (dom/stop-propagation %)
@@ -130,3 +152,13 @@
                       :data-test data-test}
                      option-name
                      [:span i/arrow-slide]])])))])]])))
+
+(mf/defc context-menu-a11y
+  {::mf/wrap-props false}
+  [props]
+  (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
+  (assert (boolean? (gobj/get props "show")) "missing `show` prop")
+  (assert (vector? (gobj/get props "options")) "missing `options` prop")
+  
+  (when (gobj/get props "show")
+    (mf/element context-menu-a11y' props)))

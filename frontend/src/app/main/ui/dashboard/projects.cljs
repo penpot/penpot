@@ -198,6 +198,21 @@
                     :menu-open true
                     :menu-pos position))))
 
+        on-menu-click-2
+        (mf/use-fn
+         (fn [event]
+           (let [active-element (dom/get-active)
+                 position-active (dom/get-element-offset-position active-element)
+                 position (dom/get-client-position event)
+                 _ (prn "active" position-active)
+                 _ (prn "client" position)
+                 
+                 ]
+             (dom/prevent-default event)
+             (swap! local assoc
+                    :menu-open true
+                    :menu-pos position))))
+
         on-menu-close
         (mf/use-fn #(swap! local assoc :menu-open false))
 
@@ -321,7 +336,7 @@
           :tab-index "0"
           :on-key-down (fn [event]
                          (when (kbd/enter? event)
-                           (on-menu-click event)))}
+                           (on-menu-click-2 event)))}
          i/actions]]]
 
       (when (and (> limit 0)
