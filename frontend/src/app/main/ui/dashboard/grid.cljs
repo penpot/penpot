@@ -253,17 +253,15 @@
              (st/emit! (dd/toggle-file-select file)))
 
            (let [position (dom/get-client-position event)]
-             (.log js/console "event" (clj->js event))
-             (prn "position" position)
+
+
              (if (and (nil? (:y position)) (nil? (:x position)))
                (let [target-element (dom/get-target event)
                      points (dom/get-bounding-rect target-element)
-                     position? (let [x (:top points)
-                                     y (:left points)]
+                     position? (let [y (:top points)
+                                     x (:left points)]
                                  (gpt/point x y))]
 
-                 (.log js/console "target" (clj->js target-element))
-                 (.log js/console "position?" (clj->js position?))
                  (swap! local assoc
                         :menu-open true
                         :menu-pos position?))
@@ -317,33 +315,33 @@
         [:& grid-item-thumbnail {:file file}])
       (when (and (:is-shared file) (not library-view?))
         [:div.item-badge i/library])
-      [:div.info-wrapper
-       [:div.item-info
-        (if (:edition @local)
-          [:& inline-edition {:content (:name file)
-                              :on-end edit}]
-          [:h3 (:name file)])
-        [:& grid-item-metadata {:modified-at (:modified-at file)}]]
-       [:div.project-th-actions {:class (dom/classnames
-                                         :force-display (:menu-open @local))}
-        [:div.project-th-icon.menu
-         {:tab-index "0"
-          :ref menu-ref
-          :on-click on-menu-click
-          :on-key-down (fn [event]
-                         (when (kbd/enter? event)
-                           (on-menu-click event)))}
-         i/actions
-         (when selected?
-           [:& file-menu {:files (vals selected-files)
-                          :show? (:menu-open @local)
-                          :left (+ 24 (:x (:menu-pos @local)))
-                          :top (:y (:menu-pos @local))
-                          :navigate? navigate?
-                          :on-edit on-edit
-                          :on-menu-close on-menu-close
-                          :origin origin
-                          :dashboard-local dashboard-local}])]]]]]))
+      [:div.item-info
+       (if (:edition @local)
+         [:& inline-edition {:content (:name file)
+                             :on-end edit}]
+         [:h3 (:name file)])
+       [:& grid-item-metadata {:modified-at (:modified-at file)}]]
+      [:div.project-th-actions {:class (dom/classnames
+                                        :force-display (:menu-open @local))}
+       [:div.project-th-icon.menu
+        {:tab-index "0"
+         :ref menu-ref
+         :on-click on-menu-click
+         :on-key-down (fn [event]
+                        (when (kbd/enter? event)
+                          (on-menu-click event)))}
+        i/actions
+        (when selected?
+          [:& file-menu {:files (vals selected-files)
+                         :show? (:menu-open @local)
+                         :left (+ 24 (:x (:menu-pos @local)))
+                         :top (:y (:menu-pos @local))
+                         :navigate? navigate?
+                         :on-edit on-edit
+                         :on-menu-close on-menu-close
+                         :origin origin
+                         :dashboard-local dashboard-local}])]]]]
+    ))
 
 
 (mf/defc grid

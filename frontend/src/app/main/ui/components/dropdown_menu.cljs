@@ -25,7 +25,7 @@
         on-key-down (gobj/get props "on-key-down")
         id          (gobj/get props "id")
         klass       (gobj/get props "klass")
-        key         (gobj/get props "klass")
+        key         (gobj/get props "key")
         data-test   (gobj/get props "data-test")]
     [:li {:id id
           :class klass
