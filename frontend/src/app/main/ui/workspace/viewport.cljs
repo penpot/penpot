@@ -437,7 +437,8 @@
           {:zoom zoom
            :vbox vbox
            :hover-frame frame-parent
-           :disabled-guides? disabled-guides?}])
+           :disabled-guides? disabled-guides?
+           :modifiers modifiers}])
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (debug? :layout-drop-zones)
