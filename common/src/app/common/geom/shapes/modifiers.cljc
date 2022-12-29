@@ -169,8 +169,9 @@
 
               [layout-line modif-tree]))]
 
-    (let [children     (->> (:shapes parent)
-                            (map (comp apply-modifiers (d/getf objects))))
+    (let [children     (->> (cph/get-immediate-children objects (:id parent))
+                            (remove :hidden)
+                            (map apply-modifiers))
           layout-data  (gcl/calc-layout-data parent children @transformed-parent-bounds)
           children     (into [] (cond-> children (not (:reverse? layout-data)) reverse))
           max-idx      (dec (count children))
@@ -209,7 +210,9 @@
             (-> modifiers
                 (ctm/resize-parent (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))
 
-        children (->> parent :shapes (map (d/getf objects)))
+        children (->> (cph/get-immediate-children objects parent-id)
+                      (remove :hidden))
+
         content-bounds
         (when (and (d/not-empty? children) (or (ctl/auto-height? parent) (ctl/auto-width? parent)))
           (gcl/layout-content-bounds bounds parent children))

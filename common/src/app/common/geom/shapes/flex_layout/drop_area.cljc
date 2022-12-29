@@ -184,6 +184,7 @@
   (let [frame       (get objects frame-id)
         position    (gmt/transform-point-center position (gco/center-shape frame) (:transform-inverse frame))
         children    (->> (cph/get-immediate-children objects frame-id)
+                         (remove :hidden)
                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points frame)) %)))
         layout-data (fli/calc-layout-data frame children (:points frame))
         drop-areas  (layout-drop-areas frame layout-data children)

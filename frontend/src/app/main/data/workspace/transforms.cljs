@@ -8,6 +8,7 @@
   "Events related with shapes transformations"
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -516,14 +517,70 @@
 
 (s/def ::direction #{:up :down :right :left})
 
-(defn move-selected
+(defn reorder-selected-layout-child
+  [direction]
+  (ptk/reify ::reorder-layout-child
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [selected (wsh/lookup-selected state {:omit-blocked? true})
+            objects (wsh/lookup-page-objects state)
+            page-id (:current-page-id state)
+
+            get-new-position
+            (fn [parent-id position]
+              (let [parent (get objects parent-id)]
+                (when (ctl/layout? parent)
+                  (if (or
+                       (and (ctl/reverse? parent)
+                            (or (= direction :left)
+                                (= direction :up)))
+                       (and (not (ctl/reverse? parent))
+                            (or (= direction :right)
+                                (= direction :down))))
+                    (dec position)
+                    (+ position 2)))))
+
+            add-children-position
+            (fn [[parent-id children]]
+              (let [children+position
+                    (->> children
+                         (keep #(let [new-position (get-new-position
+                                                    parent-id
+                                                    (cph/get-position-on-parent objects %))]
+                                  (when new-position
+                                    (vector % new-position))))
+                         (sort-by second >))]
+                [parent-id children+position]))
+
+            change-parents-and-position
+            (->> selected
+                 (group-by #(dm/get-in objects [% :parent-id]))
+                 (map add-children-position)
+                 (into {}))
+
+            changes
+            (->> change-parents-and-position
+                 (reduce
+                  (fn [changes [parent-id children]]
+                    (->> children
+                         (reduce
+                          (fn [changes [child-id index]]
+                            (pcb/change-parent changes parent-id
+                                               [(get objects child-id)]
+                                               index))
+                          changes)))
+                  (-> (pcb/empty-changes it page-id)
+                      (pcb/with-objects objects))))]
+
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event :layout/update selected))))))
+
+(defn nudge-selected-shapes
   "Move shapes a fixed increment in one direction, from a keyboard action."
   [direction shift?]
-  (us/verify ::direction direction)
-  (us/verify boolean? shift?)
 
   (let [same-event (js/Symbol "same-event")]
-    (ptk/reify ::move-selected
+    (ptk/reify ::nudge-selected-shapes
       IDeref
       (-deref [_] direction)
 
@@ -541,7 +598,7 @@
           (let [selected (wsh/lookup-selected state {:omit-blocked? true})
                 nudge (get-in state [:profile :props :nudge] {:big 10 :small 1})
                 move-events (->> stream
-                                 (rx/filter (ptk/type? ::move-selected))
+                                 (rx/filter (ptk/type? ::nudge-selected-shapes))
                                  (rx/filter #(= direction (deref %))))
                 stopper (->> move-events
                              (rx/debounce 100)
@@ -556,11 +613,27 @@
                    (rx/map #(dwm/create-modif-tree selected (ctm/move-modifiers %)))
                    (rx/map (partial dwm/set-modifiers))
                    (rx/take-until stopper))
-              (rx/of (move-selected direction shift?)))
+              (rx/of (nudge-selected-shapes direction shift?)))
 
              (rx/of (dwm/apply-modifiers)
                     (finish-transform))))
           (rx/empty))))))
+
+(defn move-selected
+  "Move shapes a fixed increment in one direction, from a keyboard action."
+  [direction shift?]
+  (us/verify ::direction direction)
+  (us/verify boolean? shift?)
+
+  (ptk/reify ::move-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            selected (wsh/lookup-selected state {:omit-blocked? true})
+            selected-shapes (->> selected (map (d/getf objects)))]
+        (if (every? (partial ctl/layout-child? objects) selected-shapes)
+          (rx/of (reorder-selected-layout-child direction))
+          (rx/of (nudge-selected-shapes direction shift?)))))))
 
 (s/def ::x number?)
 (s/def ::y number?)

@@ -35,7 +35,8 @@
         shape (or selected-frame (get objects hover-top-frame-id))]
 
     (when (and shape (:layout shape))
-      (let [children (cph/get-immediate-children objects (:id shape))
+      (let [children (->> (cph/get-immediate-children objects (:id shape))
+                          (remove :hidden))
             layout-bounds (gsl/layout-content-bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points])) shape children)]
         [:g.debug-layout {:pointer-events "none"}
          [:polygon {:points (->> layout-bounds (map #(dm/fmt "%, %" (:x %) (:y %))) (str/join " "))
@@ -61,7 +62,8 @@
       (let [row? (ctl/row? shape)
             col? (ctl/col? shape)
 
-            children (cph/get-immediate-children objects (:id shape))
+            children (->> (cph/get-immediate-children objects (:id shape))
+                          (remove :hidden))
             layout-data (gsl/calc-layout-data shape children (:points shape))
 
             layout-bounds (:layout-bounds layout-data)
@@ -99,6 +101,7 @@
 
     (when (and shape (:layout shape))
       (let [children (->> (cph/get-immediate-children objects (:id shape))
+                          (remove :hidden)
                           (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
             layout-data (gsl/calc-layout-data shape children (:points shape))
             drop-areas (gsl/layout-drop-areas shape layout-data children)]
@@ -164,7 +167,8 @@
         parent-bounds (:points parent)]
 
     (when (and (some? parent) (not= uuid/zero (:id parent)))
-      (let [children (cph/get-immediate-children objects (:id parent))]
+      (let [children (->> (cph/get-immediate-children objects (:id parent))
+                          (remove :hidden))]
         [:g.debug-parent-bounds {:pointer-events "none"}
          (for [[idx child] (d/enumerate children)]
            [:*
