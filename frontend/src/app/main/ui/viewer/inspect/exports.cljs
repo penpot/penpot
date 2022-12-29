@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.exports
+(ns app.main.ui.viewer.inspect.exports
   (:require
    [app.common.data :as d]
    [app.main.data.exports :as de]

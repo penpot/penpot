@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.layout-flex-element
+(ns app.main.ui.viewer.inspect.attributes.layout-flex-element
   (:require
    [app.common.data :as d]
    [app.main.refs :as refs]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.viewer.handoff.code :as cd]
+   [app.main.ui.viewer.inspect.code :as cd]
    [app.util.code-gen :as cg]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))

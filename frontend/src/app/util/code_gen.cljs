@@ -204,7 +204,7 @@
        (reduce d/merge)))
 
 
-;; TODO: used on handoff
+;; TODO: used on inspect
 (defn parse-style-text-blocks
   [node attrs]
   (letfn

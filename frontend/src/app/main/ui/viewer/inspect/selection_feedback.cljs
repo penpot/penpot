@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.selection-feedback
+(ns app.main.ui.viewer.inspect.selection-feedback
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]

@@ -229,7 +229,7 @@
 
 
 ;; Component that serves for render frame thumbnails, mainly used in
-;; the viewer and handoff
+;; the viewer and inspector
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
   [{:keys [objects frame zoom show-thumbnails?] :or {zoom 1} :as props}]

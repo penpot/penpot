@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.layout
+(ns app.main.ui.viewer.inspect.attributes.layout
   (:require
    [app.common.types.shape.radius :as ctsr]
    [app.main.ui.components.copy-button :refer [copy-button]]
@@ -40,36 +40,36 @@
         {:keys [x y]} selrect]
     [:*
      [:div.attributes-unit-row
-      [:div.attributes-label (tr "handoff.attributes.layout.width")]
+      [:div.attributes-label (tr "inspect.attributes.layout.width")]
       [:div.attributes-value (fmt/format-size :width (:width shape) shape)]
       [:& copy-button {:data (copy-data shape :width)}]]
 
      [:div.attributes-unit-row
-      [:div.attributes-label (tr "handoff.attributes.layout.height")]
+      [:div.attributes-label (tr "inspect.attributes.layout.height")]
       [:div.attributes-value (fmt/format-size :height (:height shape) shape)]
       [:& copy-button {:data (copy-data shape :height)}]]
 
      (when (not= (:x shape) 0)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.layout.left")]
+        [:div.attributes-label (tr "inspect.attributes.layout.left")]
         [:div.attributes-value (fmt/format-pixels x)]
         [:& copy-button {:data (copy-data selrect :x)}]])
 
      (when (not= (:y shape) 0)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.layout.top")]
+        [:div.attributes-label (tr "inspect.attributes.layout.top")]
         [:div.attributes-value (fmt/format-pixels y)]
         [:& copy-button {:data (copy-data selrect :y)}]])
 
      (when (ctsr/radius-1? shape)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.layout.radius")]
+        [:div.attributes-label (tr "inspect.attributes.layout.radius")]
         [:div.attributes-value (fmt/format-pixels (:rx shape 0))]
         [:& copy-button {:data (copy-data shape :rx)}]])
 
      (when (ctsr/radius-4? shape)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.layout.radius")]
+        [:div.attributes-label (tr "inspect.attributes.layout.radius")]
         [:div.attributes-value
          (fmt/format-number (:r1 shape)) ", "
          (fmt/format-number (:r2 shape)) ", "
@@ -79,7 +79,7 @@
 
      (when (not= (:rotation shape 0) 0)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.layout.rotation")]
+        [:div.attributes-label (tr "inspect.attributes.layout.rotation")]
         [:div.attributes-value (fmt/format-number (:rotation shape)) "deg"]
         [:& copy-button {:data (copy-data shape :rotation)}]])]))
 
@@ -88,7 +88,7 @@
   [{:keys [shapes]}]
   [:div.attributes-block
    [:div.attributes-block-title
-    [:div.attributes-block-title-text (tr "handoff.attributes.size")]
+    [:div.attributes-block-title-text (tr "inspect.attributes.size")]
     (when (= (count shapes) 1)
       [:& copy-button {:data (copy-data (first shapes))}])]
 

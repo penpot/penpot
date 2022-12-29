@@ -4,10 +4,10 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.fill
+(ns app.main.ui.viewer.inspect.attributes.fill
   (:require
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
+   [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
@@ -51,7 +51,7 @@
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
-        [:div.attributes-block-title-text (tr "handoff.attributes.fill")]
+        [:div.attributes-block-title-text (tr "inspect.attributes.fill")]
         (when (= (count shapes) 1)
           [:& copy-button {:data (copy-data (first shapes))}])]
 

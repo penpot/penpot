@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.blur
+(ns app.main.ui.viewer.inspect.attributes.blur
   (:require
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.util.code-gen :as cg]
@@ -27,12 +27,12 @@
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
-        [:div.attributes-block-title-text (tr "handoff.attributes.blur")]
+        [:div.attributes-block-title-text (tr "inspect.attributes.blur")]
         (when (= (count shapes) 1)
           [:& copy-button {:data (copy-data (first shapes))}])]
 
        (for [shape shapes]
          [:div.attributes-unit-row
-          [:div.attributes-label (tr "handoff.attributes.blur.value")]
+          [:div.attributes-label (tr "inspect.attributes.blur.value")]
           [:div.attributes-value (-> shape :blur :value) "px"]
           [:& copy-button {:data (copy-data shape)}]])])))

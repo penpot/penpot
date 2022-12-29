@@ -14,7 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.viewer.handoff.right-sidebar :as hrs]
+   [app.main.ui.viewer.inspect.right-sidebar :as hrs]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options]]
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu]]

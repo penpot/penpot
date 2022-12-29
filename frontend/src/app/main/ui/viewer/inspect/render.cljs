@@ -4,8 +4,8 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.render
-  "The main container for a frame in handoff mode"
+(ns app.main.ui.viewer.inspect.render
+  "The main container for a frame in inspect mode"
   (:require
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
@@ -21,7 +21,7 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.viewer.handoff.selection-feedback :refer [selection-feedback]]
+   [app.main.ui.viewer.inspect.selection-feedback :refer [selection-feedback]]
    [app.main.ui.viewer.interactions :refer [prepare-objects]]
    [app.util.dom :as dom]
    [app.util.object :as obj]

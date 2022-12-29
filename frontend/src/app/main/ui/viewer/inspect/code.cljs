@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.code
+(ns app.main.ui.viewer.inspect.code
   (:require
    ["js-beautify" :as beautify]
    [app.common.data.macros :as dm]
@@ -76,7 +76,7 @@
          (mf/deps @markup-type)
          (fn []
            (st/emit! (ptk/event ::ev/event
-                                {::ev/name "copy-handoff-code"
+                                {::ev/name "copy-inspect-code"
                                  :type @markup-type}))))
 
         on-style-copied
@@ -84,7 +84,7 @@
          (mf/deps @style-type)
          (fn []
            (st/emit! (ptk/event ::ev/event
-                                {::ev/name "copy-handoff-style"
+                                {::ev/name "copy-inspect-style"
                                  :type @style-type}))))]
 
     [:div.element-options

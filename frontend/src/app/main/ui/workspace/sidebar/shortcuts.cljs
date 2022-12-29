@@ -141,7 +141,7 @@
   ;;   shortcuts.open-color-picker
   ;;   shortcuts.open-comments
   ;;   shortcuts.open-dashboard
-  ;;   shortcuts.open-handoff
+  ;;   shortcuts.open-inspect
   ;;   shortcuts.open-interactions
   ;;   shortcuts.open-viewer
   ;;   shortcuts.open-workspace

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.layout-flex
+(ns app.main.ui.viewer.inspect.attributes.layout-flex
   (:require
    [app.common.data :as d]
    [app.main.ui.components.copy-button :refer [copy-button]]

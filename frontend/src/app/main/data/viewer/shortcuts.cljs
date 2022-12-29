@@ -51,10 +51,10 @@
                         :subsections [:general-viewer]
                         :fn #(st/emit! dv/select-next-frame)}
 
-   :open-handoff       {:tooltip "G H"
-                        :command "g h"
+   :open-inspect       {:tooltip "G I"
+                        :command "g i"
                         :subsections [:navigation-viewer]
-                        :fn #(st/emit! (dv/go-to-section :handoff))}
+                        :fn #(st/emit! (dv/go-to-section :inspect))}
 
    :open-comments      {:tooltip "G C"
                         :command "g c"
