@@ -12,7 +12,7 @@
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu :refer [context-menu]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
    [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -228,36 +228,39 @@
                                  "move-to-other-team"]))
 
             options (if multi?
-                      [[(tr "dashboard.duplicate-multi" file-count) on-duplicate nil "duplicate-multi"]
+                      [[(tr "dashboard.duplicate-multi" file-count) "file-duplicate-multi" on-duplicate nil "duplicate-multi"]
                        (when (or (seq current-projects) (seq other-teams))
-                         [(tr "dashboard.move-to-multi" file-count) nil sub-options "move-to-multi"])
-                       [(tr "dashboard.export-binary-multi" file-count) on-export-binary-files]
-                       [(tr "dashboard.export-standard-multi" file-count) on-export-standard-files]
+                         [(tr "dashboard.move-to-multi"file-count)  "file-move-multi"nil sub-options "move-to-multi"])
+                       [(tr "dashboard.export-binary-multi" file-count) "file-binari-export-multi" on-export-binary-files]
+                       [(tr "dashboard.export-standard-multi" file-count)  "file-standard-export-multi" on-export-standard-files]
                        (when (:is-shared file)
-                         [(tr "labels.unpublish-multi-files" file-count) on-del-shared nil "file-del-shared"])
+                         [(tr "labels.unpublish-multi-files" file-count)  "file-unpublish-multi" on-del-shared nil "file-del-shared"])
                        (when (not is-lib-page?)
                          [:separator]
-                         [(tr "labels.delete-multi-files" file-count) on-delete nil "delete-multi-files"])]
+                         [(tr "labels.delete-multi-files" file-count)  "file-delete-multi" on-delete nil "delete-multi-files"])]
 
-                      [[(tr "dashboard.open-in-new-tab") on-new-tab]
-                       [(tr "labels.rename") on-edit nil "file-rename"]
-                       [(tr "dashboard.duplicate") on-duplicate nil "file-duplicate"]
+                      [[(tr "dashboard.open-in-new-tab")  "file-open-new-tab" on-new-tab]
+                       [(tr "labels.rename") "file-rename" on-edit nil "file-rename"]
+                       [(tr "dashboard.duplicate") "file-duplicate" on-duplicate nil "file-duplicate"]
                        (when (and (not is-lib-page?) (or (seq current-projects) (seq other-teams)))
-                         [(tr "dashboard.move-to") nil sub-options "file-move-to"])
+                         [(tr "dashboard.move-to") "file-move-to" nil sub-options "file-move-to"])
                        (if (:is-shared file)
-                         [(tr "dashboard.unpublish-shared") on-del-shared nil "file-del-shared"]
-                         [(tr "dashboard.add-shared") on-add-shared nil "file-add-shared"])
+                         [(tr "dashboard.unpublish-shared") "file-del-shared" on-del-shared nil "file-del-shared"]
+                         [(tr "dashboard.add-shared") "file-add-shared" on-add-shared nil "file-add-shared"])
                        [:separator]
-                       [(tr "dashboard.download-binary-file") on-export-binary-files nil "download-binary-file"]
-                       [(tr "dashboard.download-standard-file") on-export-standard-files nil "download-standard-file"]
+                       [(tr "dashboard.download-binary-file") "file-downolad-binary"on-export-binary-files nil "download-binary-file"]
+                       [(tr "dashboard.download-standard-file") "file-download-standard" on-export-standard-files nil "download-standard-file"]
                        (when (not is-lib-page?)
                          [:separator]
-                         [(tr "labels.delete") on-delete nil "file-delete"])])]
+                         [(tr "labels.delete") "file-delete" on-delete nil "file-delete"])])
+_ (.log js/console (clj->js options) )
+]
 
-        [:& context-menu {:on-close on-menu-close
-                          :show show?
-                          :fixed? (or (not= top 0) (not= left 0))
-                          :min-width? true
-                          :top top
-                          :left left
-                          :options options}]))))
+        [:& context-menu-a11y {:on-close on-menu-close
+                               :show show?
+                               :fixed? (or (not= top 0) (not= left 0))
+                               :min-width? true
+                               :top top
+                               :left left
+                               :options options
+                               }]))))
