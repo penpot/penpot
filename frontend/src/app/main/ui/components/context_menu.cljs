@@ -51,24 +51,17 @@
         (mf/use-callback
          (mf/deps top (:offset-y @local) left (:offset-x @local))
          (fn [node]
-           (.log js/console (clj->js node))
            (when (some? node)
              (let [bounding_rect (dom/get-bounding-rect node)
                    window_size (dom/get-window-size)
                    {node-height :height node-width :width} bounding_rect
                    {window-height :height window-width :width} window_size
                    target-offset-y (if (> (+ top node-height) window-height)
-                                   (- node-height)
-                                   0)
+                                     (- node-height)
+                                     0)
                    target-offset-x (if (> (+ left node-width) window-width)
                                      (- node-width)
-                                     0)
-                   _ (prn "top" top)
-                   _ (prn "left" left)
-                   _ (prn "node-height" node-height)
-                   _ (prn "node-width" node-width)
-                   _ (prn "y" target-offset-y)
-                   _ (prn "x" target-offset-y)]
+                                     0)]
 
                (when (or (not= target-offset-y (:offset-y @local)) (not= target-offset-x (:offset-x @local)))
                  (swap! local assoc :offset-y target-offset-y :offset-x target-offset-x))))))
@@ -92,9 +85,9 @@
         props (obj/merge props #js {:on-close on-local-close})]
 
     (mf/use-effect
-      (mf/deps options)
-      #(swap! local assoc :levels [{:parent-option nil
-                                    :options options}]))
+     (mf/deps options)
+     #(swap! local assoc :levels [{:parent-option nil
+                                   :options options}]))
 
     (when (and open? (some? (:levels @local)))
       [:> dropdown' props
