@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.text
+(ns app.main.ui.viewer.inspect.attributes.text
   (:require
    [app.common.data :as d]
    [app.common.text :as txt]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
+   [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
@@ -115,53 +115,53 @@
 
      (when (:font-id style)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.typography.font-family")]
+        [:div.attributes-label (tr "inspect.attributes.typography.font-family")]
         [:div.attributes-value (-> style :font-id fonts/get-font-data :name)]
         [:& copy-button {:data (copy-style-data style :font-family)}]])
 
      (when (:font-style style)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.typography.font-style")]
+        [:div.attributes-label (tr "inspect.attributes.typography.font-style")]
         [:div.attributes-value (str (:font-style style))]
         [:& copy-button {:data (copy-style-data style :font-style)}]])
 
      (when (:font-size style)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.typography.font-size")]
+        [:div.attributes-label (tr "inspect.attributes.typography.font-size")]
         [:div.attributes-value (str (format-number (:font-size style))) "px"]
         [:& copy-button {:data (copy-style-data style :font-size)}]])
 
      (when (:line-height style)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.typography.line-height")]
+        [:div.attributes-label (tr "inspect.attributes.typography.line-height")]
         [:div.attributes-value (format-number (:line-height style))]
         [:& copy-button {:data (copy-style-data style :line-height)}]])
 
      (when (:letter-spacing style)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.typography.letter-spacing")]
+        [:div.attributes-label (tr "inspect.attributes.typography.letter-spacing")]
         [:div.attributes-value (str (format-number (:letter-spacing style))) "px"]
         [:& copy-button {:data (copy-style-data style :letter-spacing)}]])
 
      (when (:text-decoration style)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.typography.text-decoration")]
+        [:div.attributes-label (tr "inspect.attributes.typography.text-decoration")]
         ;; Execution time translation strings:
-        ;;   handoff.attributes.typography.text-decoration.none
-        ;;   handoff.attributes.typography.text-decoration.strikethrough
-        ;;   handoff.attributes.typography.text-decoration.underline
-        [:div.attributes-value (->> style :text-decoration (str "handoff.attributes.typography.text-decoration.") (tr))]
+        ;;   inspect.attributes.typography.text-decoration.none
+        ;;   inspect.attributes.typography.text-decoration.strikethrough
+        ;;   inspect.attributes.typography.text-decoration.underline
+        [:div.attributes-value (->> style :text-decoration (str "inspect.attributes.typography.text-decoration.") (tr))]
         [:& copy-button {:data (copy-style-data style :text-decoration)}]])
 
      (when (:text-transform style)
        [:div.attributes-unit-row
-        [:div.attributes-label (tr "handoff.attributes.typography.text-transform")]
+        [:div.attributes-label (tr "inspect.attributes.typography.text-transform")]
         ;; Execution time translation strings:
-        ;;   handoff.attributes.typography.text-transform.lowercase
-        ;;   handoff.attributes.typography.text-transform.none
-        ;;   handoff.attributes.typography.text-transform.titlecase
-        ;;   handoff.attributes.typography.text-transform.uppercase
-        [:div.attributes-value (->> style :text-transform (str "handoff.attributes.typography.text-transform.") (tr))]
+        ;;   inspect.attributes.typography.text-transform.lowercase
+        ;;   inspect.attributes.typography.text-transform.none
+        ;;   inspect.attributes.typography.text-transform.titlecase
+        ;;   inspect.attributes.typography.text-transform.uppercase
+        [:div.attributes-value (->> style :text-transform (str "inspect.attributes.typography.text-transform.") (tr))]
         [:& copy-button {:data (copy-style-data style :text-transform)}]])
 
      [:div.attributes-content-row
@@ -185,7 +185,7 @@
   (when-let [shapes (seq (filter has-text? shapes))]
     [:div.attributes-block
      [:div.attributes-block-title
-      [:div.attributes-block-title-text (tr "handoff.attributes.typography")]]
+      [:div.attributes-block-title-text (tr "inspect.attributes.typography")]]
 
      (for [shape shapes]
        [:& text-block {:shape shape

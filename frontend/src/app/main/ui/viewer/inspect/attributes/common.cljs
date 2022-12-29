@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff.attributes.common
+(ns app.main.ui.viewer.inspect.attributes.common
   (:require
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet color-name]]
@@ -58,13 +58,13 @@
       (when-not (and on-change-format (:gradient color))
         [:select {:on-change #(-> (dom/get-target-val %) keyword on-change-format)}
          [:option {:value "hex"}
-          (tr "handoff.attributes.color.hex")]
+          (tr "inspect.attributes.color.hex")]
 
          [:option {:value "rgba"}
-          (tr "handoff.attributes.color.rgba")]
+          (tr "inspect.attributes.color.rgba")]
 
          [:option {:value "hsla"}
-          (tr "handoff.attributes.color.hsla")]])]
+          (tr "inspect.attributes.color.hsla")]])]
      (when copy-data
        [:& copy-button {:data copy-data}])]))
 

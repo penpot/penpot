@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.handoff
+(ns app.main.ui.viewer.inspect
   (:require
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
-   [app.main.ui.viewer.handoff.left-sidebar :refer [left-sidebar]]
-   [app.main.ui.viewer.handoff.render :refer [render-frame-svg]]
-   [app.main.ui.viewer.handoff.right-sidebar :refer [right-sidebar]]
+   [app.main.ui.viewer.inspect.left-sidebar :refer [left-sidebar]]
+   [app.main.ui.viewer.inspect.render :refer [render-frame-svg]]
+   [app.main.ui.viewer.inspect.right-sidebar :refer [right-sidebar]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [goog.events :as events]
@@ -25,7 +25,7 @@
     (st/emit! (dv/select-shape (:id frame)))
 
     (let [origin (dom/get-target event)
-          over-section? (dom/class? origin "handoff-svg-container")
+          over-section? (dom/class? origin "inspect-svg-container")
           layout (dom/get-element "viewer-layout")
           has-force? (dom/class? layout "force-visible")]
 
@@ -67,9 +67,9 @@
      [:& left-sidebar {:frame frame
                        :local local
                        :page page}]
-     [:div.handoff-svg-wrapper {:on-click (handle-select-frame frame)}
+     [:div.inspect-svg-wrapper {:on-click (handle-select-frame frame)}
       [:& viewer-pagination {:index index :num-frames (count (:frames page)) :left-bar true :right-bar true}]
-      [:div.handoff-svg-container
+      [:div.inspect-svg-container
        [:& render-frame-svg {:frame frame :page page :local local :size size}]]]
 
      [:& right-sidebar {:frame frame

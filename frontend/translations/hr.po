@@ -835,7 +835,7 @@ msgstr "Vlasnik ne može napustiti tim, moraš ponovno dodijeliti ulogu vlasnika
 msgid "errors.terms-privacy-agreement-invalid"
 msgstr "Moraš prihvatiti naše uvjete pružanja usluge i politiku privatnosti."
 
-#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Došlo je do neočekivane pogreške."
 
@@ -905,222 +905,222 @@ msgstr "Twitter korisnički račun za podršku"
 msgid "generic.error"
 msgstr "Došlo je do pogreške"
 
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur"
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur"
 msgstr "Zamućenje"
 
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur.value"
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur.value"
 msgstr "Vrijednost"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hex"
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hsla"
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.rgba"
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/handoff/attributes/fill.cljs
-msgid "handoff.attributes.fill"
+#: src/app/main/ui/inspect/attributes/fill.cljs
+msgid "inspect.attributes.fill"
 msgstr "Ispuna"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.download"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.download"
 msgstr "Preuzmi izvornu sliku"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
 msgstr "Visina"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.width"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.width"
 msgstr "Širina"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout"
 msgstr "Raspored"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.height"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.height"
 msgstr "Visina"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.left"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.left"
 msgstr "Lijevo"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.radius"
+#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.radius"
 msgstr "Radius"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.rotation"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.rotation"
 msgstr "Rotacija"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.top"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.top"
 msgstr "Vrh"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
 msgstr "Širina"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow"
 msgstr "Sjena"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.blur"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.blur"
 msgstr "B"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-x"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.offset-x"
 msgstr "X"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-y"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.offset-y"
 msgstr "Y"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.spread"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.spread"
 msgstr "S"
 
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke"
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke"
 msgstr "Potez"
 
 #, permanent
-msgid "handoff.attributes.stroke.alignment.center"
+msgid "inspect.attributes.stroke.alignment.center"
 msgstr "Sredina"
 
 #, permanent
-msgid "handoff.attributes.stroke.alignment.inner"
+msgid "inspect.attributes.stroke.alignment.inner"
 msgstr "Unutra"
 
 #, permanent
-msgid "handoff.attributes.stroke.alignment.outer"
+msgid "inspect.attributes.stroke.alignment.outer"
 msgstr "Vani"
 
-msgid "handoff.attributes.stroke.style.dotted"
+msgid "inspect.attributes.stroke.style.dotted"
 msgstr "Točkasto"
 
-msgid "handoff.attributes.stroke.style.mixed"
+msgid "inspect.attributes.stroke.style.mixed"
 msgstr "Miksano"
 
-msgid "handoff.attributes.stroke.style.none"
+msgid "inspect.attributes.stroke.style.none"
 msgstr "Nikakav"
 
-msgid "handoff.attributes.stroke.style.solid"
+msgid "inspect.attributes.stroke.style.solid"
 msgstr "Solidan"
 
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke.width"
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke.width"
 msgstr "Širina"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography"
 msgstr "Tipografija"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
+#: src/app/main/ui/inspect/attributes/text.cljs
 #, fuzzy
-msgid "handoff.attributes.typography.font-family"
+msgid "inspect.attributes.typography.font-family"
 msgstr "Font"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-size"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-size"
 msgstr "Veličina fonta"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-style"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-style"
 msgstr "Stil fonta"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.letter-spacing"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Razmak između slova"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.line-height"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.line-height"
 msgstr "Visina linije"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-decoration"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-decoration"
 msgstr "Dekoracija teksta"
 
 #, fuzzy
-msgid "handoff.attributes.typography.text-decoration.none"
+msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Nikakav"
 
-msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
 msgstr "Precrtano"
 
-msgid "handoff.attributes.typography.text-decoration.underline"
+msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Podcrtano"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-transform"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-transform"
 msgstr "Transformiraj tekst"
 
-msgid "handoff.attributes.typography.text-transform.lowercase"
+msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "Mala slova"
 
 #, fuzzy
-msgid "handoff.attributes.typography.text-transform.none"
+msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Nikakav"
 
-msgid "handoff.attributes.typography.text-transform.titlecase"
+msgid "inspect.attributes.typography.text-transform.titlecase"
 msgstr "Velika i mala slova"
 
-msgid "handoff.attributes.typography.text-transform.uppercase"
+msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Velika slova"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code"
 msgstr "Kod"
 
-msgid "handoff.tabs.code.selected.circle"
+msgid "inspect.tabs.code.selected.circle"
 msgstr "Krug"
 
-msgid "handoff.tabs.code.selected.component"
+msgid "inspect.tabs.code.selected.component"
 msgstr "Komponenta"
 
-msgid "handoff.tabs.code.selected.curve"
+msgid "inspect.tabs.code.selected.curve"
 msgstr "Krivulja"
 
-msgid "handoff.tabs.code.selected.frame"
+msgid "inspect.tabs.code.selected.frame"
 msgstr "Ploča"
 
-msgid "handoff.tabs.code.selected.group"
+msgid "inspect.tabs.code.selected.group"
 msgstr "Grupa"
 
-msgid "handoff.tabs.code.selected.image"
+msgid "inspect.tabs.code.selected.image"
 msgstr "Slika"
 
-msgid "handoff.tabs.code.selected.mask"
+msgid "inspect.tabs.code.selected.mask"
 msgstr "Maska"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code.selected.multiple"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code.selected.multiple"
 msgstr "%s Označeno"
 
 #, fuzzy
-msgid "handoff.tabs.code.selected.path"
+msgid "inspect.tabs.code.selected.path"
 msgstr "Path"
 
-msgid "handoff.tabs.code.selected.rect"
+msgid "inspect.tabs.code.selected.rect"
 msgstr "Pravokutnik"
 
-msgid "handoff.tabs.code.selected.svg-raw"
+msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-msgid "handoff.tabs.code.selected.text"
+msgid "inspect.tabs.code.selected.text"
 msgstr "Tekst"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.info"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.info"
 msgstr "Informacija"
 
 msgid "history.alert-message"
@@ -2120,7 +2120,7 @@ msgid "onboarding.slide.2.title"
 msgstr "Sakupi povratne informacije, predstavi i podijeli svoj rad"
 
 msgid "onboarding.slide.3.alt"
-msgstr "Handoff i lowcode"
+msgstr "Inspect i lowcode"
 
 #, fuzzy
 msgid "onboarding.slide.3.desc1"
@@ -2473,9 +2473,6 @@ msgstr "Idi na odjeljak s komentarima"
 msgid "shortcuts.open-dashboard"
 msgstr "Idi na nadzornu ploču"
 
-msgid "shortcuts.open-handoff"
-msgstr "Idi na odjeljak primopredaje"
-
 msgid "shortcuts.open-interactions"
 msgstr "Idi na odjeljak interakcija"
 
@@ -2666,7 +2663,7 @@ msgstr "Članovi - %s - Penpot"
 msgid "title.team-settings"
 msgstr "Postavke - %s - Penpot"
 
-#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
 msgstr "%s - Način prikaza - Penpot"
 
@@ -2682,11 +2679,11 @@ msgstr ""
 msgid "viewer.breaking-change.message"
 msgstr "Oprosti!"
 
-#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.empty-state"
 msgstr "Na stranici nisu pronađene ploče."
 
-#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.frame-not-found"
 msgstr "Ploča nije pronađena."
 
@@ -2700,9 +2697,6 @@ msgstr "Ne prikazuj interakcije"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.fullscreen"
 msgstr "Cijeli zaslon"
-
-msgid "viewer.header.handoff-section"
-msgstr "Handoff (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
@@ -2888,7 +2882,7 @@ msgstr "Razmak između slova"
 msgid "workspace.assets.typography.line-height"
 msgstr "Visina linije"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/handoff/attributes/text.cljs, src/app/main/ui/handoff/attributes/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/inspect/attributes/text.cljs, src/app/main/ui/inspect/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
@@ -3275,15 +3269,15 @@ msgstr "Vrh i dno"
 msgid "workspace.options.design"
 msgstr "Dizajn"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export"
 msgstr "Izvoz"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "Izvezi selektirano"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-object"
 msgid_plural "workspace.options.export-object"
 msgstr[0] "Izvezi 1 element"
@@ -3294,19 +3288,19 @@ msgstr[2] "Izvezi %s elemenata"
 msgid "workspace.options.export.suffix"
 msgstr "Sufiks"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-complete"
 msgstr "Izvoz završen"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object"
 msgstr "Izvoz…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "Izvoz nije uspio"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-slow"
 msgstr "Izvoz neočekivano spor"
 
@@ -3888,7 +3882,7 @@ msgstr "Jednostruki kutovi"
 msgid "workspace.options.recent-fonts"
 msgstr "Nedavni"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.retry"
 msgstr "Pokušaj ponovo"
 
@@ -4406,7 +4400,7 @@ msgstr "Oblici"
 msgid "workspace.sidebar.layers.texts"
 msgstr "Tekstovi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/inspect/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Uvezeni SVG atributi"
 
