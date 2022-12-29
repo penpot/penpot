@@ -51,7 +51,6 @@
         (mf/use-callback
          (mf/deps top (:offset-y @local) left (:offset-x @local))
          (fn [node]
-           (.log js/console (clj->js node))
            (when (some? node)
              (let [bounding_rect (dom/get-bounding-rect node)
                    window_size (dom/get-window-size)
@@ -62,13 +61,7 @@
                                      0)
                    target-offset-x (if (> (+ left node-width) window-width)
                                      (- node-width)
-                                     0)
-                   _ (prn "top" top)
-                   _ (prn "left" left)
-                   _ (prn "node-height" node-height)
-                   _ (prn "node-width" node-width)
-                   _ (prn "y" target-offset-y)
-                   _ (prn "x" target-offset-y)]
+                                     0)]
 
                (when (or (not= target-offset-y (:offset-y @local)) (not= target-offset-x (:offset-x @local)))
                  (swap! local assoc :offset-y target-offset-y :offset-x target-offset-x))))))
