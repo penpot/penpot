@@ -302,33 +302,33 @@
         [:& grid-item-thumbnail {:file file}])
       (when (and (:is-shared file) (not library-view?))
         [:div.item-badge i/library])
-      [:div.item-info
-       (if (:edition @local)
-         [:& inline-edition {:content (:name file)
-                             :on-end edit}]
-         [:h3 (:name file)])
-       [:& grid-item-metadata {:modified-at (:modified-at file)}]]
-      [:div.project-th-actions {:class (dom/classnames
-                                        :force-display (:menu-open @local))}
-       [:div.project-th-icon.menu
-        {:tab-index "0"
-         :ref menu-ref
-         :on-click on-menu-click
-         :on-key-down (fn [event]
-                        (when (kbd/enter? event)
-                          (on-menu-click event)))}
-        i/actions
-        (when selected?
-          [:& file-menu {:files (vals selected-files)
-                         :show? (:menu-open @local)
-                         :left (+ 24 (:x (:menu-pos @local)))
-                         :top (:y (:menu-pos @local))
-                         :navigate? navigate?
-                         :on-edit on-edit
-                         :on-menu-close on-menu-close
-                         :origin origin
-                         :dashboard-local dashboard-local}])]]]]
-    ))
+      [:div.info-wrapper
+       [:div.item-info
+        (if (:edition @local)
+          [:& inline-edition {:content (:name file)
+                              :on-end edit}]
+          [:h3 (:name file)])
+        [:& grid-item-metadata {:modified-at (:modified-at file)}]]
+       [:div.project-th-actions {:class (dom/classnames
+                                         :force-display (:menu-open @local))}
+        [:div.project-th-icon.menu
+         {:tab-index "0"
+          :ref menu-ref
+          :on-click on-menu-click
+          :on-key-down (fn [event]
+                         (when (kbd/enter? event)
+                           (on-menu-click event)))}
+         i/actions
+         (when selected?
+           [:& file-menu {:files (vals selected-files)
+                          :show? (:menu-open @local)
+                          :left (+ 24 (:x (:menu-pos @local)))
+                          :top (:y (:menu-pos @local))
+                          :navigate? navigate?
+                          :on-edit on-edit
+                          :on-menu-close on-menu-close
+                          :origin origin
+                          :dashboard-local dashboard-local}])]]]]]))
 
 
 (mf/defc grid
@@ -444,19 +444,19 @@
 
         on-drag-enter
         (mf/use-fn
-          (mf/deps selected-project)
-          (fn [e]
-            (when (dnd/has-type? e "penpot/files")
-              (dom/prevent-default e)
-              (when-not (or (dnd/from-child? e)
-                            (dnd/broken-event? e))
-                (when (not= selected-project project-id)
-                  (reset! dragging? true))))
+         (mf/deps selected-project)
+         (fn [e]
+           (when (dnd/has-type? e "penpot/files")
+             (dom/prevent-default e)
+             (when-not (or (dnd/from-child? e)
+                           (dnd/broken-event? e))
+               (when (not= selected-project project-id)
+                 (reset! dragging? true))))
 
-            (when (or (dnd/has-type? e "Files")
-                      (dnd/has-type? e "application/x-moz-file"))
-              (dom/prevent-default e)
-              (reset! dragging? true))))
+           (when (or (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e)
+             (reset! dragging? true))))
 
         on-drag-over
         (mf/use-fn
@@ -468,9 +468,9 @@
 
         on-drag-leave
         (mf/use-fn
-          (fn [e]
-            (when-not (dnd/from-child? e)
-              (reset! dragging? false))))
+         (fn [e]
+           (when-not (dnd/from-child? e)
+             (reset! dragging? false))))
 
         on-drop-success
         (fn []
@@ -480,21 +480,21 @@
 
         on-drop
         (mf/use-fn
-          (mf/deps files selected-files)
-          (fn [e]
-            (when (or (dnd/has-type? e "Files")
-                      (dnd/has-type? e "application/x-moz-file"))
-              (dom/prevent-default e)
-              (reset! dragging? false)
-              (import-files (.-files (.-dataTransfer e))))
+         (mf/deps files selected-files)
+         (fn [e]
+           (when (or (dnd/has-type? e "Files")
+                     (dnd/has-type? e "application/x-moz-file"))
+             (dom/prevent-default e)
+             (reset! dragging? false)
+             (import-files (.-files (.-dataTransfer e))))
 
-            (when (dnd/has-type? e "penpot/files")
-              (reset! dragging? false)
-              (when (not= selected-project project-id)
-                (let [data  {:ids (into #{} (keys selected-files))
-                             :project-id project-id}
-                      mdata {:on-success on-drop-success}]
-                  (st/emit! (dd/move-files (with-meta data mdata))))))))]
+           (when (dnd/has-type? e "penpot/files")
+             (reset! dragging? false)
+             (when (not= selected-project project-id)
+               (let [data  {:ids (into #{} (keys selected-files))
+                            :project-id project-id}
+                     mdata {:on-success on-drop-success}]
+                 (st/emit! (dd/move-files (with-meta data mdata))))))))]
 
     [:div.dashboard-grid {:on-drag-enter on-drag-enter
                           :on-drag-over on-drag-over
