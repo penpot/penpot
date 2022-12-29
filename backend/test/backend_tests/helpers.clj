@@ -323,7 +323,9 @@
   [{:keys [::type] :as data}]
   (let [method-fn (get-in *system* [:app.rpc/methods :commands type])]
     ;; (app.common.pprint/pprint (:app.rpc/methods *system*))
-    (try-on! (method-fn (dissoc data ::type)))))
+    (try-on! (method-fn (-> data
+                            (dissoc ::type)
+                            (assoc :app.rpc/request-at (dt/now)))))))
 
 (defn mutation!
   [{:keys [::type profile-id] :as data}]

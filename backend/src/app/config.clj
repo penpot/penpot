@@ -137,6 +137,8 @@
 (s/def ::quotes-files-per-project ::us/integer)
 (s/def ::quotes-files-per-team ::us/integer)
 (s/def ::quotes-font-variants-per-team ::us/integer)
+(s/def ::quotes-comment-threads-per-file ::us/integer)
+(s/def ::quotes-comments-per-file ::us/integer)
 
 (s/def ::default-blob-version ::us/integer)
 (s/def ::error-report-webhook ::us/string)
@@ -288,6 +290,8 @@
                    ::quotes-files-per-project
                    ::quotes-files-per-team
                    ::quotes-font-variants-per-team
+                   ::quotes-comment-threads-per-file
+                   ::quotes-comments-per-file
 
                    ::redis-uri
                    ::registration-domain-whitelist

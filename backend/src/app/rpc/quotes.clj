@@ -8,6 +8,7 @@
   "Penpot resource usage quotes."
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
@@ -60,6 +61,16 @@
 
 (defn- send-notification!
   [{:keys [::conn] :as params}]
+  (l/warn :hint "max quote reached"
+          :target (::target params)
+          :profile-id (some-> params ::profile-id str)
+          :team-id (some-> params ::team-id str)
+          :project-id (some-> params ::project-id str)
+          :file-id (some-> params ::file-id str)
+          :quote (::quote params)
+          :total (::total params)
+          :incr  (::inc params 1))
+
   (when-let [admins (seq (cf/get :admins))]
     (let [subject (str/istr "[quotes:notification]: max quote reached ~(::target params)")
           content (str/istr "- Param: profile-id '~(::profile-id params)}'\n"
@@ -286,7 +297,8 @@
   (us/assert! ::files-per-project quote)
   (-> quote
       (assoc ::default (cf/get :quotes-comment-threads-per-file Integer/MAX_VALUE))
-      (assoc ::quote-sql [sql:get-quotes-4 target project-id profile-id team-id profile-id profile-id])
+      (assoc ::quote-sql [sql:get-quotes-4 target file-id profile-id project-id
+                          profile-id team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-comment-threads-per-file file-id])
       (generic-check!)))
 

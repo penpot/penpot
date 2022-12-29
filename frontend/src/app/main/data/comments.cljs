@@ -96,7 +96,11 @@
         (->> (rp/cmd! :create-comment-thread params)
              (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %) :id (:id %)}))
              (rx/map created-thread-on-workspace)
-             (rx/catch #(rx/throw {:type :comment-error})))))))
+             (rx/catch (fn [{:keys [type code] :as cause}]
+                         (if (and (= type :restriction)
+                                  (= code :max-quote-reached))
+                           (rx/throw cause)
+                           (rx/throw {:type :comment-error})))))))))
 
 (defn created-thread-on-viewer
   [{:keys [id comment page-id] :as thread}]
@@ -114,8 +118,7 @@
 
 (defn create-thread-on-viewer
   [params]
-  (us/assert ::create-thread-on-viewer-params params)
-
+  (us/assert! ::create-thread-on-viewer-params params)
   (ptk/reify ::create-thread-on-viewer
     ptk/WatchEvent
     (watch [_ state _]
@@ -125,7 +128,11 @@
         (->> (rp/cmd! :create-comment-thread params)
              (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %) :id (:id %) :share-id share-id}))
              (rx/map created-thread-on-viewer)
-             (rx/catch #(rx/throw {:type :comment-error})))))))
+             (rx/catch (fn [{:keys [type code] :as cause}]
+                         (if (and (= type :restriction)
+                                  (= code :max-quote-reached))
+                           (rx/throw cause)
+                           (rx/throw {:type :comment-error})))))))))
 
 (defn update-comment-thread-status
   [{:keys [id] :as thread}]
@@ -154,7 +161,11 @@
     (watch [_ state _]
        (let [share-id (-> state :viewer-local :share-id)]
          (->> (rp/cmd! :update-comment-thread {:id id :is-resolved is-resolved :share-id share-id})
-              (rx/catch #(rx/throw {:type :comment-error}))
+              (rx/catch (fn [{:keys [type code] :as cause}]
+                          (if (and (= type :restriction)
+                                   (= code :max-quote-reached))
+                            (rx/throw cause)
+                            (rx/throw {:type :comment-error}))))
               (rx/ignore))))))
 
 (defn add-comment
@@ -170,7 +181,11 @@
            (rx/concat
             (->> (rp/cmd! :create-comment {:thread-id (:id thread) :content content :share-id share-id})
                  (rx/map #(partial created %))
-                 (rx/catch #(rx/throw {:type :comment-error})))
+                 (rx/catch (fn [{:keys [type code] :as cause}]
+                             (if (and (= type :restriction)
+                                      (= code :max-quote-reached))
+                               (rx/throw cause)
+                               (rx/throw {:type :comment-error})))))
             (rx/of (refresh-comment-thread thread))))))))
 
 (defn update-comment
