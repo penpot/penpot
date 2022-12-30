@@ -79,11 +79,13 @@
       :else zero)))
 
 (defn get-snap-points [page-id frame-id remove-snap? zoom point coord]
-  (let [value (get point coord)]
+  (let [value (get point coord)
+        vbox @refs/vbox]
     (->> (uw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
                    :axis coord
+                   :bounds vbox
                    :ranges [[(- value (/ 0.5 zoom)) (+ value (/ 0.5 zoom))]]})
          (rx/take 1)
          (rx/map (remove-from-snap-points remove-snap?)))))
@@ -94,11 +96,13 @@
         ranges (->> points
                     (map coord)
                     (mapv #(vector (- % snap-accuracy)
-                                   (+ % snap-accuracy))))]
+                                   (+ % snap-accuracy))))
+        vbox @refs/vbox]
     (->> (uw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
                    :axis coord
+                   :bounds vbox
                    :ranges ranges})
          (rx/take 1)
          (rx/map (remove-from-snap-points remove-snap?))
