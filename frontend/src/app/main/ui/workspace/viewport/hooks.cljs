@@ -126,7 +126,6 @@
          (mf/deps page-id)
          (fn [point]
            (let [zoom (mf/ref-val zoom-ref)
-                 mod? (mf/ref-val mod-ref)
                  rect (gsh/center->rect point (/ 5 zoom) (/ 5 zoom))]
              (if (mf/ref-val hover-disabled-ref)
                (rx/of nil)
@@ -135,7 +134,7 @@
                       :page-id page-id
                       :rect rect
                       :include-frames? true
-                      :clip-children? (not mod?)})
+                      :clip-children? true})
                     ;; When the ask-buffered is canceled returns null. We filter them
                     ;; to improve the behavior
                     (rx/filter some?))))))
