@@ -28,7 +28,7 @@
                 (some? text-modifier)
                 (dwt/apply-text-modifier text-modifier))
 
-        transform (gsh/transform-str shape {:no-flip true})
+        transform (gsh/transform-str shape)
         {:keys [x y width height]} shape]
 
     [:rect.main.viewport-selrect
