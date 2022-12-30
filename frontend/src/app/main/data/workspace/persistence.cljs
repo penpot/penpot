@@ -30,6 +30,7 @@
 (declare persist-changes)
 (declare persist-synchronous-changes)
 (declare shapes-changes-persisted)
+(declare shapes-changes-persisted-finished)
 (declare update-persistence-status)
 
 ;; --- Persistence
@@ -42,6 +43,7 @@
       (log/debug :hint "initialize persistence")
       (let [stoper   (rx/filter (ptk/type? ::initialize-persistence) stream)
             commits  (l/atom [])
+            saving?  (l/atom false)
 
             local-file?
             #(as-> (:file-id %) event-file-id
@@ -61,13 +63,15 @@
 
             on-saving
             (fn []
+              (reset! saving? true)
               (st/emit! (update-persistence-status {:status :saving})))
 
             on-saved
             (fn []
               ;; Disable reload stoper
               (swap! st/ongoing-tasks disj :workspace-change)
-              (st/emit! (update-persistence-status {:status :saved})))]
+              (st/emit! (update-persistence-status {:status :saved}))
+              (reset! saving? false))]
 
         (rx/merge
          (->> stream
@@ -88,12 +92,15 @@
 
          (->> (rx/from-atom commits)
               (rx/filter (complement empty?))
-              (rx/sample-when (rx/merge
-                               (rx/interval 5000)
-                               (rx/filter #(= ::force-persist %) stream)
-                               (->> (rx/from-atom commits)
-                                    (rx/filter (complement empty?))
-                                    (rx/debounce 2000))))
+              (rx/sample-when
+               (->> (rx/merge
+                     (rx/interval 5000)
+                     (rx/filter #(= ::force-persist %) stream)
+                     (->> (rx/from-atom commits)
+                          (rx/filter (complement empty?))
+                          (rx/debounce 2000)))
+                    ;; Not sample while saving so there are no race conditions
+                    (rx/filter #(not @saving?))))
               (rx/tap #(reset! commits []))
               (rx/tap on-saving)
               (rx/mapcat (fn [changes]
@@ -101,9 +108,11 @@
                            ;; next persistence before this one is
                            ;; finished.
                            (rx/merge
-                            (rx/of (persist-changes file-id changes))
+                            (->> (rx/of (persist-changes file-id changes commits))
+                                 (rx/observe-on :async))
                             (->> stream
-                                 (rx/filter (ptk/type? ::changes-persisted))
+                                 ;; We wait for every change to be persisted
+                                 (rx/filter (ptk/type? ::shapes-changes-persisted-finished))
                                  (rx/take 1)
                                  (rx/tap on-saved)
                                  (rx/ignore)))))
@@ -123,7 +132,7 @@
                              (log/debug :hint "finalize persistence: synchronous save loop")))))))))
 
 (defn persist-changes
-  [file-id changes]
+  [file-id changes pending-commits]
   (log/debug :hint "persist changes" :changes (count changes))
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-changes
@@ -150,26 +159,40 @@
                             (log/debug :hint "changes persisted" :lagged (count lagged))
                             (let [frame-updates
                                   (-> (group-by :page-id changes)
-                                      (update-vals #(into #{} (mapcat :frames) %)))]
+                                      (update-vals #(into #{} (mapcat :frames) %)))
 
-                              (rx/merge
-                               (->> (rx/from frame-updates)
-                                    (rx/mapcat (fn [[page-id frames]]
-                                                 (->> frames (map #(vector page-id %)))))
-                                    (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail (:id file) page-id frame-id))))
-                               (->> (rx/from lagged)
-                                    (rx/merge-map (fn [{:keys [changes] :as entry}]
-                                                    (rx/merge
-                                                     (rx/from
-                                                      (for [[page-id changes] (group-by :page-id changes)]
-                                                        (dch/update-indices page-id changes)))
-                                                     (rx/of (shapes-changes-persisted file-id entry))))))))))
+                                  commits
+                                  (->> @pending-commits
+                                       (map #(assoc % :revn (:revn file))))]
+
+                              (rx/concat
+                               (rx/merge
+                                (->> (rx/from frame-updates)
+                                     (rx/mapcat (fn [[page-id frames]]
+                                                  (->> frames (map #(vector page-id %)))))
+                                     (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail (:id file) page-id frame-id))))
+
+                                (->> (rx/from (concat lagged commits))
+                                     (rx/merge-map
+                                      (fn [{:keys [changes] :as entry}]
+                                        (rx/merge
+                                         (rx/from
+                                          (for [[page-id changes] (group-by :page-id changes)]
+                                            (dch/update-indices page-id changes)))
+                                         (rx/of (shapes-changes-persisted file-id entry)))))))
+
+                               (rx/of (shapes-changes-persisted-finished))))))
                (rx/catch (fn [cause]
                            (rx/concat
                             (if (= :authentication (:type cause))
                               (rx/empty)
                               (rx/of (rt/assign-exception cause)))
                             (rx/throw cause))))))))))
+
+;; Event to be thrown after the changes have been persisted
+(defn shapes-changes-persisted-finished
+  []
+  (ptk/reify ::shapes-changes-persisted-finished))
 
 (defn persist-synchronous-changes
   [{:keys [file-id changes]}]
