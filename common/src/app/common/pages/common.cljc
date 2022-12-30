@@ -373,6 +373,7 @@
            :fill-color-ref-file
            :fill-color-gradient
 
+           :strokes
            :stroke-style
            :stroke-alignment
            :stroke-width
