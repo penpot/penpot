@@ -184,6 +184,7 @@ ul.palette-menu .color-bullet {
 
 .color-bullet.is-not-library-color {
   border-radius: $br-small;
+  overflow: hidden;
 
   & .color-bullet-wrapper {
     clip-path: none;
