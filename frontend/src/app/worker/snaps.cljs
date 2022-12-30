@@ -6,6 +6,7 @@
 
 (ns app.worker.snaps
   (:require
+   [app.common.geom.shapes.rect :as gpr]
    [app.util.snap-data :as sd]
    [app.worker.impl :as impl]
    [okulary.core :as l]))
@@ -24,11 +25,14 @@
   nil)
 
 (defmethod impl/handler :snaps/range-query
-  [{:keys [page-id frame-id axis ranges] :as message}]
-
-  (into []
-        (comp (mapcat #(sd/query @state page-id frame-id axis %))
-              (distinct))
-        ranges))
+  [{:keys [page-id frame-id axis ranges bounds] :as message}]
+  (let [match-bounds?
+        (fn [[_ data]]
+          (some #(gpr/contains-point? bounds %) (map :pt data)))]
+    (->> (into []
+               (comp (mapcat #(sd/query @state page-id frame-id axis %))
+                     (distinct))
+               ranges)
+         (filter match-bounds?))))
 
 
