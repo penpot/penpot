@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.svg-upload
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -73,34 +74,34 @@
                     :else (str tag))))
 
 (defn setup-fill [shape]
-  (cond-> shape
+  (let [color-attr (str/trim (get-in shape [:svg-attrs :fill]))
+        color-attr (if (= color-attr "currentColor") clr/black color-attr)
+        color-style (str/trim (get-in shape [:svg-attrs :style :fill]))
+        color-style (if (= color-style "currentColor") clr/black color-style)]
+    (cond-> shape
     ;; Color present as attribute
-    (uc/color? (str/trim (get-in shape [:svg-attrs :fill])))
-    (-> (update :svg-attrs dissoc :fill)
-        (update-in [:svg-attrs :style] dissoc :fill)
-        (assoc-in [:fills 0 :fill-color] (-> (get-in shape [:svg-attrs :fill])
-                                             (str/trim)
-                                             (uc/parse-color))))
+      (uc/color? color-attr)
+      (-> (update :svg-attrs dissoc :fill)
+          (update-in [:svg-attrs :style] dissoc :fill)
+          (assoc-in [:fills 0 :fill-color] (uc/parse-color color-attr)))
 
     ;; Color present as style
-    (uc/color? (str/trim (get-in shape [:svg-attrs :style :fill])))
-    (-> (update-in [:svg-attrs :style] dissoc :fill)
-        (update :svg-attrs dissoc :fill)
-        (assoc-in [:fills 0 :fill-color] (-> (get-in shape [:svg-attrs :style :fill])
-                                             (str/trim)
-                                             (uc/parse-color))))
+      (uc/color? color-style)
+      (-> (update-in [:svg-attrs :style] dissoc :fill)
+          (update :svg-attrs dissoc :fill)
+          (assoc-in [:fills 0 :fill-color] (uc/parse-color color-style)))
 
-    (get-in shape [:svg-attrs :fill-opacity])
-    (-> (update :svg-attrs dissoc :fill-opacity)
-        (update-in [:svg-attrs :style] dissoc :fill-opacity)
-        (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :fill-opacity])
-                                               (d/parse-double))))
+      (get-in shape [:svg-attrs :fill-opacity])
+      (-> (update :svg-attrs dissoc :fill-opacity)
+          (update-in [:svg-attrs :style] dissoc :fill-opacity)
+          (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :fill-opacity])
+                                                 (d/parse-double))))
 
-    (get-in shape [:svg-attrs :style :fill-opacity])
-    (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
-        (update :svg-attrs dissoc :fill-opacity)
-        (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :style :fill-opacity])
-                                               (d/parse-double))))))
+      (get-in shape [:svg-attrs :style :fill-opacity])
+      (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
+          (update :svg-attrs dissoc :fill-opacity)
+          (assoc-in [:fills 0 :fill-opacity] (-> (get-in shape [:svg-attrs :style :fill-opacity])
+                                                 (d/parse-double)))))))
 
 (defn setup-stroke [shape]
   (let [stroke-linecap (-> (or (get-in shape [:svg-attrs :stroke-linecap])
