@@ -216,29 +216,32 @@
   [file-id {:keys [revn changes] :as params}]
   (us/verify! ::us/uuid file-id)
   (us/verify! ::shapes-changes-persisted params)
-  (ptk/reify ::changes-persisted
+  (ptk/reify ::shapes-changes-persisted
     ptk/UpdateEvent
     (update [_ state]
       ;; NOTE: we don't set the file features context here because
       ;; there are no useful context for code that need to be executed
       ;; on the frontend side
-      (let [changes (group-by :page-id changes)]
-        (if (= file-id (:current-file-id state))
-          (-> state
-              (update-in [:workspace-file :revn] max revn)
-              (update :workspace-data (fn [file]
-                                        (loop [fdata file
-                                               entries (seq changes)]
-                                          (if-let [[page-id changes] (first entries)]
-                                            (recur (-> fdata
-                                                       (cp/process-changes changes)
-                                                       (ctst/update-object-indices page-id))
-                                                   (rest entries))
-                                            fdata)))))
+
+      (if-let [current-file-id (:current-file-id state)]
+        (if (= file-id current-file-id)
+          (let [changes (group-by :page-id changes)]
+            (-> state
+                (update-in [:workspace-file :revn] max revn)
+                (update :workspace-data (fn [file]
+                                          (loop [fdata file
+                                                 entries (seq changes)]
+                                            (if-let [[page-id changes] (first entries)]
+                                              (recur (-> fdata
+                                                         (cp/process-changes changes)
+                                                         (ctst/update-object-indices page-id))
+                                                     (rest entries))
+                                              fdata))))))
           (-> state
               (update-in [:workspace-libraries file-id :revn] max revn)
-              (update-in [:workspace-libraries file-id :data]
-                         cp/process-changes changes)))))))
+              (update-in [:workspace-libraries file-id :data] cp/process-changes changes)))
+
+        state))))
 
 
 
