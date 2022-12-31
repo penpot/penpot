@@ -30,7 +30,14 @@
   [error]
   (cond
     (instance? ExceptionInfo error)
-    (-> error ex-data ptk/handle-error)
+    (let [data (ex-data error)]
+      (if (contains? data :type)
+        (ptk/handle-error data)
+        (let [hint (str/ffmt "Unexpected error: '%'" (ex-message error))]
+          (ts/schedule #(st/emit! (rt/assign-exception error)))
+          (js/console.group hint)
+          (js/console.log (.-stack error))
+          (js/console.groupEnd hint))))
 
     (map? error)
     (ptk/handle-error error)
@@ -49,7 +56,7 @@
 
 (defmethod ptk/handle-error :default
   [error]
-  (let [hint (str/concat "Unexpected error: " (:hint error))]
+  (let [hint (str/ffmt "Unhandled error: '%'" (:hint error "[no hint]"))]
     (ts/schedule #(st/emit! (rt/assign-exception error)))
     (js/console.group hint)
     (ex/ignoring (js/console.error (pr-str error)))
