@@ -24,7 +24,9 @@
   (:import
    java.io.FilterInputStream
    java.io.InputStream
+   java.net.URI
    java.nio.ByteBuffer
+   java.nio.file.Path
    java.time.Duration
    java.util.Collection
    java.util.Optional
@@ -40,6 +42,7 @@
    software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup
    software.amazon.awssdk.regions.Region
    software.amazon.awssdk.services.s3.S3AsyncClient
+   software.amazon.awssdk.services.s3.S3Configuration
    software.amazon.awssdk.services.s3.model.Delete
    software.amazon.awssdk.services.s3.model.DeleteObjectRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
@@ -151,46 +154,51 @@
 
 (defn build-s3-client
   [{:keys [region endpoint executor]}]
-  (let [hclient (.. (NettyNioAsyncHttpClient/builder)
-                    (eventLoopGroupBuilder (.. (SdkEventLoopGroup/builder)
-                                               (numberOfThreads (int default-eventloop-threads))))
-                    (connectionAcquisitionTimeout default-timeout)
-                    (connectionTimeout default-timeout)
-                    (readTimeout default-timeout)
-                    (writeTimeout default-timeout)
-                    (build))
-        client  (.. (S3AsyncClient/builder)
-                    (asyncConfiguration (.. (ClientAsyncConfiguration/builder)
-                                            (advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR
-                                                            executor)
-                                            (build)))
-                    (httpClient hclient)
-                    (region (lookup-region region)))]
+  (let [aconfig (-> (ClientAsyncConfiguration/builder)
+                    (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
+                    (.build))
 
-    (when-let [uri (some-> endpoint (java.net.URI.))]
-      (.endpointOverride client uri))
+        sconfig (-> (S3Configuration/builder)
+                    (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
+                    (.build))
 
-    (let [client (.build client)]
-      (reify
-        clojure.lang.IDeref
-        (deref [_] client)
+        hclient (-> (NettyNioAsyncHttpClient/builder)
+                    (.eventLoopGroupBuilder (-> (SdkEventLoopGroup/builder)
+                                                (.numberOfThreads (int default-eventloop-threads))))
+                    (.connectionAcquisitionTimeout default-timeout)
+                    (.connectionTimeout default-timeout)
+                    (.readTimeout default-timeout)
+                    (.writeTimeout default-timeout)
+                    (.build))
 
-        java.lang.AutoCloseable
-        (close [_]
-          (.close hclient)
-          (.close client))))))
+        client  (-> (S3AsyncClient/builder)
+                    (.serviceConfiguration ^S3Configuration sconfig)
+                    (.asyncConfiguration  ^ClientAsyncConfiguration aconfig)
+                    (.httpClient  ^NettyNioAsyncHttpClient hclient)
+                    (.region (lookup-region region))
+                    (cond-> (some? endpoint) (.endpointOverride (URI. endpoint)))
+                    (.build))]
+
+    (reify
+      clojure.lang.IDeref
+      (deref [_] client)
+
+      java.lang.AutoCloseable
+      (close [_]
+        (.close ^NettyNioAsyncHttpClient hclient)
+        (.close ^S3AsyncClient client)))))
 
 (defn build-s3-presigner
   [{:keys [region endpoint]}]
-  (if (string? endpoint)
-    (let [uri (java.net.URI. endpoint)]
-      (.. (S3Presigner/builder)
-          (endpointOverride uri)
-          (region (lookup-region region))
-          (build)))
-    (.. (S3Presigner/builder)
-        (region (lookup-region region))
-        (build))))
+  (let [config (-> (S3Configuration/builder)
+                   (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
+                   (.build))]
+
+    (-> (S3Presigner/builder)
+        (cond-> (some? endpoint) (.endpointOverride (URI. endpoint)))
+        (.region (lookup-region region))
+        (.serviceConfiguration ^S3Configuration config)
+        (.build))))
 
 (defn- make-request-body
   [content]
@@ -198,7 +206,7 @@
         buff-size (* 1024 64)
         sem       (Semaphore. 0)
 
-        writer-fn (fn [s]
+        writer-fn (fn [^Subscriber s]
                     (try
                       (loop []
                         (.acquire sem 1)
@@ -261,7 +269,7 @@
     ;; not, read the contento into memory using bytearrays.
     (if (> size (* 1024 1024 2))
       (p/let [path (tmp/tempfile :prefix "penpot.storage.s3.")
-              rxf  (AsyncResponseTransformer/toFile path)
+              rxf  (AsyncResponseTransformer/toFile ^Path path)
               _    (.getObject ^S3AsyncClient client
                                ^GetObjectRequest gor
                                ^AsyncResponseTransformer rxf)]
@@ -283,9 +291,9 @@
                   (key (str prefix (impl/id->path id)))
                   (build))
           rxf (AsyncResponseTransformer/toBytes)
-          obj (.getObjectAsBytes ^S3AsyncClient client
-                                 ^GetObjectRequest gor
-                                 ^AsyncResponseTransformer rxf)]
+          obj (.getObject ^S3AsyncClient client
+                          ^GetObjectRequest gor
+                          ^AsyncResponseTransformer rxf)]
     (.asByteArray ^ResponseBytes obj)))
 
 (def default-max-age
