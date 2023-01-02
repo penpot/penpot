@@ -67,12 +67,12 @@
                             :member-email (:email profile))
               token  (tokens/generate props claims)]
           (-> {:invitation-token token}
-              (rph/with-transform (session/create-fn session (:id profile)))
+              (rph/with-transform (session/create-fn cfg (:id profile)))
               (rph/with-meta {::audit/props (:props profile)
                               ::audit/profile-id (:id profile)})))
 
         (-> profile
-            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-transform (session/create-fn cfg (:id profile)))
             (rph/with-meta {::audit/props (:props profile)
                             ::audit/profile-id (:id profile)}))))))
 

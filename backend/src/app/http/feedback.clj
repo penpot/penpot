@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
+   [app.http.session :as-alias session]
    [app.rpc.queries.profile :as profile]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
@@ -42,7 +43,7 @@
                          :hint "feedback module is disabled"))))))
 
 (defn- handler
-  [{:keys [pool] :as cfg} {:keys [profile-id] :as request}]
+  [{:keys [pool] :as cfg} {:keys [::session/profile-id] :as request}]
   (let [ftoken (cf/get :feedback-token ::no-token)
         token  (yrq/get-header request "x-feedback-token")
         params (d/merge (:params request)

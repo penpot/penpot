@@ -60,7 +60,7 @@
   (assert (fn? on-snd-message) "'on-snd-message' should be a function")
   (assert (fn? on-connect) "'on-connect' should be a function")
 
-  (fn [{:keys [::yws/channel session-id] :as request}]
+  (fn [{:keys [::yws/channel] :as request}]
     (let [input-ch   (a/chan input-buff-size)
           output-ch  (a/chan output-buff-size)
           hbeat-ch   (a/chan (a/sliding-buffer 6))
@@ -81,7 +81,6 @@
                                  ::stop-ch stop-ch
                                  ::channel channel
                                  ::remote-addr ip-addr
-                                 ::http-session-id session-id
                                  ::user-agent uagent})
                          (atom))
 

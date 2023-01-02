@@ -12,6 +12,7 @@
    [app.common.pprint :as pp]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.http.session :as-alias session]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
    [app.util.time :as dt]
@@ -95,7 +96,6 @@
      :user-agent       (::ws/user-agent @wsp)
      :ip-addr          (::ws/remote-addr @wsp)
      :last-activity-at (::ws/last-activity-at @wsp)
-     :http-session-id  (::ws/http-session-id @wsp)
      :subscribed-file  (-> wsp deref ::file-subscription :file-id)
      :subscribed-team  (-> wsp deref ::team-subscription :team-id)}))
 
@@ -324,14 +324,14 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [profile-id params] :as req} respond raise]
+  (fn [{:keys [params ::session/profile-id] :as request} respond raise]
     (let [{:keys [session-id]} (us/conform ::handler-params params)]
       (cond
         (not profile-id)
         (raise (ex/error :type :authentication
                          :hint "Authentication required."))
 
-        (not (yws/upgrade-request? req))
+        (not (yws/upgrade-request? request))
         (raise (ex/error :type :validation
                          :code :websocket-request-expected
                          :hint "this endpoint only accepts websocket connections"))
@@ -347,5 +347,5 @@
                 ::ws/handler (partial handle-message cfg)
                 ::profile-id profile-id
                 ::session-id session-id)
-               (yws/upgrade req)
+               (yws/upgrade request)
                (respond)))))))

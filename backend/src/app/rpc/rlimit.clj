@@ -228,7 +228,7 @@
     (let [skey  (keyword (::rpc/type cfg) (->> mdata ::sv/spec name))
           sname (str (::rpc/type cfg) "." (->> mdata ::sv/spec name))]
       (fn [cfg {:keys [::http/request] :as params}]
-        (let [uid (or (:profile-id params)
+        (let [uid (or (::profile-id params)
                       (some-> request parse-client-ip)
                       uuid/zero)
 
@@ -237,13 +237,13 @@
                                           (get-in @rlimit [::limits :default]))]
                       (let [redis  (redis/get-or-connect redis ::rlimit default-options)
                             limits (map #(assoc % ::service sname) limits)
-                            resp   (-> (process-limits redis uid limits (dt/now))
-                                       (p/catch (fn [cause]
+                            resp   (->> (process-limits redis uid limits (dt/now))
+                                        (p/merr (fn [cause]
                                                   ;; If we have an error on processing the rate-limit we just skip
                                                   ;; it for do not cause service interruption because of redis
                                                   ;; downtime or similar situation.
                                                   (l/error :hint "error on processing rate-limit" :cause cause)
-                                                  {:enabled? false})))]
+                                                  (p/resolved {:enabled? false}))))]
 
                         ;; If soft rate are enabled, we process the rate-limit but return unprotected
                         ;; response.

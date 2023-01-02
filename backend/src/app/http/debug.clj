@@ -39,7 +39,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn authorized?
-  [pool {:keys [profile-id]}]
+  [pool {:keys [::session/profile-id]}]
   (or (= "devenv" (cf/get :host))
       (let [profile (ex/ignoring (profile/retrieve-profile-data pool profile-id))
             admins  (or (cf/get :admins) #{})]
@@ -61,7 +61,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn index-handler
-  [{:keys [pool]} request]
+  [{:keys [::db/pool]} request]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
@@ -81,7 +81,7 @@
   "select revn, changes, data from file_change where file_id=? and revn = ?")
 
 (defn- retrieve-file-data
-  [{:keys [pool]} {:keys [params profile-id] :as request}]
+  [{:keys [::db/pool]} {:keys [params ::session/profile-id] :as request}]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
@@ -125,7 +125,7 @@
     (-> (db/exec-one! pool [sql id]) :exists)))
 
 (defn- upload-file-data
-  [{:keys [pool]} {:keys [profile-id params] :as request}]
+  [{:keys [::db/pool]} {:keys [::session/profile-id params] :as request}]
   (let [project-id (some-> (profile/retrieve-additional-data pool profile-id) :default-project-id)
         data       (some-> params :file :path io/read-as-bytes blob/decode)]
 
@@ -162,7 +162,7 @@
               :code :method-not-found)))
 
 (defn file-changes-handler
-  [{:keys [pool]} {:keys [params] :as request}]
+  [{:keys [::db/pool]} {:keys [params] :as request}]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
@@ -202,7 +202,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn error-handler
-  [{:keys [pool]} request]
+  [{:keys [::db/pool]} request]
   (letfn [(parse-id [request]
             (let [id (get-in request [:path-params :id])
                   id (parse-uuid id)]
@@ -251,7 +251,7 @@
     LIMIT 100")
 
 (defn error-list-handler
-  [{:keys [pool]} request]
+  [{:keys [::db/pool]} request]
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
@@ -268,7 +268,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn export-handler
-  [{:keys [pool] :as cfg} {:keys [params profile-id] :as request}]
+  [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
 
   (let [file-ids (->> (:file-ids params)
                       (remove empty?)
@@ -309,7 +309,7 @@
 
 
 (defn import-handler
-  [{:keys [pool] :as cfg} {:keys [params profile-id] :as request}]
+  [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
   (when-not (contains? params :file)
     (ex/raise :type :validation
               :code :missing-upload-file
@@ -381,16 +381,17 @@
            (raise (ex/error :type :authentication
                             :code :only-admins-allowed))))))})
 
-
 (defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req-un [::db/pool ::wrk/executor ::session/session]))
+  (s/keys :req [::db/pool
+                ::wrk/executor
+                ::session/manager]))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [session pool executor] :as cfg}]
+  [_ {:keys [::db/pool ::wrk/executor] :as cfg}]
   [["/readyz" {:middleware [[mw/with-dispatch executor]
                             [mw/with-config cfg]]
                :handler health-handler}]
-   ["/dbg" {:middleware [[session/middleware-2 session]
+   ["/dbg" {:middleware [[session/authz cfg]
                          [with-authorization pool]
                          [mw/with-dispatch executor]
                          [mw/with-config cfg]]}

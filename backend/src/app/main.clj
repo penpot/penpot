@@ -13,7 +13,8 @@
    [app.config :as cf]
    [app.db :as-alias db]
    [app.http.client :as-alias http.client]
-   [app.http.session :as-alias http.session]
+   [app.http.session :as-alias session]
+   [app.http.session.tasks :as-alias session.tasks]
    [app.loggers.audit :as-alias audit]
    [app.loggers.audit.tasks :as-alias audit.tasks]
    [app.loggers.webhooks :as-alias webhooks]
@@ -207,14 +208,13 @@
    ::http.client/client
    {::wrk/executor (ig/ref ::wrk/executor)}
 
-   :app.http.session/manager
+   ::session/manager
    {::db/pool      (ig/ref ::db/pool)
     ::wrk/executor (ig/ref ::wrk/executor)
     ::props        (ig/ref :app.setup/props)}
 
-   :app.http.session/gc-task
-   {:pool        (ig/ref ::db/pool)
-    :max-age     (cf/get :auth-token-cookie-max-age)}
+   ::session.tasks/gc
+   {::db/pool (ig/ref ::db/pool)}
 
    :app.http.awsns/handler
    {::props              (ig/ref :app.setup/props)
@@ -259,43 +259,40 @@
    {::http.client/client (ig/ref ::http.client/client)}
 
    ::oidc/routes
-   {::http.client/client   (ig/ref ::http.client/client)
-    ::db/pool              (ig/ref ::db/pool)
-    ::props                (ig/ref :app.setup/props)
-    ::wrk/executor         (ig/ref ::wrk/executor)
-    ::oidc/providers       {:google (ig/ref ::oidc.providers/google)
-                            :github (ig/ref ::oidc.providers/github)
-                            :gitlab (ig/ref ::oidc.providers/gitlab)
-                            :oidc   (ig/ref ::oidc.providers/generic)}
-    ::audit/collector      (ig/ref ::audit/collector)
-    ::http.session/session (ig/ref :app.http.session/manager)}
-
+   {::http.client/client (ig/ref ::http.client/client)
+    ::db/pool            (ig/ref ::db/pool)
+    ::props              (ig/ref :app.setup/props)
+    ::wrk/executor       (ig/ref ::wrk/executor)
+    ::oidc/providers     {:google (ig/ref ::oidc.providers/google)
+                          :github (ig/ref ::oidc.providers/github)
+                          :gitlab (ig/ref ::oidc.providers/gitlab)
+                          :oidc   (ig/ref ::oidc.providers/generic)}
+    ::audit/collector    (ig/ref ::audit/collector)
+    ::session/manager    (ig/ref ::session/manager)}
 
    ;; TODO: revisit the dependencies of this service, looks they are too much unused of them
    :app.http/router
-   {:assets        (ig/ref :app.http.assets/handlers)
-    :feedback      (ig/ref :app.http.feedback/handler)
-    :session       (ig/ref :app.http.session/manager)
-    :awsns-handler (ig/ref :app.http.awsns/handler)
-    :debug-routes  (ig/ref :app.http.debug/routes)
-    :oidc-routes   (ig/ref ::oidc/routes)
-    :ws            (ig/ref :app.http.websocket/handler)
-    :metrics       (ig/ref ::mtx/metrics)
-    :public-uri    (cf/get :public-uri)
-    :storage       (ig/ref ::sto/storage)
-    :rpc-routes    (ig/ref :app.rpc/routes)
-    :doc-routes    (ig/ref :app.rpc.doc/routes)
-    :executor      (ig/ref ::wrk/executor)}
+   {::session/manager (ig/ref ::session/manager)
+    ::wrk/executor    (ig/ref ::wrk/executor)
+    ::props           (ig/ref :app.setup/props)
+
+    :assets           (ig/ref :app.http.assets/handlers)
+    :feedback         (ig/ref :app.http.feedback/handler)
+    :awsns-handler    (ig/ref :app.http.awsns/handler)
+    :debug-routes     (ig/ref :app.http.debug/routes)
+    :oidc-routes      (ig/ref ::oidc/routes)
+    :ws               (ig/ref :app.http.websocket/handler)
+    :metrics          (ig/ref ::mtx/metrics)
+    :public-uri       (cf/get :public-uri)
+    :storage          (ig/ref ::sto/storage)
+    :rpc-routes       (ig/ref :app.rpc/routes)
+    :doc-routes       (ig/ref :app.rpc.doc/routes)
+    :executor         (ig/ref ::wrk/executor)}
 
    :app.http.debug/routes
-   {:pool     (ig/ref ::db/pool)
-    :executor (ig/ref ::wrk/executor)
-    :storage  (ig/ref ::sto/storage)
-    :session  (ig/ref :app.http.session/manager)
-
-    ::db/pool      (ig/ref ::db/pool)
-    ::wrk/executor (ig/ref ::wrk/executor)
-    ::sto/storage  (ig/ref ::sto/storage)}
+   {::db/pool         (ig/ref ::db/pool)
+    ::wrk/executor    (ig/ref ::wrk/executor)
+    ::session/manager (ig/ref ::session/manager)}
 
    :app.http.websocket/handler
    {:pool     (ig/ref ::db/pool)
@@ -327,10 +324,11 @@
     ::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::wrk/executor       (ig/ref ::wrk/executor)
-    ::props              (ig/ref :app.setup/props)
+    ::session/manager    (ig/ref ::session/manager)
     ::ldap/provider      (ig/ref ::ldap/provider)
+    ::props              (ig/ref :app.setup/props)
     :pool                (ig/ref ::db/pool)
-    :session             (ig/ref :app.http.session/manager)
+    :session             (ig/ref ::session/manager)
     :sprops              (ig/ref :app.setup/props)
     :metrics             (ig/ref ::mtx/metrics)
     :storage             (ig/ref ::sto/storage)
@@ -361,7 +359,7 @@
      :storage-gc-touched (ig/ref ::sto/gc-touched-task)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
-     :session-gc         (ig/ref :app.http.session/gc-task)
+     :session-gc         (ig/ref ::session.tasks/gc)
      :audit-log-archive  (ig/ref ::audit.tasks/archive)
      :audit-log-gc       (ig/ref ::audit.tasks/gc)
 

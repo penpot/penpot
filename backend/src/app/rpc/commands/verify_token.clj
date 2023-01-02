@@ -56,7 +56,7 @@
      ::audit/profile-id profile-id}))
 
 (defmethod process-token :verify-email
-  [{:keys [conn session] :as cfg} _ {:keys [profile-id] :as claims}]
+  [{:keys [conn] :as cfg} _ {:keys [profile-id] :as claims}]
   (let [profile (profile/retrieve-profile conn profile-id)
         claims  (assoc claims :profile profile)]
 
@@ -71,7 +71,7 @@
                   {:id (:id profile)}))
 
     (-> claims
-        (rph/with-transform (session/create-fn session profile-id))
+        (rph/with-transform (session/create-fn cfg profile-id))
         (rph/with-meta {::audit/name "verify-profile-email"
                         ::audit/props (audit/profile->props profile)
                         ::audit/profile-id (:id profile)}))))
@@ -133,7 +133,7 @@
           :opt-un [::spec.team-invitation/member-id]))
 
 (defmethod process-token :team-invitation
-  [{:keys [conn session] :as cfg}
+  [{:keys [conn] :as cfg}
    {:keys [::rpc/profile-id token]}
    {:keys [member-id team-id member-email] :as claims}]
 
@@ -179,7 +179,7 @@
                                {:columns [:id :email]})]
         (let [profile (accept-invitation cfg claims invitation member)]
           (-> (assoc claims :state :created)
-              (rph/with-transform (session/create-fn session (:id profile)))
+              (rph/with-transform (session/create-fn cfg (:id profile)))
               (rph/with-meta {::audit/name "accept-team-invitation"
                               ::audit/props (merge
                                              (audit/profile->props profile)

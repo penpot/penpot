@@ -11,6 +11,8 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.http :as-alias http]
+   [app.http.access-token :as-alias actoken]
+   [app.http.session :as-alias session]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [yetti.request :as yrq]
@@ -26,7 +28,9 @@
 
 (defn get-context
   [request]
-  (let [claims (:session-token-claims request)]
+  (let [claims (-> {}
+                   (into (::session/token-claims request))
+                   (into (::actoken/token-claims request)))]
     (merge
      *context*
      {:path          (:path request)
@@ -48,6 +52,10 @@
 (defmethod handle-exception :authentication
   [err _]
   (yrs/response 401 (ex-data err)))
+
+(defmethod handle-exception :authorization
+  [err _]
+  (yrs/response 403 (ex-data err)))
 
 (defmethod handle-exception :restriction
   [err _]

@@ -69,7 +69,7 @@
 ;; ---- COMMAND: login with password
 
 (defn login-with-password
-  [{:keys [::db/pool session] :as cfg} {:keys [email password scope] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [email password scope] :as params}]
 
   (when-not (or (contains? cf/flags :login)
                 (contains? cf/flags :login-with-password))
@@ -131,7 +131,7 @@
                     :hint "can't login with admin-only profile"))
 
         (-> response
-            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-transform (session/create-fn cfg (:id profile)))
             (rph/with-meta {::audit/props (audit/profile->props profile)
                             ::audit/profile-id (:id profile)}))))))
 
@@ -157,8 +157,8 @@
   "Clears the authentication cookie and logout the current session."
   {::rpc/auth false
    ::doc/added "1.15"}
-  [{:keys [session] :as cfg} _]
-  (rph/with-transform {} (session/delete-fn session)))
+  [cfg _]
+  (rph/with-transform {} (session/delete-fn cfg)))
 
 ;; ---- COMMAND: Recover Profile
 
@@ -356,7 +356,7 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [conn session] :as cfg} {:keys [token] :as params}]
+  [{:keys [conn] :as cfg} {:keys [token] :as params}]
   (let [claims     (tokens/verify (::main/props cfg) {:token token :iss :prepared-register})
         params     (merge params claims)
 
@@ -398,7 +398,7 @@
             token  (tokens/generate (::main/props cfg) claims)
             resp   {:invitation-token token}]
         (-> resp
-            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-transform (session/create-fn cfg (:id profile)))
             (rph/with-meta {::audit/replace-props (audit/profile->props profile)
                             ::audit/profile-id (:id profile)})))
 
@@ -407,7 +407,7 @@
       ;; we need to mark this session as logged.
       (not= "penpot" (:auth-backend profile))
       (-> (profile/strip-private-attrs profile)
-          (rph/with-transform (session/create-fn session (:id profile)))
+          (rph/with-transform (session/create-fn cfg (:id profile)))
           (rph/with-meta {::audit/replace-props (audit/profile->props profile)
                           ::audit/profile-id (:id profile)}))
 
@@ -415,7 +415,7 @@
       ;; to sign in the user directly, without email verification.
       (true? is-active)
       (-> (profile/strip-private-attrs profile)
-          (rph/with-transform (session/create-fn session (:id profile)))
+          (rph/with-transform (session/create-fn cfg (:id profile)))
           (rph/with-meta {::audit/replace-props (audit/profile->props profile)
                           ::audit/profile-id (:id profile)}))
 

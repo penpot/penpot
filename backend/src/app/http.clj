@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.transit :as t]
+   [app.http.access-token :as actoken]
    [app.http.errors :as errors]
    [app.http.middleware :as mw]
    [app.http.session :as session]
@@ -123,16 +124,15 @@
 (s/def ::oauth map?)
 (s/def ::oidc-routes (s/nilable vector?))
 (s/def ::rpc-routes (s/nilable vector?))
-(s/def ::session ::session/session)
 (s/def ::storage map?)
 (s/def ::ws fn?)
 
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::mtx/metrics
+  (s/keys :req [::session/manager]
+          :req-un [::mtx/metrics
                    ::ws
                    ::storage
                    ::assets
-                   ::session
                    ::feedback
                    ::awsns-handler
                    ::debug-routes
@@ -141,20 +141,21 @@
                    ::doc-routes]))
 
 (defmethod ig/init-key ::router
-  [_ {:keys [ws session metrics assets feedback] :as cfg}]
+  [_ {:keys [ws metrics assets feedback] :as cfg}]
   (rr/router
    [["" {:middleware [[mw/server-timing]
                       [mw/format-response]
                       [mw/params]
                       [mw/parse-request]
-                      [session/middleware-1 session]
+                      [session/soft-auth cfg]
+                      [actoken/soft-auth cfg]
                       [mw/errors errors/handle]
                       [mw/restrict-methods]]}
 
      ["/metrics" {:handler (::mtx/handler metrics)
                   :allowed-methods #{:get}}]
 
-     ["/assets" {:middleware [[session/middleware-2 session]]}
+     ["/assets"
       ["/by-id/:id" {:handler (:objects-handler assets)}]
       ["/by-file-media-id/:id" {:handler (:file-objects-handler assets)}]
       ["/by-file-media-id/:id/thumbnail" {:handler (:file-thumbnails-handler assets)}]]
@@ -165,12 +166,13 @@
       ["/sns" {:handler (:awsns-handler cfg)
                :allowed-methods #{:post}}]]
 
-     ["/ws/notifications" {:middleware [[session/middleware-2 session]]
+     ["/ws/notifications" {:middleware [[session/authz cfg]]
                            :handler ws
                            :allowed-methods #{:get}}]
 
      ["/api" {:middleware [[mw/cors]
-                           [session/middleware-2 session]]}
+                           [session/authz cfg]
+                           [actoken/authz cfg]]}
       ["/feedback" {:handler feedback
                     :allowed-methods #{:post}}]
       (:doc-routes cfg)

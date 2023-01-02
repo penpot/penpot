@@ -12,10 +12,12 @@
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
+   [app.http.access-token :as-alias actoken]
    [app.http.client :as-alias http.client]
-   [app.http.session :as-alias http.session]
+   [app.http.session :as-alias session]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as mtx]
@@ -71,71 +73,77 @@
 (defn- rpc-query-handler
   "Ring handler that dispatches query requests and convert between
   internal async flow into ring async flow."
-  [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (let [type   (keyword (:type params))
-        data   (-> params
-                   (assoc ::request-at (dt/now))
-                   (assoc ::http/request request))
-        data   (if profile-id
-                 (-> data
-                     (assoc :profile-id profile-id)
-                     (assoc ::profile-id profile-id)
-                     (assoc ::session-id session-id))
-                 (dissoc data :profile-id ::profile-id))
-        method (get methods type default-handler)]
+  [methods {:keys [params] :as request} respond raise]
+  (let [type       (keyword (:type params))
+        profile-id (or (::session/profile-id request)
+                       (::actoken/profile-id request))
 
-    (-> (method data)
-        (p/then (partial handle-response request))
-        (p/then respond)
-        (p/catch (fn [cause]
-                   (let [context {:profile-id profile-id}]
-                     (raise (ex/wrap-with-context cause context))))))))
+        data       (-> params
+                       (assoc ::request-at (dt/now))
+                       (assoc ::http/request request))
+        data       (if profile-id
+                     (-> data
+                         (assoc :profile-id profile-id)
+                         (assoc ::profile-id profile-id))
+                     (dissoc data :profile-id ::profile-id))
+        method     (get methods type default-handler)]
+
+    (->> (method data)
+         (p/mcat (partial handle-response request))
+         (p/fnly (fn [response cause]
+                   (if cause
+                     (raise (ex/wrap-with-context cause {:profile-id profile-id}))
+                     (respond response)))))))
 
 (defn- rpc-mutation-handler
   "Ring handler that dispatches mutation requests and convert between
   internal async flow into ring async flow."
-  [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (let [type   (keyword (:type params))
-        data   (-> params
-                   (assoc ::request-at (dt/now))
-                   (assoc ::http/request request))
-        data   (if profile-id
-                 (-> data
-                     (assoc :profile-id profile-id)
-                     (assoc ::profile-id profile-id)
-                     (assoc ::session-id session-id))
-                 (dissoc data :profile-id ::profile-id))
-        method (get methods type default-handler)]
-    (-> (method data)
-        (p/then (partial handle-response request))
-        (p/then respond)
-        (p/catch (fn [cause]
-                   (let [context {:profile-id profile-id}]
-                     (raise (ex/wrap-with-context cause context))))))))
+  [methods {:keys [params] :as request} respond raise]
+  (let [type       (keyword (:type params))
+        profile-id (or (::session/profile-id request)
+                       (::actoken/profile-id request))
+        data       (-> params
+                       (assoc ::request-at (dt/now))
+                       (assoc ::http/request request))
+        data       (if profile-id
+                     (-> data
+                         (assoc :profile-id profile-id)
+                         (assoc ::profile-id profile-id))
+                     (dissoc data :profile-id))
+        method     (get methods type default-handler)]
+
+    (->> (method data)
+         (p/mcat (partial handle-response request))
+         (p/fnly (fn [response cause]
+                   (if cause
+                     (raise (ex/wrap-with-context cause {:profile-id profile-id}))
+                     (respond response)))))))
 
 (defn- rpc-command-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
-  [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (let [cmd    (keyword (:type params))
-        etag   (yrq/get-header request "if-none-match")
+  [methods {:keys [params] :as request} respond raise]
+  (let [type       (keyword (:type params))
+        etag       (yrq/get-header request "if-none-match")
+        profile-id (or (::session/profile-id request)
+                       (::actoken/profile-id request))
 
-        data   (-> params
-                   (assoc ::request-at (dt/now))
-                   (assoc ::http/request request)
-                   (assoc ::cond/key etag)
-                   (cond-> (uuid? profile-id)
-                     (-> (assoc ::profile-id profile-id)
-                         (assoc ::session-id session-id))))
+        data       (-> params
+                       (assoc ::request-at (dt/now))
+                       (assoc ::http/request request)
+                       (assoc ::cond/key etag)
+                       (cond-> (uuid? profile-id)
+                         (assoc ::profile-id profile-id)))
 
-        method (get methods cmd default-handler)]
+        method    (get methods type default-handler)]
+
     (binding [cond/*enabled* true]
-      (-> (method data)
-          (p/then (partial handle-response request))
-          (p/then respond)
-          (p/catch (fn [cause]
-                     (let [context {:profile-id profile-id}]
-                       (raise (ex/wrap-with-context cause context)))))))))
+      (->> (method data)
+           (p/mcat (partial handle-response request))
+           (p/fnly (fn [response cause]
+                     (if cause
+                       (raise (ex/wrap-with-context cause {:profile-id profile-id}))
+                       (respond response))))))))
 
 (defn- wrap-metrics
   "Wrap service method with metrics measurement."
@@ -143,13 +151,28 @@
   (let [labels (into-array String [(::sv/name mdata)])]
     (fn [cfg params]
       (let [tp (dt/tpoint)]
-        (p/finally
-          (f cfg params)
-          (fn [_ _]
-            (mtx/run! metrics
-                      :id metrics-id
-                      :val (inst-ms (tp))
-                      :labels labels)))))))
+        (->> (f cfg params)
+             (p/fnly (fn [_ _]
+                       (mtx/run! metrics
+                                 :id metrics-id
+                                 :val (inst-ms (tp))
+                                 :labels labels))))))))
+
+(defn- wrap-access-token
+  "Wraps service method with access token validation."
+  [_ f {:keys [::sv/name] :as mdata}]
+  (if (contains? cf/flags :access-tokens)
+    (fn [cfg params]
+      (let [request (::http/request params)
+            token   (::actoken/token request)]
+        (if token
+          (if (contains? (:perms token) name)
+            (f cfg params)
+            (ex/raise :type :authorization
+                      :code :operation-not-allowed
+                      :allowed (:perms token)))
+          (f cfg params))))
+    f))
 
 (defn- wrap-dispatch
   "Wraps service method into async flow, with the ability to dispatching
@@ -222,29 +245,29 @@
         f))
     f))
 
+(defn- wrap-all
+  [cfg f mdata]
+  (as-> f $
+    (wrap-dispatch cfg $ mdata)
+    (cond/wrap cfg $ mdata)
+    (retry/wrap-retry cfg $ mdata)
+    (wrap-metrics cfg $ mdata)
+    (climit/wrap cfg $ mdata)
+    (rlimit/wrap cfg $ mdata)
+    (wrap-audit cfg $ mdata)
+    (wrap-access-token cfg $ mdata)))
+
 (defn- wrap
   [cfg f mdata]
-  (let [f     (as-> f $
-                (wrap-dispatch cfg $ mdata)
-                (cond/wrap cfg $ mdata)
-                (retry/wrap-retry cfg $ mdata)
-                (wrap-metrics cfg $ mdata)
-                (climit/wrap cfg $ mdata)
-                (rlimit/wrap cfg $ mdata)
-                (wrap-audit cfg $ mdata))
-
-        spec  (or (::sv/spec mdata) (s/spec any?))
-        auth? (::auth mdata true)]
-
-
+  (let [spec  (or (::sv/spec mdata) (s/spec any?))
+        auth? (::auth mdata true)
+        f     (wrap-all cfg f mdata)]
     (l/debug :hint "register method" :name (::sv/name mdata))
     (with-meta
       (fn [params]
         ;; Raise authentication error when rpc method requires auth but
         ;; no profile-id is found in the request.
-        (let [profile-id (if (= "command" (::type cfg))
-                           (::profile-id params)
-                           (:profile-id params))]
+        (let [profile-id (::profile-id params)]
           (p/do!
            (if (and auth? (not (uuid? profile-id)))
              (ex/raise :type :authentication
@@ -263,48 +286,52 @@
 (defn- resolve-query-methods
   [cfg]
   (let [cfg (assoc cfg ::type "query" ::metrics-id :rpc-query-timing)]
-    (->> (sv/scan-ns 'app.rpc.queries.projects
-                     'app.rpc.queries.files
-                     'app.rpc.queries.teams
-                     'app.rpc.queries.profile
-                     'app.rpc.queries.viewer
-                     'app.rpc.queries.fonts)
+    (->> (sv/scan-ns
+          'app.rpc.queries.projects
+          'app.rpc.queries.files
+          'app.rpc.queries.teams
+          'app.rpc.queries.profile
+          'app.rpc.queries.viewer
+          'app.rpc.queries.fonts)
          (map (partial process-method cfg))
          (into {}))))
 
 (defn- resolve-mutation-methods
   [cfg]
   (let [cfg (assoc cfg ::type "mutation" ::metrics-id :rpc-mutation-timing)]
-    (->> (sv/scan-ns 'app.rpc.mutations.media
-                     'app.rpc.mutations.profile
-                     'app.rpc.mutations.files
-                     'app.rpc.mutations.projects
-                     'app.rpc.mutations.teams
-                     'app.rpc.mutations.fonts
-                     'app.rpc.mutations.share-link)
+    (->> (sv/scan-ns
+          'app.rpc.mutations.media
+          'app.rpc.mutations.profile
+          'app.rpc.mutations.files
+          'app.rpc.mutations.projects
+          'app.rpc.mutations.teams
+          'app.rpc.mutations.fonts
+          'app.rpc.mutations.share-link)
          (map (partial process-method cfg))
          (into {}))))
 
 (defn- resolve-command-methods
   [cfg]
   (let [cfg (assoc cfg ::type "command" ::metrics-id :rpc-command-timing)]
-    (->> (sv/scan-ns 'app.rpc.commands.binfile
-                     'app.rpc.commands.comments
-                     'app.rpc.commands.profile
-                     'app.rpc.commands.management
-                     'app.rpc.commands.verify-token
-                     'app.rpc.commands.search
-                     'app.rpc.commands.media
-                     'app.rpc.commands.teams
-                     'app.rpc.commands.auth
-                     'app.rpc.commands.ldap
-                     'app.rpc.commands.demo
-                     'app.rpc.commands.webhooks
-                     'app.rpc.commands.audit
-                     'app.rpc.commands.files
-                     'app.rpc.commands.files.update
-                     'app.rpc.commands.files.create
-                     'app.rpc.commands.files.temp)
+    (->> (sv/scan-ns
+          'app.rpc.commands.access-token
+          'app.rpc.commands.audit
+          'app.rpc.commands.auth
+          'app.rpc.commands.binfile
+          'app.rpc.commands.comments
+          'app.rpc.commands.demo
+          'app.rpc.commands.files
+          'app.rpc.commands.files.create
+          'app.rpc.commands.files.temp
+          'app.rpc.commands.files.update
+          'app.rpc.commands.ldap
+          'app.rpc.commands.management
+          'app.rpc.commands.media
+          'app.rpc.commands.profile
+          'app.rpc.commands.search
+          'app.rpc.commands.teams
+          'app.rpc.commands.verify-token
+          'app.rpc.commands.webhooks)
          (map (partial process-method cfg))
          (into {}))))
 
@@ -318,12 +345,12 @@
 
 (defmethod ig/pre-init-spec ::methods [_]
   (s/keys :req [::audit/collector
+                ::session/manager
                 ::http.client/client
                 ::db/pool
                 ::ldap/provider
                 ::wrk/executor]
           :req-un [::sto/storage
-                   ::http.session/session
                    ::sprops
                    ::public-uri
                    ::msgbus

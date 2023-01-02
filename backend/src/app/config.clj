@@ -131,6 +131,7 @@
 (s/def ::database-max-pool-size ::us/integer)
 
 (s/def ::quotes-teams-per-profile ::us/integer)
+(s/def ::quotes-access-tokens-per-profile ::us/integer)
 (s/def ::quotes-projects-per-team ::us/integer)
 (s/def ::quotes-invitations-per-team ::us/integer)
 (s/def ::quotes-profiles-per-team ::us/integer)
@@ -284,6 +285,7 @@
                    ::public-uri
 
                    ::quotes-teams-per-profile
+                   ::quotes-access-tokens-per-profile
                    ::quotes-projects-per-team
                    ::quotes-invitations-per-team
                    ::quotes-profiles-per-team

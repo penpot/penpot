@@ -305,6 +305,9 @@
    {:name "0098-add-quotes-table"
     :fn (mg/resource "app/migrations/sql/0098-add-quotes-table.sql")}
 
+   {:name "0099-add-access-token-table"
+    :fn (mg/resource "app/migrations/sql/0099-add-access-token-table.sql")}
+
   ])
 
 
