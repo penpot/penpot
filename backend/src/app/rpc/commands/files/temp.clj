@@ -40,7 +40,7 @@
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)
-    (files.create/create-file conn (assoc params :deleted-at (dt/in-future {:days 1})))))
+    (files.create/create-file conn (assoc params :profile-id profile-id :deleted-at (dt/in-future {:days 1})))))
 
 ;; --- MUTATION COMMAND: update-temp-file
 
