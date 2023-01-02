@@ -145,7 +145,7 @@
                              (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))
 
 (defn update-file
-  [{:keys [conn metrics] :as cfg} {:keys [profile-id id changes changes-with-metadata] :as params}]
+  [{:keys [conn ::mtx/metrics] :as cfg} {:keys [profile-id id changes changes-with-metadata] :as params}]
   (let [file     (get-file conn id)
         features (->> (concat (:features file)
                               (:features params))
@@ -275,7 +275,7 @@
 (defn- send-notifications!
   [{:keys [conn] :as cfg} {:keys [file changes session-id] :as params}]
   (let [lchanges (filter library-change? changes)
-        msgbus   (:msgbus cfg)]
+        msgbus   (::mbus/msgbus cfg)]
 
     ;; Asynchronously publish message to the msgbus
     (mbus/pub! msgbus

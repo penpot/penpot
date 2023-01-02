@@ -54,8 +54,8 @@
                 :hint "file not found"))))
 
 (defn- get-comment-thread
-  [conn thread-id & {:keys [for-update?]}]
-  (-> (db/get-by-id conn :comment-thread thread-id {:for-update for-update?})
+  [conn thread-id & {:as opts}]
+  (-> (db/get-by-id conn :comment-thread thread-id opts)
       (decode-row)))
 
 (defn- get-comment
@@ -374,7 +374,7 @@
   {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (upsert-comment-thread-status! conn profile-id id))))
 
@@ -391,7 +391,7 @@
   {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id is-resolved share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (db/update! conn :comment-thread
                   {:is-resolved is-resolved}
@@ -414,7 +414,7 @@
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at thread-id share-id content] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id page-id] :as thread} (get-comment-thread conn thread-id :for-update? true)
+    (let [{:keys [file-id page-id] :as thread} (get-comment-thread conn thread-id ::db/for-update? true)
           {:keys [team-id project-id page-name] :as file} (get-file conn file-id page-id)]
 
       (files/check-comment-permissions! conn profile-id (:id file) share-id)
@@ -467,8 +467,8 @@
   {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id share-id content] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [thread-id] :as comment} (get-comment conn id :for-update? true)
-          {:keys [file-id page-id owner-id] :as thread} (get-comment-thread conn thread-id :for-update? true)]
+    (let [{:keys [thread-id] :as comment} (get-comment conn id ::db/for-update? true)
+          {:keys [file-id page-id owner-id] :as thread} (get-comment-thread conn thread-id ::db/for-update? true)]
 
       (files/check-comment-permissions! conn profile-id file-id share-id)
 
@@ -500,7 +500,7 @@
   {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [owner-id file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [owner-id file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (when-not (= owner-id profile-id)
         (ex/raise :type :validation
@@ -520,7 +520,7 @@
   {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [owner-id thread-id] :as comment} (get-comment conn id :for-update? true)
+    (let [{:keys [owner-id thread-id] :as comment} (get-comment conn id ::db/for-update? true)
           {:keys [file-id] :as thread} (get-comment-thread conn thread-id)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (when-not (= owner-id profile-id)
@@ -540,7 +540,7 @@
   {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id position frame-id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (db/update! conn :comment-thread
                   {:modified-at (::rpc/request-at params)
@@ -560,7 +560,7 @@
   {::doc/added "1.15"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id frame-id share-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [{:keys [file-id] :as thread} (get-comment-thread conn id :for-update? true)]
+    (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::db/for-update? true)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (db/update! conn :comment-thread
                   {:modified-at (::rpc/request-at params)

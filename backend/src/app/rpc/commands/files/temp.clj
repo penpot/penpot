@@ -45,7 +45,7 @@
 ;; --- MUTATION COMMAND: update-temp-file
 
 (defn update-temp-file
-  [conn {:keys [::rpc/profile-id session-id id revn changes] :as params}]
+  [conn {:keys [profile-id session-id id revn changes] :as params}]
   (db/insert! conn :file-change
               {:id (uuid/next)
                :session-id session-id
@@ -57,16 +57,17 @@
                :changes (blob/encode changes)}))
 
 (s/def ::update-temp-file
-  (s/keys :req-un [::files.update/changes
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::files.update/changes
                    ::files.update/revn
                    ::files.update/session-id
                    ::files/id]))
 
 (sv/defmethod ::update-temp-file
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (update-temp-file conn params)
+    (update-temp-file conn (assoc params :profile-id profile-id))
     nil))
 
 ;; --- MUTATION COMMAND: persist-temp-file

@@ -28,6 +28,7 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -114,8 +115,8 @@
 
 (defn retrieve-teams
   [conn profile-id]
-  (let [defaults (profile/retrieve-additional-data conn profile-id)]
-    (->> (db/exec! conn [sql:teams (:default-team-id defaults) profile-id])
+  (let [profile (profile/get-profile conn profile-id)]
+    (->> (db/exec! conn [sql:teams (:default-team-id profile) profile-id])
          (mapv process-permissions))))
 
 ;; --- Query: Team (by ID)
@@ -134,14 +135,15 @@
 
 (defn retrieve-team
   [conn profile-id team-id]
-  (let [defaults (profile/retrieve-additional-data conn profile-id)
-        sql      (str "WITH teams AS (" sql:teams ") SELECT * FROM teams WHERE id=?")
-        result   (db/exec-one! conn [sql (:default-team-id defaults) profile-id team-id])]
+  (let [profile (profile/get-profile conn profile-id)
+        sql     (str "WITH teams AS (" sql:teams ") SELECT * FROM teams WHERE id=?")
+        result  (db/exec-one! conn [sql (:default-team-id profile) profile-id team-id])]
+
     (when-not result
       (ex/raise :type :not-found
                 :code :team-does-not-exist))
-    (process-permissions result)))
 
+    (process-permissions result)))
 
 ;; --- Query: Team Members
 
@@ -583,11 +585,11 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (update-team-photo cfg (assoc params :profile-id profile-id))))
 
 (defn update-team-photo
-  [{:keys [pool storage executor] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [::db/pool ::sto/storage ::wrk/executor] :as cfg} {:keys [profile-id team-id] :as params}]
   (p/let [team  (px/with-dispatch executor
                   (retrieve-team pool profile-id team-id))
           photo (upload-photo cfg params)]
@@ -605,7 +607,7 @@
     (assoc team :photo-id (:id photo))))
 
 (defn upload-photo
-  [{:keys [storage executor climit] :as cfg} {:keys [file]}]
+  [{:keys [::sto/storage ::wrk/executor climit] :as cfg} {:keys [file]}]
   (letfn [(get-info [content]
             (climit/with-dispatch (:process-image climit)
               (media/run {:cmd :info :input content})))
@@ -663,7 +665,7 @@
 
 (defn- create-invitation
   [{:keys [::conn] :as cfg} {:keys [team profile role email] :as params}]
-  (let [member (profile/retrieve-profile-data-by-email conn email)
+  (let [member (profile/get-profile-by-email conn email)
         expire (dt/in-future "168h") ;; 7 days
         itoken (create-invitation-token cfg {:profile-id (:id profile)
                                              :valid-until expire
@@ -838,7 +840,7 @@
                           {:team-id team-id
                            :email-to (str/lower email)})
                   (update :role keyword))
-        member (profile/retrieve-profile-data-by-email pool (:email invit))
+        member (profile/get-profile-by-email pool (:email invit))
         token  (create-invitation-token cfg {:team-id (:team-id invit)
                                              :profile-id profile-id
                                              :valid-until (:valid-until invit)

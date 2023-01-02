@@ -15,6 +15,7 @@
    [app.rpc.commands.teams :as cmd.teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.storage :as-alias sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -126,7 +127,7 @@
   [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (cmd.teams/update-team-photo cfg params)))
 
 ;; --- Mutation: Invite Member

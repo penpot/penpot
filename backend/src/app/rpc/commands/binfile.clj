@@ -436,9 +436,8 @@
 (s/def ::embed-assets? (s/nilable ::us/boolean))
 
 (s/def ::write-export-options
-  (s/keys :req-un [::db/pool ::sto/storage]
-          :req    [::output ::file-ids]
-          :opt    [::include-libraries? ::embed-assets?]))
+  (s/keys :req [::db/pool ::sto/storage ::output ::file-ids]
+          :opt [::include-libraries? ::embed-assets?]))
 
 (defn write-export!
   "Do the exportation of a specified file in custom penpot binary
@@ -555,9 +554,8 @@
 (s/def ::ignore-index-errors? (s/nilable ::us/boolean))
 
 (s/def ::read-import-options
-  (s/keys :req-un [::db/pool ::sto/storage]
-          :req    [::project-id ::input]
-          :opt    [::overwrite? ::migrate? ::ignore-index-errors?]))
+  (s/keys :req [::db/pool ::sto/storage ::project-id ::input]
+          :opt [::overwrite? ::migrate? ::ignore-index-errors?]))
 
 (defn read-import!
   "Do the importation of the specified resource in penpot custom binary
@@ -580,7 +578,7 @@
     (read-import (assoc options ::version version ::timestamp timestamp))))
 
 (defmethod read-import :v1
-  [{:keys [pool ::input] :as options}]
+  [{:keys [::db/pool ::input] :as options}]
   (with-open [input (zstd-input-stream input)]
     (with-open [input (io/data-input-stream input)]
       (db/with-atomic [conn pool]
@@ -673,7 +671,7 @@
         (db/insert! conn :file-library-rel rel)))))
 
 (defmethod read-section :v1/sobjects
-  [{:keys [storage conn ::input ::overwrite?]}]
+  [{:keys [::sto/storage conn ::input ::overwrite?]}]
   (let [storage (media/configure-assets-storage storage)
         ids     (read-obj! input)]
 
@@ -871,13 +869,14 @@
 (s/def ::embed-assets? ::us/boolean)
 
 (s/def ::export-binfile
-  (s/keys :req [::rpc/profile-id] :req-un [::file-id ::include-libraries? ::embed-assets?]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::include-libraries? ::embed-assets?]))
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id include-libraries? embed-assets?] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id include-libraries? embed-assets?] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
   (let [body (reify yrs/StreamableResponseBody
                (-write-body-to-stream [_ _ output-stream]
@@ -892,7 +891,8 @@
 
 (s/def ::file ::media/upload)
 (s/def ::import-binfile
-  (s/keys :req [::rpc/profile-id] :req-un [::project-id ::file]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::project-id ::file]))
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."

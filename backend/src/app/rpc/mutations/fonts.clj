@@ -22,6 +22,7 @@
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [promesa.exec :as px]))
@@ -48,7 +49,7 @@
   {::doc/added "1.3"
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id] :as params}]
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (teams/check-edition-permissions! pool profile-id team-id)
     (quotes/check-quote! pool {::quotes/id ::quotes/font-variants-per-team
                                ::quotes/profile-id profile-id
@@ -56,7 +57,7 @@
     (create-font-variant cfg params)))
 
 (defn create-font-variant
-  [{:keys [storage pool executor climit] :as cfg} {:keys [data] :as params}]
+  [{:keys [::sto/storage ::db/pool ::wrk/executor climit] :as cfg} {:keys [data] :as params}]
   (letfn [(generate-fonts [data]
             (climit/with-dispatch (:process-font climit)
               (media/run {:cmd :generate-fonts :input data})))

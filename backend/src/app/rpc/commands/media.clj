@@ -23,6 +23,7 @@
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.io :as io]
@@ -66,8 +67,8 @@
 
 (sv/defmethod ::upload-file-media-object
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (files/check-edition-permissions! pool profile-id file-id)
     (media/validate-media-type! content)
     (validate-content-size! content)
@@ -110,7 +111,7 @@
 ;; inverse, soft referential integrity).
 
 (defn create-file-media-object
-  [{:keys [storage pool climit executor]}
+  [{:keys [::sto/storage ::db/pool climit ::wrk/executor]}
    {:keys [id file-id is-local name content]}]
   (letfn [;; Function responsible to retrieve the file information, as
           ;; it is synchronous operation it should be wrapped into
@@ -186,8 +187,8 @@
 
 (sv/defmethod ::create-file-media-object-from-url
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (files/check-edition-permissions! pool profile-id file-id)
     (create-file-media-object-from-url cfg params)))
 

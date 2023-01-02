@@ -3,8 +3,8 @@
 {:default
  [[:default :window "200000/h"]]
 
- #{:query/teams}
+ #{:command/get-teams}
  [[:burst :bucket "5/1/5s"]]
 
- #{:query/profile}
- [[:burst :bucket "100/60/1m"]]}
+ #{:command/get-profile}
+ [[:burst :bucket "60/60/1m"]]}

@@ -16,8 +16,10 @@
    [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
+   [app.media :as-alias mtx]
    [app.media]
    [app.migrations]
+   [app.msgbus :as-alias mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.commands.files :as files]
@@ -64,52 +66,50 @@
 
 (defn state-init
   [next]
-  (let [templates [{:id "test"
-                    :name "test"
-                    :file-uri "test"
-                    :thumbnail-uri "test"
-                    :path (-> "backend_tests/test_files/template.penpot" io/resource fs/path)}]
-        system (-> (merge main/system-config main/worker-config)
-                   (assoc-in [:app.redis/redis :app.redis/uri] (:redis-uri config))
-                   (assoc-in [:app.db/pool :uri] (:database-uri config))
-                   (assoc-in [:app.db/pool :username] (:database-username config))
-                   (assoc-in [:app.db/pool :password] (:database-password config))
-                   (assoc-in [:app.rpc/methods :templates] templates)
-                   (dissoc :app.srepl/server
-                           :app.http/server
-                           :app.http/router
-                           :app.http.awsns/handler
-                           :app.http.session/updater
-                           :app.auth.oidc/google-provider
-                           :app.auth.oidc/gitlab-provider
-                           :app.auth.oidc/github-provider
-                           :app.auth.oidc/generic-provider
-                           :app.setup/builtin-templates
-                           :app.auth.oidc/routes
-                           :app.worker/executors-monitor
-                           :app.http.oauth/handler
-                           :app.notifications/handler
-                           :app.loggers.sentry/reporter
-                           :app.loggers.mattermost/reporter
-                           :app.loggers.loki/reporter
-                           :app.loggers.database/reporter
-                           :app.loggers.zmq/receiver
-                           :app.worker/cron
-                           :app.worker/worker))
-        _      (ig/load-namespaces system)
-        system (-> (ig/prep system)
-                   (ig/init))]
-    (try
-      (binding [*system* system
-                *pool*   (:app.db/pool system)]
-        (with-redefs [app.config/flags (flags/parse flags/default default-flags (:flags config))
-                      app.config/config config
-                      app.loggers.audit/submit! (constantly nil)
-                      app.auth/derive-password identity
-                      app.auth/verify-password (fn [a b] {:valid (= a b)})]
-          (next)))
-      (finally
-        (ig/halt! system)))))
+  (with-redefs [app.config/flags (flags/parse flags/default default-flags)
+                app.config/config config
+                app.loggers.audit/submit! (constantly nil)
+                app.auth/derive-password identity
+                app.auth/verify-password (fn [a b] {:valid (= a b)})]
+
+    (let [templates [{:id "test"
+                      :name "test"
+                      :file-uri "test"
+                      :thumbnail-uri "test"
+                      :path (-> "backend_tests/test_files/template.penpot" io/resource fs/path)}]
+          system (-> (merge main/system-config main/worker-config)
+                     (assoc-in [:app.redis/redis :app.redis/uri] (:redis-uri config))
+                     (assoc-in [:app.db/pool :uri] (:database-uri config))
+                     (assoc-in [:app.db/pool :username] (:database-username config))
+                     (assoc-in [:app.db/pool :password] (:database-password config))
+                     (assoc-in [:app.rpc/methods :templates] templates)
+                     (dissoc :app.srepl/server
+                             :app.http/server
+                             :app.http/router
+                             :app.auth.oidc/google-provider
+                             :app.auth.oidc/gitlab-provider
+                             :app.auth.oidc/github-provider
+                             :app.auth.oidc/generic-provider
+                             :app.setup/builtin-templates
+                             :app.auth.oidc/routes
+                             :app.worker/executors-monitor
+                             :app.http.oauth/handler
+                             :app.notifications/handler
+                             :app.loggers.mattermost/reporter
+                             :app.loggers.loki/reporter
+                             :app.loggers.database/reporter
+                             :app.loggers.zmq/receiver
+                             :app.worker/cron
+                             :app.worker/worker))
+          _      (ig/load-namespaces system)
+          system (-> (ig/prep system)
+                     (ig/init))]
+      (try
+        (binding [*system* system
+                  *pool*   (:app.db/pool system)]
+          (next))
+        (finally
+          (ig/halt! system))))))
 
 (defn database-reset
   [next]
@@ -163,8 +163,8 @@
                        params)]
      (with-open [conn (db/open pool)]
        (->> params
-            (cmd.auth/create-profile conn)
-            (cmd.auth/create-profile-relations conn))))))
+            (cmd.auth/create-profile! conn)
+            (cmd.auth/create-profile-rels! conn))))))
 
 (defn create-project*
   ([i params] (create-project* *pool* i params))
@@ -274,12 +274,10 @@
   ([pool {:keys [file-id changes session-id profile-id revn]
           :or {session-id (uuid/next) revn 0}}]
    (with-open [conn (db/open pool)]
-     (let [msgbus    (:app.msgbus/msgbus *system*)
-           metrics   (:app.metrics/metrics *system*)
-           features  #{"components/v2"}]
-       (files.update/update-file {:conn conn
-                                  :msgbus msgbus
-                                  :metrics metrics}
+     (let [features #{"components/v2"}
+           cfg      (-> (select-keys *system* [::mbus/msgbus ::mtx/metrics])
+                        (assoc :conn conn))]
+       (files.update/update-file cfg
                                  {:id file-id
                                   :revn revn
                                   :features features

@@ -15,6 +15,7 @@
    [app.emails :as eml]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.main :as-alias main]
    [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
@@ -27,6 +28,7 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -51,13 +53,13 @@
 
 (sv/defmethod ::update-profile
   {::doc/added "1.0"}
-  [{:keys [pool] :as cfg} {:keys [profile-id fullname lang theme] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id fullname lang theme] :as params}]
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use
     ;; it or not for explicit locking and avoid concurrent updates of
     ;; the same row/object.
-    (let [profile (-> (db/get-by-id conn :profile profile-id {:for-update true})
-                      (profile/decode-profile-row))
+    (let [profile (-> (db/get-by-id conn :profile profile-id ::db/for-update? true)
+                      (profile/decode-row))
 
           ;; Update the profile map with direct params
           profile (-> profile
@@ -90,7 +92,7 @@
 
 (sv/defmethod ::update-profile-password
   {::climit/queue :auth}
-  [{:keys [pool] :as cfg} {:keys [password] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [password] :as params}]
   (db/with-atomic [conn pool]
     (let [profile    (validate-password! conn params)
           session-id (::rpc/session-id params)]
@@ -135,11 +137,11 @@
   [cfg {:keys [file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (update-profile-photo cfg params)))
 
 (defn update-profile-photo
-  [{:keys [pool storage executor] :as cfg} {:keys [profile-id file] :as params}]
+  [{:keys [::db/pool ::sto/storage ::wrk/executor] :as cfg} {:keys [profile-id file] :as params}]
   (p/let [profile (px/with-dispatch executor
                     (db/get-by-id pool :profile profile-id))
           photo   (teams/upload-photo cfg params)]
@@ -169,7 +171,7 @@
   (s/keys :req-un [::email]))
 
 (sv/defmethod ::request-email-change
-  [{:keys [pool] :as cfg} {:keys [profile-id email] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id email] :as params}]
   (db/with-atomic [conn pool]
     (let [profile (db/get-by-id conn :profile profile-id)
           cfg     (assoc cfg :conn conn)
@@ -190,13 +192,13 @@
   {:changed true})
 
 (defn- request-email-change
-  [{:keys [conn sprops] :as cfg} {:keys [profile email] :as params}]
-  (let [token   (tokens/generate sprops
+  [{:keys [conn] :as cfg} {:keys [profile email] :as params}]
+  (let [token   (tokens/generate (::main/props cfg)
                                  {:iss :change-email
                                   :exp (dt/in-future "15m")
                                   :profile-id (:id profile)
                                   :email email})
-        ptoken  (tokens/generate sprops
+        ptoken  (tokens/generate (::main/props cfg)
                                  {:iss :profile-identity
                                   :profile-id (:id profile)
                                   :exp (dt/in-future {:days 30})})]
@@ -216,18 +218,13 @@
 
     (eml/send! {::eml/conn conn
                 ::eml/factory eml/change-email
-                :public-uri (:public-uri cfg)
+                :public-uri (cf/get :public-uri)
                 :to (:email profile)
                 :name (:fullname profile)
                 :pending-email email
                 :token token
                 :extra-data ptoken})
     nil))
-
-
-(defn select-profile-for-update
-  [conn id]
-  (db/get-by-id conn :profile id {:for-update true}))
 
 
 ;; --- MUTATION: Update Profile Props
@@ -237,9 +234,9 @@
   (s/keys :req-un [::profile-id ::props]))
 
 (sv/defmethod ::update-profile-props
-  [{:keys [pool] :as cfg} {:keys [profile-id props]}]
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id props]}]
   (db/with-atomic [conn pool]
-    (let [profile (profile/retrieve-profile-data conn profile-id)
+    (let [profile (profile/get-profile conn profile-id ::db/for-update? true)
           props   (reduce-kv (fn [props k v]
                                ;; We don't accept namespaced keys
                                (if (simple-ident? k)
@@ -254,7 +251,7 @@
                   {:props (db/tjson props)}
                   {:id profile-id})
 
-      (profile/filter-profile-props props))))
+      (profile/filter-props props))))
 
 
 ;; --- MUTATION: Delete Profile
@@ -267,7 +264,7 @@
   (s/keys :req-un [::profile-id]))
 
 (sv/defmethod ::delete-profile
-  [{:keys [pool session] :as cfg} {:keys [profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id] :as params}]
   (db/with-atomic [conn pool]
     (let [teams      (get-owned-teams-with-participants conn profile-id)
           deleted-at (dt/now)]
@@ -290,7 +287,7 @@
                   {:deleted-at deleted-at}
                   {:id profile-id})
 
-      (rph/with-transform {} (session/delete-fn session)))))
+      (rph/with-transform {} (session/delete-fn cfg)))))
 
 (def sql:owned-teams
   "with owner_teams as (

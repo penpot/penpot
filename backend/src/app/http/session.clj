@@ -9,14 +9,17 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.http.session.tasks :as-alias tasks]
    [app.main :as-alias main]
    [app.tokens :as tokens]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
    [promesa.exec :as px]
@@ -45,55 +48,55 @@
 
 (defprotocol ISessionManager
   (read [_ key])
-  (decode [_ key])
   (write! [_ key data])
   (update! [_ data])
   (delete! [_ key]))
 
-(s/def ::session #(satisfies? ISessionManager %))
+(s/def ::manager #(satisfies? ISessionManager %))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STORAGE IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(s/def ::session-params
+  (s/keys :req-un [::user-agent
+                   ::profile-id
+                   ::created-at]))
+
 (defn- prepare-session-params
-  [props data]
-  (let [profile-id (:profile-id data)
-        user-agent (:user-agent data)
-        created-at (or (:created-at data) (dt/now))
-        token      (tokens/generate props {:iss "authentication"
-                                           :iat created-at
-                                           :uid profile-id})]
-    {:user-agent user-agent
-     :profile-id profile-id
-     :created-at created-at
-     :updated-at created-at
-     :id token}))
+  [key params]
+  (us/assert! ::us/not-empty-string key)
+  (us/assert! ::session-params params)
+
+  {:user-agent (:user-agent params)
+   :profile-id (:profile-id params)
+   :created-at (:created-at params)
+   :updated-at (:created-at params)
+   :id key})
 
 (defn- database-manager
   [{:keys [::db/pool ::wrk/executor ::main/props]}]
+  ^{::wrk/executor executor
+    ::db/pool pool
+    ::main/props props}
   (reify ISessionManager
     (read [_ token]
       (px/with-dispatch executor
         (db/exec-one! pool (sql/select :http-session {:id token}))))
 
-    (decode [_ token]
+    (write! [_ key params]
       (px/with-dispatch executor
-        (tokens/verify props {:token token :iss "authentication"})))
-
-    (write! [_ _ data]
-      (px/with-dispatch executor
-        (let [params (prepare-session-params props data)]
+        (let [params (prepare-session-params key params)]
           (db/insert! pool :http-session params)
           params)))
 
-    (update! [_ data]
+    (update! [_ params]
       (let [updated-at (dt/now)]
         (px/with-dispatch executor
           (db/update! pool :http-session
                       {:updated-at updated-at}
-                      {:id (:id data)})
-          (assoc data :updated-at updated-at))))
+                      {:id (:id params)})
+          (assoc params :updated-at updated-at))))
 
     (delete! [_ token]
       (px/with-dispatch executor
@@ -101,27 +104,26 @@
         nil))))
 
 (defn inmemory-manager
-  [{:keys [::wrk/executor ::main/props]}]
+  [{:keys [::db/pool ::wrk/executor ::main/props]}]
   (let [cache (atom {})]
+    ^{::main/props props
+      ::wrk/executor executor
+      ::db/pool pool}
     (reify ISessionManager
       (read [_ token]
         (p/do (get @cache token)))
 
-      (decode [_ token]
-        (px/with-dispatch executor
-          (tokens/verify props {:token token :iss "authentication"})))
-
-      (write! [_ _ data]
+      (write! [_ key params]
         (p/do
-          (let [{:keys [token] :as params} (prepare-session-params props data)]
-            (swap! cache assoc token params)
+          (let [params (prepare-session-params key params)]
+            (swap! cache assoc key params)
             params)))
 
-      (update! [_ data]
+      (update! [_ params]
         (p/do
           (let [updated-at (dt/now)]
-            (swap! cache update (:id data) assoc :updated-at updated-at)
-            (assoc data :updated-at updated-at))))
+            (swap! cache update (:id params) assoc :updated-at updated-at)
+            (assoc params :updated-at updated-at))))
 
       (delete! [_ token]
         (p/do
@@ -144,25 +146,34 @@
 ;; MANAGER IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare assign-auth-token-cookie)
-(declare assign-authenticated-cookie)
-(declare clear-auth-token-cookie)
-(declare clear-authenticated-cookie)
+(declare ^:private assign-auth-token-cookie)
+(declare ^:private assign-authenticated-cookie)
+(declare ^:private clear-auth-token-cookie)
+(declare ^:private clear-authenticated-cookie)
+(declare ^:private gen-token)
 
 (defn create-fn
-  [manager profile-id]
-  (fn [request response]
-    (let [uagent  (yrq/get-header request "user-agent")
-          params  {:profile-id profile-id
-                   :user-agent uagent}]
-      (-> (write! manager nil params)
-          (p/then (fn [session]
-                    (l/trace :hint "create" :profile-id profile-id)
-                    (-> response
-                        (assign-auth-token-cookie session)
-                        (assign-authenticated-cookie session))))))))
+  [{:keys [::manager]} profile-id]
+  (us/assert! ::manager manager)
+  (us/assert! ::us/uuid profile-id)
+
+  (let [props (-> manager meta ::main/props)]
+    (fn [request response]
+      (let [uagent (yrq/get-header request "user-agent")
+            params {:profile-id profile-id
+                    :user-agent uagent
+                    :created-at (dt/now)}
+            token  (gen-token props params)]
+
+        (->> (write! manager token params)
+             (p/fmap (fn [session]
+                       (l/trace :hint "create" :profile-id profile-id)
+                       (-> response
+                           (assign-auth-token-cookie session)
+                           (assign-authenticated-cookie session)))))))))
 (defn delete-fn
-  [manager]
+  [{:keys [::manager]}]
+  (us/assert! ::manager manager)
   (letfn [(delete [{:keys [profile-id] :as request}]
             (let [cname   (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
                   cookie  (yrq/get-cookie request cname)]
@@ -177,68 +188,92 @@
             (clear-auth-token-cookie)
             (clear-authenticated-cookie))))))
 
-(def middleware-1
-  (letfn [(decode-cookie [manager cookie]
-            (if-let [value (:value cookie)]
-              (decode manager value)
-              (p/resolved nil)))
+(defn- gen-token
+  [props {:keys [profile-id created-at]}]
+  (tokens/generate props {:iss "authentication"
+                          :iat created-at
+                          :uid profile-id}))
+(defn- decode-token
+  [props token]
+  (when token
+    (tokens/verify props {:token token :iss "authentication"})))
 
-          (wrap-handler [manager handler request respond raise]
-            (let [cookie (some->> (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
-                                  (yrq/get-cookie request))]
-              (->> (decode-cookie manager cookie)
-                   (p/fnly (fn [claims _]
-                             (cond-> request
-                               (some? claims) (assoc :session-token-claims claims)
-                               :always        (handler respond raise)))))))]
-    {:name :session-1
-     :compile (fn [& _]
-                (fn [handler manager]
-                  (partial wrap-handler manager handler)))}))
+(defn- get-token
+  [request]
+  (let [cname  (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
+        cookie (some-> (yrq/get-cookie request cname) :value)]
+    (when-not (str/empty? cookie)
+      cookie)))
 
-(def middleware-2
-  (letfn [(wrap-handler [manager handler request respond raise]
-            (-> (retrieve-session manager request)
-                (p/finally (fn [session cause]
-                             (cond
-                               (some? cause)
-                               (raise cause)
+(defn- get-session
+  [manager token]
+  (some->> token (read manager)))
 
-                               (nil? session)
-                               (handler request respond raise)
+(defn- renew-session?
+  [{:keys [updated-at] :as session}]
+  (and (dt/instant? updated-at)
+       (let [elapsed (dt/diff updated-at (dt/now))]
+         (neg? (compare default-renewal-max-age elapsed)))))
 
-                               :else
-                               (let [request (-> request
-                                                 (assoc :profile-id (:profile-id session))
-                                                 (assoc :session-id (:id session)))
-                                     respond (cond-> respond
-                                               (renew-session? session)
-                                               (wrap-respond manager session))]
-                                 (handler request respond raise)))))))
+(defn- wrap-reneval
+  [respond manager session]
+  (fn [response]
+    (p/let [session (update! manager session)]
+      (-> response
+          (assign-auth-token-cookie session)
+          (assign-authenticated-cookie session)
+          (respond)))))
 
-          (retrieve-session [manager request]
-            (let [cname  (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
-                  cookie (yrq/get-cookie request cname)]
-              (some->> (:value cookie) (read manager))))
+(defn- wrap-soft-auth
+  [handler {:keys [::manager]}]
+  (us/assert! ::manager manager)
 
-          (renew-session? [{:keys [updated-at] :as session}]
-            (and (dt/instant? updated-at)
-                 (let [elapsed (dt/diff updated-at (dt/now))]
-                   (neg? (compare default-renewal-max-age elapsed)))))
+  (let [{:keys [::wrk/executor ::main/props]} (meta manager)]
+    (fn [request respond raise]
+      (let [token (get-token request)]
+        (->> (px/submit! executor (partial decode-token props token))
+             (p/fnly (fn [claims cause]
+                       (when cause
+                         (l/trace :hint "exception on decoding malformed token" :cause cause))
 
-          ;; Wrap respond with session renewal code
-          (wrap-respond [respond manager session]
-            (fn [response]
-              (p/let [session (update! manager session)]
-                (-> response
-                    (assign-auth-token-cookie session)
-                    (assign-authenticated-cookie session)
-                    (respond)))))]
+                       (let [request (cond-> request
+                                       (map? claims)
+                                       (-> (assoc ::token-claims claims)
+                                           (assoc ::token token)))]
+                         (handler request respond raise)))))))))
 
-    {:name :session-2
-     :compile (fn [& _]
-                (fn [handler manager]
-                  (partial wrap-handler manager handler)))}))
+(defn- wrap-authz
+  [handler {:keys [::manager]}]
+  (us/assert! ::manager manager)
+  (fn [request respond raise]
+    (if-let [token (::token request)]
+      (->> (get-session manager token)
+           (p/fnly (fn [session cause]
+                     (cond
+                       (some? cause)
+                       (raise cause)
+
+                       (nil? session)
+                       (handler request respond raise)
+
+                       :else
+                       (let [request (-> request
+                                         (assoc ::profile-id (:profile-id session))
+                                         (assoc ::id (:id session)))
+                             respond (cond-> respond
+                                       (renew-session? session)
+                                       (wrap-reneval manager session))]
+                         (handler request respond raise))))))
+
+      (handler request respond raise))))
+
+(def soft-auth
+  {:name ::soft-auth
+   :compile (constantly wrap-soft-auth)})
+
+(def authz
+  {:name ::authz
+   :compile (constantly wrap-authz)})
 
 ;; --- IMPL
 
@@ -300,21 +335,26 @@
 ;; TASK: SESSION GC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare sql:delete-expired)
+(s/def ::tasks/max-age ::dt/duration)
 
-(s/def ::max-age ::dt/duration)
+(defmethod ig/pre-init-spec ::tasks/gc [_]
+  (s/keys :req [::db/pool]
+          :opt [::tasks/max-age]))
 
-(defmethod ig/pre-init-spec ::gc-task [_]
-  (s/keys :req-un [::db/pool]
-          :opt-un [::max-age]))
-
-(defmethod ig/prep-key ::gc-task
+(defmethod ig/prep-key ::tasks/gc
   [_ cfg]
-  (merge {:max-age default-cookie-max-age}
-         (d/without-nils cfg)))
+  (let [max-age (cf/get :auth-token-cookie-max-age default-cookie-max-age)]
+    (merge {::tasks/max-age max-age} (d/without-nils cfg))))
 
-(defmethod ig/init-key ::gc-task
-  [_ {:keys [pool max-age] :as cfg}]
+(def ^:private
+  sql:delete-expired
+  "delete from http_session
+    where updated_at < now() - ?::interval
+       or (updated_at is null and
+           created_at < now() - ?::interval)")
+
+(defmethod ig/init-key ::tasks/gc
+  [_ {:keys [::db/pool ::tasks/max-age] :as cfg}]
   (l/debug :hint "initializing session gc task" :max-age max-age)
   (fn [_]
     (db/with-atomic [conn pool]
@@ -326,9 +366,3 @@
                  :deleted result)
         result))))
 
-(def ^:private
-  sql:delete-expired
-  "delete from http_session
-    where updated_at < now() - ?::interval
-       or (updated_at is null and
-           created_at < now() - ?::interval)")

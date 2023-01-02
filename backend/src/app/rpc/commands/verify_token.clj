@@ -11,6 +11,7 @@
    [app.db :as db]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -34,15 +35,15 @@
 (sv/defmethod ::verify-token
   {::rpc/auth false
    ::doc/added "1.15"}
-  [{:keys [pool sprops] :as cfg} {:keys [token] :as params}]
+  [{:keys [pool] :as cfg} {:keys [token] :as params}]
   (db/with-atomic [conn pool]
-    (let [claims (tokens/verify sprops {:token token})
+    (let [claims (tokens/verify (::main/props cfg) {:token token})
           cfg    (assoc cfg :conn conn)]
       (process-token cfg params claims))))
 
 (defmethod process-token :change-email
   [{:keys [conn] :as cfg} _params {:keys [profile-id email] :as claims}]
-  (when (profile/retrieve-profile-data-by-email conn email)
+  (when (profile/get-profile-by-email conn email)
     (ex/raise :type :validation
               :code :email-already-exists))
 
@@ -56,8 +57,8 @@
      ::audit/profile-id profile-id}))
 
 (defmethod process-token :verify-email
-  [{:keys [conn session] :as cfg} _ {:keys [profile-id] :as claims}]
-  (let [profile (profile/retrieve-profile conn profile-id)
+  [{:keys [conn] :as cfg} _ {:keys [profile-id] :as claims}]
+  (let [profile (profile/get-profile conn profile-id)
         claims  (assoc claims :profile profile)]
 
     (when-not (:is-active profile)
@@ -71,14 +72,14 @@
                   {:id (:id profile)}))
 
     (-> claims
-        (rph/with-transform (session/create-fn session profile-id))
+        (rph/with-transform (session/create-fn cfg profile-id))
         (rph/with-meta {::audit/name "verify-profile-email"
                         ::audit/props (audit/profile->props profile)
                         ::audit/profile-id (:id profile)}))))
 
 (defmethod process-token :auth
   [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
-  (let [profile (profile/retrieve-profile conn profile-id)]
+  (let [profile (profile/get-profile conn profile-id)]
     (assoc claims :profile profile)))
 
 ;; --- Team Invitation
@@ -133,7 +134,7 @@
           :opt-un [::spec.team-invitation/member-id]))
 
 (defmethod process-token :team-invitation
-  [{:keys [conn session] :as cfg}
+  [{:keys [conn] :as cfg}
    {:keys [::rpc/profile-id token]}
    {:keys [member-id team-id member-email] :as claims}]
 
@@ -179,7 +180,7 @@
                                {:columns [:id :email]})]
         (let [profile (accept-invitation cfg claims invitation member)]
           (-> (assoc claims :state :created)
-              (rph/with-transform (session/create-fn session (:id profile)))
+              (rph/with-transform (session/create-fn cfg (:id profile)))
               (rph/with-meta {::audit/name "accept-team-invitation"
                               ::audit/props (merge
                                              (audit/profile->props profile)

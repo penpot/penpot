@@ -349,7 +349,7 @@
                    ::fullname
                    ::props]))
 
-(defn retrieve-info
+(defn get-info
   [{:keys [provider] :as cfg} {:keys [params] :as request}]
   (letfn [(validate-oidc [info]
             ;; If the provider is OIDC, we can proceed to check
@@ -396,14 +396,12 @@
           (p/then' validate-oidc)
           (p/then' (partial post-process state))))))
 
-(defn- retrieve-profile
+(defn- get-profile
   [{:keys [::db/pool ::wrk/executor] :as cfg} info]
   (px/with-dispatch executor
     (with-open [conn (db/open pool)]
       (some->> (:email info)
-               (profile/retrieve-profile-data-by-email conn)
-               (profile/populate-additional-data conn)
-               (profile/decode-profile-row)))))
+               (profile/get-profile-by-email conn)))))
 
 (defn- redirect-response
   [uri]
@@ -417,9 +415,9 @@
     (redirect-response uri)))
 
 (defn- generate-redirect
-  [{:keys [::session/session] :as cfg} request info profile]
+  [cfg request info profile]
   (if profile
-    (let [sxf    (session/create-fn session (:id profile))
+    (let [sxf    (session/create-fn cfg (:id profile))
           token  (or (:invitation-token info)
                      (tokens/generate (::main/props cfg)
                                       {:iss :auth
@@ -436,7 +434,7 @@
 
       (when-let [collector (::audit/collector cfg)]
         (audit/submit! collector {:type "command"
-                                  :name "login"
+                                  :name "login-with-password"
                                   :profile-id (:id profile)
                                   :ip-addr (audit/parse-client-ip request)
                                   :props (audit/profile->props profile)}))
@@ -471,8 +469,8 @@
 (defn- callback-handler
   [cfg request]
   (letfn [(process-request []
-            (p/let [info    (retrieve-info cfg request)
-                    profile (retrieve-profile cfg info)]
+            (p/let [info    (get-info cfg request)
+                    profile (get-profile cfg info)]
               (generate-redirect cfg request info profile)))
 
           (handle-error [cause]
@@ -524,23 +522,24 @@
 
 (s/def ::providers (s/map-of ::us/keyword (s/nilable ::provider)))
 
+(s/def ::routes vector?)
+
 (defmethod ig/pre-init-spec ::routes
   [_]
-  (s/keys :req [::http/client
+  (s/keys :req [::session/manager
+                ::http/client
                 ::wrk/executor
                 ::main/props
                 ::db/pool
-                ::providers
-                ::session/session]))
+                ::providers]))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::wrk/executor ::session/session] :as cfg}]
+  [_ {:keys [::wrk/executor] :as cfg}]
   (let [cfg (update cfg :provider d/without-nils)]
-    ["" {:middleware [[(:middleware session)]
+    ["" {:middleware [[session/authz cfg]
                       [hmw/with-dispatch executor]
                       [hmw/with-config cfg]
-                      [provider-lookup]
-                      ]}
+                      [provider-lookup]]}
      ["/auth/oauth"
       ["/:provider"
        {:handler auth-handler
@@ -548,4 +547,3 @@
       ["/:provider/callback"
        {:handler callback-handler
         :allowed-methods #{:get}}]]]))
-

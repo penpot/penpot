@@ -189,7 +189,7 @@
   (let [row (db/get conn :file-data-fragment
                     {:id id :file-id file-id}
                     {:columns [:content]
-                     :check-deleted? false})]
+                     ::db/check-deleted? false})]
     (blob/decode (:content row))))
 
 (defn persist-pointers!
@@ -811,7 +811,7 @@
       (let [ldata (-> library decode-row pmg/migrate-file :data)]
         (->> (db/query conn :file-library-rel {:library-file-id id})
              (map :file-id)
-             (keep #(db/get-by-id conn :file % {:check-deleted? false}))
+             (keep #(db/get-by-id conn :file % ::db/check-deleted? false))
              (map decode-row)
              (map pmg/migrate-file)
              (run! (fn [{:keys [id data revn] :as file}]

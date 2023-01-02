@@ -69,7 +69,7 @@
 ;; ---- COMMAND: login with password
 
 (defn login-with-password
-  [{:keys [::db/pool session] :as cfg} {:keys [email password] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [email password] :as params}]
 
   (when-not (or (contains? cf/flags :login)
                 (contains? cf/flags :login-with-password))
@@ -105,11 +105,10 @@
             profile)]
 
     (db/with-atomic [conn pool]
-      (let [profile    (->> (profile/retrieve-profile-data-by-email conn email)
+      (let [profile    (->> (profile/get-profile-by-email conn email)
                             (validate-profile)
-                            (profile/strip-private-attrs)
-                            (profile/populate-additional-data conn)
-                            (profile/decode-profile-row))
+                            (profile/decode-row)
+                            (profile/strip-private-attrs))
 
             invitation (when-let [token (:invitation-token params)]
                          (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))
@@ -122,14 +121,13 @@
                          (assoc profile :is-admin (let [admins (cf/get :admins)]
                                                     (contains? admins (:email profile)))))]
         (-> response
-            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-transform (session/create-fn cfg (:id profile)))
             (rph/with-meta {::audit/props (audit/profile->props profile)
                             ::audit/profile-id (:id profile)}))))))
 
-(s/def ::scope ::us/string)
 (s/def ::login-with-password
   (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token ::scope]))
+          :opt-un [::invitation-token]))
 
 (sv/defmethod ::login-with-password
   "Performs authentication using penpot password."
@@ -148,8 +146,8 @@
   "Clears the authentication cookie and logout the current session."
   {::rpc/auth false
    ::doc/added "1.15"}
-  [{:keys [session] :as cfg} _]
-  (rph/with-transform {} (session/delete-fn session)))
+  [cfg _]
+  (rph/with-transform {} (session/delete-fn cfg)))
 
 ;; ---- COMMAND: Recover Profile
 
@@ -226,7 +224,7 @@
 
   (validate-register-attempt! cfg params)
 
-  (let [profile (when-let [profile (profile/retrieve-profile-data-by-email pool (:email params))]
+  (let [profile (when-let [profile (profile/get-profile-by-email pool (:email params))]
                   (cond
                     (:is-blocked profile)
                     (ex/raise :type :restriction
@@ -267,10 +265,11 @@
 
 ;; ---- COMMAND: Register Profile
 
-(defn create-profile
+(defn create-profile!
   "Create the profile entry on the database with limited set of input
   attrs (all the other attrs are filled with default values)."
-  [conn params]
+  [conn {:keys [email] :as params}]
+  (us/assert! ::us/email email)
   (let [id        (or (:id params) (uuid/next))
         props     (-> (audit/extract-utm-params params)
                       (merge (:props params))
@@ -291,7 +290,7 @@
         is-demo   (:is-demo params false)
         is-muted  (:is-muted params false)
         is-active (:is-active params false)
-        email     (str/lower (:email params))
+        email     (str/lower email)
 
         params    {:id id
                    :fullname (:fullname params)
@@ -306,7 +305,7 @@
                    :is-demo is-demo}]
     (try
       (-> (db/insert! conn :profile params)
-          (profile/decode-profile-row))
+          (profile/decode-row))
       (catch org.postgresql.util.PSQLException e
         (let [state (.getSQLState e)]
           (if (not= state "23505")
@@ -315,15 +314,17 @@
                       :code :email-already-exists
                       :cause e)))))))
 
-(defn create-profile-relations
-  [conn profile]
-  (let [team (teams/create-team conn {:profile-id (:id profile)
+(defn create-profile-rels!
+  [conn {:keys [id] :as profile}]
+  (let [team (teams/create-team conn {:profile-id id
                                       :name "Default"
                                       :is-default true})]
-    (-> profile
-        (profile/strip-private-attrs)
-        (assoc :default-team-id (:id team))
-        (assoc :default-project-id (:default-project-id team)))))
+    (-> (db/update! conn :profile
+                    {:default-team-id (:id team)
+                     :default-project-id  (:default-project-id team)}
+                    {:id id})
+        (profile/decode-row))))
+
 
 (defn send-email-verification!
   [conn props profile]
@@ -347,22 +348,18 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [conn session] :as cfg} {:keys [token] :as params}]
+  [{:keys [conn] :as cfg} {:keys [token] :as params}]
   (let [claims     (tokens/verify (::main/props cfg) {:token token :iss :prepared-register})
         params     (merge params claims)
 
         is-active  (or (:is-active params)
-                       (not (contains? cf/flags :email-verification))
-
-                       ;; DEPRECATED: v1.15
-                       (contains? cf/flags :insecure-register))
+                       (not (contains? cf/flags :email-verification)))
 
         profile    (if-let [profile-id (:profile-id claims)]
-                     (profile/retrieve-profile conn profile-id)
-                     (->> (assoc params :is-active is-active)
-                          (create-profile conn)
-                          (create-profile-relations conn)
-                          (profile/decode-profile-row)))
+                     (profile/get-profile conn profile-id)
+                     (->> (create-profile! conn (assoc params :is-active is-active))
+                          (create-profile-rels! conn)))
+
         invitation (when-let [token (:invitation-token params)]
                      (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))]
 
@@ -389,7 +386,7 @@
             token  (tokens/generate (::main/props cfg) claims)
             resp   {:invitation-token token}]
         (-> resp
-            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-transform (session/create-fn cfg (:id profile)))
             (rph/with-meta {::audit/replace-props (audit/profile->props profile)
                             ::audit/profile-id (:id profile)})))
 
@@ -398,7 +395,7 @@
       ;; we need to mark this session as logged.
       (not= "penpot" (:auth-backend profile))
       (-> (profile/strip-private-attrs profile)
-          (rph/with-transform (session/create-fn session (:id profile)))
+          (rph/with-transform (session/create-fn cfg (:id profile)))
           (rph/with-meta {::audit/replace-props (audit/profile->props profile)
                           ::audit/profile-id (:id profile)}))
 
@@ -406,7 +403,7 @@
       ;; to sign in the user directly, without email verification.
       (true? is-active)
       (-> (profile/strip-private-attrs profile)
-          (rph/with-transform (session/create-fn session (:id profile)))
+          (rph/with-transform (session/create-fn cfg (:id profile)))
           (rph/with-meta {::audit/replace-props (audit/profile->props profile)
                           ::audit/profile-id (:id profile)}))
 
@@ -448,7 +445,7 @@
                                            :exp (dt/in-future {:days 30})})]
               (eml/send! {::eml/conn conn
                           ::eml/factory eml/password-recovery
-                          :public-uri (:public-uri cfg)
+                          :public-uri (cf/get :public-uri)
                           :to (:email profile)
                           :token (:token profile)
                           :name (:fullname profile)
@@ -456,7 +453,7 @@
               nil))]
 
     (db/with-atomic [conn pool]
-      (when-let [profile (profile/retrieve-profile-data-by-email conn email)]
+      (when-let [profile (profile/get-profile-by-email conn email)]
         (when-not (eml/allow-send-emails? conn profile)
           (ex/raise :type :validation
                     :code :profile-is-muted

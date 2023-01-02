@@ -71,7 +71,7 @@
 
   (let [sprops  (:app.setup/props system)
         pool    (:app.db/pool system)
-        profile (profile/retrieve-profile-data-by-email pool email)]
+        profile (profile/get-profile-by-email pool email)]
 
     (cmd.auth/send-email-verification! pool sprops profile)
     :email-sent))
@@ -81,10 +81,9 @@
   associated with the profile-id."
   [system email]
   (db/with-atomic [conn (:app.db/pool system)]
-    (when-let [profile (db/get-by-params conn :profile
-                                         {:email (str/lower email)}
-                                         {:columns [:id :email]
-                                          :check-not-found false})]
+    (when-let [profile (db/get* conn :profile
+                                {:email (str/lower email)}
+                                {:columns [:id :email]})]
       (when-not (:is-blocked profile)
         (db/update! conn :profile {:is-active true} {:id (:id profile)})
         :activated))))
@@ -94,10 +93,9 @@
   associated with the profile-id."
   [system email]
   (db/with-atomic [conn (:app.db/pool system)]
-    (when-let [profile (db/get-by-params conn :profile
-                                         {:email (str/lower email)}
-                                         {:columns [:id :email]
-                                          :check-not-found false})]
+    (when-let [profile (db/get* conn :profile
+                                {:email (str/lower email)}
+                                {:columns [:id :email]})]
       (when-not (:is-blocked profile)
         (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
         (db/delete! conn :http-session {:profile-id (:id profile)})

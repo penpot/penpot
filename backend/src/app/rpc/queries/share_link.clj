@@ -16,8 +16,7 @@
 
 (defn retrieve-share-link
   [conn file-id share-id]
-  (some-> (db/get-by-params conn :share-link
-                            {:id share-id :file-id file-id}
-                            {:check-not-found false})
+  (some-> (db/get* conn :share-link
+                   {:id share-id :file-id file-id})
           (decode-share-link-row)))
 
