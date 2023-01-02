@@ -21,7 +21,7 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest invite-team-member
+(t/deftest create-team-invitations
   (with-mocks [mock {:target 'app.emails/send! :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           profile2 (th/create-profile* 2 {:is-active true})
@@ -30,14 +30,14 @@
           team     (th/create-team* 1 {:profile-id (:id profile1)})
 
           pool     (:app.db/pool th/*system*)
-          data     {::th/type :invite-team-member
+          data     {::th/type :create-team-invitations
+                    ::rpc/profile-id (:id profile1)
                     :team-id (:id team)
-                    :role :editor
-                    :profile-id (:id profile1)}]
+                    :role :editor}]
 
       ;; invite external user without complaints
       (let [data       (assoc data :email "foo@bar.com")
-            out        (th/mutation! data)
+            out        (th/command! data)
             ;; retrieve the value from the database and check its content
             invitation (db/exec-one!
                         th/*pool*
@@ -52,7 +52,7 @@
       ;; invite internal user without complaints
       (th/reset-mock! mock)
       (let [data (assoc data :email (:email profile2))
-            out  (th/mutation! data)]
+            out  (th/command! data)]
         (t/is (th/success? out))
         (t/is (= 1 (:call-count (deref mock)))))
 
@@ -60,7 +60,7 @@
       (th/create-global-complaint-for pool {:type :complaint :email "foo@bar.com"})
       (th/reset-mock! mock)
       (let [data (assoc data :email "foo@bar.com")
-            out  (th/mutation! data)]
+            out  (th/command! data)]
         (t/is (th/success? out))
         (t/is (= 1 (:call-count (deref mock)))))
 
@@ -79,7 +79,7 @@
 
       (th/create-global-complaint-for pool {:type :bounce :email "foo@bar.com"})
       (let [data  (assoc data :email "foo@bar.com")
-            out   (th/mutation! data)]
+            out   (th/command! data)]
 
         (t/is (not (th/success? out)))
         (t/is (= 0 (:call-count @mock)))
@@ -92,7 +92,7 @@
       (th/reset-mock! mock)
 
       (let [data  (assoc data :email (:email profile3))
-            out   (th/mutation! data)]
+            out   (th/command! data)]
 
         (t/is (not (th/success? out)))
         (t/is (= 0 (:call-count @mock)))
@@ -115,12 +115,12 @@
           pool     (:app.db/pool th/*system*)]
 
       ;; Try to invite a not existing user
-      (let [data {::th/type :invite-team-member
+      (let [data {::th/type :create-team-invitations
+                  ::rpc/profile-id (:id profile1)
                   :email "notexisting@example.com"
                   :team-id (:id team)
-                  :role :editor
-                  :profile-id (:id profile1)}
-            out  (th/mutation! data)]
+                  :role :editor}
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (th/success? out))
@@ -139,12 +139,12 @@
       (th/reset-mock! mock)
 
       ;; Try to invite existing user
-      (let [data {::th/type :invite-team-member
+      (let [data {::th/type :create-team-invitations
+                  ::rpc/profile-id (:id profile1)
                   :email (:email profile2)
                   :team-id (:id team)
-                  :role :editor
-                  :profile-id (:id profile1)}
-            out  (th/mutation! data)]
+                  :role :editor}
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (th/success? out))
@@ -215,7 +215,9 @@
                    :role "editor"
                    :valid-until (dt/in-future "48h")})
 
-      (let [data {::th/type :verify-token :token token ::rpc/profile-id (:id profile2)}
+      (let [data {::th/type :verify-token
+                  ::rpc/profile-id (:id profile2)
+                  :token token}
             out  (th/command! data)]
         ;; (th/print-result! out)
         (t/is (th/success? out))
@@ -236,7 +238,9 @@
                    :role "editor"
                    :valid-until (dt/in-future "48h")})
 
-      (let [data {::th/type :verify-token :token token ::rpc/profile-id (:id profile1)}
+      (let [data {::th/type :verify-token
+                  ::rpc/profile-id (:id profile1)
+                  :token token}
             out  (th/command! data)]
         ;; (th/print-result! out)
         (t/is (not (th/success? out)))
@@ -246,7 +250,7 @@
 
       )))
 
-(t/deftest invite-team-member-with-email-verification-disabled
+(t/deftest create-team-invitations-with-email-verification-disabled
   (with-mocks [mock {:target 'app.emails/send! :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active true})
           profile2 (th/create-profile* 2 {:is-active true})
@@ -255,16 +259,16 @@
           team     (th/create-team* 1 {:profile-id (:id profile1)})
 
           pool     (:app.db/pool th/*system*)
-          data     {::th/type :invite-team-member
+          data     {::th/type :create-team-invitations
+                    ::rpc/profile-id (:id profile1)
                     :team-id (:id team)
-                    :role :editor
-                    :profile-id (:id profile1)}]
+                    :role :editor}]
 
       ;; invite internal user without complaints
       (with-redefs [app.config/flags #{}]
         (th/reset-mock! mock)
         (let [data (assoc data :email (:email profile2))
-              out  (th/mutation! data)]
+              out  (th/command! data)]
           (t/is (th/success? out))
           (t/is (= 0 (:call-count (deref mock)))))
 
@@ -279,8 +283,8 @@
         team     (th/create-team* 1 {:profile-id (:id profile1)})
         pool     (:app.db/pool th/*system*)
         data     {::th/type :delete-team
-                  :team-id (:id team)
-                  :profile-id (:id profile1)}]
+                  ::rpc/profile-id (:id profile1)
+                  :team-id (:id team)}]
 
     ;; team is not deleted because it does not meet all
     ;; conditions to be deleted.
@@ -288,9 +292,9 @@
       (t/is (= 0 (:processed result))))
 
     ;; query the list of teams
-    (let [data {::th/type :teams
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-teams
+                ::rpc/profile-id (:id profile1)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (th/success? out))
       (let [result (:result out)]
@@ -300,15 +304,15 @@
 
     ;; Request team to be deleted
     (let [params {::th/type :delete-team
-                  :id (:id team)
-                  :profile-id (:id profile1)}
-          out    (th/mutation! params)]
+                  ::rpc/profile-id (:id profile1)
+                  :id (:id team)}
+          out    (th/command! params)]
       (t/is (th/success? out)))
 
     ;; query the list of teams after soft deletion
-    (let [data {::th/type :teams
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-teams
+                ::rpc/profile-id (:id profile1)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (th/success? out))
       (let [result (:result out)]
@@ -321,8 +325,8 @@
 
     ;; query the list of projects after hard deletion
     (let [data {::th/type :projects
-                :team-id (:id team)
-                :profile-id (:id profile1)}
+                :profile-id (:id profile1)
+                :team-id (:id team)}
           out  (th/query! data)]
       ;; (th/print-result! out)
       (t/is (not (th/success? out)))
@@ -335,8 +339,8 @@
 
     ;; query the list of projects of a after hard deletion
     (let [data {::th/type :projects
-                :team-id (:id team)
-                :profile-id (:id profile1)}
+                :profile-id (:id profile1)
+                :team-id (:id team)}
           out  (th/query! data)]
       ;; (th/print-result! out)
 
@@ -348,8 +352,8 @@
 (t/deftest query-team-invitations
   (let [prof (th/create-profile* 1 {:is-active true})
         team (th/create-team* 1 {:profile-id (:id prof)})
-        data {::th/type :team-invitations
-              :profile-id (:id prof)
+        data {::th/type :get-team-invitations
+              ::rpc/profile-id (:id prof)
               :team-id (:id team)}]
 
     ;; insert an entry on the database with an enabled invitation
@@ -366,7 +370,7 @@
                  :role "editor"
                  :valid-until (dt/in-past "48h")})
 
-    (let [out (th/query! data)]
+    (let [out (th/command! data)]
       (t/is (th/success? out))
       (let [result (:result out)
             one    (first result)
@@ -381,7 +385,7 @@
   (let [prof (th/create-profile* 1 {:is-active true})
         team (th/create-team* 1 {:profile-id (:id prof)})
         data {::th/type :update-team-invitation-role
-              :profile-id (:id prof)
+              ::rpc/profile-id (:id prof)
               :team-id (:id team)
               :email "TEST1@mail.com"
               :role :admin}]
@@ -393,7 +397,7 @@
                  :role "editor"
                  :valid-until (dt/in-future "48h")})
 
-    (let [out (th/mutation! data)
+    (let [out (th/command! data)
           ;; retrieve the value from the database and check its content
           res (db/get* th/*pool* :team-invitation
                        {:team-id (:team-id data) :email-to "test1@mail.com"})]
@@ -405,7 +409,7 @@
   (let [prof (th/create-profile* 1 {:is-active true})
         team (th/create-team* 1 {:profile-id (:id prof)})
         data {::th/type :delete-team-invitation
-              :profile-id (:id prof)
+              ::rpc/profile-id (:id prof)
               :team-id (:id team)
               :email "TEST1@mail.com"}]
 
@@ -416,7 +420,7 @@
                  :role "editor"
                  :valid-until (dt/in-future "48h")})
 
-    (let [out (th/mutation! data)
+    (let [out (th/command! data)
           ;; retrieve the value from the database and check its content
           res (db/get* th/*pool* :team-invitation
                        {:team-id (:team-id data) :email-to "test1@mail.com"})]

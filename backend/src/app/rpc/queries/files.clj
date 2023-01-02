@@ -179,6 +179,5 @@
 (sv/defmethod ::search-files
   {::doc/added "1.0"
    ::doc/deprecated "1.17"}
-  [{:keys [pool]} {:keys [search-term] :as params}]
-  (when search-term
-    (search/search-files pool params)))
+  [{:keys [pool]} {:keys [profile-id team-id search-term]}]
+  (some->> search-term (search/search-files pool profile-id team-id)))

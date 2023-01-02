@@ -34,10 +34,10 @@
   {::climit/queue :auth
    ::climit/key-fn ::rpc/profile-id
    ::doc/added "1.18"}
-  [{:keys [::db/pool]} {:keys [password] :as params}]
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id password]}]
   (db/with-atomic [conn pool]
     (let [admins  (cf/get :admins)
-          profile (db/get-by-id conn :profile (::rpc/profile-id params))]
+          profile (db/get-by-id conn :profile profile-id)]
 
       (if (or (:is-admin profile)
               (contains? admins (:email profile)))

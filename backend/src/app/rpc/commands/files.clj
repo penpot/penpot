@@ -268,7 +268,7 @@
   {::doc/added "1.17"
    ::cond/get-object #(get-minimal-file %1 (:id %2))
    ::cond/key-fn get-file-etag}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id features] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id features]}]
   (with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id id)]
       (check-read-permissions! perms)
@@ -296,7 +296,7 @@
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
    ::rpc/:auth false}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id fragment-id share-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id fragment-id share-id] }]
   (with-open [conn (db/open pool)]
     (let [perms (get-permissions conn profile-id file-id share-id)]
       (check-read-permissions! perms)
@@ -363,7 +363,7 @@
 (sv/defmethod ::get-project-files
   "Get all files for the specified project."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id]}]
   (with-open [conn (db/open pool)]
     (projects/check-read-permissions! conn profile-id project-id)
     (get-project-files conn project-id)))
@@ -376,15 +376,16 @@
 (s/def ::file-id ::us/uuid)
 
 (s/def ::has-file-libraries
-  (s/keys :req [::rpc/profile-id] :req-un [::file-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id]))
 
 (sv/defmethod ::has-file-libraries
   "Checks if the file has libraries. Returns a boolean"
   {::doc/added "1.15.1"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! pool profile-id file-id)
-    (get-has-file-libraries conn params)))
+    (get-has-file-libraries conn file-id)))
 
 (def ^:private sql:has-file-libraries
   "SELECT COUNT(*) > 0 AS has_libraries
@@ -395,7 +396,7 @@
            fl.deleted_at > now())")
 
 (defn- get-has-file-libraries
-  [conn {:keys [file-id]}]
+  [conn file-id]
   (let [row (db/exec-one! conn [sql:has-file-libraries file-id])]
     (:has-libraries row)))
 
@@ -474,7 +475,7 @@
     order by f.modified_at desc")
 
 (defn get-team-shared-files
-  [conn {:keys [team-id] :as params}]
+  [conn team-id]
   (letfn [(assets-sample [assets limit]
             (let [sorted-assets (->> (vals assets)
                                      (sort-by #(str/lower (:name %))))]
@@ -494,14 +495,16 @@
                     (map #(dissoc % :data)))))))
 
 (s/def ::get-team-shared-files
-  (s/keys :req [::rpc/profile-id] :req-un [::team-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::team-id]))
 
 (sv/defmethod ::get-team-shared-files
   "Get all file (libraries) for the specified team."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (with-open [conn (db/open pool)]
-    (get-team-shared-files conn params)))
+    (teams/check-read-permissions! conn profile-id team-id)
+    (get-team-shared-files conn team-id)))
 
 
 ;; --- COMMAND QUERY: get-file-libraries
@@ -552,7 +555,7 @@
 (sv/defmethod ::get-file-libraries
   "Get libraries used by the specified file."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id features] :as params}]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id features]}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (get-file-libraries conn file-id features)))
@@ -582,7 +585,6 @@
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (get-library-file-references conn file-id)))
-
 
 ;; --- COMMAND QUERY: get-team-recent-files
 
@@ -765,7 +767,7 @@
 ;; --- MUTATION COMMAND: rename-file
 
 (defn rename-file
-  [conn {:keys [id name] :as params}]
+  [conn {:keys [id name]}]
   (db/update! conn :file
               {:name name
                :modified-at (dt/now)}
@@ -899,7 +901,7 @@
 ;; --- MUTATION COMMAND: unlink-file-from-library
 
 (defn unlink-file-from-library
-  [conn {:keys [file-id library-id] :as params}]
+  [conn {:keys [file-id library-id]}]
   (db/delete! conn :file-library-rel
               {:file-id file-id
                :library-file-id library-id}))

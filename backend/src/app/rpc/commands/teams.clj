@@ -385,14 +385,8 @@
 
 (declare role->params)
 
-(s/def ::reassign-to ::us/uuid)
-(s/def ::leave-team
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::id]
-          :opt-un [::reassign-to]))
-
 (defn leave-team
-  [conn {:keys [::rpc/profile-id id reassign-to]}]
+  [conn {:keys [profile-id id reassign-to]}]
   (let [perms   (get-permissions conn profile-id id)
         members (retrieve-team-members conn id)]
 
@@ -437,12 +431,17 @@
 
     nil))
 
+(s/def ::reassign-to ::us/uuid)
+(s/def ::leave-team
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::id]
+          :opt-un [::reassign-to]))
 
 (sv/defmethod ::leave-team
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (leave-team conn params)))
+    (leave-team conn (assoc params :profile-id profile-id))))
 
 ;; --- Mutation: Delete Team
 
@@ -539,9 +538,9 @@
 
 (sv/defmethod ::update-team-member-role
   {::doc/added "1.17"}
-  [{:keys [::db/pool] :as cfg} params]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (update-team-member-role conn (assoc params :profile-id (::rpc/profile-id params)))))
+    (update-team-member-role conn (assoc params :profile-id profile-id))))
 
 
 ;; --- Mutation: Delete Team Member
