@@ -13,6 +13,7 @@
       :clj [clojure.core :as c])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.math :as mth]
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]
@@ -62,7 +63,7 @@
      (map->Point v)
 
      :else
-     (throw (ex-info "Invalid arguments" {:v v}))))
+     (ex/raise :hint "invalid arguments (on pointer constructor)" :value v)))
   ([x y]
    (Point. x y)))
 

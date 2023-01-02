@@ -36,6 +36,7 @@
 - Fix selection stroke missing in properties of multiple texts [Taiga #4048](https://tree.taiga.io/project/penpot/issue/4048)
 - Fix missing create component menu for frames [Github #2670](https://github.com/penpot/penpot/issues/2670)
 - Fix "currentColor" is not converted when importing SVG [Github 2276](https://github.com/penpot/penpot/issues/2276)
+- Fix incorrect color in properties of multiple bool shapes [Taiga #4355](https://tree.taiga.io/project/penpot/issue/4355)
 
 ### :arrow_up: Deps updates
 

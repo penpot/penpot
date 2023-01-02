@@ -190,26 +190,27 @@
                            [(get-in objects [k :name]) v]))
                     modif-tree)))
 
+(defn apply-text-modifier
+  [shape {:keys [width height]}]
+  (cond-> shape
+    (some? width)
+    (assoc :width width)
+
+    (some? height)
+    (assoc :height height)
+
+    (or (some? width) (some? height))
+    (cts/setup-rect-selrect)))
+
 (defn apply-text-modifiers
   [objects text-modifiers]
-  (letfn [(apply-text-modifier
-            [shape {:keys [width height]}]
-            (cond-> shape
-              (some? width)
-              (assoc :width width)
-
-              (some? height)
-              (assoc :height height)
-
-              (or (some? width) (some? height))
-              (cts/setup-rect-selrect)))]
-    (loop [modifiers (seq text-modifiers)
-           result objects]
-      (if (empty? modifiers)
-        result
-        (let [[id text-modifier] (first modifiers)]
-          (recur (rest modifiers)
-                 (update objects id apply-text-modifier text-modifier)))))))
+  (loop [modifiers (seq text-modifiers)
+         result objects]
+    (if (empty? modifiers)
+      result
+      (let [[id text-modifier] (first modifiers)]
+        (recur (rest modifiers)
+               (update objects id apply-text-modifier text-modifier))))))
 
 #_(defn apply-path-modifiers
   [objects path-modifiers]
@@ -241,6 +242,33 @@
        (apply-text-modifiers $ (get state :workspace-text-modifier))
        ;;(apply-path-modifiers $ (get-in state [:workspace-local :edit-path]))
        (gsh/set-objects-modifiers modif-tree $ ignore-constraints snap-pixel?)))))
+
+(defn- calculate-update-modifiers
+  [old-modif-tree state ignore-constraints ignore-snap-pixel modif-tree]
+  (let [objects
+        (wsh/lookup-page-objects state)
+
+        snap-pixel?
+        (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
+
+        objects
+        (-> objects
+            (apply-text-modifiers (get state :workspace-text-modifier)))]
+
+    (gsh/set-objects-modifiers  old-modif-tree modif-tree objects ignore-constraints snap-pixel?)))
+
+(defn update-modifiers
+  ([modif-tree]
+   (update-modifiers modif-tree false))
+
+  ([modif-tree ignore-constraints]
+   (update-modifiers modif-tree ignore-constraints false))
+
+  ([modif-tree ignore-constraints ignore-snap-pixel]
+   (ptk/reify ::update-modifiers
+     ptk/UpdateEvent
+     (update [_ state]
+       (update state :workspace-modifiers calculate-update-modifiers state ignore-constraints ignore-snap-pixel modif-tree)))))
 
 (defn set-modifiers
   ([modif-tree]

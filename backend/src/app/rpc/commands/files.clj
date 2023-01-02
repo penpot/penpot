@@ -151,11 +151,14 @@
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
 
-;; A user has comment permissions if she has read permissions, or comment permissions
+;; A user has comment permissions if she has read permissions, or
+;; explicit comment permissions through the share-id
+
 (defn check-comment-permissions!
   [conn profile-id file-id share-id]
-  (let [can-read (has-read-permissions? conn profile-id file-id)
-        can-comment  (has-comment-permissions? conn profile-id file-id share-id)]
+  (let [perms       (get-permissions conn profile-id file-id share-id)
+        can-read    (has-read-permissions? perms)
+        can-comment (has-comment-permissions? perms)]
     (when-not (or can-read can-comment)
       (ex/raise :type :not-found
                 :code :object-not-found

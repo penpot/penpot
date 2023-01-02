@@ -696,7 +696,7 @@
         (pcb/resize-parents parents))))
 
 (defn relocate-shapes
-  [ids parent-id to-index]
+  [ids parent-id to-index & [ignore-parents?]]
   (us/verify (s/coll-of ::us/uuid) ids)
   (us/verify ::us/uuid parent-id)
   (us/verify number? to-index)
@@ -712,7 +712,9 @@
 
             ;; If we try to move a parent into a child we remove it
             ids      (filter #(not (cph/is-parent? objects parent-id %)) ids)
-            parents  (into #{parent-id} (map #(cph/get-parent-id objects %)) ids)
+            parents  (if ignore-parents?
+                       #{parent-id}
+                       (into #{parent-id} (map #(cph/get-parent-id objects %)) ids))
 
             groups-to-delete
             (loop [current-id  (first parents)
@@ -1830,6 +1832,21 @@
                (remove-layout-flag :colorpalette)
                (remove-layout-flag :textpalette))
         (rx/empty)))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Orphan Shapes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn fix-orphan-shapes
+  []
+  (ptk/reify ::fix-orphan-shapes
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [orphans (set (into [] (keys (wsh/find-orphan-shapes state))))]
+        (rx/of (relocate-shapes orphans uuid/zero 0 true))))))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

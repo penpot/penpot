@@ -18,6 +18,7 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.rpc.quotes :as quotes]
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -49,6 +50,9 @@
   [{:keys [pool] :as cfg} {:keys [team-id profile-id] :as params}]
   (let [cfg (update cfg :storage media/configure-assets-storage)]
     (teams/check-edition-permissions! pool profile-id team-id)
+    (quotes/check-quote! pool {::quotes/id ::quotes/font-variants-per-team
+                               ::quotes/profile-id profile-id
+                               ::quotes/team-id team-id})
     (create-font-variant cfg params)))
 
 (defn create-font-variant

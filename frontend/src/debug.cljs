@@ -346,3 +346,6 @@
   [read-only?]
   (st/emit! (dw/set-workspace-read-only read-only?)))
 
+(defn ^:export fix-orphan-shapes
+  []
+  (st/emit! (dw/fix-orphan-shapes)))

@@ -167,6 +167,7 @@
   (instance? javax.sql.DataSource v))
 
 (s/def ::pool pool?)
+(s/def ::conn-or-pool some?)
 
 (defn closed?
   [pool]

@@ -39,7 +39,6 @@
               (rx/filter ms/mouse-click?)
               (rx/switch-map #(rx/take 1 ms/mouse-position))
               (rx/with-latest-from ms/keyboard-space)
-              (rx/tap prn)
               (rx/filter (fn [[_ space]] (not space)) )
               (rx/map first)
               (rx/map handle-comment-layer-click)

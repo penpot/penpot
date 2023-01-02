@@ -57,9 +57,10 @@
         color: $color-gray-30;
         height: 40px;
         padding: $size-1 $size-5;
-
+        font-weight: 400;
         &:hover {
           color: $color-black;
+          text-decoration: none;
         }
       }
 

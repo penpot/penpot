@@ -462,6 +462,7 @@
         on-change-ref        (mf/use-ref nil)
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         editable?            (and local? (not workspace-read-only?))
+        open?                (if (nil? open?) (mf/use-state editing?) open?)
 
         on-name-blur
         (mf/use-callback

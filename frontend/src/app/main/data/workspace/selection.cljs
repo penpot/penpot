@@ -23,6 +23,7 @@
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.streams :as ms]
@@ -502,8 +503,11 @@
   [obj state objects]
   (let [{:keys [id-original id-duplicated]}
         (get-in state [:workspace-local :duplicated])]
-    (if (and (not= id-original (:id obj))
-             (not= id-duplicated (:id obj)))
+    (if (or (and (not= id-original (:id obj))
+                 (not= id-duplicated (:id obj)))
+            ;; As we can remove duplicated elements may be we can still caching a deleted id
+            (not (contains? objects id-original))
+            (not (contains? objects id-duplicated)))
 
       ;; The default is leave normal shapes in place, but put
       ;; new frames to the right of the original.
@@ -556,16 +560,21 @@
 
                   frames (into #{}
                                (map #(get-in objects [% :frame-id]))
-                               selected)]
+                               selected)
+                  undo-id (uuid/next)]
+
               (rx/concat
                (->> (rx/from dup-frames)
                     (rx/map (fn [[old-id new-id]] (dwt/duplicate-thumbnail old-id new-id))))
 
                ;; Warning: This order is important for the focus mode.
-               (rx/of (dch/commit-changes changes)
-                      (select-shapes new-selected)
-                      (ptk/data-event :layout/update frames)
-                      (memorize-duplicated id-original id-duplicated))))))))))
+               (rx/of
+                (dwu/start-undo-transaction undo-id)
+                (dch/commit-changes changes)
+                (select-shapes new-selected)
+                (ptk/data-event :layout/update frames)
+                (memorize-duplicated id-original id-duplicated)
+                (dwu/commit-undo-transaction undo-id))))))))))
 
 (defn change-hover-state
   [id value]
