@@ -332,6 +332,7 @@
   (let [method-fn (get-in *system* [:app.rpc/methods :mutations type])]
     (try-on! (method-fn (-> data
                             (dissoc ::type)
+                            (assoc ::rpc/profile-id profile-id)
                             (d/without-nils))))))
 
 (defn query!

@@ -142,9 +142,9 @@
 
           (update-file [{:keys [profile-id file-id changes revn] :or {revn 0}}]
             (let [params {::th/type :update-file
+                          ::rpc/profile-id profile-id
                           :id file-id
                           :session-id (uuid/random)
-                          ::rpc/profile-id profile-id
                           :revn revn
                           :components-v2 true
                           :changes changes}

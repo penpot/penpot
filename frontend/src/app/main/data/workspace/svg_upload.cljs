@@ -466,9 +466,10 @@
                      {:name (extract-name uri)
                       :url uri}))))
        (rx/mapcat (fn [uri-data]
-                    (->> (rp/mutation! (if (contains? uri-data :content)
-                                         :upload-file-media-object
-                                         :create-file-media-object-from-url) uri-data)
+                    (->> (rp/command! (if (contains? uri-data :content)
+                                        :upload-file-media-object
+                                        :create-file-media-object-from-url)
+                                      uri-data)
                          ;; When the image uploaded fail we skip the shape
                          ;; returning `nil` will afterward not create the shape.
                          (rx/catch #(rx/of nil))
