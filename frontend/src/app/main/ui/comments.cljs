@@ -6,6 +6,7 @@
 
 (ns app.main.ui.comments
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.config :as cfg]
    [app.main.data.comments :as dcm]
@@ -333,7 +334,7 @@
                           :thread thread
                           :origin origin}]
         (for [item (rest comments)]
-          [:*
+          [:* {:key (dm/str (:id item))}
            [:hr]
            [:& comment-item {:comment item
                              :users users

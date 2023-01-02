@@ -173,20 +173,18 @@
   (cond
     (= :feature-mismatch code)
     (let [message (tr "errors.feature-mismatch" (:feature error))]
-      (st/emit! (modal/show
-                 {:type :alert
-                  :message message
-                  :on-accept #(prn "kaka")})))
+      (st/emit! (modal/show {:type :alert :message message})))
 
     (= :features-not-supported code)
     (let [message (tr "errors.feature-not-supported" (:feature error))]
-      (st/emit! (modal/show
-                 {:type :alert
-                  :message message
-                  :on-accept #(prn "kaka")})))
+      (st/emit! (modal/show {:type :alert :message message})))
+
+    (= :max-quote-reached code)
+    (let [message (tr "errors.max-quote-reached" (:target error))]
+      (st/emit! (modal/show {:type :alert :message message})))
 
     :else
-    (ptk/handle-error (assoc error :type :server-error))))
+    (ptk/handle-error {:type :server-error :data error})))
 
 ;; This happens when the backed server fails to process the
 ;; request. This can be caused by an internal assertion or any other

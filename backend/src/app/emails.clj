@@ -257,15 +257,17 @@
   "Schedule an already defined email to be sent using asynchronously
   using worker task."
   [{:keys [::conn ::factory] :as context}]
-  (us/verify fn? factory)
   (us/verify some? conn)
-  (let [email (factory context)]
-    (wrk/submit! (assoc email
-                        ::wrk/task :sendmail
-                        ::wrk/delay 0
-                        ::wrk/max-retries 4
-                        ::wrk/priority 200
-                        ::wrk/conn conn))))
+  (let [email (if factory
+                (factory context)
+                (dissoc context ::conn))]
+    (wrk/submit! (merge
+                  {::wrk/task :sendmail
+                   ::wrk/delay 0
+                   ::wrk/max-retries 4
+                   ::wrk/priority 200
+                   ::wrk/conn conn}
+                  email))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SENDMAIL FN / TASK HANDLER

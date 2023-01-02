@@ -743,6 +743,18 @@ msgstr "Webhook modificado con éxito"
 msgid "dashboard.webhooks.create.success"
 msgstr "Webhook creado con éxito"
 
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Caracteristica no soportada: '%s'."
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Ha alcalzando el maximo de la quota '%s'. Contacte con soporte tecnico."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr "Parece que esta abriendo un fichero con la caracteristica '%s' habilitada pero la aplicacion web de penpot que esta usando no tiene soporte para ella o esta deshabilitada."
+
 msgid "errors.webhooks.timeout"
 msgstr "Timeout"
 

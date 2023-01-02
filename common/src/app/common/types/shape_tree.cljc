@@ -247,7 +247,7 @@
 (defn top-nested-frame-ids
   "Search the top nested frame in a list of ids"
   [objects ids]
-  
+
   (let [frame-ids (->> ids (filter #(cph/frame-shape? objects %)))
         frame-set (set frame-ids)]
     (loop [current-id (first frame-ids)]
@@ -296,11 +296,14 @@
     [p1 (+ 1 (d/parse-integer p2))]
     [basename 1]))
 
+(s/def ::set-of-strings
+  (s/every ::us/string :kind set?))
+
 (defn generate-unique-name
   "A unique name generator"
   [used basename]
-  (s/assert ::us/set-of-string used)
-  (s/assert ::us/string basename)
+  (us/assert! ::set-of-strings used)
+  (us/assert! ::us/string basename)
   (if-not (contains? used basename)
     basename
     (let [[prefix initial] (extract-numeric-suffix basename)]
@@ -355,8 +358,8 @@
            [new-object new-objects updated-objects])
 
          (let [child-id (first child-ids)
-               child (get objects child-id)
-               _ (us/assert some? child)
+               child    (get objects child-id)
+               _        (us/assert! ::us/some child)
 
                [new-child new-child-objects updated-child-objects]
                (clone-object child new-id objects update-new-object update-original-object)]

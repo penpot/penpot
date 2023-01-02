@@ -26,7 +26,7 @@
    [app.rpc.rlimit :as rlimit]
    [app.storage :as-alias sto]
    [app.util.services :as sv]
-   [app.util.time :as ts]
+   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
@@ -115,7 +115,9 @@
   [methods {:keys [profile-id session-id params] :as request} respond raise]
   (let [cmd    (keyword (:type params))
         etag   (yrq/get-header request "if-none-match")
-        data   (into {::http/request request ::cond/key etag} params)
+        data   (into {::request-at (dt/now)
+                      ::http/request request
+                      ::cond/key etag} params)
         data   (if profile-id
                  (assoc data ::profile-id profile-id ::session-id session-id)
                  (dissoc data ::profile-id))
@@ -133,7 +135,7 @@
   [{:keys [metrics ::metrics-id]} f mdata]
   (let [labels (into-array String [(::sv/name mdata)])]
     (fn [cfg params]
-      (let [tp (ts/tpoint)]
+      (let [tp (dt/tpoint)]
         (p/finally
           (f cfg params)
           (fn [_ _]

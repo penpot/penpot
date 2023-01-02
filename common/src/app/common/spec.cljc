@@ -249,14 +249,6 @@
   (s/with-gen (s/and string? #(not (str/empty? %)))
     #(tgen/such-that (complement str/empty?) (s/gen ::string))))
 
-(s/def ::url ::string)
-(s/def ::fn fn?)
-(s/def ::id ::uuid)
-
-(s/def ::set-of-string (s/every ::string :kind set?))
-(s/def ::coll-of-uuid (s/every ::uuid))
-(s/def ::set-of-uuid (s/every ::uuid :kind set?))
-
 #?(:clj
    (s/def ::agent #(instance? clojure.lang.Agent %)))
 
@@ -299,6 +291,13 @@
 (s/def ::safe-number
   (s/with-gen safe-number? #(tgen/one-of [(s/gen ::safe-integer)
                                           (s/gen ::safe-float)])))
+
+(s/def ::url ::string)
+(s/def ::fn fn?)
+(s/def ::id ::uuid)
+(s/def ::some some?)
+(s/def ::coll-of-uuid (s/every ::uuid))
+(s/def ::set-of-uuid (s/every ::uuid :kind set?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MACROS

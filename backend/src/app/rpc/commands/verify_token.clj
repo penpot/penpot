@@ -16,6 +16,7 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.queries.profile :as profile]
+   [app.rpc.quotes :as quotes]
    [app.tokens :as tokens]
    [app.tokens.spec.team-invitation :as-alias spec.team-invitation]
    [app.util.services :as sv]
@@ -95,6 +96,11 @@
     (when (:is-blocked member)
       (ex/raise :type :restriction
                 :code :profile-blocked))
+
+    (quotes/check-quote! conn
+                         {::quotes/id ::quotes/profiles-per-team
+                          ::quotes/profile-id (:id member)
+                          ::quotes/team-id team-id})
 
     ;; Insert the invited member to the team
     (db/insert! conn :team-profile-rel params {:on-conflict-do-nothing true})

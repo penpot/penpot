@@ -23,6 +23,7 @@
    [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.profile :as profile]
+   [app.rpc.quotes :as quotes]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
@@ -297,6 +298,9 @@
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
+    (quotes/check-quote! conn {::quotes/id ::quotes/teams-per-profile
+                               ::quotes/profile-id profile-id})
+
     (create-team conn (assoc params :profile-id profile-id))))
 
 (defn create-team
@@ -739,6 +743,17 @@
           team     (db/get-by-id conn :team team-id)
           emails   (cond-> (or emails #{}) (string? email) (conj email))]
 
+
+      (run! (partial quotes/check-quote! conn)
+            (list {::quotes/id ::quotes/invitations-per-team
+                   ::quotes/profile-id profile-id
+                   ::quotes/team-id (:id team)
+                   ::quotes/incr (count emails)}
+                  {::quotes/id ::quotes/profiles-per-team
+                   ::quotes/profile-id profile-id
+                   ::quotes/team-id (:id team)
+                   ::quotes/incr (count emails)}))
+
       (when-not (:is-admin perms)
         (ex/raise :type :validation
                   :code :insufficient-permissions))
@@ -784,6 +799,18 @@
                    :email (str/lower email)
                    :role role}))
            (run! (partial create-invitation cfg)))
+
+      (run! (partial quotes/check-quote! conn)
+            (list {::quotes/id ::quotes/teams-per-profile
+                   ::quotes/profile-id profile-id}
+                  {::quotes/id ::quotes/invitations-per-team
+                   ::quotes/profile-id profile-id
+                   ::quotes/team-id (:id team)
+                   ::quotes/incr (count emails)}
+                  {::quotes/id ::quotes/profiles-per-team
+                   ::quotes/profile-id profile-id
+                   ::quotes/team-id (:id team)
+                   ::quotes/incr (count emails)}))
 
       (-> team
           (vary-meta assoc ::audit/props {:invitations (count emails)})
