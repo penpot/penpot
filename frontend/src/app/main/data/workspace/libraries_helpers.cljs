@@ -60,13 +60,14 @@
 ;; ---- Components and instances creation ----
 
 (defn generate-add-component
-  "If there is exactly one id, and it's a group, and not already a component, use
-  it as root. Otherwise, create a group that contains all ids. Then, make a
+  "If there is exactly one id, and it's a group or a frame, and not already a component,
+  use it as root. Otherwise, create a group that contains all ids. Then, make a
   component with it, and link all shapes to their corresponding one in the component."
   [it shapes objects page-id file-id components-v2]
   (let [[group changes]
         (if (and (= (count shapes) 1)
-                 (= (:type (first shapes)) :group)
+                 (or (= (:type (first shapes)) :group)
+                     (= (:type (first shapes)) :frame))
                  (not (ctk/instance-root? (first shapes))))
           [(first shapes) (-> (pcb/empty-changes it page-id)
                               (pcb/with-objects objects))]
