@@ -23,8 +23,22 @@
   [type data]
   (ptk/data-event type data))
 
+;;(def debug-exclude-events
+;;  #{:app.main.data.workspace.notifications/handle-pointer-update
+;;    :app.main.data.workspace.notifications/handle-pointer-send
+;;    :app.main.data.workspace.persistence/update-persistence-status
+;;    :app.main.data.workspace.changes/update-indices
+;;    :app.main.data.websocket/send-message
+;;    :app.main.data.workspace.selection/change-hover-state})
+;; (def ^:dynamic *debug-events* false)
+
 (defonce state
   (ptk/store {:resolve ptk/resolve
+              ;;:on-event (fn [e]
+              ;;            (when (and *debug-events*
+              ;;                       (ptk/event? e)
+              ;;                       (not (debug-exclude-events (ptk/type e))))
+              ;;              (.log js/console (str "[stream]: " (ptk/repr-event e)) )))
               :on-error (fn [e] (@on-error e))}))
 
 (defonce stream

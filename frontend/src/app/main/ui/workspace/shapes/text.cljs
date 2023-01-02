@@ -39,7 +39,7 @@
       [:& text/text-shape {:shape shape}]]
 
      (when (and (debug? :text-outline) (d/not-empty? (:position-data shape)))
-       [:g {:transform (gsh/transform-str shape {:no-flip true})}
+       [:g {:transform (gsh/transform-str shape)}
         (let [bounding-box (gsht/position-data-selrect shape)]
           [:rect {
                   :x (:x bounding-box)

@@ -111,10 +111,10 @@
        (cond-> (some? transform)
          (gmt/multiply transform))
 
-       (cond-> (and flip-x (not no-flip))
+       (cond-> (and flip-x no-flip)
          (gmt/scale (gpt/point -1 1)))
 
-       (cond-> (and flip-y (not no-flip))
+       (cond-> (and flip-y no-flip)
          (gmt/scale (gpt/point 1 -1)))
 
        (gmt/translate (gpt/negate shape-center)))))
@@ -126,8 +126,8 @@
   ([{:keys [transform flip-x flip-y] :as shape} {:keys [no-flip] :as params}]
    (if (and (some? shape)
             (or (some? transform)
-                (and (not no-flip) flip-x)
-                (and (not no-flip) flip-y)))
+                (and no-flip flip-x)
+                (and no-flip flip-y)))
      (dm/str (transform-matrix shape params))
      "")))
 

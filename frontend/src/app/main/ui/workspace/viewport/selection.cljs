@@ -272,7 +272,7 @@
         current-transform (mf/deref refs/current-transform)
 
         selrect (:selrect shape)
-        transform (gsh/transform-str shape {:no-flip true})]
+        transform (gsh/transform-str shape)]
 
     (when (not (#{:move :rotate} current-transform))
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
@@ -297,7 +297,7 @@
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         selrect (:selrect shape)
-        transform (gsh/transform-matrix shape {:no-flip true})
+        transform (gsh/transform-matrix shape)
 
         rotation (-> (gpt/point 1 0)
                      (gpt/transform (:transform shape))
@@ -309,7 +309,22 @@
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect shape zoom)]
-         (let [common-props {:key (dm/str (name type) "-" (name position))
+         (let [rotation
+               (cond
+                 (and (#{:top-left :bottom-right} position)
+                      (or (and (:flip-x shape) (not (:flip-y shape)))
+                          (and (:flip-y shape) (not (:flip-x shape)))))
+                 (- rotation 90)
+
+                 (and (#{:top-right :bottom-left} position)
+                      (or (and (:flip-x shape) (not (:flip-y shape)))
+                          (and (:flip-y shape) (not (:flip-x shape)))))
+                 (+ rotation 90)
+
+                 :else
+                 rotation)
+
+               common-props {:key (dm/str (name type) "-" (name position))
                              :zoom zoom
                              :position position
                              :on-rotate on-rotate
