@@ -204,6 +204,10 @@
       padding: $size-2;
       a {
         width: 100%;
+        font-weight: 400;
+        &:hover {
+          text-decoration: none;
+        }
       }
 
       svg {
