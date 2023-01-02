@@ -31,12 +31,12 @@
 
       ;; No multiple selection
       (let [color (if (string? color) {:color color :opacity 1} color)]
-        [:div.color-bullet.tooltip.tooltip-right
+        [:div.color-bullet
          {:class (dom/classnames :is-library-color (some? (:id color))
                                  :is-not-library-color (nil? (:id color))
                                  :is-gradient (some? (:gradient color)))
           :on-click on-click
-          :title (or (:name color) (:color color) (gradient-type->string (:type (:gradient color))))}
+          :title (or (:color-library-name color) (:name color) (:color color) (gradient-type->string (:type (:gradient color))))}
          (if  (:gradient color)
            [:div.color-bullet-wrapper {:style {:background (uc/color->background color)}}]
            [:div.color-bullet-wrapper
