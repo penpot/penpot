@@ -408,8 +408,7 @@
                       (not (mth/close? (:height props) current-height))))
 
            (let [modif-tree (dwm/create-modif-tree [id] (ctm/reflow-modifiers))]
-             (->> (rx/of (dwm/set-modifiers modif-tree))
-                  (rx/observe-on :async)))
+             (rx/of (dwm/update-modifiers modif-tree)))
            (rx/empty)))))))
 
 (defn clean-text-modifier
