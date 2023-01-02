@@ -203,7 +203,11 @@
       flex-shrink: 0;
       padding: $size-2;
       a {
+        font-weight: 400;
         width: 100%;
+        &:hover {
+          text-decoration: none;
+        }
       }
 
       svg {
@@ -279,7 +283,9 @@
       }
 
       &.current {
-        font-weight: bold;
+        a {
+          font-weight: bold;
+        }
 
         &::before {
           background-color: $color-primary;
