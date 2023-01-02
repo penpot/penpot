@@ -11,7 +11,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
-   [app.common.path.commands :as upc]))
+   [app.common.path.commands :as upc]
+   [app.common.uuid :as uuid]))
 
 (defn lookup-page
   ([state]
@@ -146,4 +147,14 @@
   (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
     (gpt/point (+ x (/ width 2)) (+ y (/ height 2)))))
 
-
+(defn find-orphan-shapes
+  ([state]
+   (find-orphan-shapes state (:current-page-id state)))
+  ([state page-id]
+   (let [objects  (lookup-page-objects state page-id)
+         objects (filter (fn [item]
+                           (and
+                            (not= (key item) uuid/zero)
+                            (not (contains? objects (:parent-id (val item))))))
+                         objects)]
+     objects)))
