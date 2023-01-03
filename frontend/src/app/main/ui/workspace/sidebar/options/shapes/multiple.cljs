@@ -327,7 +327,7 @@
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
-     [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values}]
+     [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values :multiple true}]
 
      (when is-layout-child?
        [:& layout-item-menu

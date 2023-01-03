@@ -168,13 +168,12 @@
     (for [justify [:space-around :space-between]]
       [:button.justify.tooltip
        {:class    (dom/classnames :active  (= justify-content justify)
-                                  :tooltip-bottom-left (not= justify :start)
-                                  :tooltip-bottom (= justify :start))
+                                  :tooltip-bottom-left (not= justify :space-around)
+                                  :tooltip-bottom (= justify :space-around))
         :alt      (dm/str "Justify content " (d/name justify))
         :on-click #(set-justify justify)
         :key (dm/str "justify-content" (d/name justify))}
        (get-layout-flex-icon :justify-content justify is-col?)])]])
-
 
 (mf/defc padding-section
   [{:keys [values on-change-style on-change] :as props}]
@@ -196,8 +195,8 @@
      (cond
        (= padding-type :simple)
 
-       [:div.gap-group
-        [:div.gap-row.tooltip.tooltip-bottom-left
+       [:div.padding-group
+        [:div.padding-item.tooltip.tooltip-bottom-left
          {:alt "Vertical padding"}
          [:span.icon.rotated i/auto-padding-both-sides]
          [:> numeric-input
@@ -206,7 +205,7 @@
            :on-change (partial on-change :simple :p1)
            :value p1}]]
 
-        [:div.gap-column.tooltip.tooltip-bottom-left
+        [:div.padding-item.tooltip.tooltip-bottom-left
          {:alt "Horizontal padding"}
          [:span.icon i/auto-padding-both-sides]
          [:> numeric-input
@@ -233,57 +232,48 @@
               :value (num (:layout-padding values))}]]])])
 
      [:div.padding-icons
-      [:div.padding-icon.tooltip.tooltip-bottom
+      [:div.padding-icon.tooltip.tooltip-bottom-left
        {:class (dom/classnames :selected (= padding-type :multiple))
         :alt "Padding - multiple"
         :on-click #(on-change-style (if (= padding-type :multiple) :simple :multiple))}
        i/auto-padding-side]]]))
 
 (mf/defc gap-section
-  [{:keys [gap-selected? set-gap gap-value toggle-gap-type gap-type]}]
-  (let [gap-locked?          (= gap-type :simple)
-        some-gap-selected    (not= @gap-selected? :none)
-        is-row-activated?    (or (and (not gap-locked?) (= @gap-selected? :row-gap)) (and gap-locked? some-gap-selected))
-        is-column-activated? (or (and (not gap-locked?) (= @gap-selected? :column-gap)) (and gap-locked? some-gap-selected))]
+  [{:keys [is-col? wrap-type gap-selected? set-gap gap-value]}]
+  [:div.layout-row
+   [:div.gap.row-title "Gap"]
+   [:div.gap-group
+    [:div.gap-row.tooltip.tooltip-bottom-left
+     {:alt "Column gap"}
+     [:span.icon
+      i/auto-gap]
+     [:> numeric-input {:no-validate true
+                        :placeholder "--"
+                        :on-click (fn [event]
+                                    (reset! gap-selected? :row-gap)
+                                    (dom/select-target event))
+                        :on-change (partial set-gap (= :no-wrap wrap-type) :row-gap)
+                        :on-blur #(reset! gap-selected? :none)
+                        :value (:row-gap gap-value)
+                        :disabled (and (= :no-wrap wrap-type) (not is-col?))}]]
 
-    [:div.gap-group
-     [:div.gap-row.tooltip.tooltip-bottom-left
-      {:alt "Row gap"}
-      [:span.icon
-       {:class (dom/classnames :activated is-row-activated?)}
-       i/auto-gap]
-      [:> numeric-input {:no-validate true
-                         :placeholder "--"
-                         :on-click (fn [event]
-                                     (reset! gap-selected? :row-gap)
-                                     (dom/select-target event))
-                         :on-change (partial set-gap gap-locked? :row-gap)
-                         :on-blur #(reset! gap-selected? :none)
-                         :value (:row-gap gap-value)}]]
-
-     [:div.gap-column.tooltip.tooltip-bottom-left
-      {:alt "Column gap"}
-      [:span.icon.rotated
-       {:class (dom/classnames
-                :activated is-column-activated?)}
-       i/auto-gap]
-      [:> numeric-input {:no-validate true
-                         :placeholder "--"
-                         :on-click (fn [event]
-                                     (reset! gap-selected? :column-gap)
-                                     (dom/select-target event))
-                         :on-change (partial set-gap gap-locked? :column-gap)
-                         :on-blur #(reset! gap-selected? :none)
-                         :value (:column-gap gap-value)}]]
-     [:button.lock {:on-click toggle-gap-type
-                    :class (dom/classnames :active gap-locked?)}
-      (if gap-locked?
-        i/lock
-        i/unlock)]]))
+    [:div.gap-row.tooltip.tooltip-bottom-left
+     {:alt "Row gap"}
+     [:span.icon.rotated
+      i/auto-gap]
+     [:> numeric-input {:no-validate true
+                        :placeholder "--"
+                        :on-click (fn [event]
+                                    (reset! gap-selected? :column-gap)
+                                    (dom/select-target event))
+                        :on-change (partial set-gap (= :no-wrap wrap-type) :column-gap)
+                        :on-blur #(reset! gap-selected? :none)
+                        :value (:column-gap gap-value)
+                        :disabled (and (= :no-wrap wrap-type) is-col?)}]]]])
 
 (mf/defc layout-container-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type"]))]}
-  [{:keys [ids _type values] :as props}]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "multiple"]))]}
+  [{:keys [ids _type values  multiple] :as props}]
   (let [open?               (mf/use-state false)
 
         ;; Display
@@ -344,35 +334,13 @@
 
         ;; Gap
 
-        change-gap-type
-        (fn [type]
-          (st/emit! (dwsl/update-layout ids {:layout-gap-type type})))
-
-        gap-type (:layout-gap-type values)
-
         gap-selected?       (mf/use-state :none)
-        gap-locked?         (= gap-type :simple)
-        toggle-gap-type     (fn []
-                              (let [layout-gap (:layout-gap values)
-                                    row-gap (:row-gap layout-gap)
-                                    column-gap (:column-gap layout-gap)
-                                    max (max row-gap column-gap)
-                                    new-type (if (= gap-type :simple)
-                                               :multiple
-                                               :simple)]
-                                (when (and (not= row-gap column-gap) (= gap-type :multiple))
-                                  (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap max :column-gap max}})))
-                                (change-gap-type new-type)))
+
         set-gap
-        (fn [gap-locked? type val]
-          (if gap-locked?
+        (fn [gap-multiple? type val]
+          (if gap-multiple?
             (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
             (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))
-
-        select-all-gap
-        (fn [event]
-          (when gap-locked?
-            (dom/select-target event)))
 
         ;; Padding
 
@@ -396,7 +364,7 @@
      [:div.element-set-title
       [:*
        [:span "Layout"]
-       (if (:layout values)
+       (if (and (not multiple)(:layout values))
          [:div.title-actions
           #_[:div.layout-btns
            [:button {:on-click set-flex
@@ -448,12 +416,11 @@
             [:& justify-content-row {:is-col? is-col?
                                      :justify-content justify-content
                                      :set-justify set-justify-content}]]]
-          [:& gap-section {:gap-selected? gap-selected?
-                           :select-all-gap select-all-gap
+          [:& gap-section {:is-col? is-col?
+                           :wrap-type wrap-type
+                           :gap-selected? gap-selected?
                            :set-gap set-gap
-                           :gap-value (:layout-gap values)
-                           :toggle-gap-type toggle-gap-type
-                           :gap-type gap-type}]
+                           :gap-value (:layout-gap values)}]
 
 
           [:& padding-section {:values values

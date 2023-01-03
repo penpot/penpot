@@ -2508,6 +2508,9 @@ msgstr "Toggle history"
 msgid "shortcuts.toggle-layers"
 msgstr "Toggle layers"
 
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Add/remove layout flex"
+
 msgid "shortcuts.toggle-lock"
 msgstr "Lock selected"
 
