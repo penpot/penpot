@@ -219,6 +219,7 @@
 
           (rx/concat
            (->> ms/mouse-position
+                (rx/filter some?)
                 (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
                 (rx/map normalize-proportion-lock)
                 (rx/switch-map (fn [[point _ _ :as current]]
