@@ -40,6 +40,7 @@
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
    [app.main.ui.workspace.viewport.utils :as utils]
+   [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [beicon.core :as rx]
    [debug :refer [debug?]]
@@ -98,7 +99,8 @@
         active-frames     (mf/use-state #{})
 
         ;; REFS
-        viewport-ref      (mf/use-ref nil)
+        [viewport-ref
+         on-viewport-ref] (create-viewport-ref)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -140,15 +142,14 @@
         on-double-click   (actions/on-double-click hover hover-ids drawing-path? base-objects edition workspace-read-only?)
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
-        on-drop           (actions/on-drop file viewport-ref zoom)
+        on-drop           (actions/on-drop file)
         on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing?
-                                                 drawing-path? create-comment? space? viewport-ref zoom panning
-                                                 workspace-read-only?)
+                                                 drawing-path? create-comment? space? panning workspace-read-only?)
         on-mouse-up       (actions/on-mouse-up disable-paste)
         on-pointer-down   (actions/on-pointer-down)
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
-        on-pointer-move   (actions/on-pointer-move viewport-ref zoom move-stream)
+        on-pointer-move   (actions/on-pointer-move move-stream)
         on-pointer-up     (actions/on-pointer-up)
         on-move-selected  (actions/on-move-selected hover hover-ids selected space? workspace-read-only?)
         on-menu-selected  (actions/on-menu-selected hover hover-ids selected workspace-read-only?)
@@ -269,7 +270,7 @@
        :preserveAspectRatio "xMidYMid meet"
        :key (str "viewport" page-id)
        :view-box (utils/format-viewbox vbox)
-       :ref viewport-ref
+       :ref on-viewport-ref
        :class (when drawing-tool "drawing")
        :style {:cursor @cursor}
        :fill "none"
@@ -423,8 +424,7 @@
        [:& scroll-bars/viewport-scrollbars
         {:objects base-objects
          :zoom zoom
-         :vbox vbox
-         :viewport-ref viewport-ref}]
+         :vbox vbox}]
 
        (when show-rules?
          [:& rules/rules
