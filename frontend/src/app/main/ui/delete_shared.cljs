@@ -76,9 +76,10 @@
                   (dom/stop-propagation event)
                   (st/emit! (modal/hide))
                   (on-accept props)))]
-        (->> (events/listen js/document EventType.KEYDOWN on-keydown)
-             (partial events/unlistenByKey)))
-      #(st/emit! (dd/clean-temp-shared)))
+        (let [key (events/listen js/document EventType.KEYDOWN on-keydown)]
+          (fn []
+            (events/unlistenByKey key)
+            (st/emit! (dd/clean-temp-shared))))))
 
     [:div.modal-overlay
      [:div.modal-container.confirm-dialog
