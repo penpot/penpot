@@ -601,9 +601,17 @@
                 move-events (->> stream
                                  (rx/filter (ptk/type? ::nudge-selected-shapes))
                                  (rx/filter #(= direction (deref %))))
-                stopper (->> move-events
-                             (rx/debounce 100)
-                             (rx/take 1))
+
+                stopper
+                (->> move-events
+                     ;; We stop when there's been 1s without movement or after 250ms after a key-up
+                     (rx/switch-map #(rx/merge
+                                      (rx/timer 1000)
+                                      (->> stream
+                                           (rx/filter ms/key-up?)
+                                           (rx/delay 250))))
+                     (rx/take 1))
+
                 scale (if shift? (gpt/point (or (:big nudge) 10)) (gpt/point (or (:small nudge) 1)))
                 mov-vec (gpt/multiply (get-displacement direction) scale)]
 

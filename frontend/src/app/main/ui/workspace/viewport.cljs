@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.workspace.modifiers :as dwm]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as ui-hooks]
@@ -48,6 +49,20 @@
 
 ;; --- Viewport
 
+(defn apply-modifiers-to-selected
+  [selected objects text-modifiers modifiers]
+  (into []
+        (comp
+         (keep (d/getf objects))
+         (map (fn [{:keys [id] :as shape}]
+                (cond-> shape
+                  (and (cph/text-shape? shape) (contains? text-modifiers id))
+                  (dwm/apply-text-modifier (get text-modifiers id))
+
+                  (contains? modifiers id)
+                  (gsh/transform-shape (dm/get-in modifiers [id :modifiers]))))))
+        selected))
+
 (mf/defc viewport
   [{:keys [wlocal wglobal selected layout file] :as props}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
@@ -80,6 +95,7 @@
         base-objects      (-> objects (ui-hooks/with-focus-objects focus))
 
         modifiers         (mf/deref refs/workspace-modifiers)
+        text-modifiers    (mf/deref refs/workspace-text-modifier)
 
         objects-modified  (mf/with-memo [base-objects modifiers]
                             (gsh/apply-objects-modifiers base-objects modifiers selected))
@@ -120,7 +136,8 @@
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
-        selected-shapes   (into [] (keep (d/getf objects-modified)) selected)
+        selected-shapes   (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)
+
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
         ;; Only when we have all the selected shapes in one frame
@@ -303,7 +320,7 @@
                outlined-frame (get objects outlined-frame-id)]
            [:*
             [:& outline/shape-outlines
-             {:objects objects-modified
+             {:objects base-objects
               :hover #{outlined-frame-id}
               :zoom zoom
               :modifiers modifiers}]
@@ -443,25 +460,25 @@
        ;; DEBUG LAYOUT DROP-ZONES
        (when (debug? :layout-drop-zones)
          [:& wvd/debug-drop-zones {:selected-shapes selected-shapes
-                                   :objects objects-modified
+                                   :objects base-objects
                                    :hover-top-frame-id @hover-top-frame-id
                                    :zoom zoom}])
 
        (when (debug? :layout-content-bounds)
          [:& wvd/debug-content-bounds {:selected-shapes selected-shapes
-                                       :objects objects-modified
+                                       :objects base-objects
                                        :hover-top-frame-id @hover-top-frame-id
                                        :zoom zoom}])
 
        (when (debug? :layout-lines)
          [:& wvd/debug-layout-lines {:selected-shapes selected-shapes
-                                     :objects objects-modified
+                                     :objects base-objects
                                      :hover-top-frame-id @hover-top-frame-id
                                      :zoom zoom}])
 
        (when (debug? :parent-bounds)
          [:& wvd/debug-parent-bounds {:selected-shapes selected-shapes
-                                      :objects objects-modified
+                                      :objects base-objects
                                       :hover-top-frame-id @hover-top-frame-id
                                       :zoom zoom}])
 
