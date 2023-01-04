@@ -639,14 +639,15 @@
 (defn relocate-shapes-changes [it objects parents parent-id page-id to-index ids
                                groups-to-delete groups-to-unmask shapes-to-detach
                                shapes-to-reroot shapes-to-deroot shapes-to-unconstraint]
-  (let [shapes (map (d/getf objects) ids)]
+  (let [ordered-indexes (cph/order-by-indexed-shapes objects ids)
+        shapes (map (d/getf objects) ordered-indexes)]
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
 
         ; Move the shapes
         (pcb/change-parent parent-id
-                           (reverse shapes)
+                           shapes
                            to-index)
 
         ; Remove empty groups

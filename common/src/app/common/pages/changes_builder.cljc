@@ -244,32 +244,26 @@
    (assert-page-id changes)
    (assert-objects changes)
    (let [objects (lookup-objects changes)
-
          set-parent-change
          (cond-> {:type :mov-objects
                   :parent-id parent-id
                   :page-id (::page-id (meta changes))
-                  :shapes (->> shapes (mapv :id))}
+                  :shapes (->> shapes reverse (mapv :id))}
 
            (some? index)
            (assoc :index index))
 
          mk-undo-change
          (fn [change-set shape]
-           (let [idx (or (cph/get-position-on-parent objects (:id shape)) 0)
-                 ;; Different index if the movement was from top to bottom or the other way
-                 ;; Similar that on frontend/src/app/main/ui/workspace/sidebar/layers.cljs
-                 ;; with the 'side' property of the on-drop
-                 idx (if (< index idx)
-                       (inc idx)
-                       idx)]
+           (let [prev-sibling (cph/get-prev-sibling objects (:id shape))]
            (d/preconj
              change-set
              {:type :mov-objects
               :page-id (::page-id (meta changes))
               :parent-id (:parent-id shape)
               :shapes [(:id shape)]
-              :index idx})))]
+              :after-shape prev-sibling
+              :index 0})))] ; index is used in case there is no after-shape (moving bottom shapes)
 
      (-> changes
          (update :redo-changes conj set-parent-change)
