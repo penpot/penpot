@@ -182,7 +182,7 @@
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id ignore-touched]}]
+  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape]}]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
@@ -260,9 +260,12 @@
                 (not= :frame (:type obj))
                 (as-> $$ (reduce (partial assign-frame-id frame-id) $$ (:shapes obj))))))
 
+
+
           (move-objects [objects]
             (let [valid?   (every? (partial is-valid-move? objects) shapes)
                   parent   (get objects parent-id)
+                  index (if (nil? after-shape) index (inc (d/index-of (:shapes parent) after-shape)))
                   frame-id (if (= :frame (:type parent))
                              (:id parent)
                              (:frame-id parent))]
@@ -283,7 +286,7 @@
                   ;; Ensure that all shapes of the new parent has a
                   ;; correct link to the topside frame.
                   (reduce (partial assign-frame-id frame-id) $ shapes))
-              objects)))]
+                objects)))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] move-objects)

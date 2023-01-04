@@ -685,6 +685,7 @@
 
             shapes (->> ids (cph/clean-loops objects) (keep lookup))
 
+
             moving-shapes
             (cond->> shapes
               (not layout?)
@@ -693,6 +694,9 @@
               layout?
               (remove #(and (= (:frame-id %) frame-id)
                             (not= (:parent-id %) frame-id))))
+
+            ordered-indexes (cph/order-by-indexed-shapes objects (map :id moving-shapes))
+            moving-shapes (map (d/getf objects) ordered-indexes)
 
             all-parents
             (reduce (fn [res id]

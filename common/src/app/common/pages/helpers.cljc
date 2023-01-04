@@ -147,6 +147,16 @@
         prt (get objects pid)]
     (d/index-of (:shapes prt) id)))
 
+(defn get-prev-sibling
+  [objects id]
+  (let [obj (get objects id)
+        pid (:parent-id obj)
+        prt (get objects pid)
+        shapes (:shapes prt)
+        pos (d/index-of shapes id)]
+    (if (= 0 pos) nil (nth shapes (dec pos)))))
+
+
 (defn get-immediate-children
   "Retrieve resolved shape objects that are immediate children
    of the specified shape-id"
@@ -335,6 +345,13 @@
          (filter (fn [[idx _]] (and (>= idx from) (<= idx to))))
          (map second)
          (into #{}))))
+
+(defn order-by-indexed-shapes
+  [objects ids]
+  (->> (indexed-shapes objects)
+       (sort-by first)
+       (filter (comp (into #{} ids) second))
+       (map second)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHAPES ORGANIZATION (PATH MANAGEMENT)
