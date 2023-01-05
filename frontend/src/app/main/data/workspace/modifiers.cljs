@@ -8,6 +8,7 @@
   "Events related with shapes transformations"
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
@@ -100,7 +101,7 @@
    (let [children (map (d/getf objects) (:shapes shape))
 
          shape-id (:id shape)
-         transformed-shape (gsh/transform-shape shape (get modif-tree shape-id))
+         transformed-shape (gsh/transform-shape shape (dm/get-in modif-tree [shape-id :modifiers]))
 
          [root transformed-root ignore-geometry?]
          (check-delta shape root transformed-shape transformed-root objects modif-tree)

@@ -13,6 +13,11 @@
 (def default-color clr/gray-20)
 (def root uuid/zero)
 
+;; Attributes that may be synced in components, and the group they belong to.
+;; When one attribute is modified in a shape inside a component, the corresponding
+;; group is marked as :touched. Then, if the shape is synced with the remote shape
+;; in the main component, none of the attributes of the same group is changed.
+
 (def component-sync-attrs
   {:name                  :name-group
    :fills                 :fill-group
@@ -23,6 +28,7 @@
    :fill-color-ref-id     :fill-group
    :hide-fill-on-export   :fill-group
    :content               :content-group
+   :position-data         :content-group
    :hidden                :visibility-group
    :blocked               :modifiable-group
    :grow-type             :text-font-group
@@ -63,7 +69,6 @@
    :rotation              :geometry-group
    :transform             :geometry-group
    :transform-inverse     :geometry-group
-   :position-data         :geometry-group
    :opacity               :layer-effects-group
    :blend-mode            :layer-effects-group
    :shadow                :shadow-group

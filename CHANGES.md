@@ -37,6 +37,7 @@
 - Fix pressing the enter key gives you an internal error [Github 2675](https://github.com/penpot/penpot/issues/2675) [Github 2577](https://github.com/penpot/penpot/issues/2577)
 - Fix confirm group name with enter doesn't work in assets modal [Taiga #4506](https://tree.taiga.io/project/penpot/issue/4506)
 - Fix group/ungroup shapes inside a component [Taiga #4052](https://tree.taiga.io/project/penpot/issue/4052)
+- Fix wrong update of text in components [Taiga #4646](https://tree.taiga.io/project/penpot/issue/4646)
 
 ## 1.16.2-beta
 
