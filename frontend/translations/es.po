@@ -2846,6 +2846,9 @@ msgstr "Mostrar/ocultar histórico"
 msgid "shortcuts.toggle-layers"
 msgstr "Mostrar/ocultar capas"
 
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Añadir/eliminar layout flex"
+
 msgid "shortcuts.toggle-lock"
 msgstr "Bloquear/Desbloquear"
 

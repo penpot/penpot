@@ -380,18 +380,18 @@
                                         (dwsl/create-layout-from-selection :flex)))
         remove-flex        #(st/emit! (dwsl/remove-layout ids))]
     (cond
-      (or (not single?) (and is-frame? (not is-flex-container?)) is-group?)
+      (or single? (and is-frame? (not is-flex-container?)) is-group?)
       [:*
        [:& menu-separator]
        [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
-                       :shortcut (sc/get-tooltip :toogle-layout-flex)
+                       :shortcut (sc/get-tooltip :toggle-layout-flex)
                        :on-click add-flex}]]
 
       is-flex-container?
       [:*
        [:& menu-separator]
        [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
-                       :shortcut (sc/get-tooltip :toogle-layout-flex)
+                       :shortcut (sc/get-tooltip :toggle-layout-flex)
                        :on-click remove-flex}]])))
 
 (mf/defc context-menu-component

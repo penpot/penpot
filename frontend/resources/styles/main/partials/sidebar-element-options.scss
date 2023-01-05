@@ -1613,7 +1613,8 @@
       margin-right: 5px;
       font-family: "worksans", sans-serif;
 
-      &.justify-content {
+      &.justify-content,
+      &.sizing {
         align-items: start;
         margin-top: 4px;
       }
@@ -1622,6 +1623,10 @@
       display: flex;
       width: 100%;
       max-width: 185px;
+      &.wrap {
+        flex-direction: column;
+        gap: 5px;
+      }
 
       &.justify-content {
         display: flex;
@@ -1717,22 +1722,18 @@
     padding: 1px;
   }
 
-  .gap-group,
-  .margin-item-group {
-    display: flex;
+  .gap-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
     margin-top: 3px;
     margin-bottom: 8px;
     height: 26px;
-
-    .gap-row,
-    .gap-column,
-    .margin-item-row,
-    .margin-item-column,
-    .padding-row {
+    max-width: 166px;
+    .gap-row {
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-grow: 1;
       .icon {
         display: flex;
         justify-content: center;
@@ -1755,7 +1756,6 @@
         font-size: 0.75rem;
         min-width: 0;
         padding: 0.25rem;
-        width: 70px;
         height: 20px;
         margin: 0;
       }
@@ -1789,29 +1789,87 @@
     }
   }
 
-  .padding-row {
-    grid-template-columns: auto 30px;
-  }
-
-  .margin-item-row {
-    grid-template-columns: auto 30px;
-    margin-bottom: 1rem;
-  }
-
-  .margin-row {
-    grid-template-columns: 65px auto;
-  }
-
   .padding-row,
-  .margin-item-row {
+  .margin-row {
     display: grid;
-    height: 26px;
+    grid-template-columns: auto 30px;
+    max-width: 226px;
+    .padding-group,
+    .margin-item-group {
+      display: flex;
+      margin-top: 3px;
+      margin-bottom: 3px;
+      height: 26px;
+      .padding-item,
+      .margin-item {
+        display: flex;
+        align-items: center;
+        flex-grow: 1;
+        .icon {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-right: 7px;
+          svg {
+            height: 14px;
+            width: 14px;
+          }
+          &.rotated {
+            transform: rotate(90deg);
+          }
+          &.activated {
+            svg {
+              fill: $color-primary;
+            }
+          }
+        }
+        input {
+          font-size: 0.75rem;
+          min-width: 0;
+          padding: 0.25rem;
+          width: 70px;
+          height: 20px;
+          margin: 0;
+        }
+      }
+      button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: none;
+        border: none;
+        cursor: pointer;
+        border-radius: $br-small;
+
+        &.lock {
+          border: 1px solid $color-gray-60;
+          border-radius: $br-small;
+          width: 30px;
+          height: 30px;
+        }
+        &.active {
+          svg {
+            fill: $color-primary;
+          }
+        }
+        &:hover {
+          background-color: $color-primary;
+          svg {
+            fill: $color-gray-60;
+          }
+        }
+      }
+    }
     .padding-icons,
     .margin-item-icons {
-      display: flex;
       padding: 0;
       border: 1px solid $color-gray-60;
       border-radius: 3px;
+      margin-bottom: 8px;
+      margin-top: 3px;
+      margin-right: 1px;
+      height: 30px;
+      width: 30px;
 
       .padding-icon,
       .margin-item-icon {
@@ -1839,15 +1897,6 @@
       :last-child {
         border: none;
       }
-    }
-
-    .padding-icons,
-    .margin-item-icons {
-      margin-bottom: 8px;
-      margin-top: 3px;
-      margin-right: 1px;
-      height: 30px;
-      width: 30px;
     }
 
     .wrapper {
