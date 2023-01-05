@@ -157,7 +157,7 @@
         {:on-click on-close} i/close]]
 
       [:div.modal-content.generic-form
-       [:& fm/form {:form form}
+       [:& fm/form {:form form :on-submit on-accept}
         [:& fm/input {:name :asset-name
                       :auto-focus? true
                       :label (tr "workspace.assets.group-name")
