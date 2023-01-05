@@ -389,21 +389,22 @@
         old-id             (cip/get-id node)
         id                 (resolve old-id)
         path               (get-in node [:attrs :penpot:path] "")
+        type               (cip/get-type content)
         main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
         main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
-        data               (-> (cip/parse-data :group content)
+        data               (-> (cip/parse-data type content)
                                (assoc :path path)
                                (assoc :id id)
                                (assoc :main-instance-id main-instance-id)
                                (assoc :main-instance-page main-instance-page))
 
-        file               (-> file (fb/start-component data))
-        children            (cip/node-seq node)]
+        file               (-> file (fb/start-component data type))
+        children           (cip/node-seq node)]
 
     (->> (rx/from children)
          (rx/filter cip/shape?)
-         (rx/skip 1)
-         (rx/skip-last 1)
+         (rx/skip 1)       ;; Skip the outer component and the respective closint tag
+         (rx/skip-last 1)  ;; because they are handled in start-component an finish-component
          (rx/mapcat (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map fb/finish-component))))
@@ -419,8 +420,9 @@
         main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
         main-instance-x    (get-in node [:attrs :penpot:main-instance-x] "")
         main-instance-y    (get-in node [:attrs :penpot:main-instance-y] "")
+        type               (cip/get-type content)
 
-        data (-> (cip/parse-data :group content)
+        data (-> (cip/parse-data type content)
                  (assoc :path path)
                  (assoc :id id)
                  (assoc :main-instance-id main-instance-id)

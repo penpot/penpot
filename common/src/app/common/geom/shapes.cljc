@@ -183,7 +183,6 @@
 (dm/export gsi/rect-contains-shape?)
 
 ;; Bool
-
 (dm/export gsb/calc-bool-content)
 
 ;; Constraints
@@ -196,4 +195,3 @@
 
 ;; Modifiers
 (dm/export gsm/set-objects-modifiers)
-

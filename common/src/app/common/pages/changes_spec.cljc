@@ -12,6 +12,7 @@
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.typography :as ctt]
+   [app.common.uuid :as uuid]
    [clojure.spec.alpha :as s]))
 
 (s/def ::index integer?)
@@ -61,7 +62,7 @@
            (some? (:frame-id o)))
       (and (contains? o :component-id)
            (not (contains? o :page-id))
-           (nil? (:frame-id o)))))
+           (not= (:frame-id o) uuid/zero))))
 
 (defn- valid-container-id?
   [o]
