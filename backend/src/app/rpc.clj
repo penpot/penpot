@@ -6,6 +6,7 @@
 
 (ns app.rpc
   (:require
+   [app.auth.ldap :as-alias ldap]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -319,6 +320,7 @@
   (s/keys :req [::audit/collector
                 ::http.client/client
                 ::db/pool
+                ::ldap/provider
                 ::wrk/executor]
           :req-un [::sto/storage
                    ::http.session/session
@@ -329,8 +331,7 @@
                    ::climit
                    ::wrk/executor
                    ::mtx/metrics
-                   ::db/pool
-                   ::ldap]))
+                   ::db/pool]))
 
 (defmethod ig/init-key ::methods
   [_ cfg]
