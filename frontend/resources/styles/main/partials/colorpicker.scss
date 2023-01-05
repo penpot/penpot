@@ -522,6 +522,7 @@
       &:focus {
         border-color: $color-primary !important;
         color: $color-white;
+        outline: none;
       }
 
       &:hover {

@@ -145,6 +145,12 @@
       background: $color-gray-50;
       color: $color-gray-10;
       margin-bottom: -1px;
+      &:focus,
+      &:focus-within {
+        outline: none;
+        border-radius: 3px;
+        border: 1px solid $color-primary;
+      }
     }
   }
 

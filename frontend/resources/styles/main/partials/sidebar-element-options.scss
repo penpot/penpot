@@ -199,6 +199,7 @@
 
     &:focus {
       color: lighten($color-gray-10, 8%);
+      border-color: $color-primary;
     }
 
     option {
@@ -310,6 +311,14 @@
 
     &:hover {
       border: 1px solid $color-gray-20;
+    }
+  }
+  .opened {
+    border: 1px solid $color-primary;
+    &:hover,
+    &:focus {
+      outline: none;
+      border: 1px solid $color-primary;
     }
   }
 
@@ -549,6 +558,11 @@
 }
 
 .presets {
+  &:focus,
+  &:focus-within {
+    outline: none;
+    border: 1px solid $color-primary;
+  }
   .custom-select-dropdown {
     width: 237px;
 
@@ -968,6 +982,15 @@
     input {
       margin-right: 1em;
       width: 74px;
+      &:focus {
+        border-color: $color-primary !important;
+        color: $color-white;
+        outline: none;
+      }
+
+      &:hover {
+        border-color: $color-gray-20;
+      }
     }
   }
 }
