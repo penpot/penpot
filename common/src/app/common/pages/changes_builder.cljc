@@ -270,7 +270,6 @@
          (update :undo-changes #(reduce mk-undo-change % shapes))
          (apply-changes-local)))))
 
-
 (defn changed-attrs
   "Returns the list of attributes that will change when `update-fn` is applied"
   [object update-fn {:keys [attrs]}]

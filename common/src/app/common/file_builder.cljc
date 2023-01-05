@@ -44,7 +44,12 @@
    (let [component-id (:current-component-id file)
          change (cond-> change
                   (and add-container? (some? component-id))
-                  (assoc :component-id component-id)
+                  (cond->
+                   :always
+                    (assoc :component-id component-id)
+
+                    (some? (:current-frame-id file))
+                    (assoc :frame-id (:current-frame-id file)))
 
                   (and add-container? (nil? component-id))
                   (assoc :page-id  (:current-page-id file)
@@ -223,7 +228,6 @@
       (clear-names)))
 
 (defn add-artboard [file data]
-  (assert (nil? (:current-component-id file)))
   (let [obj (-> (cts/make-minimal-shape :frame)
                 (merge data)
                 (check-name file :frame)
@@ -237,11 +241,11 @@
         (update :parent-stack conjv (:id obj)))))
 
 (defn close-artboard [file]
-  (assert (nil? (:current-component-id file)))
-
   (let [parent-id (-> file :parent-id peek)
         parent (lookup-shape file parent-id)
-        current-frame-id (or (:frame-id parent) root-frame)]
+        current-frame-id (or (:frame-id parent)
+                             (when (nil? (:current-component-id file))
+                               root-frame))]
     (-> file
         (assoc :current-frame-id current-frame-id)
         (update :parent-stack pop))))
@@ -561,35 +565,38 @@
           :id id}))))
 
 (defn start-component
-  [file data]
+  ([file data] (start-component file data :group))
+  ([file data root-type]
+   (let [selrect (if (and (:x data) (:y data) (:width data) (:height data))
+                   (gsh/make-selrect (:x data) (:y data) (:width data) (:height data))
+                   cts/empty-selrect)
+         name               (:name data)
+         path               (:path data)
+         main-instance-id   (:main-instance-id data)
+         main-instance-page (:main-instance-page data)
+         obj (-> (cts/make-shape root-type selrect data)
+                 (dissoc :path
+                         :main-instance-id
+                         :main-instance-page
+                         :main-instance-x
+                         :main-instance-y)
+                 (check-name file root-type)
+                 (d/without-nils))]
+     (-> file
+         (commit-change
+          {:type :add-component
+           :id (:id obj)
+           :name name
+           :path path
+           :main-instance-id main-instance-id
+           :main-instance-page main-instance-page
+           :shapes [obj]})
 
-  (let [selrect cts/empty-selrect
-        name               (:name data)
-        path               (:path data)
-        main-instance-id   (:main-instance-id data)
-        main-instance-page (:main-instance-page data)
-        obj (-> (cts/make-minimal-group nil selrect name)
-                (merge data)
-                (dissoc :path
-                        :main-instance-id
-                        :main-instance-page
-                        :main-instance-x
-                        :main-instance-y)
-                (check-name file :group)
-                (d/without-nils))]
-    (-> file
-        (commit-change
-         {:type :add-component
-          :id (:id obj)
-          :name name
-          :path path
-          :main-instance-id main-instance-id
-          :main-instance-page main-instance-page
-          :shapes [obj]})
-
-        (assoc :last-id (:id obj))
-        (update :parent-stack conjv (:id obj))
-        (assoc :current-component-id (:id obj)))))
+         (assoc :last-id (:id obj))
+         (update :parent-stack conjv (:id obj))
+         (assoc :current-component-id (:id obj))
+         (assoc :current-frame-id (when (= (:type obj) :frame)
+                                    (:id obj)))))))
 
 (defn finish-component
   [file]
@@ -624,7 +631,7 @@
 
              {:add-container? true}))
 
-          :else
+          (= (:type component) :group)
           (let [component' (gsh/update-group-selrect component children)]
             (commit-change
              file
@@ -637,11 +644,13 @@
                {:type :set :attr :y      :val (-> component' :selrect :y) :ignore-touched true}
                {:type :set :attr :width  :val (-> component' :selrect :width) :ignore-touched true}
                {:type :set :attr :height :val (-> component' :selrect :height) :ignore-touched true}]}
+             {:add-container? true}))
 
-             {:add-container? true})))]
+          :else file)]
 
     (-> file
         (dissoc :current-component-id)
+        (dissoc :current-frame-id)
         (update :parent-stack pop))))
 
 (defn finish-deleted-component
@@ -700,7 +709,7 @@
                                      (gpt/point x
                                                 y)
                                      #_{:main-instance? true
-                                      :force-id main-instance-id})]
+                                        :force-id main-instance-id})]
 
     (as-> file $
       (reduce #(commit-change %1

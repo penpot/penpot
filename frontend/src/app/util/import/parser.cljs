@@ -64,9 +64,9 @@
    (or (find-node node :penpot:shape)
        (find-node node :penpot:page)))
 
-   ([node tag]
-    (-> (get-data node)
-        (find-node tag))))
+  ([node tag]
+   (-> (get-data node)
+       (find-node tag))))
 
 (defn get-type
   [node]
@@ -217,10 +217,10 @@
       (let [;; Old .penpot files doesn't have "g" nodes. They have a clipPath reference as a node attribute
             to-url #(dm/str "url(#" % ")")
             frame-clip-rect-node  (->> (find-all-nodes node :defs)
-                                   (mapcat #(find-all-nodes % :clipPath))
-                                   (filter #(= (to-url (:id (:attrs %))) (:clip-path node-attrs)))
-                                   (mapcat #(find-all-nodes % #{:rect :path}))
-                                   (first))
+                                       (mapcat #(find-all-nodes % :clipPath))
+                                       (filter #(= (to-url (:id (:attrs %))) (:clip-path node-attrs)))
+                                       (mapcat #(find-all-nodes % #{:rect :path}))
+                                       (first))
 
             ;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have
             g-nodes    (find-all-nodes node :g)
@@ -1007,8 +1007,8 @@
                      (ctsi/has-overlay-opts interaction)
                      (assoc :overlay-pos-type    (get-meta node :overlay-pos-type keyword)
                             :overlay-position    (gpt/point
-                                                   (get-meta node :overlay-position-x d/parse-double)
-                                                   (get-meta node :overlay-position-y d/parse-double))
+                                                  (get-meta node :overlay-position-x d/parse-double)
+                                                  (get-meta node :overlay-position-y d/parse-double))
                             :close-click-outside (get-meta node :close-click-outside str->bool)
                             :background-overlay  (get-meta node :background-overlay str->bool)))))))))
 
