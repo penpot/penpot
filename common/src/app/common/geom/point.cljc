@@ -170,8 +170,7 @@
               (dm/get-prop p2 :x))
         dy (- (dm/get-prop p1 :y)
               (dm/get-prop p2 :y))]
-    (mth/sqrt (+ (mth/pow dx 2)
-                 (mth/pow dy 2)))))
+    (mth/hypot dx dy)))
 
 (defn distance-vector
   "Calculate the distance, separated x and y."
@@ -191,8 +190,7 @@
   (assert (point? pt) "point instance expected")
   (let [x (dm/get-prop pt :x)
         y (dm/get-prop pt :y)]
-    (mth/sqrt (+ (mth/pow x 2)
-                 (mth/pow y 2)))))
+    (mth/hypot x y)))
 
 (defn angle
   "Returns the smaller angle between two vectors.

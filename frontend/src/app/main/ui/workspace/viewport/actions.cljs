@@ -19,7 +19,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.ui.workspace.viewport.utils :as utils]
+   [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.dom.normalize-wheel :as nw]
@@ -34,11 +34,11 @@
 
 (defn on-mouse-down
   [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
-   node-editing? drawing-path? create-comment? space? viewport-ref zoom panning
+   node-editing? drawing-path? create-comment? space? panning
    workspace-read-only?]
   (mf/use-callback
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
-            node-editing? drawing-path? create-comment? @space? viewport-ref zoom
+            node-editing? drawing-path? create-comment? @space?
             panning workspace-read-only?)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
@@ -61,8 +61,7 @@
              (dom/prevent-default bevent)
              (if mod?
                (let [raw-pt   (dom/get-client-position event)
-                     viewport (mf/ref-val viewport-ref)
-                     pt       (utils/translate-point-to-viewport viewport zoom raw-pt)]
+                     pt       (uwvv/point->viewport raw-pt)]
                  (st/emit! (dw/start-zooming pt)))
                (st/emit! (dw/start-panning))))
 
@@ -322,15 +321,12 @@
                         (= "TEXTAREA" (obj/get target "tagName")))]
        (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta? editing?))))))
 
-(defn on-mouse-move [viewport-ref zoom]
+(defn on-mouse-move []
   (let [last-position (mf/use-var nil)]
     (mf/use-callback
-     (mf/deps zoom)
      (fn [event]
-       (let [event    (.getBrowserEvent ^js event)
-             raw-pt   (dom/get-client-position event)
-             viewport (mf/ref-val viewport-ref)
-             pt       (utils/translate-point-to-viewport viewport zoom raw-pt)
+       (let [raw-pt   (dom/get-client-position event)
+             pt       (uwvv/point->viewport raw-pt)
 
              ;; We calculate the delta because Safari's MouseEvent.movementX/Y drop
              ;; events
@@ -350,30 +346,27 @@
                                       (kbd/alt? event)
                                       (kbd/meta? event))))))))
 
-(defn on-pointer-move [viewport-ref zoom move-stream]
+(defn on-pointer-move [move-stream]
   (mf/use-callback
-   (mf/deps zoom move-stream)
+   (mf/deps move-stream)
    (fn [event]
      (let [raw-pt (dom/get-client-position event)
-           viewport (mf/ref-val viewport-ref)
-           pt     (utils/translate-point-to-viewport viewport zoom raw-pt)]
+           pt     (uwvv/point->viewport raw-pt)]
        (rx/push! move-stream pt)))))
 
-(defn on-mouse-wheel [viewport-ref zoom]
+(defn on-mouse-wheel [zoom]
   (mf/use-callback
    (mf/deps zoom)
    (fn [event]
-     (let [viewport (mf/ref-val viewport-ref)
-           event  (.getBrowserEvent ^js event)
+     (let [event  (.getBrowserEvent ^js event)
            target (dom/get-target event)
            mod? (kbd/mod? event)]
 
-       (when (dom/is-child? viewport target)
+       (when (uwvv/inside-viewport? target)
          (dom/prevent-default event)
          (dom/stop-propagation event)
-         (let [pt     (->> (dom/get-client-position event)
-                           (utils/translate-point-to-viewport viewport zoom))
-
+         (let [raw-pt (dom/get-client-position event)
+               pt     (uwvv/point->viewport raw-pt)
                norm-event ^js (nw/normalize-wheel event)
                ctrl?  (kbd/ctrl? event)
                delta-y (.-pixelY norm-event)
@@ -413,14 +406,12 @@
        (dom/prevent-default e)))))
 
 (defn on-drop
-  [file viewport-ref zoom]
+  [file]
   (mf/use-fn
-   (mf/deps zoom)
    (fn [event]
      (dom/prevent-default event)
      (let [point (gpt/point (.-clientX event) (.-clientY event))
-           viewport (mf/ref-val viewport-ref)
-           viewport-coord (utils/translate-point-to-viewport viewport zoom point)
+           viewport-coord (uwvv/point->viewport point)
            asset-id     (-> (dnd/get-data event "text/asset-id") uuid/uuid)
            asset-name   (dnd/get-data event "text/asset-name")
            asset-type   (dnd/get-data event "text/asset-type")]

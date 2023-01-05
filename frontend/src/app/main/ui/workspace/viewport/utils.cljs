@@ -6,30 +6,17 @@
 
 (ns app.main.ui.workspace.viewport.utils
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.cursors :as cur]
-   [app.main.ui.formats :refer [format-number]]
-   [app.util.dom :as dom]))
+   [app.main.ui.formats :refer [format-number]]))
 
 (defn format-viewbox [vbox]
   (dm/str (format-number(:x vbox 0)) " "
           (format-number (:y vbox 0)) " "
           (format-number (:width vbox 0)) " "
           (format-number (:height vbox 0))))
-
-(defn translate-point-to-viewport [viewport zoom pt]
-  (let [vbox     (.. ^js viewport -viewBox -baseVal)
-        brect    (dom/get-bounding-rect viewport)
-        brect    (gpt/point (d/parse-integer (:left brect))
-                            (d/parse-integer (:top brect)))
-        box      (gpt/point (.-x vbox) (.-y vbox))
-        zoom     (gpt/point zoom)]
-    (-> (gpt/subtract pt brect)
-        (gpt/divide zoom)
-        (gpt/add box))))
 
 (defn get-cursor [cursor]
   (case cursor

@@ -63,7 +63,8 @@
   [shape-id]
 
   (when (some? shape-id)
-    (let [text-nodes (dom/query-all (dm/str "#html-text-node-" shape-id " .text-node"))
+    (let [text-nodes (-> (dom/query (dm/fmt "#html-text-node-%" shape-id))
+                         (dom/query-all ".text-node"))
           load-fonts (->> text-nodes (map resolve-font))
 
           process-text-node

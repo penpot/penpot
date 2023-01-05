@@ -890,8 +890,7 @@
 (defn calculate-ratio
   ;;  sqrt((actual-width)**2 + (actual-height)**2)/sqrt(2).
   [width height]
-  (/ (mth/sqrt (+ (mth/pow width 2)
-                  (mth/pow height 2)))
+  (/ (mth/hypot width height)
      (mth/sqrt 2)))
 
 (defn fix-percents

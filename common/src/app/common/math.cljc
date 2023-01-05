@@ -139,12 +139,18 @@
   #?(:cljs (math/toDegrees radians)
      :clj (Math/toDegrees radians)))
 
+(defn hypot
+  "Square root of the squares addition"
+  [a b]
+  #?(:cljs (js/Math.hypot a b)
+     :clj (Math/hypot a b)))
+
 (defn distance
   "Calculate the distance between two points."
   [[x1 y1] [x2 y2]]
   (let [dx (- x1 x2)
         dy (- y1 y2)]
-    (-> (sqrt (+ (pow dx 2) (pow dy 2)))
+    (-> (hypot dx dy)
         (precision 2))))
 
 (defn log10
@@ -182,3 +188,4 @@
   "Get the sign (+1 / -1) for the number"
   [n]
   (if (neg? n) -1 1))
+

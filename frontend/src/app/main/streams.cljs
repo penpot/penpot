@@ -21,6 +21,16 @@
   [v]
   (instance? KeyboardEvent v))
 
+(defn key-up?
+  [v]
+  (and (keyboard-event? v)
+       (= :up (:type v))))
+
+(defn key-down?
+  [v]
+  (and (keyboard-event? v)
+       (= :down (:type v))))
+
 (defrecord MouseEvent [type ctrl shift alt meta])
 
 (defn mouse-event?
