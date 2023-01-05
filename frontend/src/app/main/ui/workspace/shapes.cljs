@@ -110,9 +110,7 @@
          :circle  [:> circle-wrapper opts]
          :svg-raw [:> svg-raw-wrapper opts]
          :bool    [:> bool-wrapper opts]
-
-         ;; Only used when drawing a new frame.
-         :frame [:> nested-frame-wrapper opts]
+         :frame   [:> nested-frame-wrapper opts]
 
          nil)])))
 

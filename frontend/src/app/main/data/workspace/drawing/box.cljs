@@ -37,19 +37,21 @@
       (assoc :x (- (:x point) (* sx (- dy dx)))))))
 
 (defn resize-shape [{:keys [x y width height] :as shape} initial point lock?]
-  (let [draw-rect (gsh/make-rect initial (cond-> point lock? (adjust-ratio initial)))
-        shape-rect (gsh/make-rect x y width height)
+  (if (and (some? x) (some? y) (some? width) (some? height))
+    (let [draw-rect (gsh/make-rect initial (cond-> point lock? (adjust-ratio initial)))
+          shape-rect (gsh/make-rect x y width height)
 
-        scalev (gpt/point (/ (:width draw-rect) (:width shape-rect))
-                          (/ (:height draw-rect) (:height shape-rect)))
+          scalev (gpt/point (/ (:width draw-rect) (:width shape-rect))
+                            (/ (:height draw-rect) (:height shape-rect)))
 
-        movev (gpt/to-vec (gpt/point shape-rect) (gpt/point draw-rect))]
+          movev (gpt/to-vec (gpt/point shape-rect) (gpt/point draw-rect))]
 
-    (-> shape
-        (assoc :click-draw? false)
-        (gsh/transform-shape (-> (ctm/empty)
-                                 (ctm/resize scalev (gpt/point x y))
-                                 (ctm/move movev))))))
+      (-> shape
+          (assoc :click-draw? false)
+          (gsh/transform-shape (-> (ctm/empty)
+                                   (ctm/resize scalev (gpt/point x y))
+                                   (ctm/move movev)))))
+    shape))
 
 (defn update-drawing [state initial point lock?]
   (update-in state [:workspace-drawing :object] resize-shape initial point lock?))

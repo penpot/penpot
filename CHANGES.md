@@ -38,6 +38,8 @@
 - Fix missing create component menu for frames [Github #2670](https://github.com/penpot/penpot/issues/2670)
 - Fix "currentColor" is not converted when importing SVG [Github 2276](https://github.com/penpot/penpot/issues/2276)
 - Fix incorrect color in properties of multiple bool shapes [Taiga #4355](https://tree.taiga.io/project/penpot/issue/4355)
+- Fix pressing the enter key gives you an internal error [Github 2675](https://github.com/penpot/penpot/issues/2675) [Github 2577](https://github.com/penpot/penpot/issues/2577)
+- Fix confirm group name with enter doesn't work in assets modal [Taiga #4506](https://tree.taiga.io/project/penpot/issue/4506)
 
 ### :arrow_up: Deps updates
 

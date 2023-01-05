@@ -117,7 +117,7 @@
         [x y] (->> coords (mapv solve-derivative))
 
         ;; normalize value
-        d (mth/sqrt (+ (* x x) (* y y)))]
+        d (mth/hypot x y)]
 
     (if (mth/almost-zero? d)
       (gpt/point 0 0)

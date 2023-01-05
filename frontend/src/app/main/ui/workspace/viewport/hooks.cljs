@@ -35,21 +35,29 @@
 (defn setup-dom-events [viewport-ref zoom disable-paste in-viewport? workspace-read-only?]
   (let [on-key-down       (actions/on-key-down)
         on-key-up         (actions/on-key-up)
-        on-mouse-move     (actions/on-mouse-move viewport-ref zoom)
-        on-mouse-wheel    (actions/on-mouse-wheel viewport-ref zoom)
+        on-mouse-move     (actions/on-mouse-move)
+        on-mouse-wheel    (actions/on-mouse-wheel zoom)
         on-paste          (actions/on-paste disable-paste in-viewport? workspace-read-only?)]
+
+    ;; We use the DOM listener because the goog.closure one forces reflow to generate its internal
+    ;; structure. As we don't need currently nothing from BrowserEvent we optimize by using the basic event
+    (mf/use-layout-effect
+     (mf/deps on-mouse-move)
+     (fn []
+       (let [node (mf/ref-val viewport-ref)]
+         (.addEventListener node "mousemove" on-mouse-move)
+         (fn []
+           (.removeEventListener node "mousemove" on-mouse-move)))))
+
     (mf/use-layout-effect
      (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-paste workspace-read-only?)
      (fn []
-       (let [node (mf/ref-val viewport-ref)
-             keys [(events/listen js/document EventType.KEYDOWN on-key-down)
+       (let [keys [(events/listen js/document EventType.KEYDOWN on-key-down)
                    (events/listen js/document EventType.KEYUP on-key-up)
-                   (events/listen node EventType.MOUSEMOVE on-mouse-move)
                    ;; bind with passive=false to allow the event to be cancelled
                    ;; https://stackoverflow.com/a/57582286/3219895
                    (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
                    (events/listen js/window EventType.PASTE on-paste)]]
-
          (fn []
            (doseq [key keys]
              (events/unlistenByKey key))))))))
