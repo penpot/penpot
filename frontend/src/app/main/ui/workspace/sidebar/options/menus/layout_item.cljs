@@ -47,12 +47,12 @@
              (dm/get-in values [:layout-item-margin :m2])
              "--")]
 
-    [:div.layout-row.margin-item-row
+    [:div.margin-row
      (cond
        (= margin-type :simple)
 
        [:div.margin-item-group
-        [:div.margin-item-row.tooltip.tooltip-bottom-left
+        [:div.margin-item.tooltip.tooltip-bottom-left
          {:alt "Vertical margin"}
          [:span.icon i/auto-margin-both-sides]
          [:> numeric-input
@@ -61,7 +61,7 @@
            :on-change (partial on-margin-change :simple :m1)
            :value m1}]]
 
-        [:div.margin-item-column.tooltip.tooltip-bottom-left
+        [:div.margin-item.tooltip.tooltip-bottom-left
          {:alt "Horizontal margin"}
          [:span.icon.rotated i/auto-margin-both-sides]
          [:> numeric-input
@@ -88,7 +88,7 @@
               :value (num (:layout-item-margin values))}]]])])
 
      [:div.margin-item-icons
-      [:div.margin-item-icon.tooltip.tooltip-bottom
+      [:div.margin-item-icon.tooltip.tooltip-bottom-left
        {:class (dom/classnames :selected (= margin-type :multiple))
         :alt "Margin - multiple"
         :on-click #(change-margin-style (if (= margin-type :multiple) :simple :multiple))}
@@ -100,6 +100,7 @@
         auto? is-layout-container?]
 
     [:div.btn-wrapper
+     {:class (when (and fill? auto?) "wrap")}
      [:div.layout-behavior.horizontal
       [:button.behavior-btn.tooltip.tooltip-bottom
        {:alt "Fix width"
@@ -200,19 +201,13 @@
 
      [:div.element-set-content.layout-item-menu
       [:div.layout-row
-       [:div.row-title "Sizing"]
+       [:div.row-title.sizing "Sizing"]
        [:& element-behavior {:is-layout-child? is-layout-child?
                              :is-layout-container? is-layout-container?
                              :layout-item-v-sizing (or (:layout-item-v-sizing values) :fix)
                              :layout-item-h-sizing (or (:layout-item-h-sizing values) :fix)
                              :on-change-behavior on-change-behavior}]]
-
-
-      (when is-layout-child?
-        [:& margin-section {:values values
-                            :change-margin-style change-margin-style
-                            :on-margin-change on-margin-change}])
-
+      
       (when is-layout-child?
         [:div.layout-row
          [:div.row-title "Align"]
@@ -220,6 +215,11 @@
           [:& align-self-row {:is-col? is-col?
                               :align-self align-self
                               :set-align-self set-align-self}]]])
+
+      (when is-layout-child?
+        [:& margin-section {:values values
+                            :change-margin-style change-margin-style
+                            :on-margin-change on-margin-change}])
 
       [:div.advanced-ops-body
        [:div.input-wrapper

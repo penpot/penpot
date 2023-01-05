@@ -43,7 +43,7 @@
      (when (not is-layout-child?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
-     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values}]
+     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
 
      (when (or is-layout-child? is-layout-container?)
        [:& layout-item-menu

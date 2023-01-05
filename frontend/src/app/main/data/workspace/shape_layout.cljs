@@ -229,9 +229,9 @@
            (create-layout-from-selection :flex)
            (dwu/commit-undo-transaction undo-id)))))))
 
-(defn toogle-layout-flex
+(defn toggle-layout-flex
   []
-  (ptk/reify ::toogle-layout-flex
+  (ptk/reify ::toggle-layout-flex
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id          (:current-page-id state)
@@ -241,9 +241,10 @@
             single?          (= (count selected-shapes) 1)
             has-flex-layout? (and single? (ctl/layout? objects (:id (first selected-shapes))))]
 
-        (if has-flex-layout?
-          (rx/of (remove-layout selected))
-          (rx/of (create-layout)))))))
+        (when (not= 0 (count selected))
+          (if has-flex-layout?
+            (rx/of (remove-layout selected))
+            (rx/of (create-layout))))))))
 
 (defn update-layout
   [ids changes]

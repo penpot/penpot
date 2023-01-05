@@ -214,10 +214,10 @@
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dws/create-artboard-from-selection))}
 
-   :toogle-layout-flex   {:tooltip (ds/shift "F")
-                          :command "shift+f"
+   :toggle-layout-flex   {:tooltip (ds/shift "A")
+                          :command "shift+a"
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwsl/toogle-layout-flex))}
+                          :fn #(emit-when-no-readonly (dwsl/toggle-layout-flex))}
 
    ;; TOOLS
 
