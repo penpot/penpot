@@ -2,8 +2,6 @@
 
 ## 1.17.0
 
-### :boom: Breaking changes & Deprecations
-
 ### :sparkles: New features
 
 - Adds layout flex functionality for boards
@@ -40,11 +38,10 @@
 - Fix confirm group name with enter doesn't work in assets modal [Taiga #4506](https://tree.taiga.io/project/penpot/issue/4506)
 - Fix group/ungroup shapes inside a component [Taiga #4052](https://tree.taiga.io/project/penpot/issue/4052)
 
-### :arrow_up: Deps updates
-
-### :heart: Community contributions by (Thank you!)
-
 ## 1.16.2-beta
+
+### :bug: Bugs fixed
+
 - Fix strage cursor behaviour after clicking viewport with text pool [Github #2447](https://github.com/penpot/penpot/issues/2447)
 
 ## 1.16.1-beta
@@ -114,7 +111,6 @@
 - Fix grid not syncing immediately in multiuser [Taiga #4339](https://tree.taiga.io/project/penpot/issue/4339)
 - Fix custom font upload fails silently for unsupported formats [Taiga #4279](https://tree.taiga.io/project/penpot/issue/4280)
 
-### :arrow_up: Deps updates
 ### :heart: Community contributions by (Thank you!)
 
 - To @andrewzhurov for many code contributions on this release.
