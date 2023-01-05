@@ -2,8 +2,6 @@
 
 ## :rocket: Next
 
-### :boom: Breaking changes & Deprecations
-
 ### :sparkles: New features
 
 ### :bug: Bugs fixed
