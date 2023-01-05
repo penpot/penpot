@@ -450,9 +450,8 @@
     ::http.client/client (ig/ref ::http.client/client)}
 
    :app.loggers.database/reporter
-   {:receiver (ig/ref :app.loggers.zmq/receiver)
-    :pool     (ig/ref ::db/pool)
-    :executor (ig/ref ::wrk/executor)}
+   {::lzmq/receiver (ig/ref :app.loggers.zmq/receiver)
+    ::db/pool       (ig/ref ::db/pool)}
 
    ::sto/storage
    {:pool     (ig/ref ::db/pool)
