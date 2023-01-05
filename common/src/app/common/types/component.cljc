@@ -49,3 +49,22 @@
   [shape]
   (some? (:shape-ref shape)))
 
+(defn in-component-instance-not-root?
+  "Check if the shape is inside a component instance and
+  is not the root shape."
+  [shape]
+  (and (some? (:shape-ref shape))
+       (nil? (:component-id shape))))
+
+(defn detach-shape
+  "Remove the links and leave it as a plain shape, detached from any component."
+  [shape]
+  (dissoc shape
+          :component-id
+          :component-file
+          :component-root?
+          :remote-synced?
+          :shape-ref
+          :touched))
+
+
