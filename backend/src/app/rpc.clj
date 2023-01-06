@@ -190,6 +190,12 @@
                                 :profile-id profile-id
                                 :ip-addr (some-> request audit/parse-client-ip)
                                 :props props
+
+                                ;; NOTE: for batch-key lookup we need the params as-is
+                                ;; because the rpc api does not need to know the
+                                ;; audit/webhook specific object layout.
+                                ::params (dissoc params ::http/request)
+
                                 ::webhooks/batch-key
                                 (or (::webhooks/batch-key mdata)
                                     (::webhooks/batch-key resultm))

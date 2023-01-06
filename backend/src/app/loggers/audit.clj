@@ -8,6 +8,7 @@
   "Services related to the user activity (audit log)."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
@@ -20,6 +21,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.main :as-alias main]
    [app.metrics :as mtx]
+   [app.rpc :as-alias rpc]
    [app.tokens :as tokens]
    [app.util.retry :as rtry]
    [app.util.time :as dt]
@@ -171,18 +173,20 @@
                (::webhooks/event? event))
       (let [batch-key     (::webhooks/batch-key event)
             batch-timeout (::webhooks/batch-timeout event)
-            label-suffix  (when (ifn? batch-key)
-                            (str/ffmt ":%" (batch-key (:props params))))
-            dedupe?       (boolean
-                           (and batch-key batch-timeout))]
+            label         (dm/str "rpc:" (:name params))
+            label         (cond
+                            (ifn? batch-key)    (dm/str label ":" (batch-key (::rpc/params event)))
+                            (string? batch-key) (dm/str label ":" batch-key)
+                            :else               label)
+            dedupe?       (boolean (and batch-key batch-timeout))]
+
         (wrk/submit! ::wrk/conn pool
                      ::wrk/task :process-webhook-event
                      ::wrk/queue :webhooks
                      ::wrk/max-retries 0
                      ::wrk/delay (or batch-timeout 0)
                      ::wrk/dedupe dedupe?
-                     ::wrk/label
-                     (str/ffmt "rpc:%1%2" (:name params) label-suffix)
+                     ::wrk/label label
 
                      ::webhooks/event
                      (-> params
