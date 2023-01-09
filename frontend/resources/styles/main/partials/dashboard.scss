@@ -164,8 +164,10 @@
   flex: 1 0 0;
   margin-right: $size-4;
   overflow-y: auto;
-  user-select: none;
   width: 100%;
+  &.dashboard-projects {
+    user-select: none;
+  }
   &.no-bg {
     background-color: transparent;
   }
