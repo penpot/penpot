@@ -107,7 +107,7 @@
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response)
-         (rx/catch body-too-large? (constantly nil))
+         (rx/catch body-too-large? (constantly (rx/of nil)))
          (rx/map (constantly params)))))
 
 (defmethod impl/handler :thumbnails/generate
