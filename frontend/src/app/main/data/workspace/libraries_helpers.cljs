@@ -915,32 +915,36 @@
         parents    (cph/get-parent-ids objects (:id shape))
         parent     (first parents)
         children   (cph/get-children-ids objects (:id shape))
+        ids        (into [(:id shape)] children)
+
+        add-redo-change (fn [changes id]
+                          (update changes :redo-changes conj
+                                  (make-change
+                                   container
+                                   {:type :del-obj
+                                    :id id
+                                    :ignore-touched true})))
 
         add-undo-change (fn [changes id]
                           (let [shape' (get objects id)]
                             (update changes :undo-changes d/preconj
                                     (make-change
-                                      container
-                                      (as-> {:type :add-obj
-                                             :id id
-                                             :index (cph/get-position-on-parent objects id)
-                                             :parent-id (:parent-id shape')
-                                             :ignore-touched true
-                                             :obj shape'} $
-                                        (cond-> $
-                                          (:frame-id shape')
-                                          (assoc :frame-id (:frame-id shape'))))))))
+                                     container
+                                     (as-> {:type :add-obj
+                                            :id id
+                                            :index (cph/get-position-on-parent objects id)
+                                            :parent-id (:parent-id shape')
+                                            :ignore-touched true
+                                            :obj shape'} $
+                                       (cond-> $
+                                         (:frame-id shape')
+                                         (assoc :frame-id (:frame-id shape'))))))))
 
-        changes' (-> changes
+        changes' (-> (reduce add-redo-change changes ids)
                      (update :redo-changes conj (make-change
-                                                  container
-                                                  {:type :del-obj
-                                                   :id (:id shape)
-                                                   :ignore-touched true}))
-                     (update :redo-changes conj (make-change
-                                                  container
-                                                  {:type :reg-objects
-                                                   :shapes (vec parents)}))
+                                                 container
+                                                 {:type :reg-objects
+                                                  :shapes (vec parents)}))
                      (add-undo-change (:id shape)))
 
         changes' (reduce add-undo-change

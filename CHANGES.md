@@ -39,6 +39,7 @@
 - Fix group/ungroup shapes inside a component [Taiga #4052](https://tree.taiga.io/project/penpot/issue/4052)
 - Fix wrong update of text in components [Taiga #4646](https://tree.taiga.io/project/penpot/issue/4646)
 - Fix problem with SVG imports with style [#2605](https://github.com/penpot/penpot/issues/2605)
+- Fix ghost shapes after sync groups in components [Taiga #4649](https://tree.taiga.io/project/penpot/issue/4649)
 
 ## 1.16.2-beta
 
