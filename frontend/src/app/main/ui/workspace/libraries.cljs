@@ -15,6 +15,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.strings :refer [matches-search]]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -93,11 +94,22 @@
            (st/emit! (modal/show
                       {:type :delete-shared
                        :origin :unpublish
-                       :on-accept (fn[]
+                       :on-accept (fn []
                                     (st/emit! (dwl/set-file-shared (:id file) false))
                                     (modal/show! :libraries-dialog {}))
                        :on-cancel #(modal/show! :libraries-dialog {})
-                       :count-libraries 1}))))]
+                       :count-libraries 1}))))
+        handle-key-down
+        (mf/use-callback
+         (fn [event]
+           (let [enter? (kbd/enter? event)
+                 esc?   (kbd/esc? event)
+                 input-node (dom/event->target event)]
+
+             (when enter?
+               (dom/blur! input-node))
+             (when esc?
+               (dom/blur! input-node)))))]
     [:*
      [:div.section
       [:div.section-title (tr "workspace.libraries.in-this-file")]
@@ -130,7 +142,8 @@
         {:placeholder (tr "workspace.libraries.search-shared-libraries")
          :type "text"
          :value @search-term
-         :on-change on-search-term-change}]
+         :on-change on-search-term-change
+         :on-key-down handle-key-down}]
        (if (str/empty? @search-term)
          [:div.search-icon
           i/search]

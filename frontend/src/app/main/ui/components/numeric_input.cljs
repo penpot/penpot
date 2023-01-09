@@ -163,7 +163,8 @@
              (when enter?
                (dom/blur! input-node))
              (when esc?
-               (update-input value-str)))))
+               (update-input value-str)
+               (dom/blur! input-node)))))
 
         handle-mouse-wheel
         (mf/use-callback
