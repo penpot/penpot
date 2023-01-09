@@ -35,9 +35,8 @@
         ratio-width  (/ target-width curr-width)
         ratio-height (/ target-height curr-height)
         scalev       (gpt/point ratio-width ratio-height)]
-
     (-> modifiers
-        (ctm/resize scalev origin transform transform-inverse))))
+        (ctm/resize scalev origin transform transform-inverse {:precise? true}))))
 
 (defn position-pixel-precision
   [modifiers _ points]

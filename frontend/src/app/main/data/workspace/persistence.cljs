@@ -93,29 +93,32 @@
          (->> (rx/from-atom commits)
               (rx/filter (complement empty?))
               (rx/sample-when
-               (->> (rx/merge
-                     (rx/interval 5000)
-                     (rx/filter #(= ::force-persist %) stream)
-                     (->> (rx/from-atom commits)
-                          (rx/filter (complement empty?))
-                          (rx/debounce 2000)))
-                    ;; Not sample while saving so there are no race conditions
-                    (rx/filter #(not @saving?))))
+               (rx/merge
+                (rx/filter #(= ::force-persist %) stream)
+                (->> (rx/merge
+                      (rx/interval 5000)
+                      (->> (rx/from-atom commits)
+                           (rx/filter (complement empty?))
+                           (rx/debounce 2000)))
+                     ;; Not sample while saving so there are no race conditions
+                     (rx/filter #(not @saving?)))))
               (rx/tap #(reset! commits []))
               (rx/tap on-saving)
               (rx/mapcat (fn [changes]
                            ;; NOTE: this is needed for don't start the
                            ;; next persistence before this one is
                            ;; finished.
-                           (rx/merge
-                            (->> (rx/of (persist-changes file-id changes commits))
-                                 (rx/observe-on :async))
-                            (->> stream
-                                 ;; We wait for every change to be persisted
-                                 (rx/filter (ptk/type? ::shapes-changes-persisted-finished))
-                                 (rx/take 1)
-                                 (rx/tap on-saved)
-                                 (rx/ignore)))))
+                           (if-let [file-revn (dm/get-in @st/state [:workspace-file :revn])]
+                             (rx/merge
+                              (->> (rx/of (persist-changes file-id file-revn changes commits))
+                                   (rx/observe-on :async))
+                              (->> stream
+                                   ;; We wait for every change to be persisted
+                                   (rx/filter (ptk/type? ::shapes-changes-persisted-finished))
+                                   (rx/take 1)
+                                   (rx/tap on-saved)
+                                   (rx/ignore)))
+                             (rx/empty))))
               (rx/take-until (rx/delay 100 stoper))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: save loop"))))
@@ -132,7 +135,7 @@
                              (log/debug :hint "finalize persistence: synchronous save loop")))))))))
 
 (defn persist-changes
-  [file-id changes pending-commits]
+  [file-id file-revn changes pending-commits]
   (log/debug :hint "persist changes" :changes (count changes))
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-changes
@@ -146,48 +149,46 @@
                        (features/active-feature? state :components-v2)
                        (conj "components/v2"))
             sid      (:session-id state)
-            file     (get state :workspace-file)
-            params   {:id (:id file)
-                      :revn (:revn file)
+            params   {:id file-id
+                      :revn file-revn
                       :session-id sid
                       :changes-with-metadata (into [] changes)
                       :features features}]
 
-        (when (= file-id (:id params))
-          (->> (rp/cmd! :update-file params)
-               (rx/mapcat (fn [lagged]
-                            (log/debug :hint "changes persisted" :lagged (count lagged))
-                            (let [frame-updates
-                                  (-> (group-by :page-id changes)
-                                      (update-vals #(into #{} (mapcat :frames) %)))
+        (->> (rp/cmd! :update-file params)
+             (rx/mapcat (fn [lagged]
+                          (log/debug :hint "changes persisted" :lagged (count lagged))
+                          (let [frame-updates
+                                (-> (group-by :page-id changes)
+                                    (update-vals #(into #{} (mapcat :frames) %)))
 
-                                  commits
-                                  (->> @pending-commits
-                                       (map #(assoc % :revn (:revn file))))]
+                                commits
+                                (->> @pending-commits
+                                     (map #(assoc % :revn file-revn)))]
 
-                              (rx/concat
-                               (rx/merge
-                                (->> (rx/from frame-updates)
-                                     (rx/mapcat (fn [[page-id frames]]
-                                                  (->> frames (map #(vector page-id %)))))
-                                     (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail (:id file) page-id frame-id))))
+                            (rx/concat
+                             (rx/merge
+                              (->> (rx/from frame-updates)
+                                   (rx/mapcat (fn [[page-id frames]]
+                                                (->> frames (map #(vector page-id %)))))
+                                   (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail file-id page-id frame-id))))
 
-                                (->> (rx/from (concat lagged commits))
-                                     (rx/merge-map
-                                      (fn [{:keys [changes] :as entry}]
-                                        (rx/merge
-                                         (rx/from
-                                          (for [[page-id changes] (group-by :page-id changes)]
-                                            (dch/update-indices page-id changes)))
-                                         (rx/of (shapes-changes-persisted file-id entry)))))))
+                              (->> (rx/from (concat lagged commits))
+                                   (rx/merge-map
+                                    (fn [{:keys [changes] :as entry}]
+                                      (rx/merge
+                                       (rx/from
+                                        (for [[page-id changes] (group-by :page-id changes)]
+                                          (dch/update-indices page-id changes)))
+                                       (rx/of (shapes-changes-persisted file-id entry)))))))
 
-                               (rx/of (shapes-changes-persisted-finished))))))
-               (rx/catch (fn [cause]
-                           (rx/concat
-                            (if (= :authentication (:type cause))
-                              (rx/empty)
-                              (rx/of (rt/assign-exception cause)))
-                            (rx/throw cause))))))))))
+                             (rx/of (shapes-changes-persisted-finished))))))
+             (rx/catch (fn [cause]
+                         (rx/concat
+                          (if (= :authentication (:type cause))
+                            (rx/empty)
+                            (rx/of (rt/assign-exception cause)))
+                          (rx/throw cause)))))))))
 
 ;; Event to be thrown after the changes have been persisted
 (defn shapes-changes-persisted-finished

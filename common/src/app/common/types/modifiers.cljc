@@ -177,17 +177,19 @@
 
 (defn- maybe-add-resize
   "Check the last operation to check if we can stack it over the last one"
-  [operations op]
+  ([operations op]
+   (maybe-add-resize operations op nil))
 
-  (if (c/empty? operations)
-    [op]
-    (let [head (peek operations)]
-      (if (mergeable-resize? head op)
-        (let [item (merge-resize head op)]
-          (cond-> (pop operations)
-            (resize-vec? (dm/get-prop item :vector))
-            (conj item)))
-        (conj operations op)))))
+  ([operations op {:keys [precise?]}]
+   (if (c/empty? operations)
+     [op]
+     (let [head (peek operations)]
+       (if (mergeable-resize? head op)
+         (let [item (merge-resize head op)]
+           (cond-> (pop operations)
+             (or precise? (resize-vec? (dm/get-prop item :vector)))
+             (conj item)))
+         (conj operations op))))))
 
 (defn valid-vector?
   [vector]
@@ -259,12 +261,16 @@
        (update :geometry-child maybe-add-resize (resize-op order vector origin)))))
 
   ([modifiers vector origin transform transform-inverse]
+   (resize modifiers vector origin transform transform-inverse nil))
+
+  ;; `precise?` works so we don't remove almost empty resizes. This will be used in the pixel-precision
+  ([modifiers vector origin transform transform-inverse {:keys [precise?]}]
    (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
    (let [modifiers (or modifiers (empty))
          order     (inc (dm/get-prop modifiers :last-order))
          modifiers (assoc modifiers :last-order order)]
      (cond-> modifiers
-       (resize-vec? vector)
+       (or precise? (resize-vec? vector))
        (update :geometry-child maybe-add-resize (resize-op order vector origin transform transform-inverse))))))
 
 (defn rotation
