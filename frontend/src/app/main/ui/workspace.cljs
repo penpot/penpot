@@ -27,6 +27,7 @@
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
+   [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.dom :as dom]
@@ -72,6 +73,10 @@
        (when (debug? :coordinates)
          [:& coordinates/coordinates {:colorpalette? colorpalette?}])
 
+       (when (debug? :history-overlay)
+         [:div.history-debug-overlay
+          [:button {:on-click #(st/emit! dw/reinitialize-undo)} "CLEAR"]
+          [:& history-toolbox]])
        [:& viewport {:file file
                      :wlocal wlocal
                      :wglobal wglobal
