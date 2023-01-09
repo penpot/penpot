@@ -98,9 +98,17 @@
         (and (some? active-frames)
              (not (contains? active-frames (:id shape))))
 
-        opts  #js {:shape shape :thumbnail? thumbnail?}]
+        opts  #js {:shape shape :thumbnail? thumbnail?}
+
+        svg-leaf? (and (= :svg-raw (:type shape)) (string? (:content shape)))
+
+        [wrapper wrapper-props]
+        (if svg-leaf?
+          [mf/Fragment nil]
+          ["g" #js {:className "workspace-shape-wrapper"}])]
+
     (when (and (some? shape) (not (:hidden shape)))
-      [:g.workspace-shape-wrapper
+      [:> wrapper wrapper-props
        (case (:type shape)
          :path    [:> path/path-wrapper opts]
          :text    [:> text/text-wrapper opts]

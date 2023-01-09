@@ -21,7 +21,7 @@
 (defonce matrices-regex #"(matrix|translate|scale|rotate|skewX|skewY)\(([^\)]*)\)")
 (defonce number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
 
-(defonce tags-to-remove #{:defs :linearGradient :radialGradient :metadata :mask :clipPath :filter :title})
+(defonce tags-to-remove #{:linearGradient :radialGradient :metadata :mask :clipPath :filter :title})
 
 ;; https://www.w3.org/TR/SVG11/eltindex.html
 (defonce svg-tags-list
