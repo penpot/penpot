@@ -173,6 +173,11 @@
       background-position: 95% 48%;
       background-size: 10px;
       cursor: pointer;
+      outline: none;
+      &:focus,
+      &:focus-within {
+        border: 1px solid $color-primary;
+      }
 
       option {
         padding: 1rem;
