@@ -86,8 +86,11 @@
                         (when (some? node)
                           (let [^js observer (mf/ref-val observer-ref)
                                 ^js prev-val (mf/ref-val prev-val-ref)]
+                            
+                            (println "----> node" node)
 
                             (when (and (not= prev-val node) (some? observer))
+                              (println "disconnect" :js/prev-val prev-val :js/node node)
                               (log/debug :action "disconnect" :js/prev-val prev-val :js/node node)
                               (.disconnect observer)
                               (mf/set-ref-val! observer-ref nil))
@@ -95,11 +98,14 @@
                             (when (and (not= prev-val node) (some? node))
                               (let [^js observer (js/ResizeObserver.
                                                   #(callback last-resize-type (dom/get-client-size node)))]
+                                (println "observe"  :js/node node :js/observer observer)
                                 (mf/set-ref-val! observer-ref observer)
                                 (log/debug :action "observe"  :js/node node :js/observer observer)
                                 (.observe observer node))))
 
                           (mf/set-ref-val! prev-val-ref node))))]
+    
+    (println "use-resize-observer")
 
     (mf/with-effect []
       ;; On dismount we need to disconnect the current observer

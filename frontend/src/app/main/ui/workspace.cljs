@@ -54,12 +54,14 @@
 
         on-resize
         (mf/use-callback
-         (mf/deps vport)
+         #_(mf/deps vport)
          (fn [resize-type size]
            (when (and vport (not= size vport))
+             (println "on-resize")
              (st/emit! (dw/update-viewport-size resize-type size)))))
 
         node-ref (use-resize-observer on-resize)]
+    (println "wlocal" wlocal)
     [:*
      (when (and colorpalette? (not hide-ui?))
        [:& colorpalette])

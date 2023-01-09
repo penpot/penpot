@@ -86,6 +86,7 @@
     (update [_ state]
       (update state :workspace-local
               (fn [{:keys [vport] :as local}]
+                (println "update-viewport-size" resize-type size)
                 (if (or (nil? vport)
                         (mth/almost-zero? width)
                         (mth/almost-zero? height))
