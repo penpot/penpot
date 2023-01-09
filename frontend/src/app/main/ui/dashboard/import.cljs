@@ -384,7 +384,7 @@
          (let [editing? (and (some? (:file-id file))
                              (= (:file-id file) (:editing @state)))]
            [:& import-entry {:state state
-                             :key (dm/str (:id file))
+                             :key (dm/str (:uri file))
                              :file file
                              :editing? editing?
                              :can-be-deleted? (> (count files) 1)}]))
