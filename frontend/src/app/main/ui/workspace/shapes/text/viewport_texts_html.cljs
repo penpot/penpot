@@ -140,6 +140,10 @@
   (let [text-shapes (obj/get props "text-shapes")
         prev-text-shapes (hooks/use-previous text-shapes)
 
+        ;; We store in the state the texts still pending to be calculated so we can
+        ;; get its position
+        pending-update (mf/use-state {})
+
         text-change?
         (fn [id]
           (let [new-shape (get text-shapes id)
@@ -153,12 +157,23 @@
 
         changed-texts
         (mf/use-memo
-         (mf/deps text-shapes)
-         #(->> (keys text-shapes)
-               (filter text-change?)
-               (map (d/getf text-shapes))))
+         (mf/deps text-shapes @pending-update)
+         #(let [pending-shapes (into #{} (vals @pending-update))]
+            (->> (keys text-shapes)
+                 (filter (fn [id]
+                           (or (contains? pending-shapes id)
+                               (text-change? id))))
+                 (map (d/getf text-shapes)))))
 
-        handle-update-shape (mf/use-callback update-text-shape)]
+        handle-update-shape
+        (mf/use-callback
+         (fn [shape node]
+           ;; Unique to indentify the pending state
+           (let [uid (js/Symbol)]
+             (swap! pending-update assoc uid (:id shape))
+             (p/then
+              (update-text-shape shape node)
+              #(swap! pending-update dissoc uid)))))]
 
     [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]

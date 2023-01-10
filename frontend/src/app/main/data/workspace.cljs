@@ -1969,3 +1969,6 @@
 (dm/export dwv/update-viewport-size)
 (dm/export dwv/start-panning)
 (dm/export dwv/finish-panning)
+
+;; Undo
+(dm/export dwu/reinitialize-undo)

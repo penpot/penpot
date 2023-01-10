@@ -43,14 +43,16 @@
     (mapv #(gpt/add % move-vec))))
 
 (defn move-position-data
-  [position-data dx dy]
+  ([position-data {:keys [x y]}]
+   (move-position-data position-data x y))
 
-  (when (some? position-data)
-    (cond->> position-data
-      (d/num? dx dy)
-      (mapv #(-> %
-                 (update :x + dx)
-                 (update :y + dy))))))
+  ([position-data dx dy]
+   (when (some? position-data)
+     (cond->> position-data
+       (d/num? dx dy)
+       (mapv #(-> %
+                  (update :x + dx)
+                  (update :y + dy)))))))
 
 (defn move
   "Move the shape relatively to its current

@@ -12,6 +12,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -20,7 +21,7 @@
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry typography-options]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.timers :as tm]
+   [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -164,7 +165,12 @@
   (let [grow-type (:grow-type values)
         handle-change-grow
         (fn [_ grow-type]
-          (st/emit! (dch/update-shapes ids #(assoc % :grow-type grow-type)))
+          (let [uid (js/Symbol)]
+            (st/emit!
+             (dwu/start-undo-transaction uid)
+             (dch/update-shapes ids #(assoc % :grow-type grow-type)))
+            ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
+            (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
           (when (some? on-blur) (on-blur)))]
 
     [:div.align-icons
@@ -304,7 +310,7 @@
                   :show-recent true
                   :on-blur
                   (fn []
-                    (tm/schedule
+                    (ts/schedule
                      100
                      (fn []
                        (when (not= "INPUT" (-> (dom/get-active) (dom/get-tag-name)))

@@ -344,7 +344,7 @@
           (when (or (and (not-changed? (:width shape) new-width) (= (:grow-type shape) :auto-width))
                     (and (not-changed? (:height shape) new-height)
                          (or (= (:grow-type shape) :auto-height) (= (:grow-type shape) :auto-width))))
-            (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? false})
+            (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? true})
                    (ptk/data-event :layout/update [id]))))))))
 
 
@@ -377,7 +377,7 @@
                       (gpt/point (:selrect shape)))
 
         new-shape
-        (update new-shape :position-data gsh/move-position-data (:x delta-move) (:y delta-move))]
+        (update new-shape :position-data gsh/move-position-data delta-move)]
 
     new-shape))
 

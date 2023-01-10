@@ -4,6 +4,16 @@
 //
 // Copyright (c) KALEIDOS INC
 
+.history-debug-overlay {
+  background: $color-gray-50;
+  bottom: 0;
+  max-height: 500px;
+  overflow-y: auto;
+  position: absolute;
+  width: 500px;
+  z-index: 1000;
+}
+
 .history-toolbox {
   display: flex;
   flex-direction: column;
