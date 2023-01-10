@@ -42,3 +42,8 @@
     (let [st (str/trim (str/lower search-term))
           nm (str/trim (str/lower name))]
       (str/includes? nm st))))
+
+(defn camelize
+  [str]
+  ;; str.replace(":", "-").replace(/-./g, x=>x[1].toUpperCase())
+  (js* "~{}.replace(\":\", \"-\").replace(/-./g, x=>x[1].toUpperCase())", str))

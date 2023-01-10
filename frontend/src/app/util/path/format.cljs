@@ -6,7 +6,6 @@
 
 (ns app.util.path.format
   (:require
-   [app.common.math :as mth]
    [app.common.path.commands :as upc]
    [app.common.path.subpaths :refer [pt=]]
    [app.util.array :as arr]))
@@ -16,48 +15,48 @@
 (defn- join-params
   ([a]
    (js* "\"\"+~{}"
-        (mth/precision a path-precision)))
+        (.toFixed a path-precision)))
   ([a b]
    (js* "\"\"+~{}+\",\"+~{}"
-        (mth/precision a path-precision)
-        (mth/precision b path-precision)))
+        (.toFixed a path-precision)
+        (.toFixed b path-precision)))
   ([a b c]
    (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}"
-        (mth/precision a path-precision)
-        (mth/precision b path-precision)
-        (mth/precision c path-precision)))
+        (.toFixed a path-precision)
+        (.toFixed b path-precision)
+        (.toFixed c path-precision)))
   ([a b c d]
    (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
-        (mth/precision a path-precision)
-        (mth/precision b path-precision)
-        (mth/precision c path-precision)
-        (mth/precision d path-precision)
+        (.toFixed a path-precision)
+        (.toFixed b path-precision)
+        (.toFixed c path-precision)
+        (.toFixed d path-precision)
         ))
   ([a b c d e]
    (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
-        (mth/precision a path-precision)
-        (mth/precision b path-precision)
-        (mth/precision c path-precision)
-        (mth/precision d path-precision)
-        (mth/precision e path-precision)))
+        (.toFixed a path-precision)
+        (.toFixed b path-precision)
+        (.toFixed c path-precision)
+        (.toFixed d path-precision)
+        (.toFixed e path-precision)))
   ([a b c d e f]
    (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
-        (mth/precision a path-precision)
-        (mth/precision b path-precision)
-        (mth/precision c path-precision)
-        (mth/precision d path-precision)
-        (mth/precision e path-precision)
-        (mth/precision f path-precision)
+        (.toFixed a path-precision)
+        (.toFixed b path-precision)
+        (.toFixed c path-precision)
+        (.toFixed d path-precision)
+        (.toFixed e path-precision)
+        (.toFixed f path-precision)
         ))
   ([a b c d e f g]
    (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
-        (mth/precision a path-precision)
-        (mth/precision b path-precision)
-        (mth/precision c path-precision)
-        (mth/precision d path-precision)
-        (mth/precision e path-precision)
-        (mth/precision f path-precision)
-        (mth/precision g path-precision))))
+        (.toFixed a path-precision)
+        (.toFixed b path-precision)
+        (.toFixed c path-precision)
+        (.toFixed d path-precision)
+        (.toFixed e path-precision)
+        (.toFixed f path-precision)
+        (.toFixed g path-precision))))
 
 (defn- translate-params
   [command {:keys [x y] :as params}]

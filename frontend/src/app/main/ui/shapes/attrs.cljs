@@ -146,18 +146,20 @@
 
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]
-  (let [replace-id (fn [id]
-                     (if (contains? svg-defs id)
-                       (str render-id "-" id)
-                       id))
-        svg-attrs (-> svg-attrs
-                      (usvg/clean-attrs)
-                      (usvg/update-attr-ids replace-id)
-                      (dissoc :id))
+  (if (and (empty? svg-defs) (empty? svg-attrs))
+    [nil nil]
+    (let [replace-id (fn [id]
+                       (if (contains? svg-defs id)
+                         (str render-id "-" id)
+                         id))
+          svg-attrs (-> svg-attrs
+                        (usvg/clean-attrs)
+                        (usvg/update-attr-ids replace-id)
+                        (dissoc :id))
 
-        attrs  (-> svg-attrs (dissoc :style) (clj->js))
-        styles (-> svg-attrs (:style {}) (clj->js))]
-    [attrs styles]))
+          attrs  (-> svg-attrs (dissoc :style) (clj->js))
+          styles (-> svg-attrs (:style {}) (clj->js))]
+      [attrs styles])))
 
 (defn add-style-attrs
   ([props shape]
@@ -212,9 +214,12 @@
          (obj/set! "style" styles)))))
 
 (defn extract-style-attrs
-  [shape]
-  (-> (obj/create)
-      (add-style-attrs shape)))
+  ([shape]
+   (-> (obj/create)
+       (add-style-attrs shape)))
+  ([shape render-id]
+   (-> (obj/create)
+       (add-style-attrs shape render-id))))
 
 (defn extract-fill-attrs
   [fill-data render-id index type]
