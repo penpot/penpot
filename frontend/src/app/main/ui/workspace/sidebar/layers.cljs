@@ -468,7 +468,19 @@
         handle-show-more
         (fn []
           (when (<= (:num-items @filter-state) (count filtered-objects-total))
-            (swap! filter-state update :num-items + 100)))]
+            (swap! filter-state update :num-items + 100)))
+
+        handle-key-down
+        (mf/use-callback
+         (fn [event]
+           (let [enter? (kbd/enter? event)
+                 esc?   (kbd/esc? event)
+                 input-node (dom/event->target event)]
+
+             (when enter?
+               (dom/blur! input-node))
+             (when esc?
+               (dom/blur! input-node)))))]
 
     [filtered-objects
      handle-show-more
@@ -483,7 +495,8 @@
             [:input {:on-change update-search-text
                      :value (:search-text @filter-state)
                      :auto-focus (:show-search-box @filter-state)
-                     :placeholder (tr "workspace.sidebar.layers.search")}]]
+                     :placeholder (tr "workspace.sidebar.layers.search")
+                     :on-key-down handle-key-down}]]
            (when (not (= "" (:search-text @filter-state)))
              [:span.clear {:on-click clear-search-text} i/exclude])]
           [:span {:on-click toggle-search} i/cross]]

@@ -148,7 +148,7 @@
       width: 24px;
       height: 24px;
       border-radius: 50%;
-      border: 1px solid $color-gray-60;
+      border: 1px solid $color-gray-30;
     }
 
     .hide-color .color-bullet {
@@ -173,6 +173,11 @@
       background-position: 95% 48%;
       background-size: 10px;
       cursor: pointer;
+      outline: none;
+      &:focus,
+      &:focus-within {
+        border: 1px solid $color-primary;
+      }
 
       option {
         padding: 1rem;

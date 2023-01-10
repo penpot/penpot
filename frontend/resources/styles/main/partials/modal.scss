@@ -65,6 +65,7 @@
   flex-direction: column;
   width: 448px;
   background-color: $color-white;
+  max-height: 700px;
 
   .modal-header {
     align-items: center;
@@ -102,6 +103,11 @@
       width: 16px;
       height: 16px;
     }
+  }
+
+  .component-list {
+    max-height: 408px;
+    overflow-y: scroll;
   }
 
   .modal-item-element {

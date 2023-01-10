@@ -67,7 +67,7 @@
            (when-not (:gradient color) [:div (str (* 100 (:opacity color)) "%")])]))
 
       (when-not (and on-change-format (:gradient color))
-        [:select {:on-change #(-> (dom/get-target-val %) keyword on-change-format)}
+        [:select.color-format-select {:on-change #(-> (dom/get-target-val %) keyword on-change-format)}
          [:option {:value "hex"}
           (tr "inspect.attributes.color.hex")]
 

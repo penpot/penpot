@@ -106,6 +106,9 @@
     border: 1px dashed $color-gray-20;
     margin-top: 16px;
   }
+  .table-header {
+    user-select: none;
+  }
 
   .table-row {
     background-color: $color-white;
@@ -148,9 +151,11 @@
 
     &.roles {
       flex-grow: 1;
-      user-select: none;
       cursor: default;
       position: relative;
+      .rol-label {
+        user-select: none;
+      }
       .rol-selector {
         &.has-priv {
           border: 1px solid $color-gray-20;

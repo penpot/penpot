@@ -186,6 +186,7 @@
     flex-direction: column;
     overflow-y: auto;
     margin: 0;
+    user-select: none;
 
     // TODO: should be deprecated / unclear name
     &.dashboard-common {
@@ -223,7 +224,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        user-select: none;
       }
 
       &::before {
