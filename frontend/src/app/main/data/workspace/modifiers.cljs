@@ -114,6 +114,18 @@
 
      (reduce set-child ignore-tree children))))
 
+(defn assoc-position-data
+  [shape position-data old-shape]
+  (let [deltav (gpt/to-vec (gpt/point (:selrect old-shape))
+                           (gpt/point (:selrect shape)))
+        position-data
+        (-> position-data
+            (gsh/move-position-data deltav))]
+    (cond-> shape
+      (d/not-empty? position-data)
+      (assoc :position-data position-data))))
+
+
 (defn update-grow-type
   [shape old-shape]
   (let [auto-width? (= :auto-width (:grow-type shape))
@@ -319,7 +331,8 @@
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
      (watch [_ state _]
-       (let [objects           (wsh/lookup-page-objects state)
+       (let [text-modifiers    (get state :workspace-text-modifier)
+             objects           (wsh/lookup-page-objects state)
              object-modifiers  (if modifiers
                                  (calculate-modifiers state modifiers)
                                  (get state :workspace-modifiers))
@@ -342,9 +355,13 @@
                   ids
                   (fn [shape]
                     (let [modif (get-in object-modifiers [(:id shape) :modifiers])
-                          text-shape? (cph/text-shape? shape)]
+                          text-shape? (cph/text-shape? shape)
+                          position-data (when text-shape?
+                                          (dm/get-in text-modifiers [(:id shape) :position-data]))]
                       (-> shape
                           (gsh/transform-shape modif)
+                          (cond-> (d/not-empty? position-data)
+                            (assoc-position-data position-data shape))
                           (cond-> text-shape?
                             (update-grow-type shape)))))
                   {:reg-objects? true
@@ -366,7 +383,11 @@
                            :grow-type
                            :layout-item-h-sizing
                            :layout-item-v-sizing
+                           :position-data
                            ]})
+                 ;; We've applied the text-modifier so we can dissoc the temporary data
+                 (fn [state]
+                   (update state :workspace-text-modifier #(apply dissoc % ids)))
                  (clear-local-transform))
           (if undo-transation?
             (rx/of (dwu/commit-undo-transaction undo-id))
