@@ -390,6 +390,7 @@ button.collapse-sidebar {
     justify-content: center;
     align-items: center;
     padding: 12px 10px;
+
     .search-box {
       display: flex;
       justify-content: space-between;
@@ -397,6 +398,9 @@ button.collapse-sidebar {
       border: 1px solid $color-gray-30;
       border-radius: 2px;
       width: 100%;
+      &:focus-within {
+        border: 1px solid $color-primary;
+      }
       .input-text {
         margin: 0;
         background: $color-gray-50;

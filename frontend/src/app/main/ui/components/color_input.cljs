@@ -86,7 +86,8 @@
                  (dom/blur! input-node)))
              (when esc?
                (dom/prevent-default event)
-               (update-input value)))))
+               (update-input value)
+               (dom/blur! input-node)))))
 
         handle-blur
         (mf/use-callback

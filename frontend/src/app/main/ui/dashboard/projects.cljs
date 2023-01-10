@@ -407,7 +407,7 @@
             [:& interface-walkthrough
              {:close-walkthrough close-walkthrough}])])
 
-       [:div.dashboard-container.no-bg
+       [:div.dashboard-container.no-bg.dashboard-projects
         (for [{:keys [id] :as project} projects]
           (let [files (when recent-map
                         (->> (vals recent-map)

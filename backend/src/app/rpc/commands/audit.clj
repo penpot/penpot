@@ -72,7 +72,7 @@
 
 (sv/defmethod ::push-audit-events
   {::climit/queue :push-audit-events
-   ::climit/key-fn :profile-id
+   ::climit/key-fn ::rpc/profile-id
    ::audit/skip true
    ::doc/added "1.17"}
   [{:keys [::db/pool ::wrk/executor] :as cfg} params]

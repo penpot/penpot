@@ -8,6 +8,7 @@
   "A mattermost integration for error reporting."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.common.uri :as uri]
@@ -20,6 +21,15 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
+
+;; --- HELPERS
+
+(defn key-fn
+  [k & keys]
+  (fn [params]
+    (reduce #(dm/str %1 ":" (get params %2))
+            (dm/str (get params k))
+            keys)))
 
 ;; --- PROC
 

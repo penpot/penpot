@@ -16,6 +16,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer  [tr c]]
+   [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
 (def exports-attrs
@@ -123,7 +124,13 @@
          (fn []
            (st/emit! (dch/update-shapes ids
                                         (fn [shape]
-                                          (assoc shape :exports []))))))]
+                                          (assoc shape :exports []))))))
+        manage-key-down 
+        (mf/use-callback
+         (fn [event]
+           (let [esc?   (kbd/esc? event)]
+             (when esc?
+               (dom/blur! (dom/get-target event))))))]
 
     [:div.element-set.exports-options
      [:div.element-set-title
@@ -156,7 +163,8 @@
               [:option {:value "6"} "6x"]])
            [:input.input-text {:value (:suffix export)
                                :placeholder (tr "workspace.options.export.suffix")
-                               :on-change (partial on-suffix-change index)}]
+                               :on-change (partial on-suffix-change index)
+                               :on-key-down manage-key-down}]
            [:select.input-select {:value (name (:type export))
                                   :on-change (partial on-type-change index)}
             [:option {:value "png"} "PNG"]

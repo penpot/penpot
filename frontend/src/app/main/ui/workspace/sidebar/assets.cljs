@@ -2243,7 +2243,19 @@
            (let [value (-> (dom/get-target event)
                            (dom/get-value)
                            (d/read-string))]
-             (swap! filters assoc :box value))))]
+             (swap! filters assoc :box value))))
+
+        handle-key-down
+        (mf/use-callback
+         (fn [event]
+           (let [enter? (kbd/enter? event)
+                 esc?   (kbd/esc? event)
+                 input-node (dom/event->target event)]
+
+             (when enter?
+               (dom/blur! input-node))
+             (when esc?
+               (dom/blur! input-node)))))]
 
     [:div.assets-bar
      [:div.tool-window
@@ -2260,7 +2272,8 @@
          {:placeholder (tr "workspace.assets.search")
           :type "text"
           :value (:term @filters)
-          :on-change on-search-term-change}]
+          :on-change on-search-term-change
+          :on-key-down handle-key-down}]
         (if (str/empty? (:term @filters))
           [:div.search-icon
            i/search]

@@ -6,10 +6,11 @@
 
 (ns backend-tests.rpc-media-test
   (:require
-   [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [app.storage :as sto]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.core :as fs]))
 
@@ -125,6 +126,126 @@
 
     ;; Second try
     (let [{:keys [result error] :as out} (th/mutation! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? error))
+      (t/is (= (:id params) (:id result)))
+      (t/is (= (:file-id params) (:file-id result)))
+      (t/is (= 800 (:width result)))
+      (t/is (= 800 (:height result)))
+      (t/is (= "image/jpeg" (:mtype result)))
+      (t/is (uuid? (:media-id result)))
+      (t/is (uuid? (:thumbnail-id result))))))
+
+
+(t/deftest media-object-from-url-command
+  (let [prof   (th/create-profile* 1)
+        proj   (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        url    "https://raw.githubusercontent.com/uxbox/uxbox/develop/sample_media/images/unsplash/anna-pelzer.jpg"
+        params {::th/type :create-file-media-object-from-url
+                ::rpc/profile-id (:id prof)
+                :file-id    (:id file)
+                :is-local   true
+                :url        url}
+        out   (th/command! params)]
+
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
+      (t/is (= (:id file) (:file-id result)))
+      (t/is (= 1024 (:width result)))
+      (t/is (= 683  (:height result)))
+      (t/is (= "image/jpeg" (:mtype result)))
+      (t/is (uuid? media-id))
+      (t/is (uuid? thumbnail-id))
+      (let [storage (:app.storage/storage th/*system*)
+            mobj1   @(sto/get-object storage media-id)
+            mobj2   @(sto/get-object storage thumbnail-id)]
+        (t/is (sto/storage-object? mobj1))
+        (t/is (sto/storage-object? mobj2))
+        (t/is (= 122785 (:size mobj1)))
+        ;; This is because in ubuntu 21.04 generates different
+        ;; thumbnail that in ubuntu 22.04. This hack should be removed
+        ;; when we all use the ubuntu 22.04 devenv image.
+        (t/is (or (= 3302 (:size mobj2))
+                  (= 3303 (:size mobj2))))))))
+
+(t/deftest media-object-upload-command
+  (let [prof   (th/create-profile* 1)
+        proj   (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        mfile  {:filename "sample.jpg"
+                :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                :mtype "image/jpeg"
+                :size 312043}
+
+        params {::th/type :upload-file-media-object
+                ::rpc/profile-id (:id prof)
+                :file-id (:id file)
+                :is-local true
+                :name "testfile"
+                :content mfile}
+        out    (th/command! params)]
+
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
+      (t/is (= (:id file) (:file-id result)))
+      (t/is (= 800 (:width result)))
+      (t/is (= 800  (:height result)))
+      (t/is (= "image/jpeg" (:mtype result)))
+      (t/is (uuid? media-id))
+      (t/is (uuid? thumbnail-id))
+      (let [storage (:app.storage/storage th/*system*)
+            mobj1   @(sto/get-object storage media-id)
+            mobj2   @(sto/get-object storage thumbnail-id)]
+        (t/is (sto/storage-object? mobj1))
+        (t/is (sto/storage-object? mobj2))
+        (t/is (= 312043 (:size mobj1)))
+        (t/is (= 3887   (:size mobj2)))))
+    ))
+
+
+(t/deftest media-object-upload-idempotency-command
+  (let [prof   (th/create-profile* 1)
+        proj   (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+        mfile  {:filename "sample.jpg"
+                :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                :mtype "image/jpeg"
+                :size 312043}
+
+        params {::th/type :upload-file-media-object
+                ::rpc/profile-id (:id prof)
+                :file-id (:id file)
+                :is-local true
+                :name "testfile"
+                :content mfile
+                :id (uuid/next)}]
+
+    ;; First try
+    (let [{:keys [result error] :as out} (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? error))
+      (t/is (= (:id params) (:id result)))
+      (t/is (= (:file-id params) (:file-id result)))
+      (t/is (= 800 (:width result)))
+      (t/is (= 800 (:height result)))
+      (t/is (= "image/jpeg" (:mtype result)))
+      (t/is (uuid? (:media-id result)))
+      (t/is (uuid? (:thumbnail-id result))))
+
+    ;; Second try
+    (let [{:keys [result error] :as out} (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? error))
       (t/is (= (:id params) (:id result)))

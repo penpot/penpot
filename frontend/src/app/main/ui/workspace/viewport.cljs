@@ -225,7 +225,9 @@
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
       [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (debug? :html-text) 0)}}
        [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
-        [:div {:style {:pointer-events (when-not (debug? :html-text) "none")}}
+        [:div {:style {:pointer-events (when-not (debug? :html-text) "none")
+                       ;; some opacity because to debug auto-width events will fill the screen
+                       :opacity 0.6}}
          [:& stvh/viewport-texts
           {:key (dm/str "texts-" page-id)
            :page-id page-id

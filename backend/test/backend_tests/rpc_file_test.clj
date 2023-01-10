@@ -6,13 +6,14 @@
 
 (ns backend-tests.rpc-file-test
   (:require
-   [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http :as http]
+   [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.util.time :as dt]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.core :as fs]))
 
@@ -28,13 +29,13 @@
 
     (t/testing "create file"
       (let [data {::th/type :create-file
-                  :profile-id (:id prof)
+                  ::rpc/profile-id (:id prof)
                   :project-id proj-id
                   :id file-id
                   :name "foobar"
                   :is-shared false
                   :components-v2 true}
-            out (th/mutation! data)]
+            out (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -47,8 +48,8 @@
       (let [data {::th/type :rename-file
                   :id file-id
                   :name "new name"
-                  :profile-id (:id prof)}
-            out  (th/mutation! data)]
+                  ::rpc/profile-id (:id prof)}
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (let [result (:result out)]
@@ -56,10 +57,10 @@
           (t/is (= (:name data) (:name result))))))
 
     (t/testing "query files"
-      (let [data {::th/type :project-files
-                  :project-id proj-id
-                  :profile-id (:id prof)}
-            out  (th/query! data)]
+      (let [data {::th/type :get-project-files
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id}
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -70,11 +71,11 @@
           (t/is (= "new name" (get-in result [0 :name]))))))
 
     (t/testing "query single file without users"
-      (let [data {::th/type :file
-                  :profile-id (:id prof)
+      (let [data {::th/type :get-file
+                  ::rpc/profile-id (:id prof)
                   :id file-id
                   :components-v2 true}
-            out  (th/query! data)]
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -88,18 +89,18 @@
     (t/testing "delete file"
       (let [data {::th/type :delete-file
                   :id file-id
-                  :profile-id (:id prof)}
-            out (th/mutation! data)]
+                  ::rpc/profile-id (:id prof)}
+            out (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))))
 
     (t/testing "query single file after delete"
-      (let [data {::th/type :file
-                  :profile-id (:id prof)
+      (let [data {::th/type :get-file
+                  ::rpc/profile-id (:id prof)
                   :id file-id
                   :components-v2 true}
-            out (th/query! data)]
+            out (th/command! data)]
 
         ;; (th/print-result! out)
 
@@ -109,10 +110,10 @@
           (t/is (= (:type error-data) :not-found)))))
 
     (t/testing "query list files after delete"
-      (let [data {::th/type :project-files
-                  :project-id proj-id
-                  :profile-id (:id prof)}
-            out  (th/query! data)]
+      (let [data {::th/type :get-project-files
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id}
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -136,19 +137,18 @@
                   out    (th/mutation! params)]
 
               ;; (th/print-result! out)
-
               (t/is (nil? (:error out)))
               (:result out)))
 
           (update-file [{:keys [profile-id file-id changes revn] :or {revn 0}}]
             (let [params {::th/type :update-file
+                          ::rpc/profile-id profile-id
                           :id file-id
                           :session-id (uuid/random)
-                          :profile-id profile-id
                           :revn revn
                           :components-v2 true
                           :changes changes}
-                  out    (th/mutation! params)]
+                  out    (th/command! params)]
               (t/is (nil? (:error out)))
               (:result out)))]
 
@@ -257,12 +257,12 @@
         profile2 (th/create-profile* 2)
 
         data     {::th/type :create-file
-                  :profile-id (:id profile2)
+                  ::rpc/profile-id (:id profile2)
                   :project-id (:default-project-id profile1)
                   :name "foobar"
                   :is-shared false
                   :components-v2 true}
-        out      (th/mutation! data)
+        out      (th/command! data)
         error    (:error out)]
 
     ;; (th/print-result! out)
@@ -277,9 +277,9 @@
                                      :profile-id (:id profile1)})
         data     {::th/type :rename-file
                   :id (:id file)
-                  :profile-id (:id profile2)
+                  ::rpc/profile-id (:id profile2)
                   :name "foobar"}
-        out      (th/mutation! data)
+        out      (th/command! data)
         error    (:error out)]
 
     ;; (th/print-result! out)
@@ -293,9 +293,9 @@
         file     (th/create-file* 1 {:project-id (:default-project-id profile1)
                                      :profile-id (:id profile1)})
         data     {::th/type :delete-file
-                  :profile-id (:id profile2)
+                  ::rpc/profile-id (:id profile2)
                   :id (:id file)}
-        out      (th/mutation! data)
+        out      (th/command! data)
         error    (:error out)]
 
     ;; (th/print-result! out)
@@ -308,10 +308,10 @@
         file     (th/create-file* 1 {:project-id (:default-project-id profile1)
                                      :profile-id (:id profile1)})
         data     {::th/type :set-file-shared
-                  :profile-id (:id profile2)
+                  ::rpc/profile-id (:id profile2)
                   :id (:id file)
                   :is-shared true}
-        out      (th/mutation! data)
+        out      (th/command! data)
         error    (:error out)]
 
     ;; (th/print-result! out)
@@ -328,11 +328,11 @@
                                      :profile-id (:id profile1)})
 
         data     {::th/type :link-file-to-library
-                  :profile-id (:id profile2)
+                  ::rpc/profile-id (:id profile2)
                   :file-id (:id file2)
                   :library-id (:id file1)}
 
-        out      (th/mutation! data)
+        out      (th/command! data)
         error    (:error out)]
 
       ;; (th/print-result! out)
@@ -350,11 +350,11 @@
                                      :profile-id (:id profile2)})
 
         data     {::th/type :link-file-to-library
-                  :profile-id (:id profile2)
+                  ::rpc/profile-id (:id profile2)
                   :file-id (:id file2)
                   :library-id (:id file1)}
 
-        out      (th/mutation! data)
+        out      (th/command! data)
         error    (:error out)]
 
       ;; (th/print-result! out)
@@ -372,10 +372,10 @@
       (t/is (= 0 (:processed result))))
 
     ;; query the list of files
-    (let [data {::th/type :project-files
-                :project-id (:default-project-id profile1)
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-project-files
+                ::rpc/profile-id (:id profile1)
+                :project-id (:default-project-id profile1)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -384,15 +384,15 @@
     ;; Request file to be deleted
     (let [params {::th/type :delete-file
                   :id (:id file)
-                  :profile-id (:id profile1)}
-          out    (th/mutation! params)]
+                  ::rpc/profile-id (:id profile1)}
+          out    (th/command! params)]
       (t/is (nil? (:error out))))
 
     ;; query the list of files after soft deletion
-    (let [data {::th/type :project-files
-                :project-id (:default-project-id profile1)
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-project-files
+                ::rpc/profile-id (:id profile1)
+                :project-id (:default-project-id profile1)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -403,10 +403,10 @@
       (t/is (= 0 (:processed result))))
 
     ;; query the list of file libraries of a after hard deletion
-    (let [data {::th/type :file-libraries
-                :file-id (:id file)
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-file-libraries
+                ::rpc/profile-id (:id profile1)
+                :file-id (:id file)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -417,10 +417,10 @@
       (t/is (= 1 (:processed result))))
 
     ;; query the list of file libraries of a after hard deletion
-    (let [data {::th/type :file-libraries
-                :file-id (:id file)
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-file-libraries
+                ::rpc/profile-id (:id profile1)
+                :file-id (:id file)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (let [error (:error out)
             error-data (ex-data error)]
@@ -483,11 +483,11 @@
     (t/testing "RPC page query (rendering purposes)"
 
       ;; Query :page RPC method without passing page-id
-      (let [data {::th/type :page
-                  :profile-id (:id prof)
+      (let [data {::th/type :get-page
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :components-v2 true}
-            {:keys [error result] :as out} (th/query! data)]
+            {:keys [error result] :as out} (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (map? result))
@@ -500,12 +500,12 @@
         )
 
       ;; Query :page RPC method with page-id
-      (let [data {::th/type :page
-                  :profile-id (:id prof)
+      (let [data {::th/type :get-page
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :page-id page-id
                   :components-v2 true}
-            {:keys [error result] :as out} (th/query! data)]
+            {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (map? result))
         (t/is (contains? result :objects))
@@ -516,13 +516,13 @@
         (t/is (contains? (:objects result) uuid/zero)))
 
       ;; Query :page RPC method with page-id and object-id
-      (let [data {::th/type :page
-                  :profile-id (:id prof)
+      (let [data {::th/type :get-page
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :page-id page-id
                   :object-id frame1-id
                   :components-v2 true}
-            {:keys [error result] :as out} (th/query! data)]
+            {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (map? result))
@@ -534,12 +534,12 @@
         (t/is (not (contains? (:objects result) shape2-id))))
 
       ;; Query :page RPC method with wrong params
-      (let [data {::th/type :page
-                  :profile-id (:id prof)
+      (let [data {::th/type :get-page
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :object-id frame1-id
                   :components-v2 true}
-            out  (th/query! data)]
+            out  (th/command! data)]
 
         (t/is (not (th/success? out)))
         (let [{:keys [type code]} (-> out :error ex-data)]
@@ -551,21 +551,21 @@
     (t/testing "RPC :file-data-for-thumbnail"
       ;; Insert a thumbnail data for the frame-id
       (let [data {::th/type :upsert-file-object-thumbnail
-                  :profile-id (:id prof)
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :object-id (str page-id frame1-id)
                   :data "random-data-1"}
 
-            {:keys [error result] :as out} (th/mutation! data)]
+            {:keys [error result] :as out} (th/command! data)]
         (t/is (nil? error))
         (t/is (nil? result)))
 
       ;; Check the result
-      (let [data {::th/type :file-data-for-thumbnail
-                  :profile-id (:id prof)
+      (let [data {::th/type :get-file-data-for-thumbnail
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :components-v2 true}
-            {:keys [error result] :as out} (th/query! data)]
+            {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (map? result))
         (t/is (contains? result :page))
@@ -578,21 +578,21 @@
 
       ;; Delete thumbnail data
       (let [data {::th/type :upsert-file-object-thumbnail
-                  :profile-id (:id prof)
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :object-id (str page-id frame1-id)
                   :data nil}
-            {:keys [error result] :as out} (th/mutation! data)]
+            {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (nil? result)))
 
       ;; Check the result
-      (let [data {::th/type :file-data-for-thumbnail
-                  :profile-id (:id prof)
+      (let [data {::th/type :get-file-data-for-thumbnail
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :components-v2 true}
-            {:keys [error result] :as out} (th/query! data)]
+            {:keys [error result] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (map? result))
         (t/is (contains? result :page))
@@ -606,11 +606,11 @@
 
       ;; insert object snapshot for known frame
       (let [data {::th/type :upsert-file-object-thumbnail
-                  :profile-id (:id prof)
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :object-id (str page-id frame1-id)
                   :data "new-data"}
-            {:keys [error result] :as out} (th/mutation! data)]
+            {:keys [error result] :as out} (th/command! data)]
         (t/is (nil? error))
         (t/is (nil? result)))
 
@@ -629,11 +629,11 @@
 
       ;; insert object snapshot for for unknown frame
       (let [data {::th/type :upsert-file-object-thumbnail
-                  :profile-id (:id prof)
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :object-id (str page-id (uuid/next))
                   :data "new-data-2"}
-            {:keys [error result] :as out} (th/mutation! data)]
+            {:keys [error result] :as out} (th/command! data)]
         (t/is (nil? error))
         (t/is (nil? result)))
 
@@ -661,8 +661,8 @@
                                  :project-id (:default-project-id prof)
                                  :revn 2
                                  :is-shared false})
-        data {::th/type :file-thumbnail
-              :profile-id (:id prof)
+        data {::th/type :get-file-thumbnail
+              ::rpc/profile-id (:id prof)
               :file-id (:id file)}]
 
     (t/testing "query a thumbnail with single revn"
@@ -673,7 +673,7 @@
                       :revn 1
                       :data "testvalue1"})
 
-      (let [{:keys [result error] :as out} (th/query! data)]
+      (let [{:keys [result error] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (= 4 (count result)))
@@ -687,7 +687,7 @@
                       :revn 2
                       :data "testvalue2"})
 
-      (let [{:keys [result error] :as out} (th/query! data)]
+      (let [{:keys [result error] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (= 4 (count result)))
@@ -695,7 +695,7 @@
         (t/is (= 2 (:revn result))))
 
       ;; Then query the specific revn
-      (let [{:keys [result error] :as out} (th/query! (assoc data :revn 1))]
+      (let [{:keys [result error] :as out} (th/command! (assoc data :revn 1))]
         ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (= 4 (count result)))
@@ -704,18 +704,18 @@
 
     (t/testing "upsert file-thumbnail"
       (let [data {::th/type :upsert-file-thumbnail
-                  :profile-id (:id prof)
+                  ::rpc/profile-id (:id prof)
                   :file-id (:id file)
                   :data "foobar"
                   :props {:baz 1}
                   :revn 2}
-            {:keys [result error] :as out} (th/mutation! data)]
+            {:keys [result error] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (nil? result))))
 
     (t/testing "query last result"
-      (let [{:keys [result error] :as out} (th/query! data)]
+      (let [{:keys [result error] :as out} (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (= 4 (count result)))
@@ -734,7 +734,7 @@
         (t/is (= 1 (:processed res))))
 
       ;; Then query the specific revn
-      (let [{:keys [result error] :as out} (th/query! (assoc data :revn 1))]
+      (let [{:keys [result error] :as out} (th/command! (assoc data :revn 1))]
         (t/is (th/ex-of-type? error :not-found))
         (t/is (th/ex-of-code? error :file-thumbnail-not-found))))
     ))

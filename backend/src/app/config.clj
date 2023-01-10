@@ -61,7 +61,7 @@
 
    :public-uri "http://localhost:3449"
    :host "localhost"
-   :tenant "main"
+   :tenant "default"
 
    :redis-uri "redis://redis/0"
    :srepl-host "127.0.0.1"

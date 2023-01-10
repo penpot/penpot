@@ -282,7 +282,8 @@
        (when (and (options :presets)
                   (or (nil? all-types) (= (count all-types) 1))) ;; Don't show presets if multi selected
          [:div.row-flex                                          ;; some frames and some non frames
-          [:div.presets.custom-select.flex-grow {:on-click #(reset! show-presets-dropdown? true)}
+          [:div.presets.custom-select.flex-grow {:class (when @show-presets-dropdown? "opened")
+                                                 :on-click #(reset! show-presets-dropdown? true)}
            [:span (tr "workspace.options.size-presets")]
            [:span.dropdown-button i/arrow-down]
            [:& dropdown {:show @show-presets-dropdown?

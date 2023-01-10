@@ -67,6 +67,7 @@
 
       &:focus {
         color: lighten($color-gray-10, 8%);
+        outline: none;
       }
     }
 
@@ -97,6 +98,10 @@
 
     &:focus {
       color: lighten($color-gray-10, 8%);
+    }
+
+    &:active {
+      border-color: $color-primary;
     }
 
     option {

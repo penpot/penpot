@@ -11,12 +11,12 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.util.async :as aa]
-   [app.worker :as wrk]
+   [app.loggers.zmq :as lzmq]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [promesa.exec :as px]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Error Listener
@@ -27,7 +27,7 @@
 (defonce enabled (atom true))
 
 (defn- persist-on-database!
-  [{:keys [pool] :as cfg} {:keys [id] :as event}]
+  [{:keys [::db/pool] :as cfg} {:keys [id] :as event}]
   (when-not (db/read-only? pool)
     (db/insert! pool :server-error-report {:id id :content (db/tjson event)})))
 
@@ -53,41 +53,49 @@
       (assoc :version (:full cf/version))
       (update :id #(or % (uuid/next)))))
 
-(defn handle-event
-  [{:keys [executor] :as cfg} event]
-  (aa/with-thread executor
-    (try
-      (let [event (parse-event event)
-            uri   (cf/get :public-uri)]
+(defn- handle-event
+  [cfg event]
+  (try
+    (let [event (parse-event event)
+          uri   (cf/get :public-uri)]
 
-        (l/debug :hint "registering error on database" :id (:id event)
-                 :uri (str uri "/dbg/error/" (:id event)))
+      (l/debug :hint "registering error on database" :id (:id event)
+               :uri (str uri "/dbg/error/" (:id event)))
 
-        (persist-on-database! cfg event))
-      (catch Exception cause
-        (l/warn :hint "unexpected exception on database error logger" :cause cause)))))
+      (persist-on-database! cfg event))
+    (catch Throwable cause
+      (l/warn :hint "unexpected exception on database error logger" :cause cause))))
 
-(defmethod ig/pre-init-spec ::reporter [_]
-  (s/keys :req-un [::wrk/executor ::db/pool ::receiver]))
-
-(defn error-event?
+(defn- error-event?
   [event]
   (= "error" (:logger/level event)))
 
+(defmethod ig/pre-init-spec ::reporter [_]
+  (s/keys :req [::db/pool ::lzmq/receiver]))
+
 (defmethod ig/init-key ::reporter
-  [_ {:keys [receiver] :as cfg}]
-  (l/info :msg "initializing database error persistence")
-  (let [output (a/chan (a/sliding-buffer 5) (filter error-event?))]
-    (receiver :sub output)
-    (a/go-loop []
-      (let [msg (a/<! output)]
-        (if (nil? msg)
-          (l/info :msg "stopping error reporting loop")
-          (do
-            (a/<! (handle-event cfg msg))
-            (recur)))))
-    output))
+  [_ {:keys [::lzmq/receiver] :as cfg}]
+  (px/thread
+    {:name "penpot/database-reporter"}
+    (l/info :hint "initializing database error persistence")
+
+    (let [input (a/chan (a/sliding-buffer 5)
+                        (filter error-event?))]
+      (try
+        (lzmq/sub! receiver input)
+        (loop []
+          (when-let [msg (a/<!! input)]
+            (handle-event cfg msg))
+          (recur))
+
+        (catch InterruptedException _
+          (l/debug :hint "reporter interrupted"))
+        (catch Throwable cause
+          (l/error :hint "unexpected error" :cause cause))
+        (finally
+          (a/close! input)
+          (l/info :hint "reporter terminated"))))))
 
 (defmethod ig/halt-key! ::reporter
-  [_ output]
-  (a/close! output))
+  [_ thread]
+  (some-> thread px/interrupt!))

@@ -38,13 +38,13 @@
 
 (defn handle-event
   [cfg event]
-  (try
-    (let [event (ldb/parse-event event)]
-      (when @enabled
-        (send-mattermost-notification! cfg event)))
-    (catch Throwable cause
-      (l/warn :hint "unhandled error"
-              :cause cause))))
+  (when @enabled
+    (try
+      (let [event (ldb/parse-event event)]
+        (send-mattermost-notification! cfg event))
+      (catch Throwable cause
+        (l/warn :hint "unhandled error"
+                :cause cause)))))
 
 (defmethod ig/pre-init-spec ::reporter [_]
   (s/keys :req [::http/client

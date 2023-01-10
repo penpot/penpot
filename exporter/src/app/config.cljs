@@ -18,10 +18,10 @@
 
 (def defaults
   {:public-uri "http://localhost:3449"
-   :tenant "dev"
-   :host "devenv"
+   :tenant "default"
+   :host "localhost"
    :http-server-port 6061
-   :http-server-host "localhost"
+   :http-server-host "0.0.0.0"
    :redis-uri "redis://redis/0"})
 
 (s/def ::http-server-port ::us/integer)
