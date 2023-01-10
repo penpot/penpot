@@ -80,17 +80,33 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [layout (obj/get props "layout")
-        drawing-tool (:tool (mf/deref refs/workspace-drawing))
-        expanded (mf/deref refs/inspect-expanded)]
+  (let [layout          (obj/get props "layout")
+        section         (obj/get props "section")
+        drawing-tool    (:tool (mf/deref refs/workspace-drawing))
 
-    [:aside.settings-bar.settings-bar-right {:class (when expanded "expanded")}
+        is-comments?    (= drawing-tool :comments)
+        is-history?     (contains? layout :document-history)
+        is-inspect?     (= section :inspect)
+
+        expanded?        (mf/deref refs/inspect-expanded)
+        can-be-expanded? (and
+                          (not is-comments?)
+                          (not is-history?)
+                          is-inspect?)]
+
+    (mf/use-effect
+     (mf/deps can-be-expanded?)
+     (fn []
+      (when (not can-be-expanded?)
+        (st/emit! (dw/set-inspect-expanded false)))))
+
+    [:aside.settings-bar.settings-bar-right {:class (when (and can-be-expanded? expanded?) "expanded")}
      [:div.settings-bar-inside
       (cond
-        (= drawing-tool :comments)
+        is-comments?
         [:& comments-sidebar]
 
-        (contains? layout :document-history)
+        is-history?
         [:& history-toolbox]
 
         :else
