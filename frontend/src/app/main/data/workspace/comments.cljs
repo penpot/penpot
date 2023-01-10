@@ -162,7 +162,7 @@
             build-move-event
             (fn [comment-thread]
               (let [frame (get objects (:frame-id comment-thread))
-                    modifiers (get object-modifiers (:frame-id comment-thread))
+                    modifiers (get-in object-modifiers [(:frame-id comment-thread) :modifiers])
                     frame' (gsh/transform-shape frame modifiers)
                     moved (gpt/to-vec (gpt/point (:x frame) (:y frame))
                                       (gpt/point (:x frame') (:y frame')))
