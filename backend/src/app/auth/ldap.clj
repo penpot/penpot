@@ -41,15 +41,18 @@
   (reduce-kv clojure.string/replace s replacements))
 
 (defn- search-user
-  [{:keys [conn attrs base-dn] :as cfg} email]
-  (let [query   (replace-several (:query cfg) ":username" email)
+  [{:keys [::conn base-dn] :as cfg} email]
+  (let [query  (replace-several (:query cfg) ":username" email)
+        attrs  [(:attrs-username cfg)
+                (:attrs-email cfg)
+                (:attrs-fullname cfg)]
         params  {:filter query
                  :sizelimit 1
                  :attributes attrs}]
     (first (ldap/search conn base-dn params))))
 
 (defn- retrieve-user
-  [{:keys [conn] :as cfg} {:keys [email password]}]
+  [{:keys [::conn] :as cfg} {:keys [email password]}]
   (when-let [{:keys [dn] :as user} (search-user cfg email)]
     (when (ldap/bind? conn dn password)
       {:fullname (get user (-> cfg :attrs-fullname keyword))
@@ -66,7 +69,7 @@
 (defn authenticate
   [cfg params]
   (with-open [conn (connect cfg)]
-    (when-let [user (-> (assoc cfg :conn conn)
+    (when-let [user (-> (assoc cfg ::conn conn)
                         (retrieve-user params))]
       (when-not (s/valid? ::info-data user)
         (let [explain (s/explain-str ::info-data user)]
@@ -100,17 +103,6 @@
                  :host (:host cfg) :port (:port cfg) :cause cause)
         nil))))
 
-(defn- prepare-attributes
-  [cfg]
-  (assoc cfg :attrs [(:attrs-username cfg)
-                     (:attrs-email cfg)
-                     (:attrs-fullname cfg)]))
-
-(defmethod ig/init-key ::provider
-  [_ cfg]
-  (when (:enabled? cfg)
-    (some-> cfg try-connectivity prepare-attributes)))
-
 (s/def ::enabled? ::us/boolean)
 (s/def ::host ::cf/ldap-host)
 (s/def ::port ::cf/ldap-port)
@@ -124,8 +116,7 @@
 (s/def ::attrs-fullname ::cf/ldap-attrs-fullname)
 (s/def ::attrs-username ::cf/ldap-attrs-username)
 
-(defmethod ig/pre-init-spec ::provider
-  [_]
+(s/def ::provider-params
   (s/keys :opt-un [::host ::port
                    ::ssl ::tls
                    ::enabled?
@@ -135,3 +126,14 @@
                    ::attrs-email
                    ::attrs-username
                    ::attrs-fullname]))
+(s/def ::provider
+  (s/nilable ::provider-params))
+
+(defmethod ig/pre-init-spec ::provider
+  [_]
+  (s/spec ::provider))
+
+(defmethod ig/init-key ::provider
+  [_ cfg]
+  (when (:enabled? cfg)
+    (try-connectivity cfg)))

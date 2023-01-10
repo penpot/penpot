@@ -48,7 +48,7 @@
     order by f.created_at asc")
 
 (defn search-files
-  [conn {:keys [::rpc/profile-id team-id search-term] :as params}]
+  [conn profile-id team-id search-term]
   (db/exec! conn [sql:search-files
                   profile-id team-id
                   profile-id team-id
@@ -64,6 +64,5 @@
 
 (sv/defmethod ::search-files
   {::doc/added "1.17"}
-  [{:keys [pool]} {:keys [search-term] :as params}]
-  (when search-term
-    (search-files pool params)))
+  [{:keys [pool]} {:keys [::rpc/profile-id team-id search-term]}]
+  (some->> search-term (search-files pool profile-id team-id)))

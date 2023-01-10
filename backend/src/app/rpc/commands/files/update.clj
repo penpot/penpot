@@ -17,7 +17,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
-   [app.loggers.webhooks :as-alias webhooks]
+   [app.loggers.webhooks :as webhooks]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
@@ -130,7 +130,7 @@
    ::climit/key-fn :id
    ::webhooks/event? true
    ::webhooks/batch-timeout (dt/duration "2m")
-   ::webhooks/batch-key :id
+   ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
    ::doc/added "1.17"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]

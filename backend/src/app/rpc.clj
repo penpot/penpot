@@ -6,6 +6,7 @@
 
 (ns app.rpc
   (:require
+   [app.auth.ldap :as-alias ldap]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -72,12 +73,14 @@
   internal async flow into ring async flow."
   [methods {:keys [profile-id session-id params] :as request} respond raise]
   (let [type   (keyword (:type params))
-        data   (into {::http/request request} params)
+        data   (-> params
+                   (assoc ::request-at (dt/now))
+                   (assoc ::http/request request))
         data   (if profile-id
-                 (assoc data
-                        :profile-id profile-id
-                        ::profile-id profile-id
-                        ::session-id session-id)
+                 (-> data
+                     (assoc :profile-id profile-id)
+                     (assoc ::profile-id profile-id)
+                     (assoc ::session-id session-id))
                  (dissoc data :profile-id ::profile-id))
         method (get methods type default-handler)]
 
@@ -93,14 +96,15 @@
   internal async flow into ring async flow."
   [methods {:keys [profile-id session-id params] :as request} respond raise]
   (let [type   (keyword (:type params))
-        data   (into {::http/request request} params)
+        data   (-> params
+                   (assoc ::request-at (dt/now))
+                   (assoc ::http/request request))
         data   (if profile-id
-                 (assoc data
-                        :profile-id profile-id
-                        ::profile-id profile-id
-                        ::session-id session-id)
+                 (-> data
+                     (assoc :profile-id profile-id)
+                     (assoc ::profile-id profile-id)
+                     (assoc ::session-id session-id))
                  (dissoc data :profile-id ::profile-id))
-
         method (get methods type default-handler)]
     (-> (method data)
         (p/then (partial handle-response request))
@@ -115,12 +119,15 @@
   [methods {:keys [profile-id session-id params] :as request} respond raise]
   (let [cmd    (keyword (:type params))
         etag   (yrq/get-header request "if-none-match")
-        data   (into {::request-at (dt/now)
-                      ::http/request request
-                      ::cond/key etag} params)
-        data   (if profile-id
-                 (assoc data ::profile-id profile-id ::session-id session-id)
-                 (dissoc data ::profile-id))
+
+        data   (-> params
+                   (assoc ::request-at (dt/now))
+                   (assoc ::http/request request)
+                   (assoc ::cond/key etag)
+                   (cond-> (uuid? profile-id)
+                     (-> (assoc ::profile-id profile-id)
+                         (assoc ::session-id session-id))))
+
         method (get methods cmd default-handler)]
     (binding [cond/*enabled* true]
       (-> (method data)
@@ -184,6 +191,12 @@
                                 :profile-id profile-id
                                 :ip-addr (some-> request audit/parse-client-ip)
                                 :props props
+
+                                ;; NOTE: for batch-key lookup we need the params as-is
+                                ;; because the rpc api does not need to know the
+                                ;; audit/webhook specific object layout.
+                                ::params (dissoc params ::http/request)
+
                                 ::webhooks/batch-key
                                 (or (::webhooks/batch-key mdata)
                                     (::webhooks/batch-key resultm))
@@ -281,6 +294,7 @@
                      'app.rpc.commands.management
                      'app.rpc.commands.verify-token
                      'app.rpc.commands.search
+                     'app.rpc.commands.media
                      'app.rpc.commands.teams
                      'app.rpc.commands.auth
                      'app.rpc.commands.ldap
@@ -306,6 +320,7 @@
   (s/keys :req [::audit/collector
                 ::http.client/client
                 ::db/pool
+                ::ldap/provider
                 ::wrk/executor]
           :req-un [::sto/storage
                    ::http.session/session
@@ -316,8 +331,7 @@
                    ::climit
                    ::wrk/executor
                    ::mtx/metrics
-                   ::db/pool
-                   ::ldap]))
+                   ::db/pool]))
 
 (defmethod ig/init-key ::methods
   [_ cfg]

@@ -6,6 +6,7 @@
 
 (ns app.main
   (:require
+   [app.auth.ldap :as-alias ldap]
    [app.auth.oidc :as-alias oidc]
    [app.auth.oidc.providers :as-alias oidc.providers]
    [app.common.logging :as l]
@@ -231,7 +232,7 @@
     :max-body-size           (cf/get :http-server-max-body-size)
     :max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}
 
-   :app.auth.ldap/provider
+   ::ldap/provider
    {:host           (cf/get :ldap-host)
     :port           (cf/get :ldap-port)
     :ssl            (cf/get :ldap-ssl)
@@ -327,6 +328,7 @@
     ::db/pool            (ig/ref ::db/pool)
     ::wrk/executor       (ig/ref ::wrk/executor)
     ::props              (ig/ref :app.setup/props)
+    ::ldap/provider      (ig/ref ::ldap/provider)
     :pool                (ig/ref ::db/pool)
     :session             (ig/ref :app.http.session/manager)
     :sprops              (ig/ref :app.setup/props)
@@ -335,7 +337,6 @@
     :msgbus              (ig/ref :app.msgbus/msgbus)
     :public-uri          (cf/get :public-uri)
     :redis               (ig/ref ::rds/redis)
-    :ldap                (ig/ref :app.auth.ldap/provider)
     :http-client         (ig/ref ::http.client/client)
     :climit              (ig/ref :app.rpc/climit)
     :rlimit              (ig/ref :app.rpc/rlimit)
@@ -450,9 +451,8 @@
     ::http.client/client (ig/ref ::http.client/client)}
 
    :app.loggers.database/reporter
-   {:receiver (ig/ref :app.loggers.zmq/receiver)
-    :pool     (ig/ref ::db/pool)
-    :executor (ig/ref ::wrk/executor)}
+   {::lzmq/receiver (ig/ref :app.loggers.zmq/receiver)
+    ::db/pool       (ig/ref ::db/pool)}
 
    ::sto/storage
    {:pool     (ig/ref ::db/pool)

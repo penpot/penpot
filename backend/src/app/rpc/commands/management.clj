@@ -46,9 +46,9 @@
   "Duplicate a single file in the same team."
   {::doc/added "1.16"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (duplicate-file conn (assoc params :profile-id (::rpc/profile-id params)))))
+    (duplicate-file conn (assoc params :profile-id profile-id))))
 
 (defn- remap-id
   [item index key]
@@ -136,7 +136,7 @@
       and so.deleted_at is null")
 
 (defn duplicate-file*
-  [conn {:keys [profile-id file index project-id name flibs fmeds]} {:keys [reset-shared-flag] :as opts}]
+  [conn {:keys [profile-id file index project-id name flibs fmeds]} {:keys [reset-shared-flag]}]
   (let [flibs    (or flibs (db/exec! conn [sql:retrieve-used-libraries (:id file)]))
         fmeds    (or fmeds (db/exec! conn [sql:retrieve-used-media-objects (:id file)]))
 
@@ -329,10 +329,9 @@
   "Move a set of files from one project to other."
   {::doc/added "1.16"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (move-files conn (assoc params :profile-id (::rpc/profile-id params)))))
-
+    (move-files conn (assoc params :profile-id profile-id))))
 
 ;; --- COMMAND: Move project
 
@@ -370,9 +369,9 @@
   "Move projects between teams."
   {::doc/added "1.16"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (move-project conn (assoc params :profile-id (::rpc/profile-id params)))))
+    (move-project conn (assoc params :profile-id profile-id))))
 
 ;; --- COMMAND: Clone Template
 
@@ -387,10 +386,10 @@
   "Clone into the specified project the template by its id."
   {::doc/added "1.16"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)
-        (clone-template (assoc params :profile-id (::rpc/profile-id params))))))
+        (clone-template (assoc params :profile-id profile-id)))))
 
 (defn- clone-template
   [{:keys [conn templates] :as cfg} {:keys [profile-id template-id project-id]}]

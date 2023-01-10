@@ -89,9 +89,9 @@
           (contains? data :explain))
      (explain (:explain data) opts)
 
-     (and (::s/problems data)
-          (::s/value data)
-          (::s/spec data))
+     (and (contains? data ::s/problems)
+          (contains? data ::s/value)
+          (contains? data ::s/spec))
      (binding [s/*explain-out* expound/printer]
        (with-out-str
          (s/explain-out (update data ::s/problems #(take max-problems %))))))))

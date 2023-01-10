@@ -288,7 +288,9 @@
 (sv/defmethod ::create-comment-thread
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at file-id page-id share-id position content frame-id]}]
+  [{:keys [::db/pool] :as cfg}
+   {:keys [::rpc/profile-id ::rpc/request-at file-id page-id share-id position content frame-id]}]
+
   (db/with-atomic [conn pool]
     (let [{:keys [team-id project-id page-name] :as file} (get-file conn file-id page-id)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
