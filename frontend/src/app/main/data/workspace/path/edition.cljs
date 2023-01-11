@@ -298,7 +298,10 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [mode (get-in state [:workspace-local :edit-path id :edit-mode])
-            stopper (->> stream (rx/filter (ptk/type? ::start-path-edit)))
+            stopper (->> stream
+                         (rx/filter #(or
+                                      (= (ptk/type %) ::dwe/clear-edition-mode)
+                                      (= (ptk/type %) ::start-path-edit))))
             interrupt (->> stream (rx/filter #(= % :interrupt)) (rx/take 1))]
         (rx/concat
          (rx/of (undo/start-path-undo))
