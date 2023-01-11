@@ -117,7 +117,7 @@
             (not))))
 
 (defn setup-hover-shapes
-  [page-id move-stream objects transform selected mod? hover hover-ids hover-top-frame-id hover-disabled? focus zoom]
+  [page-id move-stream objects transform selected mod? hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures?]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         mod-ref (mf/use-ref @mod?)
@@ -192,7 +192,7 @@
 
     (hooks/use-stream
      over-shapes-stream
-     (mf/deps page-id objects)
+     (mf/deps page-id objects show-measures?)
      (fn [ids]
        (let [selected (mf/ref-val selected-ref)
              focus (mf/ref-val focus-ref)
@@ -212,15 +212,20 @@
                 (and (cph/root-frame? obj) (d/not-empty? (:shapes obj))))
 
              ;; Set with the elements to remove from the hover list
-             remove-id?
-             (cond-> selected-with-parents
-               (not mod?)
-               (into (filter #(or (root-frame-with-data? %)
-                                  (group-empty-space? % objects ids)))
-                     ids)
-
+             remove-id-xf
+             (cond
                mod?
-               (into (filter grouped?) ids))
+               (filter grouped?)
+
+               show-measures?
+               (filter #(group-empty-space? % objects ids))
+
+               (not mod?)
+               (filter #(or (root-frame-with-data? %)
+                            (group-empty-space? % objects ids))))
+
+             remove-id?
+             (into selected-with-parents remove-id-xf ids)
 
              hover-shape
              (->> ids
