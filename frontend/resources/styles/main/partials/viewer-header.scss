@@ -76,6 +76,11 @@
           display: none;
         }
       }
+      &:hover {
+        svg {
+          fill: #b1b2b5;
+        }
+      }
     }
 
     .view-options {
