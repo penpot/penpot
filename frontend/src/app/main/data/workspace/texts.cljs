@@ -323,7 +323,8 @@
   (ptk/reify ::resize-text
     ptk/WatchEvent
     (watch [_ state _]
-      (let [shape (wsh/lookup-shape state id)]
+      (let [shape (wsh/lookup-shape state id)
+            undo-id (js/Symbol)]
         (letfn [(update-fn [shape]
                   (let [{:keys [selrect grow-type]} shape
                         {shape-width :width shape-height :height} selrect
@@ -335,17 +336,19 @@
 
                         shape
                         (cond-> shape
-                         (and (not-changed? shape-height new-height)
-                              (or (= grow-type :auto-height) (= grow-type :auto-width)))
-                         (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height new-height {:ignore-lock? true})))]
+                          (and (not-changed? shape-height new-height)
+                               (or (= grow-type :auto-height) (= grow-type :auto-width)))
+                          (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height new-height {:ignore-lock? true})))]
 
                     shape))]
 
           (when (or (and (not-changed? (:width shape) new-width) (= (:grow-type shape) :auto-width))
                     (and (not-changed? (:height shape) new-height)
                          (or (= (:grow-type shape) :auto-height) (= (:grow-type shape) :auto-width))))
-            (rx/of (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? true})
-                   (ptk/data-event :layout/update [id]))))))))
+            (rx/of (dwu/start-undo-transaction undo-id)
+                   (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? true})
+                   (ptk/data-event :layout/update [id])
+                   (dwu/commit-undo-transaction undo-id))))))))
 
 
 (defn save-font

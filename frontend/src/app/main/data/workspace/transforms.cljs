@@ -570,10 +570,14 @@
                                                index))
                           changes)))
                   (-> (pcb/empty-changes it page-id)
-                      (pcb/with-objects objects))))]
+                      (pcb/with-objects objects))))
+            undo-id (js/Symbol)]
 
-        (rx/of (dch/commit-changes changes)
-               (ptk/data-event :layout/update selected))))))
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (ptk/data-event :layout/update selected)
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn nudge-selected-shapes
   "Move shapes a fixed increment in one direction, from a keyboard action."
