@@ -118,7 +118,7 @@
         i/full-screen)]
 
      (when (:is-admin permissions)
-       [:span.btn-primary {:on-click open-share-dialog} i/export [:span (tr "labels.share-prototype")]])
+       [:span.btn-primary.tooltip.tooltip-bottom-left {:on-click open-share-dialog :alt (tr "labels.share-prototype")} i/export [:span (tr "labels.share-prototype")]])
 
      (when (:can-edit permissions)
        [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])
