@@ -1588,8 +1588,10 @@
                         (map str/trim)
                         (mapv #(hash-map :type "paragraph"
                                          :children [(merge txt/default-text-attrs {:text %})])))]
-    {:type "root"
-     :children [{:type "paragraph-set" :children paragraphs}]}))
+    ;; if text is composed only by line breaks paragraphs is an empty list and should be nil
+    (when (d/not-empty? paragraphs)
+      {:type "root"
+       :children [{:type "paragraph-set" :children paragraphs}]})))
 
 (defn calculate-paste-position [state]
   (cond
