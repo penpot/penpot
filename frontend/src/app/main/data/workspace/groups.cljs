@@ -16,6 +16,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.undo :as dwu]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -188,10 +189,13 @@
 
             changes {:redo-changes (vec (mapcat :redo-changes changes-list))
                      :undo-changes (vec (mapcat :undo-changes changes-list))
-                     :origin it}]
+                     :origin it}
+            undo-id (js/Symbol)]
 
-        (rx/of (dch/commit-changes changes)
-               (ptk/data-event :layout/update parents))))))
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update parents)
+               (dwu/commit-undo-transaction undo-id))))))
 
 (def mask-group
   (ptk/reify ::mask-group

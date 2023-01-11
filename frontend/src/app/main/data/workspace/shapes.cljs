@@ -99,17 +99,20 @@
              changes  (-> (pcb/empty-changes it page-id)
                           (pcb/with-objects objects)
                           (cond-> (some? (:index (meta attrs)))
-                                (pcb/add-object shape {:index (:index (meta attrs))}))
+                            (pcb/add-object shape {:index (:index (meta attrs))}))
                           (cond-> (nil? (:index (meta attrs)))
-                                (pcb/add-object shape))
+                            (pcb/add-object shape))
                           (cond-> (some? (:parent-id attrs))
-                            (pcb/change-parent (:parent-id attrs) [shape])))]
+                            (pcb/change-parent (:parent-id attrs) [shape])))
+             undo-id (js/Symbol)]
 
          (rx/concat
-          (rx/of (dch/commit-changes changes)
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (dch/commit-changes changes)
                  (ptk/data-event :layout/update [(:parent-id shape)])
                  (when-not no-select?
-                   (dws/select-shapes (d/ordered-set id))))
+                   (dws/select-shapes (d/ordered-set id)))
+                 (dwu/commit-undo-transaction undo-id))
           (when (= :text (:type attrs))
             (->> (rx/of (dwe/start-edition-mode id))
                  (rx/observe-on :async)))))))))
@@ -307,12 +310,15 @@
                     (cond-> (seq starting-flows)
                       (pcb/update-page-option :flows (fn [flows]
                                                        (->> (map :id starting-flows)
-                                                            (reduce ctp/remove-flow flows))))))]
+                                                            (reduce ctp/remove-flow flows))))))
+        undo-id (js/Symbol)]
 
-    (rx/of (dc/detach-comment-thread ids)
+    (rx/of (dwu/start-undo-transaction undo-id)
+           (dc/detach-comment-thread ids)
            (ptk/data-event :layout/update all-parents)
            (dch/commit-changes changes)
-           (ptk/data-event :layout/update layout-ids))))
+           (ptk/data-event :layout/update layout-ids)
+           (dwu/commit-undo-transaction undo-id))))
 
 (defn create-and-add-shape
   [type frame-x frame-y data]

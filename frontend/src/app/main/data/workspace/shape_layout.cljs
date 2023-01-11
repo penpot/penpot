@@ -254,8 +254,11 @@
   (ptk/reify ::update-layout
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwc/update-shapes ids #(d/deep-merge % changes))
-             (ptk/data-event :layout/update ids)))))
+      (let [undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes ids #(d/deep-merge % changes))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
 
 (defn update-layout-child
   [ids changes]
@@ -264,6 +267,9 @@
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
             parent-ids (->> ids (map #(cph/get-parent-id objects %)))
-            layout-ids (->> ids (filter (comp ctl/layout? (d/getf objects))))]
-        (rx/of (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
-               (ptk/data-event :layout/update (d/concat-vec layout-ids parent-ids)))))))
+            layout-ids (->> ids (filter (comp ctl/layout? (d/getf objects))))
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
+               (ptk/data-event :layout/update (d/concat-vec layout-ids parent-ids))
+               (dwu/commit-undo-transaction undo-id))))))
