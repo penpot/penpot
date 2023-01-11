@@ -92,13 +92,16 @@
                           (ctst/generate-unique-name (:name attrs)))
 
              shape (make-new-shape
-                     (assoc attrs :id id :name name)
-                     objects
-                     selected)
+                    (assoc attrs :id id :name name)
+                    objects
+                    selected)
 
              changes  (-> (pcb/empty-changes it page-id)
                           (pcb/with-objects objects)
-                          (pcb/add-object shape)
+                          (cond-> (some? (:index (meta attrs)))
+                                (pcb/add-object shape {:index (:index (meta attrs))}))
+                          (cond-> (nil? (:index (meta attrs)))
+                                (pcb/add-object shape))
                           (cond-> (some? (:parent-id attrs))
                             (pcb/change-parent (:parent-id attrs) [shape])))]
 
@@ -357,7 +360,13 @@
        (let [page-id       (:current-page-id state)
              objects       (wsh/lookup-page-objects state page-id)
              selected      (wsh/lookup-selected state)
-             selected-objs (map #(get objects %) selected)]
+             selected      (cph/clean-loops objects selected)
+             selected-objs (map #(get objects %) selected)
+             new-index     (->> selected
+                                (cph/order-by-indexed-shapes objects)
+                                first
+                                (cph/get-position-on-parent objects)
+                                inc)]
          (when (d/not-empty? selected)
            (let [srect     (gsh/selection-rect selected-objs)
                  frame-id  (get-in objects [(first selected) :frame-id])
@@ -367,6 +376,7 @@
                                (cond-> id
                                  (assoc :id id))
                                (assoc :frame-id frame-id :parent-id parent-id)
+                               (with-meta {:index new-index})
                                (cond-> (not= frame-id uuid/zero)
                                  (assoc :fills [] :hide-in-viewer true))
                                (cts/setup-rect-selrect))
