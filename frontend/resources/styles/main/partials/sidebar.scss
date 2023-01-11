@@ -126,9 +126,11 @@
           border-radius: 3px;
           font-size: 10px;
           text-transform: uppercase;
-          padding: 0px 4px;
           display: flex;
           align-items: center;
+          justify-content: center;
+          margin-left: auto;
+          padding: 0.25rem;
         }
       }
 
