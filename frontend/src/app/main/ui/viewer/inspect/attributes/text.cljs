@@ -106,9 +106,9 @@
         [:& copy-button {:data (copy-style-data style)}]])
 
      (when (:fills style)
-       (for [fill (:fills style)]
-
-         [:& color-row {:format @color-format
+       (for [[idx fill] (map-indexed vector (:fills style))]
+         [:& color-row {:key idx
+                        :format @color-format
                         :color (shape->color fill)
                         :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
                         :on-change-format #(reset! color-format %)}]))
@@ -175,8 +175,9 @@
                                (remove (fn [[_ text]] (str/empty? (str/trim text))))
                                (mapv (fn [[style text]] (vector (merge txt/default-text-attrs style) text))))]
 
-    (for [[_ [full-style text]] (map-indexed vector style-text-blocks)]
-      [:& typography-block {:shape shape
+    (for [[idx [full-style text]] (map-indexed vector style-text-blocks)]
+      [:& typography-block {:key idx 
+                            :shape shape
                             :style full-style
                             :text text}])))
 
