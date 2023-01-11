@@ -255,7 +255,7 @@
                         :on-change (partial set-gap (= :no-wrap wrap-type) :row-gap)
                         :on-blur #(reset! gap-selected? :none)
                         :value (:row-gap gap-value)
-                        :disabled (and (= :no-wrap wrap-type) (not is-col?))}]]
+                        :disabled (and (= :no-wrap wrap-type) is-col?)}]]
 
     [:div.gap-row.tooltip.tooltip-bottom-left
      {:alt "Row gap"}
@@ -269,7 +269,7 @@
                         :on-change (partial set-gap (= :no-wrap wrap-type) :column-gap)
                         :on-blur #(reset! gap-selected? :none)
                         :value (:column-gap gap-value)
-                        :disabled (and (= :no-wrap wrap-type) is-col?)}]]]])
+                        :disabled (and (= :no-wrap wrap-type) (not is-col?))}]]]])
 
 (mf/defc layout-container-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "multiple"]))]}
@@ -364,67 +364,68 @@
      [:div.element-set-title
       [:*
        [:span "Layout"]
-       (if (and (not multiple)(:layout values))
+       (if (and (not multiple) (:layout values))
          [:div.title-actions
           #_[:div.layout-btns
-           [:button {:on-click set-flex
-                     :class (dom/classnames
-                             :active (= :flex layout-type))} "Flex"]
-           [:button {:on-click set-grid
-                     :class (dom/classnames
-                             :active (= :grid layout-type))} "Grid"]]
+             [:button {:on-click set-flex
+                       :class (dom/classnames
+                               :active (= :flex layout-type))} "Flex"]
+             [:button {:on-click set-grid
+                       :class (dom/classnames
+                               :active (= :grid layout-type))} "Grid"]]
           [:button.remove-layout {:on-click on-remove-layout} i/minus]]
 
          [:button.add-page {:on-click on-add-layout} i/close])]]
 
      (when (:layout values)
-       (if (= :flex layout-type)
-         [:div.element-set-content.layout-menu
-          [:div.layout-row
-           [:div.direction-wrap.row-title "Direction"]
-           [:div.btn-wrapper
-            [:div.direction
-             [:*
-              (for [dir [:row :reverse-row :column :reverse-column]]
-                [:& direction-btn {:key (d/name dir)
-                                   :dir dir
-                                   :saved-dir saved-dir
-                                   :set-direction set-direction}])]]
-
-            [:div.wrap-type
-             [:& wrap-row {:wrap-type wrap-type
-                           :set-wrap set-wrap}]]]]
-
-          (when (= :wrap wrap-type)
+       (when (not= :multiple layout-type)
+         (if (= :flex layout-type)
+           [:div.element-set-content.layout-menu
             [:div.layout-row
-             [:div.align-content.row-title "Content"]
+             [:div.direction-wrap.row-title "Direction"]
              [:div.btn-wrapper
-              [:& align-content-row {:is-col? is-col?
-                                     :align-content align-content
-                                     :set-align-content set-align-content}]]])
+              [:div.direction
+               [:*
+                (for [dir [:row :reverse-row :column :reverse-column]]
+                  [:& direction-btn {:key (d/name dir)
+                                     :dir dir
+                                     :saved-dir saved-dir
+                                     :set-direction set-direction}])]]
 
-          [:div.layout-row
-           [:div.align-items.row-title "Align"]
-           [:div.btn-wrapper
-            [:& align-row {:is-col? is-col?
-                           :align-items align-items
-                           :set-align set-align-items}]]]
+              [:div.wrap-type
+               [:& wrap-row {:wrap-type wrap-type
+                             :set-wrap set-wrap}]]]]
 
-          [:div.layout-row
-           [:div.justify-content.row-title "Justify"]
-           [:div.btn-wrapper.justify-content
-            [:& justify-content-row {:is-col? is-col?
-                                     :justify-content justify-content
-                                     :set-justify set-justify-content}]]]
-          [:& gap-section {:is-col? is-col?
-                           :wrap-type wrap-type
-                           :gap-selected? gap-selected?
-                           :set-gap set-gap
-                           :gap-value (:layout-gap values)}]
+            (when (= :wrap wrap-type)
+              [:div.layout-row
+               [:div.align-content.row-title "Content"]
+               [:div.btn-wrapper
+                [:& align-content-row {:is-col? is-col?
+                                       :align-content align-content
+                                       :set-align-content set-align-content}]]])
+
+            [:div.layout-row
+             [:div.align-items.row-title "Align"]
+             [:div.btn-wrapper
+              [:& align-row {:is-col? is-col?
+                             :align-items align-items
+                             :set-align set-align-items}]]]
+
+            [:div.layout-row
+             [:div.justify-content.row-title "Justify"]
+             [:div.btn-wrapper.justify-content
+              [:& justify-content-row {:is-col? is-col?
+                                       :justify-content justify-content
+                                       :set-justify set-justify-content}]]]
+            [:& gap-section {:is-col? is-col?
+                             :wrap-type wrap-type
+                             :gap-selected? gap-selected?
+                             :set-gap set-gap
+                             :gap-value (:layout-gap values)}]
 
 
-          [:& padding-section {:values values
-                               :on-change-style change-padding-type
-                               :on-change on-padding-change}]]
+            [:& padding-section {:values values
+                                 :on-change-style change-padding-type
+                                 :on-change on-padding-change}]]
 
-         [:div "GRID TO COME"]))]))
+           [:div "GRID TO COME"])))]))
