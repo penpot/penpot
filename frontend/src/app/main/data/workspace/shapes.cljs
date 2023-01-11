@@ -118,10 +118,8 @@
       (let [page-id  (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
 
-            to-move-shapes
-            (into []
-                  (map (d/getf objects))
-                  (reverse (ctst/sort-z-index objects shapes)))
+            ordered-indexes (cph/order-by-indexed-shapes objects shapes)
+            to-move-shapes (map (d/getf objects) ordered-indexes)
 
             changes
             (when (d/not-empty? to-move-shapes)

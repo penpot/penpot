@@ -124,6 +124,8 @@
 
   .pin-icon {
     margin: 0 $size-2 0 $size-5;
+    background-color: transparent;
+    border: none;
     svg {
       fill: $color-gray-20;
     }
