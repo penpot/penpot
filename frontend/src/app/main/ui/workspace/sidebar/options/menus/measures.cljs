@@ -10,7 +10,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
-   [app.common.uuid :as uuid]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
@@ -250,7 +249,7 @@
          (mf/deps ids)
          (fn [event]
            (let [value (-> event dom/get-target dom/checked?)
-                 undo-id (uuid/next)]
+                 undo-id (js/Symbol)]
              (do
                (st/emit! (dwu/start-undo-transaction undo-id)
                          (dch/update-shapes ids (fn [shape] (assoc shape :hide-in-viewer (not value)))))

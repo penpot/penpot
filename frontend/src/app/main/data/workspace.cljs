@@ -1618,7 +1618,7 @@
                    :height height
                    :grow-type (if (> (count text) 100) :auto-height :auto-width)
                    :content (as-content text)}
-            undo-id (uuid/next)]
+            undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwsh/create-and-add-shape :text x y shape)

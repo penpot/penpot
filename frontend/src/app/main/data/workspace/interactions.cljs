@@ -246,7 +246,7 @@
 
                 :always
                 (ctsi/set-destination (:id target-frame))))
-            undo-id (uuid/next)]
+            undo-id (js/Symbol)]
 
         (rx/of
           (dwu/start-undo-transaction undo-id)

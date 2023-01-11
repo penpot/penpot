@@ -380,7 +380,7 @@
                                (cond-> (not= frame-id uuid/zero)
                                  (assoc :fills [] :hide-in-viewer true))
                                (cts/setup-rect-selrect))
-                 undo-id (uuid/next)]
+                 undo-id (js/Symbol)]
              (rx/of
               (dwu/start-undo-transaction undo-id)
               (add-shape shape)
