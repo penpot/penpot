@@ -60,7 +60,7 @@
                                                (reset! expanded false)
                                                (reset! section %)
                                                (when (= from :workspace)
-                                                 (dw/set-inspect-expanded false)))
+                                                 (st/emit! (dw/set-inspect-expanded false))))
                              :selected @section}
            [:& tab-element {:id :info :title (tr "inspect.tabs.info")}
             [:& attributes {:page-id page-id
