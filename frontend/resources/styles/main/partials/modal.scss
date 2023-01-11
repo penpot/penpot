@@ -626,6 +626,7 @@
   border-radius: $br-medium;
   height: 664px;
   width: 920px;
+  max-height: 100%;
 
   .modal-content {
     display: flex;
