@@ -113,9 +113,10 @@
     {::mf/wrap-props false}
     [props]
 
-    (let [childs     (unchecked-get props "childs")]
+    (let [childs (unchecked-get props "childs")]
       [:> frame-container props
        [:g.frame-children
         (for [item childs]
-          [:& shape-wrapper {:key (dm/str (:id item)) :shape item}])]])))
+            [:& shape-wrapper {:key (dm/str (:id item)) :shape item}]
+            )]])))
 
