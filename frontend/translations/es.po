@@ -1742,6 +1742,9 @@ msgstr "Activo"
 msgid "labels.inactive"
 msgstr "Inactivo"
 
+msgid "labels.view-only"
+msgstr "SOLO LECTURA"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Cargando imagen…"

@@ -540,6 +540,8 @@
         observer-var (mf/use-var nil)
         lazy-load-ref (mf/use-ref nil)
 
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+
         [filtered-objects show-more filter-component] (use-search page objects)
 
         intersection-callback
@@ -576,14 +578,17 @@
               (dom/add-class! last-hidden-frame "sticky"))))]
 
     [:div#layers.tool-window
-     (if (d/not-empty? focus)
+     (if workspace-read-only?
        [:div.tool-window-bar
-        [:div.focus-title {:on-click #(st/emit! (dw/toggle-focus-mode))}
-         [:button.back-button i/arrow-slide]
-         [:div.focus-name (or title (tr "workspace.focus.selection"))]
-         [:div.focus-mode (tr "workspace.focus.focus-mode")]]]
-
-       filter-component)
+        [:span (:name page)]
+        [:span.view-only-mode (tr "labels.view-only")]]
+       (if (d/not-empty? focus)
+         [:div.tool-window-bar
+          [:div.focus-title {:on-click #(st/emit! (dw/toggle-focus-mode))}
+           [:button.back-button i/arrow-slide]
+           [:div.focus-name (or title (tr "workspace.focus.selection"))]
+           [:div.focus-mode (tr "workspace.focus.focus-mode")]]]
+         filter-component))
 
      (if (some? filtered-objects)
        [:*
@@ -599,8 +604,8 @@
                           :key (dm/str (:id page))
                           :filtered? true}]]]
 
-     [:div.tool-window-content {:on-scroll on-scroll
-                                :style {:display (when (some? filtered-objects) "none")}}
-      [:& layers-tree {:objects objects
-                       :key (dm/str (:id page))
-                       :filtered? false}]])]))
+       [:div.tool-window-content {:on-scroll on-scroll
+                                  :style {:display (when (some? filtered-objects) "none")}}
+        [:& layers-tree {:objects objects
+                         :key (dm/str (:id page))
+                         :filtered? false}]])]))
