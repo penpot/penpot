@@ -378,14 +378,16 @@
 
         add-undo-change-parent
         (fn [change-set id]
-          (let [shape (get objects id)]
+          (let [shape (get objects id)
+                prev-sibling (cph/get-prev-sibling objects (:id shape))]
             (d/preconj
              change-set
              {:type :mov-objects
               :page-id page-id
               :parent-id (:parent-id shape)
               :shapes [id]
-              :index (cph/get-position-on-parent objects id)
+              :after-shape prev-sibling
+              :index 0
               :ignore-touched true})))]
 
     (-> changes
