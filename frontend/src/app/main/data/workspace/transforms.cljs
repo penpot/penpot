@@ -20,7 +20,6 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
@@ -509,7 +508,7 @@
                    (rx/last)
                    (rx/mapcat
                     (fn [[_ target-frame drop-index]]
-                      (let [undo-id (uuid/next)]
+                      (let [undo-id (js/Symbol)]
                         (rx/of (dwu/start-undo-transaction undo-id)
                                (move-shapes-to-frame ids target-frame drop-index)
                                (dwm/apply-modifiers {:undo-transation? false})
@@ -571,10 +570,14 @@
                                                index))
                           changes)))
                   (-> (pcb/empty-changes it page-id)
-                      (pcb/with-objects objects))))]
+                      (pcb/with-objects objects))))
+            undo-id (js/Symbol)]
 
-        (rx/of (dch/commit-changes changes)
-               (ptk/data-event :layout/update selected))))))
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (ptk/data-event :layout/update selected)
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn nudge-selected-shapes
   "Move shapes a fixed increment in one direction, from a keyboard action."

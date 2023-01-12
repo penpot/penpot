@@ -41,7 +41,7 @@
           (:width parent-rect)
 
           :else
-          (+ box-width (- box-x prev-x) (/ layout-gap-row 2)))
+          (+ box-width (- box-x prev-x) (/ layout-gap-col 2)))
 
         height
         (cond
@@ -52,7 +52,7 @@
           (:height parent-rect)
 
           :else
-          (+ box-height (- box-y prev-y) (/ layout-gap-col 2)))]
+          (+ box-height (- box-y prev-y) (/ layout-gap-row 2)))]
 
     (if row?
       (let [half-point-width (+ (- box-x x) (/ box-width 2))]
@@ -87,14 +87,14 @@
         (if row?
           (:width frame)
           (+ line-width margin-x
-             (if row? (* layout-gap-row (dec num-children)) 0)))
+             (if row? (* layout-gap-col (dec num-children)) 0)))
 
         line-height
         (if col?
           (:height frame)
           (+ line-height margin-y
              (if col?
-               (* layout-gap-col (dec num-children))
+               (* layout-gap-row (dec num-children))
                0)))
 
         box-x
@@ -122,7 +122,7 @@
                 (:width frame)
 
                 :else
-                (+ line-width (- box-x prev-x) (/ layout-gap-row 2)))
+                (+ line-width (- box-x prev-x) (/ layout-gap-col 2)))
 
         height (cond
                  (and row? last?)
@@ -132,7 +132,7 @@
                  (:height frame)
 
                  :else
-                 (+ line-height (- box-y prev-y) (/ layout-gap-col 2)))]
+                 (+ line-height (- box-y prev-y) (/ layout-gap-row 2)))]
     (gsr/make-rect x y width height)))
 
 (defn layout-drop-areas

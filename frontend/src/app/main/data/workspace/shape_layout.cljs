@@ -67,10 +67,13 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
-            children-ids (into [] (mapcat #(get-in objects [% :shapes])) ids)]
-        (rx/of (dwc/update-shapes ids (get-layout-initializer type))
+            children-ids (into [] (mapcat #(get-in objects [% :shapes])) ids)
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes ids (get-layout-initializer type))
                (ptk/data-event :layout/update ids)
-               (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v)))))))
+               (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v))
+               (dwu/commit-undo-transaction undo-id))))))
 
 
 ;; Never call this directly but through the data-event `:layout/update`
@@ -155,7 +158,7 @@
                 parent-id    (:parent-id (first selected-shapes))
                 shapes-ids   (:shapes (first selected-shapes))
                 ordered-ids  (into (d/ordered-set) shapes-ids)
-                undo-id      (uuid/next)]
+                undo-id      (js/Symbol)]
             (rx/of
              (dwu/start-undo-transaction undo-id)
              (dwse/select-shapes ordered-ids)
@@ -175,7 +178,7 @@
              (dwu/commit-undo-transaction undo-id)))
 
           (let [new-shape-id (uuid/next)
-                undo-id      (uuid/next)
+                undo-id      (js/Symbol)
                 flex-params     (shapes->flex-params objects selected-shapes)]
             (rx/of
              (dwu/start-undo-transaction undo-id)
@@ -199,7 +202,7 @@
   (ptk/reify ::remove-layout
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [undo-id (uuid/next)]
+      (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dwc/update-shapes ids #(apply dissoc % layout-keys))
@@ -217,7 +220,7 @@
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
             is-frame?        (= :frame (:type (first selected-shapes)))
-            undo-id          (uuid/next)]
+            undo-id          (js/Symbol)]
 
         (if (and single? is-frame?)
           (rx/of
@@ -251,8 +254,11 @@
   (ptk/reify ::update-layout
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwc/update-shapes ids #(d/deep-merge % changes))
-             (ptk/data-event :layout/update ids)))))
+      (let [undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes ids #(d/deep-merge % changes))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
 
 (defn update-layout-child
   [ids changes]
@@ -261,6 +267,9 @@
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
             parent-ids (->> ids (map #(cph/get-parent-id objects %)))
-            layout-ids (->> ids (filter (comp ctl/layout? (d/getf objects))))]
-        (rx/of (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
-               (ptk/data-event :layout/update (d/concat-vec layout-ids parent-ids)))))))
+            layout-ids (->> ids (filter (comp ctl/layout? (d/getf objects))))
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
+               (ptk/data-event :layout/update (d/concat-vec layout-ids parent-ids))
+               (dwu/commit-undo-transaction undo-id))))))

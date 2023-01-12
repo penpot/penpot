@@ -561,7 +561,7 @@
                   frames (into #{}
                                (map #(get-in objects [% :frame-id]))
                                selected)
-                  undo-id (uuid/next)]
+                  undo-id (js/Symbol)]
 
               (rx/concat
                (->> (rx/from dup-frames)

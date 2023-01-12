@@ -148,11 +148,9 @@
   (or (= :row layout-flex-dir) (= :reverse-row layout-flex-dir)))
 
 (defn gaps
-  [{:keys [layout-gap layout-gap-type]}]
+  [{:keys [layout-gap]}]
   (let [layout-gap-row (or (-> layout-gap :row-gap) 0)
-        layout-gap-col (if (= layout-gap-type :simple)
-                         layout-gap-row
-                         (or (-> layout-gap :column-gap) 0))]
+        layout-gap-col (or (-> layout-gap :column-gap) 0)]
     [layout-gap-row layout-gap-col]))
 
 (defn child-min-width

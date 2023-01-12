@@ -19,7 +19,6 @@
 (def precision 6)
 
 ;; --- Matrix Impl
-
 (defrecord Matrix [^double a
                    ^double b
                    ^double c
@@ -28,13 +27,23 @@
                    ^double f]
   Object
   (toString [_]
-    (str "matrix("
-         (mth/precision a precision) ","
-         (mth/precision b precision) ","
-         (mth/precision c precision) ","
-         (mth/precision d precision) ","
-         (mth/precision e precision) ","
-         (mth/precision f precision) ")")))
+    #?(:clj
+       (dm/fmt "matrix(%, %, %, %, %, %)"
+               (mth/precision a precision)
+               (mth/precision b precision)
+               (mth/precision c precision)
+               (mth/precision d precision)
+               (mth/precision e precision)
+               (mth/precision f precision))
+
+       :cljs
+       (dm/fmt "matrix(%, %, %, %, %, %)"
+               (.toFixed a precision)
+               (.toFixed b precision)
+               (.toFixed c precision)
+               (.toFixed d precision)
+               (.toFixed e precision)
+               (.toFixed f precision)))))
 
 (defn matrix?
   "Return true if `v` is Matrix instance."

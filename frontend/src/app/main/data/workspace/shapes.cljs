@@ -92,21 +92,27 @@
                           (ctst/generate-unique-name (:name attrs)))
 
              shape (make-new-shape
-                     (assoc attrs :id id :name name)
-                     objects
-                     selected)
+                    (assoc attrs :id id :name name)
+                    objects
+                    selected)
 
              changes  (-> (pcb/empty-changes it page-id)
                           (pcb/with-objects objects)
-                          (pcb/add-object shape)
+                          (cond-> (some? (:index (meta attrs)))
+                            (pcb/add-object shape {:index (:index (meta attrs))}))
+                          (cond-> (nil? (:index (meta attrs)))
+                            (pcb/add-object shape))
                           (cond-> (some? (:parent-id attrs))
-                            (pcb/change-parent (:parent-id attrs) [shape])))]
+                            (pcb/change-parent (:parent-id attrs) [shape])))
+             undo-id (js/Symbol)]
 
          (rx/concat
-          (rx/of (dch/commit-changes changes)
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (dch/commit-changes changes)
                  (ptk/data-event :layout/update [(:parent-id shape)])
                  (when-not no-select?
-                   (dws/select-shapes (d/ordered-set id))))
+                   (dws/select-shapes (d/ordered-set id)))
+                 (dwu/commit-undo-transaction undo-id))
           (when (= :text (:type attrs))
             (->> (rx/of (dwe/start-edition-mode id))
                  (rx/observe-on :async)))))))))
@@ -304,12 +310,15 @@
                     (cond-> (seq starting-flows)
                       (pcb/update-page-option :flows (fn [flows]
                                                        (->> (map :id starting-flows)
-                                                            (reduce ctp/remove-flow flows))))))]
+                                                            (reduce ctp/remove-flow flows))))))
+        undo-id (js/Symbol)]
 
-    (rx/of (dc/detach-comment-thread ids)
+    (rx/of (dwu/start-undo-transaction undo-id)
+           (dc/detach-comment-thread ids)
            (ptk/data-event :layout/update all-parents)
            (dch/commit-changes changes)
-           (ptk/data-event :layout/update layout-ids))))
+           (ptk/data-event :layout/update layout-ids)
+           (dwu/commit-undo-transaction undo-id))))
 
 (defn create-and-add-shape
   [type frame-x frame-y data]
@@ -357,7 +366,13 @@
        (let [page-id       (:current-page-id state)
              objects       (wsh/lookup-page-objects state page-id)
              selected      (wsh/lookup-selected state)
-             selected-objs (map #(get objects %) selected)]
+             selected      (cph/clean-loops objects selected)
+             selected-objs (map #(get objects %) selected)
+             new-index     (->> selected
+                                (cph/order-by-indexed-shapes objects)
+                                first
+                                (cph/get-position-on-parent objects)
+                                inc)]
          (when (d/not-empty? selected)
            (let [srect     (gsh/selection-rect selected-objs)
                  frame-id  (get-in objects [(first selected) :frame-id])
@@ -367,10 +382,11 @@
                                (cond-> id
                                  (assoc :id id))
                                (assoc :frame-id frame-id :parent-id parent-id)
+                               (with-meta {:index new-index})
                                (cond-> (not= frame-id uuid/zero)
                                  (assoc :fills [] :hide-in-viewer true))
                                (cts/setup-rect-selrect))
-                 undo-id (uuid/next)]
+                 undo-id (js/Symbol)]
              (rx/of
               (dwu/start-undo-transaction undo-id)
               (add-shape shape)

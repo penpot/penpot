@@ -222,7 +222,8 @@
                                :style #js {"--height" (str size "px")}}
      [:div.tool-window-bar
       [:span (tr "workspace.sidebar.sitemap")]
-      (when-not workspace-read-only?
+      (if workspace-read-only?
+        [:div.view-only-mode (tr "labels.view-only")]
         [:div.add-page {:on-click create} i/close])
       [:div.collapse-pages {:on-click toggle-pages
                             :style {:transform (when (not @show-pages?) "rotate(-90deg)")}} i/arrow-slide]]

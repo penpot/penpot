@@ -1549,6 +1549,9 @@ msgstr "Active"
 msgid "labels.inactive"
 msgstr "Inactive"
 
+msgid "labels.view-only"
+msgstr "VIEW ONLY"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Loading image…"

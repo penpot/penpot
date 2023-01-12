@@ -72,7 +72,8 @@
         shape-parent-frame   (cph/get-frame objects (:frame-id first-selected-shape))
         on-change-tab
         (fn [options-mode]
-          (st/emit! (udw/set-options-mode options-mode))
+          (st/emit! (udw/set-options-mode options-mode)
+                    (udw/set-inspect-expanded false))
           (if (= options-mode :inspect) ;;TODO maybe move this logic to set-options-mode
             (st/emit! :interrupt (udw/set-workspace-read-only true))
             (st/emit! :interrupt (udw/set-workspace-read-only false))))]

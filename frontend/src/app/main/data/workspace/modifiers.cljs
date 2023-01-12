@@ -18,7 +18,6 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.comments :as-alias dwcm]
    [app.main.data.workspace.guides :as-alias dwg]
@@ -343,7 +342,7 @@
              shapes            (map (d/getf objects) ids)
              ignore-tree       (->> (map #(get-ignore-tree object-modifiers objects %) shapes)
                                     (reduce merge {}))
-             undo-id (uuid/next)]
+             undo-id (js/Symbol)]
 
          (rx/concat
           (if undo-transation?

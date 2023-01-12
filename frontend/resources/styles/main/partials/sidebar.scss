@@ -119,6 +119,19 @@
             }
           }
         }
+
+        & .view-only-mode {
+          color: $color-primary;
+          border: 1px solid $color-primary;
+          border-radius: 3px;
+          font-size: 10px;
+          text-transform: uppercase;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-left: auto;
+          padding: 0.25rem;
+        }
       }
 
       & .focus-title {

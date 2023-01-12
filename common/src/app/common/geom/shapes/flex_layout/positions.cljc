@@ -29,8 +29,8 @@
         lines-gap-row (* (dec num-lines) layout-gap-row)
         lines-gap-col (* (dec num-lines) layout-gap-col)
 
-        free-width-gap (- layout-width total-width lines-gap-row)
-        free-height-gap (- layout-height total-height lines-gap-col)
+        free-width-gap (- layout-width total-width lines-gap-col)
+        free-height-gap (- layout-height total-height lines-gap-row)
         free-width (- layout-width total-width)
         free-height (- layout-height total-height)]
 
@@ -87,7 +87,7 @@
           (/ free-width (inc num-lines))
 
           :else
-          layout-gap-row)
+          layout-gap-col)
 
         line-gap-col
         (cond
@@ -101,14 +101,14 @@
           (/ free-height (inc num-lines))
 
           :else
-          layout-gap-col)]
+          layout-gap-row)]
 
     (cond-> base-p
       row?
-      (gpt/add (vv (+ line-height (max layout-gap-col line-gap-col))))
+      (gpt/add (vv (+ line-height (max layout-gap-row line-gap-col))))
 
       col?
-      (gpt/add (hv (+ line-width (max layout-gap-row line-gap-row)))))))
+      (gpt/add (hv (+ line-width (max layout-gap-col line-gap-row)))))))
 
 (defn get-start-line
   "Cross axis line. It's position is fixed along the different lines"
@@ -128,8 +128,8 @@
         content-stretch?    (ctl/content-stretch? parent)
         hv                  (partial gpo/start-hv layout-bounds)
         vv                  (partial gpo/start-vv layout-bounds)
-        children-gap-width  (* layout-gap-row (dec num-children))
-        children-gap-height (* layout-gap-col (dec num-children))
+        children-gap-width  (* layout-gap-col (dec num-children))
+        children-gap-height (* layout-gap-row (dec num-children))
 
         line-height
         (if (and row? content-stretch?)
@@ -257,12 +257,12 @@
         next-p
         (cond-> start-p
           row?
-          (-> (gpt/add (hv (+ child-width layout-gap-row)))
+          (-> (gpt/add (hv (+ child-width layout-gap-col)))
               (gpt/add (hv (+ margin-left margin-right))))
 
           col?
           (-> (gpt/add (vv (+ margin-top margin-bottom)))
-              (gpt/add (vv (+ child-height layout-gap-col))))
+              (gpt/add (vv (+ child-height layout-gap-row))))
           
           (some? margin-x)
           (gpt/add (hv margin-x))

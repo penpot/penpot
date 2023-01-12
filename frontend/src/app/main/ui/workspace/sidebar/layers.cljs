@@ -582,7 +582,6 @@
          [:button.back-button i/arrow-slide]
          [:div.focus-name (or title (tr "workspace.focus.selection"))]
          [:div.focus-mode (tr "workspace.focus.focus-mode")]]]
-
        filter-component)
 
      (if (some? filtered-objects)
@@ -599,8 +598,8 @@
                           :key (dm/str (:id page))
                           :filtered? true}]]]
 
-     [:div.tool-window-content {:on-scroll on-scroll
-                                :style {:display (when (some? filtered-objects) "none")}}
-      [:& layers-tree {:objects objects
-                       :key (dm/str (:id page))
-                       :filtered? false}]])]))
+       [:div.tool-window-content {:on-scroll on-scroll
+                                  :style {:display (when (some? filtered-objects) "none")}}
+        [:& layers-tree {:objects objects
+                         :key (dm/str (:id page))
+                         :filtered? false}]])]))

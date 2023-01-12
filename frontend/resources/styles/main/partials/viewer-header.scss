@@ -76,6 +76,11 @@
           display: none;
         }
       }
+      &:hover {
+        svg {
+          fill: $color-gray-20;
+        }
+      }
     }
 
     .view-options {

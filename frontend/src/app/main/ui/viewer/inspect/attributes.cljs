@@ -39,7 +39,7 @@
         type    (if (= (count shapes) 1) (-> shapes first :type) :multiple)
         options (type->options type)]
     [:div.element-options
-     (for [option options]
+     (for [[idx option] (map-indexed vector options)]
        [:> (case option
              :layout           layout-panel
              :layout-flex      layout-flex-panel
@@ -51,7 +51,8 @@
              :image            image-panel
              :text             text-panel
              :svg              svg-panel)
-        {:shapes shapes
+        {:key idx
+         :shapes shapes
          :frame frame
          :from from}])
      [:& exports
