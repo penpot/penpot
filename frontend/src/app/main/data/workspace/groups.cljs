@@ -23,9 +23,8 @@
   [objects selected]
   (->> selected
        (cph/order-by-indexed-shapes objects)
-       (map #(get objects %))
-       (map #(assoc % ::index (cph/get-position-on-parent objects (:id %))))
-       (sort-by ::index)))
+       reverse
+       (map #(get objects %))))
 
 (defn- get-empty-groups-after-group-creation
   "An auxiliary function that finds and returns a set of ids that
@@ -77,7 +76,11 @@
                         (ctst/generate-unique-name base-name)))
 
         selrect   (gsh/selection-rect shapes)
-        group-idx (inc (::index (last shapes)))
+        group-idx (->> shapes
+                       last
+                       :id
+                       (cph/get-position-on-parent objects)
+                       inc)
         group     (-> (cts/make-minimal-group frame-id selrect gname)
                       (cts/setup-shape selrect)
                       (assoc :shapes (mapv :id shapes)
@@ -114,7 +117,8 @@
         (->> (:shapes parent)
              (map-indexed vector)
              (filter #(#{(:id group)} (second %)))
-             (ffirst))
+             (ffirst)
+             inc)
 
         ;; Shapes that are in a component (including root) must be detached,
         ;; because cannot be easyly synchronized back to the main component.
@@ -133,7 +137,9 @@
                       (cph/order-by-indexed-shapes objects)
                       (mapv #(get objects %)))
         parent-id     (cph/get-parent-id objects (:id frame))
-        idx-in-parent (cph/get-position-on-parent objects (:id frame))]
+        idx-in-parent (->> (:id frame)
+                          (cph/get-position-on-parent objects)
+                           inc)]
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
