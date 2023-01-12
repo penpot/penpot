@@ -476,9 +476,14 @@
                                                  component-id
                                                  position
                                                  page
-                                                 libraries)]
-        (rx/of (dch/commit-changes changes)
-               (dws/select-shapes (d/ordered-set (:id new-shape))))))))
+                                                 libraries)
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update [(:id new-shape)])
+               (dws/select-shapes (d/ordered-set (:id new-shape))) 
+               
+               (dwu/commit-undo-transaction undo-id))))))
 
 (defn detach-component
   "Remove all references to components in the shape with the given id,
