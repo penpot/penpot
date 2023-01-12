@@ -96,11 +96,12 @@
                     objects
                     selected)
 
+             index (:index (meta attrs))
              changes  (-> (pcb/empty-changes it page-id)
                           (pcb/with-objects objects)
-                          (cond-> (some? (:index (meta attrs)))
-                            (pcb/add-object shape {:index (:index (meta attrs))}))
-                          (cond-> (nil? (:index (meta attrs)))
+                          (cond-> (some? index)
+                            (pcb/add-object shape {:index index}))
+                          (cond-> (nil? index)
                             (pcb/add-object shape))
                           (cond-> (some? (:parent-id attrs))
                             (pcb/change-parent (:parent-id attrs) [shape])))

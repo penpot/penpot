@@ -82,11 +82,13 @@
   [ids]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
-    (watch [_ _ _]
-      (if (d/not-empty? ids)
-        (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-          (rx/of (dwm/apply-modifiers {:modifiers modif-tree})))
-        (rx/empty)))))
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            ids (->> ids (filter #(contains? objects %)))]
+        (if (d/not-empty? ids)
+          (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+            (rx/of (dwm/apply-modifiers {:modifiers modif-tree})))
+          (rx/empty))))))
 
 (defn initialize
   []

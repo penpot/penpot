@@ -177,6 +177,19 @@
          :on-click (fn []
                      (let [is-sidebar-closed? (contains? layout :collapse-left-sidebar)]
                        (ts/schedule 300 #(st/emit! (when is-sidebar-closed? (dw/toggle-layout-flag :collapse-left-sidebar))
+                                                   (dw/remove-layout-flag :debug-panel)
                                                    (-> (dw/toggle-layout-flag :shortcuts)
                                                        (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))))}
-        i/shortcut]]]]))
+        i/shortcut]
+
+       (when *assert*
+         [:button.tooltip.tooltip-right
+          {:alt "Debugging tool"
+           :class (when (contains? layout :debug-panel) "selected")
+           :on-click (fn []
+                       (let [is-sidebar-closed? (contains? layout :collapse-left-sidebar)]
+                         (ts/schedule 300 #(st/emit! (when is-sidebar-closed? (dw/toggle-layout-flag :collapse-left-sidebar))
+                                                     (dw/remove-layout-flag :shortcuts)
+                                                     (-> (dw/toggle-layout-flag :debug-panel)
+                                                         (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))))}
+          i/bug])]]]))

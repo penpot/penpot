@@ -14,6 +14,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox]]
+   [app.main.ui.workspace.sidebar.debug :refer [debug-panel]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
@@ -34,6 +35,7 @@
         section             (cond (or mode-inspect? (contains? layout :layers)) :layers
                                   (contains? layout :assets) :assets)
         shortcuts? (contains? layout :shortcuts)
+        show-debug? (contains? layout :debug-panel)
 
         {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
         (use-resize-hook :left-sidebar 255 255 500 :x false :left)
@@ -53,26 +55,31 @@
                         :on-mouse-move on-mouse-move}]
 
      [:div.settings-bar-inside
+      (cond
+        shortcuts?
+        [:& shortcuts-container]
 
-      [:* (if shortcuts?
-            [:& shortcuts-container]
-            [:*
-             [:button.collapse-sidebar
-              {:on-click handle-collapse
-               :aria-label (tr "workspace.sidebar.collapse")}
-              i/arrow-slide]
-             [:& tab-container {:on-change-tab #(st/emit! (dw/go-to-layout %))
-                                :selected section
-                                :shortcuts? shortcuts?}
+        show-debug?
+        [:& debug-panel]
 
-              [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
-               [:div.layers-tab
-                [:& sitemap {:layout layout}]
-                [:& layers-toolbox]]]
+        :else
+        [:*
+         [:button.collapse-sidebar
+          {:on-click handle-collapse
+           :aria-label (tr "workspace.sidebar.collapse")}
+          i/arrow-slide]
+         [:& tab-container {:on-change-tab #(st/emit! (dw/go-to-layout %))
+                            :selected section
+                            :shortcuts? shortcuts?}
 
-              (when-not mode-inspect?
-                [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
-                 [:& assets-toolbox]])]])]]]))
+          [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
+           [:div.layers-tab
+            [:& sitemap {:layout layout}]
+            [:& layers-toolbox]]]
+
+          (when-not mode-inspect?
+            [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
+             [:& assets-toolbox]])]])]]))
 
 ;; --- Right Sidebar (Component)
 
