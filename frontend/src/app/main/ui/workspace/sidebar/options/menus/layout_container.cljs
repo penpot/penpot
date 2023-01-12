@@ -250,11 +250,11 @@
      [:> numeric-input {:no-validate true
                         :placeholder "--"
                         :on-click (fn [event]
-                                    (reset! gap-selected? :row-gap)
+                                    (reset! gap-selected? :column-gap)
                                     (dom/select-target event))
-                        :on-change (partial set-gap (= :no-wrap wrap-type) :row-gap)
+                        :on-change (partial set-gap (= :no-wrap wrap-type) :column-gap)
                         :on-blur #(reset! gap-selected? :none)
-                        :value (:row-gap gap-value)
+                        :value (:column-gap gap-value)
                         :disabled (and (= :no-wrap wrap-type) is-col?)}]]
 
     [:div.gap-row.tooltip.tooltip-bottom-left
@@ -264,11 +264,11 @@
      [:> numeric-input {:no-validate true
                         :placeholder "--"
                         :on-click (fn [event]
-                                    (reset! gap-selected? :column-gap)
+                                    (reset! gap-selected? :row-gap)
                                     (dom/select-target event))
-                        :on-change (partial set-gap (= :no-wrap wrap-type) :column-gap)
+                        :on-change (partial set-gap (= :no-wrap wrap-type) :row-gap)
                         :on-blur #(reset! gap-selected? :none)
-                        :value (:column-gap gap-value)
+                        :value (:row-gap gap-value)
                         :disabled (and (= :no-wrap wrap-type) (not is-col?))}]]]])
 
 (mf/defc layout-container-menu
