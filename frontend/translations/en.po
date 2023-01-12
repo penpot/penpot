@@ -4133,10 +4133,10 @@ msgid "workspace.options.width"
 msgstr "Width"
 
 msgid "workspace.options.x"
-msgstr "X"
+msgstr "X axis"
 
 msgid "workspace.options.y"
-msgstr "Y"
+msgstr "Y axis"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Add node (%s)"
