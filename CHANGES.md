@@ -55,6 +55,7 @@
 - Fix ghost shapes after sync groups in components [Taiga #4649](https://tree.taiga.io/project/penpot/issue/4649)
 - Fix layer orders messed up on move, group, reparent and undo [Github #2672](https://github.com/penpot/penpot/issues/2672)
 - Fix max height in library dialog [Github #2335](https://github.com/penpot/penpot/issues/2335)
+- Fix undo ungroup (shift+g) scrambles positions [Taiga #4674](https://tree.taiga.io/project/penpot/issue/4674)
 
 ## 1.16.2-beta
 

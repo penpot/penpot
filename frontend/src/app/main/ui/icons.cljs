@@ -78,6 +78,7 @@
 (def bool-intersection (icon-xref :boolean-intersection))
 (def bool-union (icon-xref :boolean-union))
 (def box (icon-xref :box))
+(def bug (icon-xref :bug))
 (def chain (icon-xref :chain))
 (def chat (icon-xref :chat))
 (def checkbox-checked (icon-xref :checkbox-checked))

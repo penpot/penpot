@@ -360,12 +360,16 @@ button.collapse-sidebar {
   overflow: hidden;
 }
 
-.shortcuts {
-  .shortcuts-header {
+.shortcuts,
+.debug-panel {
+  .shortcuts-header,
+  .debug-panel-header {
     display: flex;
     height: 40px;
     background-color: $color-gray-60;
-    .shortcuts-title {
+
+    .shortcuts-title,
+    .debug-panel-title {
       color: $color-white;
       font-size: $fs12;
       display: flex;
@@ -379,7 +383,9 @@ button.collapse-sidebar {
         fill: $color-gray-20;
       }
     }
-    .shortcuts-close-button {
+
+    .shortcuts-close-button,
+    .debug-panel-close-button {
       display: flex;
       justify-content: center;
       background-color: transparent;
@@ -545,5 +551,37 @@ button.collapse-sidebar {
     justify-content: center;
     margin-top: 4px;
     font-size: $fs12;
+  }
+}
+
+.debug-panel {
+  .debug-panel-inner {
+    padding: 8px;
+  }
+  .debug-option {
+    display: flex;
+    gap: 8px;
+    margin: 4px 0;
+    cursor: pointer;
+
+    label {
+      font-size: 80%;
+      cursor: pointer;
+    }
+
+    svg {
+      width: 15px;
+      height: 15px;
+      background: white;
+    }
+
+    &:hover {
+      svg {
+        stroke: var(--color-primary);
+      }
+      label {
+        color: var(--color-primary);
+      }
+    }
   }
 }

@@ -86,6 +86,9 @@
 
     ;; Show html text
     :html-text
+
+    ;; Show history overlay
+    :history-overlay
     })
 
 ;; These events are excluded when we activate the :events flag
@@ -99,10 +102,26 @@
 
 (defonce ^:dynamic *debug* (atom #{#_:events}))
 
-(defn debug-all! [] (reset! *debug* debug-options))
-(defn debug-none! [] (reset! *debug* #{}))
-(defn debug! [option] (swap! *debug* conj option))
-(defn -debug! [option] (swap! *debug* disj option))
+(defn debug-all! []
+  (reset! *debug* debug-options)
+  (js* "app.main.reinit()"))
+
+(defn debug-none! []
+  (reset! *debug* #{})
+  (js* "app.main.reinit()"))
+
+(defn debug! [option]
+  (swap! *debug* conj option)
+  (when (= :events option)
+    (set! st/*debug-events* true))
+
+  (js* "app.main.reinit()"))
+
+(defn -debug! [option]
+  (swap! *debug* disj option)
+  (when (= :events option)
+    (set! st/*debug-events* false))
+  (js* "app.main.reinit()"))
 
 (defn ^:export ^boolean debug?
   [option]

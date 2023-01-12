@@ -8,11 +8,13 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -72,23 +74,30 @@
 
             initial (cond-> @ms/mouse-position snap-pixel? gpt/round)
 
-            page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
-            focus   (:workspace-focus-selected state)
-            zoom    (get-in state [:workspace-local :zoom] 1)
-            fid     (ctst/top-nested-frame objects initial)
+            page-id    (:current-page-id state)
+            objects    (wsh/lookup-page-objects state page-id)
+            focus      (:workspace-focus-selected state)
+            zoom       (get-in state [:workspace-local :zoom] 1)
+
+            fid        (ctst/top-nested-frame objects initial)
+            layout?    (ctl/layout? objects fid)
+            drop-index (when layout? (gsl/get-drop-index fid objects initial))
 
             shape   (get-in state [:workspace-drawing :object])
             shape   (-> shape
                         (cts/setup-shape {:x (:x initial)
-                                         :y (:y initial)
-                                         :width 0.01
-                                         :height 0.01})
+                                          :y (:y initial)
+                                          :width 0.01
+                                          :height 0.01})
                         (cond-> (and (cph/frame-shape? shape)
                                      (not= fid uuid/zero))
                           (assoc :fills [] :hide-in-viewer true))
 
                         (assoc :frame-id fid)
+
+                        (cond-> (some? drop-index)
+                          (with-meta {:index drop-index}))
+
                         (assoc :initialized? true)
                         (assoc :click-draw? true))]
         (rx/concat

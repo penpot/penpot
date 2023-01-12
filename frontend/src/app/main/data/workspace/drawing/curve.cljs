@@ -6,9 +6,12 @@
 
 (ns app.main.data.workspace.drawing.curve
   (:require
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.geom.shapes.path :as gsp]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
@@ -46,10 +49,14 @@
 
       (let [objects  (wsh/lookup-page-objects state)
             content  (get-in state [:workspace-drawing :object :content] [])
-            position (get-in content [0 :params] nil)
-            frame-id (ctst/top-nested-frame objects position)]
+            position (gpt/point (get-in content [0 :params] nil))
+            frame-id (ctst/top-nested-frame objects position)
+            layout?    (ctl/layout? objects frame-id)
+            drop-index (when layout? (gsl/get-drop-index frame-id objects position))]
         (-> state
-            (assoc-in [:workspace-drawing :object :frame-id] frame-id))))))
+            (assoc-in [:workspace-drawing :object :frame-id] frame-id)
+            (cond-> (some? drop-index)
+              (update-in [:workspace-drawing :object] with-meta {:index drop-index})))))))
 
 (defn curve-to-path [{:keys [segments] :as shape}]
   (let [content (gsp/segments->content segments)
