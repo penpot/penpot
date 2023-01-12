@@ -962,7 +962,8 @@
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
-    (ignore-sync conn params)))
+    (->  (ignore-sync conn params)
+         (update :features db/decode-pgarray #{}))))
 
 
 ;; --- MUTATION COMMAND: upsert-file-object-thumbnail
