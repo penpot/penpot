@@ -106,9 +106,6 @@
 (s/def ::file-change-snapshot-every ::us/integer)
 (s/def ::file-change-snapshot-timeout ::dt/duration)
 
-(s/def ::setup-admin-email ::us/email)
-(s/def ::setup-admin-password ::us/not-empty-string)
-
 (s/def ::default-executor-parallelism ::us/integer)
 (s/def ::scheduled-executor-parallelism ::us/integer)
 
@@ -313,9 +310,6 @@
 
                    ::srepl-host
                    ::srepl-port
-
-                   ::setup-admin-email
-                   ::setup-admin-password
 
                    ::assets-storage-backend
                    ::storage-assets-fs-directory

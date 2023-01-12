@@ -290,7 +290,6 @@
   (let [cfg (assoc cfg ::type "command" ::metrics-id :rpc-command-timing)]
     (->> (sv/scan-ns 'app.rpc.commands.binfile
                      'app.rpc.commands.comments
-                     'app.rpc.commands.profile
                      'app.rpc.commands.management
                      'app.rpc.commands.verify-token
                      'app.rpc.commands.search
