@@ -127,6 +127,12 @@
     (let [d (pow 10 n)]
       (/ (round (* v d)) d))))
 
+(defn to-fixed
+  "Returns a string representing the given number, using fixed precision."
+  [v n]
+  #?(:cljs (.toFixed ^js v n)
+     :clj (str (precision v n))))
+
 (defn radians
   "Converts degrees to radians."
   [degrees]
