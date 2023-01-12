@@ -77,8 +77,8 @@
               next-max-width   (+ child-margin-width (if fill-width? child-max-width child-width))
               next-max-height  (+ child-margin-height (if fill-height? child-max-height child-height))
 
-              next-line-min-width  (+ line-min-width  next-min-width  (* layout-gap-row num-children))
-              next-line-min-height (+ line-min-height next-min-height (* layout-gap-col num-children))]
+              next-line-min-width  (+ line-min-width  next-min-width  (* layout-gap-col num-children))
+              next-line-min-height (+ line-min-height next-min-height (* layout-gap-row num-children))]
 
           (if (and (some? line-data)
                    (or (not wrap?)
@@ -168,20 +168,20 @@
       (let [[total-min-width total-min-height total-max-width total-max-height]
             (->> layout-lines (reduce add-ranges [0 0 0 0]))
 
-            get-layout-width (fn [{:keys [num-children]}] (- layout-width (* layout-gap-row (dec num-children))))
-            get-layout-height (fn [{:keys [num-children]}] (- layout-height (* layout-gap-col (dec num-children))))
+            get-layout-width (fn [{:keys [num-children]}] (- layout-width (* layout-gap-col (dec num-children))))
+            get-layout-height (fn [{:keys [num-children]}] (- layout-height (* layout-gap-row (dec num-children))))
 
             num-lines (count layout-lines)
 
             ;; When align-items is stretch we need to adjust the main axis size to grow for the full content
             stretch-width-fix
             (if (and col? (ctl/content-stretch? parent))
-              (/ (- layout-width (* layout-gap-row (dec num-lines)) total-max-width) num-lines)
+              (/ (- layout-width (* layout-gap-col (dec num-lines)) total-max-width) num-lines)
               0)
 
             stretch-height-fix
             (if (and row? (ctl/content-stretch? parent))
-              (/ (- layout-height (* layout-gap-col (dec num-lines)) total-max-height) num-lines)
+              (/ (- layout-height (* layout-gap-row (dec num-lines)) total-max-height) num-lines)
               0)
 
             ;; Distributes the space between the layout lines based on its max/min constraints
@@ -200,7 +200,7 @@
               (map #(assoc % :line-height (+ (:line-max-height %) stretch-height-fix)))
 
               (and row? (< total-min-height layout-height total-max-height))
-              (distribute-space :line-height :line-min-height :line-max-height total-min-height (- layout-height (* (dec num-lines) layout-gap-col)))
+              (distribute-space :line-height :line-min-height :line-max-height total-min-height (- layout-height (* (dec num-lines) layout-gap-row)))
 
               (and col? (>= total-min-width layout-width))
               (map #(assoc % :line-width (:line-min-width %)))
@@ -209,7 +209,7 @@
               (map #(assoc % :line-width (+ (:line-max-width %) stretch-width-fix)))
 
               (and col? (< total-min-width layout-width total-max-width))
-              (distribute-space :line-width :line-min-width :line-max-width total-min-width (- layout-width (* (dec num-lines) layout-gap-row))))
+              (distribute-space :line-width :line-min-width :line-max-width total-min-width (- layout-width (* (dec num-lines) layout-gap-col))))
 
             [total-width total-height] (->> layout-lines (reduce add-lines [0 0]))
 
@@ -231,7 +231,7 @@
 
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
 
-        layout-gap-row
+        layout-gap-col
         (cond (and row? space-around?)
               0
 
@@ -239,9 +239,9 @@
               (/ (- width line-width) (dec num-children))
 
               :else
-              layout-gap-row)
+              layout-gap-col)
 
-        layout-gap-col
+        layout-gap-row
         (cond (and col? space-around?)
               0
 
@@ -249,7 +249,7 @@
               (/ (- height line-height) (dec num-children))
 
               :else
-              layout-gap-col)
+              layout-gap-row)
 
         margin-x
         (if (and row? space-around?)
