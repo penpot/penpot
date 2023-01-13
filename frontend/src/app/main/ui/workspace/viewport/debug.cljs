@@ -63,7 +63,8 @@
             col? (ctl/col? shape)
 
             children (->> (cph/get-immediate-children objects (:id shape))
-                          (remove :hidden))
+                          (remove :hidden)
+                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
             layout-data (gsl/calc-layout-data shape children (:points shape))
 
             layout-bounds (:layout-bounds layout-data)
@@ -85,7 +86,8 @@
 
 (mf/defc debug-drop-zones
   "Debug component to show the auto-layout drop areas"
-  {::mf/wrap-props false}
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["objects" "selected-shapes" "hover-top-frame-id"]))]
+   ::mf/wrap-props false}
   [props]
 
   (let [objects            (unchecked-get props "objects")
@@ -100,11 +102,7 @@
         shape (or selected-frame (get objects hover-top-frame-id))]
 
     (when (and shape (:layout shape))
-      (let [children (->> (cph/get-immediate-children objects (:id shape))
-                          (remove :hidden)
-                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
-            layout-data (gsl/calc-layout-data shape children (:points shape))
-            drop-areas (gsl/layout-drop-areas shape layout-data children)]
+      (let [drop-areas (gsl/get-drop-areas shape objects)]
         [:g.debug-layout {:pointer-events "none"
                           :transform (gsh/transform-str shape)}
          (for [[idx drop-area] (d/enumerate drop-areas)]

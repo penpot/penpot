@@ -15,7 +15,7 @@
 (dm/export fbo/layout-content-bounds)
 (dm/export fbo/child-layout-bound-points)
 (dm/export fdr/get-drop-index)
-(dm/export fdr/layout-drop-areas)
+(dm/export fdr/get-drop-areas)
 (dm/export fli/calc-layout-data)
 (dm/export fmo/layout-child-modifiers)
 
