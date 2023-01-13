@@ -164,15 +164,6 @@
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
-(defmethod command :send-feedback
-  [_ params]
-  (->> (http/send! {:method :post
-                    :uri (u/join @cf/public-uri "api/feedback")
-                    :credentials "include"
-                    :body (http/transit-data params)})
-       (rx/map http/conditional-decode-transit)
-       (rx/mapcat handle-response)))
-
 (defn- send-export
   [{:keys [blob?] :as params}]
   (->> (http/send! {:method :post

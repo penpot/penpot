@@ -328,6 +328,7 @@
           'app.rpc.commands.access-token
           'app.rpc.commands.audit
           'app.rpc.commands.auth
+          'app.rpc.commands.feedback
           'app.rpc.commands.binfile
           'app.rpc.commands.comments
           'app.rpc.commands.demo
