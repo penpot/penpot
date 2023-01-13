@@ -69,7 +69,8 @@
 
          (rx/concat
           ;; Delete the thumbnail first so if we interrupt we can regenerate after
-          (rp/cmd! :upsert-file-object-thumbnail params)
+          (->> (rp/cmd! :upsert-file-object-thumbnail params)
+               (rx/catch #(rx/empty)))
           (->> blob-result
                (rx/merge-map
                 (fn [blob]
@@ -84,7 +85,9 @@
                       (rx/merge
                        ;; Update the local copy of the thumbnails so we don't need to request it again
                        (rx/of #(update % :workspace-thumbnails assoc object-id data))
-                       (->> (rp/cmd! :upsert-file-object-thumbnail params)
+                       (->> (rx/timer 5000)
+                            (rx/flat-map #(rp/cmd! :upsert-file-object-thumbnail params))
+                            (rx/catch #(rx/empty))
                             (rx/ignore))))
 
                     (rx/empty)))))))))))
