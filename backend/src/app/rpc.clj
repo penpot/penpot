@@ -71,8 +71,8 @@
 (defn- rpc-query-handler
   "Ring handler that dispatches query requests and convert between
   internal async flow into ring async flow."
-  [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (let [type   (keyword (:type params))
+  [methods {:keys [profile-id session-id path-params params] :as request} respond raise]
+  (let [type   (keyword (:type path-params))
         data   (-> params
                    (assoc ::request-at (dt/now))
                    (assoc ::http/request request))
@@ -94,8 +94,8 @@
 (defn- rpc-mutation-handler
   "Ring handler that dispatches mutation requests and convert between
   internal async flow into ring async flow."
-  [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (let [type   (keyword (:type params))
+  [methods {:keys [profile-id session-id path-params params] :as request} respond raise]
+  (let [type   (keyword (:type path-params))
         data   (-> params
                    (assoc ::request-at (dt/now))
                    (assoc ::http/request request))
@@ -116,8 +116,8 @@
 (defn- rpc-command-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
-  [methods {:keys [profile-id session-id params] :as request} respond raise]
-  (let [cmd    (keyword (:type params))
+  [methods {:keys [profile-id session-id path-params params] :as request} respond raise]
+  (let [cmd    (keyword (:type path-params))
         etag   (yrq/get-header request "if-none-match")
 
         data   (-> params
