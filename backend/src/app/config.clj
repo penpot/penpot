@@ -326,8 +326,7 @@
   [:enable-backend-api-doc
    :enable-backend-worker
    :enable-secure-session-cookies
-   :enable-email-verification
-   :enable-quotes])
+   :enable-email-verification])
 
 (defn- parse-flags
   [config]
