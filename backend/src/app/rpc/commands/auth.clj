@@ -69,7 +69,7 @@
 ;; ---- COMMAND: login with password
 
 (defn login-with-password
-  [{:keys [::db/pool session] :as cfg} {:keys [email password scope] :as params}]
+  [{:keys [::db/pool session] :as cfg} {:keys [email password] :as params}]
 
   (when-not (or (contains? cf/flags :login)
                 (contains? cf/flags :login-with-password))
@@ -119,17 +119,8 @@
             ;; accept invitation with other email
             response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
                          {:invitation-token (:invitation-token params)}
-                         (update profile :is-admin (fn [admin?]
-                                                     (or admin?
-                                                         (let [admins (cf/get :admins)]
-                                                           (contains? admins (:email profile)))))))]
-
-        (when (and (nil? (:default-team-id profile))
-                   (not= scope "admin"))
-          (ex/raise :type :restriction
-                    :code :admin-only-profile
-                    :hint "can't login with admin-only profile"))
-
+                         (assoc profile :is-admin (let [admins (cf/get :admins)]
+                                                    (contains? admins (:email profile)))))]
         (-> response
             (rph/with-transform (session/create-fn session (:id profile)))
             (rph/with-meta {::audit/props (audit/profile->props profile)

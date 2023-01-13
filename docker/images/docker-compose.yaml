@@ -137,15 +137,6 @@ services:
     environment:
       - PENPOT_FLAGS=enable-registration enable-login disable-email-verification enable-smtp
 
-      ## Setup initial administration user, uncommit only if you are
-      ## going to use the penpot-admin; Once uncommented, the special
-      ## user will be created on application start. This user can only
-      ## be used for access admin, you will not be able to login with
-      ## it on penpot application.
-
-      # - PENPOT_SETUP_ADMIN_EMAIL=admin@example.com
-      # - PENPOT_SETUP_ADMIN_PASSWORD=password
-
       ## Public URI. If you are going to expose this instance to the
       ## internet, or use it under different domain than 'localhost'
       ## consider using traefik and set the
@@ -239,32 +230,6 @@ services:
     restart: always
     networks:
       - penpot
-
-  ## An optional admin application for pentpot. It allows manage
-  ## users, teams and inspect some parts of the database. You can read
-  ## more about it on: https://github.com/penpot/penpot-admin
-  ##
-  ## Status: EXPERIMENTAL
-
-  # penpot-admin:
-  #   image: "penpotapp/admin:alpha"
-  #   networks:
-  #     - penpot
-  #
-  #   depends_on:
-  #     - penpot-postgres
-  #     - penpot-backend
-  #
-  #   environment:
-  #     - PENPOT_PUBLIC_URI=http://localhost:9001
-  #     - PENPOT_API_URI=http://penpot-frontend/
-  #
-  #     - PENPOT_DATABASE_HOST=penpot-postgres
-  #     - PENPOT_DATABASE_NAME=penpot
-  #     - PENPOT_DATABASE_USERNAME=penpot
-  #     - PENPOT_DATABASE_PASSWORD=penpot
-  #     - PENPOT_REDIS_URI=redis://penpot-redis/0
-  #     - PENPOT_DEBUG="false"
 
   ## A mailcatch service, used as temporal SMTP server. You can access
   ## via HTTP to the port 1080 for read all emails the penpot platform

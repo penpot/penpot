@@ -11,9 +11,10 @@
    [app.common.spec :as us]
    [buddy.core.kdf :as bk]))
 
+
 (defn derive
   "Derive a key from secret-key"
-  [secret-key & {:keys [salt size]}]
+  [secret-key & {:keys [salt size] :or {size 32}}]
   (us/assert! ::us/not-empty-string secret-key)
   (let [engine (bk/engine {:key secret-key
                            :salt salt

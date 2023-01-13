@@ -408,9 +408,6 @@
    {:port (cf/get :srepl-port)
     :host (cf/get :srepl-host)}
 
-   :app.setup/initial-profile
-   {::db/pool (ig/ref ::db/pool)}
-
    :app.setup/builtin-templates
    {::http.client/client (ig/ref ::http.client/client)}
 
