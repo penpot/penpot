@@ -22,7 +22,6 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
@@ -549,13 +548,6 @@
                                        (map #(get-in % [:obj :id]))
                                        (into (d/ordered-set)))
 
-                  dup-frames      (->> changes
-                                       :redo-changes
-                                       (filter #(= (:type %) :add-obj))
-                                       (filter #(selected (:old-id %)))
-                                       (filter #(= :frame (get-in % [:obj :type])))
-                                       (map #(vector (:old-id %) (get-in % [:obj :id]))))
-
                   id-duplicated   (first new-selected)
 
                   frames (into #{}
@@ -563,18 +555,14 @@
                                selected)
                   undo-id (js/Symbol)]
 
-              (rx/concat
-               (->> (rx/from dup-frames)
-                    (rx/map (fn [[old-id new-id]] (dwt/duplicate-thumbnail old-id new-id))))
-
-               ;; Warning: This order is important for the focus mode.
-               (rx/of
+              ;; Warning: This order is important for the focus mode.
+              (rx/of
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (select-shapes new-selected)
                 (ptk/data-event :layout/update frames)
                 (memorize-duplicated id-original id-duplicated)
-                (dwu/commit-undo-transaction undo-id))))))))))
+                (dwu/commit-undo-transaction undo-id)))))))))
 
 (defn change-hover-state
   [id value]

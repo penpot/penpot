@@ -16,7 +16,6 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.comments :as-alias dwcm]
@@ -206,13 +205,10 @@
   [shape {:keys [width height]}]
   (cond-> shape
     (some? width)
-    (assoc :width width)
+    (gsh/transform-shape (ctm/change-dimensions-modifiers shape :width width {:ignore-lock? true}))
 
     (some? height)
-    (assoc :height height)
-
-    (or (some? width) (some? height))
-    (cts/setup-rect-selrect)))
+    (gsh/transform-shape (ctm/change-dimensions-modifiers shape :height height {:ignore-lock? true}))))
 
 (defn apply-text-modifiers
   [objects text-modifiers]

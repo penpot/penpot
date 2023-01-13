@@ -146,10 +146,13 @@
   ((if (= :x axis) center-horizontal-vector center-vertical-vector) child-points parent-points))
 
 (defn displacement
-  [before-v after-v]
-  (let [angl (gpt/angle-with-other before-v after-v)
-        sign (if (mth/close? angl 180) -1 1)
+  [before-v after-v before-parent-side-v after-parent-side-v]
+
+  (let [before-angl (gpt/angle-with-other before-v before-parent-side-v)
+        after-angl (gpt/angle-with-other after-v after-parent-side-v)
+        sign (if (mth/close? before-angl after-angl) 1 -1)
         length (* sign (gpt/length before-v))]
+
     (if (mth/almost-zero? length)
       after-v
       (gpt/subtract after-v (gpt/scale (gpt/unit after-v) length)))))
@@ -173,14 +176,18 @@
 (defmethod constraint-modifier :start
   [_ axis child-points-before parent-points-before child-points-after parent-points-after]
   (let [start-before (start-vector axis child-points-before parent-points-before)
-        start-after  (start-vector axis child-points-after parent-points-after)]
-    (ctm/move-modifiers (displacement start-before start-after))))
+        start-after  (start-vector axis child-points-after parent-points-after)
+        before-side-vector (side-vector axis parent-points-before)
+        after-side-vector (side-vector axis parent-points-after)]
+    (ctm/move-modifiers (displacement start-before start-after before-side-vector after-side-vector))))
 
 (defmethod constraint-modifier :end
   [_ axis child-points-before parent-points-before child-points-after parent-points-after]
   (let [end-before  (end-vector axis child-points-before parent-points-before)
-        end-after   (end-vector axis child-points-after parent-points-after)]
-    (ctm/move-modifiers (displacement end-before end-after))))
+        end-after   (end-vector axis child-points-after parent-points-after)
+        before-side-vector (side-vector axis parent-points-before)
+        after-side-vector (side-vector axis parent-points-after)]
+    (ctm/move-modifiers (displacement end-before end-after before-side-vector after-side-vector))))
 
 (defmethod constraint-modifier :fixed
   [_ axis child-points-before parent-points-before child-points-after parent-points-after]
@@ -190,8 +197,11 @@
         start-before (start-vector axis child-points-before parent-points-before)
         start-after  (start-vector axis child-points-after parent-points-after)
 
-        disp-end     (displacement end-before end-after)
-        disp-start   (displacement start-before start-after)
+        before-side-vector (side-vector axis parent-points-before)
+        after-side-vector (side-vector axis parent-points-after)
+
+        disp-end     (displacement end-before end-after before-side-vector after-side-vector)
+        disp-start   (displacement start-before start-after before-side-vector after-side-vector)
 
         ;; We get the current axis side and grow it on both side by the end+start displacements
         before-vec   (side-vector axis child-points-after)
@@ -214,8 +224,10 @@
 (defmethod constraint-modifier :center
   [_ axis child-points-before parent-points-before child-points-after parent-points-after]
   (let [center-before  (center-vector axis child-points-before parent-points-before)
-        center-after   (center-vector axis child-points-after parent-points-after)]
-    (ctm/move-modifiers (displacement center-before center-after))))
+        center-after   (center-vector axis child-points-after parent-points-after)
+        before-side-vector (side-vector axis parent-points-before)
+        after-side-vector (side-vector axis parent-points-after)]
+    (ctm/move-modifiers (displacement center-before center-after before-side-vector after-side-vector))))
 
 (defmethod constraint-modifier :default [_ _ _ _ _]
   [])
