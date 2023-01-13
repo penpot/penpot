@@ -175,14 +175,15 @@
 #?(:clj
    (defn get-error-context
      [error]
-     (when-let [data (ex-data error)]
-       (merge
-        {:hint          (ex-message error)
-         :spec-problems (some->> data ::s/problems (take 10) seq vec)
-         :spec-value    (some->> data ::s/value)
-         :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))}
-        (when-let [explain (ex/explain data)]
-          {:spec-explain explain})))))
+     (merge
+      {:hint (ex-message error)}
+      (when-let [data (ex-data error)]
+        (merge
+         {:spec-problems (some->> data ::s/problems (take 10) seq vec)
+          :spec-value    (some->> data ::s/value)
+          :data          (some-> data (dissoc ::s/problems ::s/value ::s/spec))}
+         (when-let [explain (ex/explain data)]
+           {:spec-explain explain}))))))
 
 (defmacro log
   [& props]

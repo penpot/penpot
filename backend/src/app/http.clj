@@ -91,9 +91,7 @@
               (let [params  (:path-params match)
                     result  (:result match)
                     handler (or (:handler result) not-found-handler)
-                    request (-> request
-                                (assoc :path-params params)
-                                (update :params merge params))]
+                    request (assoc request :path-params params)]
                 (handler request respond raise))
               (not-found-handler request respond raise)))
 

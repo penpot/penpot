@@ -13,7 +13,6 @@
    [app.db :as db]
    [app.main :as-alias main]
    [app.setup.builtin-templates]
-   [app.setup.initial-user]
    [app.setup.keys :as keys]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
@@ -69,5 +68,5 @@
     (let [secret (or key (generate-random-key))]
       (-> (retrieve-all conn)
           (assoc :secret-key secret)
-          (assoc :tokens-key (keys/derive secret :salt "tokens" :size 32))
+          (assoc :tokens-key (keys/derive secret :salt "tokens"))
           (update :instance-id handle-instance-id conn (db/read-only? pool))))))
