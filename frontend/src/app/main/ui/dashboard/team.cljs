@@ -626,7 +626,6 @@
 
 (def valid-webhook-mtypes
   [{:label "application/json" :value "application/json"}
-   {:label "application/x-www-form-urlencoded" :value "application/x-www-form-urlencoded"}
    {:label "application/transit+json" :value "application/transit+json"}])
 
 (defn- extract-status

@@ -29,7 +29,6 @@
 (s/def ::is-active ::us/boolean)
 (s/def ::mtype
   #{"application/json"
-    "application/x-www-form-urlencoded"
     "application/transit+json"})
 
 (s/def ::create-webhook
