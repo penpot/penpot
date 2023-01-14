@@ -23,6 +23,7 @@
 (derive :get-team-stats ::query)
 (derive :get-team-invitations ::query)
 (derive :get-team-shared-files ::query)
+(derive :get-profile ::query)
 
 (defn handle-response
   [{:keys [status body] :as response}]
@@ -187,6 +188,15 @@
   [id params]
   (->> (http/send! {:method :post
                     :uri  (u/join @cf/public-uri "api/rpc/mutation/" (name id))
+                    :credentials "include"
+                    :body (http/form-data params)})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
+
+(defmethod command ::multipart-upload
+  [id params]
+  (->> (http/send! {:method :post
+                    :uri  (u/join @cf/public-uri "api/rpc/command/" (name id))
                     :credentials "include"
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)

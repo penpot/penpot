@@ -99,7 +99,7 @@
     ;; We just recheck with an additional profile request; this avoids
     ;; some race conditions that causes unexpected redirects on
     ;; invitations workflows (and probably other cases).
-    (->> (rp/query! :profile)
+    (->> (rp/command! :get-profile)
          (rx/subs (fn [{:keys [id] :as profile}]
                     (if (= id uuid/zero)
                       (st/emit! (rt/nav :auth-login))

@@ -19,10 +19,10 @@
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.queries.profile :as profile]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -51,20 +51,6 @@
     (let [[_ candidate] (-> (str/lower email)
                             (str/split #"@" 2))]
       (contains? domains candidate))))
-
-(def ^:private sql:profile-existence
-  "select exists (select * from profile
-                   where email = ?
-                     and deleted_at is null) as val")
-
-(defn check-profile-existence!
-  [conn {:keys [email] :as params}]
-  (let [email  (str/lower email)
-        result (db/exec-one! conn [sql:profile-existence email])]
-    (when (:val result)
-      (ex/raise :type :validation
-                :code :email-already-exists))
-    params))
 
 ;; ---- COMMAND: login with password
 

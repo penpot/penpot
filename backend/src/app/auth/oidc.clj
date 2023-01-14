@@ -21,7 +21,7 @@
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
-   [app.rpc.queries.profile :as profile]
+   [app.rpc.commands.profile :as profile]
    [app.tokens :as tokens]
    [app.util.json :as json]
    [app.util.time :as dt]

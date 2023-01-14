@@ -11,8 +11,7 @@
    [app.db :as db]
    [app.main :as main]
    [app.rpc.commands.auth :as auth]
-   [app.rpc.mutations.profile :as profile]
-   [app.rpc.queries.profile :refer [get-profile-by-email]]
+   [app.rpc.commands.profile :as profile]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [integrant.core :as ig])
@@ -80,7 +79,7 @@
       (db/with-atomic [conn (:app.db/pool system)]
         (let [email    (or (:email options)
                            (read-from-console {:label "Email:"}))
-              profile  (get-profile-by-email conn email)]
+              profile  (profile/get-profile-by-email conn email)]
           (when-not profile
             (when (pos? (:verbosity options))
               (println "Profile does not exists."))

@@ -131,6 +131,7 @@
 
         data       (-> params
                        (assoc ::request-at (dt/now))
+                       (assoc ::session/id (::session/id request))
                        (assoc ::http/request request)
                        (assoc ::cond/key etag)
                        (cond-> (uuid? profile-id)

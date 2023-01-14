@@ -15,9 +15,9 @@
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as auth]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.queries.profile :as profile]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))

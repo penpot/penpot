@@ -18,11 +18,10 @@
    [app.main :as-alias main]
    [app.media :as media]
    [app.rpc :as-alias rpc]
-   [app.rpc.climit :as climit]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
-   [app.rpc.queries.profile :as profile]
    [app.rpc.quotes :as quotes]
    [app.storage :as sto]
    [app.tokens :as tokens]
@@ -572,7 +571,7 @@
 
 ;; --- Mutation: Update Team Photo
 
-(declare ^:private upload-photo)
+(declare upload-photo)
 (declare ^:private update-team-photo)
 
 (s/def ::file ::media/upload)
@@ -592,7 +591,7 @@
   [{:keys [::db/pool ::sto/storage ::wrk/executor] :as cfg} {:keys [profile-id team-id] :as params}]
   (p/let [team  (px/with-dispatch executor
                   (retrieve-team pool profile-id team-id))
-          photo (upload-photo cfg params)]
+          photo (profile/upload-photo cfg params)]
 
     ;; Mark object as touched for make it ellegible for tentative
     ;; garbage collection.
@@ -606,36 +605,6 @@
 
     (assoc team :photo-id (:id photo))))
 
-(defn upload-photo
-  [{:keys [::sto/storage ::wrk/executor climit] :as cfg} {:keys [file]}]
-  (letfn [(get-info [content]
-            (climit/with-dispatch (:process-image climit)
-              (media/run {:cmd :info :input content})))
-
-          (generate-thumbnail [info]
-            (climit/with-dispatch (:process-image climit)
-              (media/run {:cmd :profile-thumbnail
-                          :format :jpeg
-                          :quality 85
-                          :width 256
-                          :height 256
-                          :input info})))
-
-          ;; Function responsible of calculating cryptographyc hash of
-          ;; the provided data.
-          (calculate-hash [data]
-            (px/with-dispatch executor
-              (sto/calculate-hash data)))]
-
-    (p/let [info    (get-info file)
-            thumb   (generate-thumbnail info)
-            hash    (calculate-hash (:data thumb))
-            content (-> (sto/content (:data thumb) (:size thumb))
-                        (sto/wrap-with-hash hash))]
-      (sto/put-object! storage {::sto/content content
-                                ::sto/deduplicate? true
-                                :bucket "profile"
-                                :content-type (:mtype thumb)}))))
 
 ;; --- Mutation: Create Team Invitation
 

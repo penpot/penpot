@@ -12,8 +12,8 @@
    [app.common.pprint :as p]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.rpc.commands.auth :as cmd.auth]
-   [app.rpc.queries.profile :as profile]
+   [app.rpc.commands.auth :as auth]
+   [app.rpc.commands.profile :as profile]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
    [app.util.blob :as blob]
@@ -73,7 +73,7 @@
         pool    (:app.db/pool system)
         profile (profile/get-profile-by-email pool email)]
 
-    (cmd.auth/send-email-verification! pool sprops profile)
+    (auth/send-email-verification! pool sprops profile)
     :email-sent))
 
 (defn mark-profile-as-active!

@@ -13,8 +13,8 @@
    [app.db :as db]
    [app.emails :as eml]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.profile :as profile]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
