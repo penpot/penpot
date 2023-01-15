@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-04 18:22+0000\n"
-"Last-Translator: Antonio <antonio@fesomia.cat>\n"
-"Language-Team: Catalan "
-"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
+"PO-Revision-Date: 2023-01-16 14:50+0000\n"
+"Last-Translator: Rubén <rubenx@mail.com>\n"
+"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
+"ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.15.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2023,9 +2023,6 @@ msgstr ""
 msgid "onboarding.slide.3.title"
 msgstr "Una font compartida de veritat"
 
-msgid "onboarding.team.start.button"
-msgstr "Comenceu de seguida"
-
 msgid "onboarding.templates.subtitle"
 msgstr "Aquí teniu algunes plantilles."
 
@@ -3554,16 +3551,8 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Opcions avançades"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "Amplada mín."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title"
 msgstr "Redimensió de l'element"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
-msgstr "Amplada mínima"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
@@ -4388,3 +4377,10 @@ msgstr "Actualitza"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Feu clic per a tancar el camí"
+
+msgid "errors.profile-blocked"
+msgstr "El perfil està bloquejat"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "Convida membres a l'equip"
