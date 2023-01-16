@@ -136,10 +136,10 @@
       (t/is (nil? (:error out))))
 
     ;; query files after profile soft deletion
-    (let [params {::th/type :project-files
-                  :project-id (:default-project-id prof)
-                  :profile-id (:id prof)}
-          out    (th/query! params)]
+    (let [params {::th/type :get-project-files
+                  ::rpc/profile-id (:id prof)
+                  :project-id (:default-project-id prof)}
+          out    (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))

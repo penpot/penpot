@@ -16,7 +16,7 @@
    [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.rpc.commands.binfile :as binf]
-   [app.rpc.commands.files.create :refer [create-file]]
+   [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.profile :as profile]
    [app.util.blob :as blob]
    [app.util.template :as tmpl]

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.rpc.commands.files.create
+(ns app.rpc.commands.files-create
   (:require
    [app.common.data :as d]
    [app.common.files.features :as ffeat]

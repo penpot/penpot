@@ -300,7 +300,6 @@
   (let [cfg (assoc cfg ::type "query" ::metrics-id :rpc-query-timing)]
     (->> (sv/scan-ns
           'app.rpc.queries.projects
-          'app.rpc.queries.files
           'app.rpc.queries.teams
           'app.rpc.queries.profile
           'app.rpc.queries.viewer
@@ -314,7 +313,6 @@
     (->> (sv/scan-ns
           'app.rpc.mutations.media
           'app.rpc.mutations.profile
-          'app.rpc.mutations.files
           'app.rpc.mutations.projects
           'app.rpc.mutations.teams
           'app.rpc.mutations.fonts
@@ -334,9 +332,9 @@
           'app.rpc.commands.comments
           'app.rpc.commands.demo
           'app.rpc.commands.files
-          'app.rpc.commands.files.create
-          'app.rpc.commands.files.temp
-          'app.rpc.commands.files.update
+          'app.rpc.commands.files-create
+          'app.rpc.commands.files-temp
+          'app.rpc.commands.files-update
           'app.rpc.commands.ldap
           'app.rpc.commands.management
           'app.rpc.commands.media

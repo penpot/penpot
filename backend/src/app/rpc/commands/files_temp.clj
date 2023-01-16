@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.rpc.commands.files.temp
+(ns app.rpc.commands.files-temp
   (:require
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
@@ -13,8 +13,8 @@
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
-   [app.rpc.commands.files.create :as files.create]
-   [app.rpc.commands.files.update :as files.update]
+   [app.rpc.commands.files-create :refer [create-file]]
+   [app.rpc.commands.files-update :as-alias files.update]
    [app.rpc.doc :as-alias doc]
    [app.rpc.queries.projects :as proj]
    [app.util.blob :as blob]
@@ -40,7 +40,7 @@
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)
-    (files.create/create-file conn (assoc params :profile-id profile-id :deleted-at (dt/in-future {:days 1})))))
+    (create-file conn (assoc params :profile-id profile-id :deleted-at (dt/in-future {:days 1})))))
 
 ;; --- MUTATION COMMAND: update-temp-file
 

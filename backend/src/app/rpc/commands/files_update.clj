@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.rpc.commands.files.update
+(ns app.rpc.commands.files-update
   (:require
    [app.common.exceptions :as ex]
    [app.common.files.features :as ffeat]
