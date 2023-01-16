@@ -15,6 +15,7 @@
    [app.common.spec :as us]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.loggers.audit :as-alias audit]
@@ -43,7 +44,13 @@
     "storage/pointer-map"
     "components/v2"})
 
-(def default-features #{})
+(def default-features
+  (cond-> #{}
+    (contains? cf/flags :feature-storage-pointer-map)
+    (conj "storage/pointer-map")
+
+    (contains? cf/flags :feature-storage-objects-map)
+    (conj "storage/objects-map")))
 
 ;; --- SPECS
 

@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.features :as ffeat]
    [app.common.logging :as l]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
@@ -28,6 +29,7 @@
    [app.tasks.file-gc]
    [app.util.blob :as blob]
    [app.util.fressian :as fres]
+   [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -607,12 +609,23 @@
     (vswap! *state* update :index update-index files)
     (vswap! *state* assoc :version version :files files)))
 
+(defn- postprocess-file
+  [data]
+  (let [omap-wrap ffeat/*wrap-with-objects-map-fn*
+        pmap-wrap ffeat/*wrap-with-pointer-map-fn*]
+    (-> data
+        (update :pages-index update-vals #(update % :objects omap-wrap))
+        (update :pages-index update-vals pmap-wrap)
+        (update :components update-vals #(update % :objects omap-wrap))
+        (update :components pmap-wrap))))
+
 (defmethod read-section :v1/files
   [{:keys [conn ::input ::migrate? ::project-id ::timestamp ::overwrite?]}]
   (doseq [expected-file-id (-> *state* deref :files)]
-    (let [file    (read-obj! input)
-          media'  (read-obj! input)
-          file-id (:id file)]
+    (let [file     (read-obj! input)
+          media'   (read-obj! input)
+          file-id  (:id file)
+          features files/default-features]
 
       (when (not= file-id expected-file-id)
         (ex/raise :type :validation
@@ -627,33 +640,42 @@
       (l/debug :hint "update media references" ::l/async false)
       (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
 
-      (l/debug :hint "processing file" :file-id file-id ::l/async false)
+      (l/debug :hint "processing file" :file-id file-id ::features features ::l/async false)
 
-      (let [file-id' (lookup-index file-id)
-            data     (-> (:data file)
-                         (assoc :id file-id')
-                         (cond-> migrate? (pmg/migrate-data))
-                         (update :pages-index relink-shapes)
-                         (update :components relink-shapes)
-                         (update :media relink-media))
+      (binding [ffeat/*current* features
+                ffeat/*wrap-with-objects-map-fn* (if (features "storage/objects-map") omap/wrap identity)
+                ffeat/*wrap-with-pointer-map-fn* (if (features "storage/pointer-map") pmap/wrap identity)
+                pmap/*tracked* (atom {})]
 
-            params  {:id file-id'
-                     :project-id project-id
-                     :name (:name file)
-                     :revn (:revn file)
-                     :is-shared (:is-shared file)
-                     :data (blob/encode data)
-                     :created-at timestamp
-                     :modified-at timestamp}]
+        (let [file-id' (lookup-index file-id)
+              data     (-> (:data file)
+                           (assoc :id file-id')
+                           (cond-> migrate? (pmg/migrate-data))
+                           (update :pages-index relink-shapes)
+                           (update :components relink-shapes)
+                           (update :media relink-media)
+                           (postprocess-file))
 
-        (l/debug :hint "create file" :id file-id' ::l/async false)
+              params  {:id file-id'
+                       :project-id project-id
+                       :features (db/create-array conn "text" features)
+                       :name (:name file)
+                       :revn (:revn file)
+                       :is-shared (:is-shared file)
+                       :data (blob/encode data)
+                       :created-at timestamp
+                       :modified-at timestamp}]
 
-        (if overwrite?
-          (create-or-update-file conn params)
-          (db/insert! conn :file params))
+          (l/debug :hint "create file" :id file-id' ::l/async false)
 
-        (when overwrite?
-          (db/delete! conn :file-thumbnail {:file-id file-id'}))))))
+          (if overwrite?
+            (create-or-update-file conn params)
+            (db/insert! conn :file params))
+
+          (files/persist-pointers! conn file-id')
+
+          (when overwrite?
+            (db/delete! conn :file-thumbnail {:file-id file-id'})))))))
 
 (defmethod read-section :v1/rels
   [{:keys [conn ::input ::timestamp]}]
