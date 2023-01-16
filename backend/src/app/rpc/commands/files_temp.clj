@@ -15,8 +15,8 @@
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.files-update :as-alias files.update]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.projects :as proj]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -39,7 +39,7 @@
   {::doc/added "1.17"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
-    (proj/check-edition-permissions! conn profile-id project-id)
+    (projects/check-edition-permissions! conn profile-id project-id)
     (create-file conn (assoc params :profile-id profile-id :deleted-at (dt/in-future {:days 1})))))
 
 ;; --- MUTATION COMMAND: update-temp-file

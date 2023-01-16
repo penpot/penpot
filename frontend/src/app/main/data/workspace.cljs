@@ -267,7 +267,7 @@
 
         (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
                      (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
-                     (rp/query! :project {:id project-id})
+                     (rp/cmd! :get-project {:id project-id})
                      (rp/cmd! :get-team-users {:file-id file-id})
                      (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
              (rx/take 1)
@@ -1564,7 +1564,7 @@
                                  (into (d/ordered-set)))
                   undo-id (js/Symbol)]
 
-              (rx/of (dwu/start-undo-transaction undo-id) 
+              (rx/of (dwu/start-undo-transaction undo-id)
                      (dch/commit-changes changes)
                      (dws/select-shapes selected)
                      (ptk/data-event :layout/update [frame-id])

@@ -15,9 +15,9 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
-   [app.rpc.queries.projects :as proj]
    [app.rpc.quotes :as quotes]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
@@ -82,7 +82,7 @@
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
-    (proj/check-edition-permissions! conn profile-id project-id)
+    (projects/check-edition-permissions! conn profile-id project-id)
     (let [team-id (files/get-team-id conn project-id)
           params  (assoc params :profile-id profile-id)]
 

@@ -339,6 +339,7 @@
           'app.rpc.commands.management
           'app.rpc.commands.media
           'app.rpc.commands.profile
+          'app.rpc.commands.projects
           'app.rpc.commands.search
           'app.rpc.commands.teams
           'app.rpc.commands.verify-token
@@ -356,8 +357,7 @@
                 ::sto/storage
                 ::mtx/metrics
                 ::main/props
-                ::wrk/executor
-                ]
+                ::wrk/executor]
           :opt [::climit
                 ::rlimit]
           :req-un [::db/pool]))

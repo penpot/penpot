@@ -207,7 +207,7 @@
      (mf/deps show?)
      (fn []
        (when show?
-         (->> (rp/query! :all-projects)
+         (->> (rp/cmd! :get-all-projects)
               (rx/map group-by-team)
               (rx/subs #(when (mf/ref-val mounted-ref)
                           (reset! teams %)))))))
