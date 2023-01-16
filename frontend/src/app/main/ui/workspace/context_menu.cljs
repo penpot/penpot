@@ -372,27 +372,25 @@
         has-frame?         (->> shapes (d/seek cph/frame-shape?))
         is-frame?          (and single? has-frame?)
         is-flex-container? (and is-frame? (= :flex (:layout (first shapes))))
-        has-group?         (->> shapes (d/seek cph/group-shape?))
-        is-group?          (and single? has-group?)
         ids                (->> shapes (map :id))
         add-flex           #(st/emit! (if is-frame?
                                         (dwsl/create-layout-from-id ids :flex)
                                         (dwsl/create-layout-from-selection :flex)))
         remove-flex        #(st/emit! (dwsl/remove-layout ids))]
-    (cond
-      (or single? (and is-frame? (not is-flex-container?)) is-group?)
-      [:*
-       [:& menu-separator]
-       [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
-                       :shortcut (sc/get-tooltip :toggle-layout-flex)
-                       :on-click add-flex}]]
 
-      is-flex-container?
-      [:*
-       [:& menu-separator]
-       [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
-                       :shortcut (sc/get-tooltip :toggle-layout-flex)
-                       :on-click remove-flex}]])))
+    [:*
+     (when (not is-flex-container?)
+       [:div
+        [:& menu-separator]
+        [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
+                        :shortcut (sc/get-tooltip :toggle-layout-flex)
+                        :on-click add-flex}]])
+     (when  is-flex-container?
+       [:div
+        [:& menu-separator]
+        [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
+                        :shortcut (sc/get-tooltip :toggle-layout-flex)
+                        :on-click remove-flex}]])]))
 
 (mf/defc context-menu-component
   [{:keys [shapes]}]
