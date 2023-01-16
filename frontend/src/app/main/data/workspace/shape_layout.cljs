@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctc]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
@@ -153,9 +154,11 @@
             selected-shapes (map (d/getf objects) selected)
             single?         (= (count selected-shapes) 1)
             has-group?      (->> selected-shapes (d/seek cph/group-shape?))
-            is-group?       (and single? has-group?)]
+            is-group?       (and single? has-group?)
+            has_component?  (some true? (map ctc/instance-root? selected-shapes))
+            is_component?   (and single? has_component?)]
 
-        (if is-group?
+        (if (and (not is_component?) is-group?)
           (let [new-shape-id (uuid/next)
                 parent-id    (:parent-id (first selected-shapes))
                 shapes-ids   (:shapes (first selected-shapes))
