@@ -68,6 +68,7 @@
   [{:keys [padding type]}]
   (let [values (fm/format-padding-margin-shorthand (vals padding))]
     [:div.attributes-value
+     {:title (str (str/join "px " (vals values)) "px")}
      (for [[k v] values]
        [:span.items {:key (str type "-" k "-" v)} v "px"])]))
 
