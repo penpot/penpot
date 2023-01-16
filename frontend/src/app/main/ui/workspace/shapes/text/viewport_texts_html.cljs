@@ -26,7 +26,6 @@
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
-   [app.util.timers :as ts]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -78,27 +77,26 @@
     (st/emit! (dwt/clean-text-modifier id))))
 
 (defn- update-text-modifier
-  [{:keys [grow-type id]} node]
-  (ts/raf
-   #(p/let [position-data (tsp/calc-position-data id)
-            props {:position-data position-data}
+  [{:keys [grow-type id] :as shape} node]
 
-            props
-            (if (contains? #{:auto-height :auto-width} grow-type)
-              (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
-                    width (mth/ceil width)
-                    height (mth/ceil height)]
-                (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
-                  (cond-> props
-                    (= grow-type :auto-width)
-                    (assoc :width width)
+  (p/let [position-data (tsp/calc-position-data id)
+          props {:position-data position-data}
 
-                    (or (= grow-type :auto-height) (= grow-type :auto-width))
-                    (assoc :height height))
-                  props))
-              props)]
+          props
+          (if (contains? #{:auto-height :auto-width} grow-type)
+            (let [{:keys [width height]} (-> (dom/query node ".paragraph-set") (dom/get-client-size))
+                  width (mth/ceil width)
+                  height (mth/ceil height)]
+              (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
+                (cond-> props
+                  (= grow-type :auto-width)
+                  (assoc :width width)
 
-      (st/emit! (dwt/update-text-modifier id props)))))
+                  (or (= grow-type :auto-height) (= grow-type :auto-width))
+                  (assoc :height height))
+                props))
+            props)]
+    (st/emit! (dwt/update-text-modifier id props))))
 
 (mf/defc text-container
   {::mf/wrap-props false
@@ -214,15 +212,15 @@
                            :on-update handle-update-shape}])]))
 
 (mf/defc viewport-text-editing
-  {::mf/wrap-props false}
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
   [props]
 
   (let [shape   (obj/get props "shape")
 
-        ;; Join current objects with the state of the editor
-        editor-state
-        (-> (mf/deref refs/workspace-editor-state)
-            (get (:id shape)))
+        workspace-editor-state (mf/deref refs/workspace-editor-state)
+
+        editor-state (get workspace-editor-state (:id shape))
 
         text-modifier-ref
         (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
@@ -279,7 +277,12 @@
         text-shapes
         (hooks/use-equal-memo text-shapes)
 
-        editing-shape (get text-shapes edition)
+        editing-shape (mf/use-memo
+                       (mf/deps text-shapes edition)
+                       #(get text-shapes edition))
+
+        editing-shape
+        (hooks/use-equal-memo editing-shape)
 
         text-shapes-changes
         (mf/use-memo

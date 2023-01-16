@@ -129,8 +129,8 @@
   (let [auto-width? (= :auto-width (:grow-type shape))
         auto-height? (= :auto-height (:grow-type shape))
 
-        changed-width? (not (mth/close? (:width shape) (:width old-shape)))
-        changed-height? (not (mth/close? (:height shape) (:height old-shape)))
+        changed-width? (> (mth/abs (- (:width shape) (:width old-shape))) 0.1)
+        changed-height? (> (mth/abs (- (:height shape) (:height old-shape))) 0.1)
 
         change-to-fixed? (or (and auto-width? (or changed-height? changed-width?))
                              (and auto-height? changed-height?))]
@@ -262,8 +262,7 @@
         objects
         (-> objects
             (apply-text-modifiers (get state :workspace-text-modifier)))]
-
-    (gsh/set-objects-modifiers  old-modif-tree modif-tree objects ignore-constraints snap-pixel?)))
+    (gsh/set-objects-modifiers old-modif-tree modif-tree objects ignore-constraints snap-pixel?)))
 
 (defn update-modifiers
   ([modif-tree]
