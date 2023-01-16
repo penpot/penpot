@@ -706,7 +706,7 @@ msgid "errors.webhooks.timeout"
 msgstr "Timeout"
 
 msgid "errors.webhooks.connection"
-msgstr "Connection error, url not reacheable"
+msgstr "Connection error, URL not reacheable"
 
 msgid "errors.webhooks.last-delivery"
 msgstr "Last delivery was not successfull."
@@ -3451,7 +3451,7 @@ msgstr "Open overlay: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
-msgstr "Open url"
+msgstr "Open URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-out"
@@ -3990,7 +3990,7 @@ msgstr "Selection text"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.titlecase"
-msgstr "Title Case"
+msgstr "Title case"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
