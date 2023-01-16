@@ -396,12 +396,13 @@
   (ptk/reify ::update-text-modifier
     ptk/WatchEvent
     (watch [_ state _]
-      (let [shape (wsh/lookup-shape state id)
+      (let [modifiers (get-in (:workspace-modifiers state) [id :modifiers])
 
-            text-modifier (dm/get-in state [:workspace-text-modifier id])
+            shape (-> (wsh/lookup-shape state id)
+                      (gsh/transform-shape modifiers))
 
-            current-width (or (:width text-modifier) (:width shape))
-            current-height (or (:height text-modifier) (:height shape))]
+            current-width (:width shape)
+            current-height (:height shape)]
         (rx/concat
          (rx/of (update-text-modifier-state id props))
 
@@ -411,7 +412,8 @@
                       (not (mth/close? (:height props) current-height))))
 
            (let [modif-tree (dwm/create-modif-tree [id] (ctm/reflow-modifiers))]
-             (rx/of (dwm/update-modifiers modif-tree)))
+             (->> (rx/of (dwm/update-modifiers modif-tree false true))
+                  (rx/observe-on :async)))
            (rx/empty)))))))
 
 (defn clean-text-modifier
