@@ -2559,6 +2559,12 @@ msgstr "Distribute vertically"
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom to selected"
 
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Zoom lense increase"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Zoom lense decrease"
+
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"

@@ -194,3 +194,14 @@
                  (rx/dedupe))]
     (rx/subscribe-with ob sub)
     sub))
+
+(defonce keyboard-z
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter keyboard-event?)
+                 (rx/filter kbd/z?)
+                 (rx/filter (comp not kbd/editing?))
+                 (rx/map #(= :down (:type %)))
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
+    sub))

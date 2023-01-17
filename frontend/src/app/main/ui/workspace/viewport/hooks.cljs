@@ -71,13 +71,18 @@
        ;; We schedule the event so it fires after `initialize-page` event
        (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
 
-(defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? workspace-read-only?]
+(defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?]
   (mf/use-effect
-   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? workspace-read-only?)
+   (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?)
    (fn []
      (let [show-pen? (or (= drawing-tool :path)
                          (and drawing-path?
                               (not= drawing-tool :curve)))
+           show-zoom? (and @z?
+                           (not @space?)
+                           (not drawing-path?)
+                           (not drawing-tool))
+
            new-cursor
            (cond
              (and @mod? @space?)             (utils/get-cursor :zoom)
@@ -86,6 +91,8 @@
              (= drawing-tool :frame)         (utils/get-cursor :create-artboard)
              (= drawing-tool :rect)          (utils/get-cursor :create-rectangle)
              (= drawing-tool :circle)        (utils/get-cursor :create-ellipse)
+             (and show-zoom? (not @alt?))    (utils/get-cursor :zoom-in)
+             (and show-zoom? @alt?)          (utils/get-cursor :zoom-out)
              show-pen?                       (utils/get-cursor :pen)
              (= drawing-tool :curve)         (utils/get-cursor :pencil)
              drawing-tool                    (utils/get-cursor :create-shape)
@@ -98,10 +105,11 @@
        (when (not= @cursor new-cursor)
          (reset! cursor new-cursor))))))
 
-(defn setup-keyboard [alt? mod? space?]
+(defn setup-keyboard [alt? mod? space? z?]
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
   (hooks/use-stream ms/keyboard-mod #(reset! mod? %))
-  (hooks/use-stream ms/keyboard-space #(reset! space? %)))
+  (hooks/use-stream ms/keyboard-space #(reset! space? %))
+  (hooks/use-stream ms/keyboard-z #(reset! z? %)))
 
 (defn group-empty-space?
   "Given a group `group-id` check if `hover-ids` contains any of its children. If it doesn't means

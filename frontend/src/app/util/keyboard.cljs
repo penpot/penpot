@@ -6,12 +6,18 @@
 
 (ns app.util.keyboard
   (:require
-   [app.config :as cfg]))
+   [app.config :as cfg]
+   [cuerdas.core :as str]))
 
 (defn is-key?
   [^string key]
   (fn [^js e]
     (= (.-key e) key)))
+
+(defn is-key-ignore-case?
+  [^string key]
+  (fn [^js e]
+    (= (str/upper (.-key e)) (str/upper key))))
 
 (defn ^boolean alt?
   [^js event]
@@ -38,6 +44,7 @@
 (def esc? (is-key? "Escape"))
 (def enter? (is-key? "Enter"))
 (def space? (is-key? " "))
+(def z? (is-key-ignore-case? "z"))
 (def up-arrow? (is-key? "ArrowUp"))
 (def down-arrow? (is-key? "ArrowDown"))
 (def left-arrow? (is-key? "ArrowLeft"))

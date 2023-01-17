@@ -17,6 +17,7 @@
 - Add copy invitation link to the invitation options [Taiga #4213](https://tree.taiga.io/project/penpot/us/4213)
 - Dynamic alignment only in sight [Taiga #3537](https://tree.taiga.io/project/penpot/us/3537)
 - Improve naming of layers [Taiga #4036](https://tree.taiga.io/project/penpot/us/4036)
+- Add zoom lense [Taiga #4691](https://tree.taiga.io/project/penpot/us/4691)
 
 ### :bug: Bugs fixed
 
