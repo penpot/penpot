@@ -254,7 +254,7 @@
 
 (sv/defmethod ::clone-file-media-object
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (-> (assoc cfg :conn conn)

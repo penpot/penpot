@@ -174,7 +174,7 @@
 (sv/defmethod ::create-project
   {::doc/added "1.18"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
     (quotes/check-quote! conn {::quotes/id ::quotes/projects-per-team
@@ -212,7 +212,7 @@
    ::webhooks/batch-timeout (dt/duration "5s")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id team-id is-pinned] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id team-id is-pinned] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
     (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
@@ -229,7 +229,7 @@
 (sv/defmethod ::rename-project
   {::doc/added "1.18"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id name] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id name] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
     (let [project (db/get-by-id conn :project id ::db/for-update? true)]
@@ -253,7 +253,7 @@
 (sv/defmethod ::delete-project
   {::doc/added "1.18"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
     (let [project (db/update! conn :project

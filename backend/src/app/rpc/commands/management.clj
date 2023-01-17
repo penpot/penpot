@@ -46,7 +46,7 @@
   "Duplicate a single file in the same team."
   {::doc/added "1.16"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (duplicate-file conn (assoc params :profile-id profile-id))))
 
@@ -221,7 +221,7 @@
   "Duplicate an entire project with all the files"
   {::doc/added "1.16"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [::db/pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (duplicate-project conn (assoc params :profile-id (::rpc/profile-id params)))))
 
@@ -329,7 +329,7 @@
   "Move a set of files from one project to other."
   {::doc/added "1.16"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (move-files conn (assoc params :profile-id profile-id))))
 
@@ -369,7 +369,7 @@
   "Move projects between teams."
   {::doc/added "1.16"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (move-project conn (assoc params :profile-id profile-id))))
 
@@ -386,7 +386,7 @@
   "Clone into the specified project the template by its id."
   {::doc/added "1.16"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)
         (clone-template (assoc params :profile-id profile-id)))))

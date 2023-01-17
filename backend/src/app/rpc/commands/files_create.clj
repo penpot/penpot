@@ -80,7 +80,7 @@
 (sv/defmethod ::create-file
   {::doc/added "1.17"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-edition-permissions! conn profile-id project-id)
     (let [team-id (files/get-team-id conn project-id)

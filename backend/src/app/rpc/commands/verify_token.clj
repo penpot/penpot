@@ -35,7 +35,7 @@
 (sv/defmethod ::verify-token
   {::rpc/auth false
    ::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [token] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [token] :as params}]
   (db/with-atomic [conn pool]
     (let [claims (tokens/verify (::main/props cfg) {:token token})
           cfg    (assoc cfg :conn conn)]

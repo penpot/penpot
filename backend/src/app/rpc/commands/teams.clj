@@ -83,7 +83,7 @@
 
 (sv/defmethod ::get-teams
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (with-open [conn (db/open pool)]
     (retrieve-teams conn profile-id)))
 
@@ -128,7 +128,7 @@
 
 (sv/defmethod ::get-team
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id]}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
   (with-open [conn (db/open pool)]
     (retrieve-team conn profile-id id)))
 
@@ -440,7 +440,7 @@
 
 (sv/defmethod ::leave-team
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (leave-team conn (assoc params :profile-id profile-id))))
 
@@ -456,7 +456,7 @@
 
 (sv/defmethod ::delete-team
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id id)]
       (when-not (:is-owner perms)
@@ -552,7 +552,7 @@
 
 (sv/defmethod ::delete-team-member
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id team-id)]
       (when-not (or (:is-owner perms)
@@ -706,7 +706,7 @@
   "A rpc call that allow to send a single or multiple invitations to
   join the team."
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id email emails role] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [perms    (get-permissions conn profile-id team-id)
           profile  (db/get-by-id conn :profile profile-id)
@@ -755,7 +755,7 @@
 
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id emails role] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id emails role] :as params}]
   (db/with-atomic [conn pool]
     (let [team     (create-team conn params)
           profile  (db/get-by-id conn :profile profile-id)
@@ -826,7 +826,7 @@
 
 (sv/defmethod ::update-team-invitation-role
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id email role] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email role] :as params}]
   (db/with-atomic [conn pool]
     (let [perms    (get-permissions conn profile-id team-id)]
 
@@ -847,7 +847,7 @@
 
 (sv/defmethod ::delete-team-invitation
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id team-id)]
 

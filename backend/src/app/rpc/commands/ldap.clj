@@ -77,7 +77,7 @@
                             ::audit/profile-id (:id profile)}))))))
 
 (defn- login-or-register
-  [{:keys [pool] :as cfg} info]
+  [{:keys [::db/pool] :as cfg} info]
   (db/with-atomic [conn pool]
     (or (some->> (:email info)
                  (profile/get-profile-by-email conn)

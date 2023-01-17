@@ -37,7 +37,7 @@
 
 (sv/defmethod ::create-temp-file
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-edition-permissions! conn profile-id project-id)
     (create-file conn (assoc params :profile-id profile-id :deleted-at (dt/in-future {:days 1})))))
@@ -65,7 +65,7 @@
 
 (sv/defmethod ::update-temp-file
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (update-temp-file conn (assoc params :profile-id profile-id))
     nil))
@@ -102,7 +102,7 @@
 
 (sv/defmethod ::persist-temp-file
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (persist-temp-file conn params)))

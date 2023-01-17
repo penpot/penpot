@@ -476,7 +476,7 @@
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])))))
 
 (defmethod write-section :v1/metadata
-  [{:keys [pool ::output ::file-ids ::include-libraries?]}]
+  [{:keys [::db/pool ::output ::file-ids ::include-libraries?]}]
   (let [libs  (when include-libraries?
                 (retrieve-libraries pool file-ids))
         files (into file-ids libs)]
@@ -484,7 +484,7 @@
     (vswap! *state* assoc :files files)))
 
 (defmethod write-section :v1/files
-  [{:keys [pool ::output ::embed-assets?]}]
+  [{:keys [::db/pool ::output ::embed-assets?]}]
 
   ;; Initialize SIDS with empty vector
   (vswap! *state* assoc :sids [])
@@ -508,7 +508,7 @@
       (vswap! *state* update :sids into storage-object-id-xf media))))
 
 (defmethod write-section :v1/rels
-  [{:keys [pool  ::output ::include-libraries?]}]
+  [{:keys [::db/pool ::output ::include-libraries?]}]
   (let [rels  (when include-libraries?
                 (retrieve-library-relations pool (-> *state* deref :files)))]
     (l/debug :hint "found rels" :total (count rels) ::l/async false)
@@ -920,7 +920,7 @@
   "Import a penpot file in a binary format."
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-read-permissions! conn profile-id project-id)
     (let [ids (import! (assoc cfg

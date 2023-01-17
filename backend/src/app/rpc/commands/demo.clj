@@ -29,7 +29,7 @@
   {::rpc/auth false
    ::doc/added "1.15"
    ::doc/changes ["1.15" "This method is migrated from mutations to commands."]}
-  [{:keys [pool] :as cfg} _]
+  [{:keys [::db/pool] :as cfg} _]
 
   (when-not (contains? cf/flags :demo-users)
     (ex/raise :type :validation
