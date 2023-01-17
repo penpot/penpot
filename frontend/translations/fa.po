@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-12-17 16:49+0000\n"
+"PO-Revision-Date: 2023-01-18 05:48+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -2916,3 +2916,75 @@ msgstr "دارایی‌های رنگ"
 
 msgid "workspace.undo.entry.single.media"
 msgstr "دارایی گرافیکی"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "حرکت افقی"
+
+#, fuzzy
+msgid "workspace.shape.menu.intersection"
+msgstr "تقاطع"
+
+msgid "shortcuts.flip-vertical"
+msgstr "حرکت عمودی"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "حرکت افقی"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.team-hero.title"
+msgstr "تیم!"
+
+#, fuzzy
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "مشکلی در ایمپورت کردن قالب وجود داشت. قالب ایمپورت نشد."
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "تنظیم بعنوان تصویر کوچک"
+
+msgid "errors.profile-blocked"
+msgstr "پروفایل مسدود شده"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "بازیابی کامپوننت اصلی"
+
+msgid "errors.bad-font-plural"
+msgstr "فونت‌های %s بارگیری نشدند"
+
+msgid "workspace.sidebar.expand"
+msgstr "گسترش نوار کناری"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+#, fuzzy
+msgid "workspace.shape.menu.unmask"
+msgstr "حذف ماسک"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.modify"
+msgstr "اصلاح شد %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+#, fuzzy
+msgid "workspace.undo.empty"
+msgstr "هیچ تاریخچه تغییری تاکنون وجود ندارد"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
+#, fuzzy
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "ویژگی‌های SVG ایمپورت شد"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "حذف تصویر کوچک"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, fuzzy
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "نمایش در پنل دارایی"
+
+msgid "errors.bad-font"
+msgstr "فونت %s بارگیری نشد"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "تزیین متن"
