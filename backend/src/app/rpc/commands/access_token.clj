@@ -18,6 +18,12 @@
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
 
+(defn- decode-row
+  [{:keys [perms] :as row}]
+  (cond-> row
+    (db/pgarray? perms "text")
+    (assoc :perms (db/decode-pgarray perms #{}))))
+
 (defn- create-access-token
   [{:keys [::conn ::main/props]} profile-id name perms]
   (let [created-at (dt/now)
@@ -58,7 +64,24 @@
       (quotes/check-quote! conn
                            {::quotes/id ::quotes/access-tokens-per-profile
                             ::quotes/profile-id profile-id})
-      (create-access-token cfg profile-id name perms))))
+      (-> (create-access-token cfg profile-id name perms)
+          (decode-row)))))
 
+(s/def ::delete-access-token
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::us/id]))
 
+(sv/defmethod ::delete-access-token
+  {::doc/added "1.18"}
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id id]}]
+  (db/delete! pool :access-token {:id id :profile-id profile-id})
+  nil)
 
+(s/def ::get-access-tokens
+  (s/keys :req [::rpc/profile-id]))
+
+(sv/defmethod ::get-access-tokens
+  {::doc/added "1.18"}
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id]}]
+  (->> (db/query pool :access-token {:profile-id profile-id})
+       (mapv decode-row)))

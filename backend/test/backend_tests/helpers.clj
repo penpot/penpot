@@ -8,6 +8,7 @@
   (:require
    [app.auth]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.flags :as flags]
    [app.common.pages :as cp]
    [app.common.pprint :as pp]
@@ -320,6 +321,11 @@
 (defn command!
   [{:keys [::type] :as data}]
   (let [method-fn (get-in *system* [:app.rpc/methods :commands type])]
+    (when-not method-fn
+      (ex/raise :type :assertion
+                :code :rpc-method-not-found
+                :hint (str/ffmt "rpc method '%' not found" (name type))))
+
     ;; (app.common.pprint/pprint (:app.rpc/methods *system*))
     (try-on! (method-fn (-> data
                             (dissoc ::type)
