@@ -265,7 +265,8 @@
           (move-objects [objects]
             (let [valid?   (every? (partial is-valid-move? objects) shapes)
                   parent   (get objects parent-id)
-                  index (if (nil? after-shape) index (inc (d/index-of (:shapes parent) after-shape)))
+                  after-shape-index (d/index-of (:shapes parent) after-shape)
+                  index (if (nil? after-shape-index) index (inc after-shape-index))
                   frame-id (if (= :frame (:type parent))
                              (:id parent)
                              (:frame-id parent))]
