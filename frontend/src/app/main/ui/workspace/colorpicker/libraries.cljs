@@ -18,7 +18,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc libraries
-  [{:keys [on-select-color on-add-library-color disable-gradient disable-opacity]}]
+  [{:keys [state on-select-color on-add-library-color disable-gradient disable-opacity]}]
   (let [selected         (h/use-shared-state mdc/colorpicker-selected-broadcast-key :recent)
         current-colors   (mf/use-state [])
 
@@ -88,4 +88,4 @@
         [:& color-bullet
          {:key (dm/str "color-" idx)
           :color color
-          :on-click on-select-color}])]]))
+          :on-click (partial on-select-color state)}])]]))
