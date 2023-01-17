@@ -172,5 +172,5 @@
               {:key (str (:id @state) "-" index)
                :class (when (= (str value) (-> @state :current-value)) "is-selected")
                :on-click (select-item value)}
-              [:span.checked-element-value label]
-              [:span.check-icon i/tick]])))]]]))
+              [:span.check-icon i/tick]
+              [:span.checked-element-value label]])))]]]))

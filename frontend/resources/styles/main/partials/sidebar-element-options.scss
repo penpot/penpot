@@ -348,11 +348,23 @@
       cursor: pointer;
       font-size: $fs14;
       display: flex;
+      justify-content: start;
       padding: $size-2;
 
       span {
         color: $color-gray-20;
-        margin-left: auto;
+        display: flex;
+        justify-content: start;
+        align-items: center;
+        &:not(:first-child) {
+          margin-left: 10px;
+        }
+      }
+
+      .check-icon {
+        min-width: 25px;
+        color: $color-gray-20;
+        justify-content: center;
       }
 
       &.dropdown-separator:not(:last-child) {
@@ -375,11 +387,8 @@
 
   & li.checked-element {
     padding-left: 0;
-    display: flex;
-    justify-content: space-around;
 
     & span {
-      margin: 0;
       color: $color-black;
     }
 
