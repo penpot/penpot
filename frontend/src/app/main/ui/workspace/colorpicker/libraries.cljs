@@ -7,14 +7,18 @@
 (ns app.main.ui.workspace.colorpicker.libraries
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.events :as ev]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.hooks :as h]
+   [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.timers :as ts]
    [rumext.v2 :as mf]))
 
 (mf/defc libraries
@@ -81,7 +85,12 @@
          i/plus])
 
       [:div.color-bullet.button {:style {:background-color "var(--color-white)"}
-                                 :on-click #(st/emit! (mdc/show-palette @selected))}
+                                 :on-click(fn []
+                                            (r/set-resize-type! :bottom)
+                                            (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
+                                            (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
+                                                                        (-> (dw/toggle-layout-flag :colorpalette)
+                                                                            (vary-meta assoc ::ev/origin "workspace-colorpicker")))))}
        i/palette]
 
       (for [[idx color] (map-indexed vector @current-colors)]
