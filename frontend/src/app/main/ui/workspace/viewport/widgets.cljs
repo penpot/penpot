@@ -22,6 +22,7 @@
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
+   [app.util.timers :as ts]
    [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
@@ -86,7 +87,8 @@
 
 
 (mf/defc frame-title
-  {::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo
+              #(mf/deferred % ts/raf)]}
   [{:keys [frame selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
   (let [workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         on-mouse-down
