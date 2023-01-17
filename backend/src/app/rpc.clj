@@ -344,6 +344,7 @@
           'app.rpc.commands.search
           'app.rpc.commands.teams
           'app.rpc.commands.verify-token
+          'app.rpc.commands.viewer
           'app.rpc.commands.webhooks)
          (map (partial process-method cfg))
          (into {}))))

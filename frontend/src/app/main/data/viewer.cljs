@@ -129,22 +129,22 @@
                               (rx/map :content)
                               (rx/map #(vector key %)))))]
 
-        (->> (rp/query! :view-only-bundle params')
-               (rx/mapcat
-                (fn [bundle]
-                  (->> (rx/from (-> bundle :file :data :pages-index seq))
-                       (rx/merge-map
-                        (fn [[_ page :as kp]]
-                          (if (t/pointer? page)
-                            (resolve kp)
-                            (rx/of kp))))
-                       (rx/reduce conj {})
-                       (rx/map (fn [pages-index]
-                                 (update-in bundle [:file :data] assoc :pages-index pages-index))))))
-               (rx/mapcat
-                (fn [{:keys [fonts] :as bundle}]
-                  (rx/of (df/fonts-fetched fonts)
-                         (bundle-fetched (merge bundle params))))))))))
+        (->> (rp/cmd! :get-view-only-bundle params')
+             (rx/mapcat
+              (fn [bundle]
+                (->> (rx/from (-> bundle :file :data :pages-index seq))
+                     (rx/merge-map
+                      (fn [[_ page :as kp]]
+                        (if (t/pointer? page)
+                          (resolve kp)
+                          (rx/of kp))))
+                     (rx/reduce conj {})
+                     (rx/map (fn [pages-index]
+                               (update-in bundle [:file :data] assoc :pages-index pages-index))))))
+             (rx/mapcat
+              (fn [{:keys [fonts] :as bundle}]
+                (rx/of (df/fonts-fetched fonts)
+                       (bundle-fetched (merge bundle params))))))))))
 
 (declare go-to-frame-auto)
 

@@ -13,6 +13,7 @@
    [beicon.core :as rx]))
 
 (derive :get-all-projects ::query)
+(derive :get-comment-threads ::query)
 (derive :get-file ::query)
 (derive :get-file-fragment ::query)
 (derive :get-file-libraries ::query)
@@ -26,6 +27,7 @@
 (derive :get-team-stats ::query)
 (derive :get-team-users ::query)
 (derive :get-teams ::query)
+(derive :get-view-only-bundle ::query)
 (derive :search-files ::query)
 
 (defn handle-response

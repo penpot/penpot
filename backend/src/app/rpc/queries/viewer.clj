@@ -22,7 +22,7 @@
 (sv/defmethod ::view-only-bundle
   {::rpc/auth false
    ::doc/added "1.3"
-   ::doc/deprecated "1.17"}
+   ::doc/deprecated "1.18"}
   [{:keys [pool] :as cfg} {:keys [features components-v2] :as params}]
   (with-open [conn (db/open pool)]
     (let [;; BACKWARD COMPATIBILTY with the components-v2 parameter

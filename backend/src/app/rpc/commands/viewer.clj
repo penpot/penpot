@@ -84,6 +84,6 @@
    ::cond/key-fn files/get-file-etag
    ::cond/reuse-key? true
    ::doc/added "1.17"}
-  [{:keys [pool]} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
   (with-open [conn (db/open pool)]
     (get-view-only-bundle conn (assoc params :profile-id profile-id))))
