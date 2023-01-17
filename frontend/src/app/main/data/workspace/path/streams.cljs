@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
+   [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.workspace.path.state :as state]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -17,7 +18,6 @@
    [potok.core :as ptk]))
 
 (defonce drag-threshold 5)
-(def zoom-half-pixel-precision 8)
 
 (defn dragging? [start zoom]
   (fn [current]
@@ -36,7 +36,7 @@
       position
 
       (>= zoom zoom-half-pixel-precision)
-      (gpt/half-round position)
+      (gpt/round-step position 0.5)
 
       :else
       (gpt/round position))))

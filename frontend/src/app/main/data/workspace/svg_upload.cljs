@@ -11,6 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us :refer [max-safe-int min-safe-int]]
@@ -477,15 +478,17 @@
        (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})))
 
 (defn create-svg-shapes
-  [svg-data {:keys [x y] :as position} objects frame-id parent-id selected center?]
+  [svg-data {:keys [x y]} objects frame-id parent-id selected center?]
   (try
     (let [[vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
-          x (if center?
-              (- x vb-x (/ vb-width 2))
-              x)
-          y (if center?
-              (- y vb-y (/ vb-height 2))
-              y)
+          x (mth/round
+             (if center?
+               (- x vb-x (/ vb-width 2))
+               x))
+          y (mth/round
+             (if center?
+               (- y vb-y (/ vb-height 2))
+               y))
 
           unames (ctst/retrieve-used-names objects)
 

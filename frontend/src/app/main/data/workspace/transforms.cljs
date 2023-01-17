@@ -240,14 +240,12 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects (wsh/lookup-page-objects state)
-            snap-pixel? (and (contains? (:workspace-layout state) :snap-pixel-grid)
-                             (int? value))
             get-modifier
             (fn [shape] (ctm/change-dimensions-modifiers shape attr value))
 
             modif-tree
             (-> (dwm/build-modif-tree ids objects get-modifier)
-                (gsh/set-objects-modifiers objects false snap-pixel?))]
+                (gsh/set-objects-modifiers objects))]
 
         (assoc state :workspace-modifiers modif-tree)))
 
@@ -265,14 +263,13 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects     (wsh/lookup-page-objects state)
-            snap-pixel? (contains? (get state :workspace-layout) :snap-pixel-grid)
 
             get-modifier
             (fn [shape] (ctm/change-orientation-modifiers shape orientation))
 
             modif-tree
             (-> (dwm/build-modif-tree ids objects get-modifier)
-                (gsh/set-objects-modifiers objects false snap-pixel?))]
+                (gsh/set-objects-modifiers objects))]
 
         (assoc state :workspace-modifiers modif-tree)))
 
@@ -623,7 +620,7 @@
               (->> move-events
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
                    (rx/map #(dwm/create-modif-tree selected (ctm/move-modifiers %)))
-                   (rx/map (partial dwm/set-modifiers))
+                   (rx/map #(dwm/set-modifiers % false true))
                    (rx/take-until stopper))
               (rx/of (nudge-selected-shapes direction shift?)))
 
@@ -669,11 +666,12 @@
             cpos (gpt/point (:x bbox) (:y bbox))
             pos  (gpt/point (or (:x position) (:x bbox))
                             (or (:y position) (:y bbox)))
+
             delta (gpt/subtract pos cpos)
 
             modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
 
-        (rx/of (dwm/set-modifiers modif-tree)
+        (rx/of (dwm/set-modifiers modif-tree false true)
                (dwm/apply-modifiers))))))
 
 (defn- move-shapes-to-frame
@@ -687,7 +685,6 @@
             lookup   (d/getf objects)
 
             shapes (->> ids (cph/clean-loops objects) (keep lookup))
-
 
             moving-shapes
             (cond->> shapes

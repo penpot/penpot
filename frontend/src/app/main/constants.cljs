@@ -190,3 +190,5 @@
    {:name "YouTube thumb"
     :width 1280
     :height 720}])
+
+(def zoom-half-pixel-precision 8)
