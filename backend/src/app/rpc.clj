@@ -300,7 +300,6 @@
   (let [cfg (assoc cfg ::type "query" ::metrics-id :rpc-query-timing)]
     (->> (sv/scan-ns
           'app.rpc.queries.projects
-          'app.rpc.queries.teams
           'app.rpc.queries.profile
           'app.rpc.queries.viewer
           'app.rpc.queries.fonts)
@@ -314,7 +313,6 @@
           'app.rpc.mutations.media
           'app.rpc.mutations.profile
           'app.rpc.mutations.projects
-          'app.rpc.mutations.teams
           'app.rpc.mutations.fonts
           'app.rpc.mutations.share-link)
          (map (partial process-method cfg))
