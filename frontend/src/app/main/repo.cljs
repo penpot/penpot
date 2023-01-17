@@ -12,18 +12,21 @@
    [app.util.http :as http]
    [beicon.core :as rx]))
 
+(derive :get-all-projects ::query)
 (derive :get-file ::query)
-(derive :get-file-object-thumbnails ::query)
-(derive :get-file-libraries ::query)
 (derive :get-file-fragment ::query)
-(derive :search-files ::query)
-(derive :get-teams ::query)
-(derive :get-team-users ::query)
-(derive :get-team-members ::query)
-(derive :get-team-stats ::query)
-(derive :get-team-invitations ::query)
-(derive :get-team-shared-files ::query)
+(derive :get-file-libraries ::query)
+(derive :get-file-object-thumbnails ::query)
+(derive :get-font-variants ::query)
 (derive :get-profile ::query)
+(derive :get-project ::query)
+(derive :get-team-invitations ::query)
+(derive :get-team-members ::query)
+(derive :get-team-shared-files ::query)
+(derive :get-team-stats ::query)
+(derive :get-team-users ::query)
+(derive :get-teams ::query)
+(derive :search-files ::query)
 
 (defn handle-response
   [{:keys [status body] :as response}]
