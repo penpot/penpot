@@ -237,10 +237,14 @@
                                                          :points (:points first-shape)
                                                          :transform (:transform first-shape)
                                                          :transform-inverse (:transform-inverse first-shape))))
-                             (pcb/resize-parents [(:id group)]))]
+                             (pcb/resize-parents [(:id group)]))
+                undo-id (js/Symbol)]
 
-            (rx/of (dch/commit-changes changes)
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+            (rx/of (dwu/start-undo-transaction undo-id)
+                   (dch/commit-changes changes)
+                   (dws/select-shapes (d/ordered-set (:id group)))
+                   (ptk/data-event :layout/update [(:id group)])
+                   (dwu/commit-undo-transaction undo-id))))))))
 
 (def unmask-group
   (ptk/reify ::unmask-group
