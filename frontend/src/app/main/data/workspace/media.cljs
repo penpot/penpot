@@ -125,7 +125,7 @@
           (rx/map dmm/validate-file)
           (rx/filter (comp not svg-blob?))
           (rx/map prepare-blob)
-          (rx/mapcat #(rp/mutation! :upload-file-media-object %))
+          (rx/mapcat #(rp/cmd! :upload-file-media-object %))
           (rx/do on-image))
 
      (->> (rx/from blobs)
@@ -361,7 +361,7 @@
                           :type :info
                           :timeout nil
                           :tag :media-loading}))
-         (->> (rp/mutation! :clone-file-media-object params)
+         (->> (rp/cmd! :clone-file-media-object params)
               (rx/do on-success)
               (rx/catch on-error)
               (rx/finalize #(st/emit! (dm/hide-tag :media-loading)))))))))

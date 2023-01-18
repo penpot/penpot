@@ -1427,7 +1427,7 @@
                      :file-id file-id
                      :content blob
                      :is-local true}))
-                 (rx/mapcat #(rp/mutation! :upload-file-media-object %))
+                 (rx/mapcat #(rp/cmd! :upload-file-media-object %))
                  (rx/map (fn [media]
                            (assoc media :prev-id (:id imgpart))))))
 
