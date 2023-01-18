@@ -389,8 +389,8 @@
    (set-objects-modifiers nil modif-tree objects params))
 
   ([old-modif-tree modif-tree objects
-    {:keys [ignore-constraints snap-pixel? snap-precision]
-     :or {ignore-constraints false snap-pixel? false snap-precision 1}}]
+    {:keys [ignore-constraints snap-pixel? snap-precision snap-ignore-axis]
+     :or {ignore-constraints false snap-pixel? false snap-precision 1 snap-ignore-axis nil}}]
    (let [objects (-> objects
                      (cond-> (some? old-modif-tree)
                        (apply-structure-modifiers old-modif-tree))
@@ -398,7 +398,7 @@
 
          modif-tree
          (cond-> modif-tree
-           snap-pixel? (gpp/adjust-pixel-precision objects snap-precision))
+           snap-pixel? (gpp/adjust-pixel-precision objects snap-precision snap-ignore-axis))
 
          bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))
          bounds (cond-> bounds
