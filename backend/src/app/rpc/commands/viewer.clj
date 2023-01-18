@@ -13,11 +13,10 @@
    [app.rpc.commands.files :as files]
    [app.rpc.cond :as-alias cond]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.share-link :as slnk]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
-;; --- Query: View Only Bundle
+;; --- QUERY: View Only Bundle
 
 (defn- get-project
   [conn id]
@@ -31,7 +30,8 @@
         users   (comments/get-file-comments-users conn file-id profile-id)
 
         links   (->> (db/query conn :share-link {:file-id file-id})
-                     (mapv slnk/decode-share-link-row))
+                     (mapv (fn [row]
+                             (update row :pages db/decode-pgarray #{}))))
 
         fonts   (db/query conn :team-font-variant
                           {:team-id (:team-id project)

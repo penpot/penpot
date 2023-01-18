@@ -28,7 +28,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
-   [app.rpc.queries.share-link :refer [retrieve-share-link]]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -128,7 +127,9 @@
 
   ([conn profile-id file-id share-id]
    (let [perms  (get-permissions conn profile-id file-id)
-         ldata  (retrieve-share-link conn file-id share-id)]
+         ldata  (some-> (db/get* conn :share-link {:id share-id :file-id file-id})
+                        (dissoc :flags)
+                        (update :pages db/decode-pgarray #{}))]
 
      ;; NOTE: in a future when share-link becomes more powerful and
      ;; will allow us specify which parts of the app is available, we

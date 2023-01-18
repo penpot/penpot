@@ -27,7 +27,7 @@
   (ptk/reify ::create-share-link
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/mutation! :create-share-link params)
+      (->> (rp/cmd! :create-share-link params)
            (rx/map share-link-created)))))
 
 (defn delete-share-link
@@ -41,6 +41,6 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/mutation! :delete-share-link {:id id})
+      (->> (rp/cmd! :delete-share-link {:id id})
            (rx/ignore)))))
 
