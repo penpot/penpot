@@ -348,6 +348,7 @@
       cursor: pointer;
       font-size: $fs14;
       display: flex;
+      gap: 0 10px;
       justify-content: start;
       padding: $size-2;
 
@@ -356,9 +357,6 @@
         display: flex;
         justify-content: start;
         align-items: center;
-        &:not(:first-child) {
-          margin-left: 10px;
-        }
       }
 
       .check-icon {
