@@ -21,6 +21,7 @@
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
    [app.redis :as-alias rds]
+   [app.srepl :as-alias srepl]
    [app.storage :as-alias sto]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
@@ -404,9 +405,13 @@
     ::http.client/client (ig/ref ::http.client/client)
     ::props              (ig/ref :app.setup/props)}
 
-   :app.srepl/server
-   {:port (cf/get :srepl-port)
-    :host (cf/get :srepl-host)}
+   [::srepl/urepl ::srepl/server]
+   {:port (cf/get :urepl-port 6062)
+    :host (cf/get :urepl-host "localhost")}
+
+   [::srepl/prepl ::srepl/server]
+   {:port (cf/get :prepl-port 6063)
+    :host (cf/get :prepl-host "localhost")}
 
    :app.setup/builtin-templates
    {::http.client/client (ig/ref ::http.client/client)}
