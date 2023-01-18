@@ -279,11 +279,14 @@
           state)))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (setup-frame-path)
-             (dwdc/handle-finish-drawing)
-             (dwe/start-edition-mode shape-id)
-             (change-edit-mode :draw)))))
+    (watch [_ state _]
+      (let [content (get-in state [:workspace-drawing :object :content] [])]
+        (if (seq content)
+          (rx/of (setup-frame-path)
+                 (dwdc/handle-finish-drawing)
+                 (dwe/start-edition-mode shape-id)
+                 (change-edit-mode :draw))
+          (rx/of (dwdc/handle-finish-drawing)))))))
 
 (defn handle-new-shape
   "Creates a new path shape"
