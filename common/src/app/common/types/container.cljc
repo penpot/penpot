@@ -125,7 +125,7 @@
 
          update-new-shape
          (fn [new-shape original-shape]
-           (let [new-name (ctst/generate-unique-name @unames (:name new-shape))]
+           (let [new-name (:name new-shape)]
 
              (when (nil? (:parent-id original-shape))
                (vswap! unames conj new-name))

@@ -55,12 +55,12 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> Rect 1-1
+                      ;   Rect 1              #--> Rect 1  
                       ;     Rect 1*           ---> Rect 1     (color, opacity)
                       ;         #{:fill-group}
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1  
                       ;   Rect 1
                       ;
                       (let [[[group shape1] [c-group c-shape1] component]
@@ -68,14 +68,14 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Rect 1-1"))
+                        (t/is (= (:name group) "Rect 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (= (:name shape1) "Rect 1"))
                         (t/is (= (:touched shape1) #{:fill-group}))
                         (t/is (= (:fill-color shape1) clr/test))
                         (t/is (= (:fill-opacity shape1) 0.5))
 
-                        (t/is (= (:name c-group) "Rect 1-1"))
+                        (t/is (= (:name c-group) "Rect 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -110,13 +110,13 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1*           #--> Rect 1-1
+                      ;   Rect 1  *           #--> Rect 1
                       ;       #{:shapes-group}
                       ;     Circle 1
                       ;     Rect 1            ---> Rect 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1
                       ;
                       (let [[[group shape1 shape2] [c-group c-shape1] component]
@@ -124,7 +124,7 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Rect 1-1"))
+                        (t/is (= (:name group) "Rect 1"))
                         (t/is (= (:touched group) #{:shapes-group}))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) nil))
@@ -133,7 +133,7 @@
                         (t/is (= (:touched shape2) nil))
                         (t/is (not= (:shape-ref shape2) nil))
 
-                        (t/is (= (:name c-group) "Rect 1-1"))
+                        (t/is (= (:name c-group) "Rect 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:shape-ref c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
@@ -305,7 +305,7 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> <Library 1> Rect 1-1
+                      ;   Rect 1              #--> <Library 1> Rect 1
                       ;     Rect 1*           ---> <Library 1> Rect 1  (color, opacity)
                       ;         #{:fill-group}
                       ;
@@ -314,14 +314,14 @@
                               new-state
                               (thp/id :instance2))]
 
-                        (t/is (= (:name group) "Rect 1-1"))
+                        (t/is (= (:name group) "Rect 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (= (:name shape1) "Rect 1"))
                         (t/is (= (:touched shape1) #{:fill-group}))
                         (t/is (= (:fill-color shape1) clr/test))
                         (t/is (= (:fill-opacity shape1) 0.5))
 
-                        (t/is (= (:name c-group) "Rect 1-1"))
+                        (t/is (= (:name c-group) "Rect 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -367,19 +367,19 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Group-1*            #--> Group-1
-                      ;     Rect 1-1          @--> Rect 1-1
+                      ;   Group  *            #--> Group  
+                      ;     Rect 1            @--> Rect 1  
                       ;       Rect 1          ---> Rect 1
                       ;     Circle 1*         ---> Circle 1   (color, opacity)
                       ;         #{:fill-group}
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1  
                       ;   Rect 1
                       ;
-                      ; [Group-1]
-                      ; Group-1
-                      ;   Rect 1-1            @--> Rect 1-1
+                      ; [Group]
+                      ; Group  
+                      ;   Rect 1              @--> Rect 1  
                       ;     Rect 1            ---> Rect 1
                       ;   Circle 1
                       ;
@@ -391,9 +391,9 @@
 
                         ; TODO: get and check the instance inside component [Group-1]
 
-                        (t/is (= (:name instance2) "Group-1"))
+                        (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) #{:fill-group}))
@@ -404,9 +404,9 @@
                         (t/is (= (:fill-color shape2) clr/white))
                         (t/is (= (:fill-opacity shape2) 1))
 
-                        (t/is (= (:name c-instance2) "Group-1"))
+                        (t/is (= (:name c-instance2) "Group"))
                         (t/is (= (:touched c-instance2) nil))
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -456,19 +456,19 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Group-1             #--> Group-1
-                      ;     Rect 1-1          @--> Rect 1-1
+                      ;   Group               #--> Group
+                      ;     Rect 1            @--> Rect 1  
                       ;       Rect 1*         ---> Rect 1     (color, opacity)
                       ;         #{:fill-group}
                       ;     Circle 1          ---> Circle 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1  
                       ;   Rect 1
                       ;
-                      ; [Group-1]
-                      ; Group-1
-                      ;   Rect 1-1            @--> Rect 1-1
+                      ; [Group]
+                      ; Group  
+                      ;   Rect 1              @--> Rect 1  
                       ;     Rect 1            ---> Rect 1
                       ;   Circle 1
                       ;
@@ -480,9 +480,9 @@
 
                         ; TODO: get and check the instance inside component [Group-1]
 
-                        (t/is (= (:name instance2) "Group-1"))
+                        (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) nil))
@@ -493,9 +493,9 @@
                         (t/is (= (:fill-color shape2) clr/test))
                         (t/is (= (:fill-opacity shape2) 0.5))
 
-                        (t/is (= (:name c-instance2) "Group-1"))
+                        (t/is (= (:name c-instance2) "Group"))
                         (t/is (= (:touched c-instance2) nil))
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -545,18 +545,18 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Group-1             #--> Group-1
-                      ;     Rect 1-1          @--> Rect 1-1
+                      ;   Group               #--> Group
+                      ;     Rect 1            @--> Rect 1
                       ;       Rect 1          ---> Rect 1     (color, opacity)
                       ;     Circle 1          ---> Circle 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1
                       ;
-                      ; [Group-1]
-                      ; Group-1
-                      ;   Rect 1-1            @--> Rect 1-1
+                      ; [Group]
+                      ; Group
+                      ;   Rect 1              @--> Rect 1
                       ;     Rect 1*           ---> Rect 1     (color, opacity)
                       ;         #{:fill-group}
                       ;   Circle 1
@@ -569,9 +569,9 @@
 
                         ; TODO: get and check the instance inside component [Group-1]
 
-                        (t/is (= (:name instance2) "Group-1"))
+                        (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) nil))
@@ -582,9 +582,9 @@
                         (t/is (= (:fill-color shape2) clr/test))
                         (t/is (= (:fill-opacity shape2) 0.5))
 
-                        (t/is (= (:name c-instance2) "Group-1"))
+                        (t/is (= (:name c-instance2) "Group"))
                         (t/is (= (:touched c-instance2) nil))
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -628,7 +628,7 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> Rect 1-1
+                      ;   Rect 1              #--> Rect 1
                       ;     Rect 1            ---> Rect 1
                       ;
                       ; [Rect 1]
@@ -640,14 +640,14 @@
                               new-state
                               (:id instance1))]
 
-                        (t/is (= (:name group) "Rect 1-1"))
+                        (t/is (= (:name group) "Rect 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (= (:name shape1) "Rect 1"))
                         (t/is (= (:fill-color shape1) clr/white))
                         (t/is (= (:fill-opacity shape1) 1))
                         (t/is (= (:touched shape1) nil))
 
-                        (t/is (= (:name c-group) "Rect 1-1"))
+                        (t/is (= (:name c-group) "Rect 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
                         (t/is (= (:fill-color c-shape1) clr/white))
@@ -683,11 +683,11 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> Rect 1-1
+                      ;   Rect 1              #--> Rect 1
                       ;     Rect 1            ---> Rect 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1
                       ;
                       (let [[[group shape1] [c-group c-shape1] component]
@@ -695,14 +695,14 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Rect 1-1"))
+                        (t/is (= (:name group) "Rect 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (not= (:shape-ref group) nil))
                         (t/is (= (:name shape1) "Rect 1"))
                         (t/is (= (:touched shape1) nil))
                         (t/is (not= (:shape-ref shape1) nil))
 
-                        (t/is (= (:name c-group) "Rect 1-1"))
+                        (t/is (= (:name c-group) "Rect 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:shape-ref c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
@@ -881,7 +881,7 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> <Library 1> Rect 1-1
+                      ;   Rect 1              #--> <Library 1> Rect 1
                       ;     Rect 1            ---> <Library 1> Rect 1
                       ;
                       (let [[[group shape1] [c-group c-shape1] component]
@@ -889,14 +889,14 @@
                               new-state
                               (:id instance2))]
 
-                        (t/is (= (:name group) "Rect 1-1"))
+                        (t/is (= (:name group) "Rect 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (= (:name shape1) "Rect 1"))
                         (t/is (= (:fill-color shape1) clr/white))
                         (t/is (= (:fill-opacity shape1) 1))
                         (t/is (= (:touched shape1) nil))
 
-                        (t/is (= (:name c-group) "Rect 1-1"))
+                        (t/is (= (:name c-group) "Rect 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
                         (t/is (= (:fill-color c-shape1) clr/white))
@@ -943,18 +943,18 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Group-1             #--> Group-1
-                      ;     Rect 1-1          @--> Rect 1-1
+                      ;   Group               #--> Group
+                      ;     Rect 1            @--> Rect 1
                       ;       Rect 1          ---> Rect 1
                       ;     Circle 1          ---> Circle 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1
                       ;
-                      ; [Group-1]
-                      ; Group-1
-                      ;   Rect 1-1            @--> Rect 1-1
+                      ; [Group]
+                      ; Group
+                      ;   Rect 1              @--> Rect 1
                       ;     Rect 1            ---> Rect 1
                       ;   Circle 1
                       ;
@@ -964,11 +964,11 @@
                               new-state
                               (thp/id :instance2))]
 
-                        ; TODO: get and check the instance inside component [Group-1]
+                        ; TODO: get and check the instance inside component [Group]
 
-                        (t/is (= (:name instance2) "Group-1"))
+                        (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) nil))
@@ -979,9 +979,9 @@
                         (t/is (= (:fill-color shape2) clr/white))
                         (t/is (= (:fill-opacity shape2) 1))
 
-                        (t/is (= (:name c-instance2) "Group-1"))
+                        (t/is (= (:name c-instance2) "Group"))
                         (t/is (= (:touched c-instance2) nil))
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -1032,18 +1032,18 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Group-1             #--> Group-1
-                      ;     Rect 1-1          @--> Rect 1-1
+                      ;   Group               #--> Group
+                      ;     Rect 1            @--> Rect 1
                       ;       Rect 1          ---> Rect 1
                       ;     Circle 1          ---> Circle 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1                                (color, opacity)
                       ;
-                      ; [Group-1]
-                      ; Group-1
-                      ;   Rect 1-1            @--> Rect 1-1
+                      ; [Group]
+                      ; Group
+                      ;   Rect 1              @--> Rect 1
                       ;     Rect 1            ---> Rect 1
                       ;   Circle 1
                       ;
@@ -1053,11 +1053,11 @@
                               new-state
                               (thp/id :instance2))]
 
-                        ; TODO: get and check the instance inside component [Group-1]
+                        ; TODO: get and check the instance inside component [Group]
 
-                        (t/is (= (:name instance2) "Group-1"))
+                        (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) nil))
@@ -1068,9 +1068,9 @@
                         (t/is (= (:fill-color shape2) clr/white))
                         (t/is (= (:fill-opacity shape2) 1))
 
-                        (t/is (= (:name c-instance2) "Group-1"))
+                        (t/is (= (:name c-instance2) "Group"))
                         (t/is (= (:touched c-instance2) nil))
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -1122,18 +1122,18 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Group-1             #--> Group-1
-                      ;     Rect 1-1          @--> Rect 1-1
+                      ;   Group               #--> Group
+                      ;     Rect 1            @--> Rect 1
                       ;       Rect 1          ---> Rect 1
                       ;     Circle 1          ---> Circle 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1
                       ;
-                      ; [Group-1]
-                      ; Group-1
-                      ;   Rect 1-1            @--> Rect 1-1
+                      ; [Group]
+                      ; Group
+                      ;   Rect 1              @--> Rect 1
                       ;     Rect 1            ---> Rect 1     (color, opacity)
                       ;         #{:fill-group}
                       ;   Circle 1
@@ -1146,9 +1146,9 @@
 
                         ; TODO: get and check the instance inside component [Group-1]
 
-                        (t/is (= (:name instance2) "Group-1"))
+                        (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) nil))
@@ -1159,9 +1159,9 @@
                         (t/is (= (:fill-color shape2) clr/white))
                         (t/is (= (:fill-opacity shape2) 1))
 
-                        (t/is (= (:name c-instance2) "Group-1"))
+                        (t/is (= (:name c-instance2) "Group"))
                         (t/is (= (:touched c-instance2) nil))
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -1209,13 +1209,13 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> Rect 1-1
+                      ;   Rect 1              #--> Rect 1
                       ;     Rect 1            ---> Rect 1     (color, opacity)
                       ;   Rect 1-2
                       ;     Rect 1            ---> Rect 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1                              (color, opacity)
                       ;
                       (let [[[instance1 shape1] [c-instance1 c-shape1] component1]
@@ -1228,21 +1228,21 @@
                               new-state
                               (:id instance2))]
 
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Rect 1"))
                         (t/is (= (:fill-color shape1) clr/test))
                         (t/is (= (:fill-opacity shape1) 0.5))
                         (t/is (= (:touched shape1) nil))
 
-                        (t/is (= (:name instance2) "Rect 1-2"))
+                        (t/is (= (:name instance2) "Rect 1"))
                         (t/is (= (:touched instance2) nil))
                         (t/is (= (:name shape2) "Rect 1"))
                         (t/is (= (:fill-color shape2) clr/white))
                         (t/is (= (:fill-opacity shape2) 1))
                         (t/is (= (:touched shape2) nil))
 
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
                         (t/is (= (:fill-color c-shape1) clr/test))
@@ -1289,13 +1289,13 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> Rect 1-1
+                      ;   Rect 1              #--> Rect 1
                       ;     Rect 1            ---> Rect 1     (color, opacity)
-                      ;   Rect 1-2            #--> Rect 1-1
+                      ;   Rect 1              #--> Rect 1
                       ;     Rect 1            ---> Rect 1     (color, opacity)
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1                              (color, opacity)
                       ;
                       (let [[[instance1 shape1] [c-instance1 c-shape1] component1]
@@ -1308,21 +1308,21 @@
                               new-state
                               (:id instance2))]
 
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Rect 1"))
                         (t/is (= (:fill-color shape1) clr/test))
                         (t/is (= (:fill-opacity shape1) 0.5))
                         (t/is (= (:touched shape1) nil))
 
-                        (t/is (= (:name instance2) "Rect 1-2"))
+                        (t/is (= (:name instance2) "Rect 1"))
                         (t/is (= (:touched instance2) nil))
                         (t/is (= (:name shape2) "Rect 1"))
                         (t/is (= (:fill-color shape2) clr/test))
                         (t/is (= (:fill-opacity shape2) 0.5))
                         (t/is (= (:touched shape2) nil))
 
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
                         (t/is (= (:fill-color c-shape1) clr/test))
@@ -1375,9 +1375,9 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> Rect 1-1
+                      ;   Rect 1              #--> Rect 1
                       ;     Rect 1            ---> Rect 1     (color, stroke)
-                      ;   Rect 1-2            #--> Rect 1-1
+                      ;   Rect 1              #--> Rect 1
                       ;     Rect 1*           ---> Rect 1     (color, stroke2)
                       ;         #{:stroke-group}
                       ;
@@ -1395,21 +1395,21 @@
                               new-state
                               (:id instance2))]
 
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Rect 1"))
                         (t/is (= (:fill-color shape1) clr/test))
                         (t/is (= (:stroke-width shape1) 0.5))
                         (t/is (= (:touched shape1) nil))
 
-                        (t/is (= (:name instance2) "Rect 1-2"))
+                        (t/is (= (:name instance2) "Rect 1"))
                         (t/is (= (:touched instance2) nil))
                         (t/is (= (:name shape2) "Rect 1"))
                         (t/is (= (:fill-color shape2) clr/test))
                         (t/is (= (:stroke-width shape2) 0.2))
                         (t/is (= (:touched shape2) #{:stroke-group}))
 
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
                         (t/is (= (:fill-color c-shape1) clr/test))
@@ -1452,12 +1452,12 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> Rect 1-1
+                      ;   Rect 1              #--> Rect 1
                       ;     Circle 1          ---> Circle 1
                       ;     Rect 1            ---> Rect 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Circle 1
                       ;   Rect 1
                       ;
@@ -1467,7 +1467,7 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Rect 1-1"))
+                        (t/is (= (:name group) "Rect 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (not= (:shape-ref group) nil))
                         (t/is (= (:name shape1) "Circle 1"))
@@ -1477,7 +1477,7 @@
                         (t/is (= (:touched shape2) nil))
                         (t/is (not= (:shape-ref shape2) nil))
 
-                        (t/is (= (:name c-group) "Rect 1-1"))
+                        (t/is (= (:name c-group) "Rect 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:shape-ref c-group) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
@@ -1654,7 +1654,7 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect 1-1            #--> <Library 1> Rect 1-1     (color, opacity)
+                      ;   Rect 1              #--> <Library 1> Rect 1     (color, opacity)
                       ;     Rect 1            ---> <Library 1> Rect 1
                       ;
                       (let [[[group shape1] [c-group c-shape1] component]
@@ -1662,14 +1662,14 @@
                               new-state
                               (:id instance2))]
 
-                        (t/is (= (:name group) "Rect 1-1"))
+                        (t/is (= (:name group) "Rect 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (= (:name shape1) "Rect 1"))
                         (t/is (= (:fill-color shape1) clr/test))
                         (t/is (= (:fill-opacity shape1) 0.5))
                         (t/is (= (:touched shape1) nil))
 
-                        (t/is (= (:name c-group) "Rect 1-1"))
+                        (t/is (= (:name c-group) "Rect 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
                         (t/is (= (:fill-color c-shape1) clr/test))
@@ -1716,18 +1716,18 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Group-1             #--> Group-1
-                      ;     Rect 1-1          @--> Rect 1-1
+                      ;   Group               #--> Group
+                      ;     Rect 1            @--> Rect 1
                       ;       Rect 1          ---> Rect 1
                       ;     Circle 1          ---> Circle 1     (color, opacity)
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1
                       ;
-                      ; [Group-1]
-                      ; Group-1
-                      ;   Rect 1-1            @--> Rect 1-1
+                      ; [Group]
+                      ; Group
+                      ;   Rect 1              @--> Rect 1
                       ;     Rect 1            ---> Rect 1
                       ;   Circle 1                              (color, opacity)
                       ;
@@ -1739,9 +1739,9 @@
 
                         ; TODO: get and check the instance inside component [Group-1]
 
-                        (t/is (= (:name instance2) "Group-1"))
+                        (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) nil))
@@ -1752,9 +1752,9 @@
                         (t/is (= (:fill-color shape2) clr/white))
                         (t/is (= (:fill-opacity shape2) 1))
 
-                        (t/is (= (:name c-instance2) "Group-1"))
+                        (t/is (= (:name c-instance2) "Group"))
                         (t/is (= (:touched c-instance2) nil))
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -1805,18 +1805,18 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Group-1             #--> Group-1
-                      ;     Rect 1-1          @--> Rect 1-1
+                      ;   Group             #--> Group
+                      ;     Rect 1          @--> Rect 1
                       ;       Rect 1          ---> Rect 1     (color, opacity)
                       ;     Circle 1          ---> Circle 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1
                       ;
-                      ; [Group-1]
-                      ; Group-1
-                      ;   Rect 1-1            @--> Rect 1-1
+                      ; [Group]
+                      ; Group
+                      ;   Rect 1              @--> Rect 1
                       ;     Rect 1            ---> Rect 1     (color, opacity)
                       ;   Circle 1
                       ;
@@ -1828,9 +1828,9 @@
 
                         ; TODO: get and check the instance inside component [Group-1]
 
-                        (t/is (= (:name instance2) "Group-1"))
+                        (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) nil))
@@ -1841,9 +1841,9 @@
                         (t/is (= (:fill-color shape2) clr/test))
                         (t/is (= (:fill-opacity shape2) 0.5))
 
-                        (t/is (= (:name c-instance2) "Group-1"))
+                        (t/is (= (:name c-instance2) "Group"))
                         (t/is (= (:touched c-instance2) nil))
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
                         (t/is (= (:touched c-shape1) nil))
@@ -1895,18 +1895,18 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Group-1             #--> Group-1
-                      ;     Rect 1-1          @--> Rect 1-1
+                      ;   Group               #--> Group
+                      ;     Rect 1            @--> Rect 1
                       ;       Rect 1          ---> Rect 1     (color, opacity)
                       ;     Circle 1          ---> Circle 1
                       ;
                       ; [Rect 1]
-                      ; Rect 1-1
+                      ; Rect 1
                       ;   Rect 1                              (color, opacity)
                       ;
-                      ; [Group-1]
-                      ; Group-1
-                      ;   Rect 1-1            @--> Rect 1-1
+                      ; [Group]
+                      ; Group
+                      ;   Rect 1              @--> Rect 1
                       ;     Rect 1            ---> Rect 1
                       ;   Circle 1
                       ;
@@ -1918,9 +1918,9 @@
 
                         ; TODO: get and check the instance inside component [Group-1]
 
-                        (t/is (= (:name instance2) "Group-1"))
+                        (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
-                        (t/is (= (:name instance1) "Rect 1-1"))
+                        (t/is (= (:name instance1) "Rect 1"))
                         (t/is (= (:touched instance1) nil))
                         (t/is (= (:name shape1) "Circle 1"))
                         (t/is (= (:touched shape1) nil))
@@ -1931,9 +1931,9 @@
                         (t/is (= (:fill-color shape2) clr/test))
                         (t/is (= (:fill-opacity shape2) 0.5))
 
-                        (t/is (= (:name c-instance2) "Group-1"))
+                        (t/is (= (:name c-instance2) "Group"))
                         (t/is (= (:touched c-instance2) nil))
-                        (t/is (= (:name c-instance1) "Rect 1-1"))
+                        (t/is (= (:name c-instance1) "Rect 1"))
                         (t/is (= (:touched c-instance1) nil))
                         (t/is (= (:name c-shape1) "Circle 1"))
                         (t/is (= (:touched c-shape1) nil))
