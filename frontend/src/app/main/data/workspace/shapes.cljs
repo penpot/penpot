@@ -87,9 +87,7 @@
              selected (wsh/lookup-selected state)
 
              id       (or (:id attrs) (uuid/next))
-             name     (-> objects
-                          (ctst/retrieve-used-names)
-                          (ctst/generate-unique-name (:name attrs)))
+             name     (:name attrs)
 
              shape (make-new-shape
                     (assoc attrs :id id :name name)

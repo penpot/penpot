@@ -362,7 +362,7 @@
   (let [{:keys [tag attrs hidden]} element-data
         attrs (usvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
-        name (ctst/generate-unique-name unames (or (:id attrs) (tag->name tag)))
+        name (or (:id attrs) (tag->name tag))
         att-refs (usvg/find-attr-references attrs)
         references (usvg/find-def-references (:defs svg-data) att-refs)
 
@@ -492,8 +492,7 @@
 
           unames (ctst/retrieve-used-names objects)
 
-          svg-name (->> (str/replace (:name svg-data) ".svg" "")
-                        (ctst/generate-unique-name unames))
+          svg-name (str/replace (:name svg-data) ".svg" "")
 
           svg-data (-> svg-data
                        (assoc :x x

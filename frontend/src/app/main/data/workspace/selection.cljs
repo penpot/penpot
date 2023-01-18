@@ -327,8 +327,7 @@
 (defn- prepare-duplicate-frame-change
   [changes objects page unames update-unames! ids-map obj delta]
   (let [new-id     (ids-map (:id obj))
-        frame-name (ctt/generate-unique-name @unames (:name obj))
-        _          (update-unames! frame-name)
+        frame-name (:name obj)
 
         new-frame  (-> obj
                        (assoc :id new-id
@@ -361,8 +360,7 @@
   (if (some? obj)
     (let [new-id      (ids-map (:id obj))
           parent-id   (or parent-id frame-id)
-          name        (ctt/generate-unique-name @unames (:name obj))
-          _           (update-unames! name)
+          name        (:name obj)
 
           new-obj     (-> obj
                           (assoc :id new-id

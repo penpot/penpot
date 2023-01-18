@@ -11,7 +11,6 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.path.shapes-to-path :as stp]
-   [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
@@ -85,9 +84,7 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state)
-            base-name (-> bool-type d/name str/capital (str "-1"))
-            name (-> (ctt/retrieve-used-names objects)
-                     (ctt/generate-unique-name base-name))
+            name (-> bool-type d/name str/capital)
             ids  (selected-shapes-idx state)
             ordered-indexes (cph/order-by-indexed-shapes objects ids)
             shapes (->> ordered-indexes

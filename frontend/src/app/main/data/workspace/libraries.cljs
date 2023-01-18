@@ -22,7 +22,6 @@
    [app.common.types.file :as ctf]
    [app.common.types.file.media-object :as ctfm]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.shape-tree :as ctst]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
@@ -373,9 +372,7 @@
     (watch [it state _]
       (let [libraries      (wsh/get-libraries state)
             component      (cph/get-component libraries id)
-            all-components (-> state :workspace-data :components vals)
-            unames         (into #{} (map :name) all-components)
-            new-name       (ctst/generate-unique-name unames (:name component))
+            new-name       (:name component)
 
             components-v2  (features/active-feature? state :components-v2)
 

@@ -43,11 +43,11 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect-2              #--> Rect-2
+                      ;   Rect-1              #--> Rect-1
                       ;     Rect-1            ---> Rect-1
                       ;
-                      ; [Rect-2]
-                      ; Rect-2
+                      ; [Rect-1]
+                      ; Rect-1
                       ;   Rect-1
                       ;
                       (let [shape1 (thp/get-shape new-state :shape1)
@@ -60,10 +60,10 @@
                             file (wsh/get-local-file new-state)]
 
                         (t/is (= (:name shape1) "Rect-1"))
-                        (t/is (= (:name group) "Rect-2"))
-                        (t/is (= (:name component) "Rect-2"))
+                        (t/is (= (:name group) "Rect-1"))
+                        (t/is (= (:name component) "Rect-1"))
                         (t/is (= (:name c-shape1) "Rect-1"))
-                        (t/is (= (:name c-group) "Rect-2"))
+                        (t/is (= (:name c-group) "Rect-1"))
 
                         (thl/is-from-file group file))))]
 
@@ -179,12 +179,12 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Group-1             #--> Group-1
+                   ;   Group               #--> Group
                    ;     Rect-1            ---> Rect-1
                    ;     Rect-2            ---> Rect-2
                    ;
-                   ; [Group-1]
-                   ; Group-1
+                   ; [Group]
+                   ; Group
                    ;   Rect-1
                    ;   Rect-2
                    ;
@@ -199,11 +199,11 @@
 
                      (t/is (= (:name shape1) "Rect-1"))
                      (t/is (= (:name shape2) "Rect-2"))
-                     (t/is (= (:name group) "Group-1"))
-                     (t/is (= (:name component) "Group-1"))
+                     (t/is (= (:name group) "Group"))
+                     (t/is (= (:name component) "Group"))
                      (t/is (= (:name c-shape1) "Rect-1"))
                      (t/is (= (:name c-shape2) "Rect-2"))
-                     (t/is (= (:name c-group) "Group-1"))
+                     (t/is (= (:name c-group) "Group"))
 
                      (thl/is-from-file group file))))]
 
@@ -229,17 +229,17 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-3              #--> Rect-3
-                   ;     Rect-2            @--> Rect-2
+                   ;   Rect-1              #--> Rect-1
+                   ;     Rect-1            @--> Rect-1
                    ;       Rect-1          ---> Rect-1
                    ;
-                   ; [Rect-2]
-                   ; Rect-2
+                   ; [Rect-1]
+                   ; Rect-1
                    ;   Rect-1
                    ;
-                   ; [Rect-2]
-                   ; Rect-3
-                   ;   Rect-2              @--> Rect-2
+                   ; [Rect-1]
+                   ; Rect-1
+                   ;   Rect-1              @--> Rect-1
                    ;     Rect-1            ---> Rect-1
                    ;
                    (let [[[instance1 shape1]
@@ -258,18 +258,18 @@
                            (:parent-id instance1))]
 
                      (t/is (= (:name shape1) "Rect-1"))
-                     (t/is (= (:name instance1) "Rect-2"))
-                     (t/is (= (:name component1) "Rect-2"))
+                     (t/is (= (:name instance1) "Rect-1"))
+                     (t/is (= (:name component1) "Rect-1"))
                      (t/is (= (:name c-shape1) "Rect-1"))
-                     (t/is (= (:name c-instance1) "Rect-2"))
+                     (t/is (= (:name c-instance1) "Rect-1"))
 
                      (t/is (= (:name shape1') "Rect-1"))
-                     (t/is (= (:name instance1') "Rect-2"))
-                     (t/is (= (:name instance2) "Rect-3"))
-                     (t/is (= (:name component2) "Rect-3"))
+                     (t/is (= (:name instance1') "Rect-1"))
+                     (t/is (= (:name instance2) "Rect-1"))
+                     (t/is (= (:name component2) "Rect-1"))
                      (t/is (= (:name c-shape1') "Rect-1"))
-                     (t/is (= (:name c-instance1') "Rect-2"))
-                     (t/is (= (:name c-instance2) "Rect-3")))))]
+                     (t/is (= (:name c-instance1') "Rect-1"))
+                     (t/is (= (:name c-instance2) "Rect-1")))))]
 
      (ptk/emit!
        store
@@ -332,15 +332,15 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-2              #--> Rect-2
+                   ;   Rect-1              #--> Rect-1
                    ;     Rect-1            ---> Rect-1
                    ;
                    ; [Rect-1]
-                   ; Rect-2
+                   ; Rect-1
                    ;   Rect-1
                    ;
-                   ; [Rect-3]
-                   ; Rect-2
+                   ; [Rect-1]
+                   ; Rect-1
                    ;   Rect-1
                    ;
                    (let [new-component-id (->> (get-in new-state
@@ -363,7 +363,7 @@
                            new-state
                            new-component-id)]
 
-                     (t/is (= (:name component2) "Rect-3")))))]
+                     (t/is (= (:name component2) "Rect-1")))))]
 
      (ptk/emit!
        store
@@ -434,13 +434,13 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-2              #--> Rect-2
+                   ;   Rect-1              #--> Rect-1
                    ;     Rect-1            ---> Rect-1
-                   ;   Rect-3              #--> Rect-2
+                   ;   Rect-1              #--> Rect-1
                    ;     Rect-1            ---> Rect-1
                    ;
-                   ; [Rect-2]
-                   ; Rect-2
+                   ; [Rect-1]
+                   ; Rect-1
                    ;   Rect-1
                    ;
                    (let [new-instance-id (-> new-state
@@ -456,9 +456,9 @@
 
                      (t/is (not= (:id instance1) (:id instance2)))
                      (t/is (= (:id component) component-id))
-                     (t/is (= (:name instance2) "Rect-3"))
+                     (t/is (= (:name instance2) "Rect-1"))
                      (t/is (= (:name shape2) "Rect-1"))
-                     (t/is (= (:name c-instance2) "Rect-2"))
+                     (t/is (= (:name c-instance2) "Rect-1"))
                      (t/is (= (:name c-shape2) "Rect-1"))
                      (t/is (= (:component-file instance2)
                               thp/current-file-id)))))]
@@ -491,7 +491,7 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-2              #--> <Library 1> Rect-2
+                   ;   Rect-1              #--> <Library 1> Rect-1
                    ;     Rect-1            ---> <Library 1> Rect-1
                    ;
                    (let [new-instance-id (-> new-state
@@ -506,9 +506,9 @@
                            new-instance-id)]
 
                      (t/is (= (:id component) component-id))
-                     (t/is (= (:name instance2) "Rect-2"))
+                     (t/is (= (:name instance2) "Rect-1"))
                      (t/is (= (:name shape2) "Rect-1"))
-                     (t/is (= (:name c-instance2) "Rect-2"))
+                     (t/is (= (:name c-instance2) "Rect-1"))
                      (t/is (= (:name c-shape2) "Rect-1"))
                      (t/is (= (:component-file instance2) library-id)))))]
 
@@ -576,17 +576,17 @@
                     ;
                     ; [Page]
                     ; Root Frame
-                    ;   Group-1             #--> Group-1
-                    ;     Rect-2            @--> Rect-2
+                    ;   Group               #--> Group
+                    ;     Rect-1            @--> Rect-1
                     ;       Rect-1          ---> Rect-1
                     ;
                     ; [Rect-1]
-                    ; Rect-2
+                    ; Rect-1
                     ;   Rect-1
                     ;
-                    ; [Group-1]
-                    ; Group-1
-                    ;   Rect-2              @--> Rect-2
+                    ; [Group]
+                    ; Group
+                    ;   Rect-1              @--> Rect-1
                     ;     Rect-1            ---> Rect-1
                     ;
                     (let [page    (thp/current-page new-state)
@@ -600,12 +600,12 @@
                             new-state
                             (:parent-id parent1))]
 
-                      (t/is (= (:name group) "Group-1"))
-                      (t/is (= (:name shape1) "Rect-2"))
+                      (t/is (= (:name group) "Group"))
+                      (t/is (= (:name shape1) "Rect-1"))
                       (t/is (= (:name shape2) "Rect-1"))
-                      (t/is (= (:name component) "Group-1"))
-                      (t/is (= (:name c-group) "Group-1"))
-                      (t/is (= (:name c-shape1) "Rect-2"))
+                      (t/is (= (:name component) "Group"))
+                      (t/is (= (:name c-group) "Group"))
+                      (t/is (= (:name c-shape1) "Rect-1"))
                       (t/is (= (:name c-shape2) "Rect-1")))))]
 
       (ptk/emit!
@@ -641,20 +641,20 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-2              #--> Rect-2
-                   ;     Rect-2            @--> Rect-2
+                   ;   Rect-1              #--> Rect-1
+                   ;     Rect-1            @--> Rect-1
                    ;       Rect-1          ---> Rect-1
-                   ;   Rect-3              #--> Rect-2
-                   ;     Rect-2            @--> Rect-2
+                   ;   Rect-1              #--> Rect-1
+                   ;     Rect-1            @--> Rect-1
                    ;       Rect-1          ---> Rect-1
                    ;
                    ; [Rect-1]
-                   ; Rect-2
+                   ; Rect-1
                    ;   Rect-1
                    ;
-                   ; [Rect-2]
-                   ; Rect-2
-                   ;   Rect-2              @--> Rect-2
+                   ; [Rect-1]
+                   ; Rect-1
+                   ;   Rect-1              @--> Rect-1
                    ;     Rect-1            ---> Rect-1
                    ;
                    (let [new-instance-id (-> new-state
@@ -672,11 +672,11 @@
 
                      (t/is (not= (:id instance1) (:id instance3)))
                      (t/is (= (:id component) component-id))
-                     (t/is (= (:name instance3) "Rect-3"))
-                     (t/is (= (:name shape3) "Rect-2"))
+                     (t/is (= (:name instance3) "Rect-1"))
+                     (t/is (= (:name shape3) "Rect-1"))
                      (t/is (= (:name shape4) "Rect-1"))
-                     (t/is (= (:name c-instance3) "Rect-2"))
-                     (t/is (= (:name c-shape3) "Rect-2"))
+                     (t/is (= (:name c-instance3) "Rect-1"))
+                     (t/is (= (:name c-shape3) "Rect-1"))
                      (t/is (= (:name c-shape4) "Rect-1")))))]
 
         (ptk/emit!
@@ -710,13 +710,13 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Group-1             #--> Group-1
-                   ;     Rect-2            @--> <Library 1> Rect-2
+                   ;   Group             #--> Group
+                   ;     Rect-1            @--> <Library 1> Rect-1
                    ;       Rect-1          ---> <Library 1> Rect-1
                    ;
-                   ; [Group-1]
-                   ; Group-1
-                   ;   Rect-2              @--> <Library 1> Rect-2
+                   ; [Group]
+                   ; Group
+                   ;   Rect-1              @--> <Library 1> Rect-1
                    ;     Rect-1            ---> <Library 1> Rect-1
                    ;
                    (let [instance2 (thp/get-shape new-state :instance2)
@@ -726,11 +726,11 @@
                            new-state
                            (:parent-id instance2))]
 
-                     (t/is (= (:name group1) "Group-1"))
-                     (t/is (= (:name shape1) "Rect-2"))
+                     (t/is (= (:name group1) "Group"))
+                     (t/is (= (:name shape1) "Rect-1"))
                      (t/is (= (:name shape2) "Rect-1"))
-                     (t/is (= (:name c-group1) "Group-1"))
-                     (t/is (= (:name c-shape1) "Rect-2"))
+                     (t/is (= (:name c-group1) "Group"))
+                     (t/is (= (:name c-shape1) "Rect-1"))
                      (t/is (= (:name c-shape2) "Rect-1"))
                      (t/is (= (:component-file group1) thp/current-file-id))
                      (t/is (= (:component-file shape1) library-id))

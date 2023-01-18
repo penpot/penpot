@@ -304,6 +304,8 @@
   [used basename]
   (us/assert! ::set-of-strings used)
   (us/assert! ::us/string basename)
+  ;; We have add a condition because UX doesn't want numbers on 
+  ;; layer names. 
   (if-not (contains? used basename)
     basename
     (let [[prefix initial] (extract-numeric-suffix basename)]
