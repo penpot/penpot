@@ -290,7 +290,7 @@
           (or (not edit-path) (= :draw (:edit-mode edit-path)))
           (assoc-in [:workspace-local :edit-path id] {:edit-mode :move
                                                       :selected #{}
-                                                      :snap-toggled true})
+                                                      :snap-toggled false})
 
           (and (some? edit-path) (= :move (:edit-mode edit-path)))
           (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))

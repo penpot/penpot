@@ -293,7 +293,7 @@
     (update [_ state]
       (let [id (st/get-path-id state)]
         (-> state
-            (assoc-in [:workspace-local :edit-path id :snap-toggled] true))))
+            (assoc-in [:workspace-local :edit-path id :snap-toggled] false))))
 
     ptk/WatchEvent
     (watch [_ state stream]
