@@ -6,9 +6,11 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
+   [app.common.data :as d]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
@@ -21,10 +23,10 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options
-  [{:keys [shape] :as props}]
+  [{:keys [shape file-id shape-with-children shared-libs] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
-
+        objects                 (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
         stroke-values (select-keys shape stroke-attrs)
         layer-values (select-keys shape layer-attrs)
         measure-values (select-measure-keys shape)
@@ -63,6 +65,11 @@
      [:& stroke-menu {:ids ids
                       :type type
                       :values stroke-values}]
+          (when (> (count objects) 2)
+            [:& color-selection-menu {:type type
+                                      :shapes (vals objects)
+                                      :file-id file-id
+                                      :shared-libs shared-libs}])
      [:& shadow-menu {:ids ids
                       :values (select-keys shape [:shadow])}]
      [:& blur-menu {:ids ids
