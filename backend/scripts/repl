@@ -10,6 +10,11 @@ export PENPOT_FLAGS="\
        enable-demo-users \
        disable-secure-session-cookies \
        enable-smtp \
+       enable-prepl-server \
+       enable-urepl-server \
+       enable-rpc-climit \
+       enable-rpc-rlimit \
+       enable-soft-rpc-rlimit \
        enable-webhooks \
        enable-access-tokens";
 
