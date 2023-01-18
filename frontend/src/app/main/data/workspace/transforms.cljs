@@ -440,7 +440,7 @@
              exclude-frames-siblings
              (into exclude-frames
                    (comp (mapcat (partial cph/get-siblings-ids objects))
-                         (filter (partial ctl/layout-child-id? objects)))
+                         (filter (partial ctl/layout-immediate-child-id? objects)))
                    selected)
 
              fix-axis
@@ -640,7 +640,7 @@
       (let [objects (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state {:omit-blocked? true})
             selected-shapes (->> selected (map (d/getf objects)))]
-        (if (every? (partial ctl/layout-child? objects) selected-shapes)
+        (if (every? (partial ctl/layout-immediate-child-id? objects) selected-shapes)
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 

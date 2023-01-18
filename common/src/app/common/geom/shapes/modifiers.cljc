@@ -359,7 +359,7 @@
 
                       to-reflow
                       (cond-> to-reflow
-                        (and (ctl/layout-child-id? objects current)
+                        (and (ctl/layout-descent? objects parent-base)
                              (not= uuid/zero (:frame-id parent-base)))
                         (conj (:frame-id parent-base)))]
                   (recur modif-tree
