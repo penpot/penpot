@@ -15,7 +15,6 @@
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.types.modifiers :as ctm]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
@@ -318,16 +317,25 @@
 (defn not-changed? [old-dim new-dim]
   (> (mth/abs (- old-dim new-dim)) 1))
 
-(defn resize-text
-  [id new-width new-height]
-  (ptk/reify ::resize-text
+(defn commit-resize-text
+  []
+  (ptk/reify ::commit-resize-text
     ptk/WatchEvent
     (watch [_ state _]
-      (let [shape (wsh/lookup-shape state id)
+      (let [props (::resize-text-debounce-props state)
+            objects (wsh/lookup-page-objects state)
             undo-id (js/Symbol)]
-        (letfn [(update-fn [shape]
-                  (let [{:keys [selrect grow-type]} shape
-                        {shape-width :width shape-height :height} selrect
+
+        (letfn [(changed-text? [id]
+                  (let [shape (get objects id)
+                        [new-width new-height] (get props id)]
+                    (or (and (not-changed? (:width shape) new-width) (= (:grow-type shape) :auto-width))
+                        (and (not-changed? (:height shape) new-height)
+                             (or (= (:grow-type shape) :auto-height) (= (:grow-type shape) :auto-width))))))
+
+                (update-fn [{:keys [id selrect grow-type] :as shape}]
+                  (let [{shape-width :width shape-height :height} selrect
+                        [new-width new-height] (get props id)
 
                         shape
                         (cond-> shape
@@ -342,14 +350,39 @@
 
                     shape))]
 
-          (when (or (and (not-changed? (:width shape) new-width) (= (:grow-type shape) :auto-width))
-                    (and (not-changed? (:height shape) new-height)
-                         (or (= (:grow-type shape) :auto-height) (= (:grow-type shape) :auto-width))))
+          (let [ids (->> (keys props) (filter changed-text?))]
             (rx/of (dwu/start-undo-transaction undo-id)
-                   (dch/update-shapes [id] update-fn {:reg-objects? true :save-undo? true})
-                   (ptk/data-event :layout/update [id])
+                   (dch/update-shapes ids update-fn {:reg-objects? true :save-undo? true})
+                   (ptk/data-event :layout/update ids)
                    (dwu/commit-undo-transaction undo-id))))))))
 
+(defn resize-text
+  [id new-width new-height]
+
+  (let [cur-event (js/Symbol)]
+    (ptk/reify ::resize-text
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            (update ::resize-text-debounce-props (fnil assoc {}) id [new-width new-height])
+            (cond-> (nil? (::resize-text-debounce-event state))
+              (assoc ::resize-text-debounce-event cur-event))))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (if (= (::resize-text-debounce-event state) cur-event)
+          (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
+            (rx/concat
+             (rx/merge
+              (->> stream
+                   (rx/filter (ptk/type? ::resize-text))
+                   (rx/debounce 50)
+                   (rx/take 1)
+                   (rx/map #(commit-resize-text))
+                   (rx/take-until stopper))
+              (rx/of (resize-text id new-width new-height)))
+             (rx/of #(dissoc % ::resize-text-debounce-props ::resize-text-debounce-event))))
+          (rx/empty))))))
 
 (defn save-font
   [data]
@@ -384,37 +417,43 @@
 
     new-shape))
 
-(defn update-text-modifier-state
-  [id props]
-  (ptk/reify ::update-text-modifier-state
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-text-modifier id] (fnil merge {}) props))))
+(defn commit-update-text-modifier
+  []
+  (ptk/reify ::commit-update-text-modifier
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [ids (::update-text-modifier-debounce-ids state)]
+        (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+          (rx/of (dwm/update-modifiers modif-tree false true)))))))
 
 (defn update-text-modifier
   [id props]
-  (ptk/reify ::update-text-modifier
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [modifiers (get-in (:workspace-modifiers state) [id :modifiers])
 
-            shape (-> (wsh/lookup-shape state id)
-                      (gsh/transform-shape modifiers))
+  (let [cur-event (js/Symbol)]
+    (ptk/reify ::update-text-modifier
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            (update-in [:workspace-text-modifier id] (fnil merge {}) props)
+            (update ::update-text-modifier-debounce-ids (fnil conj #{}) id)
+            (cond-> (nil? (::update-text-modifier-debounce-event state))
+              (assoc ::update-text-modifier-debounce-event cur-event))))
 
-            current-width (:width shape)
-            current-height (:height shape)]
-        (rx/concat
-         (rx/of (update-text-modifier-state id props))
-
-         (if (or (and (some? (:width props))
-                      (not (mth/close? (:width props) current-width)))
-                 (and (some? (:height props))
-                      (not (mth/close? (:height props) current-height))))
-
-           (let [modif-tree (dwm/create-modif-tree [id] (ctm/reflow-modifiers))]
-             (->> (rx/of (dwm/update-modifiers modif-tree false true))
-                  (rx/observe-on :async)))
-           (rx/empty)))))))
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (if (= (::update-text-modifier-debounce-event state) cur-event)
+          (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
+            (rx/concat
+             (rx/merge
+              (->> stream
+                   (rx/filter (ptk/type? ::update-text-modifier))
+                   (rx/debounce 50)
+                   (rx/take 1)
+                   (rx/map #(commit-update-text-modifier))
+                   (rx/take-until stopper))
+              (rx/of (update-text-modifier id props)))
+             (rx/of #(dissoc % ::update-text-modifier-debounce-event ::update-text-modifier-debounce-ids))))
+          (rx/empty))))))
 
 (defn clean-text-modifier
   [id]
@@ -464,18 +503,18 @@
 (defn update-position-data
   [id position-data]
 
-  (let [start (uuid/next)]
+  (let [cur-event (js/Symbol)]
     (ptk/reify ::update-position-data
       ptk/UpdateEvent
       (update [_ state]
         (let [state (assoc-in state [:workspace-text-modifier id :position-data] position-data)]
           (if (nil? (::update-position-data-debounce state))
-            (assoc state ::update-position-data-debounce start)
+            (assoc state ::update-position-data-debounce cur-event)
             (assoc-in state [::update-position-data id] position-data))))
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (if (= (::update-position-data-debounce state) start)
+        (if (= (::update-position-data-debounce state) cur-event)
           (let [stopper (->> stream (rx/filter (ptk/type? :app.main.data.workspace/finalize)))]
             (rx/merge
              (->> stream

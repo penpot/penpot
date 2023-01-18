@@ -219,7 +219,7 @@
       result
       (let [[id text-modifier] (first modifiers)]
         (recur (rest modifiers)
-               (update objects id apply-text-modifier text-modifier))))))
+               (update result id apply-text-modifier text-modifier))))))
 
 #_(defn apply-path-modifiers
   [objects path-modifiers]
