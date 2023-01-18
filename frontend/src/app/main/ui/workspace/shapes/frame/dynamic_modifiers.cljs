@@ -183,6 +183,9 @@
               (dom/remove-attribute! node "data-old-width")
               (dom/remove-attribute! node "data-old-height"))
 
+            (dom/class? node "frame-title")
+            (dom/remove-attribute! node "data-old-transform")
+
             :else
             (let [old-transform (dom/get-attribute node "data-old-transform")]
               (if (some? old-transform)
