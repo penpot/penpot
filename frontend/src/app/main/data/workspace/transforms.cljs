@@ -750,36 +750,22 @@
   (ptk/reify ::flip-horizontal-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects  (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state {:omit-blocked? true})
-            shapes   (map #(get objects %) selected)
-            selrect  (gsh/selection-rect shapes)
-            origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))
-
-            modif-tree (dwm/create-modif-tree
-                        selected
-                        (-> (ctm/empty)
-                            (ctm/resize (gpt/point -1.0 1.0) origin)
-                            (ctm/move (gpt/point (:width selrect) 0))))]
-
-        (rx/of (dwm/set-modifiers modif-tree true)
-               (dwm/apply-modifiers))))))
+      (let [objects   (wsh/lookup-page-objects state)
+            selected  (wsh/lookup-selected state {:omit-blocked? true})
+            shapes    (map #(get objects %) selected)
+            selrect   (gsh/selection-rect shapes)
+            center    (gsh/center-selrect selrect)
+            modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
+        (rx/of (dwm/apply-modifiers {:modifiers modifiers}))))))
 
 (defn flip-vertical-selected []
   (ptk/reify ::flip-vertical-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects  (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state {:omit-blocked? true})
-            shapes   (map #(get objects %) selected)
-            selrect  (gsh/selection-rect shapes)
-            origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))
-
-            modif-tree (dwm/create-modif-tree
-                        selected
-                        (-> (ctm/empty)
-                            (ctm/resize (gpt/point 1.0 -1.0) origin)
-                            (ctm/move (gpt/point 0 (:height selrect)))))]
-
-        (rx/of (dwm/set-modifiers modif-tree true)
-               (dwm/apply-modifiers))))))
+      (let [objects   (wsh/lookup-page-objects state)
+            selected  (wsh/lookup-selected state {:omit-blocked? true})
+            shapes    (map #(get objects %) selected)
+            selrect   (gsh/selection-rect shapes)
+            center    (gsh/center-selrect selrect)
+            modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]
+        (rx/of (dwm/apply-modifiers {:modifiers modifiers}))))))
