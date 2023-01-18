@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-29 13:03+0000\n"
+"PO-Revision-Date: 2023-01-24 14:27+0000\n"
 "Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
 "Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
 "eu/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.2-dev\n"
+"X-Generator: Weblate 4.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4569,3 +4569,26 @@ msgstr "Ireki alboko barra"
 
 msgid "errors.profile-blocked"
 msgstr "Profila blokeatuta dago"
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Bidali Penpoti buruzko albisteak (blogeko artikuluak, bideo-tutorialak, "
+"zuzenekoak...)."
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Harpidetu Penpoten buletinera produktuaren garapenaren inguruko albisteak "
+"ezagutzeko."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Zure pribatutasuna zaintzen dugu, hemen irakurri dezakezu gure "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Zuretzat garrantzitsuak diren mezuak bakarrik bidaliko dizkizugu. Harpidetza "
+"zuk nahi duzunean eten dezakezu buletinean dagoen esteka erabiliz."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Bidali produktuaren eguneraketak (ezaugarri berriak, bertsioak, konponketak, "
+"...)."
