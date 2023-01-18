@@ -44,7 +44,7 @@
         shape (gsh/transform-shape shape modifiers)]
     [:*
      (case (:type shape)
-       :frame   [:& frame/options {:shape shape}]
+       :frame   [:& frame/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
        :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
        :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
        :rect    [:& rect/options {:shape shape}]
