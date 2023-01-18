@@ -312,11 +312,11 @@ msgid "dashboard.export-binary-multi"
 msgstr "Download %s Penpot files (.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "Export boards to PDF"
+msgstr "Export boards as PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
-msgstr "Export to PDF"
+msgstr "Export as PDF"
 
 msgid "dashboard.export-multi"
 msgstr "Export Penpot %s files"
