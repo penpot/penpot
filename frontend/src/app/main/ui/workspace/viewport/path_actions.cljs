@@ -106,9 +106,7 @@
         on-toggle-snap
         (mf/use-callback
          (fn [_]
-           (st/emit! (drp/toggle-snap))))
-
-        ]
+           (st/emit! (drp/toggle-snap))))]
     [:div.path-actions
      [:div.viewport-actions-group
 
