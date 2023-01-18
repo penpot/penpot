@@ -18,7 +18,7 @@
    [app.common.types.modifiers :as ctm]))
 
 (defn size-pixel-precision
-  [modifiers shape points]
+  [modifiers shape points precision]
   (let [origin        (gpo/origin points)
         curr-width    (gpo/width-points points)
         curr-height   (gpo/height-points points)
@@ -29,8 +29,8 @@
         vertical-line?   (and path? (<= curr-width 0.01))
         horizontal-line? (and path? (<= curr-height 0.01))
 
-        target-width  (if vertical-line? curr-width (max 1 (mth/round curr-width)))
-        target-height (if horizontal-line? curr-height (max 1 (mth/round curr-height)))
+        target-width  (if vertical-line? curr-width (max 1 (mth/round curr-width precision)))
+        target-height (if horizontal-line? curr-height (max 1 (mth/round curr-height precision)))
 
         ratio-width  (/ target-width curr-width)
         ratio-height (/ target-height curr-height)
@@ -39,23 +39,23 @@
         (ctm/resize scalev origin transform transform-inverse {:precise? true}))))
 
 (defn position-pixel-precision
-  [modifiers _ points]
+  [modifiers _ points precision]
   (let [bounds        (gpr/bounds->rect points)
         corner        (gpt/point bounds)
-        target-corner (gpt/round corner)
+        target-corner (gpt/round-step corner precision)
         deltav        (gpt/to-vec corner target-corner)]
     (ctm/move modifiers deltav)))
 
 (defn set-pixel-precision
   "Adjust modifiers so they adjust to the pixel grid"
-  [modifiers shape]
+  [modifiers shape precision]
   (let [points (-> shape :points (gco/transform-points (ctm/modifiers->transform modifiers)))
         has-resize? (not (ctm/only-move? modifiers))
 
         [modifiers points]
         (let [modifiers
               (cond-> modifiers
-                has-resize? (size-pixel-precision shape points))
+                has-resize? (size-pixel-precision shape points precision))
 
               points
               (if has-resize?
@@ -63,16 +63,16 @@
                     (gco/transform-points (ctm/modifiers->transform modifiers)) )
                 points)]
           [modifiers points])]
-    (position-pixel-precision modifiers shape points)))
+    (position-pixel-precision modifiers shape points precision)))
 
 (defn adjust-pixel-precision
-  [modif-tree objects]
+  [modif-tree objects precision]
   (let [update-modifiers
         (fn [modif-tree shape]
           (let [modifiers (dm/get-in modif-tree [(:id shape) :modifiers])]
             (cond-> modif-tree
               (ctm/has-geometry? modifiers)
-              (update-in [(:id shape) :modifiers] set-pixel-precision shape))))]
+              (update-in [(:id shape) :modifiers] set-pixel-precision shape precision))))]
 
     (->> (keys modif-tree)
          (map (d/getf objects))

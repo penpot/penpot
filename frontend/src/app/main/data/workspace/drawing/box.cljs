@@ -16,6 +16,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.workspace.drawing.common :as common]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.snap :as snap]
@@ -70,14 +71,15 @@
       (let [stoper? #(or (ms/mouse-up? %) (= % :interrupt))
             stoper  (rx/filter stoper? stream)
             layout  (get state :workspace-layout)
+            zoom       (get-in state [:workspace-local :zoom] 1)
             snap-pixel? (contains? layout :snap-pixel-grid)
 
-            initial (cond-> @ms/mouse-position snap-pixel? gpt/round)
+            snap-precision (if (>= zoom zoom-half-pixel-precision) 0.5 1)
+            initial (cond-> @ms/mouse-position snap-pixel? (gpt/round-step snap-precision))
 
             page-id    (:current-page-id state)
             objects    (wsh/lookup-page-objects state page-id)
             focus      (:workspace-focus-selected state)
-            zoom       (get-in state [:workspace-local :zoom] 1)
 
             fid        (ctst/top-nested-frame objects initial)
             layout?    (ctl/layout? objects fid)
@@ -119,7 +121,7 @@
                         (rx/map #(conj current %)))))
                 (rx/map
                  (fn [[_ shift? point]]
-                   #(update-drawing % initial (cond-> point snap-pixel? gpt/round) shift?)))))
+                   #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step snap-precision)) shift?)))))
           (rx/take-until stoper))
 
          (->> (rx/of (common/handle-finish-drawing))
