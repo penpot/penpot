@@ -36,6 +36,7 @@
         main-instance?     (if components-v2
                              (:main-instance? values)
                              true)
+        main-component?    (:main-instance? values)
         local-component?    (= library-id current-file-id)
         workspace-data      (deref refs/workspace-data)
         workspace-libraries (deref refs/workspace-libraries)
@@ -101,7 +102,7 @@
           [:& context-menu {:on-close on-menu-close
                             :show (:menu-open @local)
                             :options
-                            (if main-instance?
+                            (if main-component?
                               [[(tr "workspace.shape.menu.show-in-assets") do-show-in-assets]]
                               (if local-component?
                                 (if is-dangling?
