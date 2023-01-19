@@ -6,6 +6,7 @@
 
 (ns app.common.types.shape.layout
   (:require
+   [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
@@ -99,14 +100,20 @@
   ([shape]
    (and (= :frame (:type shape)) (= :flex (:layout shape)))))
 
-(defn layout-child? [objects shape]
+(defn layout-immediate-child? [objects shape]
+  (let [parent-id (:parent-id shape)
+        parent (get objects parent-id)]
+    (layout? parent)))
+
+(defn layout-immediate-child-id? [objects id]
+  (let [parent-id (dm/get-in objects [id :parent-id])
+        parent (get objects parent-id)]
+    (layout? parent)))
+
+(defn layout-descent? [objects shape]
   (let [frame-id (:frame-id shape)
         frame (get objects frame-id)]
     (layout? frame)))
-
-(defn layout-child-id? [objects id]
-  (let [shape (get objects id)]
-    (layout-child? objects shape)))
 
 (defn inside-layout?
   "Check if the shape is inside a layout"

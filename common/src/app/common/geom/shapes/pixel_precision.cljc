@@ -39,16 +39,25 @@
         (ctm/resize scalev origin transform transform-inverse {:precise? true}))))
 
 (defn position-pixel-precision
-  [modifiers _ points precision]
+  [modifiers _ points precision ignore-axis]
   (let [bounds        (gpr/bounds->rect points)
         corner        (gpt/point bounds)
-        target-corner (gpt/round-step corner precision)
+        target-corner
+        (cond-> corner
+          (= ignore-axis :x)
+          (update :y mth/round precision)
+
+          (= ignore-axis :y)
+          (update :x mth/round precision)
+
+          (nil? ignore-axis)
+          (gpt/round-step precision))
         deltav        (gpt/to-vec corner target-corner)]
     (ctm/move modifiers deltav)))
 
 (defn set-pixel-precision
   "Adjust modifiers so they adjust to the pixel grid"
-  [modifiers shape precision]
+  [modifiers shape precision ignore-axis]
   (let [points (-> shape :points (gco/transform-points (ctm/modifiers->transform modifiers)))
         has-resize? (not (ctm/only-move? modifiers))
 
@@ -63,16 +72,16 @@
                     (gco/transform-points (ctm/modifiers->transform modifiers)) )
                 points)]
           [modifiers points])]
-    (position-pixel-precision modifiers shape points precision)))
+    (position-pixel-precision modifiers shape points precision ignore-axis)))
 
 (defn adjust-pixel-precision
-  [modif-tree objects precision]
+  [modif-tree objects precision ignore-axis]
   (let [update-modifiers
         (fn [modif-tree shape]
           (let [modifiers (dm/get-in modif-tree [(:id shape) :modifiers])]
             (cond-> modif-tree
               (ctm/has-geometry? modifiers)
-              (update-in [(:id shape) :modifiers] set-pixel-precision shape precision))))]
+              (update-in [(:id shape) :modifiers] set-pixel-precision shape precision ignore-axis))))]
 
     (->> (keys modif-tree)
          (map (d/getf objects))

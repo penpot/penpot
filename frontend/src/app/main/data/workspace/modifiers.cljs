@@ -219,7 +219,7 @@
       result
       (let [[id text-modifier] (first modifiers)]
         (recur (rest modifiers)
-               (update objects id apply-text-modifier text-modifier))))))
+               (update result id apply-text-modifier text-modifier))))))
 
 #_(defn apply-path-modifiers
   [objects path-modifiers]
@@ -241,6 +241,9 @@
    (calculate-modifiers state false false modif-tree))
 
   ([state ignore-constraints ignore-snap-pixel modif-tree]
+   (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree nil))
+
+  ([state ignore-constraints ignore-snap-pixel modif-tree params]
    (let [objects
          (wsh/lookup-page-objects state)
 
@@ -253,7 +256,11 @@
      (as-> objects $
        (apply-text-modifiers $ (get state :workspace-text-modifier))
        ;;(apply-path-modifiers $ (get-in state [:workspace-local :edit-path]))
-       (gsh/set-objects-modifiers modif-tree $ {:ignore-constraints ignore-constraints :snap-pixel? snap-pixel? :snap-precision snap-precision})))))
+       (gsh/set-objects-modifiers modif-tree $ (merge
+                                                params
+                                                {:ignore-constraints ignore-constraints
+                                                 :snap-pixel? snap-pixel?
+                                                 :snap-precision snap-precision}))))))
 
 (defn- calculate-update-modifiers
   [old-modif-tree state ignore-constraints ignore-snap-pixel modif-tree]
@@ -292,10 +299,13 @@
    (set-modifiers modif-tree ignore-constraints false))
 
   ([modif-tree ignore-constraints ignore-snap-pixel]
+   (set-modifiers modif-tree ignore-constraints ignore-snap-pixel nil))
+
+  ([modif-tree ignore-constraints ignore-snap-pixel params]
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (assoc state :workspace-modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree))))))
+       (assoc state :workspace-modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree params))))))
 
 ;; Rotation use different algorithm to calculate children modifiers (and do not use child constraints).
 (defn set-rotation-modifiers

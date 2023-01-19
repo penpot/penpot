@@ -440,21 +440,11 @@
              exclude-frames-siblings
              (into exclude-frames
                    (comp (mapcat (partial cph/get-siblings-ids objects))
-                         (filter (partial ctl/layout-child-id? objects)))
+                         (filter (partial ctl/layout-immediate-child-id? objects)))
                    selected)
 
-             fix-axis
-             (fn [[position shift?]]
-               (let [delta (gpt/to-vec from-position position)]
-                 (if shift?
-                   (if (> (mth/abs (:x delta)) (mth/abs (:y delta)))
-                     (gpt/point (:x delta) 0)
-                     (gpt/point 0 (:y delta)))
-                   delta)))
-
              position (->> ms/mouse-position
-                           (rx/with-latest-from ms/mouse-position-shift)
-                           (rx/map #(fix-axis %)))
+                           (rx/map #(gpt/to-vec from-position %)))
 
              snap-delta (rx/concat
                          ;; We send the nil first so the stream is not waiting for the first value
@@ -491,11 +481,24 @@
              (rx/merge
               ;; Temporary modifiers stream
               (->> move-stream
+                   (rx/with-latest-from ms/mouse-position-shift)
                    (rx/map
-                    (fn [[move-vector target-frame drop-index]]
-                      (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
-                          (dwm/build-change-frame-modifiers objects selected target-frame drop-index)
-                          (dwm/set-modifiers)))))
+                    (fn [[[move-vector target-frame drop-index] shift?]]
+                      (let [x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
+                            [move-vector snap-ignore-axis]
+                            (cond
+                              (and shift? x-disp?)
+                              [(assoc move-vector :y 0) :y]
+
+                              shift?
+                              [(assoc move-vector :x 0) :x]
+
+                              :else
+                              [move-vector nil])]
+
+                        (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
+                            (dwm/build-change-frame-modifiers objects selected target-frame drop-index)
+                            (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
 
               (->> move-stream
                    (rx/map (comp set-ghost-displacement first)))
@@ -640,7 +643,7 @@
       (let [objects (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state {:omit-blocked? true})
             selected-shapes (->> selected (map (d/getf objects)))]
-        (if (every? (partial ctl/layout-child? objects) selected-shapes)
+        (if (every? (partial ctl/layout-immediate-child-id? objects) selected-shapes)
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 
@@ -750,36 +753,22 @@
   (ptk/reify ::flip-horizontal-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects  (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state {:omit-blocked? true})
-            shapes   (map #(get objects %) selected)
-            selrect  (gsh/selection-rect shapes)
-            origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))
-
-            modif-tree (dwm/create-modif-tree
-                        selected
-                        (-> (ctm/empty)
-                            (ctm/resize (gpt/point -1.0 1.0) origin)
-                            (ctm/move (gpt/point (:width selrect) 0))))]
-
-        (rx/of (dwm/set-modifiers modif-tree true)
-               (dwm/apply-modifiers))))))
+      (let [objects   (wsh/lookup-page-objects state)
+            selected  (wsh/lookup-selected state {:omit-blocked? true})
+            shapes    (map #(get objects %) selected)
+            selrect   (gsh/selection-rect shapes)
+            center    (gsh/center-selrect selrect)
+            modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
+        (rx/of (dwm/apply-modifiers {:modifiers modifiers}))))))
 
 (defn flip-vertical-selected []
   (ptk/reify ::flip-vertical-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects  (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state {:omit-blocked? true})
-            shapes   (map #(get objects %) selected)
-            selrect  (gsh/selection-rect shapes)
-            origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))
-
-            modif-tree (dwm/create-modif-tree
-                        selected
-                        (-> (ctm/empty)
-                            (ctm/resize (gpt/point 1.0 -1.0) origin)
-                            (ctm/move (gpt/point 0 (:height selrect)))))]
-
-        (rx/of (dwm/set-modifiers modif-tree true)
-               (dwm/apply-modifiers))))))
+      (let [objects   (wsh/lookup-page-objects state)
+            selected  (wsh/lookup-selected state {:omit-blocked? true})
+            shapes    (map #(get objects %) selected)
+            selrect   (gsh/selection-rect shapes)
+            center    (gsh/center-selrect selrect)
+            modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]
+        (rx/of (dwm/apply-modifiers {:modifiers modifiers}))))))
