@@ -155,10 +155,12 @@
             single?         (= (count selected-shapes) 1)
             has-group?      (->> selected-shapes (d/seek cph/group-shape?))
             is-group?       (and single? has-group?)
+            has-mask?       (->> selected-shapes (d/seek cph/mask-shape?))
+            is-mask?        (and single? has-mask?)
             has-component?  (some true? (map ctc/instance-root? selected-shapes))
             is-component?   (and single? has-component?)]
 
-        (if (and (not is-component?) is-group?)
+        (if (and (not is-component?) is-group? (not is-mask?))
           (let [new-shape-id (uuid/next)
                 parent-id    (:parent-id (first selected-shapes))
                 shapes-ids   (:shapes (first selected-shapes))
