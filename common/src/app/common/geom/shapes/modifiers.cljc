@@ -132,7 +132,7 @@
         children (cph/get-immediate-children objects shape-id)]
 
     (cond
-      (cph/mask-shape? shape)
+      (and (cph/mask-shape? shape) (seq children))
       (get-group-bounds objects bounds modif-tree (-> children first))
 
       (cph/group-shape? shape)
