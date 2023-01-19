@@ -50,12 +50,13 @@
 (mf/defc viewport-actions
   {::mf/wrap [mf/memo]}
   []
-  (let [edition (mf/deref refs/selected-edition)
-        selected (mf/deref refs/selected-objects)
-        shape (-> selected first)]
-    (when (and (= (count selected) 1)
-               (= (:id shape) edition)
-               (not= :text (:type shape)))
+  (let [edition     (mf/deref refs/selected-edition)
+        selected    (mf/deref refs/selected-objects)
+        drawing     (mf/deref refs/workspace-drawing)
+        drawing-obj (:object drawing)
+        shape       (or drawing-obj (-> selected first))]
+    (when (or (and (= (count selected) 1) (= (:id shape) edition) (not= :text (:type shape)))
+              (and (some? drawing-obj) (= :path (:type drawing-obj))))
       [:div.viewport-actions
        [:& path-actions {:shape shape}]])))
 
