@@ -238,7 +238,15 @@
            points-transform-mtx
            (gmt/translate-matrix center)))
 
-        transform-inverse (when transform (gmt/inverse transform))]
+        transform-inverse (when transform (gmt/inverse transform))
+
+        ;; There is a rounding error when the matrix returned have float point values
+        ;; when the matrix is unit we return a "pure" matrix so we don't accumulate
+        ;; rounding problems
+        [transform transform-inverse]
+        (if (gmt/unit? transform)
+          [(gmt/matrix) (gmt/matrix)]
+          [transform transform-inverse])]
 
     [sr transform transform-inverse]))
 
