@@ -22,6 +22,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.util.color :as uc]
    [app.util.path.parser :as upp]
@@ -585,7 +586,11 @@
                                              (filter #(= :add-obj (:type %)))
                                              (map :id)
                                              reverse
-                                             vec))]
+                                             vec))
+            undo-id (js/Symbol)]
 
-      (rx/of (dch/commit-changes changes)
-             (dws/select-shapes (d/ordered-set (:id new-shape))))))))
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (dws/select-shapes (d/ordered-set (:id new-shape)))
+               (ptk/data-event :layout/update [(:id new-shape)])
+               (dwu/commit-undo-transaction undo-id))))))
