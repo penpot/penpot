@@ -643,7 +643,7 @@
       (let [objects (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state {:omit-blocked? true})
             selected-shapes (->> selected (map (d/getf objects)))]
-        (if (every? (partial ctl/layout-immediate-child-id? objects) selected-shapes)
+        (if (every? (partial ctl/layout-immediate-child? objects) selected-shapes)
           (rx/of (reorder-selected-layout-child direction))
           (rx/of (nudge-selected-shapes direction shift?)))))))
 

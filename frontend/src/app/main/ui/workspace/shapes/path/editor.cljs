@@ -327,14 +327,15 @@
 
          [:g.path-node {:key (dm/str index "-" (:x position) "-" (:y position))}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
-           (for [[index prefix] pos-handlers]
-             (let [handler-position (upc/handler->point content index prefix)
-                   handler-hover? (contains? hover-handlers [index prefix])
+           (for [[hindex prefix] pos-handlers]
+             (let [handler-position (upc/handler->point content hindex prefix)
+                   handler-hover? (contains? hover-handlers [hindex prefix])
                    moving-handler? (= handler-position moving-handler)
                    matching-handler? (matching-handler? content position pos-handlers)]
-               [:& path-handler {:point position
+               [:& path-handler {:key (dm/str (dm/str index "-" (:x position) "-" (:y position)) "-" hindex "-" (d/name prefix))
+                                 :point position
                                  :handler handler-position
-                                 :index index
+                                 :index hindex
                                  :prefix prefix
                                  :zoom zoom
                                  :hover? handler-hover?

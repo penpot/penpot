@@ -60,7 +60,7 @@
      (point v v)
 
      (point-like? v)
-     (map->Point v)
+     (Point. (:x v) (:y v))
 
      :else
      (ex/raise :hint "invalid arguments (on pointer constructor)" :value v)))
