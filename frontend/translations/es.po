@@ -441,6 +441,16 @@ msgstr ""
 "más sobre licencias tipográficas: [font "
 "licensing](https://www.typography.com/faq)."
 
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Hemos detectado un posible problema en tus fuentes "
+"relacionado con las métricas verticales en diferentes sistemas operativos. "
+"Puedes comprobar la visualización de tu fuente utilizando servicios "
+"[como este](https://vertical-metrics.netlify.app/). "
+"Además, recomendamos usar [Transfonter](https://transfonter.org/) "
+"para generar fuentes web y corregir posibles errores."
+
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
 msgstr "Cargar todas"

@@ -18,6 +18,7 @@
 - Dynamic alignment only in sight [Taiga #3537](https://tree.taiga.io/project/penpot/us/3537)
 - Improve naming of layers [Taiga #4036](https://tree.taiga.io/project/penpot/us/4036)
 - Add zoom lense [Taiga #4691](https://tree.taiga.io/project/penpot/us/4691)
+- Detect potential problems with custom font vertical metrics [Taiga #4697](https://tree.taiga.io/project/penpot/us/4697)
 
 ### :bug: Bugs fixed
 
@@ -54,6 +55,7 @@
 - Fix undo ungroup (shift+g) scrambles positions [Taiga #4674](https://tree.taiga.io/project/penpot/issue/4674)
 - Fix justified text is stretched [Github #2539](https://github.com/penpot/penpot/issues/2539)
 - Fix mousewheel on viewer inspector [Taiga #4221](https://tree.taiga.io/project/penpot/issue/4221)
+<<<<<<< HEAD
 - Fix path edition activated on boards [Taiga #4105](https://tree.taiga.io/project/penpot/issue/4105)
 - Fix hidden layers inside groups become visible after the group visibility is changed[Taiga #4710](https://tree.taiga.io/project/penpot/issue/4710)
 - Fix format of HSLA color on viewer [Taiga #4393](https://tree.taiga.io/project/penpot/issue/4393)
@@ -62,6 +64,9 @@
 ### :heart: Community contributions by (Thank you!)
 
 - To @iprithvitharun: let's make UX Writing contributions in Open Source a trend!
+=======
+- Fix text in custom font is not at the expected position at export [Taiga #4394](https://tree.taiga.io/project/penpot/issue/4394)
+>>>>>>> 1a9c62848 (:bug: Fix font vertical metrics)
 
 ## 1.16.2-beta
 

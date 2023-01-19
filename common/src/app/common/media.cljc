@@ -9,7 +9,8 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
-(def valid-font-types #{"font/ttf" "font/woff", "application/font-woff", "font/otf"})
+;; We have added ".ttf" as string to solve a problem with chrome input selector
+(def valid-font-types #{"font/ttf", ".ttf", "font/woff", "application/font-woff", "font/otf"})
 (def valid-image-types #{"image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"})
 (def str-image-types (str/join "," valid-image-types))
 (def str-font-types (str/join "," valid-font-types))
