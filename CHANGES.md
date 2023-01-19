@@ -45,6 +45,7 @@
 - Fix undo ungroup (shift+g) scrambles positions [Taiga #4674](https://tree.taiga.io/project/penpot/issue/4674)
 - Fix justified text is stretched [Github #2539](https://github.com/penpot/penpot/issues/2539)
 - Fix mousewheel on viewer inspector [Taiga #4221](https://tree.taiga.io/project/penpot/issue/4221)
+- Fix path edition activated on boards [Taiga #4105](https://tree.taiga.io/project/penpot/issue/4105)
 
 ## 1.16.2-beta
 
