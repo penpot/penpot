@@ -165,11 +165,12 @@
                 parent-id    (:parent-id (first selected-shapes))
                 shapes-ids   (:shapes (first selected-shapes))
                 ordered-ids  (into (d/ordered-set) shapes-ids)
-                undo-id      (js/Symbol)]
+                undo-id      (js/Symbol)
+                group-index  (cph/get-index-replacement selected objects)]
             (rx/of
              (dwu/start-undo-transaction undo-id)
              (dwse/select-shapes ordered-ids)
-             (dws/create-artboard-from-selection new-shape-id parent-id)
+             (dws/create-artboard-from-selection new-shape-id parent-id group-index)
              (cl/remove-all-fills [new-shape-id] {:color clr/black
                                                   :opacity 1})
              (create-layout-from-id [new-shape-id] type)
