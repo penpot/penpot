@@ -359,6 +359,8 @@
   ([id]
    (create-artboard-from-selection id nil))
   ([id parent-id]
+   (create-artboard-from-selection id parent-id nil))
+  ([id parent-id index]
    (ptk/reify ::create-artboard-from-selection
      ptk/WatchEvent
      (watch [_ state _]
@@ -367,11 +369,8 @@
              selected      (wsh/lookup-selected state)
              selected      (cph/clean-loops objects selected)
              selected-objs (map #(get objects %) selected)
-             new-index     (->> selected
-                                (cph/order-by-indexed-shapes objects)
-                                first
-                                (cph/get-position-on-parent objects)
-                                inc)]
+             new-index     (or index
+                               (cph/get-index-replacement selected objects))]
          (when (d/not-empty? selected)
            (let [srect     (gsh/selection-rect selected-objs)
                  frame-id  (get-in objects [(first selected) :frame-id])

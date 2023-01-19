@@ -353,6 +353,16 @@
        (filter (comp (into #{} ids) second))
        (map second)))
 
+(defn get-index-replacement
+  "Given a collection of shapes, calculate their positions 
+   in the parent, find first index and return next one"
+  [shapes objects]
+  (->> shapes
+       (order-by-indexed-shapes objects)
+       first
+       (get-position-on-parent objects)
+       inc))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHAPES ORGANIZATION (PATH MANAGEMENT)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
