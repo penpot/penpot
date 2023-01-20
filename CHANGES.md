@@ -9,6 +9,7 @@
 - Show board miniature in manual overlay setting [Taiga #4475](https://tree.taiga.io/project/penpot/issue/4475)
 - Handoff visual improvements [Taiga #3124](https://tree.taiga.io/project/penpot/us/3124)
 - Dynamic alignment only in sight [Github 1971](https://github.com/penpot/penpot/issues/1971)
+- Add some accessibility to shortcut panel [Taiga #4713](https://tree.taiga.io/project/penpot/issue/4713)
 
 ### :bug: Bugs fixed
 

@@ -433,8 +433,16 @@ button.collapse-sidebar {
         display: flex;
         justify-content: center;
         align-items: center;
-        &.close {
-          transform: rotate(45deg);
+        border: none;
+        background-color: transparent;
+        padding: 0;
+        .icon {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          &.close {
+            transform: rotate(45deg);
+          }
         }
       }
       svg {
