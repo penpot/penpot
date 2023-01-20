@@ -29,7 +29,7 @@
                      :email email
                      :fullname fullname
                      :is-active true
-                     :password (derive-password password)
+                     :password password
                      :props {}}
             profile (->> (cmd.auth/create-profile! conn params)
                          (cmd.auth/create-profile-rels! conn))]

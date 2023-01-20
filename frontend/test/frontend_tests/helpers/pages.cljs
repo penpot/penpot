@@ -87,7 +87,7 @@
                :obj shape}]))))
 
 (defn group-shapes
-  ([state label ids] (group-shapes state label ids "Group-1"))
+  ([state label ids] (group-shapes state label ids "Group"))
   ([state label ids prefix]
    (let [page  (current-page state)
          shapes (dwg/shapes-for-grouping (:objects page) ids)]

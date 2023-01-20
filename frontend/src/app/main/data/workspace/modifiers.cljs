@@ -17,6 +17,7 @@
    [app.common.spec :as us]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
+   [app.main.constants :refer [zoom-half-pixel-precision]]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.comments :as-alias dwcm]
    [app.main.data.workspace.guides :as-alias dwg]
@@ -218,7 +219,7 @@
       result
       (let [[id text-modifier] (first modifiers)]
         (recur (rest modifiers)
-               (update objects id apply-text-modifier text-modifier))))))
+               (d/update-when result id apply-text-modifier text-modifier))))))
 
 #_(defn apply-path-modifiers
   [objects path-modifiers]
@@ -240,16 +241,26 @@
    (calculate-modifiers state false false modif-tree))
 
   ([state ignore-constraints ignore-snap-pixel modif-tree]
+   (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree nil))
+
+  ([state ignore-constraints ignore-snap-pixel modif-tree params]
    (let [objects
          (wsh/lookup-page-objects state)
 
          snap-pixel?
-         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))]
+         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
+
+         zoom (dm/get-in state [:workspace-local :zoom])
+         snap-precision (if (>= zoom zoom-half-pixel-precision) 0.5 1)]
 
      (as-> objects $
        (apply-text-modifiers $ (get state :workspace-text-modifier))
        ;;(apply-path-modifiers $ (get-in state [:workspace-local :edit-path]))
-       (gsh/set-objects-modifiers modif-tree $ ignore-constraints snap-pixel?)))))
+       (gsh/set-objects-modifiers modif-tree $ (merge
+                                                params
+                                                {:ignore-constraints ignore-constraints
+                                                 :snap-pixel? snap-pixel?
+                                                 :snap-precision snap-precision}))))))
 
 (defn- calculate-update-modifiers
   [old-modif-tree state ignore-constraints ignore-snap-pixel modif-tree]
@@ -259,10 +270,13 @@
         snap-pixel?
         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
+        zoom (dm/get-in state [:workspace-local :zoom])
+
+        snap-precision (if (>= zoom zoom-half-pixel-precision) 0.5 1)
         objects
         (-> objects
             (apply-text-modifiers (get state :workspace-text-modifier)))]
-    (gsh/set-objects-modifiers old-modif-tree modif-tree objects ignore-constraints snap-pixel?)))
+    (gsh/set-objects-modifiers old-modif-tree modif-tree objects {:ignore-constraints ignore-constraints :snap-pixel? snap-pixel? :snap-precision snap-precision})))
 
 (defn update-modifiers
   ([modif-tree]
@@ -285,10 +299,13 @@
    (set-modifiers modif-tree ignore-constraints false))
 
   ([modif-tree ignore-constraints ignore-snap-pixel]
+   (set-modifiers modif-tree ignore-constraints ignore-snap-pixel nil))
+
+  ([modif-tree ignore-constraints ignore-snap-pixel params]
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (assoc state :workspace-modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree))))))
+       (assoc state :workspace-modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree params))))))
 
 ;; Rotation use different algorithm to calculate children modifiers (and do not use child constraints).
 (defn set-rotation-modifiers
@@ -312,7 +329,7 @@
 
              modif-tree
              (-> (build-modif-tree ids objects get-modifier)
-                 (gsh/set-objects-modifiers objects false false))]
+                 (gsh/set-objects-modifiers objects))]
 
          (assoc state :workspace-modifiers modif-tree))))))
 

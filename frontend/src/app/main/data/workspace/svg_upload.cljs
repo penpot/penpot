@@ -11,6 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us :refer [max-safe-int min-safe-int]]
@@ -21,6 +22,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.util.color :as uc]
    [app.util.path.parser :as upp]
@@ -361,7 +363,7 @@
   (let [{:keys [tag attrs hidden]} element-data
         attrs (usvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
-        name (ctst/generate-unique-name unames (or (:id attrs) (tag->name tag)))
+        name (or (:id attrs) (tag->name tag))
         att-refs (usvg/find-attr-references attrs)
         references (usvg/find-def-references (:defs svg-data) att-refs)
 
@@ -477,20 +479,21 @@
        (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})))
 
 (defn create-svg-shapes
-  [svg-data {:keys [x y] :as position} objects frame-id parent-id selected center?]
+  [svg-data {:keys [x y]} objects frame-id parent-id selected center?]
   (try
     (let [[vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
-          x (if center?
-              (- x vb-x (/ vb-width 2))
-              x)
-          y (if center?
-              (- y vb-y (/ vb-height 2))
-              y)
+          x (mth/round
+             (if center?
+               (- x vb-x (/ vb-width 2))
+               x))
+          y (mth/round
+             (if center?
+               (- y vb-y (/ vb-height 2))
+               y))
 
           unames (ctst/retrieve-used-names objects)
 
-          svg-name (->> (str/replace (:name svg-data) ".svg" "")
-                        (ctst/generate-unique-name unames))
+          svg-name (str/replace (:name svg-data) ".svg" "")
 
           svg-data (-> svg-data
                        (assoc :x x
@@ -583,7 +586,11 @@
                                              (filter #(= :add-obj (:type %)))
                                              (map :id)
                                              reverse
-                                             vec))]
+                                             vec))
+            undo-id (js/Symbol)]
 
-      (rx/of (dch/commit-changes changes)
-             (dws/select-shapes (d/ordered-set (:id new-shape))))))))
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (dws/select-shapes (d/ordered-set (:id new-shape)))
+               (ptk/data-event :layout/update [(:id new-shape)])
+               (dwu/commit-undo-transaction undo-id))))))

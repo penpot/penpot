@@ -36,7 +36,8 @@
 
 (mf/defc viewport
   [{:keys [local file page frame index viewer-pagination size]}]
-  (let [on-mouse-wheel
+  (let [inspect-svg-container-ref (mf/use-ref nil)
+        on-mouse-wheel
         (fn [event]
           (when (kbd/mod? event)
             (dom/prevent-default event)
@@ -45,14 +46,30 @@
                            (.-deltaX ^js event))]
               (if (pos? delta)
                 (st/emit! dv/decrease-zoom)
-                (st/emit! dv/increase-zoom)))))
+                (st/emit! dv/increase-zoom))))
+          (when-not (kbd/mod? event)
+            (let [event (.getBrowserEvent ^js event)
+                  shift? (kbd/shift? event)
+                  inspect-svg-container (mf/ref-val inspect-svg-container-ref)
+                  delta (+ (.-deltaY ^js event)
+                           (.-deltaX ^js event))
+                  scroll-pos (if shift?
+                               (dom/get-h-scroll-pos inspect-svg-container)
+                               (dom/get-scroll-pos inspect-svg-container))
+                  new-scroll-pos (+ scroll-pos delta)] 
+            (do
+              (dom/prevent-default event)
+              (dom/stop-propagation event)
+              (if shift?
+                (dom/set-h-scroll-pos! inspect-svg-container new-scroll-pos)
+                (dom/set-scroll-pos! inspect-svg-container new-scroll-pos))))))
 
         on-mount
         (fn []
           ;; bind with passive=false to allow the event to be cancelled
           ;; https://stackoverflow.com/a/57582286/3219895
           (let [key1 (events/listen goog/global EventType.WHEEL
-                                    on-mouse-wheel #js {"passive" false})]
+                                    on-mouse-wheel #js {"passive" false "capture" true})]
             (fn []
               (events/unlistenByKey key1))))]
 
@@ -69,7 +86,7 @@
                        :page page}]
      [:div.inspect-svg-wrapper {:on-click (handle-select-frame frame)}
       [:& viewer-pagination {:index index :num-frames (count (:frames page)) :left-bar true :right-bar true}]
-      [:div.inspect-svg-container
+      [:div.inspect-svg-container {:ref inspect-svg-container-ref}
        [:& render-frame-svg {:frame frame :page page :local local :size size}]]]
 
      [:& right-sidebar {:frame frame

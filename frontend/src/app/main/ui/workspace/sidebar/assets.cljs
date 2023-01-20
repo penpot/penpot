@@ -12,6 +12,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
+   [app.common.types.component :as ctk]
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
@@ -434,7 +435,7 @@
            :on-drag-over on-drag-over
            :on-drop on-drop}
 
-     [:& component-svg {:group (get-in component [:objects (:id component)])
+     [:& component-svg {:root-shape (ctk/get-component-root component)
                         :objects (:objects component)}]
      (let [renaming? (= renaming (:id component))]
        [:*

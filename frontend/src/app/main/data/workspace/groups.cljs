@@ -12,7 +12,6 @@
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -73,8 +72,7 @@
                            (= (count shapes) 1)
                            (= (:type (first shapes)) :group))
                     (:name (first shapes))
-                    (-> (ctst/retrieve-used-names objects)
-                        (ctst/generate-unique-name base-name)))
+                    base-name)
 
         selrect   (gsh/selection-rect shapes)
         group-idx (->> shapes
@@ -162,7 +160,7 @@
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group changes]
-                (prepare-create-group it objects page-id shapes "Group-1" false)]
+                (prepare-create-group it objects page-id shapes "Group" false)]
             (rx/of (dch/commit-changes changes)
                    (dws/select-shapes (d/ordered-set (:id group))))))))))
 
@@ -221,7 +219,7 @@
                          (= (:type (first shapes)) :group))
                   [first-shape (-> (pcb/empty-changes it page-id)
                                    (pcb/with-objects objects))]
-                  (prepare-create-group it objects page-id shapes "Group-1" true))
+                  (prepare-create-group it objects page-id shapes "Mask" true))
 
                 changes  (-> changes
                              (pcb/update-shapes (:shapes group)
@@ -237,10 +235,14 @@
                                                          :points (:points first-shape)
                                                          :transform (:transform first-shape)
                                                          :transform-inverse (:transform-inverse first-shape))))
-                             (pcb/resize-parents [(:id group)]))]
+                             (pcb/resize-parents [(:id group)]))
+                undo-id (js/Symbol)]
 
-            (rx/of (dch/commit-changes changes)
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+            (rx/of (dwu/start-undo-transaction undo-id)
+                   (dch/commit-changes changes)
+                   (dws/select-shapes (d/ordered-set (:id group)))
+                   (ptk/data-event :layout/update [(:id group)])
+                   (dwu/commit-undo-transaction undo-id))))))))
 
 (def unmask-group
   (ptk/reify ::unmask-group

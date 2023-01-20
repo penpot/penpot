@@ -11,6 +11,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
@@ -30,14 +31,14 @@
 
 (defn get-nodes
   "Retrieve the DOM nodes to apply the matrix transformation"
-  [base-node {:keys [id type masked-group?] :as shape}]
+  [base-node {:keys [id parent-id] :as shape}]
   (when (some? base-node)
-    (let [shape-node (get-shape-node base-node id)
-
-          frame? (= :frame type)
-          group? (= :group type)
-          text? (= :text type)
-          mask?  (and group? masked-group?)]
+    (let [shape-node     (get-shape-node base-node id)
+          parent-node    (get-shape-node base-node parent-id)
+          frame?         (cph/frame-shape? shape)
+          group?         (cph/group-shape? shape)
+          text?          (cph/text-shape? shape)
+          masking-child? (:masking-child? (meta shape))]
       (cond
         frame?
         [shape-node
@@ -48,9 +49,10 @@
 
         ;; For groups we don't want to transform the whole group but only
         ;; its filters/masks
-        mask?
-        [(dom/query shape-node ".mask-clip-path")
-         (dom/query shape-node ".mask-shape")]
+        masking-child?
+        [shape-node
+         (dom/query parent-node ".mask-clip-path")
+         (dom/query parent-node ".mask-shape")]
 
         group?
         (let [shape-defs (dom/query shape-node "defs")]
@@ -74,10 +76,12 @@
              (-> (dom/get-attribute node "data-old-width") d/parse-double)
              (-> (dom/get-attribute node "data-old-height") d/parse-double))
             (gsh/transform-selrect modifiers))]
-    (dom/set-attribute! node "x" x)
-    (dom/set-attribute! node "y" y)
-    (dom/set-attribute! node "width" width)
-    (dom/set-attribute! node "height" height)))
+
+    (when (and (some? x) (some? y) (some? width) (some? height))
+      (dom/set-attribute! node "x" x)
+      (dom/set-attribute! node "y" y)
+      (dom/set-attribute! node "width" width)
+      (dom/set-attribute! node "height" height))))
 
 (defn start-transform!
   [base-node shapes]
@@ -169,10 +173,18 @@
             (or (= (dom/get-tag-name node) "mask")
                 (= (dom/get-tag-name node) "filter"))
             (do
+              (dom/set-attribute! node "x" (dom/get-attribute node "data-old-x"))
+              (dom/set-attribute! node "y" (dom/get-attribute node "data-old-y"))
+              (dom/set-attribute! node "width" (dom/get-attribute node "data-old-width"))
+              (dom/set-attribute! node "height" (dom/get-attribute node "data-old-height"))
+
               (dom/remove-attribute! node "data-old-x")
               (dom/remove-attribute! node "data-old-y")
               (dom/remove-attribute! node "data-old-width")
               (dom/remove-attribute! node "data-old-height"))
+
+            (dom/class? node "frame-title")
+            (dom/remove-attribute! node "data-old-transform")
 
             :else
             (let [old-transform (dom/get-attribute node "data-old-transform")]
@@ -190,6 +202,18 @@
     (-> modifiers
         (ctm/resize scalev (-> shape' :points first) (:transform shape') (:transform-inverse shape')))))
 
+(defn add-masking-child?
+  "Adds to the object the information about if the current shape is a masking child. We use the metadata
+  to not adding new parameters to the object."
+  [objects]
+  (fn [{:keys [id parent-id] :as shape}]
+    (let [parent (get objects parent-id)
+          masking-child? (and (cph/mask-shape? parent) (= id (first (:shapes parent))))]
+
+      (cond-> shape
+        masking-child?
+        (with-meta {:masking-child? true})))))
+
 (defn use-dynamic-modifiers
   [objects node modifiers]
 
@@ -198,11 +222,15 @@
          (mf/deps modifiers)
          (fn []
            (when (some? modifiers)
-             (d/mapm (fn [id {modifiers :modifiers}]
+             (d/mapm (fn [id {current-modifiers :modifiers}]
                        (let [shape (get objects id)
-                             adapt-text? (and (= :text (:type shape)) (not (ctm/only-move? modifiers)))
-                             modifiers (cond-> modifiers adapt-text? (adapt-text-modifiers shape))]
-                         (ctm/modifiers->transform modifiers)))
+                             adapt-text? (and (= :text (:type shape)) (not (ctm/only-move? current-modifiers)))
+
+                             current-modifiers
+                             (cond-> current-modifiers
+                               adapt-text?
+                               (adapt-text-modifiers shape))]
+                         (ctm/modifiers->transform current-modifiers)))
                      modifiers))))
 
         add-children (mf/use-memo (mf/deps modifiers) #(ctm/added-children-frames modifiers))
@@ -215,7 +243,7 @@
          (fn []
            (->> (keys transforms)
                 (filter #(some? (get transforms %)))
-                (mapv (d/getf objects)))))
+                (mapv (comp (add-masking-child? objects) (d/getf objects))))))
 
         prev-shapes (mf/use-var nil)
         prev-modifiers (mf/use-var nil)
@@ -252,7 +280,6 @@
     (mf/use-layout-effect
      (mf/deps transforms)
      (fn []
-
        (let [curr-shapes-set (into #{} (map :id) shapes)
              prev-shapes-set (into #{} (map :id) @prev-shapes)
 
@@ -266,7 +293,7 @@
            (update-transform! node shapes transforms modifiers))
 
          (when (d/not-empty? removed-shapes)
-           (remove-transform! node @prev-shapes)))
+           (remove-transform! node removed-shapes)))
 
        (reset! prev-modifiers modifiers)
        (reset! prev-transforms transforms)

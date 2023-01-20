@@ -846,8 +846,8 @@
               :text
               (rx/of (dwe/start-edition-mode id))
 
-              (:group :bool)
-              (rx/of (dws/select-shapes (into (d/ordered-set) [(last shapes)])))
+              (:group :bool :frame)
+              (rx/of (dws/select-shapes (into (d/ordered-set) shapes)))
 
               :svg-raw
               nil

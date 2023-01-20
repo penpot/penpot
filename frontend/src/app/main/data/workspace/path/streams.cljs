@@ -6,9 +6,11 @@
 
 (ns app.main.data.workspace.path.streams
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
-   [app.main.data.workspace.path.state :as state]
+   [app.main.constants :refer [zoom-half-pixel-precision]]
+   [app.main.data.workspace.path.state :as pst]
    [app.main.snap :as snap]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -17,7 +19,6 @@
    [potok.core :as ptk]))
 
 (defonce drag-threshold 5)
-(def zoom-half-pixel-precision 8)
 
 (defn dragging? [start zoom]
   (fn [current]
@@ -36,7 +37,7 @@
       position
 
       (>= zoom zoom-half-pixel-precision)
-      (gpt/half-round position)
+      (gpt/round-step position 0.5)
 
       :else
       (gpt/round position))))
@@ -71,15 +72,23 @@
       (->> position-stream
            (rx/merge-map (fn [] to-stream)))))))
 
+(defn snap-toggled-stream
+  []
+  (let [get-snap (fn [state]
+                   (let [id (pst/get-path-id state)]
+                     (dm/get-in state [:workspace-local :edit-path id :snap-toggled])))]
+    (-> (l/derived get-snap st/state)
+        (rx/from-atom {:emit-current-value? true}))))
+
 (defn move-points-stream
-  [snap-toggled start-point selected-points points]
+  [start-point selected-points points]
 
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
         ranges (snap/create-ranges points selected-points)
         d-pos (/ snap/snap-path-accuracy zoom)
 
         check-path-snap
-        (fn [position]
+        (fn [[position snap-toggled]]
           (if snap-toggled
             (let [delta (gpt/subtract position start-point)
                   moved-points (->> selected-points (mapv #(gpt/add % delta)))
@@ -88,6 +97,7 @@
             position))]
     (->> ms/mouse-position
          (rx/map to-pixel-snap)
+         (rx/with-latest-from (snap-toggled-stream))
          (rx/map check-path-snap))))
 
 (defn get-angle [node handler opposite]
@@ -99,7 +109,7 @@
       [rot-angle rot-sign])))
 
 (defn move-handler-stream
-  [snap-toggled start-point node handler opposite points]
+  [start-point node handler opposite points]
 
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
         ranges (snap/create-ranges points)
@@ -108,7 +118,7 @@
         [initial-angle] (get-angle node handler opposite)
 
         check-path-snap
-        (fn [position]
+        (fn [[position snap-toggled]]
           (if snap-toggled
             (let [delta (gpt/subtract position start-point)
                   handler (gpt/add handler delta)
@@ -134,13 +144,14 @@
          (rx/map to-pixel-snap)
          (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
          (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %))))
+         (rx/with-latest-from (snap-toggled-stream))
          (rx/map check-path-snap))))
 
 (defn position-stream
-  [snap-toggled _points]
+  []
   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
         d-pos (/ snap/snap-path-accuracy zoom)
-        get-content #(state/get-path % :content)
+        get-content #(pst/get-path % :content)
 
         content-stream
         (-> (l/derived get-content st/state)
@@ -154,7 +165,8 @@
     (->> ms/mouse-position
          (rx/map to-pixel-snap)
          (rx/with-latest vector ranges-stream)
-         (rx/map (fn [[position ranges]]
+         (rx/with-latest-from (snap-toggled-stream))
+         (rx/map (fn [[[position ranges] snap-toggled]]
                    (if snap-toggled
                      (let [snap (snap/get-snap-delta [position] ranges d-pos)]
                        (gpt/add position snap))

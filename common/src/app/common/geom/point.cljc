@@ -60,7 +60,7 @@
      (point v v)
 
      (point-like? v)
-     (map->Point v)
+     (Point. (:x v) (:y v))
 
      :else
      (ex/raise :hint "invalid arguments (on pointer constructor)" :value v)))
@@ -274,12 +274,12 @@
    (Point. (mth/precision (dm/get-prop pt :x) decimals)
            (mth/precision (dm/get-prop pt :y) decimals))))
 
-(defn half-round
+(defn round-step
   "Round the coordinates to the closest half-point"
-  [pt]
+  [pt step]
   (assert (point? pt) "expected point instance")
-  (Point. (mth/half-round (dm/get-prop pt :x))
-          (mth/half-round (dm/get-prop pt :y))))
+  (Point. (mth/round (dm/get-prop pt :x) step)
+          (mth/round (dm/get-prop pt :y) step)))
 
 (defn transform
   "Transform a point applying a matrix transformation."

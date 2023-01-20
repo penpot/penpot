@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctc]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
@@ -153,18 +154,23 @@
             selected-shapes (map (d/getf objects) selected)
             single?         (= (count selected-shapes) 1)
             has-group?      (->> selected-shapes (d/seek cph/group-shape?))
-            is-group?       (and single? has-group?)]
+            is-group?       (and single? has-group?)
+            has-mask?       (->> selected-shapes (d/seek cph/mask-shape?))
+            is-mask?        (and single? has-mask?)
+            has-component?  (some true? (map ctc/instance-root? selected-shapes))
+            is-component?   (and single? has-component?)]
 
-        (if is-group?
+        (if (and (not is-component?) is-group? (not is-mask?))
           (let [new-shape-id (uuid/next)
                 parent-id    (:parent-id (first selected-shapes))
                 shapes-ids   (:shapes (first selected-shapes))
                 ordered-ids  (into (d/ordered-set) shapes-ids)
-                undo-id      (js/Symbol)]
+                undo-id      (js/Symbol)
+                group-index  (cph/get-index-replacement selected objects)]
             (rx/of
              (dwu/start-undo-transaction undo-id)
              (dwse/select-shapes ordered-ids)
-             (dws/create-artboard-from-selection new-shape-id parent-id)
+             (dws/create-artboard-from-selection new-shape-id parent-id group-index)
              (cl/remove-all-fills [new-shape-id] {:color clr/black
                                                   :opacity 1})
              (create-layout-from-id [new-shape-id] type)

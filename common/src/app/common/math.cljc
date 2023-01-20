@@ -104,15 +104,16 @@
 
 (defn round
   "Returns the value of a number rounded to
-  the nearest integer."
-  [v]
-  #?(:cljs (js/Math.round v)
-     :clj (Math/round (float v))))
+  the nearest integer.
+  If given step rounds to the next closest step, for example:
+  (round 13.4 0.5) => 13.5
+  (round 13.4 0.3) => 13.3"
+  ([v step]
+   (* (round (/ v step)) step))
 
-(defn half-round
-  "Returns a value rounded to the next point or half point"
-  [v]
-  (/ (round (* v 2)) 2))
+  ([v]
+   #?(:cljs (js/Math.round v)
+      :clj (Math/round (float v)))))
 
 (defn ceil
   "Returns the smallest integer greater than

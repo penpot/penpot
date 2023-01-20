@@ -45,10 +45,10 @@
 
 (def default-features
   (cond-> #{}
-    (contains? cf/flags :feature-storage-pointer-map)
+    (contains? cf/flags :fdata-storage-pointer-map)
     (conj "storage/pointer-map")
 
-    (contains? cf/flags :feature-storage-objects-map)
+    (contains? cf/flags :fdata-storage-objects-map)
     (conj "storage/objects-map")))
 
 ;; --- SPECS

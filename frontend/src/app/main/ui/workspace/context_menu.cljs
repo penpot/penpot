@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
@@ -372,27 +373,25 @@
         has-frame?         (->> shapes (d/seek cph/frame-shape?))
         is-frame?          (and single? has-frame?)
         is-flex-container? (and is-frame? (= :flex (:layout (first shapes))))
-        has-group?         (->> shapes (d/seek cph/group-shape?))
-        is-group?          (and single? has-group?)
         ids                (->> shapes (map :id))
         add-flex           #(st/emit! (if is-frame?
                                         (dwsl/create-layout-from-id ids :flex)
                                         (dwsl/create-layout-from-selection :flex)))
         remove-flex        #(st/emit! (dwsl/remove-layout ids))]
-    (cond
-      (or single? (and is-frame? (not is-flex-container?)) is-group?)
-      [:*
-       [:& menu-separator]
-       [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
-                       :shortcut (sc/get-tooltip :toggle-layout-flex)
-                       :on-click add-flex}]]
 
-      is-flex-container?
-      [:*
-       [:& menu-separator]
-       [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
-                       :shortcut (sc/get-tooltip :toggle-layout-flex)
-                       :on-click remove-flex}]])))
+    [:*
+     (when (not is-flex-container?)
+       [:div
+        [:& menu-separator]
+        [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
+                        :shortcut (sc/get-tooltip :toggle-layout-flex)
+                        :on-click add-flex}]])
+     (when  is-flex-container?
+       [:div
+        [:& menu-separator]
+        [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
+                        :shortcut (sc/get-tooltip :toggle-layout-flex)
+                        :on-click remove-flex}]])]))
 
 (mf/defc context-menu-component
   [{:keys [shapes]}]
@@ -400,6 +399,7 @@
 
         has-component?      (some true? (map #(contains? % :component-id) shapes))
         is-component?       (and single? (-> shapes first :component-id some?))
+        is-non-root?        (and single? (ctk/in-component-instance-not-root? (first shapes)))
 
         shape-id            (-> shapes first :id)
         component-id        (-> shapes first :component-id)
@@ -454,10 +454,12 @@
                                        :on-accept do-update-component-in-bulk}))]
     [:*
      [:*
-      [:& menu-separator]
-      [:& menu-entry {:title (tr "workspace.shape.menu.create-component")
-                      :shortcut (sc/get-tooltip :create-component)
-                      :on-click do-add-component}]
+      (when (or (not is-non-root?) (and has-component? (not single?)))
+        [:& menu-separator])
+      (when-not is-non-root?
+        [:& menu-entry {:title (tr "workspace.shape.menu.create-component")
+                        :shortcut (sc/get-tooltip :create-component)
+                        :on-click do-add-component}])
       (when (and has-component? (not single?))
         [:*
          [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")
@@ -470,7 +472,6 @@
        ;; WARNING: this menu is the same as the context menu at the sidebar.
        ;;          If you change it, you must change equally the file
        ;;          app/main/ui/workspace/sidebar/options/menus/component.cljs
-
        [:*
         [:& menu-separator]
         (if main-component?

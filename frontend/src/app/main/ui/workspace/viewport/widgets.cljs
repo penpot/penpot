@@ -22,6 +22,7 @@
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
+   [app.util.timers :as ts]
    [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
@@ -49,12 +50,13 @@
 (mf/defc viewport-actions
   {::mf/wrap [mf/memo]}
   []
-  (let [edition (mf/deref refs/selected-edition)
-        selected (mf/deref refs/selected-objects)
-        shape (-> selected first)]
-    (when (and (= (count selected) 1)
-               (= (:id shape) edition)
-               (not= :text (:type shape)))
+  (let [edition     (mf/deref refs/selected-edition)
+        selected    (mf/deref refs/selected-objects)
+        drawing     (mf/deref refs/workspace-drawing)
+        drawing-obj (:object drawing)
+        shape       (or drawing-obj (-> selected first))]
+    (when (or (and (= (count selected) 1) (= (:id shape) edition) (not= :text (:type shape)))
+              (and (some? drawing-obj) (= :path (:type drawing-obj))))
       [:div.viewport-actions
        [:& path-actions {:shape shape}]])))
 
@@ -86,7 +88,8 @@
 
 
 (mf/defc frame-title
-  {::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo
+              #(mf/deferred % ts/raf)]}
   [{:keys [frame selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
   (let [workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         on-mouse-down

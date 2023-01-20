@@ -203,7 +203,7 @@
 
 (t/deftest halft-round-point
   (let [p1 (gpt/point 1.34567 3.34567)
-        rs (gpt/half-round p1)]
+        rs (gpt/round-step p1 0.5)]
     (t/is (gpt/point? rs))
     (t/is (mth/close? 1.5 (:x rs)))
     (t/is (mth/close? 3.5 (:y rs)))))

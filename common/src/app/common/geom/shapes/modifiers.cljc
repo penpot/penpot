@@ -359,7 +359,7 @@
 
                       to-reflow
                       (cond-> to-reflow
-                        (and (ctl/layout-child-id? objects current)
+                        (and (ctl/layout-descent? objects parent-base)
                              (not= uuid/zero (:frame-id parent-base)))
                         (conj (:frame-id parent-base)))]
                   (recur modif-tree
@@ -382,14 +382,23 @@
     result))
 
 (defn set-objects-modifiers
-  ([modif-tree objects ignore-constraints snap-pixel?]
-   (set-objects-modifiers nil modif-tree objects ignore-constraints snap-pixel?))
+  ([modif-tree objects]
+   (set-objects-modifiers modif-tree objects nil))
 
-  ([old-modif-tree modif-tree objects ignore-constraints snap-pixel?]
+  ([modif-tree objects params]
+   (set-objects-modifiers nil modif-tree objects params))
+
+  ([old-modif-tree modif-tree objects
+    {:keys [ignore-constraints snap-pixel? snap-precision snap-ignore-axis]
+     :or {ignore-constraints false snap-pixel? false snap-precision 1 snap-ignore-axis nil}}]
    (let [objects (-> objects
                      (cond-> (some? old-modif-tree)
                        (apply-structure-modifiers old-modif-tree))
                      (apply-structure-modifiers modif-tree))
+
+         modif-tree
+         (cond-> modif-tree
+           snap-pixel? (gpp/adjust-pixel-precision objects snap-precision snap-ignore-axis))
 
          bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))
          bounds (cond-> bounds
@@ -417,11 +426,7 @@
          modif-tree
          (if old-modif-tree
            (merge-modif-tree old-modif-tree modif-tree)
-           modif-tree)
-
-         modif-tree
-         (cond-> modif-tree
-           snap-pixel? (gpp/adjust-pixel-precision objects))]
+           modif-tree)]
 
      ;;#?(:cljs
      ;;   (.log js/console ">result" (modif->js modif-tree objects)))

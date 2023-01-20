@@ -278,7 +278,7 @@
 
 (def ^:private minimal-shapes
   [{:type :rect
-    :name "Rect-1"
+    :name "Rectangle"
     :fills [{:fill-color default-color
              :fill-opacity 1}]
     :strokes []
@@ -292,13 +292,13 @@
     :strokes []}
 
    {:type :circle
-    :name "Circle-1"
+    :name "Ellipse"
     :fills [{:fill-color default-color
              :fill-opacity 1}]
     :strokes []}
 
    {:type :path
-    :name "Path-1"
+    :name "Path"
     :fills []
     :strokes [{:stroke-style :solid
                :stroke-alignment :center
@@ -307,7 +307,7 @@
                :stroke-opacity 1}]}
 
    {:type :frame
-    :name "Board-1"
+    :name "Board"
     :fills [{:fill-color clr/white
              :fill-opacity 1}]
     :strokes []
@@ -320,7 +320,7 @@
     :ry 0}
 
    {:type :text
-    :name "Text-1"
+    :name "Text"
     :content nil}
 
    {:type :svg-raw}])

@@ -292,34 +292,37 @@
 ;; used to render thumbnails on assets panel.
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
-  [{:keys [objects group zoom] :or {zoom 1} :as props}]
-  (let [group-id (:id group)
+  [{:keys [objects root-shape zoom] :or {zoom 1} :as props}]
+  (let [root-shape-id (:id root-shape)
         include-metadata? (mf/use-ctx export/include-metadata-ctx)
 
         vector
         (mf/use-memo
-         (mf/deps (:x group) (:y group))
+         (mf/deps (:x root-shape) (:y root-shape))
          (fn []
-           (-> (gpt/point (:x group) (:y group))
+           (-> (gpt/point (:x root-shape) (:y root-shape))
                (gpt/negate))))
 
         objects
         (mf/use-memo
-         (mf/deps vector objects group-id)
+         (mf/deps vector objects root-shape-id)
          (fn []
-           (let [children-ids (cons group-id (cph/get-children-ids objects group-id))
+           (let [children-ids (cons root-shape-id (cph/get-children-ids objects root-shape-id))
                  update-fn    #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
              (reduce update-fn objects children-ids))))
 
-        group  (get objects group-id)
-        width  (* (:width group) zoom)
-        height (* (:height group) zoom)
-        vbox   (format-viewbox {:width (:width group 0)
-                                :height (:height group 0)})
-        group-wrapper
+        root-shape (get objects root-shape-id)
+        width      (* (:width root-shape) zoom)
+        height     (* (:height root-shape) zoom)
+        vbox       (format-viewbox {:width (:width root-shape 0)
+                                    :height (:height root-shape 0)})
+        root-shape-wrapper
         (mf/use-memo
-         (mf/deps objects)
-         (fn [] (group-wrapper-factory objects)))]
+         (mf/deps objects root-shape)
+         (fn []
+           (case (:type root-shape)
+             :group (group-wrapper-factory objects)
+             :frame (frame-wrapper-factory objects))))]
 
     [:svg {:view-box vbox
            :width (ust/format-precision width viewbox-decimal-precision)
@@ -330,8 +333,8 @@
            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
            :fill "none"}
 
-     [:> shape-container {:shape group}
-      [:& group-wrapper {:shape group :view-box vbox}]]]))
+     [:> shape-container {:shape root-shape}
+      [:& root-shape-wrapper {:shape root-shape :view-box vbox}]]]))
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
@@ -375,12 +378,12 @@
 
 (mf/defc component-symbol
   [{:keys [id data] :as props}]
-  (let [name    (:name data)
-        path    (:path data)
-        objects (-> (:objects data)
-                    (adapt-objects-for-shape id))
-        object  (get objects id)
-        selrect (:selrect object)
+  (let [name       (:name data)
+        path       (:path data)
+        objects    (-> (:objects data)
+                       (adapt-objects-for-shape id))
+        root-shape (get objects id)
+        selrect    (:selrect root-shape)
 
         main-instance-id   (:main-instance-id data)
         main-instance-page (:main-instance-page data)
@@ -394,8 +397,11 @@
 
         group-wrapper
         (mf/use-memo
-         (mf/deps objects)
-         (fn [] (group-wrapper-factory objects)))]
+         (mf/deps objects root-shape)
+         (fn []
+           (case (:type root-shape)
+             :group (group-wrapper-factory objects)
+             :frame (frame-wrapper-factory objects))))]
 
     [:> "symbol" #js {:id (str id)
                       :viewBox vbox
@@ -405,8 +411,8 @@
                       "penpot:main-instance-x" main-instance-x
                       "penpot:main-instance-y" main-instance-y}
      [:title name]
-     [:> shape-container {:shape object}
-      [:& group-wrapper {:shape object :view-box vbox}]]]))
+     [:> shape-container {:shape root-shape}
+      [:& group-wrapper {:shape root-shape :view-box vbox}]]]))
 
 (mf/defc components-sprite-svg
   {::mf/wrap-props false}

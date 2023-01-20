@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
+   [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.spec :as us]
    [app.common.types.container :as ctn]
@@ -52,8 +53,8 @@
             shape {:name name
                    :width width
                    :height height
-                   :x (- x (/ width 2))
-                   :y (- y (/ height 2))
+                   :x (mth/round (- x (/ width 2)))
+                   :y (mth/round (- y (/ height 2)))
                    :metadata {:width width
                               :height height
                               :mtype mtype
