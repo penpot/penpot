@@ -2354,6 +2354,9 @@ msgstr "Ruta"
 msgid "shortcut-subsection.shape"
 msgstr "Formas"
 
+msgid "shortcut-subsection.text-editor"
+msgstr "Textos"
+
 msgid "shortcut-subsection.tools"
 msgstr "Herramientas"
 
@@ -2726,6 +2729,42 @@ msgstr "Distribuir verticalmente"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom a selección"
+
+msgid "shortcuts.align-center"
+msgstr "Alinear al centro"
+
+msgid "shortcuts.align-justify"
+msgstr "Alinear justificado"
+
+msgid "shortcuts.bold"
+msgstr "Alternar negrita"
+
+msgid "shortcuts.italic"
+msgstr "Alternar cursiva"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Decrementar el tamaño de fuente"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Incrementar el tamaño de fuente"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Decrementar el espaciado de letras"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Incrementar el espaciado de letras"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Decrementar el interlineado"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Incrementar el interlineado"
+
+msgid "shortcuts.line-through"
+msgstr "Alternar tachado"
+
+msgid "shortcuts.underline"
+msgstr "Alternar subrayado"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

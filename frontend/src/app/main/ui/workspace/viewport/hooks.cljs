@@ -16,6 +16,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.path.shortcuts :as psc]
    [app.main.data.workspace.shortcuts :as wsc]
+   [app.main.data.workspace.text.shortcuts :as tsc]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
@@ -336,11 +337,15 @@
 ;; this shortcuts outside the viewport?
 
 (defn setup-shortcuts
-  [path-editing? drawing-path?]
+  [path-editing? drawing-path? text-editing?]
   (hooks/use-shortcuts ::workspace wsc/shortcuts)
   (mf/use-effect
    (mf/deps path-editing? drawing-path?)
    (fn []
      (when (or drawing-path? path-editing?)
        (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
-       #(st/emit! (dsc/pop-shortcuts ::path))))))
+       #(st/emit! (dsc/pop-shortcuts ::path)))
+
+     (when text-editing?
+       (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
+       #(st/emit! (dsc/pop-shortcuts ::text))))))

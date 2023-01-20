@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :as cpc]
    [app.common.text :as txt]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
@@ -158,7 +159,7 @@
    :shadow            shadow-attrs
    :blur              blur-attrs
    :stroke            stroke-attrs
-   :text              ot/attrs
+   :text              dwt/attrs
    :exports           exports-attrs
    :layout-container  layout-container-flex-attrs
    :layout-item       layout-item-attrs})

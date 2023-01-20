@@ -2262,6 +2262,9 @@ msgstr "Paths"
 msgid "shortcut-subsection.shape"
 msgstr "Shapes"
 
+msgid "shortcut-subsection.text-editor"
+msgstr "Texts"
+
 msgid "shortcut-subsection.tools"
 msgstr "Tools"
 
@@ -2634,6 +2637,42 @@ msgstr "Distribute vertically"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom to selected"
+
+msgid "shortcuts.align-center"
+msgstr "Align center"
+
+msgid "shortcuts.align-justify"
+msgstr "Align justify"
+
+msgid "shortcuts.bold"
+msgstr "Toggle bold"
+
+msgid "shortcuts.italic"
+msgstr "Toggle italic"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Decrement font size"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Increment font size"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Decrement letter spacing"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Increment letter spacing"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Decrement line height"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Increment line height"
+
+msgid "shortcuts.line-through"
+msgstr "Toggle line through"
+
+msgid "shortcuts.underline"
+msgstr "Toggle underline"
 
 msgid "shortcuts.zoom-lense-increase"
 msgstr "Zoom lense increase"

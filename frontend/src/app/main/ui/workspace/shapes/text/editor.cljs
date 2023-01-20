@@ -188,6 +188,7 @@
          (fn [editor]
            (st/emit! (dwt/update-editor editor))
            (when editor
+             (dom/add-class!  (dom/get-element-by-class "public-DraftEditor-content") "mousetrap")
              (.focus ^js editor))))
 
         handle-return

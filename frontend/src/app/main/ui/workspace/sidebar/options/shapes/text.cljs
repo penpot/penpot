@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
    [app.common.data :as d]
-   [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.texts :as dwt :refer [text-fill-attrs root-attrs paragraph-attrs text-attrs]]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -19,7 +19,7 @@
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu text-fill-attrs root-attrs paragraph-attrs text-attrs]]
+   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu]]
    [rumext.v2 :as mf]))
 
 (mf/defc options

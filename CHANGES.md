@@ -10,6 +10,7 @@
 - Handoff visual improvements [Taiga #3124](https://tree.taiga.io/project/penpot/us/3124)
 - Dynamic alignment only in sight [Github 1971](https://github.com/penpot/penpot/issues/1971)
 - Add some accessibility to shortcut panel [Taiga #4713](https://tree.taiga.io/project/penpot/issue/4713)
+- Add shortcuts for text editing [Taiga #2052](https://tree.taiga.io/project/penpot/us/2052)
 - Second level boards treated as groups in terms of selection [Taiga #4269](https://tree.taiga.io/project/penpot/us/4269)
 - Performance improvements both for backend and frontend
 - Accessibility improvements for login area [Taiga #4353](https://tree.taiga.io/project/penpot/us/4353)
