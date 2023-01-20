@@ -11,6 +11,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-attrs component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
@@ -33,6 +34,7 @@
         constraint-values (select-keys shape constraint-attrs)
         layout-container-values (select-keys shape layout-container-flex-attrs)
         layout-item-values (select-keys shape layout-item-attrs)
+        [comp-ids comp-values] [[(:id shape)] (select-keys shape component-attrs)]
 
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
         is-layout-child? (mf/deref is-layout-child-ref)
@@ -42,6 +44,9 @@
                         :values measure-values
                         :type type
                         :shape shape}]
+     [:& component-menu {:ids comp-ids
+                         :values comp-values
+                         :shape-name (:name shape)}]
      (when (not is-layout-child?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
