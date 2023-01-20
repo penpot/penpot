@@ -90,7 +90,7 @@
 (mf/defc frame-title
   {::mf/wrap [mf/memo
               #(mf/deferred % ts/raf)]}
-  [{:keys [frame selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
+  [{:keys [frame selected? zoom show-artboard-names? show-id? on-frame-enter on-frame-leave on-frame-select]}]
   (let [workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         on-mouse-down
         (mf/use-callback
@@ -148,7 +148,6 @@
                :width (:width frame)
                :height 20
                :class "workspace-frame-label"
-               ;:transform (dm/str frame-transform " " (text-transform label-pos zoom))
                :style {:fill (when selected? "var(--color-primary-dark)")}
                :visibility (if show-artboard-names? "visible" "hidden")
                :on-mouse-down on-mouse-down
@@ -156,7 +155,9 @@
                :on-context-menu on-context-menu
                :on-pointer-enter on-pointer-enter
                :on-pointer-leave on-pointer-leave}
-        (:name frame)]])))
+        (if show-id?
+          (dm/str (dm/str (:id frame)) " - " (:name frame))
+          (:name frame))]])))
 
 (mf/defc frame-titles
   {::mf/wrap-props false
@@ -169,20 +170,26 @@
         on-frame-enter       (unchecked-get props "on-frame-enter")
         on-frame-leave       (unchecked-get props "on-frame-leave")
         on-frame-select      (unchecked-get props "on-frame-select")
-        frames               (ctt/get-frames objects)
+        shapes               (ctt/get-frames objects)
+        shapes               (if (debug? :shape-titles)
+                               (into (set shapes)
+                                     (map (d/getf objects))
+                                     selected)
+                               shapes)
         focus                (unchecked-get props "focus")]
 
     [:g.frame-titles
-     (for [frame frames]
+     (for [{:keys [id parent-id] :as shape} shapes]
        (when (and
-              (= (:parent-id frame) uuid/zero)
-              (or (empty? focus)
-                  (contains? focus (:id frame))))
-         [:& frame-title {:key (dm/str "frame-title-" (:id frame))
-                          :frame frame
-                          :selected? (contains? selected (:id frame))
+              (not= id uuid/zero)
+              (or (debug? :shape-titles) (= parent-id uuid/zero))
+              (or (empty? focus) (contains? focus id)))
+         [:& frame-title {:key (dm/str "frame-title-" id)
+                          :frame shape
+                          :selected? (contains? selected id)
                           :zoom zoom
                           :show-artboard-names? show-artboard-names?
+                          :show-id? (debug? :shape-titles)
                           :on-frame-enter on-frame-enter
                           :on-frame-leave on-frame-leave
                           :on-frame-select on-frame-select}]))]))
