@@ -567,9 +567,8 @@
 (defn start-component
   ([file data] (start-component file data :group))
   ([file data root-type]
-   (let [selrect (if (and (:x data) (:y data) (:width data) (:height data))
-                   (gsh/make-selrect (:x data) (:y data) (:width data) (:height data))
-                   cts/empty-selrect)
+   (let [selrect (or (gsh/make-selrect (:x data) (:y data) (:width data) (:height data))
+                     cts/empty-selrect)
          name               (:name data)
          path               (:path data)
          main-instance-id   (:main-instance-id data)
