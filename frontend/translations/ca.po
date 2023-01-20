@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-16 14:50+0000\n"
-"Last-Translator: Rubén <rubenx@mail.com>\n"
+"PO-Revision-Date: 2023-01-24 14:27+0000\n"
+"Last-Translator: Rubén <ruben@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
 "ca/>\n"
 "Language: ca\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.15.1-dev\n"
+"X-Generator: Weblate 4.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4384,3 +4384,12 @@ msgstr "El perfil està bloquejat"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
 msgstr "Convida membres a l'equip"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Us donem la benvinguda a Penpot!"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Crea un equip"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Guia d'ús"
