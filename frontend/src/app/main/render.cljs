@@ -397,11 +397,13 @@
 
         group-wrapper
         (mf/use-memo
-         (mf/deps objects root-shape)
-         (fn []
-           (case (:type root-shape)
-             :group (group-wrapper-factory objects)
-             :frame (frame-wrapper-factory objects))))]
+         (mf/deps objects)
+         (fn [] (group-wrapper-factory objects)))
+
+        frame-wrapper
+        (mf/use-memo
+         (mf/deps objects)
+         (fn [] (frame-wrapper-factory objects)))]
 
     [:> "symbol" #js {:id (str id)
                       :viewBox vbox
@@ -412,7 +414,9 @@
                       "penpot:main-instance-y" main-instance-y}
      [:title name]
      [:> shape-container {:shape root-shape}
-      [:& group-wrapper {:shape root-shape :view-box vbox}]]]))
+      (case (:type root-shape)
+        :group [:& group-wrapper {:shape root-shape :view-box vbox}]
+        :frame [:& frame-wrapper {:shape root-shape :view-box vbox}])]]))
 
 (mf/defc components-sprite-svg
   {::mf/wrap-props false}

@@ -311,7 +311,15 @@
 
              ;; Debug only: Disable the thumbnails
              new-active-frames
-             (if (debug? :disable-frame-thumbnails) (into #{} all-frames) new-active-frames)]
+             (cond
+               (debug? :disable-frame-thumbnails)
+               (into #{} all-frames)
+
+               (debug? :force-frame-thumbnails)
+               #{}
+
+               :else
+               new-active-frames)]
 
          (when (not= @active-frames new-active-frames)
            (reset! active-frames new-active-frames)))))))

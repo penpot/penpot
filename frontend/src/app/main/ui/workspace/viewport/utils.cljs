@@ -42,7 +42,7 @@
   (let [inv-zoom (/ 1 zoom)]
     (dm/fmt "scale(%, %) translate(%, %)" inv-zoom inv-zoom (* zoom x) (* zoom y))))
 
-(defn title-transform [frame zoom]
-  (let [frame-transform (gsh/transform-str frame {:no-flip true})
-        label-pos (gpt/point (:x frame) (- (:y frame) (/ 10 zoom)))]
-    (dm/str frame-transform " " (text-transform label-pos zoom))))
+(defn title-transform [{:keys [selrect] :as shape} zoom]
+  (let [transform (gsh/transform-str shape {:no-flip true})
+        label-pos (gpt/point (:x selrect) (- (:y selrect) (/ 10 zoom)))]
+    (dm/str transform " " (text-transform label-pos zoom))))
