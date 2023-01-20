@@ -69,6 +69,9 @@
     ;; Disable frame thumbnails
     :disable-frame-thumbnails
 
+    ;; Force thumbnails always (independent of selection or zoom level)
+    :force-frame-thumbnails
+
     ;; Enable a widget to show the auto-layout drop-zones
     :layout-drop-zones
 
@@ -89,6 +92,9 @@
 
     ;; Show history overlay
     :history-overlay
+
+    ;; Show shape name and id
+    :shape-titles
     })
 
 ;; These events are excluded when we activate the :events flag
