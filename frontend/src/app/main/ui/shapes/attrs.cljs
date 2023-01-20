@@ -147,7 +147,7 @@
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]
   (if (and (empty? svg-defs) (empty? svg-attrs))
-    [nil nil]
+    [{} {}]
     (let [replace-id (fn [id]
                        (if (contains? svg-defs id)
                          (str render-id "-" id)

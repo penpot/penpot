@@ -60,8 +60,9 @@
         (case format
           :rgba (let [[r g b a] (uc/hex->rgba (:color color) (:opacity color))]
                   [:div (str/fmt "%s, %s, %s, %s" r g b a)])
-          :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))]
-                  [:div (str/fmt "%s, %s, %s, %s" h s l a)])
+          :hsla (let [[h s l a] (uc/hex->hsla (:color color) (:opacity color))
+                      result (uc/format-hsla [h s l a])]
+                  [:div result])
           [:*
            [:& color-name {:color color}]
            (when-not (:gradient color) [:div (str (* 100 (:opacity color)) "%")])]))

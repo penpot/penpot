@@ -81,13 +81,13 @@
         color-style (str/trim (get-in shape [:svg-attrs :style :fill]))
         color-style (if (= color-style "currentColor") clr/black color-style)]
     (cond-> shape
-    ;; Color present as attribute
+      ;; Color present as attribute
       (uc/color? color-attr)
       (-> (update :svg-attrs dissoc :fill)
           (update-in [:svg-attrs :style] dissoc :fill)
           (assoc-in [:fills 0 :fill-color] (uc/parse-color color-attr)))
 
-    ;; Color present as style
+      ;; Color present as style
       (uc/color? color-style)
       (-> (update-in [:svg-attrs :style] dissoc :fill)
           (update :svg-attrs dissoc :fill)
@@ -110,20 +110,22 @@
                                (get-in shape [:svg-attrs :style :stroke-linecap]))
                            ((d/nilf str/trim))
                            ((d/nilf keyword)))
+        color-attr (str/trim (get-in shape [:svg-attrs :stroke]))
+        color-attr (if (= color-attr "currentColor") clr/black color-attr)
+        color-style (str/trim (get-in shape [:svg-attrs :style :stroke]))
+        color-style (if (= color-style "currentColor") clr/black color-style)
 
         shape
         (cond-> shape
-          (uc/color? (str/trim (get-in shape [:svg-attrs :stroke])))
+          ;; Color present as attribute
+          (uc/color? color-attr)
           (-> (update :svg-attrs dissoc :stroke)
-              (assoc-in [:strokes 0 :stroke-color] (-> (get-in shape [:svg-attrs :stroke])
-                                                       (str/trim)
-                                                       (uc/parse-color))))
+              (assoc-in [:strokes 0 :stroke-color] (uc/parse-color color-attr)))
 
-          (uc/color? (str/trim (get-in shape [:svg-attrs :style :stroke])))
+          ;; Color present as style
+          (uc/color? color-style)
           (-> (update-in [:svg-attrs :style] dissoc :stroke)
-              (assoc-in [:strokes 0 :stroke-color] (-> (get-in shape [:svg-attrs :style :stroke])
-                                                       (str/trim)
-                                                       (uc/parse-color))))
+              (assoc-in [:strokes 0 :stroke-color] (uc/parse-color color-style)))
 
           (get-in shape [:svg-attrs :stroke-opacity])
           (-> (update :svg-attrs dissoc :stroke-opacity)
@@ -133,7 +135,7 @@
           (get-in shape [:svg-attrs :style :stroke-opacity])
           (-> (update-in [:svg-attrs :style] dissoc :stroke-opacity)
               (assoc-in [:strokes 0 :stroke-opacity] (-> (get-in shape [:svg-attrs :style :stroke-opacity])
-                                                       (d/parse-double))))
+                                                         (d/parse-double))))
 
           (get-in shape [:svg-attrs :stroke-width])
           (-> (update :svg-attrs dissoc :stroke-width)
@@ -516,12 +518,12 @@
 
           ;; In penpot groups have the size of their children. To respect the imported svg size and empty space let's create a transparent shape as background to respect the imported size
           base-background-shape {:tag :rect
-                                 :attrs {:x "0"
-                                         :y "0"
-                                         :width (str (:width root-shape))
-                                         :height (str (:height root-shape))
-                                         :fill "none"
-                                         :id "base-background"}
+                                 :attrs {:x      (str vb-x)
+                                         :y      (str vb-y)
+                                         :width  (str vb-width)
+                                         :height (str vb-height)
+                                         :fill   "none"
+                                         :id     "base-background"}
                                  :hidden true
                                  :content []}
 

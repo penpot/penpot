@@ -78,6 +78,13 @@
                :y (:y mask-bb-rect)
                :width (:width mask-bb-rect)
                :height (:height mask-bb-rect)
+
+               ;; This is necesary to prevent a race condition in the dynamic-modifiers whether the modifier
+               ;; triggers afte the render
+               :data-old-x (:x mask-bb-rect)
+               :data-old-y (:y mask-bb-rect)
+               :data-old-width (:width mask-bb-rect)
+               :data-old-height (:height mask-bb-rect)
                :mask-units "userSpaceOnUse"}
         [:g {:filter (when-not svg-text? (filter-url render-id mask))}
          [:& shape-wrapper {:shape (-> mask (dissoc :shadow :blur) (assoc :is-mask? true))}]]]])))

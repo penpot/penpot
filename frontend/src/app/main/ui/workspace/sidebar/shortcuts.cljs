@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.config :as cf]
    [app.main.data.dashboard.shortcuts]
+   [app.main.data.events :as ev]
    [app.main.data.shortcuts :as ds]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
@@ -18,6 +19,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.strings :refer [matches-search]]
    [clojure.set :as set]
    [clojure.string]
@@ -450,7 +452,24 @@
         (mf/use-callback
          (fn [_]
            (reset! open-sections [[1]])
-           (reset! filter-term "")))]
+           (reset! filter-term "")))
+
+        manage-key-down
+        (mf/use-callback
+         (fn [event]
+           (when (kbd/esc? event)
+             (st/emit! (-> (dw/toggle-layout-flag :shortcuts)
+                           (vary-meta assoc ::ev/origin "shortcuts-panel"))))))
+
+        on-key-down
+        (mf/use-callback
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-search-clear-click)
+             (dom/focus! (dom/get-element "shortcut-search")))))]
+    
+      (mf/with-effect []
+        (dom/focus! (dom/get-element "shortcut-search")))
 
     [:div.shortcuts
      [:div.shortcuts-header
@@ -465,13 +484,16 @@
          :type "text"
          :value @filter-term
          :on-change on-search-term-change
-         :auto-complete "off"}]
+         :auto-complete "off"
+         :on-key-down manage-key-down}]
        (if (str/empty? @filter-term)
          [:span.icon-wrapper
           i/search]
-         [:span.icon-wrapper.close
-          {:on-click on-search-clear-click}
-          i/close])]]
+         [:button.icon-wrapper
+          {:on-click on-search-clear-click
+           :on-key-down on-key-down}
+          [:span.icon.close
+           i/close]])]]
      (if match-any?
        [:div.shortcut-list
         (for [section all-shortcuts]
