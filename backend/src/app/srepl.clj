@@ -30,7 +30,7 @@
    :init repl-init
    :read ccs/repl-read))
 
-(defn json-prepl
+(defn json-repl
   []
   (let [out  *out*
         lock (locks/create)]
@@ -61,7 +61,7 @@
   [[type _] {:keys [::flag port host] :as cfg}]
   (when (contains? cf/flags flag)
     (let [accept (case type
-                   ::prepl 'app.srepl/json-prepl
+                   ::prepl 'app.srepl/json-repl
                    ::urepl 'app.srepl/user-repl)
           params {:address host
                   :port port
