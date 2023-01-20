@@ -516,12 +516,12 @@
 
           ;; In penpot groups have the size of their children. To respect the imported svg size and empty space let's create a transparent shape as background to respect the imported size
           base-background-shape {:tag :rect
-                                 :attrs {:x "0"
-                                         :y "0"
-                                         :width (str (:width root-shape))
-                                         :height (str (:height root-shape))
-                                         :fill "none"
-                                         :id "base-background"}
+                                 :attrs {:x      (str vb-x)
+                                         :y      (str vb-y)
+                                         :width  (str vb-width)
+                                         :height (str vb-height)
+                                         :fill   "none"
+                                         :id     "base-background"}
                                  :hidden true
                                  :content []}
 
