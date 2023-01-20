@@ -48,6 +48,7 @@
 - Fix mousewheel on viewer inspector [Taiga #4221](https://tree.taiga.io/project/penpot/issue/4221)
 - Fix path edition activated on boards [Taiga #4105](https://tree.taiga.io/project/penpot/issue/4105)
 - Fix hidden layers inside groups become visible after the group visibility is changed[Taiga #4710](https://tree.taiga.io/project/penpot/issue/4710)
+- Fix format of HSLA color on viewer [Taiga #4393](https://tree.taiga.io/project/penpot/issue/4393)
 
 ## 1.16.2-beta
 
