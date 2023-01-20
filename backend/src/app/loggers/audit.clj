@@ -159,7 +159,7 @@
       ;; this case we just retry the operation.
       (rtry/with-retry {::rtry/when rtry/conflict-exception?
                         ::rtry/max-retries 6
-                        ::rtry/label "persist-audit-log-event"}
+                        ::rtry/label "persist-audit-log"}
         (let [now (dt/now)]
           (db/insert! pool :audit-log
                       (-> params

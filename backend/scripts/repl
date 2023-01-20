@@ -2,7 +2,21 @@
 
 export PENPOT_HOST=devenv
 export PENPOT_TENANT=dev
-export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-audit-log enable-transit-readable-response enable-demo-users disable-secure-session-cookies enable-smtp enable-webhooks"
+export PENPOT_FLAGS="\
+       $PENPOT_FLAGS \
+       enable-backend-asserts \
+       enable-audit-log \
+       enable-transit-readable-response \
+       enable-demo-users \
+       disable-secure-session-cookies \
+       enable-smtp \
+       enable-prepl-server \
+       enable-urepl-server \
+       enable-rpc-climit \
+       enable-rpc-rlimit \
+       enable-soft-rpc-rlimit \
+       enable-webhooks \
+       enable-access-tokens";
 
 # export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot"
 # export PENPOT_DATABASE_USERNAME="penpot"
@@ -31,11 +45,12 @@ export PENPOT_STORAGE_ASSETS_S3_BUCKET=penpot
 export OPTIONS="
        -A:jmx-remote -A:dev \
        -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
-       -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
-       -J-XX:+UseG1GC \
-       -J-XX:-OmitStackTraceInFastThrow \
-       -J-Xms50m -J-Xmx1024m \
        -J-Djdk.attach.allowAttachSelf \
+       -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
+       -J-Xms50m \
+       -J-Xmx1024m \
+       -J-XX:+UseZGC \
+       -J-XX:-OmitStackTraceInFastThrow \
        -J-XX:+UnlockDiagnosticVMOptions \
        -J-XX:+DebugNonSafepoints";
 

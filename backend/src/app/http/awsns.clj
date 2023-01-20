@@ -28,18 +28,20 @@
 (declare parse-notification)
 (declare process-report)
 
-(defmethod ig/pre-init-spec ::handler [_]
+(defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req [::http/client
                 ::main/props
                 ::db/pool
                 ::wrk/executor]))
 
-(defmethod ig/init-key ::handler
+(defmethod ig/init-key ::routes
   [_ {:keys [::wrk/executor] :as cfg}]
-  (fn [request respond _]
-    (let [data (-> request yrq/body slurp)]
-      (px/run! executor #(handle-request cfg data)))
-    (respond (yrs/response 200))))
+  (letfn [(handler [request respond _]
+            (let [data (-> request yrq/body slurp)]
+              (px/run! executor #(handle-request cfg data)))
+            (respond (yrs/response 200)))]
+    ["/sns" {:handler handler
+             :allowed-methods #{:post}}]))
 
 (defn handle-request
   [cfg data]
@@ -105,8 +107,7 @@
   [cfg headers]
   (let [tdata (get headers "x-penpot-data")]
     (when-not (str/empty? tdata)
-      (let [sprops (::main/props cfg)
-            result (tokens/verify sprops {:token tdata :iss :profile-identity})]
+      (let [result (tokens/verify (::main/props cfg) {:token tdata :iss :profile-identity})]
         (:profile-id result)))))
 
 (defn- parse-notification

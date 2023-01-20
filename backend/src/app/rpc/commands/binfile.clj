@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.features :as ffeat]
    [app.common.logging :as l]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
@@ -20,14 +21,15 @@
    [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.rpc.queries.projects :as projects]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
    [app.util.blob :as blob]
    [app.util.fressian :as fres]
+   [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -436,9 +438,8 @@
 (s/def ::embed-assets? (s/nilable ::us/boolean))
 
 (s/def ::write-export-options
-  (s/keys :req-un [::db/pool ::sto/storage]
-          :req    [::output ::file-ids]
-          :opt    [::include-libraries? ::embed-assets?]))
+  (s/keys :req [::db/pool ::sto/storage ::output ::file-ids]
+          :opt [::include-libraries? ::embed-assets?]))
 
 (defn write-export!
   "Do the exportation of a specified file in custom penpot binary
@@ -475,7 +476,7 @@
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])))))
 
 (defmethod write-section :v1/metadata
-  [{:keys [pool ::output ::file-ids ::include-libraries?]}]
+  [{:keys [::db/pool ::output ::file-ids ::include-libraries?]}]
   (let [libs  (when include-libraries?
                 (retrieve-libraries pool file-ids))
         files (into file-ids libs)]
@@ -483,7 +484,7 @@
     (vswap! *state* assoc :files files)))
 
 (defmethod write-section :v1/files
-  [{:keys [pool ::output ::embed-assets?]}]
+  [{:keys [::db/pool ::output ::embed-assets?]}]
 
   ;; Initialize SIDS with empty vector
   (vswap! *state* assoc :sids [])
@@ -507,7 +508,7 @@
       (vswap! *state* update :sids into storage-object-id-xf media))))
 
 (defmethod write-section :v1/rels
-  [{:keys [pool  ::output ::include-libraries?]}]
+  [{:keys [::db/pool ::output ::include-libraries?]}]
   (let [rels  (when include-libraries?
                 (retrieve-library-relations pool (-> *state* deref :files)))]
     (l/debug :hint "found rels" :total (count rels) ::l/async false)
@@ -555,9 +556,8 @@
 (s/def ::ignore-index-errors? (s/nilable ::us/boolean))
 
 (s/def ::read-import-options
-  (s/keys :req-un [::db/pool ::sto/storage]
-          :req    [::project-id ::input]
-          :opt    [::overwrite? ::migrate? ::ignore-index-errors?]))
+  (s/keys :req [::db/pool ::sto/storage ::project-id ::input]
+          :opt [::overwrite? ::migrate? ::ignore-index-errors?]))
 
 (defn read-import!
   "Do the importation of the specified resource in penpot custom binary
@@ -580,7 +580,7 @@
     (read-import (assoc options ::version version ::timestamp timestamp))))
 
 (defmethod read-import :v1
-  [{:keys [pool ::input] :as options}]
+  [{:keys [::db/pool ::input] :as options}]
   (with-open [input (zstd-input-stream input)]
     (with-open [input (io/data-input-stream input)]
       (db/with-atomic [conn pool]
@@ -609,12 +609,23 @@
     (vswap! *state* update :index update-index files)
     (vswap! *state* assoc :version version :files files)))
 
+(defn- postprocess-file
+  [data]
+  (let [omap-wrap ffeat/*wrap-with-objects-map-fn*
+        pmap-wrap ffeat/*wrap-with-pointer-map-fn*]
+    (-> data
+        (update :pages-index update-vals #(update % :objects omap-wrap))
+        (update :pages-index update-vals pmap-wrap)
+        (update :components update-vals #(update % :objects omap-wrap))
+        (update :components pmap-wrap))))
+
 (defmethod read-section :v1/files
   [{:keys [conn ::input ::migrate? ::project-id ::timestamp ::overwrite?]}]
   (doseq [expected-file-id (-> *state* deref :files)]
-    (let [file    (read-obj! input)
-          media'  (read-obj! input)
-          file-id (:id file)]
+    (let [file     (read-obj! input)
+          media'   (read-obj! input)
+          file-id  (:id file)
+          features files/default-features]
 
       (when (not= file-id expected-file-id)
         (ex/raise :type :validation
@@ -629,33 +640,42 @@
       (l/debug :hint "update media references" ::l/async false)
       (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
 
-      (l/debug :hint "processing file" :file-id file-id ::l/async false)
+      (l/debug :hint "processing file" :file-id file-id ::features features ::l/async false)
 
-      (let [file-id' (lookup-index file-id)
-            data     (-> (:data file)
-                         (assoc :id file-id')
-                         (cond-> migrate? (pmg/migrate-data))
-                         (update :pages-index relink-shapes)
-                         (update :components relink-shapes)
-                         (update :media relink-media))
+      (binding [ffeat/*current* features
+                ffeat/*wrap-with-objects-map-fn* (if (features "storage/objects-map") omap/wrap identity)
+                ffeat/*wrap-with-pointer-map-fn* (if (features "storage/pointer-map") pmap/wrap identity)
+                pmap/*tracked* (atom {})]
 
-            params  {:id file-id'
-                     :project-id project-id
-                     :name (:name file)
-                     :revn (:revn file)
-                     :is-shared (:is-shared file)
-                     :data (blob/encode data)
-                     :created-at timestamp
-                     :modified-at timestamp}]
+        (let [file-id' (lookup-index file-id)
+              data     (-> (:data file)
+                           (assoc :id file-id')
+                           (cond-> migrate? (pmg/migrate-data))
+                           (update :pages-index relink-shapes)
+                           (update :components relink-shapes)
+                           (update :media relink-media)
+                           (postprocess-file))
 
-        (l/debug :hint "create file" :id file-id' ::l/async false)
+              params  {:id file-id'
+                       :project-id project-id
+                       :features (db/create-array conn "text" features)
+                       :name (:name file)
+                       :revn (:revn file)
+                       :is-shared (:is-shared file)
+                       :data (blob/encode data)
+                       :created-at timestamp
+                       :modified-at timestamp}]
 
-        (if overwrite?
-          (create-or-update-file conn params)
-          (db/insert! conn :file params))
+          (l/debug :hint "create file" :id file-id' ::l/async false)
 
-        (when overwrite?
-          (db/delete! conn :file-thumbnail {:file-id file-id'}))))))
+          (if overwrite?
+            (create-or-update-file conn params)
+            (db/insert! conn :file params))
+
+          (files/persist-pointers! conn file-id')
+
+          (when overwrite?
+            (db/delete! conn :file-thumbnail {:file-id file-id'})))))))
 
 (defmethod read-section :v1/rels
   [{:keys [conn ::input ::timestamp]}]
@@ -673,7 +693,7 @@
         (db/insert! conn :file-library-rel rel)))))
 
 (defmethod read-section :v1/sobjects
-  [{:keys [storage conn ::input ::overwrite?]}]
+  [{:keys [::sto/storage conn ::input ::overwrite?]}]
   (let [storage (media/configure-assets-storage storage)
         ids     (read-obj! input)]
 
@@ -871,13 +891,14 @@
 (s/def ::embed-assets? ::us/boolean)
 
 (s/def ::export-binfile
-  (s/keys :req [::rpc/profile-id] :req-un [::file-id ::include-libraries? ::embed-assets?]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id ::include-libraries? ::embed-assets?]))
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id include-libraries? embed-assets?] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id include-libraries? embed-assets?] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
   (let [body (reify yrs/StreamableResponseBody
                (-write-body-to-stream [_ _ output-stream]
@@ -892,13 +913,14 @@
 
 (s/def ::file ::media/upload)
 (s/def ::import-binfile
-  (s/keys :req [::rpc/profile-id] :req-un [::project-id ::file]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::project-id ::file]))
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."
   {::doc/added "1.15"
    ::webhooks/event? true}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-read-permissions! conn profile-id project-id)
     (let [ids (import! (assoc cfg

@@ -124,7 +124,7 @@
   (ptk/reify ::fetch-profile
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/query! :profile)
+      (->> (rp/cmd! :get-profile)
            (rx/map profile-fetched)))))
 
 ;; --- EVENT: INITIALIZE PROFILE
@@ -207,7 +207,7 @@
         ;; the returned profile is an NOT authenticated profile, we
         ;; proceed to logout and show an error message.
 
-        (->> (rp/command! :login-with-password (d/without-nils params))
+        (->> (rp/cmd! :login-with-password (d/without-nils params))
              (rx/merge-map (fn [data]
                              (rx/merge
                               (rx/of (fetch-profile))
@@ -293,7 +293,7 @@
    (ptk/reify ::logout
      ptk/WatchEvent
      (watch [_ _ _]
-       (->> (rp/command! :logout)
+       (->> (rp/cmd! :logout)
             (rx/delay-at-least 300)
             (rx/catch (constantly (rx/of 1)))
             (rx/map #(logged-out params)))))))
@@ -309,7 +309,7 @@
       (let [mdata      (meta data)
             on-success (:on-success mdata identity)
             on-error   (:on-error mdata rx/throw)]
-        (->> (rp/mutation :update-profile (dissoc data :props))
+        (->> (rp/cmd! :update-profile (dissoc data :props))
              (rx/catch on-error)
              (rx/mapcat
               (fn [_]
@@ -333,7 +333,7 @@
       (let [{:keys [on-error on-success]
              :or {on-error identity
                   on-success identity}} (meta data)]
-        (->> (rp/mutation :request-email-change data)
+        (->> (rp/cmd! :request-email-change data)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -343,7 +343,7 @@
   (ptk/reify ::cancel-email-change
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/mutation :cancel-email-change {})
+      (->> (rp/cmd! :cancel-email-change {})
            (rx/map (constantly (fetch-profile)))))))
 
 ;; --- Update Password (Form)
@@ -364,7 +364,7 @@
                   on-success identity}} (meta data)
             params {:old-password (:password-old data)
                     :password (:password-1 data)}]
-        (->> (rp/mutation :update-profile-password params)
+        (->> (rp/cmd! :update-profile-password params)
              (rx/tap on-success)
              (rx/catch (fn [err]
                          (on-error err)
@@ -382,7 +382,7 @@
     ;; the response value of update-profile-props RPC call
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/mutation :update-profile-props {:props props})
+      (->> (rp/cmd! :update-profile-props {:props props})
            (rx/map (constantly (fetch-profile)))))))
 
 (defn mark-onboarding-as-viewed
@@ -394,7 +394,7 @@
        (let [version (or version (:main @cf/version))
              props   {:onboarding-viewed true
                       :release-notes-viewed version}]
-         (->> (rp/mutation :update-profile-props {:props props})
+         (->> (rp/cmd! :update-profile-props {:props props})
               (rx/map (constantly (fetch-profile)))))))))
 
 (defn mark-questions-as-answered
@@ -407,7 +407,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [props {:onboarding-questions-answered true}]
-        (->> (rp/mutation :update-profile-props {:props props})
+        (->> (rp/cmd! :update-profile-props {:props props})
              (rx/map (constantly (fetch-profile))))))))
 
 
@@ -431,7 +431,7 @@
         (->> (rx/of file)
              (rx/map di/validate-file)
              (rx/map prepare)
-             (rx/mapcat #(rp/mutation :update-profile-photo %))
+             (rx/mapcat #(rp/cmd! :update-profile-photo %))
              (rx/do on-success)
              (rx/map (constantly (fetch-profile)))
              (rx/catch on-error))))))
@@ -460,7 +460,7 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/command! :get-profiles-for-file-comments {:team-id team-id :share-id share-id})
+          (->> (rp/cmd! :get-profiles-for-file-comments {:team-id team-id :share-id share-id})
                (rx/map #(partial fetched %))))))))
 
 ;; --- EVENT: request-account-deletion
@@ -473,7 +473,7 @@
       (let [{:keys [on-error on-success]
              :or {on-error rx/throw
                   on-success identity}} (meta params)]
-        (->> (rp/mutation :delete-profile {})
+        (->> (rp/cmd! :delete-profile {})
              (rx/tap on-success)
              (rx/delay-at-least 300)
              (rx/catch (constantly (rx/of 1)))
@@ -495,7 +495,7 @@
              :or {on-error rx/throw
                   on-success identity}} (meta data)]
 
-        (->> (rp/command! :request-profile-recovery data)
+        (->> (rp/cmd! :request-profile-recovery data)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -514,7 +514,7 @@
       (let [{:keys [on-error on-success]
              :or {on-error rx/throw
                   on-success identity}} (meta data)]
-        (->> (rp/command! :recover-profile data)
+        (->> (rp/cmd! :recover-profile data)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -525,7 +525,7 @@
   (ptk/reify ::create-demo-profile
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/command! :create-demo-profile {})
+      (->> (rp/cmd! :create-demo-profile {})
            (rx/map login)))))
 
 

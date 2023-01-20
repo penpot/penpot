@@ -652,7 +652,9 @@
       ;; check that the unknown frame thumbnail is deleted
       (let [res (th/db-exec! ["select * from file_object_thumbnail"])]
         (t/is (= 1 (count res)))
-        (t/is (= "new-data" (get-in res [0 :data])))))))
+        (t/is (= "new-data" (get-in res [0 :data])))))
+
+    ))
 
 
 (t/deftest file-thumbnail-ops

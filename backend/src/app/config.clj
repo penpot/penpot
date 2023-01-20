@@ -64,8 +64,6 @@
    :tenant "default"
 
    :redis-uri "redis://redis/0"
-   :srepl-host "127.0.0.1"
-   :srepl-port 6062
 
    :assets-storage-backend :assets-fs
    :storage-assets-fs-directory "assets"
@@ -128,6 +126,7 @@
 (s/def ::database-max-pool-size ::us/integer)
 
 (s/def ::quotes-teams-per-profile ::us/integer)
+(s/def ::quotes-access-tokens-per-profile ::us/integer)
 (s/def ::quotes-projects-per-team ::us/integer)
 (s/def ::quotes-invitations-per-team ::us/integer)
 (s/def ::quotes-profiles-per-team ::us/integer)
@@ -196,8 +195,10 @@
 (s/def ::smtp-ssl ::us/boolean)
 (s/def ::smtp-tls ::us/boolean)
 (s/def ::smtp-username (s/nilable ::us/string))
-(s/def ::srepl-host ::us/string)
-(s/def ::srepl-port ::us/integer)
+(s/def ::urepl-host ::us/string)
+(s/def ::urepl-port ::us/integer)
+(s/def ::prepl-host ::us/string)
+(s/def ::prepl-port ::us/integer)
 (s/def ::assets-storage-backend ::us/keyword)
 (s/def ::storage-assets-fs-directory ::us/string)
 (s/def ::storage-assets-s3-bucket ::us/string)
@@ -281,6 +282,7 @@
                    ::public-uri
 
                    ::quotes-teams-per-profile
+                   ::quotes-access-tokens-per-profile
                    ::quotes-projects-per-team
                    ::quotes-invitations-per-team
                    ::quotes-profiles-per-team
@@ -308,8 +310,10 @@
                    ::smtp-tls
                    ::smtp-username
 
-                   ::srepl-host
-                   ::srepl-port
+                   ::urepl-host
+                   ::urepl-port
+                   ::prepl-host
+                   ::prepl-port
 
                    ::assets-storage-backend
                    ::storage-assets-fs-directory

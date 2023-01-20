@@ -188,7 +188,7 @@
           res (db/update! (or conn pool) :storage-object
                           {:touched-at (dt/now)}
                           {:id id}
-                          {:return-keys false})]
+                          {::db/return-keys? false})]
       (pos? (:next.jdbc/update-count res)))))
 
 (defn get-object-data
@@ -247,7 +247,7 @@
           res (db/update! (or conn pool) :storage-object
                           {:deleted-at (dt/now)}
                           {:id id}
-                          {:return-keys false})]
+                          {::db/return-keys? false})]
       (pos? (:next.jdbc/update-count res)))))
 
 (dm/export impl/resolve-backend)

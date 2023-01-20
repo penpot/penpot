@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.rpc.commands.files.update
+(ns app.rpc.commands.files-update
   (:require
    [app.common.exceptions :as ex]
    [app.common.files.features :as ffeat]
@@ -132,7 +132,7 @@
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
    ::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (db/xact-lock! conn id)
@@ -145,7 +145,7 @@
                              (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))
 
 (defn update-file
-  [{:keys [conn metrics] :as cfg} {:keys [profile-id id changes changes-with-metadata] :as params}]
+  [{:keys [conn ::mtx/metrics] :as cfg} {:keys [profile-id id changes changes-with-metadata] :as params}]
   (let [file     (get-file conn id)
         features (->> (concat (:features file)
                               (:features params))
@@ -275,7 +275,7 @@
 (defn- send-notifications!
   [{:keys [conn] :as cfg} {:keys [file changes session-id] :as params}]
   (let [lchanges (filter library-change? changes)
-        msgbus   (:msgbus cfg)]
+        msgbus   (::mbus/msgbus cfg)]
 
     ;; Asynchronously publish message to the msgbus
     (mbus/pub! msgbus

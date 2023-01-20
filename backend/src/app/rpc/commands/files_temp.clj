@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.rpc.commands.files.temp
+(ns app.rpc.commands.files-temp
   (:require
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
@@ -13,10 +13,10 @@
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
-   [app.rpc.commands.files.create :as files.create]
-   [app.rpc.commands.files.update :as files.update]
+   [app.rpc.commands.files-create :refer [create-file]]
+   [app.rpc.commands.files-update :as-alias files.update]
+   [app.rpc.commands.projects :as projects]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.projects :as proj]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -37,15 +37,15 @@
 
 (sv/defmethod ::create-temp-file
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
   (db/with-atomic [conn pool]
-    (proj/check-edition-permissions! conn profile-id project-id)
-    (files.create/create-file conn (assoc params :profile-id profile-id :deleted-at (dt/in-future {:days 1})))))
+    (projects/check-edition-permissions! conn profile-id project-id)
+    (create-file conn (assoc params :profile-id profile-id :deleted-at (dt/in-future {:days 1})))))
 
 ;; --- MUTATION COMMAND: update-temp-file
 
 (defn update-temp-file
-  [conn {:keys [::rpc/profile-id session-id id revn changes] :as params}]
+  [conn {:keys [profile-id session-id id revn changes] :as params}]
   (db/insert! conn :file-change
               {:id (uuid/next)
                :session-id session-id
@@ -57,16 +57,17 @@
                :changes (blob/encode changes)}))
 
 (s/def ::update-temp-file
-  (s/keys :req-un [::files.update/changes
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::files.update/changes
                    ::files.update/revn
                    ::files.update/session-id
                    ::files/id]))
 
 (sv/defmethod ::update-temp-file
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (update-temp-file conn params)
+    (update-temp-file conn (assoc params :profile-id profile-id))
     nil))
 
 ;; --- MUTATION COMMAND: persist-temp-file
@@ -101,7 +102,7 @@
 
 (sv/defmethod ::persist-temp-file
   {::doc/added "1.17"}
-  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (persist-temp-file conn params)))

@@ -8,12 +8,11 @@
   "A demo specific mutations."
   (:require
    [app.common.exceptions :as ex]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.auth :as cmd.auth]
+   [app.rpc.commands.auth :as auth]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -30,32 +29,31 @@
   {::rpc/auth false
    ::doc/added "1.15"
    ::doc/changes ["1.15" "This method is migrated from mutations to commands."]}
-  [{:keys [pool] :as cfg} _]
-  (let [id       (uuid/next)
-        sem      (System/currentTimeMillis)
+  [{:keys [::db/pool] :as cfg} _]
+
+  (when-not (contains? cf/flags :demo-users)
+    (ex/raise :type :validation
+              :code :demo-users-not-allowed
+              :hint "Demo users are disabled by config."))
+
+  (let [sem      (System/currentTimeMillis)
         email    (str "demo-" sem ".demo@example.com")
         fullname (str "Demo User " sem)
+
         password (-> (bn/random-bytes 16)
                      (bc/bytes->b64u)
                      (bc/bytes->str))
-        params   {:id id
-                  :email email
+
+        params   {:email email
                   :fullname fullname
                   :is-active true
                   :deleted-at (dt/in-future cf/deletion-delay)
                   :password password
-                  :props {}
-                  }]
-
-    (when-not (contains? cf/flags :demo-users)
-      (ex/raise :type :validation
-                :code :demo-users-not-allowed
-                :hint "Demo users are disabled by config."))
+                  :props {}}]
 
     (db/with-atomic [conn pool]
-      (->> (cmd.auth/create-profile conn params)
-           (cmd.auth/create-profile-relations conn))
-
-      (with-meta {:email email
-                  :password password}
-        {::audit/profile-id id}))))
+      (let [profile (->> (auth/create-profile! conn params)
+                         (auth/create-profile-rels! conn))]
+        (with-meta {:email email
+                    :password password}
+          {::audit/profile-id (:id profile)})))))

@@ -6,12 +6,12 @@
 
 (ns backend-tests.bounce-handling-test
   (:require
-   [backend-tests.helpers :as th]
    [app.db :as db]
    [app.emails :as emails]
    [app.http.awsns :as awsns]
    [app.tokens :as tokens]
    [app.util.time :as dt]
+   [backend-tests.helpers :as th]
    [clojure.pprint :refer [pprint]]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))

@@ -87,6 +87,7 @@
      ::definitions definitions
      ::registry registry}))
 
+
 (defn- handler
   [registry _ respond _]
   (let [samples  (.metricFamilySamples ^CollectorRegistry registry)
@@ -94,6 +95,18 @@
     (TextFormat/write004 writer samples)
     (respond {:headers {"content-type" TextFormat/CONTENT_TYPE_004}
               :body (.toString writer)})))
+
+
+
+(s/def ::routes vector?)
+(defmethod ig/pre-init-spec ::routes [_]
+  (s/keys :req [::metrics]))
+
+(defmethod ig/init-key ::routes
+  [_ {:keys [::metrics]}]
+  (let [registry (::registry metrics)]
+    ["/metrics" {:handler (partial handler registry)
+                 :allowed-methods #{:get}}]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation

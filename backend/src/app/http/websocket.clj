@@ -12,6 +12,7 @@
    [app.common.pprint :as pp]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.http.session :as session]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
    [app.util.time :as dt]
@@ -34,7 +35,7 @@
 (def state (atom {}))
 
 (defn- on-connect
-  [{:keys [metrics]} wsp]
+  [{:keys [::mtx/metrics]} wsp]
   (let [created-at (dt/now)]
     (swap! state assoc (::ws/id @wsp) wsp)
     (mtx/run! metrics
@@ -48,7 +49,7 @@
                 :val (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0)))))
 
 (defn- on-rcv-message
-  [{:keys [metrics]} _ message]
+  [{:keys [::mtx/metrics]} _ message]
   (mtx/run! metrics
             :id :websocket-messages-total
             :labels recv-labels
@@ -56,7 +57,7 @@
   message)
 
 (defn- on-snd-message
-  [{:keys [metrics]} _ message]
+  [{:keys [::mtx/metrics]} _ message]
   (mtx/run! metrics
             :id :websocket-messages-total
             :labels send-labels
@@ -95,7 +96,6 @@
      :user-agent       (::ws/user-agent @wsp)
      :ip-addr          (::ws/remote-addr @wsp)
      :last-activity-at (::ws/last-activity-at @wsp)
-     :http-session-id  (::ws/http-session-id @wsp)
      :subscribed-file  (-> wsp deref ::file-subscription :file-id)
      :subscribed-team  (-> wsp deref ::team-subscription :team-id)}))
 
@@ -120,7 +120,7 @@
 (defmethod handle-message :connect
   [cfg wsp _]
 
-  (let [msgbus     (:msgbus cfg)
+  (let [msgbus     (::mbus/msgbus cfg)
         conn-id    (::ws/id @wsp)
         profile-id (::profile-id @wsp)
         session-id (::session-id @wsp)
@@ -139,7 +139,7 @@
 
 (defmethod handle-message :disconnect
   [cfg wsp _]
-  (let [msgbus     (:msgbus cfg)
+  (let [msgbus     (::mbus/msgbus cfg)
         conn-id    (::ws/id @wsp)
         profile-id (::profile-id @wsp)
         session-id (::session-id @wsp)
@@ -173,7 +173,7 @@
 
 (defmethod handle-message :subscribe-team
   [cfg wsp {:keys [team-id] :as params}]
-  (let [msgbus     (:msgbus cfg)
+  (let [msgbus     (::mbus/msgbus cfg)
         conn-id    (::ws/id @wsp)
         session-id (::session-id @wsp)
         output-ch  (::ws/output-ch @wsp)
@@ -205,7 +205,7 @@
 
 (defmethod handle-message :subscribe-file
   [cfg wsp {:keys [file-id] :as params}]
-  (let [msgbus     (:msgbus cfg)
+  (let [msgbus     (::mbus/msgbus cfg)
         conn-id    (::ws/id @wsp)
         profile-id (::profile-id @wsp)
         session-id (::session-id @wsp)
@@ -258,7 +258,7 @@
 
 (defmethod handle-message :unsubscribe-file
   [cfg wsp {:keys [file-id] :as params}]
-  (let [msgbus     (:msgbus cfg)
+  (let [msgbus     (::mbus/msgbus cfg)
         conn-id    (::ws/id @wsp)
         session-id (::session-id @wsp)
         profile-id (::profile-id @wsp)
@@ -288,7 +288,7 @@
 
 (defmethod handle-message :pointer-update
   [cfg wsp {:keys [file-id] :as message}]
-  (let [msgbus     (:msgbus cfg)
+  (let [msgbus     (::mbus/msgbus cfg)
         profile-id (::profile-id @wsp)
         session-id (::session-id @wsp)
         subs       (::file-subscription @wsp)
@@ -313,39 +313,47 @@
 ;; HTTP HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::msgbus ::mbus/msgbus)
 (s/def ::session-id ::us/uuid)
-
 (s/def ::handler-params
   (s/keys :req-un [::session-id]))
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::msgbus ::db/pool ::mtx/metrics]))
+(defn- http-handler
+  [cfg {:keys [params ::session/profile-id] :as request} respond raise]
+  (let [{:keys [session-id]} (us/conform ::handler-params params)]
+    (cond
+      (not profile-id)
+      (raise (ex/error :type :authentication
+                       :hint "Authentication required."))
 
-(defmethod ig/init-key ::handler
+      (not (yws/upgrade-request? request))
+      (raise (ex/error :type :validation
+                       :code :websocket-request-expected
+                       :hint "this endpoint only accepts websocket connections"))
+
+      :else
+      (do
+        (l/trace :hint "websocket request" :profile-id profile-id :session-id session-id)
+
+        (->> (ws/handler
+              ::ws/on-rcv-message (partial on-rcv-message cfg)
+              ::ws/on-snd-message (partial on-snd-message cfg)
+              ::ws/on-connect (partial on-connect cfg)
+              ::ws/handler (partial handle-message cfg)
+              ::profile-id profile-id
+              ::session-id session-id)
+             (yws/upgrade request)
+             (respond))))))
+
+(defmethod ig/pre-init-spec ::routes [_]
+  (s/keys :req [::mbus/msgbus
+                ::mtx/metrics
+                ::db/pool
+                ::session/manager]))
+
+(s/def ::routes vector?)
+
+(defmethod ig/init-key ::routes
   [_ cfg]
-  (fn [{:keys [profile-id params] :as req} respond raise]
-    (let [{:keys [session-id]} (us/conform ::handler-params params)]
-      (cond
-        (not profile-id)
-        (raise (ex/error :type :authentication
-                         :hint "Authentication required."))
-
-        (not (yws/upgrade-request? req))
-        (raise (ex/error :type :validation
-                         :code :websocket-request-expected
-                         :hint "this endpoint only accepts websocket connections"))
-
-        :else
-        (do
-          (l/trace :hint "websocket request" :profile-id profile-id :session-id session-id)
-
-          (->> (ws/handler
-                ::ws/on-rcv-message (partial on-rcv-message cfg)
-                ::ws/on-snd-message (partial on-snd-message cfg)
-                ::ws/on-connect (partial on-connect cfg)
-                ::ws/handler (partial handle-message cfg)
-                ::profile-id profile-id
-                ::session-id session-id)
-               (yws/upgrade req)
-               (respond)))))))
+  ["/ws/notifications" {:middleware [[session/authz cfg]]
+                        :handler (partial http-handler cfg)
+                        :allowed-methods #{:get}}])

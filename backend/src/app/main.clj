@@ -12,15 +12,25 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as-alias db]
+   [app.http.access-token :as-alias actoken]
+   [app.http.assets :as-alias http.assets]
+   [app.http.awsns :as http.awsns]
    [app.http.client :as-alias http.client]
-   [app.http.session :as-alias http.session]
+   [app.http.debug :as-alias http.debug]
+   [app.http.session :as-alias session]
+   [app.http.session.tasks :as-alias session.tasks]
+   [app.http.websocket :as http.ws]
    [app.loggers.audit :as-alias audit]
    [app.loggers.audit.tasks :as-alias audit.tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.loggers.zmq :as-alias lzmq]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
+   [app.msgbus :as-alias mbus]
    [app.redis :as-alias rds]
+   [app.rpc :as-alias rpc]
+   [app.rpc.doc :as-alias rpc.doc]
+   [app.srepl :as-alias srepl]
    [app.storage :as-alias sto]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
@@ -180,6 +190,9 @@
    ::mtx/metrics
    {:default default-metrics}
 
+   ::mtx/routes
+   {::mtx/metrics (ig/ref ::mtx/metrics)}
+
    :app.migrations/all
    {:main (ig/ref :app.migrations/migrations)}
 
@@ -187,7 +200,7 @@
    {::rds/uri     (cf/get :redis-uri)
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
-   :app.msgbus/msgbus
+   ::mbus/msgbus
    {:backend   (cf/get :msgbus-backend :redis)
     :executor  (ig/ref ::wrk/executor)
     :redis     (ig/ref ::rds/redis)}
@@ -207,16 +220,20 @@
    ::http.client/client
    {::wrk/executor (ig/ref ::wrk/executor)}
 
-   :app.http.session/manager
+   ::session/manager
    {::db/pool      (ig/ref ::db/pool)
     ::wrk/executor (ig/ref ::wrk/executor)
     ::props        (ig/ref :app.setup/props)}
 
-   :app.http.session/gc-task
-   {:pool        (ig/ref ::db/pool)
-    :max-age     (cf/get :auth-token-cookie-max-age)}
+   ::actoken/manager
+   {::db/pool      (ig/ref ::db/pool)
+    ::wrk/executor (ig/ref ::wrk/executor)
+    ::props        (ig/ref :app.setup/props)}
 
-   :app.http.awsns/handler
+   ::session.tasks/gc
+   {::db/pool (ig/ref ::db/pool)}
+
+   ::http.awsns/routes
    {::props              (ig/ref :app.setup/props)
     ::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
@@ -259,50 +276,44 @@
    {::http.client/client (ig/ref ::http.client/client)}
 
    ::oidc/routes
-   {::http.client/client   (ig/ref ::http.client/client)
-    ::db/pool              (ig/ref ::db/pool)
-    ::props                (ig/ref :app.setup/props)
-    ::wrk/executor         (ig/ref ::wrk/executor)
-    ::oidc/providers       {:google (ig/ref ::oidc.providers/google)
-                            :github (ig/ref ::oidc.providers/github)
-                            :gitlab (ig/ref ::oidc.providers/gitlab)
-                            :oidc   (ig/ref ::oidc.providers/generic)}
-    ::audit/collector      (ig/ref ::audit/collector)
-    ::http.session/session (ig/ref :app.http.session/manager)}
+   {::http.client/client (ig/ref ::http.client/client)
+    ::db/pool            (ig/ref ::db/pool)
+    ::props              (ig/ref :app.setup/props)
+    ::wrk/executor       (ig/ref ::wrk/executor)
+    ::oidc/providers     {:google (ig/ref ::oidc.providers/google)
+                          :github (ig/ref ::oidc.providers/github)
+                          :gitlab (ig/ref ::oidc.providers/gitlab)
+                          :oidc   (ig/ref ::oidc.providers/generic)}
+    ::audit/collector    (ig/ref ::audit/collector)
+    ::session/manager    (ig/ref ::session/manager)}
 
-
-   ;; TODO: revisit the dependencies of this service, looks they are too much unused of them
    :app.http/router
-   {:assets        (ig/ref :app.http.assets/handlers)
-    :feedback      (ig/ref :app.http.feedback/handler)
-    :session       (ig/ref :app.http.session/manager)
-    :awsns-handler (ig/ref :app.http.awsns/handler)
-    :debug-routes  (ig/ref :app.http.debug/routes)
-    :oidc-routes   (ig/ref ::oidc/routes)
-    :ws            (ig/ref :app.http.websocket/handler)
-    :metrics       (ig/ref ::mtx/metrics)
-    :public-uri    (cf/get :public-uri)
-    :storage       (ig/ref ::sto/storage)
-    :rpc-routes    (ig/ref :app.rpc/routes)
-    :doc-routes    (ig/ref :app.rpc.doc/routes)
-    :executor      (ig/ref ::wrk/executor)}
+   {::session/manager    (ig/ref ::session/manager)
+    ::actoken/manager    (ig/ref ::actoken/manager)
+    ::wrk/executor       (ig/ref ::wrk/executor)
+    ::db/pool            (ig/ref ::db/pool)
+    ::rpc/routes         (ig/ref ::rpc/routes)
+    ::rpc.doc/routes     (ig/ref ::rpc.doc/routes)
+    ::props              (ig/ref :app.setup/props)
+    ::mtx/routes         (ig/ref ::mtx/routes)
+    ::oidc/routes        (ig/ref ::oidc/routes)
+    ::http.debug/routes  (ig/ref ::http.debug/routes)
+    ::http.assets/routes (ig/ref ::http.assets/routes)
+    ::http.ws/routes     (ig/ref ::http.ws/routes)
+    ::http.awsns/routes  (ig/ref ::http.awsns/routes)}
 
    :app.http.debug/routes
-   {:pool     (ig/ref ::db/pool)
-    :executor (ig/ref ::wrk/executor)
-    :storage  (ig/ref ::sto/storage)
-    :session  (ig/ref :app.http.session/manager)
+   {::db/pool         (ig/ref ::db/pool)
+    ::wrk/executor    (ig/ref ::wrk/executor)
+    ::session/manager (ig/ref ::session/manager)}
 
-    ::db/pool      (ig/ref ::db/pool)
-    ::wrk/executor (ig/ref ::wrk/executor)
-    ::sto/storage  (ig/ref ::sto/storage)}
+   :app.http.websocket/routes
+   {::db/pool         (ig/ref ::db/pool)
+    ::mtx/metrics     (ig/ref ::mtx/metrics)
+    ::mbus/msgbus     (ig/ref :app.msgbus/msgbus)
+    ::session/manager (ig/ref ::session/manager)}
 
-   :app.http.websocket/handler
-   {:pool     (ig/ref ::db/pool)
-    :metrics  (ig/ref ::mtx/metrics)
-    :msgbus   (ig/ref :app.msgbus/msgbus)}
-
-   :app.http.assets/handlers
+   :app.http.assets/routes
    {:metrics           (ig/ref ::mtx/metrics)
     :assets-path       (cf/get :assets-path)
     :storage           (ig/ref ::sto/storage)
@@ -310,37 +321,32 @@
     :cache-max-age     (dt/duration {:hours 24})
     :signature-max-age (dt/duration {:hours 24 :minutes 5})}
 
-   :app.http.feedback/handler
-   {:pool     (ig/ref ::db/pool)
-    :executor (ig/ref ::wrk/executor)}
-
    :app.rpc/climit
-   {:metrics  (ig/ref ::mtx/metrics)
-    :executor (ig/ref ::wrk/executor)}
+   {::mtx/metrics  (ig/ref ::mtx/metrics)
+    ::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.rpc/rlimit
-   {:executor  (ig/ref ::wrk/executor)
-    :scheduled-executor (ig/ref ::wrk/scheduled-executor)}
+   {::wrk/executor           (ig/ref ::wrk/executor)
+    ::wrk/scheduled-executor (ig/ref ::wrk/scheduled-executor)}
 
    :app.rpc/methods
    {::audit/collector    (ig/ref ::audit/collector)
     ::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::wrk/executor       (ig/ref ::wrk/executor)
-    ::props              (ig/ref :app.setup/props)
+    ::session/manager    (ig/ref ::session/manager)
     ::ldap/provider      (ig/ref ::ldap/provider)
+    ::sto/storage        (ig/ref ::sto/storage)
+    ::mtx/metrics        (ig/ref ::mtx/metrics)
+    ::mbus/msgbus        (ig/ref ::mbus/msgbus)
+    ::rds/redis          (ig/ref ::rds/redis)
+
+    ::rpc/climit         (ig/ref ::rpc/climit)
+    ::rpc/rlimit         (ig/ref ::rpc/rlimit)
+
+    ::props              (ig/ref :app.setup/props)
+
     :pool                (ig/ref ::db/pool)
-    :session             (ig/ref :app.http.session/manager)
-    :sprops              (ig/ref :app.setup/props)
-    :metrics             (ig/ref ::mtx/metrics)
-    :storage             (ig/ref ::sto/storage)
-    :msgbus              (ig/ref :app.msgbus/msgbus)
-    :public-uri          (cf/get :public-uri)
-    :redis               (ig/ref ::rds/redis)
-    :http-client         (ig/ref ::http.client/client)
-    :climit              (ig/ref :app.rpc/climit)
-    :rlimit              (ig/ref :app.rpc/rlimit)
-    :executor            (ig/ref ::wrk/executor)
     :templates           (ig/ref :app.setup/builtin-templates)
     }
 
@@ -348,7 +354,12 @@
    {:methods (ig/ref :app.rpc/methods)}
 
    :app.rpc/routes
-   {:methods (ig/ref :app.rpc/methods)}
+   {::rpc/methods     (ig/ref :app.rpc/methods)
+    ::db/pool         (ig/ref ::db/pool)
+    ::wrk/executor    (ig/ref ::wrk/executor)
+    ::session/manager (ig/ref ::session/manager)
+    ::actoken/manager (ig/ref ::actoken/manager)
+    ::props           (ig/ref :app.setup/props)}
 
    ::wrk/registry
    {:metrics (ig/ref ::mtx/metrics)
@@ -361,7 +372,7 @@
      :storage-gc-touched (ig/ref ::sto/gc-touched-task)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
-     :session-gc         (ig/ref :app.http.session/gc-task)
+     :session-gc         (ig/ref ::session.tasks/gc)
      :audit-log-archive  (ig/ref ::audit.tasks/archive)
      :audit-log-gc       (ig/ref ::audit.tasks/gc)
 
@@ -404,9 +415,13 @@
     ::http.client/client (ig/ref ::http.client/client)
     ::props              (ig/ref :app.setup/props)}
 
-   :app.srepl/server
-   {:port (cf/get :srepl-port)
-    :host (cf/get :srepl-host)}
+   [::srepl/urepl ::srepl/server]
+   {:port (cf/get :urepl-port 6062)
+    :host (cf/get :urepl-host "localhost")}
+
+   [::srepl/prepl ::srepl/server]
+   {:port (cf/get :prepl-port 6063)
+    :host (cf/get :prepl-host "localhost")}
 
    :app.setup/builtin-templates
    {::http.client/client (ig/ref ::http.client/client)}

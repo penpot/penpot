@@ -6,14 +6,14 @@
 
 (ns backend-tests.rpc-profile-test
   (:require
-   [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cauth]
-   [app.rpc.mutations.profile :as profile]
    [app.tokens :as tokens]
    [app.util.time :as dt]
+   [backend-tests.helpers :as th]
    [clojure.java.io :as io]
    [clojure.test :as t]
    [cuerdas.core :as str]
@@ -67,9 +67,9 @@
 (t/deftest profile-query-and-manipulation
   (let [profile (th/create-profile* 1)]
     (t/testing "query profile"
-      (let [data {::th/type :profile
-                  :profile-id (:id profile)}
-            out  (th/query! data)]
+      (let [data {::th/type :get-profile
+                  ::rpc/profile-id (:id profile)}
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -82,20 +82,20 @@
     (t/testing "update profile"
       (let [data (assoc profile
                         ::th/type :update-profile
-                        :profile-id (:id profile)
+                        ::rpc/profile-id (:id profile)
                         :fullname "Full Name"
                         :lang "en"
                         :theme "dark")
-            out  (th/mutation! data)]
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (t/is (map? (:result out)))))
 
     (t/testing "query profile after update"
-      (let [data {::th/type :profile
-                  :profile-id (:id profile)}
-            out  (th/query! data)]
+      (let [data {::th/type :get-profile
+                  ::rpc/profile-id (:id profile)}
+            out  (th/command! data)]
 
         #_(th/print-result! out)
         (t/is (nil? (:error out)))
@@ -107,12 +107,12 @@
 
     (t/testing "update photo"
       (let [data {::th/type :update-profile-photo
-                  :profile-id (:id profile)
+                  ::rpc/profile-id (:id profile)
                   :file {:filename "sample.jpg"
                          :size 123123
                          :path (th/tempfile "backend_tests/test_files/sample.jpg")
                          :mtype "image/jpeg"}}
-            out  (th/mutation! data)]
+            out  (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))))
@@ -131,15 +131,15 @@
 
     ;; Request profile to be deleted
     (let [params {::th/type :delete-profile
-                  :profile-id (:id prof)}
-          out    (th/mutation! params)]
+                  ::rpc/profile-id (:id prof)}
+          out    (th/command! params)]
       (t/is (nil? (:error out))))
 
     ;; query files after profile soft deletion
-    (let [params {::th/type :project-files
-                  :project-id (:default-project-id prof)
-                  :profile-id (:id prof)}
-          out    (th/query! params)]
+    (let [params {::th/type :get-project-files
+                  ::rpc/profile-id (:id prof)
+                  :project-id (:default-project-id prof)}
+          out    (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
@@ -150,13 +150,13 @@
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
-                         {:check-deleted? false})]
+                         {::db/remove-deleted? false})]
       (t/is (dt/instant? (:deleted-at row))))
 
     ;; query profile after delete
-    (let [params {::th/type :profile
-                  :profile-id (:id prof)}
-          out    (th/query! params)]
+    (let [params {::th/type :get-profile
+                  ::rpc/profile-id (:id prof)}
+          out    (th/command! params)]
       ;; (th/print-result! out)
       (let [result (:result out)]
         (t/is (= uuid/zero (:id result)))))))
@@ -174,7 +174,7 @@
   (let [data  {::th/type :prepare-register-profile
                :email "user@example.com"
                :password "foobar"}
-        out   (th/mutation! data)
+        out   (th/command! data)
         token (get-in out [:result :token])]
     (t/is (string? token))
 
@@ -183,7 +183,7 @@
     (let [data  {::th/type :register-profile
                  :fullname "foobar"
                  :accept-terms-and-privacy true}
-          out   (th/mutation! data)]
+          out   (th/command! data)]
       (let [error (:error out)]
         (t/is (th/ex-info? error))
         (t/is (th/ex-of-type? error :validation))
@@ -195,7 +195,7 @@
                  :fullname "foobar"
                  :accept-terms-and-privacy true
                  :accept-newsletter-subscription true}]
-      (let [{:keys [result error]} (th/mutation! data)]
+      (let [{:keys [result error]} (th/command! data)]
         (t/is (nil? error))))
     ))
 
@@ -413,11 +413,11 @@
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
-                   :profile-id (:id profile)
+                   ::rpc/profile-id (:id profile)
                    :email "user1@example.com"}]
 
       ;; without complaints
-      (let [out (th/mutation! data)]
+      (let [out (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
         (let [mock @mock]
@@ -426,14 +426,14 @@
 
       ;; with complaints
       (th/create-global-complaint-for pool {:type :complaint :email (:email data)})
-      (let [out (th/mutation! data)]
+      (let [out (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
         (t/is (= 2 (:call-count @mock))))
 
       ;; with bounces
       (th/create-global-complaint-for pool {:type :bounce :email (:email data)})
-      (let [out   (th/mutation! data)
+      (let [out   (th/command! data)
             error (:error out)]
         ;; (th/print-result! out)
         (t/is (th/ex-info? error))
@@ -448,9 +448,9 @@
       (let [profile (th/create-profile* 1)
             pool    (:app.db/pool th/*system*)
             data    {::th/type :request-email-change
-                     :profile-id (:id profile)
+                     ::rpc/profile-id (:id profile)
                      :email "user1@example.com"}
-            out     (th/mutation! data)]
+            out     (th/command! data)]
 
         ;; (th/print-result! out)
         (t/is (false? (:called? @mock)))
@@ -467,7 +467,7 @@
 
       ;; with invalid email
       (let [data (assoc data :email "foo@bar.com")
-            out  (th/mutation! data)]
+            out  (th/command! data)]
         (t/is (nil? (:result out)))
         (t/is (= 0 (:call-count @mock))))
 
@@ -512,10 +512,10 @@
 (t/deftest update-profile-password
   (let [profile (th/create-profile* 1)
         data  {::th/type :update-profile-password
-               :profile-id (:id profile)
+               ::rpc/profile-id (:id profile)
                :old-password "123123"
                :password "foobarfoobar"}
-        out   (th/mutation! data)]
+        out   (th/command! data)]
     (t/is (nil? (:error out)))
     (t/is (nil? (:result out)))
   ))
@@ -524,10 +524,10 @@
 (t/deftest update-profile-password-bad-old-password
   (let [profile (th/create-profile* 1)
         data  {::th/type :update-profile-password
-               :profile-id (:id profile)
+               ::rpc/profile-id (:id profile)
                :old-password "badpassword"
                :password "foobarfoobar"}
-        {:keys [result error] :as out} (th/mutation! data)]
+        {:keys [result error] :as out} (th/command! data)]
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :validation))
     (t/is (th/ex-of-code? error :old-password-not-match))))
@@ -536,10 +536,10 @@
 (t/deftest update-profile-password-email-as-password
   (let [profile (th/create-profile* 1)
         data  {::th/type :update-profile-password
-               :profile-id (:id profile)
+               ::rpc/profile-id (:id profile)
                :old-password "123123"
                :password "profile1.test@nodomain.com"}
-        {:keys [result error] :as out} (th/mutation! data)]
+        {:keys [result error] :as out} (th/command! data)]
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :validation))
     (t/is (th/ex-of-code? error :email-as-password))))

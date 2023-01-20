@@ -115,7 +115,10 @@
 (s/def ::cache-max-age ::dt/duration)
 (s/def ::signature-max-age ::dt/duration)
 
-(defmethod ig/pre-init-spec ::handlers [_]
+(s/def ::routes vector?)
+
+;; FIXME: namespace qualified params
+(defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req-un [::storage
                    ::wrk/executor
                    ::mtx/metrics
@@ -123,9 +126,9 @@
                    ::cache-max-age
                    ::signature-max-age]))
 
-(defmethod ig/init-key ::handlers
+(defmethod ig/init-key ::routes
   [_ cfg]
-  {:objects-handler (partial objects-handler cfg)
-   :file-objects-handler (partial file-objects-handler cfg)
-   :file-thumbnails-handler (partial file-thumbnails-handler cfg)})
-
+  ["/assets"
+   ["/by-id/:id" {:handler (partial objects-handler cfg)}]
+   ["/by-file-media-id/:id" {:handler (partial file-objects-handler cfg)}]
+   ["/by-file-media-id/:id/thumbnail" {:handler (partial file-thumbnails-handler cfg)}]])

@@ -6,15 +6,12 @@
 
 (ns app.rpc.mutations.fonts
   (:require
-   [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
-   [app.rpc.climit :as-alias climit]
+   [app.rpc.commands.fonts :as fonts]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
@@ -22,9 +19,7 @@
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [promesa.exec :as px]))
+   [clojure.spec.alpha :as s]))
 
 (declare create-font-variant)
 
@@ -44,82 +39,19 @@
   (s/keys :req-un [::profile-id ::team-id ::data
                    ::font-id ::font-family ::font-weight ::font-style]))
 
+(declare create-font-variant)
+
 (sv/defmethod ::create-font-variant
   {::doc/added "1.3"
+   ::doc/deprecated "1.18"
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id] :as params}]
-  (let [cfg (update cfg :storage media/configure-assets-storage)]
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (teams/check-edition-permissions! pool profile-id team-id)
     (quotes/check-quote! pool {::quotes/id ::quotes/font-variants-per-team
                                ::quotes/profile-id profile-id
                                ::quotes/team-id team-id})
-    (create-font-variant cfg params)))
-
-(defn create-font-variant
-  [{:keys [storage pool executor climit] :as cfg} {:keys [data] :as params}]
-  (letfn [(generate-fonts [data]
-            (climit/with-dispatch (:process-font climit)
-              (media/run {:cmd :generate-fonts :input data})))
-
-          ;; Function responsible of calculating cryptographyc hash of
-          ;; the provided data.
-          (calculate-hash [data]
-            (px/with-dispatch executor
-              (sto/calculate-hash data)))
-
-          (validate-data [data]
-            (when (and (not (contains? data "font/otf"))
-                       (not (contains? data "font/ttf"))
-                       (not (contains? data "font/woff"))
-                       (not (contains? data "font/woff2")))
-              (ex/raise :type :validation
-                        :code :invalid-font-upload))
-            data)
-
-          (persist-font-object [data mtype]
-            (when-let [resource (get data mtype)]
-              (p/let [hash    (calculate-hash resource)
-                      content (-> (sto/content resource)
-                                  (sto/wrap-with-hash hash))]
-                (sto/put-object! storage {::sto/content content
-                                          ::sto/touched-at (dt/now)
-                                          ::sto/deduplicate? true
-                                          :content-type mtype
-                                          :bucket "team-font-variant"}))))
-
-          (persist-fonts [data]
-            (p/let [otf   (persist-font-object data "font/otf")
-                    ttf   (persist-font-object data "font/ttf")
-                    woff1 (persist-font-object data "font/woff")
-                    woff2 (persist-font-object data "font/woff2")]
-
-              (d/without-nils
-               {:otf otf
-                :ttf ttf
-                :woff1 woff1
-                :woff2 woff2})))
-
-          (insert-into-db [{:keys [woff1 woff2 otf ttf]}]
-            (db/insert! pool :team-font-variant
-                        {:id (uuid/next)
-                         :team-id (:team-id params)
-                         :font-id (:font-id params)
-                         :font-family (:font-family params)
-                         :font-weight (:font-weight params)
-                         :font-style (:font-style params)
-                         :woff1-file-id (:id woff1)
-                         :woff2-file-id (:id woff2)
-                         :otf-file-id (:id otf)
-                         :ttf-file-id (:id ttf)}))
-          ]
-
-    (->> (generate-fonts data)
-         (p/fmap validate-data)
-         (p/mcat executor persist-fonts)
-         (p/fmap executor insert-into-db)
-         (p/fmap (fn [result]
-                   (let [params (update params :data (comp vec keys))]
-                     (rph/with-meta result {::audit/replace-props params})))))))
+    (fonts/create-font-variant cfg params)))
 
 ;; --- UPDATE FONT FAMILY
 
@@ -128,6 +60,7 @@
 
 (sv/defmethod ::update-font
   {::doc/added "1.3"
+   ::doc/deprecated "1.18"
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [team-id profile-id id name] :as params}]
   (db/with-atomic [conn pool]
@@ -149,6 +82,7 @@
 
 (sv/defmethod ::delete-font
   {::doc/added "1.3"
+   ::doc/deprecated "1.18"
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
   (db/with-atomic [conn pool]
@@ -169,6 +103,7 @@
 
 (sv/defmethod ::delete-font-variant
   {::doc/added "1.3"
+   ::doc/deprecated "1.18"
    ::webhooks/event? true}
   [{:keys [pool] :as cfg} {:keys [id team-id profile-id] :as params}]
   (db/with-atomic [conn pool]

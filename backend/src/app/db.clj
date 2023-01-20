@@ -233,44 +233,46 @@
   [pool]
   (jdbc/get-connection pool))
 
+(def ^:private default-opts
+  {:builder-fn sql/as-kebab-maps})
+
 (defn exec!
   ([ds sv]
-   (exec! ds sv {}))
+   (jdbc/execute! ds sv default-opts))
   ([ds sv opts]
-   (jdbc/execute! ds sv (assoc opts :builder-fn sql/as-kebab-maps))))
+   (jdbc/execute! ds sv (merge default-opts opts))))
 
 (defn exec-one!
-  ([ds sv] (exec-one! ds sv {}))
+  ([ds sv]
+   (jdbc/execute-one! ds sv default-opts))
   ([ds sv opts]
-   (jdbc/execute-one! ds sv (assoc opts :builder-fn sql/as-kebab-maps))))
+   (jdbc/execute-one! ds sv
+                      (-> (merge default-opts opts)
+                          (assoc :return-keys (::return-keys? opts false))))))
 
 (defn insert!
-  ([ds table params] (insert! ds table params nil))
-  ([ds table params opts]
-   (exec-one! ds
-              (sql/insert table params opts)
-              (merge {:return-keys true} opts))))
+  [ds table params & {:as opts}]
+  (exec-one! ds
+             (sql/insert table params opts)
+             (merge {::return-keys? true} opts)))
 
 (defn insert-multi!
-  ([ds table cols rows] (insert-multi! ds table cols rows nil))
-  ([ds table cols rows opts]
-   (exec! ds
-          (sql/insert-multi table cols rows opts)
-          (merge {:return-keys true} opts))))
+  [ds table cols rows & {:as opts}]
+  (exec! ds
+         (sql/insert-multi table cols rows opts)
+         (merge {::return-keys? true} opts)))
 
 (defn update!
-  ([ds table params where] (update! ds table params where nil))
-  ([ds table params where opts]
-   (exec-one! ds
-              (sql/update table params where opts)
-              (merge {:return-keys true} opts))))
+  [ds table params where & {:as opts}]
+  (exec-one! ds
+             (sql/update table params where opts)
+             (merge {::return-keys? true} opts)))
 
 (defn delete!
-  ([ds table params] (delete! ds table params nil))
-  ([ds table params opts]
-   (exec-one! ds
-              (sql/delete table params opts)
-              (assoc opts :return-keys true))))
+  [ds table params & {:as opts}]
+  (exec-one! ds
+             (sql/delete table params opts)
+             (merge {::return-keys? true} opts)))
 
 (defn is-row-deleted?
   [{:keys [deleted-at]}]
@@ -279,56 +281,34 @@
           (inst-ms (dt/now)))))
 
 (defn get*
-  "Internal function for retrieve a single row from database that
-  matches a simple filters."
-  ([ds table params]
-   (get* ds table params nil))
-  ([ds table params {:keys [check-deleted?] :or {check-deleted? true} :as opts}]
-   (let [rows (exec! ds (sql/select table params opts))
-         rows (cond->> rows
-                check-deleted?
-                (remove is-row-deleted?))]
-     (first rows))))
+  "Retrieve a single row from database that matches a simple filters. Do
+  not raises exceptions."
+  [ds table params & {:as opts}]
+  (let [rows (exec! ds (sql/select table params opts))
+        rows (cond->> rows
+               (::remove-deleted? opts true)
+               (remove is-row-deleted?))]
+    (first rows)))
 
 (defn get
-  ([ds table params]
-   (get ds table params nil))
-  ([ds table params {:keys [check-deleted?] :or {check-deleted? true} :as opts}]
-   (let [row (get* ds table params opts)]
-     (when (and (not row) check-deleted?)
-       (ex/raise :type :not-found
-                 :code :object-not-found
-                 :table table
-                 :hint "database object not found"))
-     row)))
-
-(defn get-by-params
-  "DEPRECATED"
-  ([ds table params]
-   (get-by-params ds table params nil))
-  ([ds table params {:keys [check-not-found] :or {check-not-found true} :as opts}]
-   (let [row (get* ds table params (assoc opts :check-deleted? check-not-found))]
-     (when (and (not row) check-not-found)
-       (ex/raise :type :not-found
-                 :code :object-not-found
-                 :table table
-                 :hint "database object not found"))
-     row)))
+  "Retrieve a single row from database that matches a simple
+  filters. Raises :not-found exception if no object is found."
+  [ds table params & {:as opts}]
+  (let [row (get* ds table params opts)]
+    (when (and (not row) (::check-deleted? opts true))
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :table table
+                :hint "database object not found"))
+    row))
 
 (defn get-by-id
-  ([ds table id]
-   (get ds table {:id id} nil))
-  ([ds table id opts]
-   (let [opts (cond-> opts
-                (contains? opts :check-not-found)
-                (assoc :check-deleted? (:check-not-found opts)))]
-     (get ds table {:id id} opts))))
+  [ds table id & {:as opts}]
+  (get ds table {:id id} opts))
 
 (defn query
-  ([ds table params]
-   (query ds table params nil))
-  ([ds table params opts]
-   (exec! ds (sql/select table params opts))))
+  [ds table params & {:as opts}]
+  (exec! ds (sql/select table params opts)))
 
 (defn pgobject?
   ([v]

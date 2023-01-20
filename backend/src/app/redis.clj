@@ -193,6 +193,7 @@
 
 (defn get-or-connect
   [{:keys [::cache] :as state} key options]
+  (us/assert! ::redis state)
   (-> state
       (assoc ::connection
              (or (get @cache key)
@@ -205,7 +206,6 @@
 
 (defn add-listener!
   [{:keys [::connection] :as conn} listener]
-  (us/assert! ::connection-holder conn)
   (us/assert! ::pubsub-connection connection)
   (us/assert! ::pubsub-listener listener)
   (.addListener ^StatefulRedisPubSubConnection @connection
@@ -213,10 +213,9 @@
   conn)
 
 (defn publish!
-  [{:keys [::connection] :as conn} topic message]
+  [{:keys [::connection]} topic message]
   (us/assert! ::us/string topic)
   (us/assert! ::us/bytes message)
-  (us/assert! ::connection-holder conn)
   (us/assert! ::default-connection connection)
 
   (let [pcomm (.async ^StatefulRedisConnection @connection)]
@@ -224,8 +223,7 @@
 
 (defn subscribe!
   "Blocking operation, intended to be used on a thread/agent thread."
-  [{:keys [::connection] :as conn} & topics]
-  (us/assert! ::connection-holder conn)
+  [{:keys [::connection]} & topics]
   (us/assert! ::pubsub-connection connection)
   (try
     (let [topics (into-array String (map str topics))
@@ -236,8 +234,7 @@
 
 (defn unsubscribe!
   "Blocking operation, intended to be used on a thread/agent thread."
-  [{:keys [::connection] :as conn} & topics]
-  (us/assert! ::connection-holder conn)
+  [{:keys [::connection]} & topics]
   (us/assert! ::pubsub-connection connection)
   (try
     (let [topics (into-array String (map str topics))
@@ -247,8 +244,8 @@
       (throw (InterruptedException. (ex-message cause))))))
 
 (defn rpush!
-  [{:keys [::connection] :as conn} key payload]
-  (us/assert! ::connection-holder conn)
+  [{:keys [::connection]} key payload]
+  (us/assert! ::default-connection connection)
   (us/assert! (or (and (vector? payload)
                        (every? bytes? payload))
                   (bytes? payload)))
@@ -270,8 +267,8 @@
       (throw (InterruptedException. (ex-message cause))))))
 
 (defn blpop!
-  [{:keys [::connection] :as conn} timeout & keys]
-  (us/assert! ::connection-holder conn)
+  [{:keys [::connection]} timeout & keys]
+  (us/assert! ::default-connection connection)
   (try
     (let [keys    (into-array Object (map str keys))
           cmd     (.sync ^StatefulRedisConnection @connection)
@@ -286,8 +283,7 @@
       (throw (InterruptedException. (ex-message cause))))))
 
 (defn open?
-  [{:keys [::connection] :as conn}]
-  (us/assert! ::connection-holder conn)
+  [{:keys [::connection]}]
   (us/assert! ::pubsub-connection connection)
   (.isOpen ^StatefulConnection @connection))
 
@@ -335,7 +331,7 @@
 (defn eval!
   [{:keys [::mtx/metrics ::connection] :as state} script]
   (us/assert! ::redis state)
-  (us/assert! ::connection-holder state)
+  (us/assert! ::default-connection connection)
   (us/assert! ::rscript/script script)
 
   (let [cmd   (.async ^StatefulRedisConnection @connection)

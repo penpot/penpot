@@ -64,5 +64,5 @@
 
 (sv/defmethod ::search-files
   {::doc/added "1.17"}
-  [{:keys [pool]} {:keys [::rpc/profile-id team-id search-term]}]
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id team-id search-term]}]
   (some->> search-term (search-files pool profile-id team-id)))

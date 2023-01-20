@@ -10,9 +10,8 @@
    [app.common.logging :as l]
    [app.db :as db]
    [app.main :as main]
-   [app.rpc.commands.auth :as cmd.auth]
-   [app.rpc.mutations.profile :as profile]
-   [app.rpc.queries.profile :refer [retrieve-profile-data-by-email]]
+   [app.rpc.commands.auth :as auth]
+   [app.rpc.commands.profile :as profile]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
    [integrant.core :as ig])
@@ -55,16 +54,17 @@
                                          :type :password}))]
     (try
       (db/with-atomic [conn (:app.db/pool system)]
-        (->> (cmd.auth/create-profile conn
-                                     {:fullname fullname
-                                      :email email
-                                      :password password
-                                      :is-active true
-                                      :is-demo false})
-             (cmd.auth/create-profile-relations conn)))
+        (->> (auth/create-profile! conn
+                                  {:fullname fullname
+                                   :email email
+                                   :password password
+                                   :is-active true
+                                   :is-demo false})
+             (auth/create-profile-rels! conn)))
 
       (when (pos? (:verbosity options))
         (println "User created successfully."))
+
       (System/exit 0)
 
       (catch Exception _e
@@ -79,7 +79,7 @@
       (db/with-atomic [conn (:app.db/pool system)]
         (let [email    (or (:email options)
                            (read-from-console {:label "Email:"}))
-              profile  (retrieve-profile-data-by-email conn email)]
+              profile  (profile/get-profile-by-email conn email)]
           (when-not profile
             (when (pos? (:verbosity options))
               (println "Profile does not exists."))

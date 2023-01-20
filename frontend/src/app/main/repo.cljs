@@ -12,17 +12,23 @@
    [app.util.http :as http]
    [beicon.core :as rx]))
 
+(derive :get-all-projects ::query)
+(derive :get-comment-threads ::query)
 (derive :get-file ::query)
-(derive :get-file-object-thumbnails ::query)
-(derive :get-file-libraries ::query)
 (derive :get-file-fragment ::query)
-(derive :search-files ::query)
-(derive :get-teams ::query)
-(derive :get-team-users ::query)
-(derive :get-team-members ::query)
-(derive :get-team-stats ::query)
+(derive :get-file-libraries ::query)
+(derive :get-file-object-thumbnails ::query)
+(derive :get-font-variants ::query)
+(derive :get-profile ::query)
+(derive :get-project ::query)
 (derive :get-team-invitations ::query)
+(derive :get-team-members ::query)
 (derive :get-team-shared-files ::query)
+(derive :get-team-stats ::query)
+(derive :get-team-users ::query)
+(derive :get-teams ::query)
+(derive :get-view-only-bundle ::query)
+(derive :search-files ::query)
 
 (defn handle-response
   [{:keys [status body] :as response}]
@@ -164,15 +170,6 @@
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
-(defmethod command :send-feedback
-  [_ params]
-  (->> (http/send! {:method :post
-                    :uri (u/join @cf/public-uri "api/feedback")
-                    :credentials "include"
-                    :body (http/transit-data params)})
-       (rx/map http/conditional-decode-transit)
-       (rx/mapcat handle-response)))
-
 (defn- send-export
   [{:keys [blob?] :as params}]
   (->> (http/send! {:method :post
@@ -196,6 +193,15 @@
   [id params]
   (->> (http/send! {:method :post
                     :uri  (u/join @cf/public-uri "api/rpc/mutation/" (name id))
+                    :credentials "include"
+                    :body (http/form-data params)})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
+
+(defmethod command ::multipart-upload
+  [id params]
+  (->> (http/send! {:method :post
+                    :uri  (u/join @cf/public-uri "api/rpc/command/" (name id))
                     :credentials "include"
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)

@@ -59,3 +59,10 @@
        (.putLong buf (.getMostSignificantBits o))
        (.putLong buf (.getLeastSignificantBits o))
        (.array buf))))
+
+#?(:clj
+   (defn from-bytes
+     [^bytes o]
+     (let [buf (ByteBuffer/wrap o)]
+       (UUID. ^long (.getLong buf)
+              ^long (.getLong buf)))))

@@ -214,7 +214,7 @@
                      :features features}]
 
         (when (:id params)
-          (->> (rp/mutation :update-file params)
+          (->> (rp/cmd! :update-file params)
                (rx/ignore)))))))
 
 (defn update-persistence-status

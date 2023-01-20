@@ -9,6 +9,7 @@
    [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [app.http :as http]
    [app.util.time :as dt]
    [clojure.test :as t]))
@@ -214,10 +215,10 @@
       (t/is (= 0 (:processed result))))
 
     ;; query the list of files of a after soft deletion
-    (let [data {::th/type :project-files
-                :project-id (:id project)
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-project-files
+                ::rpc/profile-id (:id profile1)
+                :project-id (:id project)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -228,10 +229,10 @@
       (t/is (= 1 (:processed result))))
 
     ;; query the list of files of a after hard deletion
-    (let [data {::th/type :project-files
-                :project-id (:id project)
-                :profile-id (:id profile1)}
-          out  (th/query! data)]
+    (let [data {::th/type :get-project-files
+                ::rpc/profile-id (:id profile1)
+                :project-id (:id project)}
+          out  (th/command! data)]
       ;; (th/print-result! out)
       (let [error (:error out)
             error-data (ex-data error)]

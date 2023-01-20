@@ -6,13 +6,22 @@
 
 (ns app.http
   (:require
+   [app.auth.oidc :as-alias oidc]
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.transit :as t]
+   [app.db :as-alias db]
+   [app.http.access-token :as actoken]
+   [app.http.assets :as-alias assets]
+   [app.http.awsns :as-alias awsns]
+   [app.http.debug :as-alias debug]
    [app.http.errors :as errors]
    [app.http.middleware :as mw]
    [app.http.session :as session]
+   [app.http.websocket :as-alias ws]
    [app.metrics :as mtx]
+   [app.rpc :as-alias rpc]
+   [app.rpc.doc :as-alias rpc.doc]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
@@ -64,7 +73,6 @@
                  :http/max-body-size (:max-body-size cfg)
                  :http/max-multipart-body-size (:max-multipart-body-size cfg)
                  :xnio/io-threads (:io-threads cfg)
-                 :xnio/worker-threads (:worker-threads cfg)
                  :xnio/dispatch (:executor cfg)
                  :ring/async true}
 
@@ -113,64 +121,41 @@
 ;; HTTP ROUTER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::assets map?)
-(s/def ::awsns-handler fn?)
-(s/def ::debug-routes (s/nilable vector?))
-(s/def ::doc-routes (s/nilable vector?))
-(s/def ::feedback fn?)
-(s/def ::oauth map?)
-(s/def ::oidc-routes (s/nilable vector?))
-(s/def ::rpc-routes (s/nilable vector?))
-(s/def ::session ::session/session)
-(s/def ::storage map?)
-(s/def ::ws fn?)
-
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::mtx/metrics
-                   ::ws
-                   ::storage
-                   ::assets
-                   ::session
-                   ::feedback
-                   ::awsns-handler
-                   ::debug-routes
-                   ::oidc-routes
-                   ::rpc-routes
-                   ::doc-routes]))
+  (s/keys :req [::session/manager
+                ::actoken/manager
+                ::ws/routes
+                ::rpc/routes
+                ::rpc.doc/routes
+                ::oidc/routes
+                ::assets/routes
+                ::debug/routes
+                ::db/pool
+                ::mtx/routes
+                ::awsns/routes]))
 
 (defmethod ig/init-key ::router
-  [_ {:keys [ws session metrics assets feedback] :as cfg}]
+  [_ cfg]
   (rr/router
    [["" {:middleware [[mw/server-timing]
                       [mw/format-response]
                       [mw/params]
                       [mw/parse-request]
-                      [session/middleware-1 session]
+                      [session/soft-auth cfg]
+                      [actoken/soft-auth cfg]
                       [mw/errors errors/handle]
                       [mw/restrict-methods]]}
 
-     ["/metrics" {:handler (::mtx/handler metrics)
-                  :allowed-methods #{:get}}]
-
-     ["/assets" {:middleware [[session/middleware-2 session]]}
-      ["/by-id/:id" {:handler (:objects-handler assets)}]
-      ["/by-file-media-id/:id" {:handler (:file-objects-handler assets)}]
-      ["/by-file-media-id/:id/thumbnail" {:handler (:file-thumbnails-handler assets)}]]
-
-     (:debug-routes cfg)
+     (::mtx/routes cfg)
+     (::assets/routes cfg)
+     (::debug/routes cfg)
 
      ["/webhooks"
-      ["/sns" {:handler (:awsns-handler cfg)
-               :allowed-methods #{:post}}]]
+      (::awsns/routes cfg)]
 
-     ["/ws/notifications" {:middleware [[session/middleware-2 session]]
-                           :handler ws
-                           :allowed-methods #{:get}}]
+     (::ws/routes cfg)
 
-     ["/api" {:middleware [[mw/cors]
-                           [session/middleware-2 session]]}
-      ["/feedback" {:handler feedback
-                    :allowed-methods #{:post}}]
-      (:doc-routes cfg)
-      (:oidc-routes cfg)
-      (:rpc-routes cfg)]]]))
+     ["/api" {:middleware [[mw/cors]]}
+      (::oidc/routes cfg)
+      (::rpc.doc/routes cfg)
+      (::rpc/routes cfg)]]]))
