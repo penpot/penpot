@@ -408,7 +408,11 @@
                 (boolean? blocked) (assoc :blocked blocked)
                 (boolean? hidden) (assoc :hidden hidden)))
             objects (wsh/lookup-page-objects state)
-            ids     (into ids (->> ids (mapcat #(cph/get-children-ids objects %))))]
+            ;; We have change only the hidden behaviour, to hide only the
+            ;; selected shape, block behaviour remains the same.
+            ids     (if (boolean? blocked)
+                     (into ids (->> ids (mapcat #(cph/get-children-ids objects %))))
+                      ids)]
         (rx/of (dch/update-shapes ids update-fn))))))
 
 (defn toggle-visibility-selected
