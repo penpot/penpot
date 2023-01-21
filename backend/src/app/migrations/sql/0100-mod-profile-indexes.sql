@@ -1,6 +1,3 @@
-DROP INDEX profile__email__idx;
-CREATE INDEX profile__email__idx ON profile(email);
-
 ALTER TABLE profile
   ADD COLUMN default_project_id uuid NULL REFERENCES project(id) ON DELETE SET NULL DEFERRABLE,
   ADD COLUMN default_team_id uuid NULL REFERENCES team(id) ON DELETE SET NULL DEFERRABLE;
