@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-18 05:48+0000\n"
+"PO-Revision-Date: 2023-01-24 14:27+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.15.1-dev\n"
+"X-Generator: Weblate 4.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2988,3 +2988,235 @@ msgstr "فونت %s بارگیری نشد"
 #: src/app/main/ui/handoff/attributes/text.cljs
 msgid "handoff.attributes.typography.text-decoration"
 msgstr "تزیین متن"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.accept"
+msgstr "حذف مکالمه"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.give-feedback"
+msgstr "بازخورد بده"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.message"
+msgstr "آیا مطمئن هستید که می‌خواهید این فایل را حذف کنید؟"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "آیا مطمئن هستید که می‌خواهید فایل‌های %s را حذف کنید؟"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message"
+msgstr ""
+"آیا مطمئنید که می‌خواهید این مکالمه را حذف کنید؟ تمامی نظرات این تاپیک حذف "
+"خواهد شد."
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.title"
+msgstr "حذف مکالمه"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr "هیچ اعلان نظر معلقی ندارید"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.submit"
+msgstr "تغییر ایمیل"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.title"
+msgstr "ایمیل خود را تغییر دهید"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.accept"
+msgstr "حذف پروژه"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"شما مالک این تیم هستید. لطفاً قبل از ترک عضو دیگری را برای ارتقاء به مالک "
+"انتخاب کنید."
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.cancel"
+msgstr "لغو و نگه‌داشتن حساب من"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.confirm"
+msgstr "بله، حسابم رو حذف کن"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "حذف فایل"
+msgstr[1] "حذف فایل‌ها"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.accept"
+msgstr "حذف فایل"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.title"
+msgstr "در حال حذف فایل"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "حذف فایل‌ها"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "در حال حذف %s فایل‌ها"
+
+msgid "modals.delete-font.title"
+msgstr "درحال حذف فونت"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.message"
+msgstr "آیا مطمئن هستید که می‌خواهید این پروژه را حذف کنید؟"
+
+msgid "modals.delete-font-variant.title"
+msgstr "درحال حذف استایل فونت"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.title"
+msgstr "حذف پروژه"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "آیا مطمئن هستید که می‌خواهید این فایل را حذف کنید؟"
+msgstr[1] "آیا مطمئن هستید که می‌خواهید این فایل‌ها را حذف کنید؟"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.title"
+msgstr "درحال حذف تیم"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "این فایل دارای کتابخانه‌هایی است که در این فایل استفاده می‌شوند:"
+msgstr[1] "این فایل دارای کتابخانه‌هایی است که در این فایل‌ها استفاده می‌شوند:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "این فایل‌ها کتابخانه‌هایی دارند که در این فایل استفاده می‌‮شوند:"
+msgstr[1] "این فایل‌ها کتابخانه هایی دارند که در این فایل‌ها استفاده می‌شوند:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "درحال حذف فایل"
+msgstr[1] "درحال حذف فایل‌ها"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "درحال حذف فایل"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.accept"
+msgstr "حذف تیم"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.message"
+msgstr "آیا مطمئنید که می‌خواهید این تیم را ترک کنید؟"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.title"
+msgstr "حذف عضو تیم"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "حذف عضو"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-member-confirm.accept"
+msgstr "ارسال دعوت‌نامه"
+
+msgid "modals.invite-member.emails"
+msgstr "ایمیل‌ها، با کاما از هم جدا شده‌اند"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "دعوت اعضا به تیم"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "آیا مطمئنید که می‌خواهید تیم %s را ترک کنید؟"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"از آنجایی که شما تنها عضو این تیم هستید، تیم به همراه پروژه‌ها و فایل‌هایش "
+"حذف خواهد شد."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-reassign.title"
+msgstr "قبل از رفتن"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.accept"
+msgstr "انتقال مالکیت"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-reassign.select-member-to-promote"
+msgstr "انتخاب یک عضو برای ارتقا"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.accept"
+msgstr "خروج از تیم"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.title"
+msgstr "مالک جدید تیم"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.title"
+msgstr "درحال ترک تیم"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.message"
+msgstr ""
+"شما مالک فعلی این تیم هستید. آیا مطمئنید که می‌خواهید %s را مالک جدید تیم "
+"کنید؟"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"اگر مالکیت را منتقل کنید، نقش خود را به مدیر تغییر می‌دهید و برخی از مجوزهای "
+"این تیم را از دست می‌دهید. "
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "modals.remove-shared-confirm.hint"
+msgstr ""
+"پس از حذف به‌عنوان کتابخانه مشترک، کتابخانه فایل این فایل برای استفاده در "
+"بین بقیه فایل‌های شما در دسترس نخواهد بود."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-reassign.hint1"
+msgstr ""
+"شما مالک این تیم هستید. لطفاً قبل از ترک تیم، عضو دیگری را برای ارتقاء به "
+"مالک انتخاب کنید."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.accept"
+msgstr "حذف به عنوان کتابخانه مشترک"
+
+msgid "labels.go-back"
+msgstr "برگرد"
+
+#, fuzzy
+msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"اگر عضو دیگری برای ارتقا به مالک وجود نداشته باشد، نمی‌توانید تیم را ترک "
+"کنید. شاید بخواهید تیم را حذف کنید."
+
+#, fuzzy
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "مورد عنوان"
