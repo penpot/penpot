@@ -2683,7 +2683,7 @@ msgstr "Görünürlüğü değiştir"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Yakınlaştırma şeklini değiştir"
 
-msgid "shortcuts.toogle-fullscreen"
+msgid "shortcuts.toggle-fullscreen"
 msgstr "Tam ekranı değiştir"
 
 msgid "shortcuts.undo"

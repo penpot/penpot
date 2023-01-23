@@ -2457,7 +2457,7 @@ msgstr "切换可见度"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "切换缩放样式"
 
-msgid "shortcuts.toogle-fullscreen"
+msgid "shortcuts.toggle-fullscreen"
 msgstr "切换全屏"
 
 msgid "shortcuts.undo"

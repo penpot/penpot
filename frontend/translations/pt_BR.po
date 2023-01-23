@@ -2569,7 +2569,7 @@ msgstr "Alternar visibilidade"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Alternar estilo de zoom"
 
-msgid "shortcuts.toogle-fullscreen"
+msgid "shortcuts.toggle-fullscreen"
 msgstr "Alternar tela cheia"
 
 msgid "shortcuts.undo"
