@@ -11,9 +11,8 @@ volumes:
   # penpot_minio:
 
 services:
-  ## Traefik service declaration example. Consider using it if you are
-  ## going to expose penpot to the internet or different host than
-  ## `localhost`.
+  ## Traefik service declaration example. Consider using it if you are going to expose
+  ## penpot to the internet or different host than `localhost`.
 
   # traefik:
   #   image: traefik:v2.9
@@ -41,7 +40,7 @@ services:
       - 9001:80
 
     volumes:
-      - penpot_assets:/opt/data
+      - penpot_assets:/opt/penpot/assets
 
     depends_on:
       - penpot-backend
@@ -53,16 +52,15 @@ services:
     labels:
       - "traefik.enable=true"
 
-      ## HTTP: example of labels for the case if you are going to
-      ## expose penpot to the internet using only HTTP (without HTTPS)
-      ## with traefik
+      ## HTTP: example of labels for the case if you are going to expose penpot to the
+      ## internet using only HTTP (without HTTPS) with traefik
 
       # - "traefik.http.routers.penpot-http.entrypoints=web"
       # - "traefik.http.routers.penpot-http.rule=Host(`<DOMAIN_NAME>`)"
       # - "traefik.http.services.penpot-http.loadbalancer.server.port=80"
 
-      ## HTTPS: example of labels for the case if you are going to
-      ## expose penpot to the internet using with HTTPS using traefik
+      ## HTTPS: example of labels for the case if you are going to expose penpot to the
+      ## internet using with HTTPS using traefik
 
       # - "traefik.http.middlewares.http-redirect.redirectscheme.scheme=https"
       # - "traefik.http.middlewares.http-redirect.redirectscheme.permanent=true"
@@ -75,32 +73,31 @@ services:
       # - "traefik.http.routers.penpot-https.tls=true"
       # - "traefik.http.routers.penpot-https.tls.certresolver=letsencrypt"
 
-    ## Configuration envronment variables for frontend the
-    ## container. In this case this container only needs the
-    ## `PENPOT_FLAGS`. This environment variable is shared with other
-    ## services but not all flags are relevant to all services.
-    ##
-    ## Relevant flags for frontend:
-    ## - demo-users
-    ## - login-with-github
-    ## - login-with-gitlab
-    ## - login-with-google
-    ## - login-with-ldap
-    ## - login-with-oidc
-    ## - login-with-password
-    ## - registration
-    ## - webhooks
-    ##
-    ## You can read more about all available flags on:
-    ## https://help.penpot.app/technical-guide/configuration/#advanced-configuration
+    ## Configuration envronment variables for frontend the container. In this case this
+    ## container only needs the `PENPOT_FLAGS`. This environment variable is shared with
+    ## other services but not all flags are relevant to all services.
 
     environment:
+      ## Relevant flags for frontend:
+      ## - demo-users
+      ## - login-with-github
+      ## - login-with-gitlab
+      ## - login-with-google
+      ## - login-with-ldap
+      ## - login-with-oidc
+      ## - login-with-password
+      ## - registration
+      ## - webhooks
+      ##
+      ## You can read more about all available flags on:
+      ## https://help.penpot.app/technical-guide/configuration/#advanced-configuration
+
       - PENPOT_FLAGS=enable-registration enable-login-with-password
 
   penpot-backend:
     image: "penpotapp/backend:latest"
     volumes:
-      - penpot_assets:/opt/data
+      - penpot_assets:/opt/penpot/assets
 
     depends_on:
       - penpot-postgres
@@ -111,58 +108,79 @@ services:
 
     ## Configuration envronment variables for backend the
     ## container.
-    ##
-    ## Relevant flags for backend:
-    ## - demo-users
-    ## - email-verification
-    ## - log-emails
-    ## - log-invitation-tokens
-    ## - login-with-github
-    ## - login-with-gitlab
-    ## - login-with-google
-    ## - login-with-ldap
-    ## - login-with-oidc
-    ## - login-with-password
-    ## - registration
-    ## - secure-session-cookies
-    ## - smtp
-    ## - smtp-debug
-    ## - telemetry
-    ## - webhooks
-    ##
-    ## You can read more about all available flags and other
-    ## environment variables for the backend here:
-    ## https://help.penpot.app/technical-guide/configuration/#advanced-configuration
 
     environment:
-      - PENPOT_FLAGS=enable-registration enable-login disable-email-verification enable-smtp
 
-      ## Public URI. If you are going to expose this instance to the
-      ## internet, or use it under different domain than 'localhost'
-      ## consider using traefik and set the
-      ## `disable-secure-session-cookies` if you are not going to
-      ## serve penpot under HTTPS.
+      ## Relevant flags for backend:
+      ## - demo-users
+      ## - email-verification
+      ## - log-emails
+      ## - log-invitation-tokens
+      ## - login-with-github
+      ## - login-with-gitlab
+      ## - login-with-google
+      ## - login-with-ldap
+      ## - login-with-oidc
+      ## - login-with-password
+      ## - registration
+      ## - secure-session-cookies
+      ## - smtp
+      ## - smtp-debug
+      ## - telemetry
+      ## - webhooks
+      ## - prepl-server
+      ##
+      ## You can read more about all available flags and other
+      ## environment variables for the backend here:
+      ## https://help.penpot.app/technical-guide/configuration/#advanced-configuration
+
+      - PENPOT_FLAGS=enable-registration enable-login disable-email-verification enable-smtp enable-prepl-server
+
+      ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
+      ## (eg http sessions) are derived.
+      ##
+      ## Leave it comment if it is ok for you to have to login again after each backend
+      ## restart.
+      ##
+      ## If you going to uncomment this, we recommend use here a trully randomly generated
+      ## 512 bits base64 encoded string.  You can generate one with:
+      ##
+      ## python3 -c "import secrets; print(secrets.token_urlsafe(64))"
+
+      # - PENPOT_SECRET_KEY=my-insecure-key
+
+      ## The PREPL host. Mainly used for external programatic access to penpot backend
+      ## (example: admin). By default it listen on `localhost` but if you are going to use
+      ## the `admin`, you will need to uncomment this and set the host to `0.0.0.0`.
+
+      # - PENPOT_PREPL_HOST=0.0.0.0
+
+      ## Public URI. If you are going to expose this instance to the internet and use it
+      ## under different domain than 'localhost', you will need to adjust it to the final
+      ## domain.
+      ##
+      ## Consider using traefik and set the 'disable-secure-session-cookies' if you are
+      ## not going to serve penpot under HTTPS.
 
       - PENPOT_PUBLIC_URI=http://localhost:9001
 
-      ## Database connection parameters. Don't touch them unless you
-      ## are using custom postgresql connection parameters
+      ## Database connection parameters. Don't touch them unless you are using custom
+      ## postgresql connection parameters.
 
       - PENPOT_DATABASE_URI=postgresql://penpot-postgres/penpot
       - PENPOT_DATABASE_USERNAME=penpot
       - PENPOT_DATABASE_PASSWORD=penpot
 
-      ## Redis is used for the websockets notifications. Don't touch
-      ## unless the redis container has different parameters or
-      ## different name.
+      ## Redis is used for the websockets notifications. Don't touch unless the redis
+      ## container has different parameters or different name.
 
       - PENPOT_REDIS_URI=redis://penpot-redis/0
 
-      ## Default configuration for assets storage: using filesystem
-      ## based with all files stored in a docker volume.
+      ## Default configuration for assets storage: using filesystem based with all files
+      ## stored in a docker volume.
 
       - PENPOT_ASSETS_STORAGE_BACKEND=assets-fs
-      - PENPOT_STORAGE_ASSETS_FS_DIRECTORY=/opt/data/assets
+      - PENPOT_STORAGE_ASSETS_FS_DIRECTORY=/opt/penpot/assets
 
       ## Also can be configured to to use a S3 compatible storage
       ## service like MiniIO. Look below for minio service setup.
@@ -173,19 +191,18 @@ services:
       # - PENPOT_STORAGE_ASSETS_S3_ENDPOINT=http://penpot-minio:9000
       # - PENPOT_STORAGE_ASSETS_S3_BUCKET=<BUKET_NAME>
 
-      ## Telemetry. When enabled, a periodical process will send
-      ## anonymous data about this instance. Telemetry data will
-      ## enable us to learn on how the application is used, based on
-      ## real scenarios. If you want to help us, please leave it
-      ## enabled. You can audit what data we send with the code
-      ## available on github
+      ## Telemetry. When enabled, a periodical process will send anonymous data about this
+      ## instance. Telemetry data will enable us to learn on how the application is used,
+      ## based on real scenarios. If you want to help us, please leave it enabled. You can
+      ## audit what data we send with the code available on github
+
       - PENPOT_TELEMETRY_ENABLED=true
 
-      ## Example SMTP/Email configuration. By default, emails are sent
-      ## to the mailcatch service, but for production usage is
-      ## recommended to setup a real SMTP provider. Emails are used to
-      ## confirm user registrations & invitations. Look below how
-      ## mailcatch service is configured.
+      ## Example SMTP/Email configuration. By default, emails are sent to the mailcatch
+      ## service, but for production usage is recommended to setup a real SMTP
+      ## provider. Emails are used to confirm user registrations & invitations. Look below
+      ## how mailcatch service is configured.
+
       - PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com
       - PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com
       - PENPOT_SMTP_HOST=penpot-mailcatch
@@ -231,10 +248,9 @@ services:
     networks:
       - penpot
 
-  ## A mailcatch service, used as temporal SMTP server. You can access
-  ## via HTTP to the port 1080 for read all emails the penpot platform
-  ## has sent. Should be only used as a temporal solution meanwhile
-  ## you don't have a real SMTP provider configured.
+  ## A mailcatch service, used as temporal SMTP server. You can access via HTTP to the
+  ## port 1080 for read all emails the penpot platform has sent. Should be only used as a
+  ## temporal solution meanwhile you don't have a real SMTP provider configured.
 
   penpot-mailcatch:
     image: sj26/mailcatcher:latest
@@ -244,9 +260,42 @@ services:
     ports:
       - "1080:1080"
 
-  ## Example configuration of MiniIO (S3 compatible object storage
-  ## service); If you don't have preference, then just use filesystem,
-  ## this is here just for the completeness.
+  ## An optional admin application for pentpot. It allows manage users, teams and inspect
+  ## some parts of the database. You can read more about it on:
+  ## https://github.com/penpot/penpot-admin
+  ##
+  ## If you are going to use admin, ensure to have `enable-prepl-server` in backend flags
+  ## and uncomment the `PENPOT_PREPL_HOST` environment variable.
+  ##
+  ## Status: EXPERIMENTAL
+
+  # penpot-admin:
+  #   image: "penpotapp/admin:latest"
+  #   networks:
+  #     - penpot
+  #
+  #   depends_on:
+  #     - penpot-postgres
+  #     - penpot-backend
+  #
+  #   environment:
+  #     ## Adjust to the same value as on backend
+  #     - PENPOT_PUBLIC_URI=http://localhost:9001
+  #
+  #     ## Do not touch it, this is an internal routes
+  #     - PENPOT_API_URI=http://penpot-frontend/
+  #     - PENPOT_PREPL_URI=tcp://penpot-backend:6063/
+  #     - PENPOT_DEBUG="false"
+  #
+  #     ## Adjust to the same values as on backend
+  #     - PENPOT_DATABASE_HOST=penpot-postgres
+  #     - PENPOT_DATABASE_NAME=penpot
+  #     - PENPOT_DATABASE_USERNAME=penpot
+  #     - PENPOT_DATABASE_PASSWORD=penpot
+  #     - PENPOT_REDIS_URI=redis://penpot-redis/0
+
+  ## Example configuration of MiniIO (S3 compatible object storage service); If you don't
+  ## have preference, then just use filesystem, this is here just for the completeness.
 
   # minio:
   #   image: "minio/minio:latest"

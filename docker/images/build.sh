@@ -18,8 +18,6 @@ done
 
 if [ "$PENPOT_BUILD_PUSH" = "true" ]; then
     OPTIONS="--push $OPTIONS"
-else
-    OPTIONS="--load $OPTIONS"
 fi
 
 docker buildx inspect penpot > /dev/null 2>&1;
@@ -34,4 +32,4 @@ else
 fi
 
 unset IFS;
-docker buildx build --platform ${PLATFORM// /,} $OPTIONS -f Dockerfile.$IMAGE .;
+docker buildx build --platform ${PLATFORM// /,} $OPTIONS -f Dockerfile.$IMAGE "$@" .;

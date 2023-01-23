@@ -16,7 +16,7 @@
 
 (defmacro error
   [& {:keys [type hint] :as params}]
-  `(ex-info ~(or hint (pr-str type))
+  `(ex-info ~(or hint (name type))
             (merge
              ~(dissoc params :cause ::data)
              ~(::data params))
