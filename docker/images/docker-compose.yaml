@@ -5,20 +5,43 @@ networks:
   penpot:
 
 volumes:
-  penpot_postgres_data:
-  penpot_assets_data:
+  penpot_postgres_v15:
+  penpot_assets:
+  # penpot_traefik:
+  # penpot_minio:
 
 services:
+  ## Traefik service declaration example. Consider using it if you are
+  ## going to expose penpot to the internet or different host than
+  ## `localhost`.
+
+  # traefik:
+  #   image: traefik:v2.9
+  #   networks:
+  #     - penpot
+  #   command:
+  #     - "--api.insecure=true"
+  #     - "--entryPoints.web.address=:80"
+  #     - "--providers.docker=true"
+  #     - "--providers.docker.exposedbydefault=false"
+  #     - "--entryPoints.websecure.address=:443"
+  #     - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+  #     - "--certificatesresolvers.letsencrypt.acme.email=<EMAIL_ADDRESS>"
+  #     - "--certificatesresolvers.letsencrypt.acme.storage=/traefik/acme.json"
+  #   volumes:
+  #     - "penpot_traefik:/traefik"
+  #     - "/var/run/docker.sock:/var/run/docker.sock"
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+
   penpot-frontend:
     image: "penpotapp/frontend:latest"
     ports:
       - 9001:80
 
     volumes:
-      - penpot_assets_data:/opt/data
-
-    env_file:
-      - config.env
+      - penpot_assets:/opt/data
 
     depends_on:
       - penpot-backend
@@ -27,36 +50,174 @@ services:
     networks:
       - penpot
 
+    labels:
+      - "traefik.enable=true"
+
+      ## HTTP: example of labels for the case if you are going to
+      ## expose penpot to the internet using only HTTP (without HTTPS)
+      ## with traefik
+
+      # - "traefik.http.routers.penpot-http.entrypoints=web"
+      # - "traefik.http.routers.penpot-http.rule=Host(`<DOMAIN_NAME>`)"
+      # - "traefik.http.services.penpot-http.loadbalancer.server.port=80"
+
+      ## HTTPS: example of labels for the case if you are going to
+      ## expose penpot to the internet using with HTTPS using traefik
+
+      # - "traefik.http.middlewares.http-redirect.redirectscheme.scheme=https"
+      # - "traefik.http.middlewares.http-redirect.redirectscheme.permanent=true"
+      # - "traefik.http.routers.penpot-http.entrypoints=web"
+      # - "traefik.http.routers.penpot-http.rule=Host(`<DOMAIN_NAME>`)"
+      # - "traefik.http.routers.penpot-http.middlewares=http-redirect"
+      # - "traefik.http.routers.penpot-https.entrypoints=websecure"
+      # - "traefik.http.routers.penpot-https.rule=Host(`<DOMAIN_NAME>`)"
+      # - "traefik.http.services.penpot-https.loadbalancer.server.port=80"
+      # - "traefik.http.routers.penpot-https.tls=true"
+      # - "traefik.http.routers.penpot-https.tls.certresolver=letsencrypt"
+
+    ## Configuration envronment variables for frontend the
+    ## container. In this case this container only needs the
+    ## `PENPOT_FLAGS`. This environment variable is shared with other
+    ## services but not all flags are relevant to all services.
+    ##
+    ## Relevant flags for frontend:
+    ## - demo-users
+    ## - login-with-github
+    ## - login-with-gitlab
+    ## - login-with-google
+    ## - login-with-ldap
+    ## - login-with-oidc
+    ## - login-with-password
+    ## - registration
+    ## - webhooks
+    ##
+    ## You can read more about all available flags on:
+    ## https://help.penpot.app/technical-guide/configuration/#advanced-configuration
+
+    environment:
+      - PENPOT_FLAGS=enable-registration enable-login-with-password
+
   penpot-backend:
     image: "penpotapp/backend:latest"
     volumes:
-      - penpot_assets_data:/opt/data
+      - penpot_assets:/opt/data
 
     depends_on:
       - penpot-postgres
       - penpot-redis
 
-    env_file:
-      - config.env
-
     networks:
       - penpot
 
+    ## Configuration envronment variables for backend the
+    ## container.
+    ##
+    ## Relevant flags for backend:
+    ## - demo-users
+    ## - email-verification
+    ## - log-emails
+    ## - log-invitation-tokens
+    ## - login-with-github
+    ## - login-with-gitlab
+    ## - login-with-google
+    ## - login-with-ldap
+    ## - login-with-oidc
+    ## - login-with-password
+    ## - registration
+    ## - secure-session-cookies
+    ## - smtp
+    ## - smtp-debug
+    ## - telemetry
+    ## - webhooks
+    ##
+    ## You can read more about all available flags and other
+    ## environment variables for the backend here:
+    ## https://help.penpot.app/technical-guide/configuration/#advanced-configuration
+
+    environment:
+      - PENPOT_FLAGS=enable-registration enable-login disable-email-verification enable-smtp
+
+      ## Public URI. If you are going to expose this instance to the
+      ## internet, or use it under different domain than 'localhost'
+      ## consider using traefik and set the
+      ## `disable-secure-session-cookies` if you are not going to
+      ## serve penpot under HTTPS.
+
+      - PENPOT_PUBLIC_URI=http://localhost:9001
+
+      ## Database connection parameters. Don't touch them unless you
+      ## are using custom postgresql connection parameters
+
+      - PENPOT_DATABASE_URI=postgresql://penpot-postgres/penpot
+      - PENPOT_DATABASE_USERNAME=penpot
+      - PENPOT_DATABASE_PASSWORD=penpot
+
+      ## Redis is used for the websockets notifications. Don't touch
+      ## unless the redis container has different parameters or
+      ## different name.
+
+      - PENPOT_REDIS_URI=redis://penpot-redis/0
+
+      ## Default configuration for assets storage: using filesystem
+      ## based with all files stored in a docker volume.
+
+      - PENPOT_ASSETS_STORAGE_BACKEND=assets-fs
+      - PENPOT_STORAGE_ASSETS_FS_DIRECTORY=/opt/data/assets
+
+      ## Also can be configured to to use a S3 compatible storage
+      ## service like MiniIO. Look below for minio service setup.
+
+      # - AWS_ACCESS_KEY_ID=<KEY_ID>
+      # - AWS_SECRET_ACCESS_KEY=<ACCESS_KEY>
+      # - PENPOT_ASSETS_STORAGE_BACKEND=assets-s3
+      # - PENPOT_STORAGE_ASSETS_S3_ENDPOINT=http://penpot-minio:9000
+      # - PENPOT_STORAGE_ASSETS_S3_BUCKET=<BUKET_NAME>
+
+      ## Telemetry. When enabled, a periodical process will send
+      ## anonymous data about this instance. Telemetry data will
+      ## enable us to learn on how the application is used, based on
+      ## real scenarios. If you want to help us, please leave it
+      ## enabled. You can audit what data we send with the code
+      ## available on github
+      - PENPOT_TELEMETRY_ENABLED=true
+
+      ## Example SMTP/Email configuration. By default, emails are sent
+      ## to the mailcatch service, but for production usage is
+      ## recommended to setup a real SMTP provider. Emails are used to
+      ## confirm user registrations & invitations. Look below how
+      ## mailcatch service is configured.
+      - PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com
+      - PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com
+      - PENPOT_SMTP_HOST=penpot-mailcatch
+      - PENPOT_SMTP_PORT=1025
+      - PENPOT_SMTP_USERNAME=
+      - PENPOT_SMTP_PASSWORD=
+      - PENPOT_SMTP_TLS=false
+      - PENPOT_SMTP_SSL=false
+
   penpot-exporter:
     image: "penpotapp/exporter:latest"
-    env_file:
-      - config.env
+    networks:
+      - penpot
+
     environment:
       # Don't touch it; this uses internal docker network to
       # communicate with the frontend.
       - PENPOT_PUBLIC_URI=http://penpot-frontend
-    networks:
-      - penpot
+
+      ## Redis is used for the websockets notifications.
+      - PENPOT_REDIS_URI=redis://penpot-redis/0
 
   penpot-postgres:
-    image: "postgres:14"
+    image: "postgres:15"
     restart: always
     stop_signal: SIGINT
+
+    volumes:
+      - penpot_postgres_v15:/var/lib/postgresql/data
+
+    networks:
+      - penpot
 
     environment:
       - POSTGRES_INITDB_ARGS=--data-checksums
@@ -64,14 +225,42 @@ services:
       - POSTGRES_USER=penpot
       - POSTGRES_PASSWORD=penpot
 
-    volumes:
-      - penpot_postgres_data:/var/lib/postgresql/data
-
-    networks:
-      - penpot
-
   penpot-redis:
     image: redis:7
     restart: always
     networks:
       - penpot
+
+  ## A mailcatch service, used as temporal SMTP server. You can access
+  ## via HTTP to the port 1080 for read all emails the penpot platform
+  ## has sent. Should be only used as a temporal solution meanwhile
+  ## you don't have a real SMTP provider configured.
+
+  penpot-mailcatch:
+    image: sj26/mailcatcher:latest
+    restart: always
+    expose:
+      - '1025'
+    ports:
+      - "1080:1080"
+
+  ## Example configuration of MiniIO (S3 compatible object storage
+  ## service); If you don't have preference, then just use filesystem,
+  ## this is here just for the completeness.
+
+  # minio:
+  #   image: "minio/minio:latest"
+  #   command: minio server /mnt/data --console-address ":9001"
+  #
+  #   volumes:
+  #     - "penpot_minio:/mnt/data"
+  #
+  #   environment:
+  #     - MINIO_ROOT_USER=minioadmin
+  #     - MINIO_ROOT_PASSWORD=minioadmin
+  #
+  #   ports:
+  #     - 9000:9000
+  #     - 9001:9001
+
+
