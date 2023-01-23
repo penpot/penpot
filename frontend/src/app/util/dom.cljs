@@ -264,12 +264,14 @@
 (defn append-child!
   [^js el child]
   (when (some? el)
-    (.appendChild ^js el child)))
+    (.appendChild ^js el child))
+  el)
 
 (defn remove-child!
   [^js el child]
   (when (some? el)
-    (.removeChild ^js el child)))
+    (.removeChild ^js el child))
+  el)
 
 (defn get-first-child
   [^js el]
@@ -639,3 +641,11 @@
 
     {:ascent (.-fontBoundingBoxAscent measure)
      :descent (.-fontBoundingBoxDescent measure)}))
+
+(defn clone-node
+  [^js node]
+  (.cloneNode node))
+
+(defn has-children?
+  [^js node]
+  (> (-> node .-children .-length) 0))
