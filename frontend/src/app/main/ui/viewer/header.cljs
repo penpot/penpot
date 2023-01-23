@@ -66,7 +66,7 @@
        [:li {:on-click on-zoom-fill}
         (tr "workspace.header.zoom-fill") [:span (sc/get-tooltip :toggle-zoom-style)]]
        [:li {:on-click on-fullscreen}
-        (tr "workspace.header.zoom-full-screen") [:span (sc/get-tooltip :toogle-fullscreen)]]]]]))
+        (tr "workspace.header.zoom-full-screen") [:span (sc/get-tooltip :toggle-fullscreen)]]]]]))
 
 
 (mf/defc header-options

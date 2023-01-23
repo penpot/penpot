@@ -177,7 +177,7 @@
   ;;   shortcuts.toggle-textpalette
   ;;   shortcuts.toggle-visibility
   ;;   shortcuts.toggle-zoom-style
-  ;;   shortcuts.toogle-fullscreen
+  ;;   shortcuts.toggle-fullscreen
   ;;   shortcuts.undo
   ;;   shortcuts.ungroup
   ;;   shortcuts.unmask

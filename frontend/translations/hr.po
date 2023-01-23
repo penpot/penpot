@@ -2588,7 +2588,7 @@ msgstr "Promijeni vidljivost"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Promijeni stil zooma"
 
-msgid "shortcuts.toogle-fullscreen"
+msgid "shortcuts.toggle-fullscreen"
 msgstr "Promijeni cijeli zaslon"
 
 #, fuzzy

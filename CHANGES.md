@@ -49,6 +49,7 @@
 - Fix path edition activated on boards [Taiga #4105](https://tree.taiga.io/project/penpot/issue/4105)
 - Fix hidden layers inside groups become visible after the group visibility is changed[Taiga #4710](https://tree.taiga.io/project/penpot/issue/4710)
 - Fix format of HSLA color on viewer [Taiga #4393](https://tree.taiga.io/project/penpot/issue/4393)
+- Fix some typos [Taiga #4724](https://tree.taiga.io/project/penpot/issue/4724)
 
 ## 1.16.2-beta
 

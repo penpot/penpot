@@ -2568,7 +2568,7 @@ msgstr "Erakutsi/Ezkutatu elementua"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Erakutsi/Ezkutatu zoomaren estiloa"
 
-msgid "shortcuts.toogle-fullscreen"
+msgid "shortcuts.toggle-fullscreen"
 msgstr "Aktibatu/desaktibatu pantaila osoa"
 
 msgid "shortcuts.undo"
