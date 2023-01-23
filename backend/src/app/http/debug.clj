@@ -349,15 +349,14 @@
 
 (defn health-handler
   "Mainly a task that performs a health check."
-  [{:keys [pool]} _]
-  (db/with-atomic [conn pool]
-    (try
-      (db/exec-one! conn ["select count(*) as count from server_prop;"])
-      (yrs/response 200 "OK")
-      (catch Throwable cause
-        (l/warn :hint "unable to execute query on health handler"
-                :cause cause)
-        (yrs/response 503 "KO")))))
+  [{:keys [::db/pool]} _]
+  (try
+    (db/exec-one! pool ["select count(*) as count from server_prop;"])
+    (yrs/response 200 "OK")
+    (catch Throwable cause
+      (l/warn :hint "unable to execute query on health handler"
+              :cause cause)
+      (yrs/response 503 "KO"))))
 
 (defn changelog-handler
   [_ _]
