@@ -114,26 +114,37 @@
 
         generate-thumbnail
         (mf/use-callback
-         (fn []
-           (let [node @node-ref
-                 frame-html (dom/node->xml node)
+         (fn generate-thumbnail []
+           (try
+             (let [node @node-ref]
+               (if (dom/has-children? node)
+                 ;; The frame-content need to have children in order to generate the thumbnail
+                 (let [frame-html (dom/node->xml node)
+                       style-node (dom/query (dm/str "#frame-container-" (:id shape) " style"))
+                       style-str (or (-> style-node dom/node->xml) "")
 
-                 {:keys [x y width height]} @shape-bb-ref
+                       {:keys [x y width height]} @shape-bb-ref
+                       viewbox (dm/str x " " y " " width " " height)
 
-                 style-node (dom/query (dm/str "#frame-container-" (:id shape) " style"))
-                 style-str (or (-> style-node dom/node->xml) "")
+                       svg-node
+                       (-> (dom/make-node "http://www.w3.org/2000/svg" "svg")
+                           (dom/set-property! "version" "1.1")
+                           (dom/set-property! "viewBox" viewbox)
+                           (dom/set-property! "width" width)
+                           (dom/set-property! "height" height)
+                           (dom/set-property! "fill" "none")
+                           (obj/set! "innerHTML" (dm/str style-str frame-html)))
 
-                 svg-node
-                 (-> (dom/make-node "http://www.w3.org/2000/svg" "svg")
-                     (dom/set-property! "version" "1.1")
-                     (dom/set-property! "viewBox" (dm/str x " " y " " width " " height))
-                     (dom/set-property! "width" width)
-                     (dom/set-property! "height" height)
-                     (dom/set-property! "fill" "none")
-                     (obj/set! "innerHTML" (dm/str style-str frame-html)))
-                 img-src  (-> svg-node dom/node->xml dom/svg->data-uri)]
+                       img-src
+                       (-> svg-node dom/node->xml dom/svg->data-uri)]
 
-             (reset! image-url img-src))))
+                   (reset! image-url img-src))
+
+                 ;; Node not yet ready, we schedule a new generation
+                 (ts/schedule generate-thumbnail)))
+
+             (catch :default e
+               (.error js/console e)))))
 
         on-change-frame
         (mf/use-callback

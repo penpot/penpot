@@ -248,16 +248,15 @@
     (dissoc :content)))
 
 (defn- is-bool-descendant?
-  [shape all-shapes selected-shape-ids]
+  [[_ shape] objects selected-shape-ids]
+
   (let [parent-id (:parent-id shape)
-        parent (->> all-shapes
-                    (filter #(= (:id %) parent-id))
-                    first)]
+        parent (get objects parent-id)]
     (cond
       (nil? shape) false                                                   ;; failsafe
-      (some #{(:id shape)} selected-shape-ids) false                       ;; if it is one of the selected shapes, it is considerer not a bool descendant
+      (contains? selected-shape-ids (:id shape)) false                     ;; if it is one of the selected shapes, it is considerer not a bool descendant
       (= :bool (:type parent)) true                                        ;; if its parent is of type bool, it is a bool descendant
-      :else (is-bool-descendant? parent all-shapes selected-shape-ids))))  ;; else, check its parent
+      :else (recur [parent-id parent] objects selected-shape-ids))))  ;; else, check its parent
 
 (mf/defc options
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children" "page-id" "file-id"]))]
@@ -267,8 +266,13 @@
         shapes-with-children (unchecked-get props "shapes-with-children")
 
         ;; remove children from bool shapes
-        shape-ids (map :id shapes)
-        shapes-with-children (filter #(not (is-bool-descendant? % shapes-with-children shape-ids)) shapes-with-children)
+        shape-ids (into #{} (map :id) shapes)
+
+        objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
+        objects
+        (into {}
+              (filter #(not (is-bool-descendant? % objects shape-ids)))
+              objects)
 
         workspace-modifiers (mf/deref refs/workspace-modifiers)
         shapes (map #(gsh/transform-shape % (get-in workspace-modifiers [(:id %) :modifiers])) shapes)
@@ -276,7 +280,7 @@
         page-id (unchecked-get props "page-id")
         file-id (unchecked-get props "file-id")
         shared-libs (unchecked-get props "shared-libs")
-        objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
+
         show-caps (some #(and (= :path (:type %)) (gsh/open-path? %)) shapes)
 
         ;; Selrect/points only used for measures and it's the one that changes the most. We separate it
