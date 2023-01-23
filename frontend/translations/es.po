@@ -2879,7 +2879,7 @@ msgstr "Mostrar/ocultar elemento"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Alternar estilo de zoom"
 
-msgid "shortcuts.toogle-fullscreen"
+msgid "shortcuts.toggle-fullscreen"
 msgstr "Activar/desactivar pantalla completa"
 
 msgid "shortcuts.undo"

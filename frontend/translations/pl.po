@@ -2443,7 +2443,7 @@ msgstr "Przełącz widoczność"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Przełącz sposób powiększania"
 
-msgid "shortcuts.toogle-fullscreen"
+msgid "shortcuts.toggle-fullscreen"
 msgstr "Przełącz tryb pełnoekranowy"
 
 msgid "shortcuts.undo"

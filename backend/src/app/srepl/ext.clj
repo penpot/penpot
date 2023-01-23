@@ -8,35 +8,70 @@
   "PREPL API for external usage (CLI or ADMIN)"
   (:require
    [app.auth :as auth]
+   [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.rpc.commands.auth :as cmd.auth]))
+   [app.rpc.commands.auth :as cmd.auth]
+   [app.util.json :as json]
+   [cuerdas.core :as str]))
 
 (defn- get-current-system
   []
   (or (deref (requiring-resolve 'app.main/system))
       (deref (requiring-resolve 'user/system))))
 
-(defn derive-password
-  [password]
-  (auth/derive-password password))
+(defmulti ^:private run-json-cmd* ::cmd)
 
-(defn create-profile
-  [fullname, email, password]
+(defn run-json-cmd
+  "Entry point with external tools integrations that uses PREPL
+  interface for interacting with running penpot backend."
+  [data]
+  (let [data (json/decode data)
+        params (merge {::cmd (keyword (:cmd data "default"))}
+                      (:params data))]
+    (run-json-cmd* params)))
+
+(defmethod run-json-cmd* :create-profile
+  [{:keys [fullname email password is-active]
+    :or {is-active true}}]
   (when-let [system (get-current-system)]
     (db/with-atomic [conn (:app.db/pool system)]
       (let [params  {:id (uuid/next)
                      :email email
                      :fullname fullname
-                     :is-active true
+                     :is-active is-active
                      :password password
-                     :props {}}
-            profile (->> (cmd.auth/create-profile! conn params)
-                         (cmd.auth/create-profile-rels! conn))]
-        (str (:id profile))))))
+                     :props {}}]
+        (->> (cmd.auth/create-profile! conn params)
+             (cmd.auth/create-profile-rels! conn))))))
 
+(defmethod run-json-cmd* :update-profile
+  [{:keys [fullname email password is-active]}]
+  (when-let [system (get-current-system)]
+    (db/with-atomic [conn (:app.db/pool system)]
+      (let [params (cond-> {}
+                     (some? fullname)
+                     (assoc :fullname fullname)
 
+                     (some? password)
+                     (assoc :password (auth/derive-password password))
 
+                     (some? is-active)
+                     (assoc :is-active is-active))]
+        (when (seq params)
+          (let [res (db/update! conn :profile
+                                params
+                                {:email email
+                                 :deleted-at nil}
+                                {:return-keys false})]
+            (pos? (:next.jdbc/update-count res))))))))
 
+(defmethod run-json-cmd* :derive-password
+  [{:keys [password]}]
+  (auth/derive-password password))
 
-
+(defmethod run-json-cmd* :default
+  [{:keys [::cmd]}]
+  (ex/raise :type :internal
+            :code :not-implemented
+            :hint (str/ffmt "command '%' not implemented" (name cmd))))

@@ -1977,7 +1977,7 @@ msgstr "Invitation link copied"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
-msgstr "You can't delete you profile. Reassign your teams before proceed."
+msgstr "You can't delete your profile. Reassign your teams before proceed."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -2541,8 +2541,8 @@ msgstr "Toggle visibility"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Toggle zoom style"
 
-msgid "shortcuts.toogle-fullscreen"
-msgstr "Toogle fullscreen"
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Toggle fullscreen"
 
 msgid "shortcuts.undo"
 msgstr "Undo"

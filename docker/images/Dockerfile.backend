@@ -74,10 +74,13 @@ RUN set -ex; \
         fontconfig \
         woff-tools \
         woff2 \
+        python3 \
         fontforge \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
+    mkdir -p /opt/penpot/assets; \
+    chown -R penpot:penpot /opt/penpot; \
     rm -rf /var/lib/apt/lists/*;
 
 COPY --chown=penpot:penpot ./bundle-backend/ /opt/penpot/backend/

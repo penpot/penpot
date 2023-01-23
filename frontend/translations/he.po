@@ -2647,7 +2647,7 @@ msgstr "החלפת מצב הצגה"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "החלפת סגנון תקריב"
 
-msgid "shortcuts.toogle-fullscreen"
+msgid "shortcuts.toggle-fullscreen"
 msgstr "החלפת מילוי מסך"
 
 msgid "shortcuts.undo"

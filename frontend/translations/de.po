@@ -2695,7 +2695,7 @@ msgstr "Elemente ein-/ausblenden"
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Zoom-Optionen umschalten"
 
-msgid "shortcuts.toogle-fullscreen"
+msgid "shortcuts.toggle-fullscreen"
 msgstr "Vollbild aktivieren/deaktivieren"
 
 msgid "shortcuts.undo"

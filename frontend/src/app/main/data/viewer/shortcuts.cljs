@@ -36,7 +36,7 @@
                         :subsections [:zoom-viewer]
                         :fn #(st/emit! dv/toggle-zoom-style)}
 
-   :toogle-fullscreen  {:tooltip (ds/shift "F")
+   :toggle-fullscreen  {:tooltip (ds/shift "F")
                         :command "shift+f"
                         :subsections [:zoom-viewer]
                         :fn #(st/emit! dv/toggle-fullscreen)}

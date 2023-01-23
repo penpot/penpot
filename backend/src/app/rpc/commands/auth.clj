@@ -298,6 +298,7 @@
             (throw e)
             (ex/raise :type :validation
                       :code :email-already-exists
+                      :hint "email already exists"
                       :cause e)))))))
 
 (defn create-profile-rels!
