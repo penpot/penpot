@@ -28,22 +28,27 @@
        (rx/filter #(= % id))
        (rx/take 1)))
 
-(defn thumbnail-stream
+(defn thumbnail-canvas-blob-stream
   [object-id]
-  (rx/create
-   (fn [subs]
-     ;; We look in the DOM a canvas that 1) matches the id and 2) that it's not empty
-     ;; will be empty on first rendering before drawing the thumbnail and we don't want to store that
-     (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'][data-ready='true']" object-id))]
-       (if (some? node)
+  ;; Look for the thumbnail canvas to send the data to the backend
+
+  (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'][data-ready='true']" object-id))
+        stopper (->> st/stream
+                     (rx/filter (ptk/type? :app.main.data.workspace/finalize-page))
+                     (rx/take 1))]
+    (if (some? node)
+      ;; Success: we generate the blob (async call)
+      (rx/create
+       (fn [subs]
          (.toBlob node (fn [blob]
                          (rx/push! subs blob)
                          (rx/end! subs))
-                  "image/png")
+                  "image/png")))
 
-         ;; If we cannot find the node we send `nil` and the upsert will delete the thumbnail
-         (do (rx/push! subs nil)
-             (rx/end! subs)))))))
+      ;; Not found, we retry after delay
+      (->> (rx/timer 250)
+           (rx/flat-map #(thumbnail-canvas-blob-stream object-id))
+           (rx/take-until stopper)))))
 
 (defn clear-thumbnail
   [page-id frame-id]
@@ -64,7 +69,7 @@
      (watch [_ state _]
        (let [object-id   (dm/str page-id frame-id)
              file-id     (or file-id (:current-file-id state))
-             blob-result (thumbnail-stream object-id)
+             blob-result (thumbnail-canvas-blob-stream object-id)
              params {:file-id file-id :object-id object-id :data nil}]
 
          (rx/concat
@@ -80,7 +85,7 @@
 
                (rx/merge-map
                 (fn [data]
-                  (if (some? file-id)
+                  (if (and (some? data) (some? file-id))
                     (let [params (assoc params :data data)]
                       (rx/merge
                        ;; Update the local copy of the thumbnails so we don't need to request it again

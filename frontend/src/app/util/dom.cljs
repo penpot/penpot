@@ -643,8 +643,10 @@
      :descent (.-fontBoundingBoxDescent measure)}))
 
 (defn clone-node
-  [^js node]
-  (.cloneNode node))
+  ([^js node]
+   (clone-node node true))
+  ([^js node deep?]
+   (.cloneNode node deep?)))
 
 (defn has-children?
   [^js node]
