@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.config :as cf]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -251,15 +252,26 @@
           :width fixed-width
           :height fixed-height
           ;; DEBUG
-          :style {:filter (when (debug? :thumbnails) "invert(1)")
+          :style {:filter (when (and (not (cf/check-browser? :safari)) (debug? :thumbnails)) "invert(1)")
                   :width "100%"
                   :height "100%"}}]]
 
+       ;; Safari don't support filters so instead we add a rectangle around the thumbnail
+       (when (and (cf/check-browser? :safari) (debug? :thumbnails))
+         [:rect {:x (+ x 2)
+                 :y (+ y 2)
+                 :width (- width 4)
+                 :height (- height 4)
+                 :stroke "blue"
+                 :stroke-width 2}])
+
        (when (some? @image-url)
-         [:image {:ref frame-image-ref
-                  :x x
-                  :y y
-                  :href @image-url
-                  :width width
-                  :height height
-                  :on-load on-image-load}])])]))
+         [:foreignObject {:x x
+                          :y y
+                          :width width
+                          :height height}
+          [:img {:ref frame-image-ref
+                 :src @image-url
+                 :width width
+                 :height height
+                 :on-load on-image-load}]])])]))
