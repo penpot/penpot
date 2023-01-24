@@ -919,6 +919,9 @@ msgstr "حساب دعم تويتر"
 msgid "generic.error"
 msgstr "حدث خطأ"
 
+msgid "history.alert-message"
+msgstr "أنت ترى الإصدار %s"
+
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
 msgstr "الضبابية"
@@ -1130,9 +1133,6 @@ msgstr "نص"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "معلومات"
-
-msgid "history.alert-message"
-msgstr "أنت ترى الإصدار %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"

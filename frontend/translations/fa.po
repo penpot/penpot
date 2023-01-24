@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-01-24 14:27+0000\n"
 "Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
-"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
-"fa/>\n"
+"Language-Team: Persian "
+"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -244,6 +244,11 @@ msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot برای تیم‌ها در نظر گرفته شده است. از اعضا دعوت کنید تا روی پروژه‌ها "
 "و فایل‌ها با هم کار کنند"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.team-hero.title"
+msgstr "تیم!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
@@ -487,6 +492,10 @@ msgstr "کتابخانه‌ها و قالب‌ها"
 #, fuzzy
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "بیشتر آنها را کاوش کنید و بدانید که چگونه مشارکت کنید"
+
+#, fuzzy
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "مشکلی در ایمپورت کردن قالب وجود داشت. قالب ایمپورت نشد."
 
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
@@ -734,6 +743,12 @@ msgstr "ارائه دهنده احراز هویت پیکربندی نشده اس
 msgid "errors.auth.unable-to-login"
 msgstr "به نظر می‌رسد شما احراز هویت نشده‌اید یا جلسه منقضی شده است."
 
+msgid "errors.bad-font"
+msgstr "فونت %s بارگیری نشد"
+
+msgid "errors.bad-font-plural"
+msgstr "فونت‌های %s بارگیری نشدند"
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "مرورگر شما نمی‌تواند این عملیات را انجام دهد"
@@ -809,6 +824,9 @@ msgstr "رمزعبور تأیید باید مطابقت داشته باشد"
 #, fuzzy
 msgid "errors.password-too-short"
 msgstr "رمزعبور باید حداقل 8 کاراکتر باشد"
+
+msgid "errors.profile-blocked"
+msgstr "پروفایل مسدود شده"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
@@ -897,6 +915,18 @@ msgstr "حساب پشتیبانی در توییتر"
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "خطایی رخ داده است"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.text-decoration"
+msgstr "تزیین متن"
+
+#, fuzzy
+msgid "handoff.attributes.typography.text-transform.titlecase"
+msgstr "مورد عنوان"
+
+#, fuzzy
+msgid "history.alert-message"
+msgstr "شما در حال مشاهده نسخه %s هستید"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -1105,10 +1135,6 @@ msgstr "متن"
 msgid "inspect.tabs.info"
 msgstr "اطلاعات"
 
-#, fuzzy
-msgid "history.alert-message"
-msgstr "شما در حال مشاهده نسخه %s هستید"
-
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
 msgstr "میانبرها"
@@ -1272,6 +1298,13 @@ msgstr "فونت‌ها"
 msgid "labels.github-repo"
 msgstr "مخزن Github"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.give-feedback"
+msgstr "بازخورد بده"
+
+msgid "labels.go-back"
+msgstr "برگرد"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 #, fuzzy
 msgid "labels.help-center"
@@ -1345,6 +1378,10 @@ msgstr "رمزعبور جدید"
 
 msgid "labels.next"
 msgstr "بعدی"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr "هیچ اعلان نظر معلقی ندارید"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
@@ -1586,6 +1623,28 @@ msgstr "برای تأیید هویت شما یک ایمیل به ایمیل فع
 msgid "modals.change-email.new-email"
 msgstr "ایمیل جدید"
 
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.submit"
+msgstr "تغییر ایمیل"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.title"
+msgstr "ایمیل خود را تغییر دهید"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.change-owner-and-leave-confirm.message"
+msgstr ""
+"شما مالک این تیم هستید. لطفاً قبل از ترک عضو دیگری را برای ارتقاء به مالک "
+"انتخاب کنید."
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.cancel"
+msgstr "لغو و نگه‌داشتن حساب من"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.confirm"
+msgstr "بله، حسابم رو حذف کن"
+
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.info"
 msgstr ""
@@ -1596,15 +1655,59 @@ msgstr ""
 msgid "modals.delete-account.title"
 msgstr "آیا مطمئن هستید که می‌خواهید حساب خود را حذف کنید؟"
 
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.accept"
+msgstr "حذف مکالمه"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message"
+msgstr ""
+"آیا مطمئنید که می‌خواهید این مکالمه را حذف کنید؟ تمامی نظرات این تاپیک حذف "
+"خواهد شد."
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.title"
+msgstr "حذف مکالمه"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.accept"
+msgstr "حذف فایل"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.message"
+msgstr "آیا مطمئن هستید که می‌خواهید این فایل را حذف کنید؟"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.title"
+msgstr "در حال حذف فایل"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "حذف فایل‌ها"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "آیا مطمئن هستید که می‌خواهید فایل‌های %s را حذف کنید؟"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "در حال حذف %s فایل‌ها"
+
 msgid "modals.delete-font-variant.message"
 msgstr ""
 "آیا مطمئن هستید که می‌خواهید این سبک فونت را حذف کنید؟ اگر در یک فایل "
 "استفاده شود، بارگیری نمی‌شود."
 
+msgid "modals.delete-font-variant.title"
+msgstr "درحال حذف استایل فونت"
+
 msgid "modals.delete-font.message"
 msgstr ""
 "آیا مطمئن هستید که می‌خواهید این فونت را حذف کنید؟ اگر در یک فایل استفاده "
 "شود، بارگیری نمی‌شود."
+
+msgid "modals.delete-font.title"
+msgstr "درحال حذف فونت"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "modals.delete-page.body"
@@ -1614,15 +1717,166 @@ msgstr "آیا مطمئن هستید که می‌خواهید این صفحه ر
 msgid "modals.delete-page.title"
 msgstr "حذف صفحه"
 
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.accept"
+msgstr "حذف پروژه"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.message"
+msgstr "آیا مطمئن هستید که می‌خواهید این پروژه را حذف کنید؟"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.title"
+msgstr "حذف پروژه"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "حذف فایل"
+msgstr[1] "حذف فایل‌ها"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "آیا مطمئن هستید که می‌خواهید این فایل را حذف کنید؟"
+msgstr[1] "آیا مطمئن هستید که می‌خواهید این فایل‌ها را حذف کنید؟"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message"
+msgid_plural "modals.delete-shared-confirm.scd-message"
+msgstr[0] "این فایل دارای کتابخانه‌هایی است که در این فایل استفاده می‌شوند:"
+msgstr[1] "این فایل دارای کتابخانه‌هایی است که در این فایل‌ها استفاده می‌شوند:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "modals.delete-shared-confirm.scd-message-plural"
+msgid_plural "modals.delete-shared-confirm.scd-message-plural"
+msgstr[0] "این فایل‌ها کتابخانه‌هایی دارند که در این فایل استفاده می‌‮شوند:"
+msgstr[1] "این فایل‌ها کتابخانه هایی دارند که در این فایل‌ها استفاده می‌شوند:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "درحال حذف فایل"
+msgstr[1] "درحال حذف فایل‌ها"
+
+#: src/app/main/ui/delete_shared.cljs
+msgid "modals.delete-shared.title"
+msgstr "درحال حذف فایل"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.accept"
+msgstr "حذف تیم"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.message"
 msgstr ""
 "آیا مطمئنید که می‌خواهید این تیم را حذف کنید؟ تمام پروژه‌ها و فایل‌های "
 "مرتبط با تیم به طور دائم حذف خواهند شد."
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.title"
+msgstr "درحال حذف تیم"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "حذف عضو"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.message"
 msgstr "آیا مطمئن هستید که می‌خواهید این عضو را از تیم حذف کنید؟"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.title"
+msgstr "حذف عضو تیم"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-member-confirm.accept"
+msgstr "ارسال دعوت‌نامه"
+
+msgid "modals.invite-member.emails"
+msgstr "ایمیل‌ها، با کاما از هم جدا شده‌اند"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "دعوت اعضا به تیم"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"از آنجایی که شما تنها عضو این تیم هستید، تیم به همراه پروژه‌ها و فایل‌هایش "
+"حذف خواهد شد."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "آیا مطمئنید که می‌خواهید تیم %s را ترک کنید؟"
+
+#, fuzzy
+msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"اگر عضو دیگری برای ارتقا به مالک وجود نداشته باشد، نمی‌توانید تیم را ترک "
+"کنید. شاید بخواهید تیم را حذف کنید."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-reassign.hint1"
+msgstr ""
+"شما مالک این تیم هستید. لطفاً قبل از ترک تیم، عضو دیگری را برای ارتقاء به "
+"مالک انتخاب کنید."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-reassign.select-member-to-promote"
+msgstr "انتخاب یک عضو برای ارتقا"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-reassign.title"
+msgstr "قبل از رفتن"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.accept"
+msgstr "خروج از تیم"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.message"
+msgstr "آیا مطمئنید که می‌خواهید این تیم را ترک کنید؟"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.title"
+msgstr "درحال ترک تیم"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.accept"
+msgstr "انتقال مالکیت"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"اگر مالکیت را منتقل کنید، نقش خود را به مدیر تغییر می‌دهید و برخی از "
+"مجوزهای این تیم را از دست می‌دهید. "
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.message"
+msgstr ""
+"شما مالک فعلی این تیم هستید. آیا مطمئنید که می‌خواهید %s را مالک جدید تیم "
+"کنید؟"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.title"
+msgstr "مالک جدید تیم"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.accept"
+msgstr "حذف به عنوان کتابخانه مشترک"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, fuzzy
+msgid "modals.remove-shared-confirm.hint"
+msgstr ""
+"پس از حذف به‌عنوان کتابخانه مشترک، کتابخانه فایل این فایل برای استفاده در "
+"بین بقیه فایل‌های شما در دسترس نخواهد بود."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
@@ -1728,6 +1982,12 @@ msgstr "متن"
 
 msgid "shortcuts.escape"
 msgstr "لغو"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "حرکت افقی"
+
+msgid "shortcuts.flip-vertical"
+msgstr "حرکت عمودی"
 
 msgid "shortcuts.go-to-search"
 msgstr "جستجو"
@@ -1995,6 +2255,10 @@ msgstr "اندازه"
 msgid "workspace.assets.typography.font-variant-id"
 msgstr "گونه"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/handoff/attributes/text.cljs, src/app/main/ui/handoff/attributes/text.cljs
+msgid "workspace.assets.typography.sample"
+msgstr "مثال"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
 msgstr "تبدیل متن"
@@ -2017,6 +2281,10 @@ msgstr "ویرایش"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.file"
 msgstr "فایل"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "اولویت‌ها"
 
 #: src/app/main/ui/workspace/header.cljs
 #, fuzzy
@@ -2112,6 +2380,10 @@ msgstr "محو"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
 msgid "workspace.options.component"
 msgstr "کامپوننت"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "محدودیت‌ها"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints.bottom"
@@ -2613,6 +2885,10 @@ msgid "workspace.shape.menu.flatten"
 msgstr "صاف"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "حرکت افقی"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "چرخش عمودی"
 
@@ -2644,6 +2920,10 @@ msgstr "مخفی"
 msgid "workspace.shape.menu.hide-ui"
 msgstr "نمایش/پنهان کردن رابط کاربری"
 
+#, fuzzy
+msgid "workspace.shape.menu.intersection"
+msgstr "تقاطع"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.lock"
 msgstr "قفل"
@@ -2659,6 +2939,9 @@ msgstr "چسباندن"
 msgid "workspace.shape.menu.path"
 msgstr "مسیر"
 
+msgid "workspace.shape.menu.restore-main"
+msgstr "بازیابی کامپوننت اصلی"
+
 #: src/app/main/ui/workspace/context_menu.cljs
 #, fuzzy
 msgid "workspace.shape.menu.select-layer"
@@ -2669,8 +2952,19 @@ msgid "workspace.shape.menu.show"
 msgstr "نمایش"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, fuzzy
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "نمایش در پنل دارایی"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
 msgstr "نمایش کامپوننت اصلی"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "حذف تصویر کوچک"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "تنظیم بعنوان تصویر کوچک"
 
 msgid "workspace.shape.menu.transform-to-path"
 msgstr "تبدیل به مسیر"
@@ -2687,6 +2981,11 @@ msgstr "متحد"
 msgid "workspace.shape.menu.unlock"
 msgstr "بازکردن قفل"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+#, fuzzy
+msgid "workspace.shape.menu.unmask"
+msgstr "حذف ماسک"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-components-in-bulk"
 msgstr "به‌روزرسانی کامپوننت‌های اصلی"
@@ -2694,6 +2993,9 @@ msgstr "به‌روزرسانی کامپوننت‌های اصلی"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "به‌روزرسانی کامپوننت اصلی"
+
+msgid "workspace.sidebar.expand"
+msgstr "گسترش نوار کناری"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
@@ -2726,6 +3028,11 @@ msgstr "شکل‌ها"
 
 msgid "workspace.sidebar.layers.texts"
 msgstr "متن‌ها"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
+#, fuzzy
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "ویژگی‌های SVG ایمپورت شد"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs
 msgid "workspace.sidebar.sitemap"
@@ -2788,11 +3095,23 @@ msgid "workspace.toolbar.text-palette"
 msgstr "تایپوگرافی‌ها (%s)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
+#, fuzzy
+msgid "workspace.undo.empty"
+msgstr "هیچ تاریخچه تغییری تاکنون وجود ندارد"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.delete"
 msgstr "%s حذف شد"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.modify"
+msgstr "اصلاح شد %s"
+
 msgid "workspace.undo.entry.multiple.circle"
 msgstr "دایره‌ها"
+
+msgid "workspace.undo.entry.multiple.color"
+msgstr "دارایی‌های رنگ"
 
 msgid "workspace.undo.entry.multiple.component"
 msgstr "کامپوننت‌ها"
@@ -2805,6 +3124,9 @@ msgstr "آرت‌بورد"
 
 msgid "workspace.undo.entry.multiple.group"
 msgstr "گروه‌ها"
+
+msgid "workspace.undo.entry.multiple.media"
+msgstr "دارایی‌های گرافیکی"
 
 msgid "workspace.undo.entry.multiple.multiple"
 msgstr "اشیاء"
@@ -2824,12 +3146,18 @@ msgstr "شکل‌ها"
 msgid "workspace.undo.entry.multiple.text"
 msgstr "متن‌ها"
 
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "دارایی‌های تایپوگرافی"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.new"
 msgstr "%s جدید"
 
 msgid "workspace.undo.entry.single.circle"
 msgstr "دایره"
+
+msgid "workspace.undo.entry.single.color"
+msgstr "دارایی رنگ"
 
 msgid "workspace.undo.entry.single.component"
 msgstr "کامپوننت"
@@ -2845,6 +3173,9 @@ msgstr "گروه"
 
 msgid "workspace.undo.entry.single.image"
 msgstr "تصویر"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "دارایی گرافیکی"
 
 msgid "workspace.undo.entry.single.multiple"
 msgstr "شیء"
@@ -2889,334 +3220,3 @@ msgstr "به‌روزرسانی"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "برای بستن مسیر کلیک کنید"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.option.preferences"
-msgstr "اولویت‌ها"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.constraints"
-msgstr "محدودیت‌ها"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/handoff/attributes/text.cljs, src/app/main/ui/handoff/attributes/text.cljs
-msgid "workspace.assets.typography.sample"
-msgstr "مثال"
-
-msgid "workspace.undo.entry.single.color"
-msgstr "دارایی رنگ"
-
-msgid "workspace.undo.entry.multiple.typography"
-msgstr "دارایی‌های تایپوگرافی"
-
-msgid "workspace.undo.entry.multiple.media"
-msgstr "دارایی‌های گرافیکی"
-
-msgid "workspace.undo.entry.multiple.color"
-msgstr "دارایی‌های رنگ"
-
-msgid "workspace.undo.entry.single.media"
-msgstr "دارایی گرافیکی"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.flip-horizontal"
-msgstr "حرکت افقی"
-
-#, fuzzy
-msgid "workspace.shape.menu.intersection"
-msgstr "تقاطع"
-
-msgid "shortcuts.flip-vertical"
-msgstr "حرکت عمودی"
-
-msgid "shortcuts.flip-horizontal"
-msgstr "حرکت افقی"
-
-#: src/app/main/ui/dashboard/projects.cljs
-#, fuzzy
-msgid "dasboard.team-hero.title"
-msgstr "تیم!"
-
-#, fuzzy
-msgid "dashboard.libraries-and-templates.import-error"
-msgstr "مشکلی در ایمپورت کردن قالب وجود داشت. قالب ایمپورت نشد."
-
-msgid "workspace.shape.menu.thumbnail-set"
-msgstr "تنظیم بعنوان تصویر کوچک"
-
-msgid "errors.profile-blocked"
-msgstr "پروفایل مسدود شده"
-
-msgid "workspace.shape.menu.restore-main"
-msgstr "بازیابی کامپوننت اصلی"
-
-msgid "errors.bad-font-plural"
-msgstr "فونت‌های %s بارگیری نشدند"
-
-msgid "workspace.sidebar.expand"
-msgstr "گسترش نوار کناری"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-#, fuzzy
-msgid "workspace.shape.menu.unmask"
-msgstr "حذف ماسک"
-
-#: src/app/main/ui/workspace/sidebar/history.cljs
-msgid "workspace.undo.entry.modify"
-msgstr "اصلاح شد %s"
-
-#: src/app/main/ui/workspace/sidebar/history.cljs
-#, fuzzy
-msgid "workspace.undo.empty"
-msgstr "هیچ تاریخچه تغییری تاکنون وجود ندارد"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
-#, fuzzy
-msgid "workspace.sidebar.options.svg-attrs.title"
-msgstr "ویژگی‌های SVG ایمپورت شد"
-
-msgid "workspace.shape.menu.thumbnail-remove"
-msgstr "حذف تصویر کوچک"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-#, fuzzy
-msgid "workspace.shape.menu.show-in-assets"
-msgstr "نمایش در پنل دارایی"
-
-msgid "errors.bad-font"
-msgstr "فونت %s بارگیری نشد"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-decoration"
-msgstr "تزیین متن"
-
-#: src/app/main/ui/comments.cljs
-msgid "modals.delete-comment-thread.accept"
-msgstr "حذف مکالمه"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.give-feedback"
-msgstr "بازخورد بده"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-confirm.message"
-msgstr "آیا مطمئن هستید که می‌خواهید این فایل را حذف کنید؟"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-multi-confirm.message"
-msgstr "آیا مطمئن هستید که می‌خواهید فایل‌های %s را حذف کنید؟"
-
-#: src/app/main/ui/comments.cljs
-msgid "modals.delete-comment-thread.message"
-msgstr ""
-"آیا مطمئنید که می‌خواهید این مکالمه را حذف کنید؟ تمامی نظرات این تاپیک حذف "
-"خواهد شد."
-
-#: src/app/main/ui/comments.cljs
-msgid "modals.delete-comment-thread.title"
-msgstr "حذف مکالمه"
-
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
-msgid "labels.no-comments-available"
-msgstr "هیچ اعلان نظر معلقی ندارید"
-
-#: src/app/main/ui/settings/change_email.cljs
-msgid "modals.change-email.submit"
-msgstr "تغییر ایمیل"
-
-#: src/app/main/ui/settings/change_email.cljs
-msgid "modals.change-email.title"
-msgstr "ایمیل خود را تغییر دهید"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "modals.delete-project-confirm.accept"
-msgstr "حذف پروژه"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.change-owner-and-leave-confirm.message"
-msgstr ""
-"شما مالک این تیم هستید. لطفاً قبل از ترک عضو دیگری را برای ارتقاء به مالک "
-"انتخاب کنید."
-
-#: src/app/main/ui/settings/delete_account.cljs
-msgid "modals.delete-account.cancel"
-msgstr "لغو و نگه‌داشتن حساب من"
-
-#: src/app/main/ui/settings/delete_account.cljs
-msgid "modals.delete-account.confirm"
-msgstr "بله، حسابم رو حذف کن"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.accept"
-msgid_plural "modals.delete-shared-confirm.accept"
-msgstr[0] "حذف فایل"
-msgstr[1] "حذف فایل‌ها"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-confirm.accept"
-msgstr "حذف فایل"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-confirm.title"
-msgstr "در حال حذف فایل"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-multi-confirm.accept"
-msgstr "حذف فایل‌ها"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-multi-confirm.title"
-msgstr "در حال حذف %s فایل‌ها"
-
-msgid "modals.delete-font.title"
-msgstr "درحال حذف فونت"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "modals.delete-project-confirm.message"
-msgstr "آیا مطمئن هستید که می‌خواهید این پروژه را حذف کنید؟"
-
-msgid "modals.delete-font-variant.title"
-msgstr "درحال حذف استایل فونت"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "modals.delete-project-confirm.title"
-msgstr "حذف پروژه"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.message"
-msgid_plural "modals.delete-shared-confirm.message"
-msgstr[0] "آیا مطمئن هستید که می‌خواهید این فایل را حذف کنید؟"
-msgstr[1] "آیا مطمئن هستید که می‌خواهید این فایل‌ها را حذف کنید؟"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.delete-team-confirm.title"
-msgstr "درحال حذف تیم"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "این فایل دارای کتابخانه‌هایی است که در این فایل استفاده می‌شوند:"
-msgstr[1] "این فایل دارای کتابخانه‌هایی است که در این فایل‌ها استفاده می‌شوند:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
-msgid "modals.delete-shared-confirm.scd-message-plural"
-msgid_plural "modals.delete-shared-confirm.scd-message-plural"
-msgstr[0] "این فایل‌ها کتابخانه‌هایی دارند که در این فایل استفاده می‌‮شوند:"
-msgstr[1] "این فایل‌ها کتابخانه هایی دارند که در این فایل‌ها استفاده می‌شوند:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.title"
-msgid_plural "modals.delete-shared-confirm.title"
-msgstr[0] "درحال حذف فایل"
-msgstr[1] "درحال حذف فایل‌ها"
-
-#: src/app/main/ui/delete_shared.cljs
-msgid "modals.delete-shared.title"
-msgstr "درحال حذف فایل"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.delete-team-confirm.accept"
-msgstr "حذف تیم"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-confirm.message"
-msgstr "آیا مطمئنید که می‌خواهید این تیم را ترک کنید؟"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.delete-team-member-confirm.title"
-msgstr "حذف عضو تیم"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.delete-team-member-confirm.accept"
-msgstr "حذف عضو"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-member-confirm.accept"
-msgstr "ارسال دعوت‌نامه"
-
-msgid "modals.invite-member.emails"
-msgstr "ایمیل‌ها، با کاما از هم جدا شده‌اند"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-team-member.title"
-msgstr "دعوت اعضا به تیم"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-close-confirm.message"
-msgstr "آیا مطمئنید که می‌خواهید تیم %s را ترک کنید؟"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
-msgid "modals.leave-and-close-confirm.hint"
-msgstr ""
-"از آنجایی که شما تنها عضو این تیم هستید، تیم به همراه پروژه‌ها و فایل‌هایش "
-"حذف خواهد شد."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
-msgid "modals.leave-and-reassign.title"
-msgstr "قبل از رفتن"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.promote-owner-confirm.accept"
-msgstr "انتقال مالکیت"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
-msgid "modals.leave-and-reassign.select-member-to-promote"
-msgstr "انتخاب یک عضو برای ارتقا"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-confirm.accept"
-msgstr "خروج از تیم"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.promote-owner-confirm.title"
-msgstr "مالک جدید تیم"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-confirm.title"
-msgstr "درحال ترک تیم"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.promote-owner-confirm.message"
-msgstr ""
-"شما مالک فعلی این تیم هستید. آیا مطمئنید که می‌خواهید %s را مالک جدید تیم "
-"کنید؟"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.promote-owner-confirm.hint"
-msgstr ""
-"اگر مالکیت را منتقل کنید، نقش خود را به مدیر تغییر می‌دهید و برخی از مجوزهای "
-"این تیم را از دست می‌دهید. "
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
-msgid "modals.remove-shared-confirm.hint"
-msgstr ""
-"پس از حذف به‌عنوان کتابخانه مشترک، کتابخانه فایل این فایل برای استفاده در "
-"بین بقیه فایل‌های شما در دسترس نخواهد بود."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
-msgid "modals.leave-and-reassign.hint1"
-msgstr ""
-"شما مالک این تیم هستید. لطفاً قبل از ترک تیم، عضو دیگری را برای ارتقاء به "
-"مالک انتخاب کنید."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.remove-shared-confirm.accept"
-msgstr "حذف به عنوان کتابخانه مشترک"
-
-msgid "labels.go-back"
-msgstr "برگرد"
-
-#, fuzzy
-msgid "modals.leave-and-reassign.forbidden"
-msgstr ""
-"اگر عضو دیگری برای ارتقا به مالک وجود نداشته باشد، نمی‌توانید تیم را ترک "
-"کنید. شاید بخواهید تیم را حذف کنید."
-
-#, fuzzy
-msgid "handoff.attributes.typography.text-transform.titlecase"
-msgstr "مورد عنوان"

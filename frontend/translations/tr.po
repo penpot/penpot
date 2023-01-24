@@ -939,6 +939,9 @@ msgstr "Twitter destek hesabı"
 msgid "generic.error"
 msgstr "Bir hata oluştu"
 
+msgid "history.alert-message"
+msgstr "%s sürümünü görüyorsun"
+
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
 msgstr "Bulanıklık"
@@ -1150,9 +1153,6 @@ msgstr "Metin"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Bilgi"
-
-msgid "history.alert-message"
-msgstr "%s sürümünü görüyorsun"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -2647,6 +2647,9 @@ msgstr "Renk paletini değiştir"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Odak modunu değiştir"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Tam ekranı değiştir"
+
 msgid "shortcuts.toggle-grid"
 msgstr "Izgarayı göster/gizle"
 
@@ -2682,9 +2685,6 @@ msgstr "Görünürlüğü değiştir"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Yakınlaştırma şeklini değiştir"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Tam ekranı değiştir"
 
 msgid "shortcuts.undo"
 msgstr "Geri al"

@@ -906,6 +906,9 @@ msgstr "Służymy pomocą w kwestiach technicznych."
 msgid "generic.error"
 msgstr "Wystąpił błąd"
 
+msgid "history.alert-message"
+msgstr "Widzisz wersję %s"
+
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
 msgstr "Rozmycie"
@@ -1119,9 +1122,6 @@ msgstr "Tekst"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Informacje"
-
-msgid "history.alert-message"
-msgstr "Widzisz wersję %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -2407,6 +2407,9 @@ msgstr "Przełącz paletę kolorów"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Przełącz tryb skupienia"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Przełącz tryb pełnoekranowy"
+
 msgid "shortcuts.toggle-grid"
 msgstr "Pokaż/ukryj siatkę"
 
@@ -2442,9 +2445,6 @@ msgstr "Przełącz widoczność"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Przełącz sposób powiększania"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Przełącz tryb pełnoekranowy"
 
 msgid "shortcuts.undo"
 msgstr "Cofnij"
