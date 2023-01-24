@@ -609,6 +609,7 @@
             objects         (wsh/lookup-page-objects state page-id)
             selected-ids    (wsh/lookup-selected state)
             selected-shapes (map (d/getf objects) selected-ids)
+            undo-id (js/Symbol)
 
             move-shape
             (fn [changes shape]
@@ -631,7 +632,10 @@
                                 (pcb/with-objects objects))
                             selected-shapes)]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update selected-ids)
+               (dwu/commit-undo-transaction undo-id))))))
 
 
 ;; --- Change Shape Order (D&D Ordering)
