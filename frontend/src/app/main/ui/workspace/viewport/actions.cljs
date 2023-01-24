@@ -178,7 +178,7 @@
    (mf/deps @hover @hover-ids drawing-path? edition drawing-tool @z? workspace-read-only?)
    (fn [event]
      (dom/stop-propagation event)
-     (when (not z?)
+     (when-not @z?
        (let [ctrl? (kbd/ctrl? event)
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
