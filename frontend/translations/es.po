@@ -3380,6 +3380,12 @@ msgstr "Pantalla completa"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom a selección"
 
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Incrementar zoom a objetivo"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Decrementar zoom a objetivo"
+
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
 msgstr "Añadir"

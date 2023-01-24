@@ -245,7 +245,7 @@
                           :command "t"
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly dwtxt/start-edit-if-selected
-                                         (dwd/select-for-drawing :text))}
+                                                      (dwd/select-for-drawing :text))}
 
    :draw-path            {:tooltip "P"
                           :command "p"
@@ -419,14 +419,14 @@
                          :subsections [:panels]
                          :fn #(do (r/set-resize-type! :bottom)
                                   (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
-                                            (toggle-layout-flag :colorpalette)))}
+                                                         (toggle-layout-flag :colorpalette)))}
 
    :toggle-textpalette  {:tooltip (ds/alt "T")
                          :command (ds/a-mod "t")
                          :subsections [:panels]
                          :fn #(do (r/set-resize-type! :bottom)
                                   (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
-                                            (toggle-layout-flag :textpalette)))}
+                                                         (toggle-layout-flag :textpalette)))}
 
    :hide-ui              {:tooltip "\\"
                           :command "\\"
@@ -459,6 +459,16 @@
                           :command ["shift+2" "@" "\""]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}
+
+   :zoom-lense-increase  {:tooltip "Z"
+                          :command "z"
+                          :subsections [:zoom-workspace]
+                          :fn identity}
+
+   :zoom-lense-decrease {:tooltip (ds/alt "Z")
+                         :command "alt+z"
+                         :subsections [:zoom-workspace]
+                         :fn identity}
 
    ;; NAVIGATION
 
