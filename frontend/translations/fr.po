@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-12-10 15:48+0000\n"
+"PO-Revision-Date: 2023-01-24 14:27+0000\n"
 "Last-Translator: GradelerM <marie.gradeler@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.15-dev\n"
+"X-Generator: Weblate 4.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4349,3 +4349,59 @@ msgstr "Inviter avec le rôle :"
 
 msgid "onboarding.team-modal.create-team-feature-3"
 msgstr "Gestion des rôles"
+
+#, fuzzy
+msgid "shortcuts.make-corner"
+msgstr "Créer un angle"
+
+#, fuzzy
+msgid "shortcuts.toggle-scale-text"
+msgstr "Mettre le texte à l’échelle"
+
+msgid "viewer.header.handoff-section"
+msgstr "Transfert(%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Afficher la palette des polices"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Réinitialiser"
+
+msgid "workspace.focus.focus-on"
+msgstr "Focus activé"
+
+msgid "workspace.focus.focus-off"
+msgstr "Focus désactivé"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Masquer le nom des plans de travail"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "Masquer la palette de polices"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Afficher le nom des plans de travail"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "Zoomer sur la sélection"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Mode focus"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "Remplir l’écran"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "Zoomer pour montrer tous les éléments"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Ajuster à l’écran"
