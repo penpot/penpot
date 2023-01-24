@@ -185,9 +185,6 @@ msgstr "Dit Penpot"
 msgid "dashboard.delete-team"
 msgstr "Slet team"
 
-msgid "dashboard.draft-title"
-msgstr "Udkast"
-
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "Dublikér"
@@ -195,10 +192,6 @@ msgstr "Dublikér"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "Dublikér %s filer"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "Du har stadig ingen filer her"
 
 #, markdown
 msgid "dashboard.fonts.hero-text1"
@@ -412,10 +405,6 @@ msgstr "Ok"
 #: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
 msgid "ds.confirm-title"
 msgstr "Er du sikker?"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "ds.updated-at"
-msgstr "Opdateret: %s"
 
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"

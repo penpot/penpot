@@ -83,10 +83,6 @@ msgstr "ওপেনআইডি"
 msgid "auth.new-password"
 msgstr "নতুন পাসওয়ার্ড টাইপ করুন"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "আমি Penpot মেইলিং লিষ্টে সাবস্ক্রাইব করতে সম্মত।"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "রিকভারি টোকেন সঠিক নয়।"

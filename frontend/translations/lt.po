@@ -89,10 +89,6 @@ msgstr "OpenID"
 msgid "auth.new-password"
 msgstr "Įveskite naują slaptažodį"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Sutinku prenumeruoti Penpot naujienas."
-
 #: src/app/main/ui/auth/recovery.cljs
 #, fuzzy
 msgid "auth.notifications.invalid-token-error"
@@ -185,9 +181,6 @@ msgstr "Gauti nuorodą"
 msgid "common.share-link.link-copied-success"
 msgstr "Nuoroda sėkmingai nukopijuota"
 
-msgid "common.share-link.link-deleted-success"
-msgstr "Nuoroda sėkmingai ištrinta"
-
 msgid "common.share-link.permissions-hint"
 msgstr "Kiekvienas, turintis nuorodą, turės prieigą"
 
@@ -221,9 +214,6 @@ msgstr "Jūsų Penpot"
 msgid "dashboard.delete-team"
 msgstr "Naikinti komandą"
 
-msgid "dashboard.draft-title"
-msgstr "Juodraštis"
-
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "Dublikatas"
@@ -231,10 +221,6 @@ msgstr "Dublikatas"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "Dubliuoti %s failus"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "Čia vis dar nėra failų"
 
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
@@ -278,9 +264,6 @@ msgstr "Nėra elementų su eksporto nustatymais."
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
 msgstr "Eksportuoti pažymėtą sritį"
-
-msgid "dashboard.export-single"
-msgstr "Eksportuoti Penpot failą"
 
 msgid "dashboard.export.detail"
 msgstr "* Gali apimti komponentus, grafiką, spalvas ir (arba) tipografiją."

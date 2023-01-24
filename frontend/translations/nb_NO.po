@@ -78,9 +78,6 @@ msgstr "Din Penpot"
 msgid "dashboard.delete-team"
 msgstr "Slett lag"
 
-msgid "dashboard.draft-title"
-msgstr "Kladd"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
 msgstr "Inviter til lag"
@@ -211,17 +208,9 @@ msgstr "Er du sikker?"
 msgid "errors.invalid-color"
 msgstr "Ugyldig farge"
 
-#, fuzzy
-msgid "errors.media-format-unsupported"
-msgstr "Bildeformatet støttes ikke (må være SVG, JPG, eller PNG)."
-
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Ukjent symbol"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-start"
-msgstr "Ta del i sludringen"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
@@ -320,9 +309,6 @@ msgstr "Avbryt"
 msgid "labels.confirm-password"
 msgstr "Bekreft passord"
 
-msgid "labels.content"
-msgstr "Innhold"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
 msgstr "Opprett"
@@ -375,9 +361,6 @@ msgstr "Skrifttilbydere"
 msgid "labels.fonts"
 msgstr "Skrifter"
 
-msgid "labels.icons"
-msgstr "Ikoner"
-
 msgid "labels.images"
 msgstr "Bilder"
 
@@ -397,17 +380,9 @@ msgstr "Logg ut"
 msgid "labels.members"
 msgstr "Medlemmer"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "Navn"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.new-password"
 msgstr "Nytt passord"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.not-found.auth-info"
-msgstr "Du er innlogget som"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.old-password"
@@ -421,10 +396,6 @@ msgstr "Eier"
 msgid "labels.password"
 msgstr "Passord"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "Tilganger"
-
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.profile"
 msgstr "Profil"
@@ -432,10 +403,6 @@ msgstr "Profil"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "Prosjekter"
-
-#, fuzzy
-msgid "labels.recent"
-msgstr "Nylige"
 
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
@@ -480,10 +447,6 @@ msgstr "Delte bibliotek"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"
 msgstr "Vis alle kommentarer"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.sign-out"
-msgstr "Logg ut"
 
 msgid "labels.upload"
 msgstr "Last opp"
@@ -592,15 +555,8 @@ msgid "title.workspace"
 msgstr "%s - Penpot"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.create-link"
-msgstr "Opprett lenke"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.remove-link"
 msgstr "Fjern lenke"
-
-msgid "workspace.assets.box-filter-graphics"
-msgstr "Grafikk"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
@@ -686,10 +642,6 @@ msgstr "Nylige farger"
 msgid "workspace.libraries.colors.save-color"
 msgstr "Lagre fargestil"
 
-#: src/app/main/ui/workspace/colorpalette.cljs
-msgid "workspace.libraries.colors.small-thumbnails"
-msgstr "Små miniatyrbilder"
-
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
 msgstr "%s komponenter"
@@ -697,9 +649,6 @@ msgstr "%s komponenter"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
 msgstr "Filbibliotek"
-
-msgid "workspace.options.blur-options.background-blur"
-msgstr "Bakgrunn"
 
 msgid "workspace.options.blur-options.layer-blur"
 msgstr "Lag"

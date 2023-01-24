@@ -83,10 +83,6 @@ msgstr "OpenID Connect"
 msgid "auth.new-password"
 msgstr "新しいパスワードを入力"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Penpotのメーリングリストに登録します。"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "リカバリコードが無効です。"
@@ -186,9 +182,6 @@ msgstr "リンクを取得"
 msgid "common.share-link.link-copied-success"
 msgstr "リンクをコピーしました"
 
-msgid "common.share-link.link-deleted-success"
-msgstr "リンクを削除しました"
-
 msgid "common.share-link.manage-ops"
 msgstr "権限の管理"
 
@@ -261,9 +254,6 @@ msgstr "Penpotファイル(.penpot)をダウンロード"
 msgid "dashboard.download-standard-file"
 msgstr "標準形式(.svg+.json)でダウンロード"
 
-msgid "dashboard.draft-title"
-msgstr "下書き"
-
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "複製"
@@ -271,10 +261,6 @@ msgstr "複製"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "%s ファイルを複製"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "ここには何もありません"
 
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
@@ -364,10 +350,6 @@ msgstr "+ 新規プロジェクト"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "新規プロジェクト"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-msg"
-msgstr "Penpotに関する更新情報を受け取る。"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"
@@ -529,10 +511,6 @@ msgstr "OK"
 msgid "ds.confirm-title"
 msgstr "本当に実行しますか？"
 
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "ds.updated-at"
-msgstr "%s 更新しました"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "認証プロバイダが設定されていません。"
@@ -570,10 +548,6 @@ msgstr "«%s» はスパムとして報告されたか、または恒久的に�
 msgid "errors.generic"
 msgstr "エラーが発生しました。"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.google-auth-not-enabled"
-msgstr "Googleでのログインは無効になっています"
-
 #: src/app/main/ui/components/color_input.cljs
 msgid "errors.invalid-color"
 msgstr "無効な色"
@@ -589,9 +563,6 @@ msgstr "この招待はキャンセルされたか、失効しています。"
 msgid "errors.ldap-disabled"
 msgstr "LDAP認証は無効になっています。"
 
-msgid "errors.media-format-unsupported"
-msgstr "画像フォーマットがサポートされていません(svg,jpg,pngのみ対応しています)。"
-
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
 msgstr "画像が大きすぎます。5MB以下にしてください。"
@@ -604,9 +575,6 @@ msgstr "画像の内容と拡張子が一致しません。"
 msgid "errors.media-type-not-allowed"
 msgstr "無効な画像です。"
 
-msgid "errors.network"
-msgstr "サーバーに接続できません。"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "パスワードは8文字以上である必要があります"
@@ -617,9 +585,6 @@ msgstr "新規登録は無効化されています。"
 
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "オーナーはチームを脱退できません。オーナーロールを外してください。"
-
-msgid "errors.terms-privacy-agreement-invalid"
-msgstr "利用規約とプライバシーポリシーに同意する必要があります。"
 
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
@@ -636,10 +601,6 @@ msgstr "ユーザー名かパスワードが正しくありません。"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "以前のパスワードが正しくありません"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-start"
-msgstr "Chatに参加"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.chat-subtitle"
@@ -774,10 +735,6 @@ msgstr "マスク"
 msgid "label.shortcuts"
 msgstr "ショートカット"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.about-penpot"
-msgstr "Penpotについて"
-
 msgid "labels.add-custom-font"
 msgstr "カスタムフォントを追加"
 
@@ -796,9 +753,6 @@ msgstr "コミュニティ"
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "パスワードを確認"
-
-msgid "labels.content"
-msgstr "コンテンツ"
 
 msgid "labels.continue"
 msgstr "続ける"
@@ -821,9 +775,6 @@ msgstr "カスタムフォント"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "ダッシュボード"
-
-msgid "labels.default"
-msgstr "デフォルト"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
@@ -855,10 +806,6 @@ msgstr "ファイルを編集"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "エディタ"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.email"
-msgstr "メールアドレス"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.expired-invitation"
@@ -899,9 +846,6 @@ msgstr "ヘルプセンター"
 msgid "labels.hide-resolved-comments"
 msgstr "解決済みのコメントを非表示"
 
-msgid "labels.icons"
-msgstr "アイコン"
-
 msgid "labels.images"
 msgstr "画像"
 
@@ -921,15 +865,9 @@ msgstr "言語"
 msgid "labels.libraries-and-templates"
 msgstr "ライブラリ&テンプレート"
 
-msgid "labels.link"
-msgstr "リンク"
-
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "ログアウト"
-
-msgid "labels.manage-fonts"
-msgstr "フォントを管理"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
@@ -939,16 +877,9 @@ msgstr "メンバー"
 msgid "labels.members"
 msgstr "メンバー"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "名前"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.new-password"
 msgstr "新しいパスワード"
-
-msgid "labels.next"
-msgstr "次へ"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
@@ -969,10 +900,6 @@ msgstr "あなた専用"
 msgid "labels.or"
 msgstr "または"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "権限"
-
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
 msgstr "プロフィール"
@@ -980,9 +907,6 @@ msgstr "プロフィール"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "プロジェクト"
-
-msgid "labels.recent"
-msgstr "最近"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.release-notes"

@@ -87,10 +87,6 @@ msgstr "OpenID"
 msgid "auth.new-password"
 msgstr "یک رمزعبور جدید تایپ کنید"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "من موافقت می‌کنم که در لیست پستی Penpot مشترک شوم."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "توکن بازیابی نامعتبر است."
@@ -194,9 +190,6 @@ msgstr "دریافت لینک"
 msgid "common.share-link.link-copied-success"
 msgstr "لینک با موفقیت کپی شد"
 
-msgid "common.share-link.link-deleted-success"
-msgstr "لینک با موفقیت حذف شد"
-
 msgid "common.share-link.manage-ops"
 msgstr "مدیریت مجوزها"
 
@@ -299,9 +292,6 @@ msgstr "دانلود فایل پنپات (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "دانلود فایل استاندارد (.svg + .json)"
 
-msgid "dashboard.draft-title"
-msgstr "پیش‌نویس"
-
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "تکثیر"
@@ -309,10 +299,6 @@ msgstr "تکثیر"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "فایل‌های %s را کپی کنید"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "شما هنوز هیچ فایلی در اینجا ندارید"
 
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
@@ -361,9 +347,6 @@ msgstr "هیچ عنصری با تنظیمات اکسپورت وجود ندارد
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
 msgstr "انتخاب اکسپورت"
-
-msgid "dashboard.export-single"
-msgstr "اکسپورت فایل پنپات"
 
 #, fuzzy
 msgid "dashboard.export-standard-multi"
@@ -535,12 +518,6 @@ msgstr "+ پروژه جدید"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "پروژه جدید"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-msg"
-msgstr ""
-"اخبار، به‌روزرسانی‌های محصول و توصیه‌های مربوط به Penpot را برای من ارسال "
-"کنید."
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"
@@ -729,11 +706,6 @@ msgstr "بله"
 msgid "ds.confirm-title"
 msgstr "مطمئنی؟"
 
-#: src/app/main/ui/dashboard/grid.cljs
-#, fuzzy
-msgid "ds.updated-at"
-msgstr "به‌روزشده: %s"
-
 #: src/app/main/ui/auth/login.cljs
 #, fuzzy
 msgid "errors.auth-provider-not-configured"
@@ -752,11 +724,6 @@ msgstr "فونت‌های %s بارگیری نشدند"
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "مرورگر شما نمی‌تواند این عملیات را انجام دهد"
-
-#: src/app/main/data/workspace/persistence.cljs
-#, fuzzy
-msgid "errors.components-v2"
-msgstr "این فایل قبلاً با فعال بودن Components V2 استفاده شده است."
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 #, fuzzy
@@ -779,10 +746,6 @@ msgstr "ایمیل تأیید باید مطابقت داشته باشد"
 msgid "errors.generic"
 msgstr "اشتباهی رخ داده است."
 
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.google-auth-not-enabled"
-msgstr "احراز هویت با گوگل در بک‌اند غیرفعال است"
-
 #: src/app/main/ui/components/color_input.cljs
 msgid "errors.invalid-color"
 msgstr "رنگ نامعتبر"
@@ -798,9 +761,6 @@ msgstr "این دعوت ممکن است لغو یا منقضی شده باشد."
 msgid "errors.ldap-disabled"
 msgstr "احراز هویت LDAP غیرفعال است."
 
-msgid "errors.media-format-unsupported"
-msgstr "فرمت تصویر پشتیبانی نمی‌شود (باید svg، jpg یا png باشد)."
-
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
 msgstr "تصویر برای درج خیلی بزرگ است."
@@ -812,9 +772,6 @@ msgstr "به نظر می‌رسد که محتوای تصویر با پسوند �
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
 msgstr "به نظر می‌رسد که این یک تصویر معتبر نیست."
-
-msgid "errors.network"
-msgstr "اتصال به سرور بک‌اند امکان‌پذیر نیست."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
@@ -842,9 +799,6 @@ msgstr "عضوی که می‌خواهید اختصاص دهید وجود ندا�
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "مالک نمی‌تواند تیم را ترک کند، شما باید نقش مالک را مجدداً اختصاص دهید."
 
-msgid "errors.terms-privacy-agreement-invalid"
-msgstr "شما باید شرایط خدمات و سیاست حفظ حریم‌خصوصی ما را بپذیرید."
-
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "یک خطای غیرمنتظره رخ داد."
@@ -860,10 +814,6 @@ msgstr "به نظر می‌رسد نام‌کاربری یا رمزعبور اش
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "رمزعبور قدیمی اشتباه است"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-start"
-msgstr "پیوستن به چت"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
@@ -916,17 +866,9 @@ msgstr "حساب پشتیبانی در توییتر"
 msgid "generic.error"
 msgstr "خطایی رخ داده است"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-decoration"
-msgstr "تزیین متن"
-
 #, fuzzy
 msgid "handoff.attributes.typography.text-transform.titlecase"
 msgstr "مورد عنوان"
-
-#, fuzzy
-msgid "history.alert-message"
-msgstr "شما در حال مشاهده نسخه %s هستید"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -997,16 +939,8 @@ msgid "inspect.attributes.shadow"
 msgstr "سایه"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.blur"
-msgstr "B"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.offset-x"
 msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1139,10 +1073,6 @@ msgstr "اطلاعات"
 msgid "label.shortcuts"
 msgstr "میانبرها"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.about-penpot"
-msgstr "درباره Penpot"
-
 msgid "labels.accept"
 msgstr "تایید"
 
@@ -1174,9 +1104,6 @@ msgstr ""
 msgid "labels.cancel"
 msgstr "لغو"
 
-msgid "labels.centered"
-msgstr "مرکز"
-
 msgid "labels.close"
 msgstr "بستن"
 
@@ -1191,9 +1118,6 @@ msgstr "انجمن"
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "تایید رمزعبور"
-
-msgid "labels.content"
-msgstr "محتوا"
 
 msgid "labels.continue"
 msgstr "ادامه"
@@ -1222,9 +1146,6 @@ msgstr "فونت‌های سفارشی"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "داشبورد"
-
-msgid "labels.default"
-msgstr "پیش‌فرض"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
@@ -1261,10 +1182,6 @@ msgstr "ویرایش فایل"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "ویرایشگر"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.email"
-msgstr "ایمیل"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.expired-invitation"
@@ -1315,9 +1232,6 @@ msgstr "مرکز کمک"
 msgid "labels.hide-resolved-comments"
 msgstr "پنهان کردن نظرات حل شده"
 
-msgid "labels.icons"
-msgstr "آیکون‌ها"
-
 msgid "labels.images"
 msgstr "تصاویر"
 
@@ -1347,18 +1261,12 @@ msgstr "زبان"
 msgid "labels.libraries-and-templates"
 msgstr "کتابخانه‌ها و قالب‌ها"
 
-msgid "labels.link"
-msgstr "لینک"
-
 msgid "labels.log-or-sign"
 msgstr "ورود یا ثبت نام"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "خروج"
-
-msgid "labels.manage-fonts"
-msgstr "مدیریت فونت‌ها"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
@@ -1368,16 +1276,9 @@ msgstr "عضو"
 msgid "labels.members"
 msgstr "اعضا"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "نام"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.new-password"
 msgstr "رمزعبور جدید"
-
-msgid "labels.next"
-msgstr "بعدی"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
@@ -1390,11 +1291,6 @@ msgstr "هیچ دعوتنامه‌ای وجود ندارد."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr "دکمه \"دعوت به تیم\" را فشار دهید تا اعضای بیشتری را به این تیم دعوت کنید."
-
-#: src/app/main/ui/static.cljs
-#, fuzzy
-msgid "labels.not-found.auth-info"
-msgstr "شما وارد شده‌اید به عنوان"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1445,10 +1341,6 @@ msgstr "کلمه‌عبور"
 msgid "labels.pending-invitation"
 msgstr "در انتظار"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "مجوزها"
-
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
 msgstr "پروفایل"
@@ -1456,9 +1348,6 @@ msgstr "پروفایل"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "پروژه‌ها"
-
-msgid "labels.recent"
-msgstr "اخیر"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.release-notes"
@@ -1537,15 +1426,8 @@ msgstr "نمایش لیست نظرات"
 msgid "labels.show-your-comments"
 msgstr "فقط نظرات خودتان را نشان دهید"
 
-#: src/app/main/ui/static.cljs
-msgid "labels.sign-out"
-msgstr "خروج"
-
 msgid "labels.skip"
 msgstr "رد"
-
-msgid "labels.start"
-msgstr "شروع"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1576,9 +1458,6 @@ msgstr "درحال بارگذاری…"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "بیننده"
-
-msgid "labels.workspace"
-msgstr "فضای‌کاری"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
@@ -1630,12 +1509,6 @@ msgstr "تغییر ایمیل"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
 msgstr "ایمیل خود را تغییر دهید"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.change-owner-and-leave-confirm.message"
-msgstr ""
-"شما مالک این تیم هستید. لطفاً قبل از ترک عضو دیگری را برای ارتقاء به مالک "
-"انتخاب کنید."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1748,21 +1621,10 @@ msgstr[0] "این فایل دارای کتابخانه‌هایی است که د
 msgstr[1] "این فایل دارای کتابخانه‌هایی است که در این فایل‌ها استفاده می‌شوند:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
-msgid "modals.delete-shared-confirm.scd-message-plural"
-msgid_plural "modals.delete-shared-confirm.scd-message-plural"
-msgstr[0] "این فایل‌ها کتابخانه‌هایی دارند که در این فایل استفاده می‌‮شوند:"
-msgstr[1] "این فایل‌ها کتابخانه هایی دارند که در این فایل‌ها استفاده می‌شوند:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "درحال حذف فایل"
 msgstr[1] "درحال حذف فایل‌ها"
-
-#: src/app/main/ui/delete_shared.cljs
-msgid "modals.delete-shared.title"
-msgstr "درحال حذف فایل"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"
@@ -1907,10 +1769,6 @@ msgstr "پس از نامگذاری تیم خود، می‌توانید افرا�
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-#, fuzzy
-msgid "onboarding.welcome.title"
-msgstr "به Penpot خوش آمدید"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
@@ -2129,16 +1987,8 @@ msgid "viewer.header.share.copy-link"
 msgstr "کپی کردن لینک"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.create-link"
-msgstr "ایجاد لینک"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.placeholder"
 msgstr "لینک اشتراک‌گذاری در اینجا ظاهر می‌شود"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.remove-link"
-msgstr "حذف لینک"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
@@ -2191,9 +2041,6 @@ msgstr "دارایی‌ها"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.box-filter-all"
 msgstr "تمام دارایی‌ها"
-
-msgid "workspace.assets.box-filter-graphics"
-msgstr "گرافیک"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
@@ -2364,14 +2211,8 @@ msgstr "به‌روزرسانی"
 msgid "workspace.libraries.updates"
 msgstr "به‌روزرسانی‌ها"
 
-msgid "workspace.library.libraries"
-msgstr "کتابخانه‌ها"
-
 msgid "workspace.options.blur-options.background-blur"
 msgstr "پس‌زمینه"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "لایه"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -2760,10 +2601,6 @@ msgstr "LTR"
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "RTL"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.options.text-options.google"
-msgstr "گوگل"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.grow-auto-height"
 msgstr "ارتفاع خودکار"
@@ -2792,10 +2629,6 @@ msgstr "حروف کوچک"
 msgid "workspace.options.text-options.none"
 msgstr "هیچ‌یک"
 
-#, fuzzy
-msgid "workspace.options.text-options.text-case"
-msgstr "کیس"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
 msgstr "متن"
@@ -2816,9 +2649,6 @@ msgstr "خط‌زیر"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"
 msgstr "حروف بزرگ"
-
-msgid "workspace.options.text-options.vertical-align"
-msgstr "تراز عمودی"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
