@@ -10,6 +10,13 @@
 - Handoff visual improvements [Taiga #3124](https://tree.taiga.io/project/penpot/us/3124)
 - Dynamic alignment only in sight [Github 1971](https://github.com/penpot/penpot/issues/1971)
 - Add some accessibility to shortcut panel [Taiga #4713](https://tree.taiga.io/project/penpot/issue/4713)
+- Second level boards treated as groups in terms of selection [Taiga #4269](https://tree.taiga.io/project/penpot/us/4269)
+- Performance improvements both for backend and frontend
+- Accessibility improvements for login area [Taiga #4353](https://tree.taiga.io/project/penpot/us/4353)
+- Outbound webhooks [Taiga #4577](https://tree.taiga.io/project/penpot/us/4577)
+- Add copy invitation link to the invitation options [Taiga #4213](https://tree.taiga.io/project/penpot/us/4213)
+- Dynamic alignment only in sight [Taiga #3537](https://tree.taiga.io/project/penpot/us/3537)
+- Improve naming of layers [Taiga #4036](https://tree.taiga.io/project/penpot/us/4036)
 
 ### :bug: Bugs fixed
 
@@ -50,6 +57,10 @@
 - Fix hidden layers inside groups become visible after the group visibility is changed[Taiga #4710](https://tree.taiga.io/project/penpot/issue/4710)
 - Fix format of HSLA color on viewer [Taiga #4393](https://tree.taiga.io/project/penpot/issue/4393)
 - Fix some typos [Taiga #4724](https://tree.taiga.io/project/penpot/issue/4724)
+
+### :heart: Community contributions by (Thank you!)
+
+- To @iprithvitharun: let's make UX Writing contributions in Open Source a trend!
 
 ## 1.16.2-beta
 
