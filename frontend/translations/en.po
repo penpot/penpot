@@ -418,6 +418,16 @@ msgstr ""
 "Service](https://penpot.app/terms.html). You also might want to read about "
 "[font licensing](https://www.typography.com/faq)."
 
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"We have detected a possible problem in your fonts "
+"related to vertical metrics for different operative systems. "
+"In order to check it you can use font vertical metrics services "
+"like [this one](https://vertical-metrics.netlify.app/). "
+"In addition, we recommend using [Transfonter](https://transfonter.org/) "
+"to generate webfonts and fix errors. "
+
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
 msgstr "Upload all"
