@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-27 15:18+0000\n"
-"Last-Translator: Dário <dariogomes@gmail.com>\n"
-"Language-Team: Portuguese (Portugal) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_PT/>\n"
+"PO-Revision-Date: 2022-12-28 23:47+0000\n"
+"Last-Translator: Fernando Krik <fernandokrik@hotmail.com>\n"
+"Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.15.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4521,3 +4521,52 @@ msgstr "Atualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clica para fechar o caminho"
+
+#, fuzzy
+msgid "errors.bad-font"
+msgstr "A fonte %s não pôde ser carregada"
+
+msgid "errors.bad-font-plural"
+msgstr "A fonte %s não pôde ser carregada"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Mostrar recursos no painel"
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Sua privacidade é importante para nós, saiba mais aqui "
+
+msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"Não pode deixar a equipa se não houver outro membro a promover a dono. Pode "
+"querer eliminar a equipa."
+
+msgid "errors.profile-blocked"
+msgstr "O perfil está bloqueado"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Subscreva a Penpot newsletter para ficar a par do progresso do "
+"desenvolvimento do produto e das novidades."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Envie-me notícias sobre o Penpot (postagens em blogs, tutoriais em vídeo, "
+"streamings...)."
+
+msgid "workspace.sidebar.expand"
+msgstr "Expandir barra lateral"
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Enviaremos apenas e-mails relevantes para você. Você pode cancelar a "
+"inscrição a qualquer momento através do link de cancelamento de inscrição em "
+"qualquer uma de nossas newsletter."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Envie-me atualizações do produto (novas funcionalidades, lançamentos, "
+"correções...)."
+
+msgid "workspace.sidebar.collapse"
+msgstr "Fechar barra lateral"
