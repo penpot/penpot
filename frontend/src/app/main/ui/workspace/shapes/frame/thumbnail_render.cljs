@@ -16,7 +16,6 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.frame :as frame]
    [app.util.dom :as dom]
-   [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -116,28 +115,30 @@
         (mf/use-callback
          (fn generate-thumbnail []
            (try
+             ;; When starting generating the canvas we mark it as not ready so its not send to back until
+             ;; we have time to update it
+             (let [canvas-node (mf/ref-val frame-canvas-ref)]
+               (dom/set-property! canvas-node "data-ready" "false"))
              (let [node @node-ref]
                (if (dom/has-children? node)
                  ;; The frame-content need to have children in order to generate the thumbnail
-                 (let [frame-html (dom/node->xml node)
-                       style-node (dom/query (dm/str "#frame-container-" (:id shape) " style"))
-                       style-str (or (-> style-node dom/node->xml) "")
+                 (let [style-node (dom/query (dm/str "#frame-container-" (:id shape) " style"))
 
                        {:keys [x y width height]} @shape-bb-ref
                        viewbox (dm/str x " " y " " width " " height)
 
-                       svg-node
-                       (-> (dom/make-node "http://www.w3.org/2000/svg" "svg")
-                           (dom/set-property! "version" "1.1")
-                           (dom/set-property! "viewBox" viewbox)
-                           (dom/set-property! "width" width)
-                           (dom/set-property! "height" height)
-                           (dom/set-property! "fill" "none")
-                           (obj/set! "innerHTML" (dm/str style-str frame-html)))
+                       ;; This is way faster than creating a node through the DOM API
+                       svg-data
+                       (dm/fmt "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"%\" width=\"%\" height=\"%\" fill=\"none\">% %</svg>"
+                               viewbox
+                               width
+                               height
+                               (if (some? style-node) (dom/node->xml style-node) "")
+                               (dom/node->xml node))
 
-                       img-src
-                       (-> svg-node dom/node->xml dom/svg->data-uri)]
+                       blob (js/Blob. #js [svg-data] #js {:type "image/svg+xml;charset=utf-8"})
 
+                       img-src (.createObjectURL js/URL blob)]
                    (reset! image-url img-src))
 
                  ;; Node not yet ready, we schedule a new generation
