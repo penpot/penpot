@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-01-24 14:27+0000\n"
 "Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
-"Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
-"eu/>\n"
+"Language-Team: Basque "
+"<https://hosted.weblate.org/projects/penpot/frontend/eu/>\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -726,6 +726,12 @@ msgstr "Saioa hasteko hornitzailea ez dago konfiguratuta."
 msgid "errors.auth.unable-to-login"
 msgstr "Badirudi ez zarela sartu edo zure saioa iraungi egin dela."
 
+msgid "errors.bad-font"
+msgstr "Ezin izan da %s letra-tipoa kargatu"
+
+msgid "errors.bad-font-plural"
+msgstr "Ezin izan dira %s letra-tipoak kargatu"
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Zure nabigatzaileak ezin du hori egin"
@@ -812,6 +818,9 @@ msgstr "Pasahitzaren egiaztapenak bat etorri behar du aurrekoarekin"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "Pasahitzak gutxienez 8 karaktere izan behar ditu"
+
+msgid "errors.profile-blocked"
+msgstr "Profila blokeatuta dago"
 
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
@@ -906,6 +915,9 @@ msgstr "Laguntzarako Twitter kontua"
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "Errore bat gertatu da"
+
+msgid "history.alert-message"
+msgstr "%s bertsioa ikusten ari zara"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -1120,9 +1132,6 @@ msgstr "Testua"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Informazioa"
-
-msgid "history.alert-message"
-msgstr "%s bertsioa ikusten ari zara"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -1977,6 +1986,30 @@ msgstr "Bideo tutorialak"
 msgid "onboarding-v2.before-start.title"
 msgstr "Hasi aurretik"
 
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Harpidetu Penpoten buletinera produktuaren garapenaren inguruko albisteak "
+"ezagutzeko."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Bidali Penpoti buruzko albisteak (blogeko artikuluak, bideo-tutorialak, "
+"zuzenekoak...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Zure pribatutasuna zaintzen dugu, hemen irakurri dezakezu gure "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Zuretzat garrantzitsuak diren mezuak bakarrik bidaliko dizkizugu. "
+"Harpidetza zuk nahi duzunean eten dezakezu buletinean dagoen esteka "
+"erabiliz."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Bidali produktuaren eguneraketak (ezaugarri berriak, bertsioak, "
+"konponketak, ...)."
+
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "Penpot Kode Irekikoa da eta Kaleidos eta komunitateak egindakoa da. "
@@ -2529,6 +2562,9 @@ msgstr "Erakutsi/ezkutatu kolore paleta"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Erakutsi/ezkutatu foko-modua"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Aktibatu/desaktibatu pantaila osoa"
+
 msgid "shortcuts.toggle-grid"
 msgstr "Erakutsi/ezkutatu sarea"
 
@@ -2564,9 +2600,6 @@ msgstr "Erakutsi/Ezkutatu elementua"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Erakutsi/Ezkutatu zoomaren estiloa"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Aktibatu/desaktibatu pantaila osoa"
 
 msgid "shortcuts.undo"
 msgstr "Desegin"
@@ -4248,6 +4281,10 @@ msgid "workspace.shape.menu.show"
 msgstr "Erakutsi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Ikusi baliabideen panelean"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
 msgstr "Erakutsi osagai nagusia"
 
@@ -4282,6 +4319,12 @@ msgstr "Eguneratu osagai nagusiak"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "Eguneratu osagai nagusia"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Itxi alboko barra"
+
+msgid "workspace.sidebar.expand"
+msgstr "Ireki alboko barra"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
@@ -4508,45 +4551,3 @@ msgstr "Eguneratu"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Egin klik bidea ixteko"
-
-msgid "errors.bad-font"
-msgstr "Ezin izan da %s letra-tipoa kargatu"
-
-msgid "errors.bad-font-plural"
-msgstr "Ezin izan dira %s letra-tipoak kargatu"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.show-in-assets"
-msgstr "Ikusi baliabideen panelean"
-
-msgid "workspace.sidebar.collapse"
-msgstr "Itxi alboko barra"
-
-msgid "workspace.sidebar.expand"
-msgstr "Ireki alboko barra"
-
-msgid "errors.profile-blocked"
-msgstr "Profila blokeatuta dago"
-
-msgid "onboarding-v2.newsletter.news"
-msgstr ""
-"Bidali Penpoti buruzko albisteak (blogeko artikuluak, bideo-tutorialak, "
-"zuzenekoak...)."
-
-msgid "onboarding-v2.newsletter.desc"
-msgstr ""
-"Harpidetu Penpoten buletinera produktuaren garapenaren inguruko albisteak "
-"ezagutzeko."
-
-msgid "onboarding-v2.newsletter.privacy1"
-msgstr "Zure pribatutasuna zaintzen dugu, hemen irakurri dezakezu gure "
-
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"Zuretzat garrantzitsuak diren mezuak bakarrik bidaliko dizkizugu. Harpidetza "
-"zuk nahi duzunean eten dezakezu buletinean dagoen esteka erabiliz."
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr ""
-"Bidali produktuaren eguneraketak (ezaugarri berriak, bertsioak, konponketak, "
-"...)."

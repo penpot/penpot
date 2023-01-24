@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-11-05 10:09+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
-"de/>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -957,6 +957,16 @@ msgstr "Twitter Support-Konto"
 msgid "generic.error"
 msgstr "Ein Fehler ist aufgetreten"
 
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Durchgezogen"
+
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "Schriftschnitt"
+
+msgid "history.alert-message"
+msgstr "Sie sehen Version %s"
+
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
 msgstr "Unschärfe"
@@ -1064,9 +1074,6 @@ msgstr "Mehrere"
 msgid "inspect.attributes.stroke.style.none"
 msgstr "Keine"
 
-msgid "handoff.attributes.stroke.style.solid"
-msgstr "Durchgezogen"
-
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke.width"
 msgstr "Breite"
@@ -1082,10 +1089,6 @@ msgstr "Schriftart"
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-size"
 msgstr "Schriftgröße"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-style"
-msgstr "Schriftschnitt"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.letter-spacing"
@@ -1168,9 +1171,6 @@ msgstr "Text"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Info"
-
-msgid "history.alert-message"
-msgstr "Sie sehen Version %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -1940,8 +1940,9 @@ msgstr "Als gemeinsam genutzte Bibliothek entfernen"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"Sobald Sie diese Datai aus den geteilten Bibliotheken entfernen, steht Ihnen "
-"die Bibliothek dieser Datei nicht mehr in anderen Dateien zur Verfügung."
+"Sobald Sie diese Datai aus den geteilten Bibliotheken entfernen, steht "
+"Ihnen die Bibliothek dieser Datei nicht mehr in anderen Dateien zur "
+"Verfügung."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2656,6 +2657,9 @@ msgstr "Farbpalette ein-/ausblenden"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Fokusmodus umschalten"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Vollbild aktivieren/deaktivieren"
+
 msgid "shortcuts.toggle-grid"
 msgstr "Raster ein-/ausblenden"
 
@@ -2691,9 +2695,6 @@ msgstr "Elemente ein-/ausblenden"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Zoom-Optionen umschalten"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Vollbild aktivieren/deaktivieren"
 
 msgid "shortcuts.undo"
 msgstr "Rückgängig"

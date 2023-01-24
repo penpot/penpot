@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-01-24 14:27+0000\n"
 "Last-Translator: Rubén <ruben@users.noreply.hosted.weblate.org>\n"
-"Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
-"ca/>\n"
+"Language-Team: Catalan "
+"<https://hosted.weblate.org/projects/penpot/frontend/ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -820,6 +820,9 @@ msgstr "La contrasenya de confirmació ha de coincidir"
 msgid "errors.password-too-short"
 msgstr "La contrasenya ha de tenir 8 caràcters com a mínim"
 
+msgid "errors.profile-blocked"
+msgstr "El perfil està bloquejat"
+
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr ""
@@ -918,6 +921,9 @@ msgstr "Compte de Twitter d'ajuda"
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "S'ha produït un error"
+
+msgid "history.alert-message"
+msgstr "Esteu veient la versió %s"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -1132,9 +1138,6 @@ msgstr "Text"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Informació"
-
-msgid "history.alert-message"
-msgstr "Esteu veient la versió %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -1777,6 +1780,10 @@ msgstr "Envia una invitació"
 msgid "modals.invite-member.emails"
 msgstr "Correus electrònics, separats per una coma"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "Convida membres a l'equip"
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
@@ -1908,6 +1915,12 @@ msgstr "El perfil s'ha desat correctament!"
 msgid "notifications.validation-email-sent"
 msgstr "S'ha enviat un correu electrònic de verificació a %s. Reviseu el correu!"
 
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Guia d'ús"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Us donem la benvinguda a Penpot!"
+
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Nom de l'equip"
 
@@ -2022,6 +2035,9 @@ msgstr ""
 
 msgid "onboarding.slide.3.title"
 msgstr "Una font compartida de veritat"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Crea un equip"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Aquí teniu algunes plantilles."
@@ -2406,6 +2422,9 @@ msgstr "Commuta paleta de colors"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Activa/desactiva el mode de concentració"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Activa/desactiva la pantalla completa"
+
 msgid "shortcuts.toggle-grid"
 msgstr "Mostra/Amaga la graella"
 
@@ -2441,9 +2460,6 @@ msgstr "Mostra/amaga l'element"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Commuta l'estil de zoom"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Activa/desactiva la pantalla completa"
 
 msgid "shortcuts.undo"
 msgstr "Desfés"
@@ -4339,19 +4355,3 @@ msgstr "Actualitza"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Feu clic per a tancar el camí"
-
-msgid "errors.profile-blocked"
-msgstr "El perfil està bloquejat"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.invite-team-member.title"
-msgstr "Convida membres a l'equip"
-
-msgid "onboarding-v2.welcome.title"
-msgstr "Us donem la benvinguda a Penpot!"
-
-msgid "onboarding.team-modal.create-team"
-msgstr "Crea un equip"
-
-msgid "onboarding-v2.before-start.desc2.title"
-msgstr "Guia d'ús"

@@ -908,6 +908,9 @@ msgstr "Account di supporto Twitter"
 msgid "generic.error"
 msgstr "Si è verificato un errore"
 
+msgid "history.alert-message"
+msgstr "Stai guardando la versione %s"
+
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
 msgstr "Sfumatura"
@@ -1116,9 +1119,6 @@ msgstr "Testo"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Informazione"
-
-msgid "history.alert-message"
-msgstr "Stai guardando la versione %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"

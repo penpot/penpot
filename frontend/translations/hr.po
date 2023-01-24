@@ -905,6 +905,9 @@ msgstr "Twitter korisnički račun za podršku"
 msgid "generic.error"
 msgstr "Došlo je do pogreške"
 
+msgid "history.alert-message"
+msgstr "Vidiš verziju %s"
+
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
 msgstr "Zamućenje"
@@ -1122,9 +1125,6 @@ msgstr "Tekst"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Informacija"
-
-msgid "history.alert-message"
-msgstr "Vidiš verziju %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -2548,6 +2548,9 @@ msgstr "Promijena palete boja"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Promijena fokus moda"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Promijeni cijeli zaslon"
+
 #, fuzzy
 msgid "shortcuts.toggle-grid"
 msgstr "Promijena \"grida\""
@@ -2587,9 +2590,6 @@ msgstr "Promijeni vidljivost"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Promijeni stil zooma"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Promijeni cijeli zaslon"
 
 #, fuzzy
 msgid "shortcuts.undo"

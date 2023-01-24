@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-12-28 23:47+0000\n"
 "Last-Translator: Fernando Krik <fernandokrik@hotmail.com>\n"
-"Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
-"penpot/frontend/pt_PT/>\n"
+"Language-Team: Portuguese (Portugal) "
+"<https://hosted.weblate.org/projects/penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -728,6 +728,13 @@ msgstr "Provedor de autenticação não configurado."
 msgid "errors.auth.unable-to-login"
 msgstr "Parece que não estás autenticado ou a sessão expirou."
 
+#, fuzzy
+msgid "errors.bad-font"
+msgstr "A fonte %s não pôde ser carregada"
+
+msgid "errors.bad-font-plural"
+msgstr "A fonte %s não pôde ser carregada"
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "O teu browser não pode fazer esta operação"
@@ -812,6 +819,9 @@ msgstr "A palavra-passe de confirmação tem de corresponder"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "A palavra-passe deverá conter no mínimo 8 caracteres"
+
+msgid "errors.profile-blocked"
+msgstr "O perfil está bloqueado"
 
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
@@ -909,6 +919,9 @@ msgstr "Conta de suporte no Twitter"
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "Ocorreu um erro"
+
+msgid "history.alert-message"
+msgstr "Estás a visualizar a versão %s"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -1123,9 +1136,6 @@ msgstr "Texto"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Informação"
-
-msgid "history.alert-message"
-msgstr "Estás a visualizar a versão %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -1801,6 +1811,11 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Tens a certeza de que pretendes sair da equipa %s?"
 
+msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"Não pode deixar a equipa se não houver outro membro a promover a dono. Pode "
+"querer eliminar a equipa."
+
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
@@ -1973,6 +1988,30 @@ msgstr "Tutoriais em vídeo"
 
 msgid "onboarding-v2.before-start.title"
 msgstr "Antes de começares"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Subscreva a Penpot newsletter para ficar a par do progresso do "
+"desenvolvimento do produto e das novidades."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Envie-me notícias sobre o Penpot (postagens em blogs, tutoriais em vídeo, "
+"streamings...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Sua privacidade é importante para nós, saiba mais aqui "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Enviaremos apenas e-mails relevantes para você. Você pode cancelar a "
+"inscrição a qualquer momento através do link de cancelamento de inscrição "
+"em qualquer uma de nossas newsletter."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Envie-me atualizações do produto (novas funcionalidades, lançamentos, "
+"correções...)."
 
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
@@ -2528,6 +2567,9 @@ msgstr "Alternar selector de cores"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Alternar modo de foco"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Alternar tela cheia"
+
 msgid "shortcuts.toggle-grid"
 msgstr "Mostrar/ocultar grade"
 
@@ -2563,9 +2605,6 @@ msgstr "Alternar visibilidade"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Alternar estilo de zoom"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Alternar tela cheia"
 
 msgid "shortcuts.undo"
 msgstr "Desfazer"
@@ -4261,6 +4300,10 @@ msgid "workspace.shape.menu.show"
 msgstr "Mostrar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Mostrar recursos no painel"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
 msgstr "Mostrar componente principal"
 
@@ -4295,6 +4338,12 @@ msgstr "Atualizar componentes principais"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "Atualizar componente principal"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Fechar barra lateral"
+
+msgid "workspace.sidebar.expand"
+msgstr "Expandir barra lateral"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
@@ -4521,52 +4570,3 @@ msgstr "Atualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clica para fechar o caminho"
-
-#, fuzzy
-msgid "errors.bad-font"
-msgstr "A fonte %s não pôde ser carregada"
-
-msgid "errors.bad-font-plural"
-msgstr "A fonte %s não pôde ser carregada"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.show-in-assets"
-msgstr "Mostrar recursos no painel"
-
-msgid "onboarding-v2.newsletter.privacy1"
-msgstr "Sua privacidade é importante para nós, saiba mais aqui "
-
-msgid "modals.leave-and-reassign.forbidden"
-msgstr ""
-"Não pode deixar a equipa se não houver outro membro a promover a dono. Pode "
-"querer eliminar a equipa."
-
-msgid "errors.profile-blocked"
-msgstr "O perfil está bloqueado"
-
-msgid "onboarding-v2.newsletter.desc"
-msgstr ""
-"Subscreva a Penpot newsletter para ficar a par do progresso do "
-"desenvolvimento do produto e das novidades."
-
-msgid "onboarding-v2.newsletter.news"
-msgstr ""
-"Envie-me notícias sobre o Penpot (postagens em blogs, tutoriais em vídeo, "
-"streamings...)."
-
-msgid "workspace.sidebar.expand"
-msgstr "Expandir barra lateral"
-
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"Enviaremos apenas e-mails relevantes para você. Você pode cancelar a "
-"inscrição a qualquer momento através do link de cancelamento de inscrição em "
-"qualquer uma de nossas newsletter."
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr ""
-"Envie-me atualizações do produto (novas funcionalidades, lançamentos, "
-"correções...)."
-
-msgid "workspace.sidebar.collapse"
-msgstr "Fechar barra lateral"

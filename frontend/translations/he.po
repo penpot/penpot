@@ -914,6 +914,9 @@ msgstr "חשבון תמיכה בטוויטר"
 msgid "generic.error"
 msgstr "אירעה שגיאה"
 
+msgid "history.alert-message"
+msgstr "הגרסה שמוצגת היא %s"
+
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
 msgstr "טשטוש"
@@ -1125,9 +1128,6 @@ msgstr "טקסט"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "מידע"
-
-msgid "history.alert-message"
-msgstr "הגרסה שמוצגת היא %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -2611,6 +2611,9 @@ msgstr "החלפת מצב לוח צבעים"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "החלפת מצב מיקוד"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "החלפת מילוי מסך"
+
 msgid "shortcuts.toggle-grid"
 msgstr "הצגת/הסתרת רשת"
 
@@ -2646,9 +2649,6 @@ msgstr "החלפת מצב הצגה"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "החלפת סגנון תקריב"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "החלפת מילוי מסך"
 
 msgid "shortcuts.undo"
 msgstr "ביטול"

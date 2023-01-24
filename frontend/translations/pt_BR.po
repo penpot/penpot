@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2022-12-27 22:22+0000\n"
 "Last-Translator: Fernando Krik <fernandokrik@hotmail.com>\n"
-"Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
-"penpot/frontend/pt_BR/>\n"
+"Language-Team: Portuguese (Brazil) "
+"<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -726,6 +726,12 @@ msgstr "Provedor de autenticação não configurado."
 msgid "errors.auth.unable-to-login"
 msgstr "Parece que você não está autenticado ou a sessão expirou."
 
+msgid "errors.bad-font"
+msgstr "A fonte %s não pode ser carregada"
+
+msgid "errors.bad-font-plural"
+msgstr "As fontes %s não puderam ser carregadas"
+
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Seu navegador não pode fazer esta operação"
@@ -810,6 +816,9 @@ msgstr "A senha de confirmação deve ser a mesma"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-too-short"
 msgstr "A senha deve ter pelo menos 8 caracteres"
+
+msgid "errors.profile-blocked"
+msgstr "O perfil está bloqueado"
 
 #: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
@@ -907,6 +916,9 @@ msgstr "Conta de suporte no Twitter"
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "Um erro ocorreu"
+
+msgid "history.alert-message"
+msgstr "Você está vendo a versão %s"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -1121,9 +1133,6 @@ msgstr "Texto"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Informação"
-
-msgid "history.alert-message"
-msgstr "Você está vendo a versão %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -1976,6 +1985,30 @@ msgstr "Tutoriais em vídeo"
 msgid "onboarding-v2.before-start.title"
 msgstr "Antes de começar"
 
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Assine a newsletter da Penpot para se manter atualizado com o "
+"desenvolvimento, progresso e novidades."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Envie-me notícias sobre o Penpot (postagens do blog, tutoriais em vídeo, "
+"streamings...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Sua privacidade é importante para nós, saiba mais aqui "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Enviaremos apenas e-mails relevantes para você. Pode cancelar a inscrição a "
+"qualquer momento através do link de cancelamento em qualquer uma das "
+"newsletters."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Envie-me atualizações do produto (novos recursos, lançamentos, "
+"correções...)."
+
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "O Penpot é Open Source e é feito pela Kaleidos e também pela comunidade, "
@@ -2533,6 +2566,9 @@ msgstr "Alternar paleta de cor"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Alternar modo de foco"
 
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Alternar tela cheia"
+
 msgid "shortcuts.toggle-grid"
 msgstr "Mostrar/ocultar grade"
 
@@ -2568,9 +2604,6 @@ msgstr "Alternar visibilidade"
 
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Alternar estilo de zoom"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Alternar tela cheia"
 
 msgid "shortcuts.undo"
 msgstr "Desfazer"
@@ -4262,6 +4295,10 @@ msgid "workspace.shape.menu.show"
 msgstr "Mostrar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Mostrar no painel de ativos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
 msgstr "Mostrar componente principal"
 
@@ -4296,6 +4333,12 @@ msgstr "Atualizar componentes principais"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "Atualizar o componente principal"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Recolher a barra lateral"
+
+msgid "workspace.sidebar.expand"
+msgstr "Expandir a barra lateral"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.sidebar.history"
@@ -4522,45 +4565,3 @@ msgstr "Atualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clique para fechar o caminho"
-
-msgid "errors.bad-font-plural"
-msgstr "As fontes %s não puderam ser carregadas"
-
-msgid "errors.profile-blocked"
-msgstr "O perfil está bloqueado"
-
-msgid "errors.bad-font"
-msgstr "A fonte %s não pode ser carregada"
-
-msgid "onboarding-v2.newsletter.desc"
-msgstr ""
-"Assine a newsletter da Penpot para se manter atualizado com o "
-"desenvolvimento, progresso e novidades."
-
-msgid "onboarding-v2.newsletter.news"
-msgstr ""
-"Envie-me notícias sobre o Penpot (postagens do blog, tutoriais em vídeo, "
-"streamings...)."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.show-in-assets"
-msgstr "Mostrar no painel de ativos"
-
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"Enviaremos apenas e-mails relevantes para você. Pode cancelar a inscrição a "
-"qualquer momento através do link de cancelamento em qualquer uma das "
-"newsletters."
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr ""
-"Envie-me atualizações do produto (novos recursos, lançamentos, correções...)."
-
-msgid "workspace.sidebar.collapse"
-msgstr "Recolher a barra lateral"
-
-msgid "workspace.sidebar.expand"
-msgstr "Expandir a barra lateral"
-
-msgid "onboarding-v2.newsletter.privacy1"
-msgstr "Sua privacidade é importante para nós, saiba mais aqui "

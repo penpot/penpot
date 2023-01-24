@@ -734,6 +734,10 @@ msgstr "Шрифты %s не могут быть загружены"
 msgid "errors.clipboard-not-implemented"
 msgstr "Ваш браузер не поддерживает эту операцию"
 
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.components-v2"
+msgstr "Этот файл уже использовался с включенными компонентами версии 2."
+
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
 msgstr "Такая эл. почта уже используется"
@@ -901,6 +905,9 @@ msgstr "Аккаунт поддержки в Twitter"
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "Произошла ошибка"
+
+msgid "history.alert-message"
+msgstr "Ваша версия %s"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -1115,9 +1122,6 @@ msgstr "Текст"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Информация"
-
-msgid "history.alert-message"
-msgstr "Ваша версия %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -1790,6 +1794,47 @@ msgstr ""
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Вы уверены, что хотите покинуть команду %s?"
 
+msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"Вы не можете покинуть команду, если нет другого участника, которого можно "
+"было бы назначить владельцем. Возможно, вы захотите удалить команду."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.hint1"
+msgstr ""
+"Вы владелец этой команды. Прежде чем покинуть её, выберите другого "
+"участника, чтобы сделать его владельцем."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.promote-and-leave"
+msgstr "Назначить и покинуть"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.select-member-to-promote"
+msgstr "Выберите участника для назначения"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.accept"
+msgstr "Покинуть команду"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.message"
+msgstr "Вы уверены, что хотите покинуть эту команду?"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.title"
+msgstr "Выход из команды"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.message"
+msgstr ""
+"Вы текущий владелец этой команды. Вы уверены, что хотите сделать %s новым "
+"владельцем команды?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.title"
+msgstr "Новый владелец команды"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
 msgstr "Удалить из общих библиотек"
@@ -1801,6 +1846,16 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr ""
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Снять с публикации"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint"
+msgid_plural "modals.unpublish-shared-confirm.hint"
+msgstr[0] "Если вы отмените её публикацию, активы в ней станут библиотекой этого файла."
+msgstr[1] "Если вы отмените её публикацию, активы в ней станут библиотекой этих файлов."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1825,6 +1880,10 @@ msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
 "Вы собираетесь обновить компоненты в общей библиотеке. Это может повлиять "
 "на другие файлы, которые её используют."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Обновить компоненты в общей библиотеке"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
@@ -3152,112 +3211,3 @@ msgstr "Обновить"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Нажмите для замыкания контура"
-
-msgid "onboarding-v2.welcome.title"
-msgstr "Добро пожаловать в Penpot!"
-
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Создать команду позже"
-
-msgid "onboarding.choice.team-up.invite-members-info"
-msgstr ""
-"Никого не забудьте. Разработчики, дизайнеры, менеджеры... разнообразие "
-"развивает :)"
-
-msgid "onboarding.team-modal.create-team"
-msgstr "Создать команду"
-
-msgid "onboarding.choice.title"
-msgstr "Добро пожаловать в Penpot"
-
-msgid "onboarding.contrib.alt"
-msgstr "Открытый исходный код"
-
-msgid "errors.bad-font"
-msgstr "Шрифт %s не может быть загружен"
-
-msgid "onboarding-v2.newsletter.updates"
-msgstr ""
-"Присылать мне обновления продукта (новые функции, выпуски, исправления...)."
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.auth-provider-not-configured"
-msgstr "Провайдер аутентификации не настроен."
-
-msgid "onboarding.choice.team-up.create-team-desc"
-msgstr ""
-"После добавления названия команды, вы сможете пригласить людей "
-"присоединиться."
-
-msgid "errors.email-spam-or-permanent-bounces"
-msgstr "Эл. почта «%s» была отмечена как спам или постоянно недоступна."
-
-msgid "errors.bad-font-plural"
-msgstr "Шрифты %s не могут быть загружены"
-
-msgid "errors.profile-blocked"
-msgstr "Профиль заблокирован"
-
-msgid "onboarding-v2.welcome.desc3.title"
-msgstr "Руководство по участию в проекте"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-confirm.title"
-msgstr "Выход из команды"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.promote-owner-confirm.title"
-msgstr "Новый владелец команды"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-confirm.message"
-msgstr "Вы уверены, что хотите покинуть эту команду?"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-confirm.accept"
-msgstr "Покинуть команду"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "modals.update-remote-component-in-bulk.message"
-msgstr "Обновить компоненты в общей библиотеке"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.promote-and-leave"
-msgstr "Назначить и покинуть"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.select-member-to-promote"
-msgstr "Выберите участника для назначения"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Снять с публикации"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Если вы отмените её публикацию, активы в ней станут библиотекой этого файла."
-msgstr[1] ""
-"Если вы отмените её публикацию, активы в ней станут библиотекой этих файлов."
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "modals.promote-owner-confirm.message"
-msgstr ""
-"Вы текущий владелец этой команды. Вы уверены, что хотите сделать %s новым "
-"владельцем команды?"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint1"
-msgstr ""
-"Вы владелец этой команды. Прежде чем покинуть её, выберите другого "
-"участника, чтобы сделать его владельцем."
-
-#: src/app/main/data/workspace/persistence.cljs
-msgid "errors.components-v2"
-msgstr "Этот файл уже использовался с включенными компонентами версии 2."
-
-msgid "modals.leave-and-reassign.forbidden"
-msgstr ""
-"Вы не можете покинуть команду, если нет другого участника, которого можно "
-"было бы назначить владельцем. Возможно, вы захотите удалить команду."

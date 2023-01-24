@@ -500,6 +500,9 @@ msgstr "Email"
 msgid "generic.error"
 msgstr "Παρουσιάστηκε σφάλμα"
 
+msgid "history.alert-message"
+msgstr "Βλέπετε την έκδοση %s"
+
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
 msgstr "Θολούρα"
@@ -707,9 +710,6 @@ msgstr "Κείμενο"
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.info"
 msgstr "Πληροφορίες"
-
-msgid "history.alert-message"
-msgstr "Βλέπετε την έκδοση %s"
 
 msgid "labels.accept"
 msgstr "Αποδέχομαι"
