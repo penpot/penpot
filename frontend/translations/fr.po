@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-09-20 13:46+0000\n"
-"Last-Translator: Swapnil C <swapnilchitnis360@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2023-01-24 14:27+0000\n"
+"Last-Translator: GradelerM <marie.gradeler@gmail.com>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 4.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -102,7 +102,8 @@ msgstr "Mot de passe changé avec succès"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr "Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer."
+msgstr ""
+"Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
@@ -1194,8 +1195,8 @@ msgstr "Retour"
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
-"Il semble que vous deviez attendre un peu et réessayer ; nous effectuons "
-"une petite maintenance de nos serveurs."
+"Il semble que vous deviez attendre un peu et réessayer ; nous effectuons une "
+"petite maintenance de nos serveurs."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.bad-gateway.main-message"
@@ -1646,9 +1647,9 @@ msgstr "Ajouter comme Bibliothèque Partagée"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"Une fois ajoutées en tant que Bibliothèque Partagée, les ressources de "
-"cette bibliothèque de fichiers seront disponibles pour être utilisées parmi "
-"le reste de vos fichiers."
+"Une fois ajoutées en tant que Bibliothèque Partagée, les ressources de cette "
+"bibliothèque de fichiers seront disponibles pour être utilisées parmi le "
+"reste de vos fichiers."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2018,9 +2019,6 @@ msgstr "Avant de démarrer"
 
 msgid "onboarding-v2.welcome.title"
 msgstr "Bienvenu sur Penpot !"
-
-msgid "onboarding.choice.team-up"
-msgstr "Faites équipe"
 
 msgid "onboarding.choice.team-up.create-team"
 msgstr "Le nom de votre équipe"
@@ -4129,3 +4127,254 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Sachez qu’il existe de nombreuses ressources disponibles pour vous aider à "
+"démarrer avec Penpot, comme le Guide de l’utilisateur et notre chaîne "
+"Youtube."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message"
+msgid_plural "modals.unpublish-shared-confirm.scd-message"
+msgstr[0] "Utilisé dans le fichier suivant :"
+msgstr[1] "Utilisé dans les fichiers suivants :"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Retirer la bibliothèque"
+msgstr[1] "Retirer les bibliothèques"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Abonnez-vous à la newsletter de Penpot pour être tenu informé du "
+"développement du produit et de notre actualité."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Envoyez-moi des nouvelles de Penpot (articles de blog, tutoriels vidéo, "
+"streamings...)."
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Nous ne vous enverrons que des e-mails pertinents. Vous pouvez vous "
+"désabonner à tout moment via votre profil d’utilisateur ou via le lien de "
+"désabonnement dans l’une de nos newsletters."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Envoyez-moi les mises à jour du produit (nouvelles fonctionnalités, "
+"versions, corrections...)."
+
+msgid "errors.bad-font"
+msgstr "La police %s n'a pas pu être chargée"
+
+msgid "errors.bad-font-plural"
+msgstr "Les polices %s n'ont pas pu être chargées"
+
+msgid "errors.profile-blocked"
+msgstr "Le profil est bloqué"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Annuler la publication"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr ""
+"Vous pouvez regarder nos tutoriels et les tutoriels réalisés par notre "
+"communauté."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Nous nous soucions de la vie privée, vous pouvez lire ici notre "
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot est un logiciel Open Source créé par Kaleidos et la communauté, où de "
+"nombreuses personnes s’entraident déjà. Tout le monde peut collaborer en :"
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Masquer la grille de pixels"
+
+msgid "viewer.header.comments-section"
+msgstr "Commentaires (%s)"
+
+msgid "viewer.header.interactions-section"
+msgstr "Interactions (%s)"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Guide du contributeur"
+
+#, fuzzy
+msgid "shortcut-subsection.panels"
+msgstr "Panneaux"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Une équipe vous permet de collaborer avec d'autres utilisateurs de Penpot "
+"travaillant sur les mêmes fichiers et projets."
+
+msgid "shortcuts.zoom-selected"
+msgstr "Zoomer sur la sélection"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Invitations - %s - Penpot"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Désactiver l’alignement sur les guides"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "Aligner sur les guides"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Préférences"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Déplacer vers le bas"
+
+msgid "shortcuts.toggle-snap-grid"
+msgstr "Aligner sur la grille"
+
+msgid "shortcuts.toggle-snap-guide"
+msgstr "Aligner sur les guides"
+
+msgid "shortcuts.toogle-fullscreen"
+msgstr "Activer/désactiver le plein écran"
+
+msgid "shortcuts.undo"
+msgstr "Annuler"
+
+msgid "shortcuts.v-distribute"
+msgstr "Distribuer verticalement"
+
+msgid "viewer.breaking-change.description"
+msgstr ""
+"Ce lien de partage n'est plus valide. Créez-en un nouveau ou demandez-en un "
+"nouveau au propriétaire."
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Désactiver l’accrochage au pixel"
+
+msgid "workspace.focus.selection"
+msgstr "Sélection"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Activer l’alignement au pixel"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Afficher la grille de pixels"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Verrou sélectionné"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Afficher/masquer la palette de texte"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Afficher/masquer l’élément"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Alterner le style de zoom"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Édition multijoueur"
+
+msgid "workspace.assets.local-library"
+msgstr "Bibliothèque locale"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "Aide et information"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "Vue"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Un espace public pour apprendre, partager et échanger autour de Penpot, de "
+"son présent et de son avenir avec l'ensemble de la communauté et l'équipe "
+"centrale de Penpot."
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Participation à la Communauté"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Vous y trouverez comment collaborer avec des traductions, des demandes de "
+"fonctionnalités (feature requests), des contributions au code, la recherche "
+"de bugs…"
+
+msgid "onboarding.choice.team-up.create-later"
+msgstr "Créer une équipe plus tard"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"N'oubliez pas d'inclure tout le monde. Développeurs, concepteurs, "
+"gestionnaires... la diversité fait la force :)"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Inviter avec le rôle :"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Gestion des rôles"
+
+#, fuzzy
+msgid "shortcuts.make-corner"
+msgstr "Créer un angle"
+
+#, fuzzy
+msgid "shortcuts.toggle-scale-text"
+msgstr "Mettre le texte à l’échelle"
+
+msgid "viewer.header.handoff-section"
+msgstr "Transfert(%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Afficher la palette des polices"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Réinitialiser"
+
+msgid "workspace.focus.focus-on"
+msgstr "Focus activé"
+
+msgid "workspace.focus.focus-off"
+msgstr "Focus désactivé"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Masquer le nom des plans de travail"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "Masquer la palette de polices"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Afficher le nom des plans de travail"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "Zoomer sur la sélection"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Mode focus"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "Remplir l’écran"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "Zoomer pour montrer tous les éléments"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Ajuster à l’écran"

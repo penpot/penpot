@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-25 12:22+0000\n"
-"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"PO-Revision-Date: 2022-11-05 10:09+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -18,7 +18,7 @@ msgstr "Sie haben schon ein Konto?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
 msgstr ""
-"Überprüfen Sie Ihre E-Mail, klicken Sie auf den Link um sich zu "
+"Überprüfen Sie Ihre E-Mail und klicken Sie auf den Link, um sich zu "
 "verifizieren und Penpot zu nutzen."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -31,7 +31,7 @@ msgstr "Ein Demo-Konto erstellen"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-profile"
-msgstr "Einfach testen?"
+msgstr "Wollen Sie es einfach ausprobieren?"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.demo-warning"
@@ -54,7 +54,7 @@ msgstr "Vollständiger Name"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
-msgstr "Hier einloggen"
+msgstr "Hier anmelden"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -1064,8 +1064,8 @@ msgstr "Mehrere"
 msgid "inspect.attributes.stroke.style.none"
 msgstr "Keine"
 
-msgid "inspect.attributes.stroke.style.solid"
-msgstr "Solid"
+msgid "handoff.attributes.stroke.style.solid"
+msgstr "Durchgezogen"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke.width"
@@ -1083,9 +1083,9 @@ msgstr "Schriftart"
 msgid "inspect.attributes.typography.font-size"
 msgstr "Schriftgröße"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-style"
-msgstr "Schriftstil"
+#: src/app/main/ui/handoff/attributes/text.cljs
+msgid "handoff.attributes.typography.font-style"
+msgstr "Schriftschnitt"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.letter-spacing"
@@ -1656,8 +1656,8 @@ msgstr "Hinzufügen als gemeinsam genutzte Bibliothek"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
-"Sobald es als gemeinsam genutzte Bibliothek hinzugefügt wurde, können die "
-"Assets dieser Dateibibliothek von den anderen Dateien verwendet werden."
+"Sobald diese Datei als geteilte Bibliothek verwendet wird, können Sie die "
+"Assets dieser Dateibibliothek in anderen Dateien verwenden."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1940,8 +1940,8 @@ msgstr "Als gemeinsam genutzte Bibliothek entfernen"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"Nach dem Entfernen als gemeinsam genutzte Bibliothek steht die Bibliothek "
-"dieser Datei nicht mehr für den Rest Ihrer Dateien zur Verfügung."
+"Sobald Sie diese Datai aus den geteilten Bibliotheken entfernen, steht Ihnen "
+"die Bibliothek dieser Datei nicht mehr in anderen Dateien zur Verfügung."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2016,14 +2016,14 @@ msgstr "Abbrechen"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
-"Sie sind dabei, eine Komponente in einer gemeinsam genutzten Bibliothek zu "
-"aktualisieren. Dies kann sich auf andere Dateien auswirken, die es "
-"verwenden."
+"Sie sind dabei, eine Komponente in einer geteilten Bibliothek zu "
+"aktualisieren. Dies kann sich auf andere Dateien auswirken, die diese "
+"Komponente verwenden."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
-msgstr "Aktualisieren einer Komponente in einer gemeinsam genutzten Bibliothek"
+msgstr "Komponente aus einer geteilten Bibliothek aktualiseren"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
@@ -2267,9 +2267,6 @@ msgstr "Unbegrenzte Anzahl von Mitgliedern"
 
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% kostenlos!"
-
-msgid "onboarding.team.start.title"
-msgstr "Mit der Gestaltung beginnen"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Hier sind einige Vorlagen."
@@ -2894,7 +2891,7 @@ msgstr "Farben"
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.components"
-msgstr "Komponente"
+msgstr "Komponenten"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group"
@@ -2973,7 +2970,7 @@ msgstr "GETEILT"
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
-msgstr "Typografien"
+msgstr "Textstile"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-id"
@@ -3277,15 +3274,15 @@ msgstr "GEMEINSAM GENUTZTE BIBLIOTHEKEN"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"
-msgstr "Mehrere Typografien"
+msgstr "Mehrere Textstile"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography-tooltip"
-msgstr "Verknüpfung aller Typografien aufheben"
+msgstr "Verknüpfung aller Textstile aufheben"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.typography"
-msgstr "%s Typografien"
+msgstr "%s Textstile"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
@@ -4127,7 +4124,7 @@ msgstr "Außen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke.solid"
-msgstr "Solid"
+msgstr "Durchgezogen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-bottom"
