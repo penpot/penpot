@@ -131,9 +131,7 @@
 
 (defn ^:export ^boolean debug?
   [option]
-  (if *assert*
-    (boolean (@*debug* option))
-    false))
+  (boolean (@*debug* option)))
 
 (defn ^:export toggle-debug [name] (let [option (keyword name)]
                                      (if (debug? option)
