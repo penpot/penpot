@@ -41,6 +41,33 @@
     (when-not (= :none (:stroke-style shape))
       (str/format "%spx %s %s" width style (uc/color->background color)))))
 
+(defn get-size
+  [type values]
+  (let [value (cond
+                (number? values) values
+                (string? values) values
+                (type values) (type values)
+                :else (type (:selrect values)))]
+
+    (if (= :width type)
+      (fmt/format-size :width value values)
+      (fmt/format-size :heigth value values))))
+
+(defn get-layout-orientation
+  [value]
+  (if (= :wrap value)
+    "wrap"
+    "nowrap"))
+
+(defn get-layout-direction
+  [value]
+  (case value
+    :row "row"
+    :reverse-row "row-reverse"
+    :column "column"
+    :reverse-column "column-reverse"
+    "row"))
+
 (def styles-data
   {:layout      {:props   [:width :height :x :y :radius :rx :r1]
                  :to-prop {:x "left"
@@ -49,9 +76,9 @@
                            :rx "border-radius"
                            :r1 "border-radius"}
                  :format  {:rotation #(str/fmt "rotate(%sdeg)" %)
-                           :r1 #(apply str/fmt "%spx, %spx, %spx, %spx" %)
-                           :width (partial fmt/format-size :width)
-                           :height (partial fmt/format-size :height)}
+                           :r1       #(apply str/fmt "%spx, %spx, %spx, %spx" %)
+                           :width    #(get-size :width %)
+                           :height   #(get-size :height %)}
                  :multi   {:r1 [:r1 :r2 :r3 :r4]}}
    :fill        {:props [:fill-color :fill-color-gradient]
                  :to-prop {:fill-color "background" :fill-color-gradient "background"}
@@ -66,8 +93,8 @@
                  :to-prop {:blur "filter"}
                  :format {:blur #(str/fmt "blur(%spx)" (:value %))}}
    :layout-flex {:props   [:layout
-                           :layout-align-items
                            :layout-flex-dir
+                           :layout-align-items
                            :layout-justify-content
                            :layout-gap
                            :layout-padding
@@ -80,10 +107,10 @@
                            :layout-gap "gap"
                            :layout-padding "padding"}
                  :format  {:layout name
-                           :layout-flex-dir name
+                           :layout-flex-dir get-layout-direction
                            :layout-align-items name
                            :layout-justify-content name
-                           :layout-wrap-type name
+                           :layout-wrap-type get-layout-orientation
                            :layout-gap format-gap
                            :layout-padding fmt/format-padding}}})
 
@@ -98,9 +125,9 @@
              :text-transform]
    :to-prop {:fill-color "color"}
    :format  {:font-family #(str "'" % "'")
-             :font-style #(str "'" % "'")
+             :font-style #(str %)
              :font-size #(str % "px")
-             :line-height #(str % "px")
+             :line-height #(str %)
              :letter-spacing #(str % "px")
              :text-decoration name
              :text-transform name
@@ -126,6 +153,25 @@
              :layout-item-min-w #(str % "px")
              :layout-item-align-self name}})
 
+(def layout-align-content
+  {:props   [:layout-align-content]
+   :to-prop {:layout-align-content "align-content"}
+   :format  {:layout-align-content name}})
+
+(defn get-specific-value
+  [values prop]
+  (let [result  (if (get values prop)
+                  (get values prop)
+                  (get (:selrect values) prop))
+        result (if (= :width prop)
+                 (get-size :width values)
+                 result)
+        result (if (= :height prop)
+                 (get-size :height values)
+                 result)]
+
+    result))
+
 (defn generate-css-props
   ([values properties]
    (generate-css-props values properties nil))
@@ -150,7 +196,7 @@
          get-value (fn [prop]
                      (if-let [props (prop multi)]
                        (map #(get values %) props)
-                       (get values prop)))
+                       (get-specific-value values prop)))
 
          null? (fn [value]
                  (if (coll? value)
@@ -178,20 +224,19 @@
         ;; it will come with a vector of flex-items if any.
         ;; If there are none it will continue as usual. 
         flex-items (:flex-items shape)
-        
         props      (->> styles-data vals (mapcat :props))
         to-prop    (->> styles-data vals (map :to-prop) (reduce merge))
         format     (->> styles-data vals (map :format) (reduce merge))
         multi      (->> styles-data vals (map :multi) (reduce merge))
-        props      (if (seq flex-items)
-                     (concat props (:props layout-flex-item-params))
-                     props)
-        to-prop    (if (seq flex-items)
-                     (merge to-prop (:to-prop layout-flex-item-params))
-                     to-prop)
-        format     (if (seq flex-items)
-                     (merge format (:format layout-flex-item-params))
-                     format)]
+        props      (cond-> props
+                     (seq flex-items) (concat (:props layout-flex-item-params))
+                     (= :wrap (:layout-wrap-type shape)) (concat (:props layout-align-content)))
+        to-prop    (cond-> to-prop
+                     (seq flex-items) (merge (:to-prop layout-flex-item-params))
+                     (= :wrap (:layout-wrap-type shape)) (merge (:to-prop layout-align-content)))
+        format     (cond-> format
+                     (seq flex-items) (merge (:format layout-flex-item-params))
+                     (= :wrap (:layout-wrap-type shape)) (merge (:format layout-align-content)))]
     (generate-css-props shape props {:to-prop to-prop
                                      :format format
                                      :multi multi
@@ -208,39 +253,47 @@
 (defn parse-style-text-blocks
   [node attrs]
   (letfn
-      [(rec-style-text-map [acc node style]
-         (let [node-style (merge style (select-keys node attrs))
-               head (or (-> acc first) [{} ""])
-               [head-style head-text] head
+   [(rec-style-text-map [acc node style]
+      (let [node-style (merge style (select-keys node attrs))
+            head (or (-> acc first) [{} ""])
+            [head-style head-text] head
 
-               new-acc
-               (cond
-                 (:children node)
-                 (reduce #(rec-style-text-map %1 %2 node-style) acc (:children node))
+            new-acc
+            (cond
+              (:children node)
+              (reduce #(rec-style-text-map %1 %2 node-style) acc (:children node))
 
-                 (not= head-style node-style)
-                 (cons [node-style (:text node "")] acc)
+              (not= head-style node-style)
+              (cons [node-style (:text node "")] acc)
 
-                 :else
-                 (cons [node-style (str head-text "" (:text node))] (rest acc)))
+              :else
+              (cons [node-style (str head-text "" (:text node))] (rest acc)))
 
                ;; We add an end-of-line when finish a paragraph
-               new-acc
-               (if (= (:type node) "paragraph")
-                 (let [[hs ht] (first new-acc)]
-                   (cons [hs (str ht "\n")] (rest new-acc)))
-                 new-acc)]
-           new-acc))]
+            new-acc
+            (if (= (:type node) "paragraph")
+              (let [[hs ht] (first new-acc)]
+                (cons [hs (str ht "\n")] (rest new-acc)))
+              new-acc)]
+        new-acc))]
 
     (-> (rec-style-text-map [] node {})
         reverse)))
 
 (defn text->properties [shape]
-  (let [text-shape-style (select-keys styles-data [:layout :shadow :blur])
+  (let [flex-items (:flex-items shape)
+        text-shape-style (select-keys styles-data [:layout :shadow :blur])
 
         shape-props      (->> text-shape-style vals (mapcat :props))
         shape-to-prop    (->> text-shape-style vals (map :to-prop) (reduce merge))
         shape-format     (->> text-shape-style vals (map :format) (reduce merge))
+
+        shape-props      (cond-> shape-props
+                           (seq flex-items) (concat (:props layout-flex-item-params)))
+        shape-to-prop    (cond-> shape-to-prop
+                           (seq flex-items) (merge (:to-prop layout-flex-item-params)))
+        shape-format     (cond-> shape-format
+                           (seq flex-items) (merge (:format layout-flex-item-params)))
 
         text-values      (->> (search-text-attrs
                                (:content shape)
@@ -257,9 +310,7 @@
                           (:props style-text)
                           {:to-prop (:to-prop style-text)
                            :format (:format style-text)
-                           :tab-size 2})]))
-
-  )
+                           :tab-size 2})])))
 
 (defn generate-css [shape]
   (let [name (:name shape)
