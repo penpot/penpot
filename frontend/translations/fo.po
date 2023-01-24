@@ -88,10 +88,6 @@ msgstr "OpenID"
 msgid "auth.new-password"
 msgstr "Skriva eitt nýtt loyniorð"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Eg góðtakið skrásetingina á tíðindalistanum hjá Penpot."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.password-changed-successfully"
 msgstr "Loyniorðið er broytt"
@@ -188,9 +184,6 @@ msgstr "Fá leinkið"
 
 msgid "common.share-link.link-copied-success"
 msgstr "Leinkið avritað"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "Leinkið er strikað"
 
 msgid "common.share-link.manage-ops"
 msgstr "Fyrisit heimildir"
@@ -291,9 +284,6 @@ msgstr "Heinta Penpot fílu (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "Heinta standarafílu (.svg + .json)"
 
-msgid "dashboard.draft-title"
-msgstr "Kladda"
-
 #: src/app/main/ui/dashboard/project_menu.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
@@ -302,10 +292,6 @@ msgstr "Tvítøka"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "Tvítak %s fílur"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "Tú hevur enn ongar fílur her"
 
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
@@ -346,9 +332,6 @@ msgstr "Har eru ongin lutir við útflytsstillingum."
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
 msgstr "Valt til útflyting"
-
-msgid "dashboard.export-single"
-msgstr "Útflyt Penpot fílu"
 
 msgid "dashboard.export-standard-multi"
 msgstr "Heinta %s standarafílur (.svg + .json)"
@@ -455,10 +438,6 @@ msgstr "+ Nýggj verkætlan"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "Nýggj verkætlan"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-msg"
-msgstr "Send mær tíðindi, framleiðslu dagføringar og viðmælingar um Penpot."
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"
@@ -660,10 +639,6 @@ msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Strikar fílu"
 msgstr[1] "Strikar fílur"
-
-#: src/app/main/ui/delete_shared.cljs
-msgid "modals.delete-shared.title"
-msgstr "Strikar fílu"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"

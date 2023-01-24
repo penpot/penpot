@@ -88,10 +88,6 @@ msgstr "OpenID"
 msgid "auth.new-password"
 msgstr "Geben Sie ein neues Passwort ein"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Ich bin damit einverstanden, die Penpot-Mailingliste zu abonnieren."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "Der Wiederherstellungscode ist ungültig."
@@ -196,9 +192,6 @@ msgstr "Link erstellen"
 
 msgid "common.share-link.link-copied-success"
 msgstr "Link wurde erfolgreich kopiert"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "Link wurde erfolgreich gelöscht"
 
 msgid "common.share-link.manage-ops"
 msgstr "Verwalten von Berechtigungen"
@@ -306,9 +299,6 @@ msgstr "Penpot-Datei herunterladen (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "Standarddatei herunterladen (.svg + .json)"
 
-msgid "dashboard.draft-title"
-msgstr "Entwurf"
-
 #: src/app/main/ui/dashboard/project_menu.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
@@ -317,10 +307,6 @@ msgstr "Duplizieren"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "%s Dateien duplizieren"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "Sie haben hier noch keine Dateien"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
@@ -367,9 +353,6 @@ msgstr "Es gibt keine Elemente mit Exporteinstellungen."
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
 msgstr "Auswahl exportieren"
-
-msgid "dashboard.export-single"
-msgstr "Datei exportieren"
 
 msgid "dashboard.export-standard-multi"
 msgstr "%s Standarddateien herunterladen (.svg + .json)"
@@ -545,12 +528,6 @@ msgstr "+ Neues Projekt"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "Neues Projekt"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-msg"
-msgstr ""
-"Senden Sie mir Neuigkeiten, Produktaktualisierungen und Empfehlungen zu "
-"Penpot."
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"
@@ -740,10 +717,6 @@ msgstr "Ok"
 msgid "ds.confirm-title"
 msgstr "Sind Sie sicher?"
 
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "ds.updated-at"
-msgstr "Aktualisiert: %s"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "Authentifizierungsanbieter ist nicht konfiguriert."
@@ -760,10 +733,6 @@ msgstr "Die Schriftarten %s konnten nicht geladen werden"
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Ihr Browser kann diese Funktion nicht ausführen"
-
-#: src/app/main/data/workspace/persistence.cljs
-msgid "errors.components-v2"
-msgstr "Diese Datei wurde bereits mit aktivierten V2-Komponenten verwendet."
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/change_email.cljs
@@ -796,10 +765,6 @@ msgstr "Die E-Mail \"%s\" wurde als Spam oder dauerhaft abgelehnt gemeldet."
 msgid "errors.generic"
 msgstr "Etwas ist schief gelaufen."
 
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.google-auth-not-enabled"
-msgstr "Die Authentifizierung mit Google ist im Backend deaktiviert"
-
 #: src/app/main/ui/components/color_input.cljs
 msgid "errors.invalid-color"
 msgstr "Ungültige Farbe"
@@ -814,9 +779,6 @@ msgstr "Diese Einladung wurde möglicherweise abgebrochen oder ist abgelaufen."
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "Die LDAP-Authentifizierung ist deaktiviert."
-
-msgid "errors.media-format-unsupported"
-msgstr "Das Bildformat wird nicht unterstützt (es muss ein SVG, JPG oder PNG sein)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -837,9 +799,6 @@ msgid "errors.member-is-muted"
 msgstr ""
 "In dem von Ihnen eingeladenen Profil sind E-Mails stummgeschaltet "
 "(Spam-Berichte oder hohe Unzustellbarkeitsberichte)."
-
-msgid "errors.network"
-msgstr "Es kann keine Verbindung zum Server hergestellt werden."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
@@ -877,11 +836,6 @@ msgstr ""
 "Der Besitzer kann das Team nicht verlassen, Sie müssen die Besitzerrolle "
 "neu zuweisen."
 
-msgid "errors.terms-privacy-agreement-invalid"
-msgstr ""
-"Sie müssen unsere Nutzungsbedingungen und Datenschutzrichtlinien "
-"akzeptieren."
-
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/inspect/exports.cljs
@@ -899,10 +853,6 @@ msgstr "Der Benutzername oder das Passwort ist falsch."
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "Altes Passwort ist falsch"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-start"
-msgstr "Dem Chat beitreten"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.chat-subtitle"
@@ -957,15 +907,9 @@ msgstr "Twitter Support-Konto"
 msgid "generic.error"
 msgstr "Ein Fehler ist aufgetreten"
 
-msgid "handoff.attributes.stroke.style.solid"
-msgstr "Durchgezogen"
-
 #: src/app/main/ui/handoff/attributes/text.cljs
 msgid "handoff.attributes.typography.font-style"
 msgstr "Schriftschnitt"
-
-msgid "history.alert-message"
-msgstr "Sie sehen Version %s"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -1037,16 +981,8 @@ msgid "inspect.attributes.shadow"
 msgstr "Schatten"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.blur"
-msgstr "B"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.offset-x"
 msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1176,10 +1112,6 @@ msgstr "Info"
 msgid "label.shortcuts"
 msgstr "Tastenkürzel"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.about-penpot"
-msgstr "Über Penpot"
-
 msgid "labels.accept"
 msgstr "Akzeptieren"
 
@@ -1214,9 +1146,6 @@ msgstr "Bad Gateway"
 msgid "labels.cancel"
 msgstr "Abbrechen"
 
-msgid "labels.centered"
-msgstr "Zentriert"
-
 msgid "labels.close"
 msgstr "Schließen"
 
@@ -1231,9 +1160,6 @@ msgstr "Community"
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Passwort bestätigen"
-
-msgid "labels.content"
-msgstr "Inhalt"
 
 msgid "labels.continue"
 msgstr "Weiter"
@@ -1263,9 +1189,6 @@ msgstr "Eigene Schriftarten"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "Dashboard"
-
-msgid "labels.default"
-msgstr "Standardeinstellung"
 
 #: src/app/main/ui/dashboard/project_menu.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1305,10 +1228,6 @@ msgstr "Datei bearbeiten"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "Editor"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.email"
-msgstr "E-Mail"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.expired-invitation"
@@ -1358,9 +1277,6 @@ msgstr "Hilfezentrum"
 msgid "labels.hide-resolved-comments"
 msgstr "Erledigte Kommentare ausblenden"
 
-msgid "labels.icons"
-msgstr "Icons"
-
 msgid "labels.images"
 msgstr "Bilder"
 
@@ -1390,18 +1306,12 @@ msgstr "Sprache"
 msgid "labels.libraries-and-templates"
 msgstr "Bibliotheken & Vorlagen"
 
-msgid "labels.link"
-msgstr "Link"
-
 msgid "labels.log-or-sign"
 msgstr "Einloggen oder anmelden"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Abmelden"
-
-msgid "labels.manage-fonts"
-msgstr "Schriftarten verwalten"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
@@ -1411,16 +1321,9 @@ msgstr "Mitglied"
 msgid "labels.members"
 msgstr "Mitglieder"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "Name"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.new-password"
 msgstr "Neues Passwort"
-
-msgid "labels.next"
-msgstr "Weiter"
 
 #: src/app/main/ui/workspace/comments.cljs,
 #: src/app/main/ui/dashboard/comments.cljs
@@ -1436,10 +1339,6 @@ msgid "labels.no-invitations-hint"
 msgstr ""
 "Drücken Sie die Schaltfläche \"Zum Team einladen\", um weitere Mitglieder "
 "in dieses Team einzuladen."
-
-#: src/app/main/ui/static.cljs
-msgid "labels.not-found.auth-info"
-msgstr "Sie sind angemeldet als"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1492,10 +1391,6 @@ msgstr "Passwort"
 msgid "labels.pending-invitation"
 msgstr "Ausstehend"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "Berechtigungen"
-
 #: src/app/main/ui/settings/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.profile"
@@ -1504,9 +1399,6 @@ msgstr "Profil"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "Projekte"
-
-msgid "labels.recent"
-msgstr "Zuletzt"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.release-notes"
@@ -1589,15 +1481,8 @@ msgstr "Kommentarliste anzeigen"
 msgid "labels.show-your-comments"
 msgstr "Nur eigene Kommentare anzeigen"
 
-#: src/app/main/ui/static.cljs
-msgid "labels.sign-out"
-msgstr "Abmelden"
-
 msgid "labels.skip"
 msgstr "Überspringen"
-
-msgid "labels.start"
-msgstr "Start"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1627,9 +1512,6 @@ msgstr "Lädt hoch…"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "Zuschauer"
-
-msgid "labels.workspace"
-msgstr "Arbeitsbereich"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
@@ -1689,12 +1571,6 @@ msgstr "E-Mail-Adresse ändern"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
 msgstr "Ihre E-Mail-Adresse ändern"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.change-owner-and-leave-confirm.message"
-msgstr ""
-"Sie sind der Besitzer dieses Teams. Bitte wählen Sie ein anderes Mitglied "
-"aus, das Sie zum Besitzer ernennen möchten, bevor Sie gehen."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1811,23 +1687,10 @@ msgstr[1] "Diese Datei enthält Bibliotheken, die in diesen Dateien verwendet we
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-plural"
-msgid_plural "modals.delete-shared-confirm.scd-message-plural"
-msgstr[0] "Diese Dateien enthalten Bibliotheken, die in dieser Datei verwendet werden:"
-msgstr[1] ""
-"Diese Dateien enthalten Bibliotheken, die in diesen Dateien verwendet "
-"werden:"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Datei löschen"
 msgstr[1] "Dateien löschen"
-
-#: src/app/main/ui/delete_shared.cljs
-msgid "modals.delete-shared.title"
-msgstr "Datei löschen"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"
@@ -2146,29 +2009,14 @@ msgstr "Team erstellen und Einladungen versenden"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Einladen mit der Rolle:"
 
-msgid "onboarding.choice.title"
-msgstr "Willkommen bei Penpot"
-
 msgid "onboarding.contrib.alt"
 msgstr "Open Source"
-
-msgid "onboarding.contrib.desc1"
-msgstr ""
-"Penpot ist Open Source Software, die von und für die Gemeinschaft "
-"entwickelt wurde. Wenn Sie mitarbeiten möchten, sind Sie mehr als "
-"willkommen!"
 
 msgid "onboarding.contrib.desc2.1"
 msgstr "Sie können das Projekt"
 
-msgid "onboarding.contrib.desc2.2"
-msgstr "und mehr über die Richtlinien zum Beitragen erfahren :)"
-
 msgid "onboarding.contrib.link"
 msgstr "auf GitHub ansehen"
-
-msgid "onboarding.contrib.title"
-msgstr "Open-Source-Mitwirkende?"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Ja, abonnieren"
@@ -2178,73 +2026,40 @@ msgstr ""
 "Ihre Abonnementanfrage wurde gesendet, wir senden Ihnen eine E-Mail zur "
 "Bestätigung."
 
-msgid "onboarding.newsletter.decline"
-msgstr "Nein, danke"
-
 msgid "onboarding.newsletter.policy"
 msgstr "Datenschutzbestimmungen."
 
 msgid "onboarding.newsletter.title"
 msgstr "Möchten Sie die Penpot-Nachrichten erhalten?"
 
-msgid "onboarding.slide.0.alt"
-msgstr "Gestalten Sie"
-
 msgid "onboarding.slide.0.desc1"
 msgstr ""
 "Erstellen Sie ansprechende Benutzeroberflächen gemeinsam mit anderen "
 "Teammitgliedern."
 
-msgid "onboarding.slide.0.desc2"
-msgstr ""
-"Schaffen Sie ein einheitliches Erscheinungsbild mit Hilfe von Komponenten, "
-"Bibliotheken und Design-Systemen."
-
 msgid "onboarding.slide.0.title"
 msgstr "Design-Bibliotheken, Stile und Komponenten"
-
-msgid "onboarding.slide.1.alt"
-msgstr "Interaktive Prototypen"
 
 msgid "onboarding.slide.1.desc1"
 msgstr ""
 "Erstellen Sie umfangreiche Interaktionen, um das reale Verhalten ihres "
 "Produktes zu simulieren."
 
-msgid "onboarding.slide.1.desc2"
-msgstr ""
-"Teilen Sie Ihre Vorschläge mit allen Beteiligten und testen Sie Entwürfe "
-"direkt mit Ihren Nutzern - alles an einem Ort."
-
 msgid "onboarding.slide.1.title"
 msgstr "Hauchen Sie Ihren Entwürfen mit Interaktionen Leben ein"
-
-msgid "onboarding.slide.2.alt"
-msgstr "Erhalten Sie Feedback"
 
 msgid "onboarding.slide.2.desc1"
 msgstr ""
 "Alle Teammitglieder können in Echtzeit an Entwürfen arbeiten – und erhalten "
 "direktes Feedback über die integrierte Kommentarfunktion."
 
-msgid "onboarding.slide.2.title"
-msgstr "Holen Sie sich Feedback, präsentieren und teilen Sie Ihre Entwürfe"
-
 msgid "onboarding.slide.3.alt"
 msgstr "Übergabe und Lowcode"
-
-msgid "onboarding.slide.3.desc1"
-msgstr ""
-"Synchronisieren Sie das Design und den Code all Ihrer Komponenten und Stile "
-"und nutzen Sie Code-Snippets."
 
 msgid "onboarding.slide.3.desc2"
 msgstr ""
 "Erstellen und erhalten Sie Spezifikationen in Auszeichnungs- (SVG, HTML) "
 "oder Stylesheet-Sprachen (CSS, Less, Stylus…)."
-
-msgid "onboarding.slide.3.title"
-msgstr "Eine zentrale Anlaufstelle für alle"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Ein Team erstellen"
@@ -2277,9 +2092,6 @@ msgstr "Beginnen Sie mit dem Entwerfen"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.title"
-msgstr "Willkommen bei Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
@@ -2814,16 +2626,8 @@ msgid "viewer.header.share.copy-link"
 msgstr "Link kopieren"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.create-link"
-msgstr "Link erstellen"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.placeholder"
 msgstr "Der Link fürs Teilen wird hier angezeigt"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.remove-link"
-msgstr "Link entfernen"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
@@ -2880,9 +2684,6 @@ msgstr "Assets"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.box-filter-all"
 msgstr "Alle Assets"
-
-msgid "workspace.assets.box-filter-graphics"
-msgstr "Grafiken"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -3193,10 +2994,6 @@ msgstr "Hinzufügen"
 msgid "workspace.libraries.colors"
 msgstr "%s Farben"
 
-#: src/app/main/ui/workspace/colorpalette.cljs
-msgid "workspace.libraries.colors.big-thumbnails"
-msgstr "Große Miniaturen"
-
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs,
 #: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.file-library"
@@ -3222,10 +3019,6 @@ msgstr "RGBA"
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.save-color"
 msgstr "Farbstil speichern"
-
-#: src/app/main/ui/workspace/colorpalette.cljs
-msgid "workspace.libraries.colors.small-thumbnails"
-msgstr "Kleine Miniaturen"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
@@ -3293,14 +3086,8 @@ msgstr "Aktualisieren"
 msgid "workspace.libraries.updates"
 msgstr "AKTUALISIERUNG"
 
-msgid "workspace.library.all"
-msgstr "Alle Bibliotheken"
-
 msgid "workspace.library.libraries"
 msgstr "Bibliotheken"
-
-msgid "workspace.library.own"
-msgstr "Meine Bibliotheken"
 
 msgid "workspace.library.store"
 msgstr "Gespeicherte Bibliotheken"
@@ -3308,9 +3095,6 @@ msgstr "Gespeicherte Bibliotheken"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Klicken Sie auf den + Button um Interaktionen hinzuzufügen."
-
-msgid "workspace.options.blur-options.background-blur"
-msgstr "Hintergrund"
 
 msgid "workspace.options.blur-options.layer-blur"
 msgstr "Ebene"
@@ -3835,10 +3619,6 @@ msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "Min.Breite"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title"
-msgstr "Elementgröße ändern"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-item-max-h"
 msgstr "Maximale Höhe"
 
@@ -3895,10 +3675,6 @@ msgid "workspace.options.layout.margin-simple"
 msgstr "Einfacher Rand"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.no-wrap"
-msgstr "no wrap"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.packed"
 msgstr "kompakt"
 
@@ -3925,10 +3701,6 @@ msgstr "im Leerraum verteilt"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.space-between"
 msgstr "Abstand zwischen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.title"
-msgstr "Layout"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.top"
@@ -3985,10 +3757,6 @@ msgid "workspace.options.select-a-shape"
 msgstr ""
 "Wählen Sie eine Form, Zeichenfläche oder Gruppe aus, um eine Verbindung zu "
 "einer anderen Zeichenfläche herzustellen."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.select-artboard"
-msgstr "Wählen Sie eine Zeichenfläche aus"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.selection-color"
@@ -4155,9 +3923,6 @@ msgstr "Rechtsbündig ausrichten"
 msgid "workspace.options.text-options.align-top"
 msgstr "Oben ausrichten"
 
-msgid "workspace.options.text-options.decoration"
-msgstr "Textdekoration"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "von links nach rechts"
@@ -4165,10 +3930,6 @@ msgstr "von links nach rechts"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "von rechts nach links"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.options.text-options.google"
-msgstr "Google"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.grow-auto-height"
@@ -4199,16 +3960,9 @@ msgstr "Kleinbuchstaben"
 msgid "workspace.options.text-options.none"
 msgstr "Keine"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.options.text-options.preset"
-msgstr "Vordefiniert"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Durchgestrichen"
-
-msgid "workspace.options.text-options.text-case"
-msgstr "Schriftauszeichnung"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -4233,9 +3987,6 @@ msgstr "Unterstrichen"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"
 msgstr "Großbuchstaben"
-
-msgid "workspace.options.text-options.vertical-align"
-msgstr "Vertikal ausrichten"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"

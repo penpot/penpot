@@ -88,10 +88,6 @@ msgstr "OpenID"
 msgid "auth.new-password"
 msgstr "Escribe un contrasinal novo"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Acepto subscribirme á lista de correo de Penpot."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "O código de recuperación non é correcto."
@@ -195,9 +191,6 @@ msgstr "Obter ligazón"
 msgid "common.share-link.link-copied-success"
 msgstr "A ligazón copiouse correctamente"
 
-msgid "common.share-link.link-deleted-success"
-msgstr "A ligazón eliminouse correctamente"
-
 msgid "common.share-link.manage-ops"
 msgstr "Xestionar permisos"
 
@@ -300,9 +293,6 @@ msgstr "Descargar ficheiro Penpot (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "Descargar ficheiro estándar (.svg + .json)"
 
-msgid "dashboard.draft-title"
-msgstr "Borrador"
-
 #: src/app/main/ui/dashboard/project_menu.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
@@ -311,10 +301,6 @@ msgstr "Duplicar"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "Duplicar % ficheiros"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "Aínda non tes ficheiros"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
@@ -360,9 +346,6 @@ msgstr "Non hai elementos con configuración de exportación."
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
 msgstr "Exportar selección"
-
-msgid "dashboard.export-single"
-msgstr "Exportar arquivo Penpot"
 
 msgid "dashboard.export-standard-multi"
 msgstr "Descargar %s ficheiros estándar (.svg + .json)"
@@ -531,10 +514,6 @@ msgstr "+ Novo proxecto"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "Novo proxecto"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-msg"
-msgstr "Envíame noticias, actualizacións do produto e recomendacións sobre Penpot."
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"
@@ -711,10 +690,6 @@ msgstr "Ok"
 msgid "ds.confirm-title"
 msgstr "Seguro?"
 
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "ds.updated-at"
-msgstr "Actualizado: %s"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "Provedor de autenticación non configurado."
@@ -797,16 +772,8 @@ msgid "inspect.attributes.shadow"
 msgstr "Sombra"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.blur"
-msgstr "B"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.offset-x"
 msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -923,18 +890,12 @@ msgstr "Volver"
 msgid "labels.cancel"
 msgstr "Cancelar"
 
-msgid "labels.centered"
-msgstr "Centrado"
-
 msgid "labels.close"
 msgstr "Pechar"
 
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.comments"
 msgstr "Comentarios"
-
-msgid "labels.content"
-msgstr "Contido"
 
 msgid "labels.continue"
 msgstr "Continuar"
@@ -946,9 +907,6 @@ msgstr "Crear"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "Panel"
-
-msgid "labels.default"
-msgstr "por defecto"
 
 #: src/app/main/ui/dashboard/project_menu.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -970,10 +928,6 @@ msgstr "Editar"
 msgid "labels.editor"
 msgstr "Editor"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.email"
-msgstr "Correo electrónico"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.expired-invitation"
 msgstr "Caducada"
@@ -987,9 +941,6 @@ msgstr "Estilos"
 msgid "labels.fonts"
 msgstr "Fontes"
 
-msgid "labels.icons"
-msgstr "Iconas"
-
 msgid "labels.images"
 msgstr "Imaxes"
 
@@ -1002,9 +953,6 @@ msgstr "Invitacións"
 msgid "labels.language"
 msgstr "Lingua"
 
-msgid "labels.link"
-msgstr "Ligazón"
-
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "Pechar sesión"
@@ -1016,10 +964,6 @@ msgstr "Integrante"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "Integrantes"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "Nome"
 
 msgid "labels.next"
 msgstr "Seguinte"
@@ -1040,10 +984,6 @@ msgstr "Contrasinal"
 msgid "labels.pending-invitation"
 msgstr "Pendente"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "Permisos"
-
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
 msgstr "Perfil"
@@ -1051,9 +991,6 @@ msgstr "Perfil"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "Proxectos"
-
-msgid "labels.recent"
-msgstr "Recente"
 
 #: src/app/main/ui/workspace/libraries.cljs,
 #: src/app/main/ui/dashboard/team.cljs
@@ -1094,9 +1031,6 @@ msgstr "Configuración"
 msgid "labels.shared-libraries"
 msgstr "Bibliotecas"
 
-msgid "labels.skip"
-msgstr "Pasar"
-
 msgid "labels.start"
 msgstr "Comezar"
 
@@ -1121,9 +1055,6 @@ msgstr "Cargando…"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "Visor"
-
-msgid "labels.workspace"
-msgstr "Espazo de traballo"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
@@ -1273,9 +1204,6 @@ msgstr "Mapa do sitio"
 msgid "workspace.assets.assets"
 msgstr "Recursos"
 
-msgid "workspace.assets.box-filter-graphics"
-msgstr "Gráficos"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
@@ -1407,14 +1335,8 @@ msgstr "Actualizar"
 msgid "workspace.libraries.updates"
 msgstr "Actualizacións"
 
-msgid "workspace.library.libraries"
-msgstr "Bibliotecas"
-
 msgid "workspace.options.blur-options.background-blur"
 msgstr "Fondo"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Capa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"

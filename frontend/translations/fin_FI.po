@@ -87,10 +87,6 @@ msgstr "OpenID"
 msgid "auth.new-password"
 msgstr "Syötä uusi salasana"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Suostun tilaamaan Penpotin uutiskirjeen."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "Palautustunnus on virheellinen."
@@ -192,9 +188,6 @@ msgstr "Hanki linkki"
 
 msgid "common.share-link.link-copied-success"
 msgstr "Linkin kopiointi onnistui"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "Linkin poisto onnistui"
 
 msgid "common.share-link.manage-ops"
 msgstr "Muokkaa käyttöoikeuksia"

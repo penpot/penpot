@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2021-12-18 01:51+0000\n"
 "Last-Translator: Andy Li <andyli2456@gmail.com>\n"
-"Language-Team: Chinese (Traditional) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hant/>\n"
+"Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -82,10 +82,6 @@ msgstr "OpenID"
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "輸入新密碼"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "我同意訂閱 Penpot 的郵件討論群。"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
@@ -174,9 +170,6 @@ msgstr "取得連結"
 msgid "common.share-link.link-copied-success"
 msgstr "成功複製連結"
 
-msgid "common.share-link.link-deleted-success"
-msgstr "成功刪除連結"
-
 msgid "common.share-link.permissions-hint"
 msgstr "任何有連結的人皆能存取"
 
@@ -211,9 +204,6 @@ msgstr "你的 Penpot"
 msgid "dashboard.delete-team"
 msgstr "刪除團隊"
 
-msgid "dashboard.draft-title"
-msgstr "草稿"
-
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "複製"
@@ -221,10 +211,6 @@ msgstr "複製"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "複製 %s 個檔案"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "你在這裡還沒有文件"
 
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
@@ -238,9 +224,6 @@ msgstr "將 boards 匯出為 PDF"
 
 msgid "dashboard.export-multi"
 msgstr "匯出 %s 個檔案"
-
-msgid "dashboard.export-single"
-msgstr "匯出檔案"
 
 msgid "dashboard.export.detail"
 msgstr "* 可能會包含元件、圖像、顏色及／或文字編排。"
@@ -489,10 +472,6 @@ msgstr "Ok"
 msgid "ds.confirm-title"
 msgstr "您確定嗎？"
 
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "ds.updated-at"
-msgstr "已更新：%s"
-
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "你的瀏覽器無法執行此作業"
@@ -509,10 +488,6 @@ msgstr "電子信箱已完成驗證。"
 msgid "errors.generic"
 msgstr "發生了一些錯誤。"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.google-auth-not-enabled"
-msgstr "Google 驗證功能在後端並未啟用"
-
 #: src/app/main/ui/components/color_input.cljs
 msgid "errors.invalid-color"
 msgstr "顏色無效"
@@ -521,9 +496,6 @@ msgstr "顏色無效"
 msgid "errors.ldap-disabled"
 msgstr "LDAP 驗證已停用。"
 
-msgid "errors.media-format-unsupported"
-msgstr "不支援此影像格式（必須是 svg，jpg 或者 png）"
-
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
 msgstr "影像檔案過大，無法插入"
@@ -531,9 +503,6 @@ msgstr "影像檔案過大，無法插入"
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
 msgstr "這好像不是個能用的影像。"
-
-msgid "errors.network"
-msgstr "無法連接後端伺服器。"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
@@ -546,9 +515,6 @@ msgstr "密碼至少需有 8 個字元"
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "目前並不開放註冊。"
-
-msgid "errors.terms-privacy-agreement-invalid"
-msgstr "您必須接受我們的服務條款和隱私權政策。"
 
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
@@ -565,10 +531,6 @@ msgstr "使用者名稱或密碼似乎有誤。"
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "舊密碼不正確"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-start"
-msgstr "加入聊天"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
@@ -619,16 +581,8 @@ msgid "inspect.attributes.layout.left"
 msgstr "左"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.blur"
-msgstr "B"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.offset-x"
 msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -681,9 +635,6 @@ msgstr "輸入新團隊名稱"
 msgid "labels.dashboard"
 msgstr "控制台"
 
-msgid "labels.default"
-msgstr "預設"
-
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
 msgstr "刪除"
@@ -699,10 +650,6 @@ msgstr "編輯檔案"
 msgid "labels.editor"
 msgstr "編輯者"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.email"
-msgstr "電子郵件"
-
 msgid "labels.export"
 msgstr "匯出"
 
@@ -712,18 +659,12 @@ msgstr "字型"
 msgid "labels.go-back"
 msgstr "返回"
 
-msgid "labels.icons"
-msgstr "圖示"
-
 msgid "labels.images"
 msgstr "圖片"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "語言"
-
-msgid "labels.link"
-msgstr "連結"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -732,10 +673,6 @@ msgstr "登出"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "成員"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "名稱"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
@@ -757,10 +694,6 @@ msgstr "擁有者"
 msgid "labels.password"
 msgstr "密碼"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "權限"
-
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.profile"
 msgstr "個人檔案"
@@ -768,9 +701,6 @@ msgstr "個人檔案"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "專案"
-
-msgid "labels.recent"
-msgstr "最近"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.release-notes"
@@ -803,15 +733,8 @@ msgstr "正在傳送…"
 msgid "labels.settings"
 msgstr "設定"
 
-#: src/app/main/ui/static.cljs
-msgid "labels.sign-out"
-msgstr "登出"
-
 msgid "labels.skip"
 msgstr "跳過"
-
-msgid "labels.start"
-msgstr "開始"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
@@ -826,9 +749,6 @@ msgstr "正在上傳…"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "檢視者"
-
-msgid "labels.workspace"
-msgstr "工作區"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
@@ -882,17 +802,11 @@ msgstr "取消"
 msgid "notifications.validation-email-sent"
 msgstr "已將驗證信傳送至 %s。請查看您的電子郵件信箱！"
 
-msgid "onboarding.contrib.alt"
-msgstr "開放原始碼"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "您能夠存取"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.title"
-msgstr "歡迎使用 Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "title.dashboard.fonts"
@@ -951,10 +865,6 @@ msgstr "抱歉！"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.copy-link"
 msgstr "複製連結"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.create-link"
-msgstr "建立連結"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.remove-link"

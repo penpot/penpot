@@ -85,10 +85,6 @@ msgstr "OpenID"
 msgid "auth.new-password"
 msgstr "اكتب كلمة مرور جديدة"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "أوافق على الاشتراك في قائمة Penpot البريدية."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "رمز الاسترداد غير صالح."
@@ -189,9 +185,6 @@ msgstr "خذ رابطا إلكتروني"
 
 msgid "common.share-link.link-copied-success"
 msgstr "تم نسخ الرابط بنجاح"
-
-msgid "common.share-link.link-deleted-success"
-msgstr "تم حذف الرابط بنجاح"
 
 msgid "common.share-link.manage-ops"
 msgstr "إدارة التصاريح"
@@ -299,9 +292,6 @@ msgstr "تنزيل ملف Penpot (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "تنزيل ملف قياسي (.svg + .json)"
 
-msgid "dashboard.draft-title"
-msgstr "مسودة"
-
 #: src/app/main/ui/dashboard/project_menu.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
@@ -310,10 +300,6 @@ msgstr "تكرير"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "تكرير %s الملفات"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "لا يزال لديك 0 ملفات هنا"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
@@ -359,9 +345,6 @@ msgstr "لا يوجد عناصر بإعدادت التصدير."
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
 msgstr "إختيار التصدير"
-
-msgid "dashboard.export-single"
-msgstr "تصدير الملف"
 
 msgid "dashboard.export-standard-multi"
 msgstr "تحميل %s ملفات أساسية (.svg + .json)"
@@ -529,10 +512,6 @@ msgstr "+ مشروع جديد"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "مشروع جديد"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-msg"
-msgstr "أرسل لي الأخبار وتحديثات المنتجات والتوصيات حول Penpot."
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.newsletter-title"
@@ -722,10 +701,6 @@ msgstr "حسنا"
 msgid "ds.confirm-title"
 msgstr "هل أنت متأكد؟"
 
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "ds.updated-at"
-msgstr "محدث: %s"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "موفر المصادقة غير معد ومسجل."
@@ -736,10 +711,6 @@ msgstr "يبدوا أنك غير مصرح لك أو أن الجلسة إنتهت
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "لا يمكن للمتصفح إجراء هذه العملية"
-
-#: src/app/main/data/workspace/persistence.cljs
-msgid "errors.components-v2"
-msgstr "تم استخدام هذا الملف بالفعل مع تمكين المكونات V2."
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/change_email.cljs
@@ -772,10 +743,6 @@ msgstr "تم الإبلاغ عن البريد الإلكتروني «٪ s» كب
 msgid "errors.generic"
 msgstr "حدث خطأ ما."
 
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.google-auth-not-enabled"
-msgstr "المصادقة مع جوجل تعطلت في الخلفية"
-
 #: src/app/main/ui/components/color_input.cljs
 msgid "errors.invalid-color"
 msgstr "لون غير صالح"
@@ -790,9 +757,6 @@ msgstr "هذه الدعوة قد تلغى أو قد تنتهي."
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "تم تعطيل مصادقة LDAP."
-
-msgid "errors.media-format-unsupported"
-msgstr "تنسيق الصورة غير مدعوم (يجب أن يكون svg أو jpg أو png)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -811,9 +775,6 @@ msgid "errors.member-is-muted"
 msgstr ""
 "يحتوي الملف الشخصي الذي تدعوه على رسائل بريد إلكتروني مكتومة (تقارير البريد "
 "المزعج أو الارتدادات العالية)."
-
-msgid "errors.network"
-msgstr "تعذر الاتصال بخادم الواجهة الخلفية."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
@@ -844,9 +805,6 @@ msgstr "العضو الذي تحاول تعيينه غير موجود."
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "لا يمكن للمالك مغادرة الفريق ، يجب إعادة تعيين دور المالك."
 
-msgid "errors.terms-privacy-agreement-invalid"
-msgstr "يجب أن تقبل شروط الخدمة وسياسة الخصوصية الخاصة بنا."
-
 #: src/app/main/data/media.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
 #: src/app/main/ui/inspect/exports.cljs
@@ -864,10 +822,6 @@ msgstr "يبدو أن اسم المستخدم أو كلمة المرور خاط�
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "كلمة المرور القديمة غير صحيحة"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-start"
-msgstr "انضم إلى الدردشة"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.chat-subtitle"
@@ -918,9 +872,6 @@ msgstr "حساب دعم تويتر"
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "حدث خطأ"
-
-msgid "history.alert-message"
-msgstr "أنت ترى الإصدار %s"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -992,16 +943,8 @@ msgid "inspect.attributes.shadow"
 msgstr "ظل"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.blur"
-msgstr "B"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.offset-x"
 msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1138,10 +1081,6 @@ msgstr "معلومات"
 msgid "label.shortcuts"
 msgstr "الاختصارات"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.about-penpot"
-msgstr "حول Penpot"
-
 msgid "labels.accept"
 msgstr "إقبل"
 
@@ -1176,9 +1115,6 @@ msgstr "مدخل خاطأ"
 msgid "labels.cancel"
 msgstr "الغاء"
 
-msgid "labels.centered"
-msgstr "توسيط"
-
 msgid "labels.close"
 msgstr "غلق"
 
@@ -1193,9 +1129,6 @@ msgstr "مجتمع"
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "تأكيد كلمة المرور"
-
-msgid "labels.content"
-msgstr "محتوى"
 
 msgid "labels.continue"
 msgstr "استمر"
@@ -1225,9 +1158,6 @@ msgstr "خطوط مخصصة"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "لوحة التحكم"
-
-msgid "labels.default"
-msgstr "إفتراضي"
 
 #: src/app/main/ui/dashboard/project_menu.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1267,10 +1197,6 @@ msgstr "تعديل ملف"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "محرر"
-
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.email"
-msgstr "البريد الإلكتروني"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.expired-invitation"
@@ -1320,9 +1246,6 @@ msgstr "مركز المساعدة"
 msgid "labels.hide-resolved-comments"
 msgstr "إخفاء التعليقات التي تم حلها"
 
-msgid "labels.icons"
-msgstr "الأيقونات"
-
 msgid "labels.images"
 msgstr "الصور"
 
@@ -1350,18 +1273,12 @@ msgstr "اللغة"
 msgid "labels.libraries-and-templates"
 msgstr "المكتبات والقوالب"
 
-msgid "labels.link"
-msgstr "رابط"
-
 msgid "labels.log-or-sign"
 msgstr "تسجيل الدخول أو الاشتراك"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
 msgstr "تسجيل خروج"
-
-msgid "labels.manage-fonts"
-msgstr "إدارة الخطوط"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
@@ -1371,16 +1288,9 @@ msgstr "عضو"
 msgid "labels.members"
 msgstr "الأعضاء"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "الاسم"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.new-password"
 msgstr "كلمة مرور جديدة"
-
-msgid "labels.next"
-msgstr "التالي"
 
 #: src/app/main/ui/workspace/comments.cljs,
 #: src/app/main/ui/dashboard/comments.cljs
@@ -1394,10 +1304,6 @@ msgstr "لا توجد دعوات."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr "اضغط على الزر \"دعوة إلى الفريق\" لدعوة المزيد من الأعضاء إلى هذا الفريق."
-
-#: src/app/main/ui/static.cljs
-msgid "labels.not-found.auth-info"
-msgstr "لقد سجلت الدخول باعتبارك"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1460,10 +1366,6 @@ msgstr "كلمة المرور"
 msgid "labels.pending-invitation"
 msgstr "قيد الانتظار"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "اذونات"
-
 #: src/app/main/ui/settings/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.profile"
@@ -1472,9 +1374,6 @@ msgstr "الملف الشخصي"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "المشاريع"
-
-msgid "labels.recent"
-msgstr "الأخيرة"
 
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.release-notes"
@@ -1556,15 +1455,8 @@ msgstr "قائمة التعليقات"
 msgid "labels.show-your-comments"
 msgstr "إظهار تعليقاتك فقط"
 
-#: src/app/main/ui/static.cljs
-msgid "labels.sign-out"
-msgstr "خروج"
-
 msgid "labels.skip"
 msgstr "تخطي"
-
-msgid "labels.start"
-msgstr "ابدأ"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1594,9 +1486,6 @@ msgstr "جارٍ الرفع …"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "مشاهد"
-
-msgid "labels.workspace"
-msgstr "مساحة العمل"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
@@ -1654,10 +1543,6 @@ msgstr "تغيير البريد الإلكتروني"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
 msgstr "تغيير بريدك الإلكتروني"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.change-owner-and-leave-confirm.message"
-msgstr "أنت صاحب هذا الفريق. الرجاء تحديد عضو آخر للترقية إلى مالك قبل المغادرة."
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1746,10 +1631,6 @@ msgstr "هل أنت متأكد أنك تريد حذف هذا المشروع؟"
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "modals.delete-project-confirm.title"
 msgstr "حذف المشروع"
-
-#: src/app/main/ui/delete_shared.cljs
-msgid "modals.delete-shared.title"
-msgstr "حذف الملف"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.accept"
@@ -2000,28 +1881,14 @@ msgstr "أنشئ فريقًا وأرسل الدعوات"
 msgid "onboarding.choice.team-up.roles"
 msgstr "دعوة مع الدور:"
 
-msgid "onboarding.choice.title"
-msgstr "مرحبًا بك في Penpot"
-
 msgid "onboarding.contrib.alt"
 msgstr "مصدر مفتوح"
-
-msgid "onboarding.contrib.desc1"
-msgstr ""
-"Penpot هو برنامج مفتوح المصدر ، تم إنشاؤه بواسطة المجتمع ومن أجله. إذا كنت "
-"ترغب في التعاون ، فأنت أكثر من موضع ترحيب!"
 
 msgid "onboarding.contrib.desc2.1"
 msgstr "يمكنك الوصول إلى"
 
-msgid "onboarding.contrib.desc2.2"
-msgstr "واتبع تعليمات المساهمة :)"
-
 msgid "onboarding.contrib.link"
 msgstr "مشروع على github"
-
-msgid "onboarding.contrib.title"
-msgstr "مساهم في المصدر المفتوح؟"
 
 msgid "onboarding.newsletter.accept"
 msgstr "نعم ، اشترك"
@@ -2029,67 +1896,33 @@ msgstr "نعم ، اشترك"
 msgid "onboarding.newsletter.acceptance-message"
 msgstr "تم إرسال طلب الاشتراك الخاص بك ، وسوف نرسل لك بريدًا إلكترونيًا لتأكيده."
 
-msgid "onboarding.newsletter.decline"
-msgstr "لا شكرا"
-
 msgid "onboarding.newsletter.policy"
 msgstr "سياسة الخصوصية."
-
-msgid "onboarding.newsletter.privacy2"
-msgstr ""
-"سوف نرسل لك رسائل البريد الإلكتروني ذات الصلة فقط. يمكنك إلغاء الاشتراك في "
-"أي وقت في ملف تعريف المستخدم الخاص بك أو عبر رابط إلغاء الاشتراك في أي من "
-"رسائلنا الإخبارية."
 
 msgid "onboarding.newsletter.title"
 msgstr "هل تريد تلقي أخبار Penpot؟"
 
-msgid "onboarding.slide.0.alt"
-msgstr "خلق التصاميم"
-
 msgid "onboarding.slide.0.desc1"
 msgstr "قم بإنشاء واجهات مستخدم جميلة بالتعاون مع جميع أعضاء الفريق."
-
-msgid "onboarding.slide.0.desc2"
-msgstr "الحفاظ على الاتساق على نطاق واسع مع المكونات والمكتبات وأنظمة التصميم."
 
 msgid "onboarding.slide.0.title"
 msgstr "مكتبات التصميم والأنماط والمكونات"
 
-msgid "onboarding.slide.1.alt"
-msgstr "النماذج التفاعلية"
-
 msgid "onboarding.slide.1.desc1"
 msgstr "أنشئ تفاعلات غنية لتقليد سلوك المنتج."
 
-msgid "onboarding.slide.1.desc2"
-msgstr ""
-"شارك مع أصحاب المصلحة ، وقدم مقترحات إلى فريقك وابدأ في اختبار المستخدم "
-"بتصميماتك ، كل ذلك في مكان واحد."
-
 msgid "onboarding.slide.1.title"
 msgstr "اجعل تصميماتك تنبض بالحياة من خلال التفاعلات"
-
-msgid "onboarding.slide.2.alt"
-msgstr "احصل على تعليقات"
 
 msgid "onboarding.slide.2.desc1"
 msgstr ""
 "يعمل جميع أعضاء الفريق في وقت واحد مع تصميمات متعددة اللاعبين في الوقت "
 "الفعلي وتعليقات وأفكار وتعليقات مركزية مباشرة على التصميمات."
 
-msgid "onboarding.slide.2.title"
-msgstr "الحصول على ردود الفعل ، وتقديم ومشاركة عملك"
-
 msgid "onboarding.slide.3.desc1"
 msgstr ""
 "قم بمزامنة التصميم والرمز لجميع المكونات والأنماط الخاصة بك واحصل على "
 "مقتطفات التعليمات البرمجية."
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"احصل على مواصفات التعليمات البرمجية وقدمها مثل الترميز (SVG ، HTML) أو "
-"الأنماط (CSS ، Less ، Stylus…)."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "أنشئ فريقًا"
@@ -2122,9 +1955,6 @@ msgstr "إبدأ التصميم"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.title"
-msgstr "مرحبًا بك في Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
@@ -2511,16 +2341,8 @@ msgid "viewer.header.share.copy-link"
 msgstr "نسخ الرابط"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.create-link"
-msgstr "إنشاء رابط"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.placeholder"
 msgstr "سيظهر رابط المشاركة هنا"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.remove-link"
-msgstr "إزالة الرابط"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
@@ -2577,9 +2399,6 @@ msgstr "أصول رقمية"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.box-filter-all"
 msgstr "كل الأصول الرقمية"
-
-msgid "workspace.assets.box-filter-graphics"
-msgstr "الرسومات"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -2797,10 +2616,6 @@ msgstr "أضف"
 msgid "workspace.libraries.colors"
 msgstr "%s الألوان"
 
-#: src/app/main/ui/workspace/colorpalette.cljs
-msgid "workspace.libraries.colors.big-thumbnails"
-msgstr "صور مصغرة كبيرة"
-
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs,
 #: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.file-library"
@@ -2814,10 +2629,6 @@ msgstr "الألوان الحديثة"
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.save-color"
 msgstr "حفظ نمط اللون"
-
-#: src/app/main/ui/workspace/colorpalette.cljs
-msgid "workspace.libraries.colors.small-thumbnails"
-msgstr "صور مصغرة صغيرة"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
@@ -2883,20 +2694,11 @@ msgstr "تحديث"
 msgid "workspace.libraries.updates"
 msgstr "التحديثات"
 
-msgid "workspace.library.all"
-msgstr "جميع المكتبات"
-
 msgid "workspace.library.libraries"
 msgstr "المكتبات"
 
-msgid "workspace.library.own"
-msgstr "مكتباتي"
-
 msgid "workspace.library.store"
 msgstr "المكتبات المخزنة"
-
-msgid "workspace.options.blur-options.background-blur"
-msgstr "خلفية"
 
 msgid "workspace.options.blur-options.layer-blur"
 msgstr "طبقة"

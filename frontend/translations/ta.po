@@ -87,10 +87,6 @@ msgstr "ஓப்பன் ஐடி"
 msgid "auth.new-password"
 msgstr "புதிய கடவுச்சொல்லை உள்ளிடவும்"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "பென்பாட் அஞ்சல் பட்டியலில் குழுசேர ஒப்புக்கொள்கிறேன்."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "மீட்பு டோக்கன் செல்லுபடியாகாது."

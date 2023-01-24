@@ -64,10 +64,6 @@ msgstr "OpenID"
 msgid "auth.new-password"
 msgstr "Введіть новий пароль"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "Я хочу підписатися на розсилку Penpot."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "Невірний код відновлення."
@@ -108,9 +104,6 @@ msgstr "+ Створити нову команду"
 
 msgid "dashboard.download-binary-file"
 msgstr "Завантажити файл Penpot (.penpot)"
-
-msgid "dashboard.draft-title"
-msgstr "Чорновик"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
@@ -266,16 +259,8 @@ msgid "inspect.attributes.shadow"
 msgstr "Тінь"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.blur"
-msgstr "Р"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.offset-x"
 msgstr "X"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
 
 #, permanent
 msgid "inspect.attributes.stroke.alignment.center"
@@ -366,10 +351,6 @@ msgstr "Текст"
 msgid "inspect.tabs.info"
 msgstr "Інформація"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.about-penpot"
-msgstr "Про Penpot"
-
 msgid "labels.accept"
 msgstr "Прийняти"
 
@@ -391,9 +372,6 @@ msgstr "Назад"
 msgid "labels.cancel"
 msgstr "Відміна"
 
-msgid "labels.centered"
-msgstr "По центру"
-
 msgid "labels.close"
 msgstr "Закрити"
 
@@ -405,9 +383,6 @@ msgstr "Коментарі"
 msgid "labels.community"
 msgstr "Спільнота"
 
-msgid "labels.content"
-msgstr "Вміст"
-
 msgid "labels.continue"
 msgstr "Продовжити"
 
@@ -418,9 +393,6 @@ msgstr "Створити"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.dashboard"
 msgstr "Панель управління"
-
-msgid "labels.default"
-msgstr "за умовчуванням"
 
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
@@ -438,10 +410,6 @@ msgstr "Редагувати"
 msgid "labels.editor"
 msgstr "Редактор"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.email"
-msgstr "Електронна пошта"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.expired-invitation"
 msgstr "Протерміновано"
@@ -455,9 +423,6 @@ msgstr "Стилі"
 msgid "labels.fonts"
 msgstr "Шрифти"
 
-msgid "labels.icons"
-msgstr "Іконки"
-
 msgid "labels.images"
 msgstr "Зображення"
 
@@ -468,9 +433,6 @@ msgstr "Запрошення"
 #: src/app/main/ui/settings/options.cljs
 msgid "labels.language"
 msgstr "Мова"
-
-msgid "labels.link"
-msgstr "Посилання"
 
 #: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.logout"
@@ -483,10 +445,6 @@ msgstr "Учасник"
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "Учасники"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "Ім'я"
 
 msgid "labels.next"
 msgstr "Далі"
@@ -510,10 +468,6 @@ msgstr "Пароль"
 msgid "labels.pending-invitation"
 msgstr "Очікування"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "Дозволи"
-
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
 msgstr "Профіль"
@@ -521,9 +475,6 @@ msgstr "Профіль"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "Проекти"
-
-msgid "labels.recent"
-msgstr "Нещодавні"
 
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
@@ -560,9 +511,6 @@ msgstr "Налаштування"
 msgid "labels.shared-libraries"
 msgstr "Бібліотеки"
 
-msgid "labels.skip"
-msgstr "Пропустити"
-
 msgid "labels.start"
 msgstr "Почати"
 
@@ -587,9 +535,6 @@ msgstr "Завантажую…"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "Спостерігач"
-
-msgid "labels.workspace"
-msgstr "Робоче поле"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
@@ -739,9 +684,6 @@ msgstr "Мапа сайту"
 msgid "workspace.assets.assets"
 msgstr "Ресурси"
 
-msgid "workspace.assets.box-filter-graphics"
-msgstr "Графіка"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
 msgstr "Кольори"
@@ -861,14 +803,8 @@ msgstr "Оновити"
 msgid "workspace.libraries.updates"
 msgstr "ОНОВЛЕННЯ"
 
-msgid "workspace.library.libraries"
-msgstr "Бібліотеки"
-
 msgid "workspace.options.blur-options.background-blur"
 msgstr "Фон"
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Шар"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
