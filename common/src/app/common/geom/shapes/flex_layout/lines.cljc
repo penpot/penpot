@@ -26,6 +26,7 @@
 
   (let [col?  (ctl/col? shape)
         row?  (ctl/row? shape)
+        space-around?  (ctl/space-around? shape)
 
         wrap? (and (ctl/wrap? shape)
                    (or col? (not (ctl/auto-width? shape)))
@@ -77,8 +78,18 @@
               next-max-width   (+ child-margin-width (if fill-width? child-max-width child-width))
               next-max-height  (+ child-margin-height (if fill-height? child-max-height child-height))
 
-              next-line-min-width  (+ line-min-width  next-min-width  (* layout-gap-col num-children))
-              next-line-min-height (+ line-min-height next-min-height (* layout-gap-row num-children))]
+              total-gap-col (if space-around?
+                              (* layout-gap-col (+ num-children 2))
+                              (* layout-gap-col num-children))
+
+              total-gap-row (if space-around?
+                              (* layout-gap-row (+ num-children 2))
+                              (* layout-gap-row num-children))
+
+              next-line-min-width  (+ line-min-width  next-min-width  total-gap-col)
+              next-line-min-height (+ line-min-height next-min-height total-gap-row)
+
+              ]
 
           (if (and (some? line-data)
                    (or (not wrap?)
@@ -226,16 +237,38 @@
 
         row?           (ctl/row? shape)
         col?           (ctl/col? shape)
+        auto-height?   (ctl/auto-height? shape)
+        auto-width?    (ctl/auto-width? shape)
         space-between? (ctl/space-between? shape)
         space-around?  (ctl/space-around? shape)
 
         [layout-gap-row layout-gap-col] (ctl/gaps shape)
 
+        margin-x
+        (cond (and row? space-around? (not auto-width?))
+              (max layout-gap-col (/ (- width line-width) (inc num-children)))
+
+              (and row? space-around? auto-width?)
+              layout-gap-col
+
+              :else
+              0)
+
+        margin-y
+        (cond (and col? space-around? (not auto-height?))
+              (max layout-gap-row (/ (- height line-height) (inc num-children)))
+
+              (and col? space-around? auto-height?)
+              layout-gap-row
+
+              :else
+              0)
+
         layout-gap-col
         (cond (and row? space-around?)
               0
 
-              (and row? space-between?)
+              (and row? space-between? (not auto-width?))
               (max layout-gap-col (/ (- width line-width) (dec num-children)))
 
               :else
@@ -245,21 +278,11 @@
         (cond (and col? space-around?)
               0
 
-              (and col? space-between?)
+              (and col? space-between? (not auto-height?))
               (max layout-gap-row (/ (- height line-height) (dec num-children)))
 
               :else
-              layout-gap-row)
-
-        margin-x
-        (if (and row? space-around?)
-          (/ (- width line-width) (inc num-children))
-          0)
-
-        margin-y
-        (if (and col? space-around?)
-          (/ (- height line-height) (inc num-children))
-          0)]
+              layout-gap-row)]
     (assoc line-data
            :layout-bounds layout-bounds
            :layout-gap-row layout-gap-row
@@ -308,4 +331,3 @@
     {:layout-lines layout-lines
      :layout-bounds layout-bounds
      :reverse? reverse?}))
-
