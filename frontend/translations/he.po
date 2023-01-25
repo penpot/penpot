@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-10-16 13:49+0000\n"
+"PO-Revision-Date: 2023-01-26 16:52+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 4.15-dev\n"
+"X-Generator: Weblate 4.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -300,18 +300,18 @@ msgstr "שכפול %s קבצים"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"אבוי! עדיין אין לך קבצים! כדי להתנסות עם כמה מהתבניות ניתן לגשת אל [הספריות "
-"והתבניות](https://penpot.app/libraries-templates.html)"
+"קבצים שנוספו לספריות יתווספו לכאן. כדאי לנסות לשתף את הקבצים שלך או להוסיף "
+"אותם מ[הספריות והתבניות](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "הורדת %s קובצי Penpot‏ (‎.penpot)"
 
 msgid "dashboard.export-frames"
-msgstr "ייצוא לוחות אומנות ל־PDF"
+msgstr "ייצוא לוחות אומנות כ־PDF"
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-frames.title"
-msgstr "ייצוא ל־PDF"
+msgstr "ייצוא כ־PDF"
 
 msgid "dashboard.export-multi"
 msgstr "ייצוא קובצי %s של Penpot"
@@ -380,7 +380,7 @@ msgid "dashboard.fonts.dismiss-all"
 msgstr "להתעלם מהכול"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "עדיין לא מותקנים אצלך גופנים משלך."
+msgstr "גופנים שהעלית יופיעו כאן."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
@@ -446,7 +446,7 @@ msgstr "נשלח קובץ: %s"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "הזמנה לצוות"
+msgstr "הזמנת אנשים"
 
 #: src/app/main/ui/dashboard/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -502,10 +502,6 @@ msgstr "+ מיזם חדש"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "מיזם חדש"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "מינוי לרשימת הדיוור"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -583,17 +579,9 @@ msgstr "בחירת ערכת עיצוב"
 msgid "dashboard.show-all-files"
 msgstr "הצגת כל הקבצים"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgstr "הקובץ שלך נמחק בהצלחה"
-
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "המיזם שלך נמחק בהצלחה"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgstr "הקובץ שלך שוכפל בהצלחה"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -819,10 +807,6 @@ msgid "errors.wrong-old-password"
 msgstr "הסיסמה הישנה שגויה"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "מעניין אותך לדבר? מזמינים אותך ל־Gitter"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "תיאור"
 
@@ -936,10 +920,6 @@ msgstr "רוחב"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "צל"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1241,9 +1221,6 @@ msgstr "מרכז העזרה"
 msgid "labels.hide-resolved-comments"
 msgstr "הסתרת הערות שנפתרו"
 
-msgid "labels.images"
-msgstr "תמונות"
-
 msgid "labels.installed-fonts"
 msgstr "גופנים מותקנים"
 
@@ -1445,9 +1422,6 @@ msgstr "הצגת רשימת הערות"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "הצגת ההערות שלך בלבד"
-
-msgid "labels.skip"
-msgstr "דילוג"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1957,14 +1931,8 @@ msgstr "יצירת צוות ושליחת הזמנות"
 msgid "onboarding.choice.team-up.roles"
 msgstr "הזמנה עם התפקיד:"
 
-msgid "onboarding.contrib.alt"
-msgstr "קוד פתוח"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "אפשר לגשת אל"
-
-msgid "onboarding.contrib.link"
-msgstr "מיזם ב־github"
 
 msgid "onboarding.newsletter.accept"
 msgstr "כן, להירשם"
@@ -1978,30 +1946,14 @@ msgstr "מדיניות פרטיות."
 msgid "onboarding.newsletter.title"
 msgstr "מעניין אותך לקבל חדשות על Penpot?"
 
-msgid "onboarding.slide.0.desc1"
-msgstr "אפשר ליצור מנשקי משתמש יפהפיים בשיתוף פעולה של כל חברי הצוות."
-
 msgid "onboarding.slide.0.title"
 msgstr "ספריות עיצוב, סגנונות ורכיבים"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "יצירת אינטראקציות עשירות לחיקוי התנהגות המוצר."
 
 msgid "onboarding.slide.1.title"
 msgstr "העיצובים שלך קמים לחיים עם אינטראקציות"
 
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"כל חברי הצוות עובדים במקביל עם הערות, רעיונות ממגוון גורמים במקום מרכזי על "
-"העיצוב בזמן אמת ישירות על העיצובים."
-
 msgid "onboarding.slide.3.alt"
 msgstr "הגשה וקוד מקור"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"לקבל ולספק מפרטי קוד כגון שפת סימון (SVG,‏ HTML) או סגנונות (CSS,‏ Less,‏ "
-"Stylus…)."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "יצירת צוות"
@@ -2026,9 +1978,6 @@ msgstr "ללא הגבלת משתמשים"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% בחינם!"
 
-msgid "onboarding.team.create.title"
-msgstr "יצירת צוות"
-
 msgid "onboarding.team.start.title"
 msgstr "מתחילים לעצב"
 
@@ -2040,9 +1989,6 @@ msgstr "להתחיל לעצב"
 
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
-
-msgid "onboarding.welcome.title"
-msgstr "ברוך בואך ל־Penpot"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
@@ -2577,10 +2523,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "העתקת קישור"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "הקישור לשיתוף יופיע כאן"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "לכל מי שיש את הקישור יש גישה"
 
@@ -3035,18 +2977,12 @@ msgstr "עדכון"
 msgid "workspace.libraries.updates"
 msgstr "עדכונים"
 
-msgid "workspace.library.libraries"
-msgstr "ספריות"
-
 msgid "workspace.library.store"
 msgstr "אחסון ספריות"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "יש ללחוץ על הכפתור + כדי להוסיף אינטראקציות."
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "שכבה"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -3573,10 +3509,6 @@ msgid "workspace.options.layout-item.layout-item-min-w"
 msgstr "רוחב מז.‏"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.min-w"
-msgstr "רוחב מזערי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-item-max-h"
 msgstr "גובה מרבי"
 
@@ -3590,10 +3522,6 @@ msgstr "גובה מזערי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-item-min-w"
-msgstr "רוחב מזערי"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.min-w"
 msgstr "רוחב מזערי"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
@@ -4399,3 +4327,36 @@ msgstr "עדכון"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+msgid "dashboard.webhooks.active"
+msgstr "פעילה"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "כאשר ההתליה הזאת מופעלת פרטי האירוע יישלחו"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "סוג תוכן"
+
+msgid "dashboard.webhooks.create"
+msgstr "יצירת התליית רשת"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "התליית הרשת נוצרה בהצלחה."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "התליות הרשת עודכנו בהצלחה."
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"התליות רשת הן דרך פשוטה לאפשר לאתרים אחרים לקבל הודעות כשאירועים מסוימים "
+"מתרחשים ב־Penpot. אנו נשלח בקשת POST לכל אחת מהכתובות שתצויינה."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "לחיצה על הכפתור „הוספת התליית רשת” תוסיף אחת."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "לא נוצרו התליות רשת עדיין."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "נא למלא כתובת דוא״ל תקפה בבקשה"
