@@ -1311,16 +1311,22 @@
                         :file-id (:current-file-id state)
                         :selected selected
                         :objects {}
-                        :images #{}}]
+                        :images #{}}
+              selected_text (.. js/window getSelection toString)]
 
-          (->> (rx/from (seq (vals pdata)))
-               (rx/merge-map (partial prepare-object objects selected+children))
-               (rx/reduce collect-data initial)
-               (rx/map (partial sort-selected state))
-               (rx/map t/encode-str)
-               (rx/map wapi/write-to-clipboard)
-               (rx/catch on-copy-error)
-               (rx/ignore)))))))
+          (if (not-empty selected_text)
+            (try
+              (wapi/write-to-clipboard selected_text)
+              (catch :default e
+                (on-copy-error e)))
+            (->> (rx/from (seq (vals pdata)))
+                 (rx/merge-map (partial prepare-object objects selected+children))
+                 (rx/reduce collect-data initial)
+                 (rx/map (partial sort-selected state))
+                 (rx/map t/encode-str)
+                 (rx/map wapi/write-to-clipboard)
+                 (rx/catch on-copy-error)
+                 (rx/ignore))))))))
 
 (declare paste-shape)
 (declare paste-text)
