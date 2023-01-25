@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-11-05 10:09+0000\n"
+"PO-Revision-Date: 2023-01-26 16:52+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German "
-"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
+"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
+"de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.2-dev\n"
+"X-Generator: Weblate 4.16-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -309,10 +309,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "%s Dateien duplizieren"
 
 #: src/app/main/ui/dashboard/grid.cljs
+#, fuzzy
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Hier gibt es noch keine Dateien. Wenn Sie einige Vorlagen ausprobieren "
-"möchten, können Sie zum Abschnitt [Bibliotheken & "
+"Zu Bibliotheken hinzugefügte Dateien werden hier angezeigt. Wenn Sie einige "
+"Vorlagen ausprobieren möchten, können Sie zum Abschnitt [Bibliotheken & "
 "Vorlagen](https://penpot.app/libraries-templates.html) gehen"
 
 msgid "dashboard.export-binary-multi"
@@ -401,7 +402,9 @@ msgid "dashboard.fonts.dismiss-all"
 msgstr "Alle ablehnen"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Sie haben noch keine benutzerdefinierten Schriftarten installiert."
+msgstr ""
+"Die von Ihnen hochgeladenen benutzerdefinierten Schriftarten werden hier "
+"angezeigt."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
@@ -470,7 +473,7 @@ msgstr "Datei %s wird hochgeladen"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "Zum Team einladen"
+msgstr "Personen einladen"
 
 #: src/app/main/ui/dashboard/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -528,10 +531,6 @@ msgstr "+ Neues Projekt"
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
 msgstr "Neues Projekt"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Anmeldung zum Newsletter"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -609,17 +608,9 @@ msgstr "Theme auswählen"
 msgid "dashboard.show-all-files"
 msgstr "Alle Dateien anzeigen"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgstr "Ihre Datei wurde erfolgreich gelöscht"
-
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "Ihr Projekt wurde erfolgreich gelöscht"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgstr "Ihre Datei wurde erfolgreich dupliziert"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -848,15 +839,11 @@ msgstr "Unbekannter Token"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
-msgstr "Der Benutzername oder das Passwort ist falsch."
+msgstr "Die E-Mail-Adresse oder das Passwort ist falsch."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "Altes Passwort ist falsch"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Möchten Sie sprechen? Chatten Sie mit uns bei Gitter"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
@@ -906,10 +893,6 @@ msgstr "Twitter Support-Konto"
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "Ein Fehler ist aufgetreten"
-
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-style"
-msgstr "Schriftschnitt"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
@@ -979,10 +962,6 @@ msgstr "Breite"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Schatten"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1277,9 +1256,6 @@ msgstr "Hilfezentrum"
 msgid "labels.hide-resolved-comments"
 msgstr "Erledigte Kommentare ausblenden"
 
-msgid "labels.images"
-msgstr "Bilder"
-
 msgid "labels.installed-fonts"
 msgstr "Installierte Schriftarten"
 
@@ -1328,17 +1304,19 @@ msgstr "Neues Passwort"
 #: src/app/main/ui/workspace/comments.cljs,
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "Sie haben keine ausstehenden Kommentarbenachrichtigungen"
+msgstr ""
+"Sie sind auf dem neuesten Stand! Neue Benachrichtigungen zu Kommentaren "
+"werden hier angezeigt."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
-msgstr "Es gibt keine Einladungen."
+msgstr "Keine ausstehenden Einladungen."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr ""
-"Drücken Sie die Schaltfläche \"Zum Team einladen\", um weitere Mitglieder "
-"in dieses Team einzuladen."
+"Drücken Sie auf die Schaltfläche **Personen einladen**, um Personen zu "
+"diesem Team einzuladen."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1480,9 +1458,6 @@ msgstr "Kommentarliste anzeigen"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Nur eigene Kommentare anzeigen"
-
-msgid "labels.skip"
-msgstr "Überspringen"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1818,11 +1793,6 @@ msgstr "Minimal"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Veröffentlichung aufheben"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
@@ -2009,14 +1979,8 @@ msgstr "Team erstellen und Einladungen versenden"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Einladen mit der Rolle:"
 
-msgid "onboarding.contrib.alt"
-msgstr "Open Source"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "Sie können das Projekt"
-
-msgid "onboarding.contrib.link"
-msgstr "auf GitHub ansehen"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Ja, abonnieren"
@@ -2032,34 +1996,14 @@ msgstr "Datenschutzbestimmungen."
 msgid "onboarding.newsletter.title"
 msgstr "Möchten Sie die Penpot-Nachrichten erhalten?"
 
-msgid "onboarding.slide.0.desc1"
-msgstr ""
-"Erstellen Sie ansprechende Benutzeroberflächen gemeinsam mit anderen "
-"Teammitgliedern."
-
 msgid "onboarding.slide.0.title"
 msgstr "Design-Bibliotheken, Stile und Komponenten"
-
-msgid "onboarding.slide.1.desc1"
-msgstr ""
-"Erstellen Sie umfangreiche Interaktionen, um das reale Verhalten ihres "
-"Produktes zu simulieren."
 
 msgid "onboarding.slide.1.title"
 msgstr "Hauchen Sie Ihren Entwürfen mit Interaktionen Leben ein"
 
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Alle Teammitglieder können in Echtzeit an Entwürfen arbeiten – und erhalten "
-"direktes Feedback über die integrierte Kommentarfunktion."
-
 msgid "onboarding.slide.3.alt"
 msgstr "Übergabe und Lowcode"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Erstellen und erhalten Sie Spezifikationen in Auszeichnungs- (SVG, HTML) "
-"oder Stylesheet-Sprachen (CSS, Less, Stylus…)."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Ein Team erstellen"
@@ -2626,10 +2570,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Link kopieren"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "Der Link fürs Teilen wird hier angezeigt"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Jeder mit dem Link hat Zugriff"
 
@@ -3086,18 +3026,12 @@ msgstr "Aktualisieren"
 msgid "workspace.libraries.updates"
 msgstr "AKTUALISIERUNG"
 
-msgid "workspace.library.libraries"
-msgstr "Bibliotheken"
-
 msgid "workspace.library.store"
 msgstr "Gespeicherte Bibliotheken"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Klicken Sie auf den + Button um Interaktionen hinzuzufügen."
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Ebene"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -4445,3 +4379,212 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"Wenn Sie es löschen, werden diese Assets in die lokale Bibliothek dieser "
+"Datei verschoben. Unbenutzte Assets gehen verloren."
+msgstr[1] ""
+"Wenn Sie sie löschen, werden diese Assets in die lokale Bibliothek dieser "
+"Datei verschoben. Unbenutzte Assets gehen verloren."
+
+msgid "dashboard.webhooks.active"
+msgstr "Aktiv"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Inhaltstyp"
+
+msgid "dashboard.webhooks.create"
+msgstr "Webhook erstellen"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook wurde erfolgreich erstellt."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr ""
+"Um einen Webhook hinzuzufügen, drücken Sie auf die Schaltfläche \"Webhook "
+"hinzufügen\"."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Geben Sie bitte eine gültige E-Mail-Adresse ein"
+
+msgid "errors.webhooks.connection"
+msgstr "Verbindungsfehler, URL ist nicht erreichbar"
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Fehler bei der SSL-Validierung."
+
+msgid "errors.webhooks.timeout"
+msgstr "Zeitüberschreitung"
+
+msgid "labels.active"
+msgstr "Aktiv"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Link kopieren"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Datei neu laden"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Veröffentlichung von %s-Dateien aufheben"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Webhook löschen"
+
+msgid "modals.delete-webhook.message"
+msgstr "Möchten Sie diesen Webhook wirklich löschen?"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Textstile"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Ein Element exportieren"
+msgstr[1] "%s Elemente exportieren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relativ zu"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Flex-Layout entfernen"
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Bisher wurden noch keine Webhooks erstellt."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook wurde erfolgreich aktualisiert."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Es scheint als würden Sie eine Datei öffnen, bei der die Funktion '%s' "
+"aktiviert ist. Ihr Penpot-Frontend unterstützt es aber nicht oder hat die "
+"Funktion deaktiviert."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Die Funktion '%s' wird nicht unterstützt."
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-style"
+msgstr "Schriftschnitt"
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Sie haben das Limit von '%s' erreicht. Kontaktieren Sie den Support."
+
+msgid "errors.webhooks.unexpected"
+msgstr "Unerwarteter Fehler bei der Validierung"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Unerwarteter Status %s"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Größe und Position"
+
+msgid "inspect.attributes.stroke.style.solid"
+msgstr "Durchgezogen"
+
+msgid "inspect.empty.select"
+msgstr ""
+"Wählen Sie eine Form, ein Board oder eine Gruppe aus, um deren Eigenschaften "
+"und Code zu überprüfen."
+
+msgid "inspect.empty.more-info"
+msgstr "Weitere Informationen zur Inspektion"
+
+msgid "labels.inactive"
+msgstr "Inaktiv"
+
+msgid "labels.view-only"
+msgstr "NUR ANSEHEN"
+
+msgid "modals.create-webhook.url.label"
+msgstr "Payload-URL"
+
+msgid "modals.delete-webhook.title"
+msgstr "Webhook löschen"
+
+msgid "labels.webhooks"
+msgstr "Webhooks"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Webhook erstellen"
+
+msgid "modals.create-webhook.title"
+msgstr "Webhook erstellen"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Webhook bearbeiten"
+
+msgid "modals.edit-webhook.title"
+msgstr "Webhook bearbeiten"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Einladungslink kopiert"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Flex-Layout hinzufügen/entfernen"
+
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "Einige Grafiken konnten nicht aktualisiert werden."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr ""
+"Von nun an sind Grafiken in der Bibliothek auch Komponenten. Das macht sie "
+"viel leistungsfähiger."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "Konvertieren von %s/%s"
+
+msgid "workspace.options.inspect"
+msgstr "Inspizieren"
+
+msgid "workspace.options.interaction-auto"
+msgstr "Automatisch"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "Aktualisierung von %s..."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Flex-Layout hinzufügen"
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Webhooks ermöglichen es, andere Websites und Anwendungen automatisch über "
+"bestimmte Ereignisse bei Penpot zu informieren. Dies geschieht durch das "
+"Versenden einer POST-Anfrage an die von Ihnen festgelegten URLs."
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "Die URL erfüllt nicht die Validierungskriterien."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Die letzte Übertragung war nicht erfolgreich."
+
+msgid "inspect.empty.help"
+msgstr ""
+"Für weitere Informationen zum Thema \"Auswerten von Design-Spezifikationen\""
+", besuchen Sie bitte das Penpot-Hilfezentrum."
