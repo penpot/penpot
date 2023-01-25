@@ -17,6 +17,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dws]
+   [app.main.data.workspace.text.shortcuts :as dwtxts]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -106,6 +107,7 @@
                           :command "escape"
                           :subsections [:edit]
                           :fn #(st/emit! :interrupt (dw/deselect-all true))}
+
 
    ;; MODIFY LAYERS
 
@@ -526,7 +528,7 @@
                            :fn #(emit-when-no-readonly (dwly/pressed-opacity n))}])))))
 
 (def shortcuts
-  (merge base-shortcuts opacity-shortcuts))
+  (merge base-shortcuts opacity-shortcuts dwtxts/shortcuts))
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

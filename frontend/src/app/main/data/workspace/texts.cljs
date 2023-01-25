@@ -28,6 +28,68 @@
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
+;; -- Attrs
+
+(def text-typography-attrs
+  [:typography-ref-id
+   :typography-ref-file])
+
+(def text-fill-attrs
+  [:fill-color
+   :fill-opacity
+   :fill-color-ref-id
+   :fill-color-ref-file
+   :fill-color-gradient])
+
+(def text-font-attrs
+  [:font-id
+   :font-family
+   :font-variant-id
+   :font-size
+   :font-weight
+   :font-style])
+
+(def text-align-attrs
+  [:text-align])
+
+(def text-direction-attrs
+  [:text-direction])
+
+(def text-spacing-attrs
+  [:line-height
+   :letter-spacing])
+
+(def text-valign-attrs
+  [:vertical-align])
+
+(def text-decoration-attrs
+  [:text-decoration])
+
+(def text-transform-attrs
+  [:text-transform])
+
+(def shape-attrs
+  [:grow-type])
+
+(def root-attrs text-valign-attrs)
+
+(def paragraph-attrs
+  (d/concat-vec
+   text-align-attrs
+   text-direction-attrs))
+
+(def text-attrs
+  (d/concat-vec
+   text-typography-attrs
+   text-font-attrs
+   text-spacing-attrs
+   text-decoration-attrs
+   text-transform-attrs))
+
+(def attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-attrs))
+
+;; -- Editor
+
 (defn update-editor
   [editor]
   (ptk/reify ::update-editor
@@ -182,8 +244,8 @@
 
 (defn- update-text-content
   [shape pred-fn update-fn attrs]
-  (let [update-attrs #(update-fn % attrs)
-        transform   #(txt/transform-nodes pred-fn update-attrs %)]
+  (let [update-attrs-fn #(update-fn % attrs)
+        transform   #(txt/transform-nodes pred-fn update-attrs-fn %)]
     (-> shape
         (update :content transform))))
 
@@ -525,3 +587,24 @@
                   (rx/take-until stopper))
              (rx/of (update-position-data id position-data))))
           (rx/empty))))))
+
+(defn update-attrs
+[id attrs]
+  (ptk/reify ::update-attrs
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (rx/concat
+             (let [attrs (select-keys attrs root-attrs)]
+               (if-not (empty? attrs)
+                 (rx/of (update-root-attrs {:id id :attrs attrs}))
+                 (rx/empty)))
+
+             (let [attrs (select-keys attrs paragraph-attrs)]
+               (if-not (empty? attrs)
+                 (rx/of (update-paragraph-attrs {:id id :attrs attrs}))
+                 (rx/empty)))
+
+             (let [attrs (select-keys attrs text-attrs)]
+               (if-not (empty? attrs)
+                 (rx/of (update-text-attrs {:id id :attrs attrs}))
+                 (rx/empty)))))))
