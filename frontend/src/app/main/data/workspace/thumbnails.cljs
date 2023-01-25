@@ -94,7 +94,9 @@
                             (rx/catch #(rx/empty))
                             (rx/ignore))))
 
-                    (rx/empty)))))))))))
+                    (rx/empty))))
+               (rx/catch #(do (.error js/console %)
+                              (rx/empty))))))))))
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"
