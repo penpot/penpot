@@ -342,10 +342,10 @@
   (mf/use-effect
    (mf/deps path-editing? drawing-path?)
    (fn []
-     (when (or drawing-path? path-editing?)
-       (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
-       #(st/emit! (dsc/pop-shortcuts ::path)))
-
-     (when text-editing?
-       (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
-       #(st/emit! (dsc/pop-shortcuts ::text))))))
+     (cond
+       (or drawing-path? path-editing?)
+       (do (st/emit! (dsc/push-shortcuts ::path psc/shortcuts))
+           #(st/emit! (dsc/pop-shortcuts ::path)))
+       text-editing?
+        (do (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
+            #(st/emit! (dsc/pop-shortcuts ::text)))))))
