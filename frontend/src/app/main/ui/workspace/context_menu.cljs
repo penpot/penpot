@@ -411,6 +411,8 @@
 
         current-file-id     (mf/use-ctx ctx/current-file-id)
         local-component?    (= component-file current-file-id)
+        remote-components   (filter #(not= (:component-file %) current-file-id)
+                                    component-shapes)
 
         workspace-data      (deref refs/workspace-data)
         workspace-libraries (deref refs/workspace-libraries)
@@ -442,16 +444,19 @@
                      :accept-style :primary
                      :on-accept do-update-component}))
 
-        do-update-in-bulk #(st/emit! (modal/show
-                                      {:type :confirm
-                                       :message ""
-                                       :title (tr "modals.update-remote-component-in-bulk.message")
-                                       :hint (tr "modals.update-remote-component-in-bulk.hint")
-                                       :items component-shapes
-                                       :cancel-label (tr "modals.update-remote-component.cancel")
-                                       :accept-label (tr "modals.update-remote-component.accept")
-                                       :accept-style :primary
-                                       :on-accept do-update-component-in-bulk}))]
+        do-update-in-bulk (fn []
+                            (if (empty? remote-components)
+                              (do-update-component-in-bulk)
+                              #(st/emit! (modal/show
+                                          {:type :confirm
+                                           :message ""
+                                           :title (tr "modals.update-remote-component-in-bulk.message")
+                                           :hint (tr "modals.update-remote-component-in-bulk.hint")
+                                           :items remote-components
+                                           :cancel-label (tr "modals.update-remote-component.cancel")
+                                           :accept-label (tr "modals.update-remote-component.accept")
+                                           :accept-style :primary
+                                           :on-accept do-update-component-in-bulk}))))]
     [:*
      [:*
       (when (or (not is-non-root?) (and has-component? (not single?)))

@@ -62,6 +62,7 @@
 - Fix some typos [Taiga #4724](https://tree.taiga.io/project/penpot/issue/4724)
 - Fix ctrl+c for inspect code [Taiga #4739](https://tree.taiga.io/project/penpot/issue/4739)
 - Fix text in custom font is not at the expected position at export [Taiga #4394](https://tree.taiga.io/project/penpot/issue/4394)
+- Fix unneeded popup when updating local components [Taiga #4430](https://tree.taiga.io/project/penpot/issue/4430)
 
 ### :heart: Community contributions by (Thank you!)
 
