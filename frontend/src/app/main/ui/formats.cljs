@@ -55,7 +55,7 @@
       {:p1 p1 :p2 p2 :p3 p3 :p4 p4}
 
       (and (= p1 p3) (= p2 p4))
-      {:p1 p1 :p3 p3}
+      {:p1 p1 :p2 p2}
 
       (and (not= p1 p3) (= p2 p4))
       {:p1 p1 :p2 p2 :p3 p3}
@@ -67,9 +67,11 @@
   (let [sizing (if (= type :width)
                  (:layout-item-h-sizing shape)
                  (:layout-item-v-sizing shape))]
-    (if (= sizing :fill)
-      "100%"
-      (str (format-pixels value)))))
+    (if (string? value)
+      value
+      (if (= sizing :fill)
+        "100%"
+        (str (format-pixels value))))))
 
 (defn format-padding
   [padding-values type]

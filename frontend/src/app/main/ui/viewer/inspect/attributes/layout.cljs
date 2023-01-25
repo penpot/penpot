@@ -23,31 +23,31 @@
              :rx "border-radius"
              :r1 "border-radius"}
    :format  {:rotation #(str/fmt "rotate(%sdeg)" %)
-             :r1 #(apply str/fmt "%spx, %spx, %spx, %spx" %)
-             :width (partial fmt/format-size :width)
-             :height (partial fmt/format-size :height)}
+             :r1       #(apply str/fmt "%spx, %spx, %spx, %spx" %)
+             :width    #(cg/get-size :width %)
+             :height   #(cg/get-size :height %)}
    :multi   {:r1 [:r1 :r2 :r3 :r4]}})
 
 (defn copy-data
   ([shape]
    (apply copy-data shape properties))
-  ([shape & properties] 
+  ([shape & properties]
    (cg/generate-css-props shape properties params)))
 
 (mf/defc layout-block
   [{:keys [shape]}]
   (let [selrect (:selrect shape)
-        {:keys [x y]} selrect]
+        {:keys [x y width height]} selrect]
     [:*
      [:div.attributes-unit-row
       [:div.attributes-label (tr "inspect.attributes.layout.width")]
-      [:div.attributes-value (fmt/format-size :width (:width shape) shape)]
-      [:& copy-button {:data (copy-data shape :width)}]]
+      [:div.attributes-value (fmt/format-size :width width shape)]
+      [:& copy-button {:data (copy-data selrect :width)}]]
 
      [:div.attributes-unit-row
       [:div.attributes-label (tr "inspect.attributes.layout.height")]
-      [:div.attributes-value (fmt/format-size :height (:height shape) shape)]
-      [:& copy-button {:data (copy-data shape :height)}]]
+      [:div.attributes-value (fmt/format-size :height height shape)]
+      [:& copy-button {:data (copy-data selrect :height)}]]
 
      (when (not= (:x shape) 0)
        [:div.attributes-unit-row
@@ -73,7 +73,7 @@
         [:div.attributes-value
          (fmt/format-number (:r1 shape)) ", "
          (fmt/format-number (:r2 shape)) ", "
-         (fmt/format-number (:r3 shape))", "
+         (fmt/format-number (:r3 shape)) ", "
          (fmt/format-pixels (:r4 shape))]
         [:& copy-button {:data (copy-data shape :r1)}]])
 
