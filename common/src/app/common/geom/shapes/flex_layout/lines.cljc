@@ -236,7 +236,7 @@
               0
 
               (and row? space-between?)
-              (/ (- width line-width) (dec num-children))
+              (max layout-gap-col (/ (- width line-width) (dec num-children)))
 
               :else
               layout-gap-col)
@@ -246,7 +246,7 @@
               0
 
               (and col? space-between?)
-              (/ (- height line-height) (dec num-children))
+              (max layout-gap-row (/ (- height line-height) (dec num-children)))
 
               :else
               layout-gap-row)
