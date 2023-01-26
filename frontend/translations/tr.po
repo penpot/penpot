@@ -3635,11 +3635,11 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Sütun"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
+msgid "workspace.options.layout.direction.column-reverse"
 msgstr "Ters sütun"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
+msgid "workspace.options.layout.direction.row-reverse"
 msgstr "Ters satır"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs

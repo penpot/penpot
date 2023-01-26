@@ -3541,11 +3541,11 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Zutabea"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
+msgid "workspace.options.layout.direction.column-reverse"
 msgstr "Alderantzikatu zutabea"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
+msgid "workspace.options.layout.direction.row-reverse"
 msgstr "Alderantzikatu lerroa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs

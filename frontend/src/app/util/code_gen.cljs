@@ -74,21 +74,6 @@
       (fmt/format-size :width value values)
       (fmt/format-size :heigth value values))))
 
-(defn get-layout-orientation
-  [value]
-  (if (= :wrap value)
-    "wrap"
-    "nowrap"))
-
-(defn get-layout-direction
-  [value]
-  (case value
-    :row "row"
-    :reverse-row "row-reverse"
-    :column "column"
-    :reverse-column "column-reverse"
-    "row"))
-
 (defn styles-data
   [shape]
   {:position    {:props [:type]
@@ -134,10 +119,10 @@
                            :layout-gap "gap"
                            :layout-padding "padding"}
                  :format  {:layout name
-                           :layout-flex-dir get-layout-direction
+                           :layout-flex-dir name
                            :layout-align-items name
                            :layout-justify-content name
-                           :layout-wrap-type get-layout-orientation
+                           :layout-wrap-type name
                            :layout-gap format-gap
                            :layout-padding fmt/format-padding}}})
 
