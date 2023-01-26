@@ -39,10 +39,10 @@
              :layout-gap "gap"
              :layout-padding "padding"}
    :format  {:layout name
-             :layout-flex-dir cg/get-layout-direction
+             :layout-flex-dir name
              :layout-align-items name
              :layout-justify-content name
-             :layout-wrap-type cg/get-layout-orientation
+             :layout-wrap-type name
              :layout-gap fm/format-gap
              :layout-padding fm/format-padding}})
 
@@ -82,7 +82,7 @@
 
    [:div.attributes-unit-row
     [:div.attributes-label "Direction"]
-    [:div.attributes-value (str/capital (cg/get-layout-direction (:layout-flex-dir shape)))]
+    [:div.attributes-value (str/capital (d/name (:layout-flex-dir shape)))]
     [:& copy-button {:data (copy-data shape :layout-flex-dir)}]]
 
    [:div.attributes-unit-row
@@ -97,7 +97,7 @@
 
    [:div.attributes-unit-row
     [:div.attributes-label "Flex wrap"]
-    [:div.attributes-value (str/capital (cg/get-layout-orientation (:layout-wrap-type shape)))]
+    [:div.attributes-value (str/capital (d/name (:layout-wrap-type shape)))]
     [:& copy-button {:data (copy-data shape :layout-wrap-type)}]]
    
    (when (= :wrap (:layout-wrap-type shape))

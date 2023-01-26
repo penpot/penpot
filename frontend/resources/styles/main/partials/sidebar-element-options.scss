@@ -1707,13 +1707,13 @@
           cursor: pointer;
           border-right: 1px solid $color-gray-60;
           padding: 2px;
-          &.reverse-row {
+          &.row-reverse {
             svg {
               transform: rotate(180deg);
             }
           }
 
-          &.reverse-column {
+          &.column-reverse {
             svg {
               transform: rotate(-90deg);
             }

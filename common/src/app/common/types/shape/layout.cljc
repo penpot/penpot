@@ -11,13 +11,13 @@
    [clojure.spec.alpha :as s]))
 
 ;; :layout                 ;; :flex, :grid in the future
-;; :layout-flex-dir        ;; :row, :reverse-row, :column, :reverse-column
+;; :layout-flex-dir        ;; :row, :row-reverse, :column, :column-reverse
 ;; :layout-gap-type        ;; :simple, :multiple
 ;; :layout-gap             ;; {:row-gap number , :column-gap number}
 ;; :layout-align-items     ;; :start :end :center :stretch
 ;; :layout-justify-content ;; :start :center :end :space-between :space-around
 ;; :layout-align-content   ;; :start :center :end :space-between :space-around :stretch (by default)
-;; :layout-wrap-type       ;; :wrap, :no-wrap
+;; :layout-wrap-type       ;; :wrap, :nowrap
 ;; :layout-padding-type    ;; :simple, :multiple
 ;; :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
 
@@ -32,13 +32,13 @@
 ;; :layout-item-min-w       ;; num
 
 (s/def ::layout  #{:flex :grid})
-(s/def ::layout-flex-dir #{:row :reverse-row :column :reverse-column})
+(s/def ::layout-flex-dir #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse}) ;;TODO remove reverse-column and reverse-row after script
 (s/def ::layout-gap-type #{:simple :multiple})
 (s/def ::layout-gap ::us/safe-number)
 (s/def ::layout-align-items #{:start :end :center :stretch})
 (s/def ::layout-align-content #{:start :end :center :space-between :space-around :stretch})
 (s/def ::layout-justify-content #{:start :center :end :space-between :space-around})
-(s/def ::layout-wrap-type #{:wrap :no-wrap})
+(s/def ::layout-wrap-type #{:wrap :nowrap :no-wrap}) ;;TODO remove no-wrap after script
 (s/def ::layout-padding-type #{:simple :multiple})
 
 (s/def ::p1 ::us/safe-number)
@@ -148,11 +148,11 @@
 
 (defn col?
   [{:keys [layout-flex-dir]}]
-  (or (= :column layout-flex-dir) (= :reverse-column layout-flex-dir)))
+  (or (= :column layout-flex-dir) (= :column-reverse layout-flex-dir)))
 
 (defn row?
   [{:keys [layout-flex-dir]}]
-  (or (= :row layout-flex-dir) (= :reverse-row layout-flex-dir)))
+  (or (= :row layout-flex-dir) (= :row-reverse layout-flex-dir)))
 
 (defn gaps
   [{:keys [layout-gap]}]
@@ -278,8 +278,8 @@
 
 (defn reverse?
   [{:keys [layout-flex-dir]}]
-  (or (= :reverse-row layout-flex-dir)
-      (= :reverse-column layout-flex-dir)))
+  (or (= :row-reverse layout-flex-dir)
+      (= :column-reverse layout-flex-dir)))
 
 (defn space-between?
   [{:keys [layout-justify-content]}]
