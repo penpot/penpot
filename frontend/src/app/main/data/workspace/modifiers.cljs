@@ -79,15 +79,22 @@
           (gpt/point (- (gsh/left-bound transformed-shape) (gsh/left-bound transformed-root))
                      (- (gsh/top-bound transformed-shape) (gsh/top-bound transformed-root))))
 
-        ;; There are cases in that the coordinates change slightly (e.g. when
-        ;; rounding to pixel, or when recalculating text positions in different
-        ;; zoom levels). To take this into account, we ignore movements smaller
-        ;; than 1 pixel.
         distance (if (and shape-delta transformed-shape-delta)
                    (gpt/distance-vector shape-delta transformed-shape-delta)
                    (gpt/point 0 0))
 
-        ignore-geometry? (and (< (:x distance) 1) (< (:y distance) 1))]
+        selrect (:selrect shape)
+        transformed-selrect (:selrect transformed-shape)
+
+        ;; There are cases in that the coordinates change slightly (e.g. when rounding
+        ;; to pixel, or when recalculating text positions in different zoom levels).
+        ;; To take this into account, we ignore movements smaller than 1 pixel.
+        ;;
+        ;; When the change is a resize, also has a transformation that may have the
+        ;; shape position unchanged. But in this case we do not want to ignore it.
+        ignore-geometry? (and (and (< (:x distance) 1) (< (:y distance) 1))
+                              (mth/close? (:width selrect) (:width transformed-selrect))
+                              (mth/close? (:height selrect) (:height transformed-selrect)))]
 
     [root transformed-root ignore-geometry?]))
 

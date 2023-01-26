@@ -387,6 +387,10 @@
         is-geometry?    (and (or (= group :geometry-group)
                                  (and (= group :content-group) (= (:type shape) :path)))
                              (not (#{:width :height} attr))) ;; :content in paths are also considered geometric
+                        ;; TODO: the check of :width and :height probably may be removed
+                        ;;       after the check added in data/workspace/modifiers/check-delta
+                        ;;       function. Better check it and test toroughly when activating
+                        ;;       components-v2 mode.
         shape-ref       (:shape-ref shape)
         root-name?      (and (= group :name-group)
                              (:component-root? shape))
