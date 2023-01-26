@@ -157,6 +157,15 @@
   (us/verify (s/coll-of uuid?) ids)
   (into {} (map #(vector % {:modifiers (get-modifier (get objects %))})) ids))
 
+(defn modifier-remove-from-parent
+  [modif-tree objects shapes]
+  (->> shapes
+       (reduce
+        (fn [modif-tree child-id]
+          (let [parent-id (get-in objects [child-id :parent-id])]
+            (update-in modif-tree [parent-id :modifiers] ctm/remove-children [child-id])))
+        modif-tree)))
+
 (defn build-change-frame-modifiers
   [modif-tree objects selected target-frame drop-index]
 
@@ -186,7 +195,7 @@
                          (filterv #(contains? child-set %)))]
             (cond-> modif-tree
               (not= original-frame target-frame)
-              (-> (update-in [original-frame :modifiers] ctm/remove-children shapes)
+              (-> (modifier-remove-from-parent objects shapes)
                   (update-in [target-frame :modifiers] ctm/add-children shapes drop-index)
                   (set-parent-ids shapes target-frame))
 
