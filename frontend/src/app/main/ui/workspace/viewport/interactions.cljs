@@ -230,7 +230,7 @@
         [:g {:on-mouse-down start-move-position
              :on-mouse-enter #(reset! hover-disabled? true)
              :on-mouse-leave #(reset! hover-disabled? false)}
-         [:use {:href (str "#shape-" (:id dest-shape))
+         [:use {:href (str "#thumbnail-container-" (:id dest-shape))
                 :x (- marker-x dest-x)
                 :y (- marker-y dest-y)}]
          [:path {:stroke "var(--color-primary)"
