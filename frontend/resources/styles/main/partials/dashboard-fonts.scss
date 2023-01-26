@@ -132,6 +132,7 @@
     .options {
       display: flex;
       justify-content: flex-end;
+      min-width: 180px;
 
       .icon {
         width: $size-5;
