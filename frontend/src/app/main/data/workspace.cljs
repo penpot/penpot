@@ -839,13 +839,22 @@
   (ptk/reify ::start-editing-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
-        (if-not (= 1 (count selected))
-          (rx/empty)
+      (let [selected (wsh/lookup-selected state)
+            objects (wsh/lookup-page-objects state)]
 
-          (let [objects (wsh/lookup-page-objects state)
-                {:keys [id type shapes]} (get objects (first selected))]
+        (if (> (count selected) 1)
+          (let [shapes-to-select
+                (->> selected
+                     (reduce
+                      (fn [result shape-id]
+                        (let [children (dm/get-in objects [shape-id :shapes])]
+                          (if (empty? children)
+                            (conj result shape-id)
+                            (into result children))))
+                      (d/ordered-set)))]
+            (rx/of (dws/select-shapes shapes-to-select)))
 
+          (let [{:keys [id type shapes]} (get objects (first selected))]
             (case type
               :text
               (rx/of (dwe/start-edition-mode id))
@@ -899,9 +908,13 @@
                        (align-objects-list objects selected axis))
             moved-objects (->> moved (group-by :id))
             ids (keys moved-objects)
-            update-fn (fn [shape] (first (get moved-objects (:id shape))))]
+            update-fn (fn [shape] (first (get moved-objects (:id shape))))
+            undo-id (js/Symbol)]
         (when (can-align? selected objects)
-          (rx/of (dch/update-shapes ids update-fn {:reg-objects? true})))))))
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (dch/update-shapes ids update-fn {:reg-objects? true})
+                 (ptk/data-event :layout/update ids)
+                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn align-object-to-parent
   [objects object-id axis]
