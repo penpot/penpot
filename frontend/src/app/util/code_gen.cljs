@@ -7,6 +7,7 @@
 (ns app.util.code-gen
   (:require
    [app.common.data :as d]
+   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.main.ui.formats :as fmt]
    [app.util.color :as uc]
@@ -25,21 +26,41 @@
     (str/fmt "%spx" row-gap)
     (str/fmt "%spx %spx" row-gap column-gap)))
 
+(defn fill-color->background
+  [fill]
+  (uc/color->background {:color (:fill-color fill)
+                         :opacity (:fill-opacity fill)
+                         :gradient (:fill-color-gradient fill)}))
+
 (defn format-fill-color [_ shape]
-  (let [color {:color (:fill-color shape)
-               :opacity (:fill-opacity shape)
-               :gradient (:fill-color-gradient shape)}]
-    (uc/color->background color)))
+  (let [fills      (:fills shape)
+        first-fill (first fills)
+        colors     (if (> (count fills) 1)
+                     (map (fn [fill]
+                            (let [color (fill-color->background fill)]
+                              (if (some? (:fill-color-gradient fill))
+                                color
+                                (str/format "linear-gradient(%s,%s)" color color))))
+                          (:fills shape))
+                     [(fill-color->background first-fill)])]
+    (str/join ", " colors)))
 
 (defn format-stroke [_ shape]
-  (let [width (:stroke-width shape)
-        style (let [style (:stroke-style shape)]
+  (let [first-stroke (first (:strokes shape))
+        width (:stroke-width first-stroke)
+        style (let [style (:stroke-style first-stroke)]
                 (when (keyword? style) (name style)))
-        color {:color (:stroke-color shape)
-               :opacity (:stroke-opacity shape)
-               :gradient (:stroke-color-gradient shape)}]
-    (when-not (= :none (:stroke-style shape))
+        color {:color (:stroke-color first-stroke)
+               :opacity (:stroke-opacity first-stroke)
+               :gradient (:stroke-color-gradient first-stroke)}]
+    (when-not (= :none (:stroke-style first-stroke))
       (str/format "%spx %s %s" width style (uc/color->background color)))))
+
+(defn format-position [_ shape]
+  (cond
+    (cph/frame-shape? shape) "relative"
+    (empty? (:flex-items shape)) "absolute"
+    :else "static"))
 
 (defn get-size
   [type values]
@@ -68,8 +89,14 @@
     :reverse-column "column-reverse"
     "row"))
 
-(def styles-data
-  {:layout      {:props   [:width :height :x :y :radius :rx :r1]
+(defn styles-data
+  [shape]
+  {:position    {:props [:type]
+                 :to-prop {:type "position"}
+                 :format {:type format-position}}
+   :layout      {:props   (if (empty? (:flex-items shape))
+                            [:width :height :x :y :radius :rx :r1]
+                            [:width :height :radius :rx :r1])
                  :to-prop {:x "left"
                            :y "top"
                            :rotation "transform"
@@ -80,12 +107,12 @@
                            :width    #(get-size :width %)
                            :height   #(get-size :height %)}
                  :multi   {:r1 [:r1 :r2 :r3 :r4]}}
-   :fill        {:props [:fill-color :fill-color-gradient]
-                 :to-prop {:fill-color "background" :fill-color-gradient "background"}
-                 :format {:fill-color format-fill-color :fill-color-gradient format-fill-color}}
-   :stroke      {:props [:stroke-style]
-                 :to-prop {:stroke-style "border"}
-                 :format {:stroke-style format-stroke}}
+   :fill        {:props [:fills]
+                 :to-prop {:fills (if (> (count (:fills shape)) 1) "background-image" "background")}
+                 :format {:fills format-fill-color}}
+   :stroke      {:props [:strokes]
+                 :to-prop {:strokes "border"}
+                 :format {:strokes format-stroke}}
    :shadow      {:props [:shadow]
                  :to-prop {:shadow :box-shadow}
                  :format {:shadow #(str/join ", " (map shadow->css %1))}}
@@ -115,7 +142,7 @@
                            :layout-padding fmt/format-padding}}})
 
 (def style-text
-  {:props   [:fill-color
+  {:props   [:fills
              :font-family
              :font-style
              :font-size
@@ -123,7 +150,7 @@
              :letter-spacing
              :text-decoration
              :text-transform]
-   :to-prop {:fill-color "color"}
+   :to-prop {:fills "color"}
    :format  {:font-family #(str "'" % "'")
              :font-style #(str %)
              :font-size #(str % "px")
@@ -131,7 +158,7 @@
              :letter-spacing #(str % "px")
              :text-decoration name
              :text-transform name
-             :fill-color format-fill-color}})
+             :fills format-fill-color}})
 
 (def layout-flex-item-params
   {:props   [:layout-item-margin
@@ -224,10 +251,10 @@
         ;; it will come with a vector of flex-items if any.
         ;; If there are none it will continue as usual. 
         flex-items (:flex-items shape)
-        props      (->> styles-data vals (mapcat :props))
-        to-prop    (->> styles-data vals (map :to-prop) (reduce merge))
-        format     (->> styles-data vals (map :format) (reduce merge))
-        multi      (->> styles-data vals (map :multi) (reduce merge))
+        props      (->> (styles-data shape) vals (mapcat :props))
+        to-prop    (->> (styles-data shape) vals (map :to-prop) (reduce merge))
+        format     (->> (styles-data shape) vals (map :format) (reduce merge))
+        multi      (->> (styles-data shape) vals (map :multi) (reduce merge))
         props      (cond-> props
                      (seq flex-items) (concat (:props layout-flex-item-params))
                      (= :wrap (:layout-wrap-type shape)) (concat (:props layout-align-content)))
@@ -282,7 +309,7 @@
 
 (defn text->properties [shape]
   (let [flex-items (:flex-items shape)
-        text-shape-style (select-keys styles-data [:layout :shadow :blur])
+        text-shape-style (select-keys (styles-data shape) [:layout :shadow :blur])
 
         shape-props      (->> text-shape-style vals (mapcat :props))
         shape-to-prop    (->> text-shape-style vals (map :to-prop) (reduce merge))
@@ -317,7 +344,6 @@
         properties (if (= :text (:type shape))
                      (text->properties shape)
                      (shape->properties shape))
-
         selector (str/css-selector name)
         selector (if (str/starts-with? selector "-") (subs selector 1) selector)]
     (str/join "\n" [(str/fmt "/* %s */" name)

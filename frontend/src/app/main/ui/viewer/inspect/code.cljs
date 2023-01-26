@@ -29,7 +29,7 @@
                 (dom/query js/document "#svg-frame"))
         markup-shape
         (fn [shape]
-          (let [selector (str "#shape-" (:id shape) (when (= :text (:type shape)) " .root"))]
+          (let [selector (str "#shape-" (:id shape))]
             (when-let [el (and frame (dom/query frame selector))]
               (str
                (str/fmt "<!-- %s -->" (:name shape))
