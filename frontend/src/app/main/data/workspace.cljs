@@ -899,9 +899,13 @@
                        (align-objects-list objects selected axis))
             moved-objects (->> moved (group-by :id))
             ids (keys moved-objects)
-            update-fn (fn [shape] (first (get moved-objects (:id shape))))]
+            update-fn (fn [shape] (first (get moved-objects (:id shape))))
+            undo-id (js/Symbol)]
         (when (can-align? selected objects)
-          (rx/of (dch/update-shapes ids update-fn {:reg-objects? true})))))))
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (dch/update-shapes ids update-fn {:reg-objects? true})
+                 (ptk/data-event :layout/update ids)
+                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn align-object-to-parent
   [objects object-id axis]
