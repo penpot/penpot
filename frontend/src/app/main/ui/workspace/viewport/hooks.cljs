@@ -81,6 +81,7 @@
                               (not= drawing-tool :curve)))
            show-zoom? (and @z?
                            (not @space?)
+                           (not @mod?)
                            (not drawing-path?)
                            (not drawing-tool))
 
