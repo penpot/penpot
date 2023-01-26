@@ -63,6 +63,7 @@
 - Fix ctrl+c for inspect code [Taiga #4739](https://tree.taiga.io/project/penpot/issue/4739)
 - Fix text in custom font is not at the expected position at export [Taiga #4394](https://tree.taiga.io/project/penpot/issue/4394)
 - Fix unneeded popup when updating local components [Taiga #4430](https://tree.taiga.io/project/penpot/issue/4430)
+- Fix multiuser - "Shadow" element is not updating immediately [Taiga #4709](https://tree.taiga.io/project/penpot/issue/4709)
 
 ### :heart: Community contributions by (Thank you!)
 
