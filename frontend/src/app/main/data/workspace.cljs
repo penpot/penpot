@@ -839,13 +839,22 @@
   (ptk/reify ::start-editing-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
-        (if-not (= 1 (count selected))
-          (rx/empty)
+      (let [selected (wsh/lookup-selected state)
+            objects (wsh/lookup-page-objects state)]
 
-          (let [objects (wsh/lookup-page-objects state)
-                {:keys [id type shapes]} (get objects (first selected))]
+        (if (> (count selected) 1)
+          (let [shapes-to-select
+                (->> selected
+                     (reduce
+                      (fn [result shape-id]
+                        (let [children (dm/get-in objects [shape-id :shapes])]
+                          (if (empty? children)
+                            (conj result shape-id)
+                            (into result children))))
+                      (d/ordered-set)))]
+            (rx/of (dws/select-shapes shapes-to-select)))
 
+          (let [{:keys [id type shapes]} (get objects (first selected))]
             (case type
               :text
               (rx/of (dwe/start-edition-mode id))
