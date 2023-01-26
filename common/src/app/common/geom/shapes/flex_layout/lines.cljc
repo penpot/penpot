@@ -152,6 +152,8 @@
 
   (let [row? (ctl/row? parent)
         col? (ctl/col? parent)
+        auto-width? (ctl/auto-width? parent)
+        auto-height? (ctl/auto-height? parent)
 
         [layout-gap-row layout-gap-col] (ctl/gaps parent)
 
@@ -186,12 +188,12 @@
 
             ;; When align-items is stretch we need to adjust the main axis size to grow for the full content
             stretch-width-fix
-            (if (and col? (ctl/content-stretch? parent))
+            (if (and col? (ctl/content-stretch? parent) (not auto-width?))
               (/ (- layout-width (* layout-gap-col (dec num-lines)) total-max-width) num-lines)
               0)
 
             stretch-height-fix
-            (if (and row? (ctl/content-stretch? parent))
+            (if (and row? (ctl/content-stretch? parent) (not auto-height?))
               (/ (- layout-height (* layout-gap-row (dec num-lines)) total-max-height) num-lines)
               0)
 
