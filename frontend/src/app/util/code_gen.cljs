@@ -7,6 +7,7 @@
 (ns app.util.code-gen
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.main.ui.formats :as fmt]
@@ -16,7 +17,7 @@
 (defn shadow->css [shadow]
   (let [{:keys [style offset-x offset-y blur spread]} shadow
         css-color (uc/color->background (:color shadow))]
-    (str
+    (dm/str
      (if (= style :inner-shadow) "inset " "")
      (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
 
@@ -49,7 +50,7 @@
   (let [first-stroke (first (:strokes shape))
         width (:stroke-width first-stroke)
         style (let [style (:stroke-style first-stroke)]
-                (when (keyword? style) (name style)))
+                (when (keyword? style) (d/name style)))
         color {:color (:stroke-color first-stroke)
                :opacity (:stroke-opacity first-stroke)
                :gradient (:stroke-color-gradient first-stroke)}]
@@ -118,11 +119,11 @@
                            :layout-wrap-type "flex-wrap"
                            :layout-gap "gap"
                            :layout-padding "padding"}
-                 :format  {:layout name
-                           :layout-flex-dir name
-                           :layout-align-items name
-                           :layout-justify-content name
-                           :layout-wrap-type name
+                 :format  {:layout d/name
+                           :layout-flex-dir d/name
+                           :layout-align-items d/name
+                           :layout-justify-content d/name
+                           :layout-wrap-type d/name
                            :layout-gap format-gap
                            :layout-padding fmt/format-padding}}})
 
@@ -137,14 +138,14 @@
              :text-decoration
              :text-transform]
    :to-prop {:fills "color"}
-   :format  {:font-family #(str "'" % "'")
-             :font-style #(str %)
-             :font-size #(str % "px")
-             :font-weight #(str %)
-             :line-height #(str %)
-             :letter-spacing #(str % "px")
-             :text-decoration name
-             :text-transform name
+   :format  {:font-family #(dm/str "'" % "'")
+             :font-style #(dm/str %)
+             :font-size #(dm/str % "px")
+             :font-weight #(dm/str %)
+             :line-height #(dm/str %)
+             :letter-spacing #(dm/str % "px")
+             :text-decoration d/name
+             :text-transform d/name
              :fills format-fill-color}})
 
 (def layout-flex-item-params
@@ -161,16 +162,16 @@
              :layout-item-min-w "min-width"
              :layout-item-align-self "align-self"}
    :format  {:layout-item-margin fmt/format-margin
-             :layout-item-max-h #(str % "px")
-             :layout-item-min-h #(str % "px")
-             :layout-item-max-w #(str % "px")
-             :layout-item-min-w #(str % "px")
-             :layout-item-align-self name}})
+             :layout-item-max-h #(dm/str % "px")
+             :layout-item-min-h #(dm/str % "px")
+             :layout-item-max-w #(dm/str % "px")
+             :layout-item-min-w #(dm/str % "px")
+             :layout-item-align-self d/name}})
 
 (def layout-align-content
   {:props   [:layout-align-content]
    :to-prop {:layout-align-content "align-content"}
-   :format  {:layout-align-content name}})
+   :format  {:layout-align-content d/name}})
 
 (defn get-specific-value
   [values prop]
@@ -217,13 +218,13 @@
                    (every? #(or (nil? %) (= % 0)) value)
                    (or (nil? value) (= value 0))))
 
-         default-format (fn [value] (str (fmt/format-pixels value)))
+         default-format (fn [value] (dm/str (fmt/format-pixels value)))
          format-property (fn [prop]
-                           (let [css-prop (or (prop to-prop) (name prop))
+                           (let [css-prop (or (prop to-prop) (d/name prop))
                                  format-fn (or (prop format) default-format)
                                  css-val (format-fn (get-value prop) values)]
                              (when css-val
-                               (str
+                               (dm/str
                                 (str/repeat " " tab-size)
                                 (str/fmt "%s: %s;" css-prop css-val)))))]
 
@@ -281,13 +282,13 @@
               (cons [node-style (:text node "")] acc)
 
               :else
-              (cons [node-style (str head-text "" (:text node))] (rest acc)))
+              (cons [node-style (dm/str head-text "" (:text node))] (rest acc)))
 
                ;; We add an end-of-line when finish a paragraph
             new-acc
             (if (= (:type node) "paragraph")
               (let [[hs ht] (first new-acc)]
-                (cons [hs (str ht "\n")] (rest new-acc)))
+                (cons [hs (dm/str ht "\n")] (rest new-acc)))
               new-acc)]
         new-acc))]
 
