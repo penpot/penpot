@@ -693,9 +693,7 @@
       .section-list-item {
         padding: $size-4 0;
         border-bottom: 1px solid $color-gray-20;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        position: relative;
 
         .item-name {
           color: $color-gray-60;
@@ -720,6 +718,8 @@
           color: $color-black;
           padding: $size-2;
           margin-bottom: 0;
+          position: absolute;
+          top: 1rem;
 
           &:hover {
             color: $color-primary;
