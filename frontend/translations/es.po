@@ -2690,7 +2690,7 @@ msgid "shortcuts.toggle-layers"
 msgstr "Mostrar/ocultar capas"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Añadir/eliminar layout flex"
+msgstr "Añadir/eliminar flex layout"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Bloquear/Desbloquear"
@@ -4463,7 +4463,7 @@ msgstr "Ruta"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
-msgstr "Eliminar layout flex"
+msgstr "Eliminar flex layout"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
