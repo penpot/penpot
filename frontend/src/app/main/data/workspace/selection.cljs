@@ -281,8 +281,6 @@
 
 
 ;; --- Duplicate Shapes
-(declare prepare-duplicate-change)
-(declare prepare-duplicate-frame-change)
 (declare prepare-duplicate-shape-change)
 (declare prepare-duplicate-flows)
 (declare prepare-duplicate-guides)
@@ -304,91 +302,59 @@
 
         changes
         (->> shapes
-             (reduce #(prepare-duplicate-change %1
-                                                all-objects
-                                                page
-                                                unames
-                                                update-unames!
-                                                ids-map
-                                                %2
-                                                delta)
+             (reduce #(prepare-duplicate-shape-change %1
+                                                      all-objects
+                                                      page
+                                                      unames
+                                                      update-unames!
+                                                      ids-map
+                                                      %2
+                                                      delta)
                      init-changes))]
 
     (-> changes
         (prepare-duplicate-flows shapes page ids-map)
         (prepare-duplicate-guides shapes page ids-map delta))))
 
-(defn- prepare-duplicate-change
-  [changes objects page unames update-unames! ids-map shape delta]
-  (if (cph/frame-shape? shape)
-    (prepare-duplicate-frame-change changes objects page unames update-unames! ids-map shape delta)
-    (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map shape delta (:frame-id shape) (:parent-id shape))))
-
-(defn- prepare-duplicate-frame-change
-  [changes objects page unames update-unames! ids-map obj delta]
-  (let [new-id     (ids-map (:id obj))
-        frame-name (:name obj)
-
-        new-frame  (-> obj
-                       (assoc :id new-id
-                              :name frame-name
-                              :shapes [])
-                       (dissoc :use-for-thumbnail?)
-                       (gsh/move delta)
-                       (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
-
-        changes (-> (pcb/add-object changes new-frame)
-                    (pcb/amend-last-change #(assoc % :old-id (:id obj))))
-
-        changes (reduce (fn [changes child]
-                          (prepare-duplicate-shape-change changes
-                                                          objects
-                                                          page
-                                                          unames
-                                                          update-unames!
-                                                          ids-map
-                                                          child
-                                                          delta
-                                                          new-id
-                                                          new-id))
-                        changes
-                        (map (d/getf objects) (:shapes obj)))]
-    changes))
-
 (defn- prepare-duplicate-shape-change
-  [changes objects page unames update-unames! ids-map obj delta frame-id parent-id]
-  (if (some? obj)
-    (let [new-id      (ids-map (:id obj))
-          parent-id   (or parent-id frame-id)
-          name        (:name obj)
+  ([changes objects page unames update-unames! ids-map obj delta]
+   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta (:frame-id obj) (:parent-id obj)))
 
-          new-obj     (-> obj
-                          (assoc :id new-id
-                                 :name name
-                                 :parent-id parent-id
-                                 :frame-id frame-id)
-                          (dissoc :shapes
-                                  :main-instance?)
-                          (gsh/move delta)
-                          (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
+  ([changes objects page unames update-unames! ids-map obj delta frame-id parent-id]
+   (if (some? obj)
+     (let [frame?      (cph/frame-shape? obj)
+           new-id      (ids-map (:id obj))
+           parent-id   (or parent-id frame-id)
+           name        (:name obj)
 
-          changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
-                      (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
+           new-obj     (-> obj
+                           (assoc :id new-id
+                                  :name name
+                                  :parent-id parent-id
+                                  :frame-id frame-id)
+                           (dissoc :shapes
+                                   :main-instance?
+                                   :use-for-thumbnail?)
+                           (gsh/move delta)
+                           (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 
-      (reduce (fn [changes child]
-                (prepare-duplicate-shape-change changes
-                                                objects
-                                                page
-                                                unames
-                                                update-unames!
-                                                ids-map
-                                                child
-                                                delta
-                                                frame-id
-                                                new-id))
-              changes
-              (map (d/getf objects) (:shapes obj))))
-    changes))
+           changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
+                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
+
+       (reduce (fn [changes child]
+                 (prepare-duplicate-shape-change changes
+                                                 objects
+                                                 page
+                                                 unames
+                                                 update-unames!
+                                                 ids-map
+                                                 child
+                                                 delta
+                                                 (if frame? new-id frame-id)
+                                                 new-id))
+               changes
+               (map (d/getf objects) (:shapes obj))))
+     changes)))
 
 (defn- prepare-duplicate-flows
   [changes shapes page ids-map]

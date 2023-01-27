@@ -267,6 +267,30 @@
   []
   (dump-selected' @st/state))
 
+(defn ^:export parent
+  []
+  (let [state @st/state
+        page-id (get state :current-page-id)
+        objects (get-in state [:workspace-data :pages-index page-id :objects])
+        selected (first (get-in state [:workspace-local :selected]))
+        parent-id (get-in objects [selected :parent-id])
+        parent (get objects parent-id)]
+    (when parent
+      (prn (str (:name parent) " - " (:id parent))))
+    nil))
+
+(defn ^:export frame
+  []
+  (let [state @st/state
+        page-id (get state :current-page-id)
+        objects (get-in state [:workspace-data :pages-index page-id :objects])
+        selected (first (get-in state [:workspace-local :selected]))
+        frame-id (get-in objects [selected :frame-id])
+        frame (get objects frame-id)]
+    (when frame
+      (prn (str (:name frame) " - " (:id frame))))
+    nil))
+
 (defn dump-tree'
   ([state] (dump-tree' state false false))
   ([state show-ids] (dump-tree' state show-ids false))
