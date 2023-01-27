@@ -314,11 +314,15 @@
     }
   }
 
-  .attributes-shadow-block {
+  .attributes-shadow-block,
+  .attributes-stroke-block,
+  .attributes-fill-block {
     border-top: 1px solid $color-gray-60;
   }
 
-  .attributes-shadow-blocks :first-child {
+  .attributes-shadow-blocks :first-child,
+  .attributes-stroke-blocks :first-child,
+  .attributes-fill-blocks :first-child {
     border-top: none;
   }
 }

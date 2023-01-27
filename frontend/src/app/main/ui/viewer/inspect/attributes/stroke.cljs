@@ -55,12 +55,7 @@
   [{:keys [shape]}]
   (let [color-format (mf/use-state :hex)
         color (shape->color shape)]
-    [:*
-     [:& color-row {:color color
-                    :format @color-format
-                    :copy-data (copy-color-data shape)
-                    :on-change-format #(reset! color-format %)}]
-
+    [:div.attributes-stroke-block
      (let [{:keys [stroke-style stroke-alignment]} shape
            stroke-style (if (= stroke-style :svg) :solid stroke-style)
            stroke-alignment (or stroke-alignment :center)]
@@ -78,7 +73,11 @@
         ;;   inspect.attributes.stroke.alignment.inner
         ;;   inspect.attributes.stroke.alignment.outer
         [:div.attributes-label (->> stroke-alignment d/name (str "inspect.attributes.stroke.alignment.") (tr))]
-        [:& copy-button {:data (copy-stroke-data shape)}]])]))
+        [:& copy-button {:data (copy-stroke-data shape)}]])
+     [:& color-row {:color color
+                    :format @color-format
+                    :copy-data (copy-color-data shape)
+                    :on-change-format #(reset! color-format %)}]]))
 
 (mf/defc stroke-panel
   [{:keys [shapes]}]
@@ -86,14 +85,13 @@
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
-        [:div.attributes-block-title-text (tr "inspect.attributes.stroke")]
-        (when (= (count shapes) 1)
-          [:& copy-button {:data (copy-stroke-data (first shapes))}])]
+        [:div.attributes-block-title-text (tr "inspect.attributes.stroke")]]
 
-       (for [shape shapes]
+       [:div.attributes-stroke-blocks
+        (for [shape shapes]
          (if (seq (:strokes shape))
            (for [value (:strokes shape [])]
              [:& stroke-block {:key (str "stroke-color-" (:id shape) value)
                                :shape value}])
            [:& stroke-block {:key (str "stroke-color-only" (:id shape))
-                             :shape shape}]))])))
+                             :shape shape}]))]])))

@@ -6,7 +6,6 @@
 
 (ns app.main.ui.viewer.inspect.attributes.fill
   (:require
-   [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.util.color :as uc]
@@ -40,10 +39,11 @@
   (let [color-format (mf/use-state :hex)
         color (shape->color shape)]
 
-    [:& color-row {:color color
-                   :format @color-format
-                   :on-change-format #(reset! color-format %)
-                   :copy-data (copy-data shape)}]))
+    [:div.attributes-fill-block
+     [:& color-row {:color color
+                    :format @color-format
+                    :on-change-format #(reset! color-format %)
+                    :copy-data (copy-data shape)}]]))
 
 (mf/defc fill-panel
   [{:keys [shapes]}]
@@ -51,14 +51,13 @@
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
-        [:div.attributes-block-title-text (tr "inspect.attributes.fill")]
-        (when (= (count shapes) 1)
-          [:& copy-button {:data (copy-data (first shapes))}])]
+        [:div.attributes-block-title-text (tr "inspect.attributes.fill")]]
 
-       (for [shape shapes]
+       [:div.attributes-fill-blocks
+        (for [shape shapes]
          (if (seq (:fills shape))
            (for [value (:fills shape [])]
              [:& fill-block {:key (str "fill-block-" (:id shape) value)
                              :shape value}])
            [:& fill-block {:key (str "fill-block-only" (:id shape))
-                           :shape shape}]))])))
+                           :shape shape}]))]])))
