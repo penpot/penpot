@@ -2598,7 +2598,7 @@ msgid "shortcuts.toggle-layers"
 msgstr "Toggle layers"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Add/remove layout flex"
+msgstr "Add/remove flex layout"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Lock selected"
@@ -4316,7 +4316,7 @@ msgstr "Path"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
-msgstr "Remove layout flex"
+msgstr "Remove flex layout"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"

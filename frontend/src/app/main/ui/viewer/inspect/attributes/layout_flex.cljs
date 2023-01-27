@@ -38,18 +38,18 @@
              :layout-wrap-type "flex-wrap"
              :layout-gap "gap"
              :layout-padding "padding"}
-   :format  {:layout name
-             :layout-flex-dir name
-             :layout-align-items name
-             :layout-justify-content name
-             :layout-wrap-type name
+   :format  {:layout d/name
+             :layout-flex-dir d/name
+             :layout-align-items d/name
+             :layout-justify-content d/name
+             :layout-wrap-type d/name
              :layout-gap fm/format-gap
              :layout-padding fm/format-padding}})
 
 (def layout-align-content-params
   {:props   [:layout-align-content]
    :to-prop {:layout-align-content "align-content"}
-   :format  {:layout-align-content name}})
+   :format  {:layout-align-content d/name}})
 
 (defn copy-data
   ([shape]

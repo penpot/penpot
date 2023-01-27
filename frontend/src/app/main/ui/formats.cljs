@@ -67,11 +67,11 @@
   (let [sizing (if (= type :width)
                  (:layout-item-h-sizing shape)
                  (:layout-item-v-sizing shape))]
-    (if (string? value)
-      value
-      (if (= sizing :fill)
-        "100%"
-        (str (format-pixels value))))))
+    (cond
+      (= sizing :fill) "100%"
+      (= sizing :auto) "auto"
+      (number? value)  (format-pixels value)
+      :else value)))
 
 (defn format-padding
   [padding-values type]
