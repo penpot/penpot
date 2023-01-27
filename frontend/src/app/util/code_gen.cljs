@@ -146,6 +146,7 @@
              :font-family
              :font-style
              :font-size
+             :font-weight
              :line-height
              :letter-spacing
              :text-decoration
@@ -154,6 +155,7 @@
    :format  {:font-family #(str "'" % "'")
              :font-style #(str %)
              :font-size #(str % "px")
+             :font-weight #(str %)
              :line-height #(str %)
              :letter-spacing #(str % "px")
              :text-decoration name
