@@ -1111,6 +1111,10 @@ msgid "inspect.attributes.typography.font-size"
 msgstr "Tamaño de fuente"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Grosor de fuente"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-style"
 msgstr "Estilo de fuente"
 
