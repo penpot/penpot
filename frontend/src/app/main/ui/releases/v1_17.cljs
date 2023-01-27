@@ -24,8 +24,8 @@
           [:h2 "What's new?"]]
          [:span.release "Version " version]
          [:div.modal-content
-          [:p "Penpot continues to grow with new features that improve performance, user experience and visual design."]
-          [:p "We are happy to show you a sneak peek of the most important stuff that the 1.17 version brings."]]
+          [:p "This is the first release in which Penpot is no longer Beta (hooray!) and it comes with very special features, starring the long awaited Flex Layout."]
+          [:p "On this 1.17 release, you’ll also be able to inspect the code and properties of your designs right from the workspace and to manage webhooks. We’ve also implemented a lot of accessibility improvements."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
         [:img.deco {:src "images/deco-left.png" :border "0"}]
