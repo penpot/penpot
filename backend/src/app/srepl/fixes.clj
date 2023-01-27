@@ -41,3 +41,35 @@
   ([file state]
    (repair-orphaned-shapes (:data file))
    (update state :total (fnil inc 0))))
+
+(defn rename-layout-attrs
+  ([file]
+   (let [found? (volatile! false)]
+     (letfn [(update-shape
+               [shape]
+               (when (or (= (:layout-flex-dir shape) :reverse-row)
+                         (= (:layout-flex-dir shape) :reverse-column)
+                         (= (:layout-wrap-type shape) :no-wrap))
+                 (vreset! found? true))
+               (cond-> shape
+                 (= (:layout-flex-dir shape) :reverse-row)
+                 (assoc :layout-flex-dir :row-reverse)
+                 (= (:layout-flex-dir shape) :reverse-column)
+                 (assoc :layout-flex-dir :column-reverse)
+                 (= (:layout-wrap-type shape) :no-wrap)
+                 (assoc :layout-wrap-type :nowrap)))
+
+             (update-page
+               [page]
+               (h/update-shapes page update-shape))]
+
+       (let [new-file (update file :data h/update-pages update-page)]
+         (when @found?
+           (l/info :hint "Found attrs to rename in file"
+                   :id (:id file)
+                   :name (:name file)))
+         new-file))))
+
+   ([file state]
+    (rename-layout-attrs file)
+    (update state :total (fnil inc 0))))
