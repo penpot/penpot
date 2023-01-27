@@ -69,7 +69,7 @@
                  :height (:height selrect)
                  :rx (.-rx border-radius-attrs)
                  :ry (.-ry border-radius-attrs)
-                 :d border-radius-attrs})]
+                 :d (.-d border-radius-attrs)})]
 
     [:> outline-type (map->obj (merge common props))]))
 
