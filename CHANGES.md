@@ -65,6 +65,7 @@
 - Fix unneeded popup when updating local components [Taiga #4430](https://tree.taiga.io/project/penpot/issue/4430)
 - Fix multiuser - "Shadow" element is not updating immediately [Taiga #4709](https://tree.taiga.io/project/penpot/issue/4709)
 - Fix paths not flagged as modified when resized [Taiga #4742](https://tree.taiga.io/project/penpot/issue/4742)
+- Fix resend invitation doesn't reset the expiration date [Taiga #4741](https://tree.taiga.io/project/penpot/issue/4741)
 
 ### :heart: Community contributions by (Thank you!)
 

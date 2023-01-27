@@ -460,7 +460,8 @@
         (mf/use-fn
          (fn []
            (st/emit! (msg/success (tr "notifications.invitation-email-sent"))
-                     (modal/hide))))
+                     (modal/hide)
+                     (dd/fetch-team-invitations))))
 
         on-copy-success
         (mf/use-fn
