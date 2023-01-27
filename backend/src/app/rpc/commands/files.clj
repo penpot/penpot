@@ -492,6 +492,7 @@
           (library-summary [{:keys [id data] :as file}]
             (binding [pmap/*load-fn* (partial load-pointer conn id)]
               {:components (assets-sample (:components data) 4)
+               :media (assets-sample (:media data) 3)
                :colors (assets-sample (:colors data) 3)
                :typographies (assets-sample (:typographies data) 3)}))]
 
