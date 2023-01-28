@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-26 16:52+0000\n"
-"Last-Translator: Stas Haas <stas@girafic.de>\n"
+"PO-Revision-Date: 2023-01-30 17:46+0000\n"
+"Last-Translator: nautilusx <translate@disroot.org>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -309,12 +309,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "%s Dateien duplizieren"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, fuzzy
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Zu Bibliotheken hinzugefügte Dateien werden hier angezeigt. Wenn Sie einige "
-"Vorlagen ausprobieren möchten, können Sie zum Abschnitt [Bibliotheken & "
-"Vorlagen](https://penpot.app/libraries-templates.html) gehen"
+"Zu Bibliotheken hinzugefügte Dateien werden hier angezeigt. Versuchen Sie, "
+"Ihre Dateien zu teilen oder fügen Sie sie aus unseren [Bibliotheken & "
+"Vorlagen](https://penpot.app/libraries-Vorlagen.html) hinzu."
 
 msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot-Dateien herunterladen (.penpot)"
@@ -962,10 +961,6 @@ msgstr "Breite"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Schatten"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -1866,8 +1861,8 @@ msgstr "Einladung erfolgreich gesendet"
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
 msgstr ""
-"Sie können Ihr Profil nicht löschen. Weisen Sie Ihre Teams neu zu, bevor "
-"Sie fortfahren."
+"Sie können Ihr Profil nicht löschen. Weisen Sie Ihre Teams neu zu, bevor Sie "
+"fortfahren."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -1979,9 +1974,6 @@ msgstr "Team erstellen und Einladungen versenden"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Einladen mit der Rolle:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Sie können das Projekt"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Ja, abonnieren"
 
@@ -1996,14 +1988,8 @@ msgstr "Datenschutzbestimmungen."
 msgid "onboarding.newsletter.title"
 msgstr "Möchten Sie die Penpot-Nachrichten erhalten?"
 
-msgid "onboarding.slide.0.title"
-msgstr "Design-Bibliotheken, Stile und Komponenten"
-
 msgid "onboarding.slide.1.title"
 msgstr "Hauchen Sie Ihren Entwürfen mit Interaktionen Leben ein"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Übergabe und Lowcode"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Ein Team erstellen"
@@ -2570,10 +2556,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Link kopieren"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Jeder mit dem Link hat Zugriff"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Interaktionen anzeigen"
 
@@ -3025,9 +3007,6 @@ msgstr "Aktualisieren"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "AKTUALISIERUNG"
-
-msgid "workspace.library.store"
-msgstr "Gespeicherte Bibliotheken"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
@@ -3669,7 +3648,7 @@ msgstr "Alle Ecken"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
-msgstr "Einzelne Ecken"
+msgstr "Individuelle Ecken"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Aktuell"
@@ -3932,10 +3911,10 @@ msgid "workspace.options.width"
 msgstr "Breite"
 
 msgid "workspace.options.x"
-msgstr "X"
+msgstr "X-Achse"
 
 msgid "workspace.options.y"
-msgstr "Y"
+msgstr "Y-Achse"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Ankerpunkt hinzufügen (%s)"
@@ -4588,3 +4567,34 @@ msgid "inspect.empty.help"
 msgstr ""
 "Für weitere Informationen zum Thema \"Auswerten von Design-Spezifikationen\""
 ", besuchen Sie bitte das Penpot-Hilfezentrum."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"Wenn Sie es löschen, werden diese Assets in die lokalen Bibliotheken dieser "
+"Dateien verschoben. Unbenutzte Assets gehen verloren."
+msgstr[1] ""
+"Wenn Sie sie löschen, werden diese Assets in die lokalen Bibliotheken dieser "
+"Dateien verschoben. Unbenutzte Assets gehen verloren."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "Diese Aktualisierung ist eine einmalige Aktion."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] ""
+"Keines der Assets in der Bibliothek dieser Datei ist in Gebrauch. Sie werden "
+"zusammen mit der Datei gelöscht."
+msgstr[1] ""
+"Keines der Assets in den Bibliotheken dieser Datei ist in Gebrauch. Sie "
+"werden zusammen mit der Datei gelöscht."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr ""
+"Um es erneut zu versuchen, können Sie diese Datei neu laden. Wenn das "
+"Problem weiterhin besteht, empfehlen wir Ihnen, einen Blick auf die Liste zu "
+"werfen und zu überlegen, ob Sie defekte Grafiken löschen wollen."
