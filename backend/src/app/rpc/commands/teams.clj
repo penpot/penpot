@@ -641,7 +641,7 @@
   "insert into team_invitation(team_id, email_to, role, valid_until)
    values (?, ?, ?, ?)
        on conflict(team_id, email_to) do
-          update set role = ?, updated_at = now();")
+          update set role = ?, valid_until = ?, updated_at = now();")
 
 (defn- create-invitation-token
   [cfg {:keys [profile-id valid-until team-id member-id member-email role]}]
@@ -712,7 +712,7 @@
                       {:id (:id member)})))
       (do
         (db/exec-one! conn [sql:upsert-team-invitation
-                            (:id team) (str/lower email) (name role) expire (name role)])
+                            (:id team) (str/lower email) (name role) expire (name role) expire])
         (eml/send! {::eml/conn conn
                     ::eml/factory eml/invite-to-team
                     :public-uri (cf/get :public-uri)
