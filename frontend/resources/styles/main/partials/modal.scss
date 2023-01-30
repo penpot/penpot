@@ -1195,9 +1195,10 @@
   }
 
   &.right {
-    left: 731px;
-    top: 100px;
+    left: auto;
     color: $color-primary;
+    top: 100px;
+    right: -40px;
   }
 
   &.square {
