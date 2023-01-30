@@ -27,6 +27,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.comments :as dcm]
@@ -1550,7 +1551,8 @@
 
           ;; Proceed with the standard shape paste process.
           (do-paste [it state mouse-pos media]
-            (let [page         (wsh/lookup-page state)
+            (let [file-id      (:current-file-id state)
+                  page         (wsh/lookup-page state)
                   media-idx    (d/index-by :prev-id media)
 
                   ;; Calculate position for the pasted elements
@@ -1565,7 +1567,10 @@
                         ;; if foreign instance, detach the shape
                         (cond-> (foreign-instance? shape paste-objects state)
                           (dissoc :component-id :component-file :component-root?
-                                  :remote-synced? :shape-ref :touched))))
+                                  :remote-synced? :shape-ref :touched))
+                        ;; if is a text, remove references to external typographies
+                        (cond-> (= (:type shape) :text)
+                          (ctt/remove-external-typographies file-id))))
 
                   paste-objects (->> paste-objects (d/mapm process-shape))
 
@@ -1587,7 +1592,7 @@
                                  (into (d/ordered-set)))
                   undo-id (js/Symbol)]
 
-              (rx/of (dwu/start-undo-transaction undo-id) 
+              (rx/of (dwu/start-undo-transaction undo-id)
                      (dch/commit-changes changes)
                      (dws/select-shapes selected)
                      (ptk/data-event :layout/update [frame-id])
