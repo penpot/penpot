@@ -506,6 +506,7 @@
           (when show-prototypes?
             [:& interactions/interactions
              {:selected selected
+              :page-id page-id
               :zoom zoom
               :objects objects-modified
               :current-transform transform
