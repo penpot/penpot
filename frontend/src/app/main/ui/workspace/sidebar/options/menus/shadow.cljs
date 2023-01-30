@@ -49,6 +49,8 @@
         adv-blur-ref (mf/use-ref nil)
         adv-spread-ref (mf/use-ref nil)
 
+        shadow-style (str (:style value))
+
         remove-shadow-by-index
         (fn [values index] (->> (d/enumerate values)
                                 (filterv (fn [[idx _]] (not= idx index)))
@@ -116,12 +118,12 @@
       ;;                    :value (:blur value)}]
 
       [:select.input-select
-       {:default-value (str (:style value))
+       {:default-value shadow-style
         :on-change (fn [event]
                      (let [value (-> event dom/get-target dom/get-value d/read-string)]
                        (st/emit! (dch/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
-       [:option {:value ":drop-shadow"} (tr "workspace.options.shadow-options.drop-shadow")]
-       [:option {:value ":inner-shadow"} (tr "workspace.options.shadow-options.inner-shadow")]]
+       [:option {:value ":drop-shadow"  :selected (when (= shadow-style ":drop-shadow") "selected")} (tr "workspace.options.shadow-options.drop-shadow")]
+       [:option {:value ":inner-shadow" :selected (when (= shadow-style ":inner-shadow") "selected")} (tr "workspace.options.shadow-options.inner-shadow")]]
 
       [:div.element-set-actions
        [:div.element-set-actions-button {:on-click (toggle-visibility index)}

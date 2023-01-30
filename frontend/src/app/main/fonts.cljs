@@ -283,7 +283,7 @@
       (let [variant (d/seek #(= (:id %) font-variant-id) variants)]
         (-> (generate-gfonts-url
              {:family family
-              :variants [{:id variant}]})
+              :variants [variant]})
             (http/fetch-text)))
 
       (= :custom backend)

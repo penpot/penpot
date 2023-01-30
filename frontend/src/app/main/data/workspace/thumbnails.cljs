@@ -15,6 +15,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
+   [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -31,7 +32,6 @@
 (defn thumbnail-canvas-blob-stream
   [object-id]
   ;; Look for the thumbnail canvas to send the data to the backend
-
   (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'][data-ready='true']" object-id))
         stopper (->> st/stream
                      (rx/filter (ptk/type? :app.main.data.workspace/finalize-page))
@@ -40,10 +40,11 @@
       ;; Success: we generate the blob (async call)
       (rx/create
        (fn [subs]
-         (.toBlob node (fn [blob]
-                         (rx/push! subs blob)
-                         (rx/end! subs))
-                  "image/png")))
+         (ts/raf
+          #(.toBlob node (fn [blob]
+                           (rx/push! subs blob)
+                           (rx/end! subs))
+                    "image/png"))))
 
       ;; Not found, we retry after delay
       (->> (rx/timer 250)
@@ -94,7 +95,9 @@
                             (rx/catch #(rx/empty))
                             (rx/ignore))))
 
-                    (rx/empty)))))))))))
+                    (rx/empty))))
+               (rx/catch #(do (.error js/console %)
+                              (rx/empty))))))))))
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"

@@ -38,18 +38,18 @@
              :layout-wrap-type "flex-wrap"
              :layout-gap "gap"
              :layout-padding "padding"}
-   :format  {:layout name
-             :layout-flex-dir name
-             :layout-align-items name
-             :layout-justify-content name
-             :layout-wrap-type name
+   :format  {:layout d/name
+             :layout-flex-dir d/name
+             :layout-align-items d/name
+             :layout-justify-content d/name
+             :layout-wrap-type d/name
              :layout-gap fm/format-gap
              :layout-padding fm/format-padding}})
 
 (def layout-align-content-params
   {:props   [:layout-align-content]
    :to-prop {:layout-align-content "align-content"}
-   :format  {:layout-align-content name}})
+   :format  {:layout-align-content d/name}})
 
 (defn copy-data
   ([shape]
@@ -72,7 +72,7 @@
      (for [[k v] values]
        [:span.items {:key (str type "-" k "-" v)} v "px"])]))
 
-(mf/defc layout-block
+(mf/defc layout-flex-block
   [{:keys [shape]}]
   [:*
    [:div.attributes-unit-row
@@ -129,11 +129,11 @@
   (let [shapes (->> shapes (filter has-flex?))] 
    (when (seq shapes)
     [:div.attributes-block
-   [:div.attributes-block-title
-    [:div.attributes-block-title-text "Layout"]
-    (when (= (count shapes) 1)
-      [:& copy-button {:data (copy-data (first shapes))}])]
+     [:div.attributes-block-title
+      [:div.attributes-block-title-text "Layout"]
+      (when (= (count shapes) 1)
+        [:& copy-button {:data (copy-data (first shapes))}])]
 
-   (for [shape shapes]
-     [:& layout-block {:shape shape
-                       :key (:id shape)}])])))
+     (for [shape shapes]
+       [:& layout-flex-block {:shape shape
+                              :key (:id shape)}])])))

@@ -35,11 +35,11 @@
             (or (ex/ignoring (upf/format-path (:content shape)))
                 "")))
 
-        {:keys [x y width height selrect rx ry]} shape
+        {:keys [x y width height selrect]} shape
 
-        border-radius-attrs (.-d (attrs/extract-border-radius shape))
+        border-radius-attrs (attrs/extract-border-radius shape)
 
-        path? (some? border-radius-attrs)
+        path? (some? (.-d border-radius-attrs))
 
         outline-type (case (:type shape)
                        :circle "ellipse"
@@ -67,9 +67,9 @@
                  :y (:y selrect)
                  :width (:width selrect)
                  :height (:height selrect)
-                 :rx rx
-                 :ry ry
-                 :d border-radius-attrs})]
+                 :rx (.-rx border-radius-attrs)
+                 :ry (.-ry border-radius-attrs)
+                 :d (.-d border-radius-attrs)})]
 
     [:> outline-type (map->obj (merge common props))]))
 

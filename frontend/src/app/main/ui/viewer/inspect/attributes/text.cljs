@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.inspect.attributes.text
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.text :as txt]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
@@ -42,6 +43,7 @@
                  :font-family
                  :font-style
                  :font-size
+                 :font-weight
                  :line-height
                  :letter-spacing
                  :text-decoration
@@ -57,13 +59,14 @@
 (def params
   {:to-prop {:fill-color "color"
              :fill-color-gradient "color"}
-   :format  {:font-family #(str "'" % "'")
-             :font-style #(str "'" % "'")
-             :font-size #(str (format-number %) "px")
+   :format  {:font-family #(dm/str "'" % "'")
+             :font-style #(dm/str % )
+             :font-size #(dm/str (format-number %) "px")
+             :font-weight d/name
              :line-height #(format-number %)
-             :letter-spacing #(str (format-number %) "px")
-             :text-decoration name
-             :text-transform name
+             :letter-spacing #(dm/str (format-number %) "px")
+             :text-decoration d/name
+             :text-transform d/name
              :fill-color #(-> %2 shape->color uc/color->background)
              :fill-color-gradient #(-> %2 shape->color uc/color->background)}})
 
@@ -130,6 +133,12 @@
         [:div.attributes-label (tr "inspect.attributes.typography.font-size")]
         [:div.attributes-value (str (format-number (:font-size style))) "px"]
         [:& copy-button {:data (copy-style-data style :font-size)}]])
+
+     (when (:font-weight style)
+       [:div.attributes-unit-row
+        [:div.attributes-label (tr "inspect.attributes.typography.font-weight")]
+        [:div.attributes-value (str (:font-weight style))]
+        [:& copy-button {:data (copy-style-data style :font-weight)}]])
 
      (when (:line-height style)
        [:div.attributes-unit-row

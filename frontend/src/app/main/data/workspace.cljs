@@ -27,6 +27,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.comments :as dcm]
@@ -609,6 +610,7 @@
             objects         (wsh/lookup-page-objects state page-id)
             selected-ids    (wsh/lookup-selected state)
             selected-shapes (map (d/getf objects) selected-ids)
+            undo-id (js/Symbol)
 
             move-shape
             (fn [changes shape]
@@ -631,7 +633,10 @@
                                 (pcb/with-objects objects))
                             selected-shapes)]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update selected-ids)
+               (dwu/commit-undo-transaction undo-id))))))
 
 
 ;; --- Change Shape Order (D&D Ordering)
@@ -835,13 +840,22 @@
   (ptk/reify ::start-editing-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
-        (if-not (= 1 (count selected))
-          (rx/empty)
+      (let [selected (wsh/lookup-selected state)
+            objects (wsh/lookup-page-objects state)]
 
-          (let [objects (wsh/lookup-page-objects state)
-                {:keys [id type shapes]} (get objects (first selected))]
+        (if (> (count selected) 1)
+          (let [shapes-to-select
+                (->> selected
+                     (reduce
+                      (fn [result shape-id]
+                        (let [children (dm/get-in objects [shape-id :shapes])]
+                          (if (empty? children)
+                            (conj result shape-id)
+                            (into result children))))
+                      (d/ordered-set)))]
+            (rx/of (dws/select-shapes shapes-to-select)))
 
+          (let [{:keys [id type shapes]} (get objects (first selected))]
             (case type
               :text
               (rx/of (dwe/start-edition-mode id))
@@ -895,9 +909,13 @@
                        (align-objects-list objects selected axis))
             moved-objects (->> moved (group-by :id))
             ids (keys moved-objects)
-            update-fn (fn [shape] (first (get moved-objects (:id shape))))]
+            update-fn (fn [shape] (first (get moved-objects (:id shape))))
+            undo-id (js/Symbol)]
         (when (can-align? selected objects)
-          (rx/of (dch/update-shapes ids update-fn {:reg-objects? true})))))))
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (dch/update-shapes ids update-fn {:reg-objects? true})
+                 (ptk/data-event :layout/update ids)
+                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn align-object-to-parent
   [objects object-id axis]
@@ -1307,16 +1325,22 @@
                         :file-id (:current-file-id state)
                         :selected selected
                         :objects {}
-                        :images #{}}]
+                        :images #{}}
+              selected_text (.. js/window getSelection toString)]
 
-          (->> (rx/from (seq (vals pdata)))
-               (rx/merge-map (partial prepare-object objects selected+children))
-               (rx/reduce collect-data initial)
-               (rx/map (partial sort-selected state))
-               (rx/map t/encode-str)
-               (rx/map wapi/write-to-clipboard)
-               (rx/catch on-copy-error)
-               (rx/ignore)))))))
+          (if (not-empty selected_text)
+            (try
+              (wapi/write-to-clipboard selected_text)
+              (catch :default e
+                (on-copy-error e)))
+            (->> (rx/from (seq (vals pdata)))
+                 (rx/merge-map (partial prepare-object objects selected+children))
+                 (rx/reduce collect-data initial)
+                 (rx/map (partial sort-selected state))
+                 (rx/map t/encode-str)
+                 (rx/map wapi/write-to-clipboard)
+                 (rx/catch on-copy-error)
+                 (rx/ignore))))))))
 
 (declare paste-shape)
 (declare paste-text)
@@ -1527,7 +1551,8 @@
 
           ;; Proceed with the standard shape paste process.
           (do-paste [it state mouse-pos media]
-            (let [page         (wsh/lookup-page state)
+            (let [file-id      (:current-file-id state)
+                  page         (wsh/lookup-page state)
                   media-idx    (d/index-by :prev-id media)
 
                   ;; Calculate position for the pasted elements
@@ -1542,7 +1567,10 @@
                         ;; if foreign instance, detach the shape
                         (cond-> (foreign-instance? shape paste-objects state)
                           (dissoc :component-id :component-file :component-root?
-                                  :remote-synced? :shape-ref :touched))))
+                                  :remote-synced? :shape-ref :touched))
+                        ;; if is a text, remove references to external typographies
+                        (cond-> (= (:type shape) :text)
+                          (ctt/remove-external-typographies file-id))))
 
                   paste-objects (->> paste-objects (d/mapm process-shape))
 

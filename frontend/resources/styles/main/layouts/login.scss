@@ -23,9 +23,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  background-color: #feecfd;
-  background-image: url("/images/login-pink.svg");
-  background-position: center;
+  background-color: #151035;
+  background-image: url("/images/login-penpot.svg");
+  background-position: center 30vh;
   background-size: 96%;
   background-repeat: no-repeat;
 
@@ -34,12 +34,12 @@
     width: 280px;
     font-size: $fs18;
     margin-top: 2vh;
-    color: #2c233e;
+    color: white;
   }
 
   .logo {
     svg {
-      fill: #2c233e;
+      fill: white;
       max-width: 11vw;
       height: 80px;
     }

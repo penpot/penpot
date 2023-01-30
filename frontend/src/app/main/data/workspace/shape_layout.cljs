@@ -48,7 +48,7 @@
    :layout-align-items     :start
    :layout-justify-content :start
    :layout-align-content   :stretch
-   :layout-wrap-type       :no-wrap
+   :layout-wrap-type       :nowrap
    :layout-padding-type    :simple
    :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
 
@@ -136,8 +136,8 @@
         direction
         (cond
           (mth/close? tmin t1) :row
-          (mth/close? tmin t2) :reverse-column
-          (mth/close? tmin t3) :reverse-row
+          (mth/close? tmin t2) :column-reverse
+          (mth/close? tmin t3) :row-reverse
           (mth/close? tmin t4) :column)]
 
     {:layout-flex-dir direction}))

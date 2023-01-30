@@ -46,30 +46,14 @@
                            (.-deltaX ^js event))]
               (if (pos? delta)
                 (st/emit! dv/decrease-zoom)
-                (st/emit! dv/increase-zoom))))
-          (when-not (kbd/mod? event)
-            (let [event (.getBrowserEvent ^js event)
-                  shift? (kbd/shift? event)
-                  inspect-svg-container (mf/ref-val inspect-svg-container-ref)
-                  delta (+ (.-deltaY ^js event)
-                           (.-deltaX ^js event))
-                  scroll-pos (if shift?
-                               (dom/get-h-scroll-pos inspect-svg-container)
-                               (dom/get-scroll-pos inspect-svg-container))
-                  new-scroll-pos (+ scroll-pos delta)] 
-            (do
-              (dom/prevent-default event)
-              (dom/stop-propagation event)
-              (if shift?
-                (dom/set-h-scroll-pos! inspect-svg-container new-scroll-pos)
-                (dom/set-scroll-pos! inspect-svg-container new-scroll-pos))))))
+                (st/emit! dv/increase-zoom)))))
 
         on-mount
         (fn []
           ;; bind with passive=false to allow the event to be cancelled
           ;; https://stackoverflow.com/a/57582286/3219895
           (let [key1 (events/listen goog/global EventType.WHEEL
-                                    on-mouse-wheel #js {"passive" false "capture" true})]
+                                    on-mouse-wheel #js {"passive" false})]
             (fn []
               (events/unlistenByKey key1))))]
 

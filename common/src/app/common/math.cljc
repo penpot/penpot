@@ -174,6 +174,13 @@
 (defn almost-zero? [num]
   (< (abs (double num)) 1e-4))
 
+(defn round-to-zero
+  "Given a number if it's close enough to zero round to the zero to avoid precision problems"
+  [num]
+  (if (almost-zero? num)
+    0
+    num))
+
 (defonce float-equal-precision 0.001)
 
 (defn close?

@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.config :as cf]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-fills shape-strokes]]
@@ -90,15 +91,25 @@
         bounds (or (obj/get props "bounds") (gsh/points->selrect (:points shape)))]
 
     (when (:thumbnail shape)
-      [:image.frame-thumbnail
-       {:id (dm/str "thumbnail-" (:id shape))
-        :href (:thumbnail shape)
-        :x (:x bounds)
-        :y (:y bounds)
-        :width (:width bounds)
-        :height (:height bounds)
-        ;; DEBUG
-        :style {:filter (when (debug? :thumbnails) "sepia(1)")}}])))
+      [:*
+       [:image.frame-thumbnail
+        {:id (dm/str "thumbnail-" (:id shape))
+         :href (:thumbnail shape)
+         :x (:x bounds)
+         :y (:y bounds)
+         :width (:width bounds)
+         :height (:height bounds)
+         ;; DEBUG
+         :style {:filter (when (and (not (cf/check-browser? :safari))(debug? :thumbnails)) "sepia(1)")}}]
+
+       ;; Safari don't support filters so instead we add a rectangle around the thumbnail
+       (when (and (cf/check-browser? :safari) (debug? :thumbnails))
+         [:rect {:x (+ (:x bounds) 4)
+                 :y (+ (:y bounds) 4)
+                 :width (- (:width bounds) 8)
+                 :height (- (:height bounds) 8)
+                 :stroke "red"
+                 :stroke-width 2}])])))
 
 (mf/defc frame-thumbnail
   {::mf/wrap-props false}

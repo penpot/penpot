@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.config :as cf]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -24,18 +25,23 @@
 
 (defn- draw-thumbnail-canvas!
   [canvas-node img-node]
-  (try
-    (when (and (some? canvas-node) (some? img-node))
-      (let [canvas-context (.getContext canvas-node "2d")
-            canvas-width   (.-width canvas-node)
-            canvas-height  (.-height canvas-node)]
-        (.clearRect canvas-context 0 0 canvas-width canvas-height)
-        (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
-        (dom/set-property! canvas-node "data-ready" "true")
-        true))
-    (catch :default err
-      (.error js/console err)
-      false)))
+  (ts/raf
+   (fn []
+     (try
+       (when (and (some? canvas-node) (some? img-node))
+         (let [canvas-context (.getContext canvas-node "2d")
+               canvas-width   (.-width canvas-node)
+               canvas-height  (.-height canvas-node)]
+           (.clearRect canvas-context 0 0 canvas-width canvas-height)
+           (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
+
+           ;; Set a true on the next animation frame, we make sure the drawImage is completed
+           (ts/raf
+            #(dom/set-data! canvas-node "ready" "true"))
+           true))
+       (catch :default err
+         (.error js/console err)
+         false)))))
 
 (defn- remove-image-loading
   "Remove the changes related to change a url for its embed value. This is necessary
@@ -97,19 +103,18 @@
         (mf/use-callback
          (mf/deps @show-frame-thumbnail)
          (fn []
-           (ts/raf
-            #(let [canvas-node (mf/ref-val frame-canvas-ref)
-                   img-node    (mf/ref-val frame-image-ref)]
-               (when (draw-thumbnail-canvas! canvas-node img-node)
-                 (reset! image-url nil)
-                 (when @show-frame-thumbnail
-                   (reset! show-frame-thumbnail false))
-                 ;; If we don't have the thumbnail data saved (normally the first load) we update the data
-                 ;; when available
-                 (when (not @thumbnail-data-ref)
-                   (st/emit! (dwt/update-thumbnail page-id id) ))
+           (let [canvas-node (mf/ref-val frame-canvas-ref)
+                 img-node    (mf/ref-val frame-image-ref)]
+             (when (draw-thumbnail-canvas! canvas-node img-node)
+               (reset! image-url nil)
+               (when @show-frame-thumbnail
+                 (reset! show-frame-thumbnail false))
+               ;; If we don't have the thumbnail data saved (normally the first load) we update the data
+               ;; when available
+               (when (not @thumbnail-data-ref)
+                 (st/emit! (dwt/update-thumbnail page-id id) ))
 
-                 (reset! render-frame? false))))))
+               (reset! render-frame? false)))))
 
         generate-thumbnail
         (mf/use-callback
@@ -117,8 +122,6 @@
            (try
              ;; When starting generating the canvas we mark it as not ready so its not send to back until
              ;; we have time to update it
-             (let [canvas-node (mf/ref-val frame-canvas-ref)]
-               (dom/set-property! canvas-node "data-ready" "false"))
              (let [node @node-ref]
                (if (dom/has-children? node)
                  ;; The frame-content need to have children in order to generate the thumbnail
@@ -160,6 +163,9 @@
         on-update-frame
         (mf/use-callback
          (fn []
+           (let [canvas-node (mf/ref-val frame-canvas-ref)]
+             (when (not= "false" (dom/get-data canvas-node "ready"))
+               (dom/set-data! canvas-node "ready" "false")))
            (when (not @disable-ref?)
              (reset! render-frame? true)
              (reset! regenerate-thumbnail true))))
@@ -251,15 +257,26 @@
           :width fixed-width
           :height fixed-height
           ;; DEBUG
-          :style {:filter (when (debug? :thumbnails) "invert(1)")
+          :style {:filter (when (and (not (cf/check-browser? :safari)) (debug? :thumbnails)) "invert(1)")
                   :width "100%"
                   :height "100%"}}]]
 
+       ;; Safari don't support filters so instead we add a rectangle around the thumbnail
+       (when (and (cf/check-browser? :safari) (debug? :thumbnails))
+         [:rect {:x (+ x 2)
+                 :y (+ y 2)
+                 :width (- width 4)
+                 :height (- height 4)
+                 :stroke "blue"
+                 :stroke-width 2}])
+
        (when (some? @image-url)
-         [:image {:ref frame-image-ref
-                  :x x
-                  :y y
-                  :href @image-url
-                  :width width
-                  :height height
-                  :on-load on-image-load}])])]))
+         [:foreignObject {:x x
+                          :y y
+                          :width width
+                          :height height}
+          [:img {:ref frame-image-ref
+                 :src @image-url
+                 :width width
+                 :height height
+                 :on-load on-image-load}]])])]))

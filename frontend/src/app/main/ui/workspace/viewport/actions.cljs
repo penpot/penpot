@@ -34,8 +34,7 @@
 
 (defn on-mouse-down
   [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
-   node-editing? drawing-path? create-comment? space? panning
-   workspace-read-only?]
+   node-editing? drawing-path? create-comment? space? panning workspace-read-only?]
   (mf/use-callback
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
             node-editing? drawing-path? create-comment? @space?
@@ -140,9 +139,9 @@
      (reset! frame-hover nil))))
 
 (defn on-click
-  [hover selected edition drawing-path? drawing-tool space? selrect]
+  [hover selected edition drawing-path? drawing-tool space? selrect z?]
   (mf/use-callback
-   (mf/deps @hover selected edition drawing-path? drawing-tool @space? selrect)
+   (mf/deps @hover selected edition drawing-path? drawing-tool @space? selrect @z?)
    (fn [event]
      (when (and (nil? selrect)
                 (or (dom/class? (dom/get-target event) "viewport-controls")
@@ -151,7 +150,9 @@
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
-             hovering? (some? @hover)]
+             hovering? (some? @hover)
+             raw-pt (dom/get-client-position event)
+             pt     (uwvv/point->viewport raw-pt)]
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt? meta?))
 
          (when (and hovering?
@@ -159,42 +160,52 @@
                     (not edition)
                     (not drawing-path?)
                     (not drawing-tool))
-           (st/emit! (dw/select-shape (:id @hover) shift?))))))))
+           (st/emit! (dw/select-shape (:id @hover) shift?)))
+
+         (when (and @z?
+                    (not @space?)
+                    (not edition)
+                    (not drawing-path?)
+                    (not drawing-tool))
+           (if alt?
+             (st/emit! (dw/decrease-zoom pt))
+             (st/emit! (dw/increase-zoom pt)))))))))
 
 (defn on-double-click
-  [hover hover-ids drawing-path? objects edition workspace-read-only?]
+  [hover hover-ids drawing-path? objects edition drawing-tool z? workspace-read-only?]
 
   (mf/use-callback
-   (mf/deps @hover @hover-ids drawing-path? edition workspace-read-only?)
+   (mf/deps @hover @hover-ids drawing-path? edition drawing-tool @z? workspace-read-only?)
    (fn [event]
      (dom/stop-propagation event)
-     (let [ctrl? (kbd/ctrl? event)
-           shift? (kbd/shift? event)
-           alt? (kbd/alt? event)
-           meta? (kbd/meta? event)
+     (when-not @z?
+       (let [ctrl? (kbd/ctrl? event)
+             shift? (kbd/shift? event)
+             alt? (kbd/alt? event)
+             meta? (kbd/meta? event)
 
-           {:keys [id type] :as shape} (or @hover (get objects (first @hover-ids)))
+             {:keys [id type] :as shape} (or @hover (get objects (first @hover-ids)))
 
-           editable? (contains? #{:text :rect :path :image :circle} type)]
+             editable? (contains? #{:text :rect :path :image :circle} type)]
 
-       (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt? meta?))
+         (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt? meta?))
 
        ;; Emit asynchronously so the double click to exit shapes won't break
-       (timers/schedule
-        (fn []
-          (when (and (not drawing-path?) shape)
-            (cond
-              (and editable? (not= id edition) (not workspace-read-only?))
-              (st/emit! (dw/select-shape id)
-                        (dw/start-editing-selected))
+         (timers/schedule
+          (fn []
+            (when (and (not drawing-path?) shape)
+              (cond
+                (and editable? (not= id edition) (not workspace-read-only?))
+                (st/emit! (dw/select-shape id)
+                          (dw/start-editing-selected))
 
-              :else
-              (let [;; We only get inside childrens of the hovering shape
-                    hover-ids (->> @hover-ids (filter (partial cph/is-child? objects id)))
-                    selected (get objects (first hover-ids))]
-                (when (some? selected)
-                  (reset! hover selected)
-                  (st/emit! (dw/select-shape (:id selected)))))))))))))
+                :else
+                (let [;; We only get inside childrens of the hovering shape
+                      hover-ids (->> @hover-ids (filter (partial cph/is-child? objects id)))
+                      selected (get objects (first hover-ids))]
+                  (when (some? selected)
+                    (reset! hover selected)
+                    (st/emit! (dw/select-shape (:id selected))))))))))))))
 
 (defn on-context-menu
   [hover hover-ids workspace-read-only?]

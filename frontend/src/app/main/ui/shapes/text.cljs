@@ -8,7 +8,6 @@
   (:require
    [app.common.text :as txt]
    [app.main.fonts :as fonts]
-   [app.main.ui.shapes.text.fo-text :as fo]
    [app.main.ui.shapes.text.svg-text :as svg]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -28,6 +27,5 @@
     (mf/with-memo [content]
       (load-fonts! content))
 
-    (if (some? position-data)
-      [:> svg/text-shape props]
-      [:> fo/text-shape props])))
+    (when (some? position-data)
+      [:> svg/text-shape props])))

@@ -129,6 +129,7 @@ $width-settings-bar: 256px;
     overflow: hidden;
     flex-direction: column;
     justify-content: flex-start;
+    position: relative;
   }
 
   .inspect-svg-container {

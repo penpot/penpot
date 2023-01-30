@@ -17,6 +17,7 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
    [app.common.geom.shapes.rect :as gpr]
+   [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]))
@@ -159,67 +160,79 @@
   "Calculate the transform matrix to convert from the selrect to the points bounds
     TargetM = SourceM * Transform ==> Transform = TargetM * inv(SourceM)"
   [{:keys [x1 y1 x2 y2]} [d1 d2 _ d4]]
-  #?(:clj
-     ;; NOTE: the source matrix may not be invertible we can't
-     ;; calculate the transform, so on exception we return `nil`
-     (ex/ignoring
-      (let [target-points-matrix
-            (->> (list (:x d1) (:x d2) (:x d4)
-                       (:y d1) (:y d2) (:y d4)
-                       1       1       1     )
-                 (into-array Double/TYPE)
-                 (Matrix/from1DArray 3 3))
+  ;; If the coordinates are very close to zero (but not zero) the rounding can mess with the
+  ;; transforms. So we round to zero the values
+  (let [x1  (mth/round-to-zero x1)
+        y1  (mth/round-to-zero y1)
+        x2  (mth/round-to-zero x2)
+        y2  (mth/round-to-zero y2)
+        d1x (mth/round-to-zero (:x d1))
+        d1y (mth/round-to-zero (:y d1))
+        d2x (mth/round-to-zero (:x d2))
+        d2y (mth/round-to-zero (:y d2))
+        d4x (mth/round-to-zero (:x d4))
+        d4y (mth/round-to-zero (:y d4))]
+    #?(:clj
+       ;; NOTE: the source matrix may not be invertible we can't
+       ;; calculate the transform, so on exception we return `nil`
+       (ex/ignoring
+        (let [target-points-matrix
+              (->> (list d1x d2x d4x
+                         d1y d2y d4y
+                         1     1   1)
+                   (into-array Double/TYPE)
+                   (Matrix/from1DArray 3 3))
 
-            source-points-matrix
-            (->> (list x1 x2 x1
-                       y1 y1 y2
-                        1  1  1)
-                 (into-array Double/TYPE)
-                 (Matrix/from1DArray 3 3))
+              source-points-matrix
+              (->> (list x1 x2 x1
+                         y1 y1 y2
+                         1  1  1)
+                   (into-array Double/TYPE)
+                   (Matrix/from1DArray 3 3))
 
-            ;; May throw an exception if the matrix is not invertible
-            source-points-matrix-inv
-            (.. source-points-matrix
-                (withInverter LinearAlgebra/GAUSS_JORDAN)
-                (inverse))
+              ;; May throw an exception if the matrix is not invertible
+              source-points-matrix-inv
+              (.. source-points-matrix
+                  (withInverter LinearAlgebra/GAUSS_JORDAN)
+                  (inverse))
 
-            transform-jvm
-            (.. target-points-matrix
-                (multiply source-points-matrix-inv))]
+              transform-jvm
+              (.. target-points-matrix
+                  (multiply source-points-matrix-inv))]
 
-        (gmt/matrix (.get transform-jvm 0 0)
-                    (.get transform-jvm 1 0)
-                    (.get transform-jvm 0 1)
-                    (.get transform-jvm 1 1)
-                    (.get transform-jvm 0 2)
-                    (.get transform-jvm 1 2))))
+          (gmt/matrix (.get transform-jvm 0 0)
+                      (.get transform-jvm 1 0)
+                      (.get transform-jvm 0 1)
+                      (.get transform-jvm 1 1)
+                      (.get transform-jvm 0 2)
+                      (.get transform-jvm 1 2))))
 
-     :cljs
-     (let [target-points-matrix
-           (Matrix. #js [#js [(:x d1) (:x d2) (:x d4)]
-                         #js [(:y d1) (:y d2) (:y d4)]
-                         #js [      1       1       1]])
+       :cljs
+       (let [target-points-matrix
+             (Matrix. #js [#js [d1x d2x d4x]
+                           #js [d1y d2y d4y]
+                           #js [  1   1   1]])
 
-           source-points-matrix
-           (Matrix. #js [#js [x1 x2 x1]
-                         #js [y1 y1 y2]
-                         #js [ 1  1  1]])
+             source-points-matrix
+             (Matrix. #js [#js [x1 x2 x1]
+                           #js [y1 y1 y2]
+                           #js [ 1  1  1]])
 
-           ;; returns nil if not invertible
-           source-points-matrix-inv (.getInverse source-points-matrix)
+             ;; returns nil if not invertible
+             source-points-matrix-inv (.getInverse source-points-matrix)
 
-           ;; TargetM = SourceM * Transform ==> Transform = TargetM * inv(SourceM)
-           transform-js
-           (when source-points-matrix-inv
-             (.multiply target-points-matrix source-points-matrix-inv))]
+             ;; TargetM = SourceM * Transform ==> Transform = TargetM * inv(SourceM)
+             transform-js
+             (when source-points-matrix-inv
+               (.multiply target-points-matrix source-points-matrix-inv))]
 
-       (when transform-js
-         (gmt/matrix (.getValueAt transform-js 0 0)
-                     (.getValueAt transform-js 1 0)
-                     (.getValueAt transform-js 0 1)
-                     (.getValueAt transform-js 1 1)
-                     (.getValueAt transform-js 0 2)
-                     (.getValueAt transform-js 1 2))))))
+         (when transform-js
+           (gmt/matrix (.getValueAt transform-js 0 0)
+                       (.getValueAt transform-js 1 0)
+                       (.getValueAt transform-js 0 1)
+                       (.getValueAt transform-js 1 1)
+                       (.getValueAt transform-js 0 2)
+                       (.getValueAt transform-js 1 2)))))))
 
 (defn calculate-geometry
   [points]

@@ -17,13 +17,13 @@
 
 (def layout-container-flex-attrs
   [:layout                 ;; :flex, :grid in the future
-   :layout-flex-dir        ;; :row, :reverse-row, :column, :reverse-column
+   :layout-flex-dir        ;; :row, :row-reverse, :column, :column-reverse
    :layout-gap-type        ;; :simple, :multiple
    :layout-gap             ;; {:row-gap number , :column-gap number}
    :layout-align-items     ;; :start :end :center :stretch
    :layout-justify-content ;; :start :center :end :space-between :space-around
    :layout-align-content   ;; :start :center :end :space-between :space-around :stretch (by default)
-   :layout-wrap-type       ;; :wrap, :no-wrap
+   :layout-wrap-type       ;; :wrap, :nowrap
    :layout-padding-type    ;; :simple, :multiple
    :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
    ])
@@ -101,8 +101,8 @@
     [:button.dir.tooltip.tooltip-bottom
      {:class  (dom/classnames :active         (= saved-dir dir)
                               :row            (= :row dir)
-                              :reverse-row    (= :reverse-row dir)
-                              :reverse-column (= :reverse-column dir)
+                              :row-reverse    (= :row-reverse dir)
+                              :column-reverse (= :column-reverse dir)
                               :column         (= :column dir))
       :key    (dm/str  "direction-" dir)
       :alt    (str/replace (str/capital (d/name dir)) "-" " ")
@@ -113,9 +113,9 @@
   [{:keys [wrap-type set-wrap] :as props}]
   [:*
    [:button.tooltip.tooltip-bottom
-    {:class  (dom/classnames :active  (= wrap-type :no-wrap))
-     :alt    "No-wrap"
-     :on-click #(set-wrap :no-wrap)
+    {:class  (dom/classnames :active  (= wrap-type :nowrap))
+     :alt    "Nowrap"
+     :on-click #(set-wrap :nowrap)
      :style {:padding 0}}
     [:span.no-wrap i/minus]]
    [:button.wrap.tooltip.tooltip-bottom
@@ -252,10 +252,10 @@
                         :on-click (fn [event]
                                     (reset! gap-selected? :column-gap)
                                     (dom/select-target event))
-                        :on-change (partial set-gap (= :no-wrap wrap-type) :column-gap)
+                        :on-change (partial set-gap (= :nowrap wrap-type) :column-gap)
                         :on-blur #(reset! gap-selected? :none)
                         :value (:column-gap gap-value)
-                        :disabled (and (= :no-wrap wrap-type) is-col?)}]]
+                        :disabled (and (= :nowrap wrap-type) is-col?)}]]
 
     [:div.gap-row.tooltip.tooltip-bottom-left
      {:alt "Row gap"}
@@ -266,10 +266,10 @@
                         :on-click (fn [event]
                                     (reset! gap-selected? :row-gap)
                                     (dom/select-target event))
-                        :on-change (partial set-gap (= :no-wrap wrap-type) :row-gap)
+                        :on-change (partial set-gap (= :nowrap wrap-type) :row-gap)
                         :on-blur #(reset! gap-selected? :none)
                         :value (:row-gap gap-value)
-                        :disabled (and (= :no-wrap wrap-type) (not is-col?))}]]]])
+                        :disabled (and (= :nowrap wrap-type) (not is-col?))}]]]])
 
 (mf/defc layout-container-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "multiple"]))]}
@@ -302,7 +302,7 @@
         ;; Flex-direction
 
         saved-dir (:layout-flex-dir values)
-        is-col? (or (= :column saved-dir) (= :reverse-column saved-dir))
+        is-col? (or (= :column saved-dir) (= :column-reverse saved-dir))
         set-direction
         (fn [dir]
           (st/emit! (dwsl/update-layout ids {:layout-flex-dir dir})))
@@ -386,7 +386,7 @@
              [:div.btn-wrapper
               [:div.direction
                [:*
-                (for [dir [:row :reverse-row :column :reverse-column]]
+                (for [dir [:row :row-reverse :column :column-reverse]]
                   [:& direction-btn {:key (d/name dir)
                                      :dir dir
                                      :saved-dir saved-dir

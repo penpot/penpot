@@ -87,11 +87,27 @@
   (let [parent-id (:id parent)
         parent-bounds @(get bounds parent-id)
 
+        row?            (ctl/row? parent)
+        col?            (ctl/col? parent)
+        space-around?   (ctl/space-around? parent)
+        content-around? (ctl/content-around? parent)
+        [layout-gap-row layout-gap-col] (ctl/gaps parent)
+
+        row-pad (if (or (and col? space-around?)
+                        (and row? content-around?))
+                  layout-gap-row
+                  0)
+
+        col-pad (if (or(and row? space-around?)
+                       (and col? content-around?))
+                  layout-gap-col
+                  0)
+
         {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
-        pad-top    (or pad-top 0)
-        pad-right  (or pad-right 0)
-        pad-bottom (or pad-bottom 0)
-        pad-left   (or pad-left 0)
+        pad-top    (+ (or pad-top 0) row-pad)
+        pad-right  (+ (or pad-right 0) col-pad)
+        pad-bottom (+ (or pad-bottom 0) row-pad)
+        pad-left   (+ (or pad-left 0) col-pad)
 
         child-bounds
         (fn [child]

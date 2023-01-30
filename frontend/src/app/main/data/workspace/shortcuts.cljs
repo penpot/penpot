@@ -17,6 +17,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dws]
+   [app.main.data.workspace.text.shortcuts :as dwtxts]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -106,6 +107,7 @@
                           :command "escape"
                           :subsections [:edit]
                           :fn #(st/emit! :interrupt (dw/deselect-all true))}
+
 
    ;; MODIFY LAYERS
 
@@ -245,7 +247,7 @@
                           :command "t"
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly dwtxt/start-edit-if-selected
-                                         (dwd/select-for-drawing :text))}
+                                                      (dwd/select-for-drawing :text))}
 
    :draw-path            {:tooltip "P"
                           :command "p"
@@ -419,14 +421,14 @@
                          :subsections [:panels]
                          :fn #(do (r/set-resize-type! :bottom)
                                   (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
-                                            (toggle-layout-flag :colorpalette)))}
+                                                         (toggle-layout-flag :colorpalette)))}
 
    :toggle-textpalette  {:tooltip (ds/alt "T")
                          :command (ds/a-mod "t")
                          :subsections [:panels]
                          :fn #(do (r/set-resize-type! :bottom)
                                   (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
-                                            (toggle-layout-flag :textpalette)))}
+                                                         (toggle-layout-flag :textpalette)))}
 
    :hide-ui              {:tooltip "\\"
                           :command "\\"
@@ -459,6 +461,16 @@
                           :command ["shift+2" "@" "\""]
                           :subsections [:zoom-workspace]
                           :fn #(st/emit! dw/zoom-to-selected-shape)}
+
+   :zoom-lense-increase  {:tooltip "Z"
+                          :command "z"
+                          :subsections [:zoom-workspace]
+                          :fn identity}
+
+   :zoom-lense-decrease {:tooltip (ds/alt "Z")
+                         :command "alt+z"
+                         :subsections [:zoom-workspace]
+                         :fn identity}
 
    ;; NAVIGATION
 
@@ -516,7 +528,7 @@
                            :fn #(emit-when-no-readonly (dwly/pressed-opacity n))}])))))
 
 (def shortcuts
-  (merge base-shortcuts opacity-shortcuts))
+  (merge base-shortcuts opacity-shortcuts dwtxts/shortcuts))
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

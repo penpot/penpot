@@ -478,7 +478,11 @@
 
 (defn get-data [^js node ^string attr]
   (when (some? node)
-    (.getAttribute node (str "data-" attr))))
+    (.getAttribute node (dm/str "data-" attr))))
+
+(defn set-data! [^js node ^string attr value]
+  (when (some? node)
+    (.setAttribute node (dm/str "data-" attr) (dm/str value))))
 
 (defn set-attribute! [^js node ^string attr value]
   (when (some? node)

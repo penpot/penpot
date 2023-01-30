@@ -424,6 +424,16 @@ msgstr ""
 "más sobre licencias tipográficas: [font "
 "licensing](https://www.typography.com/faq)."
 
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Hemos detectado un posible problema en tus fuentes "
+"relacionado con las métricas verticales en diferentes sistemas operativos. "
+"Puedes comprobar la visualización de tu fuente utilizando servicios "
+"[como este](https://vertical-metrics.netlify.app/). "
+"Además, recomendamos usar [Transfonter](https://transfonter.org/) "
+"para generar fuentes web y corregir posibles errores."
+
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
 msgstr "Cargar todas"
@@ -1099,6 +1109,10 @@ msgstr "Familia tipográfica"
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-size"
 msgstr "Tamaño de fuente"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Grosor de fuente"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.font-style"
@@ -2344,6 +2358,9 @@ msgstr "Ruta"
 msgid "shortcut-subsection.shape"
 msgstr "Formas"
 
+msgid "shortcut-subsection.text-editor"
+msgstr "Textos"
+
 msgid "shortcut-subsection.tools"
 msgstr "Herramientas"
 
@@ -2673,7 +2690,7 @@ msgid "shortcuts.toggle-layers"
 msgstr "Mostrar/ocultar capas"
 
 msgid "shortcuts.toggle-layout-flex"
-msgstr "Añadir/eliminar layout flex"
+msgstr "Añadir/eliminar flex layout"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Bloquear/Desbloquear"
@@ -2716,6 +2733,42 @@ msgstr "Distribuir verticalmente"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom a selección"
+
+msgid "shortcuts.align-center"
+msgstr "Alinear al centro"
+
+msgid "shortcuts.align-justify"
+msgstr "Alinear justificado"
+
+msgid "shortcuts.bold"
+msgstr "Alternar negrita"
+
+msgid "shortcuts.italic"
+msgstr "Alternar cursiva"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Decrementar el tamaño de fuente"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Incrementar el tamaño de fuente"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Decrementar el espaciado de letras"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Incrementar el espaciado de letras"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Decrementar el interlineado"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Incrementar el interlineado"
+
+msgid "shortcuts.line-through"
+msgstr "Alternar tachado"
+
+msgid "shortcuts.underline"
+msgstr "Alternar subrayado"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -3191,6 +3244,12 @@ msgstr "Pantalla completa"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom a selección"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Incrementar zoom a objetivo"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Decrementar zoom a objetivo"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3864,11 +3923,11 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Columna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-column"
+msgid "workspace.options.layout.direction.column-reverse"
 msgstr "Columna invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
+msgid "workspace.options.layout.direction.row-reverse"
 msgstr "Fila invertida"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
@@ -4283,7 +4342,7 @@ msgstr "Actualizando %s..."
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
-msgstr "Añadir layout flex"
+msgstr "Añadir flex layout"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
@@ -4404,7 +4463,7 @@ msgstr "Ruta"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
-msgstr "Eliminar layout flex"
+msgstr "Eliminar flex layout"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,

@@ -318,7 +318,7 @@
                  mod? (kbd/mod? event)
                  shift? (kbd/shift? event)
                  delta (.-pixelY norm-event)
-                 viewer-section (mf/ref-val viewer-section-ref)
+                 viewer-section (.target event)
                  scroll-pos (if shift?
                               (dom/get-h-scroll-pos viewer-section)
                               (dom/get-scroll-pos viewer-section))

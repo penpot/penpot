@@ -43,7 +43,7 @@
              :layout-item-max-w "max-width"
              :layout-item-min-w "min-width"}
    :format  {:layout-item-margin format-margin
-             :layout-item-align-self name}})
+             :layout-item-align-self d/name}})
 
 (defn copy-data
   ([shape]

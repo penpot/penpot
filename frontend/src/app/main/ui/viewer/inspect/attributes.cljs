@@ -27,7 +27,7 @@
    :group    [:layout :svg :layout-flex-item]
    :rect     [:layout :fill :stroke :shadow :blur :svg :layout-flex-item]
    :circle   [:layout :fill :stroke :shadow :blur :svg :layout-flex-item]
-   :path     [:layout :fill :stroke :shadow :blur :svg]
+   :path     [:layout :fill :stroke :shadow :blur :svg :layout-flex-item]
    :image    [:image :layout :fill :stroke :shadow :blur :svg :layout-flex-item]
    :text     [:layout :text :shadow :blur :stroke :layout-flex-item]})
 
