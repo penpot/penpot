@@ -66,6 +66,7 @@
 - Fix multiuser - "Shadow" element is not updating immediately [Taiga #4709](https://tree.taiga.io/project/penpot/issue/4709)
 - Fix paths not flagged as modified when resized [Taiga #4742](https://tree.taiga.io/project/penpot/issue/4742)
 - Fix resend invitation doesn't reset the expiration date [Taiga #4741](https://tree.taiga.io/project/penpot/issue/4741)
+- Fix incorrect state after undo page creation [Taiga #4690](https://tree.taiga.io/project/penpot/issue/4690)
 
 ### :heart: Community contributions by (Thank you!)
 
