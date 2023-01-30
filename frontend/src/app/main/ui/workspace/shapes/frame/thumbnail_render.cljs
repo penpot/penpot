@@ -18,9 +18,11 @@
    [app.main.ui.shapes.frame :as frame]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
+   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [debug :refer [debug?]]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (defn- draw-thumbnail-canvas!
@@ -228,6 +230,16 @@
           (when (some? @observer-ref)
             (.disconnect @observer-ref)
             (reset! observer-ref nil)))))
+
+    ;; When the thumbnail-data is empty we regenerate the thumbnail
+    (mf/use-effect
+     (mf/deps (:selrect shape) thumbnail-data)
+     (fn []
+       (let [{:keys [width height]} (:selrect shape)]
+         (p/then (wapi/empty-png-size width height)
+                 (fn [data]
+                   (when (<= (count thumbnail-data) (+ 100 (count data)))
+                     (rx/push! updates-str :update)))))))
 
     [on-load-frame-dom
      @render-frame?

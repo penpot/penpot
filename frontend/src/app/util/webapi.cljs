@@ -11,7 +11,8 @@
    [app.common.logging :as log]
    [app.util.object :as obj]
    [beicon.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [promesa.core :as p]))
 
 (log/set-level! :warn)
 
@@ -144,3 +145,24 @@
        (.observe ^js obs node)
        (fn []
          (.disconnect ^js obs))))))
+
+(defn empty-png-size*
+  [width height]
+  (p/create
+   (fn [resolve reject]
+     (try
+       (let [canvas (.createElement js/document "canvas")
+             _ (set! (.-width canvas) width)
+             _ (set! (.-height canvas) height)
+             _ (set! (.-background canvas) "white")
+             canvas-context (.getContext canvas "2d")]
+         (.fillRect canvas-context 0 0 width height)
+         (.toBlob canvas
+                  (fn [blob]
+                    (->> (read-file-as-data-url blob)
+                         (rx/catch (fn [err] (reject err)))
+                         (rx/subs (fn [result] (resolve result)))))))
+
+       (catch :default e (reject e))))))
+
+(def empty-png-size (memoize empty-png-size*))
