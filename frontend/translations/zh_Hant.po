@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-30 17:46+0000\n"
+"PO-Revision-Date: 2023-02-01 16:38+0000\n"
 "Last-Translator: im424 <424@live.hk>\n"
 "Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hant/>\n"
@@ -1960,3 +1960,208 @@ msgstr "高度"
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
 msgstr "邀請"
+
+msgid "labels.continue-with-penpot"
+msgstr "以Penpot帳戶繼續"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-disabled"
+msgstr "已停用迴響"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "已選顏色"
+
+msgid "modals.create-webhook.title"
+msgstr "設置Webhook"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.single-corners"
+msgstr "個別角落"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "縮放"
+
+msgid "shortcut-section.workspace"
+msgstr "工作區"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "縮放"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.hide-resolved-comments"
+msgstr "隱藏已解決的評論"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "已發送迴響"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Github 倉庫"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "重新發送邀請"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.confirm-email"
+msgstr "驗證新電子郵件"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "社群"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "設置Webhook"
+
+msgid "modals.create-webhook.url.label"
+msgstr "訊息負載網址"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.desc-message"
+msgstr "系統正在進行定期保養。"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.submit"
+msgstr "更改電子郵件"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.column"
+msgstr "欄"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.all-corners"
+msgstr "所有角落"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "説明中心"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-complete"
+msgstr "完成匯出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-center"
+msgstr "置中"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-projects"
+msgid_plural "labels.num-of-projects"
+msgstr[0] "%s 個專案"
+
+msgid "workspace.options.radius"
+msgstr "圓角半徑"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.radius"
+msgstr "圓角半徑"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
+msgstr "寬度"
+
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke.width"
+msgstr "寬度"
+
+msgid "inspect.tabs.code.selected.image"
+msgstr "圖像"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.desc-message"
+msgstr "伺服器正在進行小型維修，請稍後重試。"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.give-feedback"
+msgstr "給予迴響"
+
+msgid "labels.log-or-sign"
+msgstr "登錄或註冊"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr "此頁面可能不存在，或者您無權訪問。"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "重新載入檔案"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-your-comments"
+msgstr "僅顯示您的評論"
+
+msgid "labels.view-only"
+msgstr "僅供查閱"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info"
+msgstr "刪除你的帳戶後，你會失去現有專案及檔案。"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "刪除檔案"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "修改 Webhook"
+
+msgid "modals.edit-webhook.title"
+msgstr "修改 Webhook"
+
+msgid "modals.delete-webhook.title"
+msgstr "刪除 Webhook"
+
+msgid "shortcuts.add-comment"
+msgstr "評論"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "主功能表"
+
+msgid "shortcuts.toggle-grid"
+msgstr "顯示/隱藏網格"
+
+msgid "shortcuts.toggle-layers"
+msgstr "切換圖層"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.columns"
+msgstr "欄"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.rows"
+msgstr "列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.size"
+msgstr "尺寸"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.row"
+msgstr "列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-w"
+msgstr "最小寬度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-h"
+msgstr "最小高度"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "更多顏色"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.size"
+msgstr "尺寸"
+
+msgid "shortcut-section.dashboard"
+msgstr "儀表板"
+
+msgid "shortcut-section.viewer"
+msgstr "檢視者"
