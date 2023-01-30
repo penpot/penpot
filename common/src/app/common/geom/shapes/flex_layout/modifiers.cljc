@@ -68,7 +68,7 @@
         child-height (gpo/height-points child-bounds)
 
         [_ transform transform-inverse]
-        (when (or (ctl/fill-width? child) (ctl/fill-width? child))
+        (when (or (ctl/fill-width? child) (ctl/fill-height? child))
           (gtr/calculate-geometry @parent-bounds))
 
         fill-width   (when (ctl/fill-width? child)  (calc-fill-width-data parent transform transform-inverse child child-origin child-width layout-line))
