@@ -432,7 +432,8 @@
             (or
              (= uuid/zero id)
              (and
-              (str/includes? (str/lower (:name shape)) (str/lower search))
+              (or (str/includes? (str/lower (:name shape)) (str/lower search))
+                  (str/includes? (dm/str (:id shape)) (str/lower search)))
               (or
                (empty? filters)
                (and

@@ -243,6 +243,7 @@
                   (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
                   (first)
                   (get objects))]
+
          (reset! hover hover-shape)
          (reset! hover-ids ids)
          (reset! hover-top-frame-id (ctt/top-nested-frame objects (deref last-point-ref))))))))
