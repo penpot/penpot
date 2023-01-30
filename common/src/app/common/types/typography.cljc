@@ -70,3 +70,14 @@
                                    remap-typography
                                    content)))))
 
+(defn remove-external-typographies
+  "Change the shape so that any use of an external typography now is removed"
+  [shape file-id]
+  (let [remove-ref-file #(dissoc % :typography-ref-file :typography-ref-id)]
+
+    (update shape :content
+            (fn [content]
+              (txt/transform-nodes #(not= (:typography-ref-file %) file-id)
+                                   remove-ref-file
+                                   content)))))
+
