@@ -323,7 +323,7 @@
     where archived_at is not null")
 
 (defn- clean-archived
-  [{:keys [pool]}]
+  [{:keys [::db/pool]}]
   (let [result (db/exec-one! pool [sql:clean-archived])
         result (:next.jdbc/update-count result)]
     (l/debug :hint "delete archived audit log entries" :deleted result)
