@@ -200,3 +200,12 @@
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))
+
+(defmethod command ::multipart-upload
+  [id params]
+  (->> (http/send! {:method :post
+                    :uri  (u/join @cf/public-uri "api/rpc/command/" (name id))
+                    :credentials "include"
+                    :body (http/form-data params)})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
