@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-30 17:46+0000\n"
-"Last-Translator: nautilusx <translate@disroot.org>\n"
+"PO-Revision-Date: 2023-02-01 16:38+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -1987,9 +1987,6 @@ msgstr "Datenschutzbestimmungen."
 
 msgid "onboarding.newsletter.title"
 msgstr "Möchten Sie die Penpot-Nachrichten erhalten?"
-
-msgid "onboarding.slide.1.title"
-msgstr "Hauchen Sie Ihren Entwürfen mit Interaktionen Leben ein"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Ein Team erstellen"
@@ -4598,3 +4595,14 @@ msgstr ""
 "Um es erneut zu versuchen, können Sie diese Datei neu laden. Wenn das "
 "Problem weiterhin besteht, empfehlen wir Ihnen, einen Blick auf die Liste zu "
 "werfen und zu überlegen, ob Sie defekte Grafiken löschen wollen."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "Einige Assets aus der Bibliothek dieser Datei werden hier verwendet:"
+msgstr[1] ""
+"Einige der Assets aus den Bibliotheken dieser Datei werden hier verwendet:"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr ""
+"Wenn dieser Hook ausgelöst wird, dann werden die Eventdetails übermittelt."
