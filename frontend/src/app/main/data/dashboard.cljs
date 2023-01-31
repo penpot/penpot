@@ -426,8 +426,8 @@
            (rx/ignore)))))
 
 (defn update-team-photo
-  [{:keys [file] :as params}]
-  (us/assert! ::di/file file)
+  [file]
+  (us/verify ::di/blob file)
   (ptk/reify ::update-team-photo
     ptk/WatchEvent
     (watch [_ state _]
@@ -441,7 +441,7 @@
         (->> (rx/of file)
              (rx/map di/validate-file)
              (rx/map prepare)
-             (rx/mapcat #(rp/cmd! :update-team-photo %))
+             (rx/mapcat #(rp/mutation :update-team-photo %))
              (rx/do on-success)
              (rx/map du/fetch-teams)
              (rx/catch on-error))))))
