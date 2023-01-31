@@ -3,19 +3,19 @@ jobs:
   build:
     docker:
       - image: penpotapp/devenv:latest
-      - image: cimg/postgres:13.5
+      - image: cimg/postgres:14.5
         environment:
           POSTGRES_USER: penpot_test
           POSTGRES_PASSWORD: penpot_test
           POSTGRES_DB: penpot_test
-      - image: cimg/redis:6.2.6
+      - image: cimg/redis:7.0.5
 
     working_directory: ~/repo
     resource_class: large
 
     environment:
       # Customize the JVM maximum heap limit
-      JVM_OPTS: -Xmx1g
+      JVM_OPTS: -Xmx4g
 
     steps:
       - checkout
@@ -28,6 +28,13 @@ jobs:
            - v1-dependencies-
 
       - run: cd .clj-kondo && cat config.edn
+
+      - run:
+          name: frontend styles prettier
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn run lint-scss
 
       - run:
           name: common lint
@@ -44,60 +51,48 @@ jobs:
             clj-kondo --parallel --lint src/
 
       - run:
-          name: frontend styles prettier
-          working_directory: "./frontend"
-          command: |
-            yarn install
-            yarn run lint-scss
-
-      - run:
           name: backend lint
           working_directory: "./backend"
           command: |
             clj-kondo --version
             clj-kondo --parallel --lint src/
 
-      # run backend test
+      - run:
+          working_directory: "./common"
+          name: common tests
+          command: |
+            yarn install
+            yarn test
+            clojure -X:dev:test :patterns '["common-tests.*-test"]'
+
+          environment:
+            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
+            JVM_OPTS: -Xmx4g
+            NODE_OPTIONS: --max-old-space-size=4096
+
       - run:
           name: backend test
           working_directory: "./backend"
-          command: "clojure -X:dev:test"
+          command: |
+            clojure -X:dev:test :patterns '["backend-tests.*-test"]'
+
           environment:
             PENPOT_TEST_DATABASE_URI: "postgresql://localhost/penpot_test"
             PENPOT_TEST_DATABASE_USERNAME: penpot_test
             PENPOT_TEST_DATABASE_PASSWORD: penpot_test
             PENPOT_TEST_REDIS_URI: "redis://localhost/1"
+            JVM_OPTS: -Xmx4g
 
       - run:
           name: frontend tests
           working_directory: "./frontend"
           command: |
             yarn install
-            clojure -M:dev:shadow-cljs compile test
-            node target/tests.js
+            yarn test
 
           environment:
             PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
-
-      - run:
-          working_directory: "./common"
-          name: common tests (cljs)
-          command: |
-            yarn install
-            yarn run compile-test
-            node target/test.js
-
-          environment:
-            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
-
-      - run:
-          working_directory: "./common"
-          name: common tests (clj)
-          command: |
-            clojure -X:dev:test
-
-          environment:
-            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
+            NODE_OPTIONS: --max-old-space-size=4096
 
       - save_cache:
          paths:

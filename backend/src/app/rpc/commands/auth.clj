@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.auth
   (:require
+   [app.auth :as auth]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
@@ -13,15 +14,18 @@
    [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
+   [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.main :as-alias main]
+   [app.rpc :as-alias rpc]
+   [app.rpc.climit :as climit]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.mutations.teams :as teams]
+   [app.rpc.helpers :as rph]
    [app.rpc.queries.profile :as profile]
-   [app.rpc.semaphore :as rsem]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -29,7 +33,6 @@
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::lang ::us/string)
 (s/def ::path ::us/string)
-(s/def ::profile-id ::us/uuid)
 (s/def ::password ::us/not-empty-string)
 (s/def ::old-password ::us/not-empty-string)
 (s/def ::theme ::us/string)
@@ -37,22 +40,6 @@
 (s/def ::token ::us/not-empty-string)
 
 ;; ---- HELPERS
-
-(defn derive-password
-  [password]
-  (hashers/derive password
-                  {:alg :argon2id
-                   :memory 16384
-                   :iterations 20
-                   :parallelism 2}))
-
-(defn verify-password
-  [attempt password]
-  (try
-    (hashers/verify attempt password)
-    (catch Exception _e
-      {:update false
-       :valid false})))
 
 (defn email-domain-in-whitelist?
   "Returns true if email's domain is in the given whitelist or if
@@ -82,9 +69,10 @@
 ;; ---- COMMAND: login with password
 
 (defn login-with-password
-  [{:keys [pool session sprops] :as cfg} {:keys [email password] :as params}]
+  [{:keys [::db/pool session] :as cfg} {:keys [email password] :as params}]
 
-  (when-not (contains? cf/flags :login)
+  (when-not (or (contains? cf/flags :login)
+                (contains? cf/flags :login-with-password))
     (ex/raise :type :restriction
               :code :login-disabled
               :hint "login is disabled in this instance"))
@@ -94,7 +82,7 @@
               (ex/raise :type :validation
                         :code :account-without-password
                         :hint "the current account does not have password"))
-            (:valid (verify-password password (:password profile))))
+            (:valid (auth/verify-password password (:password profile))))
 
           (validate-profile [profile]
             (when-not profile
@@ -124,28 +112,29 @@
                             (profile/decode-profile-row))
 
             invitation (when-let [token (:invitation-token params)]
-                         (tokens/verify sprops {:token token :iss :team-invitation}))
+                         (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))
 
             ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
-            ;; invitation because invitations matches exactly; and user can't loging with other email and
+            ;; invitation because invitations matches exactly; and user can't login with other email and
             ;; accept invitation with other email
             response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
                          {:invitation-token (:invitation-token params)}
-                         profile)]
+                         (assoc profile :is-admin (let [admins (cf/get :admins)]
+                                                    (contains? admins (:email profile)))))]
+        (-> response
+            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-meta {::audit/props (audit/profile->props profile)
+                            ::audit/profile-id (:id profile)}))))))
 
-        (with-meta response
-          {:transform-response ((:create session) (:id profile))
-           ::audit/props (audit/profile->props profile)
-           ::audit/profile-id (:id profile)})))))
-
+(s/def ::scope ::us/string)
 (s/def ::login-with-password
   (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token]))
+          :opt-un [::invitation-token ::scope]))
 
 (sv/defmethod ::login-with-password
   "Performs authentication using penpot password."
-  {:auth false
-   ::rsem/queue :auth
+  {::rpc/auth false
+   ::climit/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (login-with-password cfg params))
@@ -153,26 +142,25 @@
 ;; ---- COMMAND: Logout
 
 (s/def ::logout
-  (s/keys :opt-un [::profile-id]))
+  (s/keys :opt [::rpc/profile-id]))
 
 (sv/defmethod ::logout
   "Clears the authentication cookie and logout the current session."
-  {:auth false
+  {::rpc/auth false
    ::doc/added "1.15"}
   [{:keys [session] :as cfg} _]
-  (with-meta {}
-    {:transform-response (:delete session)}))
+  (rph/with-transform {} (session/delete-fn session)))
 
 ;; ---- COMMAND: Recover Profile
 
 (defn recover-profile
-  [{:keys [pool sprops] :as cfg} {:keys [token password]}]
+  [{:keys [::db/pool] :as cfg} {:keys [token password]}]
   (letfn [(validate-token [token]
-            (let [tdata (tokens/verify sprops {:token token :iss :password-recovery})]
+            (let [tdata (tokens/verify (::main/props cfg) {:token token :iss :password-recovery})]
               (:profile-id tdata)))
 
           (update-password [conn profile-id]
-            (let [pwd (derive-password password)]
+            (let [pwd (auth/derive-password password)]
               (db/update! conn :profile {:password pwd} {:id profile-id})))]
 
     (db/with-atomic [conn pool]
@@ -185,8 +173,8 @@
   (s/keys :req-un [::token ::password]))
 
 (sv/defmethod ::recover-profile
-  {:auth false
-   ::rsem/queue :auth
+  {::rpc/auth false
+   ::climit/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (recover-profile cfg params))
@@ -194,13 +182,13 @@
 ;; ---- COMMAND: Prepare Register
 
 (defn validate-register-attempt!
-  [{:keys [pool sprops]} params]
+  [{:keys [::db/pool] :as cfg} params]
 
   (when-not (contains? cf/flags :registration)
     (if-not (contains? params :invitation-token)
       (ex/raise :type :restriction
                 :code :registration-disabled)
-      (let [invitation (tokens/verify sprops {:token (:invitation-token params) :iss :team-invitation})]
+      (let [invitation (tokens/verify (::main/props cfg) {:token (:invitation-token params) :iss :team-invitation})]
         (when-not (= (:email params) (:member-email invitation))
           (ex/raise :type :restriction
                     :code :email-does-not-match-invitation
@@ -234,7 +222,7 @@
     (pos? (compare elapsed register-retry-threshold))))
 
 (defn prepare-register
-  [{:keys [pool sprops] :as cfg} params]
+  [{:keys [::db/pool] :as cfg} params]
 
   (validate-register-attempt! cfg params)
 
@@ -263,7 +251,7 @@
 
         params (d/without-nils params)
 
-        token  (tokens/generate sprops params)]
+        token  (tokens/generate (::main/props cfg) params)]
     (with-meta {:token token}
       {::audit/profile-id uuid/zero})))
 
@@ -272,7 +260,7 @@
           :opt-un [::invitation-token]))
 
 (sv/defmethod ::prepare-register-profile
-  {:auth false
+  {::rpc/auth false
    ::doc/added "1.15"}
   [cfg params]
   (prepare-register cfg params))
@@ -292,7 +280,7 @@
                       (db/tjson))
 
         password  (if-let [password (:password params)]
-                    (derive-password password)
+                    (auth/derive-password password)
                     "!")
 
         locale    (:locale params)
@@ -325,6 +313,7 @@
             (throw e)
             (ex/raise :type :validation
                       :code :email-already-exists
+                      :hint "email already exists"
                       :cause e)))))))
 
 (defn create-profile-relations
@@ -338,15 +327,15 @@
         (assoc :default-project-id (:default-project-id team)))))
 
 (defn send-email-verification!
-  [conn sprops profile]
-  (let [vtoken (tokens/generate sprops
+  [conn props profile]
+  (let [vtoken (tokens/generate props
                                 {:iss :verify-email
                                  :exp (dt/in-future "72h")
                                  :profile-id (:id profile)
                                  :email (:email profile)})
         ;; NOTE: this token is mainly used for possible complains
         ;; identification on the sns webhook
-        ptoken (tokens/generate sprops
+        ptoken (tokens/generate props
                                 {:iss :profile-identity
                                  :profile-id (:id profile)
                                  :exp (dt/in-future {:days 30})})]
@@ -359,8 +348,8 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [conn sprops session] :as cfg} {:keys [token] :as params}]
-  (let [claims     (tokens/verify sprops {:token token :iss :prepared-register})
+  [{:keys [conn session] :as cfg} {:keys [token] :as params}]
+  (let [claims     (tokens/verify (::main/props cfg) {:token token :iss :prepared-register})
         params     (merge params claims)
 
         is-active  (or (:is-active params)
@@ -375,20 +364,19 @@
                           (create-profile conn)
                           (create-profile-relations conn)
                           (profile/decode-profile-row)))
-        audit-fn   (:audit cfg)
-
         invitation (when-let [token (:invitation-token params)]
-                     (tokens/verify sprops {:token token :iss :team-invitation}))]
+                     (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))]
 
     ;; If profile is filled in claims, means it tries to register
     ;; again, so we proceed to update the modified-at attr
     ;; accordingly.
     (when-let [id (:profile-id claims)]
       (db/update! conn :profile {:modified-at (dt/now)} {:id id})
-      (audit-fn :cmd :submit
-                :type "fact"
-                :name "register-profile-retry"
-                :profile-id id))
+      (when-let [collector (::audit/collector cfg)]
+        (audit/submit! collector
+                       {:type "fact"
+                        :name "register-profile-retry"
+                        :profile-id id})))
 
     (cond
       ;; If invitation token comes in params, this is because the
@@ -399,35 +387,35 @@
       ;; email.
       (and (some? invitation) (= (:email profile) (:member-email invitation)))
       (let [claims (assoc invitation :member-id  (:id profile))
-            token  (tokens/generate sprops claims)
+            token  (tokens/generate (::main/props cfg) claims)
             resp   {:invitation-token token}]
-        (with-meta resp
-          {:transform-response ((:create session) (:id profile))
-           ::audit/replace-props (audit/profile->props profile)
-           ::audit/profile-id (:id profile)}))
+        (-> resp
+            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-meta {::audit/replace-props (audit/profile->props profile)
+                            ::audit/profile-id (:id profile)})))
 
       ;; If auth backend is different from "penpot" means user is
       ;; registering using third party auth mechanism; in this case
       ;; we need to mark this session as logged.
       (not= "penpot" (:auth-backend profile))
-      (with-meta (profile/strip-private-attrs profile)
-        {:transform-response ((:create session) (:id profile))
-         ::audit/replace-props (audit/profile->props profile)
-         ::audit/profile-id (:id profile)})
+      (-> (profile/strip-private-attrs profile)
+          (rph/with-transform (session/create-fn session (:id profile)))
+          (rph/with-meta {::audit/replace-props (audit/profile->props profile)
+                          ::audit/profile-id (:id profile)}))
 
       ;; If the `:enable-insecure-register` flag is set, we proceed
       ;; to sign in the user directly, without email verification.
       (true? is-active)
-      (with-meta (profile/strip-private-attrs profile)
-        {:transform-response ((:create session) (:id profile))
-         ::audit/replace-props (audit/profile->props profile)
-         ::audit/profile-id (:id profile)})
+      (-> (profile/strip-private-attrs profile)
+          (rph/with-transform (session/create-fn session (:id profile)))
+          (rph/with-meta {::audit/replace-props (audit/profile->props profile)
+                          ::audit/profile-id (:id profile)}))
 
       ;; In all other cases, send a verification email.
       :else
       (do
-        (send-email-verification! conn sprops profile)
-        (with-meta profile
+        (send-email-verification! conn (::main/props cfg) profile)
+        (rph/with-meta profile
           {::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})))))
 
@@ -435,10 +423,10 @@
   (s/keys :req-un [::token ::fullname]))
 
 (sv/defmethod ::register-profile
-  {:auth false
-   ::rsem/queue :auth
+  {::rpc/auth false
+   ::climit/queue :auth
    ::doc/added "1.15"}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [::db/pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)
         (register-profile params))))
@@ -446,16 +434,16 @@
 ;; ---- COMMAND: Request Profile Recovery
 
 (defn request-profile-recovery
-  [{:keys [pool sprops] :as cfg} {:keys [email] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [email] :as params}]
   (letfn [(create-recovery-token [{:keys [id] :as profile}]
-            (let [token (tokens/generate sprops
+            (let [token (tokens/generate (::main/props cfg)
                                          {:iss :password-recovery
                                           :exp (dt/in-future "15m")
                                           :profile-id id})]
               (assoc profile :token token)))
 
           (send-email-notification [conn profile]
-            (let [ptoken (tokens/generate sprops
+            (let [ptoken (tokens/generate (::main/props cfg)
                                           {:iss :profile-identity
                                            :profile-id (:id profile)
                                            :exp (dt/in-future {:days 30})})]
@@ -493,7 +481,7 @@
   (s/keys :req-un [::email]))
 
 (sv/defmethod ::request-profile-recovery
-  {:auth false
+  {::rpc/auth false
    ::doc/added "1.15"}
   [cfg params]
   (request-profile-recovery cfg params))

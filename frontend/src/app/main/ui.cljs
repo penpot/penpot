@@ -72,6 +72,7 @@
         :dashboard-font-providers
         :dashboard-team-members
         :dashboard-team-invitations
+        :dashboard-team-webhooks
         :dashboard-team-settings)
 
        [:*

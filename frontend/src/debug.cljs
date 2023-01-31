@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.math :as mth]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
@@ -67,25 +68,70 @@
 
     ;; Disable frame thumbnails
     :disable-frame-thumbnails
+
+    ;; Force thumbnails always (independent of selection or zoom level)
+    :force-frame-thumbnails
+
+    ;; Enable a widget to show the auto-layout drop-zones
+    :layout-drop-zones
+
+    ;; Display the layout lines
+    :layout-lines
+
+    ;; Display the bounds for the hug content adjust
+    :layout-content-bounds
+
+    ;; Makes the pixel grid red so its more visibile
+    :pixel-grid
+
+    ;; Show the bounds relative to the parent
+    :parent-bounds
+
+    ;; Show html text
+    :html-text
+
+    ;; Show history overlay
+    :history-overlay
+
+    ;; Show shape name and id
+    :shape-titles
     })
 
 ;; These events are excluded when we activate the :events flag
 (def debug-exclude-events
   #{:app.main.data.workspace.notifications/handle-pointer-update
+    :app.main.data.workspace.notifications/handle-pointer-send
+    :app.main.data.workspace.persistence/update-persistence-status
+    :app.main.data.workspace.changes/update-indices
+    :app.main.data.websocket/send-message
     :app.main.data.workspace.selection/change-hover-state})
 
-(defonce ^:dynamic *debug* (atom #{#_:events #_:text-outline}))
+(defonce ^:dynamic *debug* (atom #{#_:events}))
 
-(defn debug-all! [] (reset! *debug* debug-options))
-(defn debug-none! [] (reset! *debug* #{}))
-(defn debug! [option] (swap! *debug* conj option))
-(defn -debug! [option] (swap! *debug* disj option))
+(defn debug-all! []
+  (reset! *debug* debug-options)
+  (js* "app.main.reinit()"))
+
+(defn debug-none! []
+  (reset! *debug* #{})
+  (js* "app.main.reinit()"))
+
+(defn debug! [option]
+  (swap! *debug* conj option)
+  (when (= :events option)
+    (set! st/*debug-events* true))
+
+  (js* "app.main.reinit()"))
+
+(defn -debug! [option]
+  (swap! *debug* disj option)
+  (when (= :events option)
+    (set! st/*debug-events* false))
+  (js* "app.main.reinit()"))
 
 (defn ^:export ^boolean debug?
   [option]
-  (if *assert*
-    (boolean (@*debug* option))
-    false))
+  (boolean (@*debug* option)))
 
 (defn ^:export toggle-debug [name] (let [option (keyword name)]
                                      (if (debug? option)
@@ -105,16 +151,27 @@
        (effect-fn input)
        (rf result input)))))
 
+(defn prettify
+  "Prepare x fror cleaner output when logged."
+  [x]
+  (cond
+    (map? x) (d/mapm #(prettify %2) x)
+    (vector? x) (mapv prettify x)
+    (seq? x) (map prettify x)
+    (set? x) (into #{} (map prettify x))
+    (number? x) (mth/precision x 4)
+    (uuid? x) (str "#uuid " x)
+    :else x))
+
 (defn ^:export logjs
   ([str] (tap (partial logjs str)))
   ([str val]
-   (js/console.log str (clj->js val))
+   (js/console.log str (clj->js (prettify val)))
    val))
 
 (when (exists? js/window)
   (set! (.-dbg ^js js/window) clj->js)
   (set! (.-pp ^js js/window) pprint))
-
 
 (defonce widget-style "
   background: black;
@@ -156,6 +213,10 @@
 
 (defn ^:export dump-state []
   (logjs "state" @st/state)
+  nil)
+
+(defn ^:export dump-data []
+  (logjs "workspace-data" (get @st/state :workspace-data))
   nil)
 
 (defn ^:export dump-buffer []
@@ -205,6 +266,30 @@
 (defn ^:export dump-selected
   []
   (dump-selected' @st/state))
+
+(defn ^:export parent
+  []
+  (let [state @st/state
+        page-id (get state :current-page-id)
+        objects (get-in state [:workspace-data :pages-index page-id :objects])
+        selected (first (get-in state [:workspace-local :selected]))
+        parent-id (get-in objects [selected :parent-id])
+        parent (get objects parent-id)]
+    (when parent
+      (prn (str (:name parent) " - " (:id parent))))
+    nil))
+
+(defn ^:export frame
+  []
+  (let [state @st/state
+        page-id (get state :current-page-id)
+        objects (get-in state [:workspace-data :pages-index page-id :objects])
+        selected (first (get-in state [:workspace-local :selected]))
+        frame-id (get-in objects [selected :frame-id])
+        frame (get objects frame-id)]
+    (when frame
+      (prn (str (:name frame) " - " (:id frame))))
+    nil))
 
 (defn dump-tree'
   ([state] (dump-tree' state false false))
@@ -290,9 +375,24 @@
         num-nodes (->> (dom/seq-nodes root-node) count)]
     #js {:number num-nodes}))
 
-#_(defn modif->js
+(defn modif->js
   [modif-tree objects]
   (clj->js (into {}
                  (map (fn [[k v]]
                         [(get-in objects [k :name]) v]))
                  modif-tree)))
+
+(defn ^:export dump-modifiers
+  []
+  (let [page-id (get @st/state :current-page-id)
+        objects (get-in @st/state [:workspace-data :pages-index page-id :objects])]
+    (.log js/console (modif->js (:workspace-modifiers @st/state) objects)))
+  nil)
+
+(defn ^:export set-workspace-read-only
+  [read-only?]
+  (st/emit! (dw/set-workspace-read-only read-only?)))
+
+(defn ^:export fix-orphan-shapes
+  []
+  (st/emit! (dw/fix-orphan-shapes)))

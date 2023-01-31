@@ -29,12 +29,11 @@
 
     (->> values (map #(+ % width)) (str/join ","))))
 
-
-(defn add-border-radius [attrs {:keys [x y width height] :as shape}]
+(defn extract-border-radius [{:keys [x y width height] :as shape}]
   (case (ctsr/radius-mode shape)
     :radius-1
     (let [radius (gsh/shape-corners-1 shape)]
-      (obj/merge! attrs #js {:rx radius :ry radius}))
+      #js {:rx radius :ry radius})
 
     :radius-4
     (let [[r1 r2 r3 r4] (gsh/shape-corners-4 shape)
@@ -42,18 +41,21 @@
           right  (- height r2 r3)
           bottom (- width r3 r4)
           left   (- height r4 r1)]
-      (obj/merge! attrs #js {:d (dm/str
-                                 "M" (+ x r1) "," y " "
-                                 "h" top " "
-                                 "a" r2 "," r2 " 0 0 1 " r2 "," r2 " "
-                                 "v" right " "
-                                 "a" r3 "," r3 " 0 0 1 " (- r3) "," r3 " "
-                                 "h" (- bottom) " "
-                                 "a" r4 "," r4 " 0 0 1 " (- r4) "," (- r4) " "
-                                 "v" (- left) " "
-                                 "a" r1 "," r1 " 0 0 1 " r1 "," (- r1) " "
-                                 "z")}))
-    attrs))
+      #js {:d (dm/str
+               "M" (+ x r1) "," y " "
+               "h" top " "
+               "a" r2 "," r2 " 0 0 1 " r2 "," r2 " "
+               "v" right " "
+               "a" r3 "," r3 " 0 0 1 " (- r3) "," r3 " "
+               "h" (- bottom) " "
+               "a" r4 "," r4 " 0 0 1 " (- r4) "," (- r4) " "
+               "v" (- left) " "
+               "a" r1 "," r1 " 0 0 1 " r1 "," (- r1) " "
+               "z")})))
+
+
+(defn add-border-radius [attrs shape]
+  (obj/merge! attrs (extract-border-radius shape)))
 
 (defn add-fill
   ([attrs fill-data render-id type]
@@ -144,18 +146,20 @@
 
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]
-  (let [replace-id (fn [id]
-                     (if (contains? svg-defs id)
-                       (str render-id "-" id)
-                       id))
-        svg-attrs (-> svg-attrs
-                      (usvg/clean-attrs)
-                      (usvg/update-attr-ids replace-id)
-                      (dissoc :id))
+  (if (and (empty? svg-defs) (empty? svg-attrs))
+    [#js {} #js {}]
+    (let [replace-id (fn [id]
+                       (if (contains? svg-defs id)
+                         (str render-id "-" id)
+                         id))
+          svg-attrs (-> svg-attrs
+                        (usvg/clean-attrs)
+                        (usvg/update-attr-ids replace-id)
+                        (dissoc :id))
 
-        attrs  (-> svg-attrs (dissoc :style) (clj->js))
-        styles (-> svg-attrs (:style {}) (clj->js))]
-    [attrs styles]))
+          attrs  (-> svg-attrs (dissoc :style) (clj->js))
+          styles (-> svg-attrs (:style {}) (clj->js))]
+      [attrs styles])))
 
 (defn add-style-attrs
   ([props shape]
@@ -210,9 +214,12 @@
          (obj/set! "style" styles)))))
 
 (defn extract-style-attrs
-  [shape]
-  (-> (obj/create)
-      (add-style-attrs shape)))
+  ([shape]
+   (-> (obj/create)
+       (add-style-attrs shape)))
+  ([shape render-id]
+   (-> (obj/create)
+       (add-style-attrs shape render-id))))
 
 (defn extract-fill-attrs
   [fill-data render-id index type]

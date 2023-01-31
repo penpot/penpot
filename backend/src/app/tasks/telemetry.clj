@@ -11,13 +11,14 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
-   [app.util.async :refer [thread-sleep]]
+   [app.http.client :as http]
+   [app.main :as-alias main]
    [app.util.json :as json]
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [promesa.exec :as px]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASK ENTRY POINT
@@ -28,18 +29,13 @@
 (declare get-subscriptions-newsletter-updates)
 (declare get-subscriptions-newsletter-news)
 
-(s/def ::http-client fn?)
-(s/def ::version ::us/string)
-(s/def ::uri ::us/string)
-(s/def ::instance-id ::us/uuid)
-(s/def ::sprops
-  (s/keys :req-un [::instance-id]))
-
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::http-client ::version ::uri ::sprops]))
+  (s/keys :req [::http/client
+                ::db/pool
+                ::main/props]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [pool sprops version] :as cfg}]
+  [_ {:keys [::db/pool ::main/props] :as cfg}]
   (fn [{:keys [send? enabled?] :or {send? true enabled? false}}]
     (let [subs     {:newsletter-updates (get-subscriptions-newsletter-updates pool)
                     :newsletter-news (get-subscriptions-newsletter-news pool)}
@@ -48,15 +44,15 @@
                        (cf/get :telemetry-enabled))
 
           data     {:subscriptions subs
-                    :version version
-                    :instance-id (:instance-id sprops)}]
+                    :version (:full cf/version)
+                    :instance-id (:instance-id props)}]
       (cond
         ;; If we have telemetry enabled, then proceed the normal
         ;; operation.
         enabled?
         (let [data (merge data (get-stats pool))]
           (when send?
-            (thread-sleep (rand-int 10000))
+            (px/sleep (rand-int 10000))
             (send! cfg data))
           data)
 
@@ -68,7 +64,7 @@
         (seq subs)
         (do
           (when send?
-            (thread-sleep (rand-int 10000))
+            (px/sleep (rand-int 10000))
             (send! cfg data))
           data)
 
@@ -80,12 +76,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- send!
-  [{:keys [http-client uri] :as cfg} data]
-  (let [response (http-client {:method :post
-                               :uri uri
-                               :headers {"content-type" "application/json"}
-                               :body (json/write-str data)}
-                               {:sync? true})]
+  [cfg data]
+  (let [response (http/req! cfg
+                            {:method :post
+                             :uri (cf/get :telemetry-uri)
+                             :headers {"content-type" "application/json"}
+                             :body (json/encode-str data)}
+                            {:sync? true})]
     (when (> (:status response) 206)
       (ex/raise :type :internal
                 :code :invalid-response

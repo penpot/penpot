@@ -137,8 +137,6 @@ nav > div:not(:last-child) {
   margin: 0px;
   padding: 0px;
   flex-direction: column;
-  flex-wrap: wrap;
-  height: calc(100vh - 75px);
   justify-content: flex-start;
 }
 
@@ -151,18 +149,30 @@ nav > div:not(:last-child) {
   margin: 0px 20px;
   cursor: pointer;
   display: flex;
-  justify-content: center;
   border-radius: 3px;
 }
 
+
+
 .horizontal-list li:hover {
   background-color: #e9e9e9;
+}
+
+.horizontal-list li > *:not(:last-child) {
+  margin-right: 10px;
 }
 
 .horizontal-list li > a {
   text-decoration: none;
   color: inherit;
 }
+
+.horizontal-list li > .date {
+  font-weight: 200;
+  color: #686868;
+  min-width: 210px;
+}
+
 
 form .row {
   padding: 5px 0;

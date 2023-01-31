@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -ex
 
 export ORGANIZATION="penpotapp";
 export DEVENV_IMGNAME="$ORGANIZATION/devenv";
@@ -10,6 +9,8 @@ export CURRENT_VERSION=$(cat ./version.txt);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 export CURRENT_HASH=$(git rev-parse --short HEAD);
 export CURRENT_COMMITS=$(git rev-list --count HEAD)
+
+set -ex
 
 function print-current-version {
     echo -n "$CURRENT_VERSION-$CURRENT_COMMITS-g$CURRENT_HASH"
@@ -78,13 +79,21 @@ function log-devenv {
     docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml logs -f --tail=50
 }
 
-function run-devenv {
+function run-devenv-tmux {
     if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
         start-devenv
     fi
 
     docker exec -ti penpot-devenv-main sudo -EH -u penpot /home/start-tmux.sh
 }
+
+function run-devenv-shell {
+    if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
+        start-devenv
+    fi
+    docker exec -ti penpot-devenv-main sudo -EH -u penpot bash
+}
+
 
 function build {
     echo ">> build start: $1"
@@ -164,6 +173,20 @@ function build-exporter-bundle {
     echo ">> bundle exporter end";
 }
 
+function build-docker-images {
+    rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
+    rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
+    rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
+
+    pushd ./docker/images;
+
+    docker build -t penpotapp/frontend:$CURRENT_BRANCH -f Dockerfile.frontend .;
+    docker build -t penpotapp/backend:$CURRENT_BRANCH -f Dockerfile.backend .;
+    docker build -t penpotapp/exporter:$CURRENT_BRANCH -f Dockerfile.exporter .;
+
+    popd;
+}
+
 function usage {
     echo "PENPOT build & release manager"
     echo "USAGE: $0 OPTION"
@@ -203,7 +226,10 @@ case $1 in
         start-devenv ${@:2}
         ;;
     run-devenv)
-        run-devenv ${@:2}
+        run-devenv-tmux ${@:2}
+        ;;
+    run-devenv-shell)
+        run-devenv-shell ${@:2}
         ;;
     stop-devenv)
         stop-devenv ${@:2}
@@ -216,6 +242,12 @@ case $1 in
         ;;
 
     # production builds
+    build-bundle)
+        build-frontend-bundle;
+        build-backend-bundle;
+        build-exporter-bundle;
+        ;;
+
     build-frontend-bundle)
         build-frontend-bundle;
         ;;
@@ -226,6 +258,10 @@ case $1 in
 
     build-exporter-bundle)
         build-exporter-bundle;
+        ;;
+
+    build-docker-images)
+        build-docker-images
         ;;
 
     # Docker Image Tasks

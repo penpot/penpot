@@ -45,9 +45,10 @@
 
 (defn check-props
   [new-props old-props]
-  (and
-       (= (unchecked-get new-props "thumbnail?") (unchecked-get old-props "thumbnail?"))
-       (= (unchecked-get new-props "shape") (unchecked-get old-props "shape"))))
+  (and (= (unchecked-get new-props "thumbnail?")
+          (unchecked-get old-props "thumbnail?"))
+       (= (unchecked-get new-props "shape")
+          (unchecked-get old-props "shape"))))
 
 (defn nested-frame-wrapper-factory
   [shape-wrapper]
@@ -99,7 +100,7 @@
               ;; when `true` we've called the mount for the frame
               rendered?          (mf/use-var false)
 
-              disable-thumbnail? (d/not-empty? (dm/get-in modifiers [(:id shape) :modifiers]))
+              disable-thumbnail? (d/not-empty? (dm/get-in modifiers [frame-id :modifiers]))
 
               [on-load-frame-dom render-frame? thumbnail-renderer]
               (ftr/use-render-thumbnail page-id shape node-ref rendered? disable-thumbnail? @force-render)
@@ -116,7 +117,7 @@
 
           (mf/use-effect
            (fn []
-             ;; When a change in the data is received a "force-render" event is emited
+             ;; When a change in the data is received a "force-render" event is emitted
              ;; that will force the component to be mounted in memory
              (let [sub
                    (->> (dwt/force-render-stream (:id shape))
@@ -145,5 +146,5 @@
             [:g.frame-thumbnail-wrapper
              {:id (dm/str "thumbnail-container-" (:id shape))
               ;; Hide the thumbnail when not displaying
-              :opacity (when (and @rendered? (not thumbnail?) (not render-frame?)) 0)}
+              :opacity (when-not thumbnail? 0)}
              thumbnail-renderer]]])))))

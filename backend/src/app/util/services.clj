@@ -11,20 +11,6 @@
    [app.common.data :as d]
    [cuerdas.core :as str]))
 
-(defrecord WrappedValue [obj]
-  clojure.lang.IDeref
-  (deref [_] obj))
-
-(defn wrap
-  ([]
-   (WrappedValue. nil))
-  ([o]
-   (WrappedValue. o)))
-
-(defn wrapped?
-  [o]
-  (instance? WrappedValue o))
-
 (defmacro defmethod
   [sname & body]
   (let [[docs body]  (if (string? (first body))

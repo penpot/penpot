@@ -79,11 +79,13 @@
       :else zero)))
 
 (defn get-snap-points [page-id frame-id remove-snap? zoom point coord]
-  (let [value (get point coord)]
+  (let [value (get point coord)
+        vbox @refs/vbox]
     (->> (uw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
                    :axis coord
+                   :bounds vbox
                    :ranges [[(- value (/ 0.5 zoom)) (+ value (/ 0.5 zoom))]]})
          (rx/take 1)
          (rx/map (remove-from-snap-points remove-snap?)))))
@@ -94,11 +96,13 @@
         ranges (->> points
                     (map coord)
                     (mapv #(vector (- % snap-accuracy)
-                                   (+ % snap-accuracy))))]
+                                   (+ % snap-accuracy))))
+        vbox @refs/vbox]
     (->> (uw/ask! {:cmd :snaps/range-query
                    :page-id page-id
                    :frame-id frame-id
                    :axis coord
+                   :bounds vbox
                    :ranges ranges})
          (rx/take 1)
          (rx/map (remove-from-snap-points remove-snap?))
@@ -140,17 +144,6 @@
         dist-lt (fn [other] (sr-distance coord (:selrect other) selrect))
         dist-gt (fn [other] (sr-distance coord selrect (:selrect other)))
 
-        ;; Calculates the snap distance when in the middle of two shapes
-        between-snap
-        (fn [[sh-lt sh-gt]]
-          ;; To calculate the middle snap.
-          ;; Given x, the distance to a left shape and y to a right shape
-          ;; x - v = y + v  =>  v = (x - y)/2
-          ;; v will be the vector that we need to move the shape so it "snaps"
-          ;; in the middle
-          (/ (- (dist-gt sh-gt)
-                (dist-lt sh-lt)) 2))
-
         ;; Calculates the distance between all the shapes given as argument
         inner-distance
         (fn [selrects]
@@ -159,14 +152,6 @@
                (d/map-perm #(sr-distance coord %1 %2)
                            #(overlap? coord %1 %2)
                            #{})))
-
-        best-snap
-        (fn [acc val]
-          ;; Using a number is faster than accessing the variable.
-          ;; Keep up to date with `snap-distance-accuracy`
-          (if (and (<= val snap-distance-accuracy) (>= val (- snap-distance-accuracy)))
-            (min acc val)
-            acc))
 
         ;; Distance between the elements in an area, these are the snap
         ;; candidates to either side
@@ -178,17 +163,46 @@
         lt-dist (into #{} (map dist-lt) shapes-lt)
         gt-dist (into #{} (map dist-gt) shapes-gt)
 
-        ;; Calculate the snaps, we need to reverse depending on area
-        lt-snap (d/join lt-cand lt-dist -)
-        gt-snap (d/join gt-dist gt-cand -)
+        get-side-snaps
+        (fn [candidates distances]
+          ;; We add to the range tree the distrances between elements
+          ;; then, for each distance from the selection we query the tree
+          ;; to find a snap
+          (let [range-tree (rt/make-tree)
+                range-tree
+                (->> candidates
+                     (reduce #(rt/insert %1 %2 %2) range-tree))]
+            (->> distances
+                 (mapcat
+                  (fn [cd]
+                    (->> (rt/range-query
+                          range-tree
+                          (- cd snap-distance-accuracy)
+                          (+ cd snap-distance-accuracy))
+                         (map #(- (first %) cd ))))))))
 
-        ;; Calculate snap-between
-        between-snap (->> (d/join shapes-lt shapes-gt)
-                          (map between-snap))
+        get-middle-snaps
+        (fn [lt-dist gt-dist]
+          (let [range-tree (rt/make-tree)
+                range-tree (->> lt-dist
+                                (reduce #(rt/insert %1 %2 %2) range-tree))]
+            (->> gt-dist
+                 (mapcat (fn [cd]
+                           (->> (rt/range-query
+                                 range-tree
+                                 (- cd (* snap-distance-accuracy 2))
+                                 (+ cd (* snap-distance-accuracy 2)))
+                                (map #(/ (- cd (first %)) 2))))))))
+
+        ;; Calculate the snaps, we need to reverse depending on area
+        lt-snap (get-side-snaps lt-cand lt-dist)
+        gt-snap (get-side-snaps gt-dist gt-cand)
+        md-snap (get-middle-snaps lt-dist gt-dist)
 
         ;; Search the minimum snap
-        snap-list (d/concat-vec lt-snap gt-snap between-snap)
-        min-snap  (reduce best-snap ##Inf snap-list)]
+        snap-list (d/concat-vec lt-snap gt-snap md-snap)
+
+        min-snap  (reduce min ##Inf snap-list)]
 
     (if (d/num? min-snap) [0 min-snap] nil)))
 
@@ -198,14 +212,14 @@
                  (calculate-snap coord selrect shapes-lt shapes-gt zoom)))))
 
 (defn select-shapes-area
-  [page-id shapes objects area-selrect]
+  [page-id frame-id selected objects area]
   (->> (uw/ask! {:cmd :selection/query
                  :page-id page-id
-                 :frame-id (->> shapes first :frame-id)
+                 :frame-id frame-id
                  :include-frames? true
-                 :rect area-selrect})
+                 :rect area})
        (rx/map #(cph/clean-loops objects %))
-       (rx/map #(set/difference % (into #{} (map :id shapes))))
+       (rx/map #(set/difference % selected))
        (rx/map #(map (d/getf objects) %))))
 
 (defn closest-distance-snap
@@ -216,9 +230,14 @@
     (->> (rx/of (vector frame selrect))
          (rx/merge-map
           (fn [[frame selrect]]
-            (let [areas (->> (gsh/selrect->areas (or (:selrect frame)
-                                                     (gsh/rect->selrect @refs/vbox)) selrect)
-                             (d/mapm #(select-shapes-area page-id shapes objects %2)))
+            (let [vbox (gsh/rect->selrect @refs/vbox)
+                  frame-id (->> shapes first :frame-id)
+                  selected (into #{} (map :id shapes))
+                  areas (->> (gsh/selrect->areas
+                              (or (gsh/clip-selrect (:selrect frame) vbox)
+                                  vbox)
+                              selrect)
+                             (d/mapm #(select-shapes-area page-id frame-id selected objects %2)))
                   snap-x (search-snap-distance selrect :x (:left areas) (:right areas) zoom)
                   snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas) zoom)]
               (rx/combine-latest snap-x snap-y))))
@@ -297,8 +316,8 @@
                  (mapv (fn [[value points]]
                          [(- value pval)
                           (->> points (mapv #(vector point %)))])))))]
-    {:x (query-coord point :x)
-     :y (query-coord point :y)}))
+    (gpt/point (query-coord point :x)
+               (query-coord point :y))))
 
 (defn merge-matches
   ([] {:x nil :y nil})
@@ -358,7 +377,8 @@
   "Snaps a position given an old snap to a different position. We use this to provide a temporal
   snap while the new is being processed."
   [[position [snap-pos snap-delta]]]
-  (if (some? snap-delta)
+  (if (nil? snap-delta)
+    position
     (let [dx (if (not= 0 (:x snap-delta))
                (- (+ (:x snap-pos) (:x snap-delta)) (:x position))
                0)
@@ -372,6 +392,4 @@
           dy (if (> (mth/abs dy) snap-accuracy) 0 dy)]
       (-> position
           (update :x + dx)
-          (update :y + dy)))
-
-    position))
+          (update :y + dy)))))

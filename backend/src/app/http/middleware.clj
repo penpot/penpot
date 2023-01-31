@@ -19,6 +19,7 @@
    [yetti.request :as yrq]
    [yetti.response :as yrs])
   (:import
+   com.fasterxml.jackson.core.JsonParseException
    com.fasterxml.jackson.core.io.JsonEOFException
    io.undertow.server.RequestTooBigException
    java.io.OutputStream))
@@ -30,6 +31,12 @@
 (def params
   {:name ::params
    :compile (constantly ymw/wrap-params)})
+
+(def ^:private json-mapper
+  (json/mapper
+   {:encode-key-fn str/camel
+    :decode-key-fn (comp keyword str/kebab)
+    :pretty true}))
 
 (defn wrap-parse-request
   [handler]
@@ -45,7 +52,7 @@
 
                 (str/starts-with? header "application/json")
                 (with-open [is (yrq/body request)]
-                  (let [params (json/read is)]
+                  (let [params (json/decode is json-mapper)]
                     (-> request
                         (assoc :body-params params)
                         (update :params merge params))))
@@ -60,21 +67,23 @@
                                :code :request-body-too-large
                                :hint (ex-message cause)))
 
-              (instance? JsonEOFException cause)
+
+              (or (instance? JsonEOFException cause)
+                  (instance? JsonParseException cause))
               (raise (ex/error :type :validation
                                :code :malformed-json
-                               :hint (ex-message cause)))
+                               :hint (ex-message cause)
+                               :cause cause))
               :else
               (raise cause)))]
 
     (fn [request respond raise]
-      (when-let [request (try
-                           (process-request request)
-                           (catch RuntimeException cause
-                             (handle-error raise (or (.getCause cause) cause)))
-                           (catch Throwable cause
-                             (handle-error raise cause)))]
-        (handler request respond raise)))))
+      (let [request (ex/try! (process-request request))]
+        (if (ex/exception? request)
+          (if (instance? RuntimeException request)
+            (handle-error raise (or (ex/cause request) request))
+            (handle-error raise request))
+          (handler request respond raise))))))
 
 (def parse-request
   {:name ::parse-request
@@ -113,7 +122,32 @@
                   (finally
                     (.close ^OutputStream output-stream))))))
 
-          (format-response [response request]
+          (json-streamable-body [data]
+            (reify yrs/StreamableResponseBody
+              (-write-body-to-stream [_ _ output-stream]
+                (try
+
+                  (with-open [bos (buffered-output-stream output-stream buffer-size)]
+                    (json/write! bos data json-mapper))
+
+                  (catch java.io.IOException _cause
+                    ;; Do nothing, EOF means client closes connection abruptly
+                    nil)
+                  (catch Throwable cause
+                    (l/warn :hint "unexpected error on encoding response"
+                            :cause cause))
+                  (finally
+                    (.close ^OutputStream output-stream))))))
+
+          (format-response-with-json [response _]
+            (let [body (yrs/body response)]
+              (if (or (boolean? body) (coll? body))
+                (-> response
+                    (update :headers assoc "content-type" "application/json")
+                    (assoc :body (json-streamable-body body)))
+                response)))
+
+          (format-response-with-transit [response request]
             (let [body (yrs/body response)]
               (if (or (boolean? body) (coll? body))
                 (let [qs   (yrq/query request)
@@ -125,6 +159,20 @@
                       (update :headers assoc "content-type" "application/transit+json")
                       (assoc :body (transit-streamable-body body opts))))
                 response)))
+
+          (format-response [response request]
+            (let [accept (yrq/get-header request "accept")]
+              (cond
+                (or (= accept "application/transit+json")
+                    (str/includes? accept "application/transit+json"))
+                (format-response-with-transit response request)
+
+                (or (= accept "application/json")
+                    (str/includes? accept "application/json"))
+                (format-response-with-json response request)
+
+                :else
+                (format-response-with-transit response request))))
 
           (process-response [response request]
             (cond-> response

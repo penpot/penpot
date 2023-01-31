@@ -280,10 +280,11 @@
   (let [{:keys [backend family variants]} (get @fontsdb font-id)]
     (cond
       (= :google backend)
-      (-> (generate-gfonts-url
-           {:family family
-            :variants [{:id font-variant-id}]})
-          (http/fetch-text))
+      (let [variant (d/seek #(= (:id %) font-variant-id) variants)]
+        (-> (generate-gfonts-url
+             {:family family
+              :variants [variant]})
+            (http/fetch-text)))
 
       (= :custom backend)
       (let [variant (d/seek #(= (:id %) font-variant-id) variants)

@@ -21,12 +21,16 @@
     (and (empty? path)
          (list? pred)
          (= (first (last pred)) 'cljs.core/contains?))
-    (let [path (conj path (last (last pred)))]
-      (assoc-in acc path {:code ::missing :type :builtin}))
+    (let [field (last (last pred))
+          path  (conj path field)
+          root  (first via)]
+      (assoc-in acc path {:code :missing :type :builtin :root root :field field}))
 
-    (and (seq path)
-         (seq via))
-    (assoc-in acc path {:code (last via) :type :builtin})
+    (and (seq path) (seq via))
+    (let [field (first path)
+          code  (last via)
+          root  (first via)]
+      (assoc-in acc path {:code code :type :builtin :root root :field field}))
 
     :else acc))
 
@@ -64,11 +68,12 @@
           problems (when (= ::s/invalid cleaned)
                      (::s/problems (s/explain-data spec (:data state))))
 
-          errors   (merge (reduce interpret-problem {} problems)
-                          (reduce (fn [errors vf]
-                                    (merge errors (vf (:data state))))
-                                  {} validators)
-                          (:errors state))]
+          errors   (reduce interpret-problem {} problems)
+          errors   (reduce (fn [errors vf]
+                             (merge errors (vf errors (:data state))))
+                           errors
+                           validators)
+          errors   (merge errors (:errors state))]
 
       (assoc state
              :errors errors

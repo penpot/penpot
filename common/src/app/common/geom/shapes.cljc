@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.shapes
   (:require
@@ -13,8 +13,7 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.corners :as gsc]
-   [app.common.geom.shapes.intersect :as gin]
-   [app.common.geom.shapes.layout :as gcl]
+   [app.common.geom.shapes.intersect :as gsi]
    [app.common.geom.shapes.modifiers :as gsm]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
@@ -28,7 +27,7 @@
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
   (->> shapes
-       (map (comp gpr/points->selrect :points gtr/transform-shape))
+       (map (comp gpr/points->selrect :points))
        (gpr/join-selrects)))
 
 (defn translate-to-frame
@@ -83,24 +82,12 @@
          (update :height (comp inc inc))))))
 
 (defn selrect->areas [bounds selrect]
-  (let [make-selrect
-        (fn [x1 y1 x2 y2]
-          (let [x1 (min x1 x2)
-                x2 (max x1 x2)
-                y1 (min y1 y2)
-                y2 (max y1 y2)]
-            {:x1 x1 :y1 y1
-             :x2 x2 :y2 y2
-             :x x1  :y y1
-             :width (- x2 x1)
-             :height (- y2 y1)
-             :type :rect}))
-        {bound-x1 :x1 bound-x2 :x2 bound-y1 :y1 bound-y2 :y2} bounds
+  (let [{bound-x1 :x1 bound-x2 :x2 bound-y1 :y1 bound-y2 :y2} bounds
         {sr-x1 :x1 sr-x2 :x2 sr-y1 :y1 sr-y2 :y2} selrect]
-    {:left   (make-selrect bound-x1 sr-y1 sr-x1 sr-y2)
-     :top    (make-selrect sr-x1 bound-y1 sr-x2 sr-y1)
-     :right  (make-selrect sr-x2 sr-y1 bound-x2 sr-y2)
-     :bottom (make-selrect sr-x1 sr-y2 sr-x2 bound-y2)}))
+    {:left (gpr/corners->selrect bound-x1 sr-y1 sr-x1 sr-y2)
+     :top    (gpr/corners->selrect sr-x1 bound-y1 sr-x2 sr-y1)
+     :right  (gpr/corners->selrect sr-x2 sr-y1 bound-x2 sr-y2)
+     :bottom (gpr/corners->selrect sr-x1 sr-y2 sr-x2 bound-y2)}))
 
 (defn distance-selrect [selrect other]
   (let [{:keys [x1 y1]} other
@@ -160,36 +147,29 @@
 (dm/export gpr/join-rects)
 (dm/export gpr/join-selrects)
 (dm/export gpr/contains-selrect?)
+(dm/export gpr/contains-point?)
+(dm/export gpr/close-selrect?)
+(dm/export gpr/clip-selrect)
 
 (dm/export gtr/move)
 (dm/export gtr/absolute-move)
 (dm/export gtr/transform-matrix)
 (dm/export gtr/transform-str)
 (dm/export gtr/inverse-transform-matrix)
-(dm/export gtr/transform-point-center)
 (dm/export gtr/transform-rect)
-(dm/export gtr/calculate-adjust-matrix)
+(dm/export gtr/calculate-geometry)
 (dm/export gtr/update-group-selrect)
 (dm/export gtr/update-mask-selrect)
-(dm/export gtr/resize-modifiers)
-(dm/export gtr/change-orientation-modifiers)
-(dm/export gtr/rotation-modifiers)
-(dm/export gtr/merge-modifiers)
+(dm/export gtr/update-bool-selrect)
 (dm/export gtr/transform-shape)
 (dm/export gtr/transform-selrect)
 (dm/export gtr/transform-selrect-matrix)
 (dm/export gtr/transform-bounds)
-(dm/export gtr/modifiers->transform)
-(dm/export gtr/empty-modifiers?)
 (dm/export gtr/move-position-data)
-(dm/export gtr/apply-transform)
+(dm/export gtr/apply-objects-modifiers)
 
 ;; Constratins
 (dm/export gct/calc-child-modifiers)
-
-;; Layout
-(dm/export gcl/calc-layout-data)
-(dm/export gcl/calc-layout-modifiers)
 
 ;; PATHS
 (dm/export gsp/content->selrect)
@@ -197,13 +177,12 @@
 (dm/export gsp/open-path?)
 
 ;; Intersection
-(dm/export gin/overlaps?)
-(dm/export gin/has-point?)
-(dm/export gin/has-point-rect?)
-(dm/export gin/rect-contains-shape?)
+(dm/export gsi/overlaps?)
+(dm/export gsi/has-point?)
+(dm/export gsi/has-point-rect?)
+(dm/export gsi/rect-contains-shape?)
 
 ;; Bool
-(dm/export gsb/update-bool-selrect)
 (dm/export gsb/calc-bool-content)
 
 ;; Constraints

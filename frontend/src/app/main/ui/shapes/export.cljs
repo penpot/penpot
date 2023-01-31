@@ -332,16 +332,84 @@
               :penpot:preserve-scroll ((d/nilf str) (:preserve-scroll interaction))}])])))
 
 
+(defn- export-layout-container-data
+  [{:keys [layout
+           layout-flex-dir
+           layout-gap
+           layout-gap-type
+           layout-wrap-type
+           layout-padding-type
+           layout-padding
+           layout-justify-content
+           layout-align-items
+           layout-align-content]}]
+
+  (when layout
+    (mf/html
+     [:> "penpot:layout"
+      #js {:penpot:layout (d/name layout)
+           :penpot:layout-flex-dir (d/name layout-flex-dir)
+           :penpot:layout-gap-type (d/name layout-gap-type)
+           :penpot:layout-gap-row (:row-gap layout-gap)
+           :penpot:layout-gap-column (:column-gap layout-gap)
+           :penpot:layout-wrap-type (d/name layout-wrap-type)
+           :penpot:layout-padding-type (d/name layout-padding-type)
+           :penpot:layout-padding-p1 (:p1 layout-padding)
+           :penpot:layout-padding-p2 (:p2 layout-padding)
+           :penpot:layout-padding-p3 (:p3 layout-padding)
+           :penpot:layout-padding-p4 (:p4 layout-padding)
+           :penpot:layout-justify-content (d/name layout-justify-content)
+           :penpot:layout-align-items (d/name layout-align-items)
+           :penpot:layout-align-content (d/name layout-align-content)}])))
+
+(defn- export-layout-item-data
+  [{:keys [layout-item-margin
+           layout-item-margin-type
+           layout-item-h-sizing
+           layout-item-v-sizing
+           layout-item-max-h
+           layout-item-min-h
+           layout-item-max-w
+           layout-item-min-w
+           layout-item-align-self]}]
+
+  (when (or layout-item-margin
+            layout-item-margin-type
+            layout-item-h-sizing
+            layout-item-v-sizing
+            layout-item-max-h
+            layout-item-min-h
+            layout-item-max-w
+            layout-item-min-w
+            layout-item-align-self)
+    (mf/html
+     [:> "penpot:layout-item"
+      #js {:penpot:layout-item-margin-m1 (:m1 layout-item-margin)
+           :penpot:layout-item-margin-m2 (:m2 layout-item-margin)
+           :penpot:layout-item-margin-m3 (:m3 layout-item-margin)
+           :penpot:layout-item-margin-m4 (:m4 layout-item-margin)
+           :penpot:layout-item-margin-type (d/name layout-item-margin-type)
+           :penpot:layout-item-h-sizing (d/name layout-item-h-sizing)
+           :penpot:layout-item-v-sizing (d/name layout-item-v-sizing)
+           :penpot:layout-item-max-h layout-item-max-h
+           :penpot:layout-item-min-h layout-item-min-h
+           :penpot:layout-item-max-w layout-item-max-w
+           :penpot:layout-item-min-w layout-item-min-w
+           :penpot:layout-item-align-self (d/name layout-item-align-self)}])))
+
+
 (mf/defc export-data
   [{:keys [shape]}]
   (let [props (-> (obj/create) (add-data shape) (add-library-refs shape))]
     [:> "penpot:shape" props
-     (export-shadow-data       shape)
-     (export-blur-data         shape)
-     (export-exports-data      shape)
-     (export-svg-data          shape)
-     (export-interactions-data shape)
-     (export-fills-data        shape)
-     (export-strokes-data      shape)
-     (export-grid-data         shape)]))
+     (export-shadow-data           shape)
+     (export-blur-data             shape)
+     (export-exports-data          shape)
+     (export-svg-data              shape)
+     (export-interactions-data     shape)
+     (export-fills-data            shape)
+     (export-strokes-data          shape)
+     (export-grid-data             shape)
+     (export-layout-container-data shape)
+     (export-layout-item-data     shape)]))
 

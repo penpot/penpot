@@ -51,7 +51,7 @@
   (use-set-page-title team section)
 
   [:header.dashboard-header
-   [:div.dashboard-title
+   [:div.dashboard-title#dashboard-fonts-title
     [:h1 (tr "labels.fonts")]]
    [:nav
     #_[:ul
@@ -120,7 +120,9 @@
 
         on-dismiss-all
         (fn [items]
-          (run! on-delete items))]
+          (run! on-delete items))
+
+        problematic-fonts? (some :height-warning? (vals @fonts))]
 
     [:div.dashboard-fonts-upload
      [:div.dashboard-fonts-hero
@@ -132,10 +134,18 @@
         [:div.icon i/msg-info]
         [:div.content
          [:& i18n/tr-html {:tag-name "span"
-                           :label "dashboard.fonts.hero-text2"}]]]]
+                           :label "dashboard.fonts.hero-text2"}]]]
 
-      [:div.btn-primary
-       {:on-click on-click}
+       (when problematic-fonts?
+         [:div.banner.warning
+          [:div.icon i/msg-warning]
+          [:div.content
+           [:& i18n/tr-html {:tag-name "span"
+                             :label "dashboard.fonts.warning-text"}]]])]
+
+      [:button.btn-primary
+       {:on-click on-click
+        :tab-index "0"}
        [:span (tr "labels.add-custom-font")]
        [:& file-uploader {:input-id "font-upload"
                           :accept cm/str-font-types
@@ -170,6 +180,8 @@
               [:span item])]
 
            [:div.table-field.options
+            (when (:height-warning? item)
+              [:span.icon.failure i/msg-warning])
             [:button.btn-primary.upload-button
              {:on-click #(on-upload item)
               :class (dom/classnames :disabled uploading?)

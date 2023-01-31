@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.setup.builtin-templates
-  "A service/module that is reponsible for download, load & internally
+  "A service/module that is responsible for download, load & internally
   expose a set of builtin penpot file templates."
   (:require
    [app.common.logging :as l]
@@ -29,10 +29,8 @@
   (s/keys :req-un [::id ::name ::thumbnail-uri ::file-uri]
           :opt-un [::path]))
 
-(s/def ::http-client ::http/client)
-
 (defmethod ig/pre-init-spec :app.setup/builtin-templates [_]
-  (s/keys :req-un [::http-client]))
+  (s/keys :req [::http/client]))
 
 (defmethod ig/init-key :app.setup/builtin-templates
   [_ cfg]
@@ -43,7 +41,7 @@
 
 (defn- download-preset!
   [cfg {:keys [path file-uri] :as preset}]
-  (let [response (http/req! (:http-client cfg)
+  (let [response (http/req! cfg
                             {:method :get
                              :uri file-uri}
                             {:response-type :input-stream

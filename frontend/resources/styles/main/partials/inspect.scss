@@ -1,0 +1,385 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+.inspect-svg-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-button,
+.copy-button {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+  position: absolute;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: $color-gray-20;
+    transition: fill 0.3s;
+
+    &:hover {
+      fill: $color-primary;
+    }
+  }
+}
+
+.expand-button {
+  right: 24px;
+  top: -1px;
+
+  svg {
+    transform: rotate(45deg);
+  }
+}
+.copy-button {
+  right: 0;
+  top: 0;
+}
+
+.attributes-block {
+  user-select: text;
+
+  border-bottom: 1px solid $color-gray-60;
+  padding-bottom: 0.5rem;
+  font-size: $fs12;
+
+  .attributes-text-block {
+    border-bottom: 1px solid $color-gray-60;
+  }
+
+  & :last-child {
+    border-bottom: none;
+  }
+
+  .attributes-label {
+    color: $color-gray-20;
+  }
+
+  .attributes-value {
+    color: $color-white;
+  }
+
+  .attributes-block-title {
+    position: relative;
+    color: $color-gray-10;
+    padding: 0.5rem;
+    font-size: $fs14;
+
+    .copy-button {
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+    }
+  }
+
+  .attributes-unit-row {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    padding: 0.6rem 1.6rem 0.6rem 0.5rem;
+
+    .attributes-label,
+    .attributes-value {
+      margin-right: 0.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 50%;
+      .items {
+        margin-right: 5px;
+      }
+    }
+    .copy-button {
+      padding: 0.6rem 0.5rem;
+      margin-top: 0.25rem;
+    }
+  }
+
+  .attributes-color-row {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    position: relative;
+
+    .attributes-color-id {
+      display: flex;
+      align-items: center;
+
+      & > * {
+        margin: 0 0.5rem;
+      }
+      margin-bottom: 0.5rem;
+    }
+
+    .attributes-color-value {
+      display: flex;
+      align-items: center;
+
+      & > * {
+        margin: 0 0.5rem;
+      }
+
+      & :last-child {
+        margin-right: 0;
+      }
+    }
+
+    .color-text {
+      width: 3rem;
+      text-transform: uppercase;
+    }
+
+    .attributes-color-display {
+      display: flex;
+    }
+
+    .color-bullet {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1px solid $color-gray-30;
+    }
+
+    .hide-color .color-bullet {
+      visibility: hidden;
+    }
+    .copy-button {
+      padding: 1rem 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    select {
+      font-size: $fs12;
+      margin: 0;
+      background: none;
+      color: $color-gray-20;
+      border: none;
+      border-bottom: 1px solid $color-gray-30;
+      padding: 0 1rem 0.25rem 0.25rem;
+      margin-top: 2px;
+      background-image: url("/images/icons/arrow-down-white.svg");
+      background-repeat: no-repeat;
+      background-position: 95% 48%;
+      background-size: 10px;
+      cursor: pointer;
+      outline: none;
+      &:focus,
+      &:focus-within {
+        border: 1px solid $color-primary;
+      }
+
+      option {
+        padding: 1rem;
+        background-color: $color-gray-50;
+        border: none;
+      }
+    }
+  }
+
+  .attributes-content-row {
+    position: relative;
+    margin: 0.5rem;
+    width: calc(100% - 1rem);
+
+    .attributes-content {
+      overflow-y: auto;
+      max-height: 5rem;
+      background: $color-gray-60;
+      border-radius: 4px;
+      padding: 1rem 0.5rem;
+      color: $color-gray-10;
+      white-space: pre-wrap;
+    }
+
+    .copy-button {
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+    }
+  }
+
+  .attributes-image-row {
+    position: relative;
+    display: flex;
+    padding: 0.25rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5rem;
+    background: $color-gray-60;
+    border-radius: 4px;
+
+    width: calc(100% - 1rem);
+    min-height: 5rem;
+
+    img {
+      max-height: 8rem;
+      max-width: 100%;
+      width: auto;
+    }
+  }
+
+  .attributes-shadow-row {
+    position: relative;
+    display: flex;
+    margin: 0.5rem;
+    padding-right: 2rem;
+    justify-content: space-between;
+
+    & > :first-child {
+      color: $color-gray-10;
+    }
+
+    .attributes-shadow {
+      display: flex;
+      margin-left: 4px;
+    }
+  }
+
+  .attributes-stroke-row {
+    position: relative;
+    display: flex;
+    margin: 0.5rem;
+    padding-right: 2rem;
+    justify-content: space-between;
+  }
+
+  .attributes-typography-name-row {
+    position: relative;
+    margin-top: 0.5rem;
+    border: 1px solid $color-black;
+    border-radius: 4px;
+    margin: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .copy-button {
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+    }
+  }
+
+  .attributes-typography-row {
+    position: relative;
+    margin: 0.5rem;
+    padding-right: 2rem;
+
+    .typography-sample {
+      font-size: $fs16;
+    }
+  }
+
+  .download-button {
+    display: block;
+    text-align: center;
+    border: 1px solid $color-gray-60;
+    background-color: $color-gray-60;
+    padding: 0.5rem 1rem;
+    color: $color-gray-10;
+    width: calc(100% - 1rem);
+    border-radius: 4px;
+    margin: 0.5rem;
+    cursor: pointer;
+
+    &:hover {
+      background-color: $color-primary;
+      color: $color-black;
+    }
+  }
+
+  .attributes-block-title,
+  .attributes-unit-row,
+  .attributes-color-row,
+  .attributes-shadow-row,
+  .attributes-stroke-row,
+  .attributes-typography-row,
+  .attributes-content-row,
+  .attributes-typography-name-row {
+    &:hover {
+      .expand-button,
+      .copy-button {
+        visibility: visible;
+        opacity: 1;
+      }
+    }
+  }
+
+  .attributes-shadow-block,
+  .attributes-stroke-block,
+  .attributes-fill-block {
+    border-top: 1px solid $color-gray-60;
+  }
+
+  .attributes-shadow-blocks :first-child,
+  .attributes-stroke-blocks :first-child,
+  .attributes-fill-blocks :first-child {
+    border-top: none;
+  }
+}
+
+.code-block {
+  margin-top: 0.5rem;
+  border-top: 1px solid $color-gray-60;
+
+  &:hover {
+    .code-row-lang {
+      .expand-button,
+      .copy-button {
+        visibility: visible;
+        opacity: 1;
+      }
+    }
+  }
+
+  .code-row-lang {
+    color: $color-gray-10;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    font-size: $fs14;
+    margin: 0.5rem;
+
+    .expand-button,
+    .copy-button {
+      margin-top: 8px;
+    }
+  }
+
+  .code-row-display {
+    margin: 0.5rem;
+    font-size: $fs14;
+
+    .code-display {
+      border-radius: 4px;
+      padding: 1rem;
+      overflow: hidden;
+      white-space: pre-wrap;
+      background: $color-gray-60;
+      user-select: text;
+
+      .hljs-attr {
+        color: #a6e22e;
+      }
+      .hljs-comment {
+        color: $color-gray-30;
+      }
+      .hljs-string {
+        color: #66d9ef;
+      }
+    }
+  }
+}
+
+.element-options > :first-child {
+  border-top: none;
+}

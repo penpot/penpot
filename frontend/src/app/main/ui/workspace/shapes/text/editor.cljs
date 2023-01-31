@@ -188,6 +188,7 @@
          (fn [editor]
            (st/emit! (dwt/update-editor editor))
            (when editor
+             (dom/add-class!  (dom/get-element-by-class "public-DraftEditor-content") "mousetrap")
              (.focus ^js editor))))
 
         handle-return
@@ -199,7 +200,7 @@
              (st/emit! (dwt/update-editor-state shape state)))
            "handled"))
 
-        on-click
+        on-mouse-down
         (mf/use-callback
          (fn [event]
            (when (dom/class? (dom/get-target event) "DraftEditor-root")
@@ -227,7 +228,7 @@
               ;; the underlying text. Use opacity because display or visibility won't allow to recover
               ;; focus afterwards.
               :opacity (when @blurred 0)}
-      :on-click on-click
+      :on-mouse-down on-mouse-down
       :class (dom/classnames
               :align-top    (= (:vertical-align content "top") "top")
               :align-center (= (:vertical-align content) "center")
@@ -257,7 +258,9 @@
 (mf/defc text-editor-svg
   {::mf/wrap-props false}
   [props]
-  (let [shape        (obj/get props "shape")
+  (let [shape     (obj/get props "shape")
+        modifiers (obj/get props "modifiers")
+        modifiers (get-in modifiers [(:id shape) :modifiers])
 
         clip-id
         (dm/str "text-edition-clip" (:id shape))
@@ -270,7 +273,10 @@
 
         shape (cond-> shape
                 (some? text-modifier)
-                (dwt/apply-text-modifier text-modifier))
+                (dwt/apply-text-modifier text-modifier)
+
+                (some? modifiers)
+                (gsh/transform-shape modifiers))
 
         bounding-box (gsht/position-data-selrect shape)
 
@@ -290,7 +296,7 @@
                :fill "red"}]]]
 
      [:foreignObject {:x x :y y :width width :height height}
-      [:div {:style {:position "absolute"
+      [:div {:style {:position "fixed"
                      :left 0
                      :top  (- (:y shape) y)
                      :pointer-events "all"}}

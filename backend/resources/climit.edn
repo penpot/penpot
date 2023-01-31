@@ -1,0 +1,9 @@
+;; Example climit.edn file
+;; Required: concurrency
+;; Optional: queue-size, ommited means Integer/MAX_VALUE
+{:update-file   {:concurrency 1 :queue-size 3}
+ :auth          {:concurrency 128}
+ :process-font  {:concurrency 4 :queue-size 32}
+ :process-image {:concurrency 8 :queue-size 32}
+ :push-audit-events
+ {:concurrency 1 :queue-size 3}}

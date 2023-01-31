@@ -2,23 +2,35 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.shapes.rect
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]))
 
 (defn make-rect
-  [x y width height]
-  (when (d/num? x y width height)
-    (let [width (max width 0.01)
-          height (max height 0.01)]
-      {:x x
-       :y y
-       :width width
-       :height height})))
+  ([p1 p2]
+   (let [xp1 (:x p1)
+         yp1 (:y p1)
+         xp2 (:x p2)
+         yp2 (:y p2)
+         x1 (min xp1 xp2)
+         y1 (min yp1 yp2)
+         x2 (max xp1 xp2)
+         y2 (max yp1 yp2)]
+     (make-rect x1 y1 (- x2 x1) (- y2 y1))))
+
+  ([x y width height]
+   (when (d/num? x y width height)
+     (let [width (max width 0.01)
+           height (max height 0.01)]
+       {:x x
+        :y y
+        :width width
+        :height height}))))
 
 (defn make-selrect
   [x y width height]
@@ -72,13 +84,44 @@
 
 (defn points->rect
   [points]
+  (when-let [points (seq points)]
+    (loop [minx ##Inf
+           miny ##Inf
+           maxx ##-Inf
+           maxy ##-Inf
+           pts  points]
+      (if-let [pt (first pts)]
+        (let [x (dm/get-prop pt :x)
+              y (dm/get-prop pt :y)]
+          (recur (min minx x)
+                 (min miny y)
+                 (max maxx x)
+                 (max maxy y)
+                 (rest pts)))
+        (when (d/num? minx miny maxx maxy)
+          (make-rect minx miny (- maxx minx) (- maxy miny)))))))
+
+(defn bounds->rect
+  [[{ax :x ay :y} {bx :x by :y} {cx :x cy :y} {dx :x dy :y}]]
+  (let [minx (min ax bx cx dx)
+        miny (min ay by cy dy)
+        maxx (max ax bx cx dx)
+        maxy (max ay by cy dy)]
+    (when (d/num? minx miny maxx maxy)
+      (make-rect minx miny (- maxx minx) (- maxy miny)))))
+
+(defn squared-points
+  [points]
   (when (d/not-empty? points)
     (let [minx (transduce (keep :x) min ##Inf points)
           miny (transduce (keep :y) min ##Inf points)
           maxx (transduce (keep :x) max ##-Inf points)
           maxy (transduce (keep :y) max ##-Inf points)]
       (when (d/num? minx miny maxx maxy)
-        (make-rect minx miny (- maxx minx) (- maxy miny))))))
+        [(gpt/point minx miny)
+         (gpt/point maxx miny)
+         (gpt/point maxx maxy)
+         (gpt/point minx maxy)]))))
 
 (defn points->selrect [points]
   (when-let [rect (points->rect points)]
@@ -168,3 +211,14 @@
        (>= (:y1 sr2) (:y1 sr1))
        (<= (:y2 sr2) (:y2 sr1))))
 
+(defn corners->selrect
+  ([p1 p2]
+   (corners->selrect (:x p1) (:y p1) (:x p2) (:y p2)))
+  ([xp1 yp1 xp2 yp2]
+   (make-selrect (min xp1 xp2) (min yp1 yp2) (abs (- xp1 xp2)) (abs (- yp1 yp2)))))
+
+(defn clip-selrect
+  [{:keys [x1 y1 x2 y2] :as sr} bounds]
+  (when (some? sr)
+    (let [{bx1 :x1 by1 :y1 bx2 :x2 by2 :y2} (rect->selrect bounds)]
+      (corners->selrect (max bx1 x1) (max by1 y1) (min bx2 x2) (min by2 y2)))))

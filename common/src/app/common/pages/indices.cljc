@@ -2,11 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.pages.indices
   (:require
-   [app.common.data :as d]
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]))
 
@@ -54,4 +53,4 @@
                         (mapcat get-clip-parents))
                   parents)))]
     (-> parents-index
-        (d/update-vals retrieve-clips))))
+        (update-vals retrieve-clips))))

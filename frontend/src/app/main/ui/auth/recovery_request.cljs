@@ -6,11 +6,13 @@
 
 (ns app.main.ui.auth.recovery-request
   (:require
+   [app.common.data :as d]
    [app.common.spec :as us]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -20,10 +22,19 @@
 
 (s/def ::email ::us/email)
 (s/def ::recovery-request-form (s/keys :req-un [::email]))
+(defn handle-error-messages
+  [errors _data]
+  (d/update-when errors :email
+                 (fn [{:keys [code] :as error}]
+                   (cond-> error
+                     (= code :missing)
+                     (assoc :message (tr "errors.email-invalid"))))))
 
 (mf/defc recovery-form
   [{:keys [on-success-callback] :as props}]
-  (let [form      (fm/use-form :spec ::recovery-request-form :initial {})
+  (let [form      (fm/use-form :spec ::recovery-request-form 
+                               :validators [handle-error-messages]
+                               :initial {})
         submitted (mf/use-state false)
 
         default-success-finish #(st/emit! (dm/info (tr "auth.notifications.recovery-token-sent")))
@@ -87,9 +98,8 @@
       [:h1 (tr "auth.recovery-request-title")]
       [:div.subtitle (tr "auth.recovery-request-subtitle")]
       [:& recovery-form {:params params :on-success-callback on-success-callback}]
-
       [:div.links
        [:div.link-entry
-        [:a {:on-click go-back
-             :data-test "go-back-link"}
+        [:& lk/link {:action go-back
+                     :data-test "go-back-link"}
          (tr "labels.go-back")]]]]]))

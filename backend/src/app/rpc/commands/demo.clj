@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
@@ -24,11 +25,11 @@
 
 (sv/defmethod ::create-demo-profile
   "A command that is responsible of creating a demo purpose
-  profile. It only works if the `demo-users` flag is inabled in the
+  profile. It only works if the `demo-users` flag is enabled in the
   configuration."
-  {:auth false
+  {::rpc/auth false
    ::doc/added "1.15"
-   ::doc/changes ["1.15" "This methos is migrated from mutations to commands."]}
+   ::doc/changes ["1.15" "This method is migrated from mutations to commands."]}
   [{:keys [pool] :as cfg} _]
   (let [id       (uuid/next)
         sem      (System/currentTimeMillis)

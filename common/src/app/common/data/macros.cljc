@@ -2,12 +2,12 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 #_:clj-kondo/ignore
 (ns app.common.data.macros
   "Data retrieval & manipulation specific macros."
-  (:refer-clojure :exclude [get-in select-keys str])
+  (:refer-clojure :exclude [get-in select-keys str with-open])
   #?(:cljs (:require-macros [app.common.data.macros]))
   (:require
    #?(:clj [clojure.core :as c]
@@ -17,7 +17,7 @@
    [cljs.analyzer.api :as aapi]))
 
 (defmacro select-keys
-  "A macro version of `select-keys`. Usefull when keys vector is known
+  "A macro version of `select-keys`. Useful when keys vector is known
   at compile time (aprox 600% performance boost).
 
   It is not 100% equivalent, this macro does not removes not existing
@@ -27,7 +27,7 @@
   `{ ~@(mapcat (fn [key] [key (list `c/get target key)]) keys) ~@[] })
 
 (defmacro get-in
-  "A macro version of `get-in`. Usefull when the keys vector is known at
+  "A macro version of `get-in`. Useful when the keys vector is known at
   compile time (20-40% performance improvement)."
   ([target keys]
    (assert (vector? keys) "keys expected to be a vector")
@@ -94,5 +94,28 @@
   [s & params]
   `(str/ffmt ~s ~@params))
 
+(defmacro with-open
+  [bindings & body]
+  {:pre [(vector? bindings)
+         (even? (count bindings))
+         (pos? (count bindings))]}
+  (reduce (fn [acc bindings]
+            `(let ~(vec bindings)
+               (try
+                 ~acc
+                 (finally
+                   (d/close! ~(first bindings))))))
+          `(do ~@body)
+          (reverse (partition 2 bindings))))
 
-
+(defmacro get-prop
+  "A macro based, optimized variant of `get` that access the property
+  directly on CLJS, on CLJ works as get."
+  [obj prop]
+  ;; `(do
+  ;;    (when-not (record? ~obj)
+  ;;      (js/console.trace (pr-str ~obj)))
+  ;;    (c/get ~obj ~prop)))
+  (if (:ns &env)
+    (list (symbol ".") (with-meta obj {:tag 'js}) (symbol (str "-" (c/name prop))))
+    `(c/get ~obj ~prop)))

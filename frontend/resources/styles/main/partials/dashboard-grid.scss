@@ -9,6 +9,7 @@
   height: 100%;
   overflow: hidden;
   overflow-y: auto;
+  margin-bottom: 0;
 
   .grid-row {
     display: grid;
@@ -26,6 +27,10 @@
     margin: $size-3 $size-4 $size-4 $size-2;
     position: relative;
     text-align: center;
+    a {
+      width: 100%;
+      font-weight: normal;
+    }
     @media #{$bp-max-1366} {
       height: 200px;
       flex: 1 0 230px;
@@ -99,6 +104,10 @@
       width: 90px;
       height: 90px;
     }
+    .info-wrapper {
+      display: grid;
+      grid-template-columns: 1fr auto;
+    }
 
     .item-info {
       display: grid;
@@ -128,7 +137,6 @@
 
       span.date {
         color: $color-gray-30;
-        font-size: $fs13;
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
@@ -193,13 +201,18 @@
     &.project-th {
       background-color: $color-white;
 
-      &:hover {
+      &:hover,
+      &:focus,
+      &:focus-within {
         .project-th-actions {
           opacity: 1;
         }
+        a {
+          text-decoration: none;
+        }
       }
 
-      &.selected {
+      .selected {
         .grid-item-th {
           border: 2px solid $color-primary;
         }
@@ -207,14 +220,12 @@
 
       .project-th-actions {
         align-items: center;
-        bottom: 14px;
         opacity: 0;
         display: flex;
         right: 5px;
         justify-content: center;
-        position: absolute;
         width: 30px;
-        height: 30px;
+        height: 100%;
 
         span {
           color: $color-black;
@@ -232,7 +243,8 @@
             align-items: flex-end;
             flex-direction: column;
             width: 100%;
-            height: 100%;
+            height: 30px;
+            margin-top: 20px;
 
             > svg {
               fill: $color-gray-60;
@@ -241,7 +253,8 @@
               width: 18px;
             }
 
-            &:hover {
+            &:hover,
+            &:focus {
               > svg {
                 fill: $color-primary-dark;
               }
@@ -312,7 +325,7 @@
     background-repeat: no-repeat;
     border-top-left-radius: $br-small;
     border-top-right-radius: $br-small;
-    height: 70%;
+    height: 230px;
     max-height: 160px;
     overflow: hidden;
     position: relative;
@@ -430,6 +443,7 @@
   background-color: rgba(227, 227, 227, 0.3);
   padding: 13px;
   margin-right: 13px;
+  height: 230px;
   &.loader {
     justify-items: center;
   }

@@ -9,7 +9,7 @@
    [app.common.logging :as log]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.worker :as uw]
+   [app.util.router :as rt]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
@@ -17,7 +17,7 @@
 (log/set-level! :warn)
 
 (defn initialized?
-  "Check if the state is properly intialized in a workspace. This means
+  "Check if the state is properly initialized in a workspace. This means
   it has the `:current-page-id` and `:current-file-id` properly set."
   [state]
   (and (uuid? (:current-file-id state))
@@ -27,17 +27,24 @@
 
 (defn interrupt? [e] (= e :interrupt))
 
-;; --- Selection Index Handling
 
-(defn initialize-indices
-  [{:keys [file-raw] :as bundle}]
-  (ptk/reify ::setup-selection-index
+(defn- assure-valid-current-page
+  []
+  (ptk/reify ::assure-valid-current-page
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [msg {:cmd :initialize-indices
-                 :file-raw file-raw}]
-        (->> (uw/ask! msg)
-             (rx/map (constantly ::index-initialized)))))))
+    (watch [_ state _]
+      (let [current_page (:current-page-id state)
+            pages        (get-in state [:workspace-data :pages])
+            exists? (some #(= current_page %) pages)
+
+            project-id (:current-project-id state)
+            file-id    (:current-file-id state)
+            pparams    {:file-id file-id :project-id project-id}
+            qparams    {:page-id (first pages)}]
+        (if exists?
+          (rx/empty)
+          (rx/of (rt/nav :workspace pparams qparams)))))))
+
 
 ;; These functions should've been in `src/app/main/data/workspace/undo.cljs` but doing that causes
 ;; a circular dependency with `src/app/main/data/workspace/changes.cljs`
@@ -58,7 +65,8 @@
                        (dch/commit-changes {:redo-changes changes
                                             :undo-changes []
                                             :save-undo? false
-                                            :origin it}))))))))))
+                                            :origin it})
+                       (assure-valid-current-page))))))))))
 
 (def redo
   (ptk/reify ::redo

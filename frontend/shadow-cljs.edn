@@ -53,7 +53,7 @@
                        :createFile app.libs.file-builder/create-file-export}}}
 
    :compiler-options
-   {:output-feature-set :es8
+   {:output-feature-set :es2020
     :output-wrapper false
     :warnings {:fn-deprecated false}}
 
@@ -69,10 +69,10 @@
   {:target :node-script
    :output-to "target/bench.js"
    :output-dir "target/bench/"
-   :main cljs.user/main
+   :main bench/main
 
    :compiler-options
-   {:output-feature-set :es8
+   {:output-feature-set :es2020
     :output-wrapper false
     :warnings {:fn-deprecated false}}
 
@@ -86,7 +86,7 @@
   {:target :node-test
    :output-to "target/tests.js"
    :output-dir "target/test/"
-   :ns-regexp "^app.*-test$"
+   :ns-regexp "^frontend-tests.*-test$"
    :autorun true
 
    :compiler-options

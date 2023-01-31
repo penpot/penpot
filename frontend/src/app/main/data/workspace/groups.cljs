@@ -10,23 +10,24 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.undo :as dwu]
    [beicon.core :as rx]
    [potok.core :as ptk]))
 
 (defn shapes-for-grouping
   [objects selected]
   (->> selected
-       (map #(get objects %))
-       (map #(assoc % ::index (cph/get-position-on-parent objects (:id %))))
-       (sort-by ::index)))
+       (cph/order-by-indexed-shapes objects)
+       reverse
+       (map #(get objects %))))
 
 (defn- get-empty-groups-after-group-creation
-  "An auxiliar function that finds and returns a set of ids that
+  "An auxiliary function that finds and returns a set of ids that
   corresponds to groups that should be deleted after a group creation.
 
   The corner case happens when you selects two (or more) shapes that
@@ -71,16 +72,24 @@
                            (= (count shapes) 1)
                            (= (:type (first shapes)) :group))
                     (:name (first shapes))
-                    (-> (ctt/retrieve-used-names objects)
-                        (ctt/generate-unique-name base-name)))
+                    base-name)
 
         selrect   (gsh/selection-rect shapes)
+        group-idx (->> shapes
+                       last
+                       :id
+                       (cph/get-position-on-parent objects)
+                       inc)
         group     (-> (cts/make-minimal-group frame-id selrect gname)
                       (cts/setup-shape selrect)
                       (assoc :shapes (mapv :id shapes)
                              :parent-id parent-id
                              :frame-id frame-id
-                             :index (::index (first shapes))))
+                             :index group-idx))
+
+        ;; Shapes that are in a component, but are not root, must be detached,
+        ;; because they will be now children of a non instance group.
+        shapes-to-detach (filter ctk/in-component-instance-not-root? shapes)
 
         ;; Look at the `get-empty-groups-after-group-creation`
         ;; docstring to understand the real purpose of this code
@@ -88,15 +97,18 @@
 
         changes   (-> (pcb/empty-changes it page-id)
                       (pcb/with-objects objects)
-                      (pcb/add-object group {:index (::index (first shapes))})
-                      (pcb/change-parent (:id group) shapes)
+                      (pcb/add-object group {:index group-idx})
+                      (pcb/change-parent (:id group) (reverse shapes))
+                      (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape)
                       (pcb/remove-objects ids-to-delete))]
 
     [group changes]))
 
 (defn remove-group-changes
   [it page-id group objects]
-  (let [children  (mapv #(get objects %) (:shapes group))
+  (let [children (->> (:shapes group)
+                      (cph/order-by-indexed-shapes objects)
+                      (mapv #(get objects %)))
         parent-id (cph/get-parent-id objects (:id group))
         parent    (get objects parent-id)
 
@@ -104,34 +116,29 @@
         (->> (:shapes parent)
              (map-indexed vector)
              (filter #(#{(:id group)} (second %)))
-             (ffirst))
+             (ffirst)
+             inc)
 
-        ids-to-detach (when (:component-id group)
-                        (cph/get-children-ids objects (:id group)))
+        ;; Shapes that are in a component (including root) must be detached,
+        ;; because cannot be easyly synchronized back to the main component.
+        shapes-to-detach (filter ctk/in-component-instance?
+                                 (cph/get-children-with-self objects (:id group)))]
 
-        detach-fn (fn [attrs]
-                    (dissoc attrs
-                            :component-id
-                            :component-file
-                            :component-root?
-                            :remote-synced?
-                            :shape-ref
-                            :touched))]
-
-    (cond-> (-> (pcb/empty-changes it page-id)
-                (pcb/with-objects objects)
-                (pcb/change-parent parent-id children index-in-parent)
-                (pcb/remove-objects [(:id group)]))
-
-      (some? ids-to-detach)
-      (pcb/update-shapes ids-to-detach detach-fn))))
+    (-> (pcb/empty-changes it page-id)
+        (pcb/with-objects objects)
+        (pcb/change-parent parent-id children index-in-parent)
+        (pcb/remove-objects [(:id group)])
+        (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape))))
 
 (defn remove-frame-changes
   [it page-id frame objects]
-
-  (let [children      (mapv #(get objects %) (:shapes frame))
+  (let [children (->> (:shapes frame)
+                      (cph/order-by-indexed-shapes objects)
+                      (mapv #(get objects %)))
         parent-id     (cph/get-parent-id objects (:id frame))
-        idx-in-parent (cph/get-position-on-parent objects (:id frame))]
+        idx-in-parent (->> (:id frame)
+                          (cph/get-position-on-parent objects)
+                           inc)]
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
@@ -153,7 +160,7 @@
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group changes]
-                (prepare-create-group it objects page-id shapes "Group-1" false)]
+                (prepare-create-group it objects page-id shapes "Group" false)]
             (rx/of (dch/commit-changes changes)
                    (dws/select-shapes (d/ordered-set (:id group))))))))))
 
@@ -174,15 +181,25 @@
                   (cph/frame-shape? shape)
                   (remove-frame-changes it page-id shape objects))))
 
+            selected (wsh/lookup-selected state)
             changes-list (sequence
                           (keep prepare)
-                          (wsh/lookup-selected state))
+                          selected)
+
+            parents (into #{}
+                          (comp (map #(cph/get-parent objects %))
+                                (keep :id))
+                          selected)
 
             changes {:redo-changes (vec (mapcat :redo-changes changes-list))
                      :undo-changes (vec (mapcat :undo-changes changes-list))
-                     :origin it}]
+                     :origin it}
+            undo-id (js/Symbol)]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update parents)
+               (dwu/commit-undo-transaction undo-id))))))
 
 (def mask-group
   (ptk/reify ::mask-group
@@ -202,7 +219,7 @@
                          (= (:type (first shapes)) :group))
                   [first-shape (-> (pcb/empty-changes it page-id)
                                    (pcb/with-objects objects))]
-                  (prepare-create-group it objects page-id shapes "Group-1" true))
+                  (prepare-create-group it objects page-id shapes "Mask" true))
 
                 changes  (-> changes
                              (pcb/update-shapes (:shapes group)
@@ -218,10 +235,14 @@
                                                          :points (:points first-shape)
                                                          :transform (:transform first-shape)
                                                          :transform-inverse (:transform-inverse first-shape))))
-                             (pcb/resize-parents [(:id group)]))]
+                             (pcb/resize-parents [(:id group)]))
+                undo-id (js/Symbol)]
 
-            (rx/of (dch/commit-changes changes)
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+            (rx/of (dwu/start-undo-transaction undo-id)
+                   (dch/commit-changes changes)
+                   (dws/select-shapes (d/ordered-set (:id group)))
+                   (ptk/data-event :layout/update [(:id group)])
+                   (dwu/commit-undo-transaction undo-id))))))))
 
 (def unmask-group
   (ptk/reify ::unmask-group

@@ -16,6 +16,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -54,7 +55,11 @@
 
     [:div.dashboard-comments-section
      [:div.button
-      {:on-click show-dropdown
+      {:tab-index "0"
+       :on-click show-dropdown
+       :on-key-down (fn [event]
+                      (when (kbd/enter? event)
+                        (show-dropdown event)))
        :data-test "open-comments"
        :class (dom/classnames :open @show-dropdown?
                               :unread (boolean (seq tgroups)))}
@@ -64,7 +69,13 @@
       [:div.dropdown.comments-section.comment-threads-section.
        [:div.header
         [:h3 (tr "labels.comments")]
-        [:span.close {:on-click hide-dropdown} i/close]]
+        [:span.close {:tab-index (if @show-dropdown?
+                                  "0"
+                                  "-1")
+                      :on-click hide-dropdown
+                      :on-key-down (fn [event]
+                                     (when (kbd/enter? event)
+                                       (hide-dropdown event)))} i/close]]
 
        [:hr]
 

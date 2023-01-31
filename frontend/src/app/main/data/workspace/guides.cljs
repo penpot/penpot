@@ -10,7 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.spec :as us]
-   [app.common.types.page :as ctp]
+   [app.common.types.page.guide :as ctpg]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.core :as rx]
@@ -23,7 +23,7 @@
       (merge guide))))
 
 (defn update-guides [guide]
-  (us/verify ::ctp/guide guide)
+  (us/verify ::ctpg/guide guide)
   (ptk/reify ::update-guides
     ptk/WatchEvent
     (watch [it state _]
@@ -35,7 +35,7 @@
         (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guide [guide]
-  (us/verify ::ctp/guide guide)
+  (us/verify ::ctpg/guide guide)
   (ptk/reify ::remove-guide
     ptk/UpdateEvent
     (update [_ state]
@@ -79,8 +79,7 @@
             build-move-event
             (fn [guide]
               (let [frame (get objects (:frame-id guide))
-                    frame' (-> (merge frame (get object-modifiers (:frame-id guide)))
-                               (gsh/transform-shape))
+                    frame' (gsh/transform-shape frame (get-in object-modifiers [(:frame-id guide) :modifiers]))
 
                     moved (gpt/to-vec (gpt/point (:x frame) (:y frame))
                                       (gpt/point (:x frame') (:y frame')))

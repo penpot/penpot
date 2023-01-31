@@ -28,28 +28,40 @@
         has-value? (not (nil? blur))
         multiple? (= blur :multiple)
 
-        change! (fn [update-fn] (st/emit! (dch/update-shapes ids update-fn)))
+        change!
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [update-fn]
+           (st/emit! (dch/update-shapes ids update-fn))))
 
         handle-add
-        (fn []
-          (change! #(assoc % :blur (create-blur))))
+        (mf/use-callback
+         (mf/deps change!)
+         (fn []
+           (change! #(assoc % :blur (create-blur)))))
 
         handle-delete
-        (fn []
-          (change! #(dissoc % :blur)))
+        (mf/use-callback
+         (mf/deps change!)
+         (fn []
+           (change! #(dissoc % :blur))))
 
         handle-change
-        (fn [value]
-          (change! #(cond-> %
-                      (not (contains? % :blur))
-                      (assoc :blur (create-blur))
+        (mf/use-callback
+         (mf/deps change!)
+         (fn [value]
+           (change! #(cond-> %
+                       (not (contains? % :blur))
+                       (assoc :blur (create-blur))
 
-                      :always
-                      (assoc-in [:blur :value] value))))
+                       :always
+                       (assoc-in [:blur :value] value)))))
 
         handle-toggle-visibility
-        (fn []
-          (change! #(update-in % [:blur :hidden] not)))]
+        (mf/use-callback
+         (mf/deps change!)
+         (fn []
+           (change! #(update-in % [:blur :hidden] not))))]
 
     [:div.element-set
      [:div.element-set-title

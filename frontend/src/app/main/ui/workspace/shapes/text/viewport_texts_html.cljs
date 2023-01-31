@@ -8,11 +8,14 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gsht]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
+   [app.common.types.modifiers :as ctm]
+   [app.main.data.workspace.modifiers :as mdwm]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -23,33 +26,19 @@
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
-   [app.util.timers :as ts]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
-(defn strip-position-data [shape]
-  (-> shape
-      (cond-> (some? (meta (:position-data shape)))
-        (with-meta (meta (:position-data shape))))
-      (dissoc :position-data :transform :transform-inverse)))
-
-(defn strip-modifier
-  [modifier]
-  (if (or (some? (dm/get-in modifier [:modifiers :resize-vector]))
-          (some? (dm/get-in modifier [:modifiers :resize-vector-2])))
-    modifier
-    (d/update-when modifier :modifiers dissoc :displacement :rotation)))
-
-(defn process-shape [modifiers {:keys [id] :as shape}]
-  (let [modifier (-> (get modifiers id) strip-modifier)
-        shape (cond-> shape
-                (not (gsh/empty-modifiers? (:modifiers modifier)))
-                (-> (assoc :grow-type :fixed)
-                    (merge modifier) gsh/transform-shape))]
+(defn fix-position [shape]
+  (let [modifiers (:modifiers shape)
+        shape' (gsh/transform-shape shape modifiers)
+        ;; We need to remove the movement because the dynamic modifiers will have move it
+        deltav (gpt/to-vec (gpt/point (:selrect shape'))
+                           (gpt/point (:selrect shape)))]
     (-> shape
-        (cond-> (nil? (:position-data shape))
-          (assoc :migrate true))
-        strip-position-data)))
+        (gsh/transform-shape (ctm/move modifiers deltav))
+        (mdwm/update-grow-type shape)
+        (dissoc :modifiers))))
 
 (defn- update-with-editor-state
   "Updates the shape with the current state in the editor"
@@ -84,10 +73,12 @@
                    (not (mth/almost-zero? height))
                    (not migrate))
           (st/emit! (dwt/resize-text id width height)))))
+
     (st/emit! (dwt/clean-text-modifier id))))
 
 (defn- update-text-modifier
-  [{:keys [grow-type id]} node]
+  [{:keys [grow-type id] :as shape} node]
+
   (p/let [position-data (tsp/calc-position-data id)
           props {:position-data position-data}
 
@@ -97,10 +88,14 @@
                   width (mth/ceil width)
                   height (mth/ceil height)]
               (if (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
-                (assoc props :width width :height height)
+                (cond-> props
+                  (= grow-type :auto-width)
+                  (assoc :width width)
+
+                  (or (= grow-type :auto-height) (= grow-type :auto-width))
+                  (assoc :height height))
                 props))
             props)]
-
     (st/emit! (dwt/update-text-modifier id props))))
 
 (mf/defc text-container
@@ -122,62 +117,110 @@
                          :shape shape
                          :grow-type (:grow-type shape)}]))
 
-(mf/defc viewport-texts-wrapper
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
+(defn text-properties-equal?
+  [shape other]
+  (or (identical? shape other)
+      (and
+       ;; Check if both shapes are equivalent removing their geometry data
+       (= (dissoc shape :migrate :points :selrect :height :width :x :y :position-data :modifiers)
+          (dissoc other :migrate :points :selrect :height :width :x :y :position-data :modifiers))
+
+       ;; Check if the position and size is close. If any of these changes the shape has changed
+       ;; and if not there is no geometry relevant change
+       (mth/close? (:x shape) (:x other))
+       (mth/close? (:y shape) (:y other))
+       (mth/close? (:width shape) (:width other))
+       (mth/close? (:height shape) (:height other)))))
+
+(mf/defc text-changes-renderer
+  {::mf/wrap-props false}
   [props]
   (let [text-shapes (obj/get props "text-shapes")
-        modifiers (obj/get props "modifiers")
-        prev-modifiers (hooks/use-previous modifiers)
         prev-text-shapes (hooks/use-previous text-shapes)
 
-        ;; A change in position-data won't be a "real" change
+        ;; We store in the state the texts still pending to be calculated so we can
+        ;; get its position
+        pending-update (mf/use-state {})
+
         text-change?
         (fn [id]
           (let [new-shape (get text-shapes id)
                 old-shape (get prev-text-shapes id)
-                old-modifiers (-> (get prev-modifiers id) strip-modifier)
-                new-modifiers (-> (get modifiers id) strip-modifier)
+                remote? (some? (-> new-shape meta :session-id))]
 
-                remote? (some? (-> new-shape meta :session-id)) ]
-
-            (or (and (not remote?)
-                     (not (identical? old-shape new-shape))
-                     (not= (dissoc old-shape :migrate)
-                           (dissoc new-shape :migrate)))
-                (not= new-modifiers old-modifiers)
-
+            (or (and (not remote?) ;; changes caused by a remote peer are not re-calculated
+                     (not (text-properties-equal? old-shape new-shape)))
                 ;; When the position data is nil we force to recalculate
-                (:migrate new-shape))))
+                (nil? (:position-data new-shape)))))
 
         changed-texts
         (mf/use-memo
-         (mf/deps text-shapes modifiers)
+         (mf/deps text-shapes @pending-update)
+         #(let [pending-shapes (into #{} (vals @pending-update))]
+            (->> (keys text-shapes)
+                 (filter (fn [id]
+                           (or (contains? pending-shapes id)
+                               (text-change? id))))
+                 (map (d/getf text-shapes)))))
+
+        handle-update-shape
+        (mf/use-callback
+         (fn [shape node]
+           ;; Unique to indentify the pending state
+           (let [uid (js/Symbol)]
+             (swap! pending-update assoc uid (:id shape))
+             (p/then
+              (update-text-shape shape node)
+              #(swap! pending-update dissoc uid)))))]
+
+    [:.text-changes-renderer
+     (for [{:keys [id] :as shape} changed-texts]
+       [:& text-container {:key (str (dm/str "text-container-" id))
+                           :shape shape
+                           :on-update handle-update-shape}])]))
+
+(mf/defc text-modifiers-renderer
+  {::mf/wrap-props false}
+  [props]
+  (let [text-shapes (-> (obj/get props "text-shapes")
+                        (update-vals fix-position))
+
+        prev-text-shapes (hooks/use-previous text-shapes)
+
+        text-change?
+        (fn [id]
+          (let [new-shape (get text-shapes id)
+                old-shape (get prev-text-shapes id)]
+            (and
+             (some? new-shape)
+             (some? old-shape)
+             (not (text-properties-equal? old-shape new-shape)))))
+
+        changed-texts
+        (mf/use-memo
+         (mf/deps text-shapes)
          #(->> (keys text-shapes)
                (filter text-change?)
                (map (d/getf text-shapes))))
 
-        handle-update-modifier (mf/use-callback update-text-modifier)
-        handle-update-shape (mf/use-callback update-text-shape)]
+        handle-update-shape (mf/use-callback update-text-modifier)]
 
-    [:*
+    [:.text-changes-renderer
      (for [{:keys [id] :as shape} changed-texts]
-       [:& text-container {:shape (gsh/transform-shape shape)
-                           :on-update (if (some? (get modifiers (:id shape)))
-                                        handle-update-modifier
-                                        handle-update-shape)
-                           :key (str (dm/str "text-container-" id))}])]))
+       [:& text-container {:key (str (dm/str "text-container-" id))
+                           :shape shape
+                           :on-update handle-update-shape}])]))
 
 (mf/defc viewport-text-editing
-  {::mf/wrap-props false}
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
   [props]
 
   (let [shape   (obj/get props "shape")
 
-        ;; Join current objects with the state of the editor
-        editor-state
-        (-> (mf/deref refs/workspace-editor-state)
-            (get (:id shape)))
+        workspace-editor-state (mf/deref refs/workspace-editor-state)
+
+        editor-state (get workspace-editor-state (:id shape))
 
         text-modifier-ref
         (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
@@ -228,21 +271,35 @@
         text-shapes
         (mf/use-memo
          (mf/deps objects)
-         #(into {} (filter (comp cph/text-shape? second)) objects))
+         (fn []
+           (into {} (filter (comp cph/text-shape? second)) objects)))
 
         text-shapes
-        (mf/use-memo
-         (mf/deps text-shapes modifiers)
-         #(d/update-vals text-shapes (partial process-shape modifiers)))
+        (hooks/use-equal-memo text-shapes)
 
-        editing-shape (get text-shapes edition)
+        editing-shape (mf/use-memo
+                       (mf/deps text-shapes edition)
+                       #(get text-shapes edition))
 
-        ;; This memo is necesary so the viewport-text-wrapper memoize its props correctly
-        text-shapes-wrapper
+        editing-shape
+        (hooks/use-equal-memo editing-shape)
+
+        text-shapes-changes
         (mf/use-memo
          (mf/deps text-shapes edition)
          (fn []
-           (dissoc text-shapes edition)))]
+           (-> text-shapes
+               (dissoc edition))))
+
+        text-shapes-modifiers
+        (mf/use-memo
+         (mf/deps modifiers text-shapes)
+         (fn []
+           (into {}
+                 (keep (fn [[id modifiers]]
+                         (when-let [shape (get text-shapes id)]
+                           (vector id (merge shape modifiers)))))
+                 modifiers)))]
 
     ;; We only need the effect to run on "mount" because the next fonts will be changed when the texts are
     ;; edited
@@ -256,5 +313,5 @@
      (when editing-shape
        [:& viewport-text-editing {:shape editing-shape}])
 
-     [:& viewport-texts-wrapper {:text-shapes text-shapes-wrapper
-                                 :modifiers modifiers}]]))
+     [:& text-modifiers-renderer {:text-shapes text-shapes-modifiers}]
+     [:& text-changes-renderer {:text-shapes text-shapes-changes}]]))

@@ -6,6 +6,7 @@
 
 (ns app.util.storage
   (:require
+   [app.common.exceptions :as ex]
    [app.common.transit :as t]
    [app.util.globals :as g]
    [app.util.timers :as tm]))
@@ -38,7 +39,8 @@
               {}
               (range len)))))
 
-
-(defonce storage (atom (load (unchecked-get g/global "localStorage"))))
+;; Using ex/ignoring because can receive a DOMException like this when importing the code as a library:
+;; Failed to read the 'localStorage' property from 'Window': Storage is disabled inside 'data:' URLs.
+(defonce storage (atom (load (ex/ignoring (unchecked-get g/global "localStorage")))))
 
 (add-watch storage :persistence #(persist js/localStorage %3 %4))

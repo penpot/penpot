@@ -17,7 +17,7 @@ describe("onboarding slides", () => {
     cy.demoLogin();
   });
 
-  it("go trough all the onboarding slides", () => {
+  it("go through all the onboarding slides", () => {
     cy.getBySel("onboarding-welcome").should("exist");
     cy.getBySel("onboarding-next-btn").should("exist");
     cy.getBySel("onboarding-next-btn").click();

@@ -60,6 +60,7 @@
       (rx/merge
        (rx/of (ev/initialize)
               (du/initialize-profile))
+
        (->> stream
             (rx/filter du/profile-fetched?)
             (rx/take 1)
@@ -80,7 +81,7 @@
   (init-ui)
   (st/emit! (initialize)))
 
-(defn reinit
+(defn ^:export reinit
   []
   (mf/unmount (dom/get-element "app"))
   (mf/unmount (dom/get-element "modal"))

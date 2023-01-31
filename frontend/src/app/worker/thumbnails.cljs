@@ -7,6 +7,7 @@
 (ns app.worker.thumbnails
   (:require
    ["react-dom/server" :as rds]
+   [app.common.logging :as log]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.fonts :as fonts]
@@ -16,6 +17,9 @@
    [beicon.core :as rx]
    [debug :refer [debug?]]
    [rumext.v2 :as mf]))
+
+(log/set-level! :trace)
+
 
 (defn- handle-response
   [{:keys [body status] :as response}]
@@ -48,30 +52,29 @@
        (= :request-body-too-large code)))
 
 (defn- request-data-for-thumbnail
-  [file-id revn components-v2]
-  (let [path    "api/rpc/query/file-data-for-thumbnail"
-        params  {:file-id file-id
-                 :revn revn
-                 :strip-frames-with-thumbnails true
-                 :components-v2 components-v2}
-        request {:method :get
-                 :uri (u/join @cf/public-uri path)
-                 :credentials "include"
-                 :query params}]
+  [file-id revn features]
+  (let [path    "api/rpc/command/get-file-data-for-thumbnail"
+        params   {:file-id file-id
+                  :revn revn
+                  :strip-frames-with-thumbnails true
+                  :features features}
+        request  {:method :get
+                  :uri (u/join @cf/public-uri path)
+                  :credentials "include"
+                  :query params}]
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
 (defn- request-thumbnail
   [file-id revn]
-  (let [path    "api/rpc/query/file-thumbnail"
+  (let [path    "api/rpc/command/get-file-thumbnail"
         params  {:file-id file-id
                  :revn revn}
         request {:method :get
                  :uri (u/join @cf/public-uri path)
                  :credentials "include"
                  :query params}]
-
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
@@ -91,7 +94,7 @@
 
 (defn- persist-thumbnail
   [{:keys [file-id data revn fonts]}]
-  (let [path    "api/rpc/mutation/upsert-file-thumbnail"
+  (let [path    "api/rpc/command/upsert-file-thumbnail"
         params  {:file-id file-id
                  :revn revn
                  :props {:fonts fonts}
@@ -104,23 +107,26 @@
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response)
-         (rx/catch body-too-large? (constantly nil))
+         (rx/catch body-too-large? (constantly (rx/of nil)))
          (rx/map (constantly params)))))
 
 (defmethod impl/handler :thumbnails/generate
-  [{:keys [file-id revn components-v2] :as message}]
+  [{:keys [file-id revn features] :as message}]
   (letfn [(on-result [{:keys [data props]}]
             {:data data
              :fonts (:fonts props)})
 
           (on-cache-miss [_]
-            (->> (request-data-for-thumbnail file-id revn components-v2)
+            (log/debug :hint "request-thumbnail" :file-id file-id :revn revn :cache "miss")
+            (->> (request-data-for-thumbnail file-id revn features)
                  (rx/map render-thumbnail)
                  (rx/mapcat persist-thumbnail)))]
 
     (if (debug? :disable-thumbnail-cache)
-      (->> (request-data-for-thumbnail file-id revn components-v2)
+      (->> (request-data-for-thumbnail file-id revn features)
            (rx/map render-thumbnail))
       (->> (request-thumbnail file-id revn)
+           (rx/tap (fn [_]
+                     (log/debug :hint "request-thumbnail" :file-id file-id :revn revn :cache "hit")))
            (rx/catch not-found? on-cache-miss)
            (rx/map on-result)))))

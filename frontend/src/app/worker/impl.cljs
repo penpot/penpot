@@ -6,9 +6,9 @@
 
 (ns app.worker.impl
   (:require
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.pages.changes :as ch]
-   [app.common.transit :as t]
    [app.config :as cf]
    [okulary.core :as l]))
 
@@ -30,31 +30,24 @@
   [message]
   message)
 
-(defmethod handler :initialize-indices
-  [{:keys [file-raw] :as message}]
+(defmethod handler :initialize-page-index
+  [{:keys [page] :as message}]
+  (swap! state update :pages-index assoc (:id page) page)
+  (handler (assoc message :cmd :selection/initialize-page-index))
+  (handler (assoc message :cmd :snaps/initialize-page-index)))
 
-  (let [data (-> (t/decode-str file-raw) :data)
-        message (assoc message :data data)]
-    (reset! state data)
-    (handler (-> message
-                 (assoc :cmd :selection/initialize-index)))
-    (handler (-> message
-                 (assoc :cmd :snaps/initialize-index)))))
-
-(defmethod handler :update-page-indices
+(defmethod handler :update-page-index
   [{:keys [page-id changes] :as message}]
 
-  (let [old-page (get-in @state [:pages-index page-id])]
-    (swap! state ch/process-changes changes false)
-
-    (let [new-page (get-in @state [:pages-index page-id])
-          message (assoc message
-                         :old-page old-page
-                         :new-page new-page)]
-      (handler (-> message
-                   (assoc :cmd :selection/update-index)))
-      (handler (-> message
-                   (assoc :cmd :snaps/update-index))))))
+  (let [old-page (dm/get-in @state [:pages-index page-id])
+        new-page (-> state
+                     (swap! ch/process-changes changes false)
+                     (dm/get-in [:pages-index page-id]))
+        message (assoc message
+                       :old-page old-page
+                       :new-page new-page)]
+    (handler (assoc message :cmd :selection/update-page-index))
+    (handler (assoc message :cmd :snaps/update-page-index))))
 
 (defmethod handler :configure
   [{:keys [key val]}]

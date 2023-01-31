@@ -371,7 +371,7 @@
                                 (db/create-array conn "uuid" ids)]))
 
           ;; NOTE: A getter that retrieves the key witch will be used
-          ;; for group ids; previoulsy we have no value, then we
+          ;; for group ids; previously we have no value, then we
           ;; introduced the `:reference` prop, and then it is renamed
           ;; to `:bucket` and now is string instead. This is
           ;; implemented in this way for backward comaptibilty.

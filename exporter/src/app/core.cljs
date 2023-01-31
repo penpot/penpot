@@ -34,7 +34,7 @@
   ;; an empty line for visual feedback of restart
   (js/console.log "")
 
-  (l/info :msg "stoping")
+  (l/info :msg "stopping")
   (p/do!
    (bwr/stop)
    (redis/stop)
@@ -44,3 +44,6 @@
 (proc/on "uncaughtException"
          (fn [cause]
            (js/console.error cause)))
+
+(proc/on "SIGTERM" (fn [] (proc/exit 0)))
+(proc/on "SIGINT" (fn [] (proc/exit 0)))

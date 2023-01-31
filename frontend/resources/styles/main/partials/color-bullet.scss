@@ -13,7 +13,7 @@
   width: 65px;
 
   .color-bullet {
-    border: 2px solid $color-gray-60;
+    border: 2px solid $color-gray-30;
     position: relative;
     width: var(--bullet-size);
     height: var(--bullet-size);
@@ -30,21 +30,21 @@
 
 .color-cell.current {
   .color-bullet {
-    border-color: $color-gray-50;
+    border-color: $color-gray-30;
   }
 }
 
 ul.palette-menu .color-bullet {
   width: 20px;
   height: 20px;
-  border: 1px solid $color-gray-10;
+  border: 1px solid $color-gray-30;
   margin-right: 5px;
   background-size: 8px;
 }
 .color-cell.add-color .color-bullet {
   align-items: center;
   background-color: $color-gray-50;
-  border: 3px dashed $color-gray-10;
+  border: 3px dashed $color-gray-30;
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -62,16 +62,23 @@ ul.palette-menu .color-bullet {
   grid-area: color;
   width: 20px;
   height: 20px;
-  border: 1px solid $color-gray-10;
+  border: 1px solid $color-gray-30;
   background-size: 8px;
   overflow: hidden;
 }
 
 .asset-section .asset-list-item .color-bullet {
-  border: 1px solid $color-gray-20;
+  border: 1px solid $color-gray-30;
   height: 20px;
   margin-right: $size-1;
   width: 20px;
+}
+.asset-list .asset-list-item {
+  &:hover {
+    .color-bullet {
+      border: 1px solid $color-primary;
+    }
+  }
 }
 
 .color-cell.add-color:hover .color-bullet {
@@ -182,8 +189,9 @@ ul.palette-menu .color-bullet {
   }
 }
 
-.color-data .color-bullet.is-not-library-color {
+.color-bullet.is-not-library-color {
   border-radius: $br-small;
+  overflow: hidden;
 
   & .color-bullet-wrapper {
     clip-path: none;

@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.pages.helpers
   (:require
@@ -28,16 +28,26 @@
        (= frame-id uuid/zero)))
 
 (defn frame-shape?
-  [{:keys [type]}]
-  (= type :frame))
+  ([objects id]
+   (frame-shape? (get objects id)))
+  ([{:keys [type]}]
+   (= type :frame)))
 
 (defn group-shape?
   [{:keys [type]}]
   (= type :group))
 
+(defn mask-shape?
+  [{:keys [type masked-group?]}]
+  (and (= type :group) masked-group?))
+
 (defn bool-shape?
   [{:keys [type]}]
   (= type :bool))
+
+(defn group-like-shape?
+  [{:keys [type]}]
+  (or (= :group type) (= :bool type)))
 
 (defn text-shape?
   [{:keys [type]}]
@@ -63,9 +73,12 @@
 
 (defn get-children-ids
   [objects id]
-  (if-let [shapes (-> (get objects id) :shapes (some-> vec))]
-    (into shapes (mapcat #(get-children-ids objects %)) shapes)
-    []))
+  (letfn [(get-children-ids-rec
+            [id processed]
+            (when (not (contains? processed id))
+              (when-let [shapes (-> (get objects id) :shapes (some-> vec))]
+                (into shapes (mapcat #(get-children-ids-rec % (conj processed id))) shapes))))]
+    (get-children-ids-rec id #{})))
 
 (defn get-children
   [objects id]
@@ -95,6 +108,11 @@
       (if (and (some? parent-id) (not= parent-id id))
         (recur (conj result parent-id) parent-id)
         result))))
+
+(defn get-siblings-ids
+  [objects id]
+  (let [parent (get-parent objects id)]
+    (into [] (->> (:shapes parent) (remove #(= % id))))))
 
 (defn get-frame
   "Get the frame that contains the shape. If the shape is already a
@@ -128,6 +146,16 @@
         pid (:parent-id obj)
         prt (get objects pid)]
     (d/index-of (:shapes prt) id)))
+
+(defn get-prev-sibling
+  [objects id]
+  (let [obj (get objects id)
+        pid (:parent-id obj)
+        prt (get objects pid)
+        shapes (:shapes prt)
+        pos (d/index-of shapes id)]
+    (if (= 0 pos) nil (nth shapes (dec pos)))))
+
 
 (defn get-immediate-children
   "Retrieve resolved shape objects that are immediate children
@@ -318,6 +346,23 @@
          (map second)
          (into #{}))))
 
+(defn order-by-indexed-shapes
+  [objects ids]
+  (->> (indexed-shapes objects)
+       (sort-by first)
+       (filter (comp (into #{} ids) second))
+       (map second)))
+
+(defn get-index-replacement
+  "Given a collection of shapes, calculate their positions 
+   in the parent, find first index and return next one"
+  [shapes objects]
+  (->> shapes
+       (order-by-indexed-shapes objects)
+       first
+       (get-position-on-parent objects)
+       inc))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHAPES ORGANIZATION (PATH MANAGEMENT)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -398,7 +443,7 @@
                   cur (-> (or (get objects frame-id) (transient {}))
                           (assoc! id shape))]
               (assoc! objects frame-id cur)))]
-    (d/update-vals
+    (update-vals
      (->> objects
           (reduce process-shape (transient {}))
           (persistent!))
@@ -419,7 +464,7 @@
           (update shape :shapes #(filterv selected+parents %)))]
 
     (-> (select-keys objects selected+parents)
-        (d/update-vals remove-children))))
+        (update-vals remove-children))))
 
 (defn is-child?
   [objects parent-id candidate-child-id]
@@ -456,7 +501,6 @@
 
 (defn selected-with-children
   [objects selected]
-
   (into selected
         (mapcat #(get-children-ids objects %))
         selected))

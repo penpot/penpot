@@ -6,19 +6,23 @@
 
 (ns app.rpc.mutations.profile
   (:require
+   [app.auth :as auth]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
    [app.emails :as eml]
+   [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.media :as media]
+   [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.auth :as cmd.auth]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.mutations.teams :as teams]
+   [app.rpc.helpers :as rph]
    [app.rpc.queries.profile :as profile]
-   [app.rpc.semaphore :as rsem]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
@@ -46,6 +50,7 @@
           :opt-un [::lang ::theme]))
 
 (sv/defmethod ::update-profile
+  {::doc/added "1.0"}
   [{:keys [pool] :as cfg} {:keys [profile-id fullname lang theme] :as params}]
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use
@@ -68,8 +73,11 @@
                    :props (db/tjson (:props profile))}
                   {:id profile-id})
 
-      (with-meta (-> profile profile/strip-private-attrs d/without-nils)
-        {::audit/props (audit/profile->props profile)}))))
+      (-> profile
+          profile/strip-private-attrs
+          d/without-nils
+          (rph/with-meta {::audit/props (audit/profile->props profile)})))))
+
 
 ;; --- MUTATION: Update Password
 
@@ -81,11 +89,11 @@
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
 (sv/defmethod ::update-profile-password
-  {::rsem/queue :auth}
+  {::climit/queue :auth}
   [{:keys [pool] :as cfg} {:keys [password] :as params}]
   (db/with-atomic [conn pool]
     (let [profile    (validate-password! conn params)
-          session-id (:app.rpc/session-id params)]
+          session-id (::rpc/session-id params)]
       (when (= (str/lower (:email profile))
                (str/lower (:password params)))
         (ex/raise :type :validation
@@ -104,7 +112,7 @@
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
   (let [profile (db/get-by-id conn :profile profile-id)]
-    (when-not (:valid (cmd.auth/verify-password old-password (:password profile)))
+    (when-not (:valid (auth/verify-password old-password (:password profile)))
       (ex/raise :type :validation
                 :code :old-password-not-match))
     profile))
@@ -112,7 +120,7 @@
 (defn update-profile-password!
   [conn {:keys [id password] :as profile}]
   (db/update! conn :profile
-              {:password (cmd.auth/derive-password password)}
+              {:password (auth/derive-password password)}
               {:id id}))
 
 ;; --- MUTATION: Update Photo
@@ -131,7 +139,7 @@
     (update-profile-photo cfg params)))
 
 (defn update-profile-photo
-  [{:keys [pool storage executor] :as cfg} {:keys [profile-id] :as params}]
+  [{:keys [pool storage executor] :as cfg} {:keys [profile-id file] :as params}]
   (p/let [profile (px/with-dispatch executor
                     (db/get-by-id pool :profile profile-id))
           photo   (teams/upload-photo cfg params)]
@@ -144,7 +152,13 @@
     (db/update! pool :profile
                 {:photo-id (:id photo)}
                 {:id profile-id})
-    nil))
+
+    (-> (rph/wrap)
+        (rph/with-meta {::audit/replace-props
+                        {:file-name (:filename file)
+                         :file-size (:size file)
+                         :file-path (str (:path file))
+                         :file-mtype (:mtype file)}}))))
 
 ;; --- MUTATION: Request Email Change
 
@@ -276,8 +290,7 @@
                   {:deleted-at deleted-at}
                   {:id profile-id})
 
-      (with-meta {}
-        {:transform-response (:delete session)}))))
+      (rph/with-transform {} (session/delete-fn session)))))
 
 (def sql:owned-teams
   "with owner_teams as (
@@ -296,77 +309,3 @@
 (defn- get-owned-teams-with-participants
   [conn profile-id]
   (db/exec! conn [sql:owned-teams profile-id profile-id]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; DEPRECATED METHODS (TO BE REMOVED ON 1.16.x)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- MUTATION: Login
-
-(s/def ::login ::cmd.auth/login-with-password)
-
-(sv/defmethod ::login
-  {:auth false
-   ::rsem/queue :auth
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [cfg params]
-  (cmd.auth/login-with-password cfg params))
-
-;; --- MUTATION: Logout
-
-(s/def ::logout ::cmd.auth/logout)
-
-(sv/defmethod ::logout
-  {:auth false
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [{:keys [session] :as cfg} _]
-  (with-meta {}
-    {:transform-response (:delete session)}))
-
-;; --- MUTATION: Recover Profile
-
-(s/def ::recover-profile ::cmd.auth/recover-profile)
-
-(sv/defmethod ::recover-profile
-  {::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [cfg params]
-  (cmd.auth/recover-profile cfg params))
-
-;; --- MUTATION: Prepare Register
-
-(s/def ::prepare-register-profile ::cmd.auth/prepare-register-profile)
-
-(sv/defmethod ::prepare-register-profile
-  {:auth false
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [cfg params]
-  (cmd.auth/prepare-register cfg params))
-
-;; --- MUTATION: Register Profile
-
-(s/def ::register-profile ::cmd.auth/register-profile)
-
-(sv/defmethod ::register-profile
-  {:auth false
-   ::rsem/queue :auth
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [{:keys [pool] :as cfg} params]
-  (db/with-atomic [conn pool]
-    (-> (assoc cfg :conn conn)
-        (cmd.auth/register-profile params))))
-
-;; --- MUTATION: Request Profile Recovery
-
-(s/def ::request-profile-recovery ::cmd.auth/request-profile-recovery)
-
-(sv/defmethod ::request-profile-recovery
-  {:auth false
-   ::doc/added "1.0"
-   ::doc/deprecated "1.15"}
-  [cfg params]
-  (cmd.auth/request-profile-recovery cfg params))

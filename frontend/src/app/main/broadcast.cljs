@@ -7,6 +7,7 @@
 (ns app.main.broadcast
   "BroadcastChannel API."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.transit :as t]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -18,9 +19,12 @@
 (def ^:const default-topic "penpot")
 
 ;; The main broadcast channel instance, used for emit data
+;; If used as a library may be we can't access js/BroadcastChannel.
+;; and even if it exists we can receive an exception like:
+;; Failed to construct 'BroadcastChannel': Can't create BroadcastChannel in an opaque origin
 (defonce default-channel
   (when (exists? js/BroadcastChannel)
-    (js/BroadcastChannel. default-topic)))
+    (ex/ignoring (js/BroadcastChannel. default-topic))))
 
 (defonce stream
   (if (exists? js/BroadcastChannel)

@@ -8,7 +8,7 @@
   {:target :node-test
    :output-to "target/test.js"
    :output-dir "target/test/"
-   :ns-regexp "^app.common.*-test$"
+   :ns-regexp "^common-tests.*-test$"
    :autorun true
 
    :compiler-options

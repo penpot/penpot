@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
    [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -17,11 +16,14 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
+   [app.util.timers :as ts]
+   [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
 (mf/defc pixel-grid
@@ -35,8 +37,8 @@
                :pattern-units "userSpaceOnUse"}
      [:path {:d "M 1 0 L 0 0 0 1"
              :style {:fill "none"
-                     :stroke "var(--color-info)"
-                     :stroke-opacity "0.2"
+                     :stroke (if (debug? :pixel-grid) "red" "var(--color-info)")
+                     :stroke-opacity (if (debug? :pixel-grid) 1 "0.2")
                      :stroke-width (str (/ 1 zoom))}}]]]
    [:rect {:x (:x vbox)
            :y (:y vbox)
@@ -48,12 +50,13 @@
 (mf/defc viewport-actions
   {::mf/wrap [mf/memo]}
   []
-  (let [edition (mf/deref refs/selected-edition)
-        selected (mf/deref refs/selected-objects)
-        shape (-> selected first)]
-    (when (and (= (count selected) 1)
-               (= (:id shape) edition)
-               (not= :text (:type shape)))
+  (let [edition     (mf/deref refs/selected-edition)
+        selected    (mf/deref refs/selected-objects)
+        drawing     (mf/deref refs/workspace-drawing)
+        drawing-obj (:object drawing)
+        shape       (or drawing-obj (-> selected first))]
+    (when (or (and (= (count selected) 1) (= (:id shape) edition) (not= :text (:type shape)))
+              (and (some? drawing-obj) (= :path (:type drawing-obj))))
       [:div.viewport-actions
        [:& path-actions {:shape shape}]])))
 
@@ -85,17 +88,19 @@
 
 
 (mf/defc frame-title
-  {::mf/wrap [mf/memo]}
-  [{:keys [frame selected? zoom show-artboard-names? on-frame-enter on-frame-leave on-frame-select]}]
-  (let [on-mouse-down
+  {::mf/wrap [mf/memo
+              #(mf/deferred % ts/raf)]}
+  [{:keys [frame selected? zoom show-artboard-names? show-id? on-frame-enter on-frame-leave on-frame-select]}]
+  (let [workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+        on-mouse-down
         (mf/use-callback
-         (mf/deps (:id frame) on-frame-select)
+         (mf/deps (:id frame) on-frame-select workspace-read-only?)
          (fn [bevent]
            (let [event  (.-nativeEvent bevent)]
              (when (= 1 (.-which event))
                (dom/prevent-default event)
                (dom/stop-propagation event)
-               (on-frame-select event (:id frame))))))
+                 (on-frame-select event (:id frame))))))
 
         on-double-click
         (mf/use-callback
@@ -105,13 +110,14 @@
 
         on-context-menu
         (mf/use-callback
-         (mf/deps frame)
+         (mf/deps frame workspace-read-only?)
          (fn [bevent]
            (let [event    (.-nativeEvent bevent)
                  position (dom/get-client-position event)]
              (dom/prevent-default event)
              (dom/stop-propagation event)
-             (st/emit! (dw/show-shape-context-menu {:position position :shape frame})))))
+             (when-not workspace-read-only?
+               (st/emit! (dw/show-shape-context-menu {:position position :shape frame}))))))
 
         on-pointer-enter
         (mf/use-callback
@@ -142,7 +148,6 @@
                :width (:width frame)
                :height 20
                :class "workspace-frame-label"
-               ;:transform (dm/str frame-transform " " (text-transform label-pos zoom))
                :style {:fill (when selected? "var(--color-primary-dark)")}
                :visibility (if show-artboard-names? "visible" "hidden")
                :on-mouse-down on-mouse-down
@@ -150,40 +155,48 @@
                :on-context-menu on-context-menu
                :on-pointer-enter on-pointer-enter
                :on-pointer-leave on-pointer-leave}
-        (:name frame)]])))
+        (if show-id?
+          (dm/str (dm/str (:id frame)) " - " (:name frame))
+          (:name frame))]])))
 
 (mf/defc frame-titles
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [objects         (unchecked-get props "objects")
-        zoom            (unchecked-get props "zoom")
-        selected        (or (unchecked-get props "selected") #{})
+  (let [objects              (unchecked-get props "objects")
+        zoom                 (unchecked-get props "zoom")
+        selected             (or (unchecked-get props "selected") #{})
         show-artboard-names? (unchecked-get props "show-artboard-names?")
-        on-frame-enter  (unchecked-get props "on-frame-enter")
-        on-frame-leave  (unchecked-get props "on-frame-leave")
-        on-frame-select (unchecked-get props "on-frame-select")
-        frames          (ctt/get-frames objects)
-        focus           (unchecked-get props "focus")]
+        on-frame-enter       (unchecked-get props "on-frame-enter")
+        on-frame-leave       (unchecked-get props "on-frame-leave")
+        on-frame-select      (unchecked-get props "on-frame-select")
+        shapes               (ctt/get-frames objects)
+        shapes               (if (debug? :shape-titles)
+                               (into (set shapes)
+                                     (map (d/getf objects))
+                                     selected)
+                               shapes)
+        focus                (unchecked-get props "focus")]
 
     [:g.frame-titles
-     (for [frame frames]
+     (for [{:keys [id parent-id] :as shape} shapes]
        (when (and
-              (= (:parent-id frame) uuid/zero)
-              (or (empty? focus)
-                  (contains? focus (:id frame))))
-         [:& frame-title {:key (dm/str "frame-title-" (:id frame))
-                          :frame frame
-                          :selected? (contains? selected (:id frame))
+              (not= id uuid/zero)
+              (or (debug? :shape-titles) (= parent-id uuid/zero))
+              (or (empty? focus) (contains? focus id)))
+         [:& frame-title {:key (dm/str "frame-title-" id)
+                          :frame shape
+                          :selected? (contains? selected id)
                           :zoom zoom
                           :show-artboard-names? show-artboard-names?
+                          :show-id? (debug? :shape-titles)
                           :on-frame-enter on-frame-enter
                           :on-frame-leave on-frame-leave
                           :on-frame-select on-frame-select}]))]))
 
 (mf/defc frame-flow
-  [{:keys [flow frame modifiers selected? zoom on-frame-enter on-frame-leave on-frame-select]}]
-  (let [{:keys [x y]} (gsh/transform-shape frame)
+  [{:keys [flow frame selected? zoom on-frame-enter on-frame-leave on-frame-select]}]
+  (let [{:keys [x y]} frame
         flow-pos (gpt/point x (- y (/ 35 zoom)))
 
         on-mouse-down
@@ -217,9 +230,7 @@
                      :y -15
                      :width 100000
                      :height 24
-                     :transform (str (when (and selected? modifiers)
-                                       (str (:displacement modifiers) " " ))
-                                     (vwu/text-transform flow-pos zoom))}
+                     :transform (vwu/text-transform flow-pos zoom)}
      [:div.flow-badge {:class (dom/classnames :selected selected?)}
       [:div.content {:on-mouse-down on-mouse-down
                      :on-double-click on-double-click
@@ -234,7 +245,6 @@
   (let [flows     (unchecked-get props "flows")
         objects   (unchecked-get props "objects")
         zoom      (unchecked-get props "zoom")
-        modifiers (unchecked-get props "modifiers")
         selected  (or (unchecked-get props "selected") #{})
 
         on-frame-enter  (unchecked-get props "on-frame-enter")
@@ -248,7 +258,6 @@
                          :frame frame
                          :selected? (contains? selected (:id frame))
                          :zoom zoom
-                         :modifiers modifiers
                          :on-frame-enter on-frame-enter
                          :on-frame-leave on-frame-leave
                          :on-frame-select on-frame-select}]))]))

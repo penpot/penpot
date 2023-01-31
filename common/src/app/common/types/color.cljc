@@ -2,17 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.color
   (:require
     [app.common.data :as d]
     [app.common.spec :as us]
     [app.common.text :as txt]
+    [app.common.types.color.generic :as-alias color-generic]
+    [app.common.types.color.gradient :as-alias color-gradient]
+    [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
     [clojure.spec.alpha :as s]))
-
-;; TODO: waiting clojure 1.11 to rename this all :internal.stuff to a
-;; more consistent name.
 
 ;; TODO: maybe define ::color-hex-string with proper hex color spec?
 
@@ -20,66 +20,70 @@
 
 (s/def ::id uuid?)
 
-(s/def :internal.gradient.stop/color string?)
-(s/def :internal.gradient.stop/opacity ::us/safe-number)
-(s/def :internal.gradient.stop/offset ::us/safe-number)
+(s/def ::color-gradient/type #{:linear :radial})
+(s/def ::color-gradient/start-x ::us/safe-number)
+(s/def ::color-gradient/start-y ::us/safe-number)
+(s/def ::color-gradient/end-x ::us/safe-number)
+(s/def ::color-gradient/end-y ::us/safe-number)
+(s/def ::color-gradient/width ::us/safe-number)
 
-(s/def :internal.gradient/type #{:linear :radial})
-(s/def :internal.gradient/start-x ::us/safe-number)
-(s/def :internal.gradient/start-y ::us/safe-number)
-(s/def :internal.gradient/end-x ::us/safe-number)
-(s/def :internal.gradient/end-y ::us/safe-number)
-(s/def :internal.gradient/width ::us/safe-number)
+(s/def ::color-gradient-stop/color ::us/rgb-color-str)
+(s/def ::color-gradient-stop/opacity ::us/safe-number)
+(s/def ::color-gradient-stop/offset ::us/safe-number)
 
-(s/def :internal.gradient/stop
-  (s/keys :req-un [:internal.gradient.stop/color
-                   :internal.gradient.stop/opacity
-                   :internal.gradient.stop/offset]))
+(s/def ::color-gradient/stop
+  (s/keys :req-un [::color-gradient-stop/color
+                   ::color-gradient-stop/opacity
+                   ::color-gradient-stop/offset]))
 
-(s/def :internal.gradient/stops
-  (s/coll-of :internal.gradient/stop :kind vector?))
+(s/def ::color-gradient/stops
+  (s/coll-of ::color-gradient/stop :kind vector?))
 
 (s/def ::gradient
-  (s/keys :req-un [:internal.gradient/type
-                   :internal.gradient/start-x
-                   :internal.gradient/start-y
-                   :internal.gradient/end-x
-                   :internal.gradient/end-y
-                   :internal.gradient/width
-                   :internal.gradient/stops]))
+  (s/keys :req-un [::color-gradient/type
+                   ::color-gradient/start-x
+                   ::color-gradient/start-y
+                   ::color-gradient/end-x
+                   ::color-gradient/end-y
+                   ::color-gradient/width
+                   ::color-gradient/stops]))
 
 ;; --- COLORS
 
-(s/def :internal.color/name string?)
-(s/def :internal.color/path (s/nilable string?))
-(s/def :internal.color/value (s/nilable string?))
-(s/def :internal.color/color (s/nilable string?))
-(s/def :internal.color/opacity (s/nilable ::us/safe-number))
-(s/def :internal.color/gradient (s/nilable ::gradient))
-(s/def :internal.color/ref-id uuid?)
-(s/def :internal.color/ref-file uuid?)
+(s/def ::color-generic/name string?)
+(s/def ::color-generic/path (s/nilable string?))
+(s/def ::color-generic/value (s/nilable string?))
+(s/def ::color-generic/color (s/nilable ::us/rgb-color-str))
+(s/def ::color-generic/opacity (s/nilable ::us/safe-number))
+(s/def ::color-generic/gradient (s/nilable ::gradient))
+(s/def ::color-generic/ref-id uuid?)
+(s/def ::color-generic/ref-file uuid?)
 
 (s/def ::shape-color
   (s/keys :req-un [:us/color
-                   :internal.color/opacity]
-          :opt-un [:internal.color/gradient
-                   :internal.color/ref-id
-                   :internal.color/ref-file]))
+                   ::color-generic/opacity]
+          :opt-un [::color-generic/gradient
+                   ::color-generic/ref-id
+                   ::color-generic/ref-file]))
 
 (s/def ::color
   (s/keys :opt-un [::id
-                   :internal.color/name
-                   :internal.color/path
-                   :internal.color/value
-                   :internal.color/color
-                   :internal.color/opacity
-                   :internal.color/gradient]))
+                   ::color-generic/name
+                   ::color-generic/path
+                   ::color-generic/value
+                   ::color-generic/color
+                   ::color-generic/opacity
+                   ::color-generic/gradient]))
 
 (s/def ::recent-color
-  (s/keys :opt-un [:internal.color/value
-                   :internal.color/color
-                   :internal.color/opacity
-                   :internal.color/gradient]))
+  (s/and
+   (s/keys :opt-un [::color-generic/value
+                    ::color-generic/color
+                    ::color-generic/opacity
+                    ::color-generic/gradient])
+   (fn [o]
+     (or (contains? o :gradient)
+         (contains? o :color)))))
 
 ;; --- Helpers for color in different parts of a shape
 
@@ -159,7 +163,7 @@
   [shape position color opacity gradient]
   (update-in shape [:shadow position :color]
              (fn [shadow-color]
-               (d/without-nils (assoc shadow-color 
+               (d/without-nils (assoc shadow-color
                                       :color color
                                       :opacity opacity
                                       :gradient gradient)))))
@@ -190,7 +194,7 @@
   [shape position color opacity gradient]
   (update-in shape [:grids position :params :color]
              (fn [grid-color]
-               (d/without-nils (assoc grid-color 
+               (d/without-nils (assoc grid-color
                                       :color color
                                       :opacity opacity
                                       :gradient gradient)))))

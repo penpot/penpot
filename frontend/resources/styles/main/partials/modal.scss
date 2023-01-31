@@ -65,6 +65,7 @@
   flex-direction: column;
   width: 448px;
   background-color: $color-white;
+  max-height: 700px;
 
   .modal-header {
     align-items: center;
@@ -102,6 +103,11 @@
       width: 16px;
       height: 16px;
     }
+  }
+
+  .component-list {
+    max-height: 408px;
+    overflow-y: scroll;
   }
 
   .modal-item-element {
@@ -620,6 +626,7 @@
   border-radius: $br-medium;
   height: 664px;
   width: 920px;
+  max-height: 100%;
 
   .modal-content {
     display: flex;
@@ -687,8 +694,6 @@
         padding: $size-4 0;
         border-bottom: 1px solid $color-gray-20;
         position: relative;
-        display: flex;
-        justify-content: space-between;
 
         .item-name {
           color: $color-gray-60;
@@ -704,7 +709,6 @@
 
         .item-button {
           cursor: pointer;
-          position: absolute;
           top: $size-4;
           right: 0;
           border: 1px solid $color-primary;
@@ -713,6 +717,9 @@
           background: $color-primary;
           color: $color-black;
           padding: $size-2;
+          margin-bottom: 0;
+          position: absolute;
+          top: 1rem;
 
           &:hover {
             color: $color-primary;
@@ -736,6 +743,13 @@
         width: 50px;
         margin-bottom: $size-4;
       }
+
+      & svg#loader-pencil {
+        fill: $color-gray-20;
+        height: 75px;
+        width: 75px;
+        margin-bottom: $size-4;
+      }
     }
 
     .libraries-search {
@@ -756,6 +770,11 @@
         margin: 0;
         padding: 0;
         flex-grow: 1;
+
+        &:hover,
+        &:focus {
+          outline: none;
+        }
       }
 
       & .search-icon {
@@ -782,6 +801,7 @@
   background-color: $color-white;
   box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
   display: flex;
+  max-height: 710px;
   min-height: 420px;
   flex-direction: row;
   font-family: "sourcesanspro", sans-serif;
@@ -1176,9 +1196,10 @@
   }
 
   &.right {
-    left: 731px;
-    top: 100px;
+    left: auto;
     color: $color-primary;
+    top: 100px;
+    right: -40px;
   }
 
   &.square {
@@ -1472,6 +1493,13 @@
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 8px;
+        .btn-large {
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .btn-primary {
+          max-width: 250px;
+        }
       }
     }
     .skip-action {
@@ -1844,6 +1872,82 @@
       color: $color-gray-40;
       font-size: $fs16;
       padding: 1rem 0 0 0;
+    }
+  }
+}
+
+.remove-graphics-dialog {
+  .modal-content {
+    padding-top: 16px;
+  }
+
+  h2 {
+    font-size: $fs18;
+  }
+
+  p {
+    font-size: $fs12;
+    color: $color-gray-30;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    &.progress-message {
+      color: $color-info;
+    }
+
+    &.error-message {
+      color: $color-black;
+
+      & svg {
+        width: 16px;
+        height: 16px;
+        fill: $color-danger;
+        margin-right: 0.5rem;
+        position: relative;
+        bottom: -4px;
+        transform: rotate(45deg);
+      }
+    }
+  }
+
+  .close {
+    border: 1px solid $color-gray-30;
+    background: $color-canvas;
+    border-radius: 3px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+
+    &:hover {
+      background: $color-gray-20;
+    }
+  }
+
+  .button-primary {
+    background: $color-primary;
+    border: 1px solid $color-primary;
+    border-radius: 3px;
+    color: $color-black;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+
+    &:hover {
+      background: $color-primary-dark;
+    }
+  }
+
+  .button-secondary {
+    border: 1px solid $color-gray-30;
+    background: $color-white;
+    border-radius: 3px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    margin-right: 8px;
+
+    &:hover {
+      background: $color-gray-20;
     }
   }
 }

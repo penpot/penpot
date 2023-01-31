@@ -87,10 +87,6 @@ msgstr "ഓപ്പൺഐഡി"
 msgid "auth.new-password"
 msgstr "പുതിയൊരു പാസ്‌വേഡ് ചേർക്കുക"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.newsletter-subscription"
-msgstr "പെൻപോട്ട് മെയിലിങ് പട്ടികയുടെ വരിക്കാരാകാൻ ഞാൻ സമ്മതിക്കുന്നു."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.notifications.invalid-token-error"
 msgstr "റിക്കവറി ടോക്കൺ അസാധുവാണ്."
@@ -182,9 +178,6 @@ msgstr "കണ്ണി നേടുക"
 msgid "common.share-link.link-copied-success"
 msgstr "കണ്ണി വിജയകരമായി പകർത്തി"
 
-msgid "common.share-link.link-deleted-success"
-msgstr "കണ്ണി വിജയകരമായി മായിച്ചു"
-
 msgid "common.share-link.permissions-hint"
 msgstr "കണ്ണിയുള്ള ആർക്കും പ്രാപ്യമാകും"
 
@@ -218,9 +211,6 @@ msgstr "നിങ്ങളുടെ പെൻപോട്ട്"
 msgid "dashboard.delete-team"
 msgstr "സംഘത്തെ നീക്കുക"
 
-msgid "dashboard.draft-title"
-msgstr "ഡ്രാഫ്റ്റ്"
-
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "പകർപ്പ്"
@@ -228,10 +218,6 @@ msgstr "പകർപ്പ്"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate-multi"
 msgstr "%s ഫയലുകളുടെ പകർപ്പ്"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "നിങ്ങൾക്കിതുവരെയും ഇവിടെ ഫയലുകളില്ല"
 
 #: src/app/main/ui/dashboard/grid.cljs
 #, markdown
@@ -254,9 +240,6 @@ msgstr "പെൻപോട്ട് %s ഫയലുകൾ എക്സ്പോ�
 #: src/app/main/ui/workspace/header.cljs
 msgid "dashboard.export-shapes"
 msgstr "എക്സ്പോർട്ട്"
-
-msgid "dashboard.export-single"
-msgstr "പെൻപോട്ട് ഫയൽ എക്സ്പോർട്ട് ചെയ്യുക"
 
 msgid "dashboard.export.detail"
 msgstr "* ഘടകങ്ങൾ, ഗ്രാഫിക്സ്, നിറങ്ങൾ അല്ലെങ്കിൽ മുദ്രണകലകൾ എന്നിവ ഉൾപ്പെടാം."

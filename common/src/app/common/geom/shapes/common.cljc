@@ -2,13 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.shapes.common
   (:require
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]))
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.rect :as gpr]))
 
 (defn center-rect
   [{:keys [x y width height]}]
@@ -31,6 +32,22 @@
     (gpt/point (/ (+ minx maxx) 2.0)
                (/ (+ miny maxy) 2.0))))
 
+(defn center-bounds [[a b c d]]
+  (let [xa (:x a)
+        ya (:y a)
+        xb (:x b)
+        yb (:y b)
+        xc (:x c)
+        yc (:y c)
+        xd (:x d)
+        yd (:y d)
+        minx (min xa xb xc xd)
+        miny (min ya yb yc yd)
+        maxx (max xa xb xc xd)
+        maxy (max ya yb yc yd)]
+    (gpt/point (/ (+ minx maxx) 2.0)
+               (/ (+ miny maxy) 2.0))))
+
 (defn center-shape
   "Calculate the center of the shape."
   [shape]
@@ -49,3 +66,8 @@
                       (gpt/transform point (gmt/multiply prev matrix post)))]
        (mapv tr-point points))
      points)))
+
+(defn transform-selrect
+  [{:keys [x1 y1 x2 y2] :as sr} matrix]
+  (let [[c1 c2] (transform-points [(gpt/point x1 y1) (gpt/point x2 y2)] matrix)]
+    (gpr/corners->selrect c1 c2)))

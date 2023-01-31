@@ -65,7 +65,7 @@
          (fn []
            (st/emit! (dw/set-hover-guide id false))
            (swap! state assoc :hover false)))
-        
+
         on-pointer-down
         (mf/use-callback
          (fn [event]
@@ -96,7 +96,7 @@
         (mf/use-callback
          (mf/deps position zoom snap-pixel?)
          (fn [event]
-           
+
            (when-let [_ (mf/ref-val dragging-ref)]
              (let [start-pt (mf/ref-val start-ref)
                    start-pos (mf/ref-val start-pos-ref)
@@ -142,7 +142,7 @@
        :y (- pos (/ guide-active-area 2))
        :width (:width frame)
        :height guide-active-area}
-      
+
       (= axis :x)
       {:x (- pos (/ guide-active-area 2))
        :y (+ (:y vbox) rules-pos)
@@ -278,7 +278,7 @@
                 frame]} (use-guide handle-change-position get-hover-frame zoom guide)
 
         base-frame (or frame hover-frame)
-        frame (gsh/transform-shape (merge base-frame frame-modifier))
+        frame (gsh/transform-shape base-frame frame-modifier)
 
         move-vec (gpt/to-vec (gpt/point (:x base-frame) (:y base-frame))
                              (gpt/point (:x frame) (:y frame)))
@@ -476,7 +476,7 @@
                          :axis :y
                          :get-hover-frame get-hover-frame
                          :disabled-guides? disabled-guides?}]
-     
+
      (for [current guides]
        (when (or (nil? (:frame-id current))
                  (empty? focus)
@@ -485,7 +485,7 @@
                      :guide current
                      :vbox vbox
                      :zoom zoom
-                     :frame-modifier (get modifiers (:frame-id current))
+                     :frame-modifier (get-in modifiers [(:frame-id current) :modifiers])
                      :get-hover-frame get-hover-frame
                      :on-guide-change on-guide-change
                      :disabled-guides? disabled-guides?}]))]))

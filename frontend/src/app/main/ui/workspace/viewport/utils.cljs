@@ -6,30 +6,17 @@
 
 (ns app.main.ui.workspace.viewport.utils
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.cursors :as cur]
-   [app.main.ui.formats :refer [format-number]]
-   [app.util.dom :as dom]))
+   [app.main.ui.formats :refer [format-number]]))
 
 (defn format-viewbox [vbox]
   (dm/str (format-number(:x vbox 0)) " "
           (format-number (:y vbox 0)) " "
           (format-number (:width vbox 0)) " "
           (format-number (:height vbox 0))))
-
-(defn translate-point-to-viewport [viewport zoom pt]
-  (let [vbox     (.. ^js viewport -viewBox -baseVal)
-        brect    (dom/get-bounding-rect viewport)
-        brect    (gpt/point (d/parse-integer (:left brect))
-                            (d/parse-integer (:top brect)))
-        box      (gpt/point (.-x vbox) (.-y vbox))
-        zoom     (gpt/point zoom)]
-    (-> (gpt/subtract pt brect)
-        (gpt/divide zoom)
-        (gpt/add box))))
 
 (defn get-cursor [cursor]
   (case cursor
@@ -44,7 +31,7 @@
     :duplicate cur/duplicate
     :zoom cur/zoom
     :zoom-in cur/zoom-in
-    :zooom-out cur/zoom-out
+    :zoom-out cur/zoom-out
     cur/pointer-inner))
 
 ;; Ensure that the label has always the same font
@@ -53,11 +40,9 @@
 (defn text-transform
   [{:keys [x y]} zoom]
   (let [inv-zoom (/ 1 zoom)]
-    (str
-     "scale(" inv-zoom ", " inv-zoom ") "
-     "translate(" (* zoom x) ", " (* zoom y) ")")))
+    (dm/fmt "scale(%, %) translate(%, %)" inv-zoom inv-zoom (* zoom x) (* zoom y))))
 
-(defn title-transform [frame zoom]
-  (let [frame-transform (gsh/transform-str frame {:no-flip true})
-        label-pos (gpt/point (:x frame) (- (:y frame) (/ 10 zoom)))]
-    (dm/str frame-transform " " (text-transform label-pos zoom))))
+(defn title-transform [{:keys [selrect] :as shape} zoom]
+  (let [transform (gsh/transform-str shape {:no-flip true})
+        label-pos (gpt/point (:x selrect) (- (:y selrect) (/ 10 zoom)))]
+    (dm/str transform " " (text-transform label-pos zoom))))

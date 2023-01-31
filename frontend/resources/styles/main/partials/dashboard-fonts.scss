@@ -132,6 +132,7 @@
     .options {
       display: flex;
       justify-content: flex-end;
+      min-width: 180px;
 
       .icon {
         width: $size-5;
@@ -140,6 +141,12 @@
         margin-left: 10px;
         justify-content: center;
         align-items: center;
+        &.failure {
+          margin-right: 10px;
+          svg {
+            fill: $color-warning;
+          }
+        }
         svg {
           width: 16px;
           height: 16px;
@@ -171,7 +178,6 @@
 
   .dashboard-fonts-hero {
     font-size: $fs14;
-
     padding: $size-6;
     background-color: $color-white;
     margin-top: $size-6;
@@ -179,17 +185,29 @@
     justify-content: space-between;
 
     .banner {
-      background-color: unset;
-
-      display: flex;
-
+      background-color: $color-info-lighter;
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      &:not(:last-child) {
+        margin-bottom: 10px;
+      }
       .icon {
         display: flex;
-        align-items: center;
-        padding-left: 0px;
-        padding-right: 10px;
+        align-items: start;
+        justify-content: center;
+        padding-top: 10px;
+        background-color: $color-info;
         svg {
-          fill: $color-info;
+          fill: $color-white;
+        }
+      }
+      .content {
+        margin: 10px;
+      }
+      &.warning {
+        background-color: $color-warning-lighter;
+        .icon {
+          background-color: $color-warning;
         }
       }
     }

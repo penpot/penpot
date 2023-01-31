@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.path.edition
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
    [app.common.path.commands :as upc]
@@ -35,8 +36,8 @@
       (let [content (st/get-path state :content)
             modifiers (helpers/move-handler-modifiers content index prefix false match-opposite? dx dy)
             [cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
-            point (gpt/point (+ (get-in content [index :params cx]) dx)
-                             (+ (get-in content [index :params cy]) dy))]
+            point (gpt/point (+ (dm/get-in content [index :params cx]) dx)
+                             (+ (dm/get-in content [index :params cy]) dy))]
 
         (-> state
             (update-in [:workspace-local :edit-path id :content-modifiers] merge modifiers)
@@ -51,7 +52,7 @@
             id (st/get-path-id state)
             page-id (:current-page-id state)
             shape (st/get-path state)
-            content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
+            content-modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers])
 
             content (:content shape)
             new-content (upc/apply-content-modifiers content content-modifiers)
@@ -98,7 +99,7 @@
       (let [id (st/get-path-id state)
             content (st/get-path state :content)
             modifiers-reducer (partial modify-content-point content move-modifier)
-            content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers] {})
+            content-modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers] {})
             content-modifiers (->> points
                                    (reduce modifiers-reducer content-modifiers))]
 
@@ -115,9 +116,9 @@
 
             modifiers-reducer (partial modify-content-point content delta)
 
-            points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+            points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
 
-            modifiers (get-in state [:workspace-local :edit-path id :content-modifiers] {})
+            modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers] {})
             modifiers (->> points
                            (reduce modifiers-reducer modifiers))]
 
@@ -132,8 +133,8 @@
   (ptk/reify ::start-move-path-point
     ptk/WatchEvent
     (watch [_ state _]
-      (let [id (get-in state [:workspace-local :edition])
-            selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+      (let [id (dm/get-in state [:workspace-local :edition])
+            selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
             selected? (contains? selected-points position)]
         (streams/drag-stream
          (rx/of
@@ -148,10 +149,9 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (->> stream (rx/filter ms/mouse-up?))
-            id (get-in state [:workspace-local :edition])
-            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
+            id (dm/get-in state [:workspace-local :edition])
 
-            selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+            selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
 
             content (st/get-path state :content)
             points (upg/content->points content)]
@@ -159,7 +159,7 @@
         (rx/concat
          ;; This stream checks the consecutive mouse positions to do the dragging
          (->> points
-              (streams/move-points-stream snap-toggled start-position selected-points)
+              (streams/move-points-stream start-position selected-points)
               (rx/map #(move-selected-path-point start-position %))
               (rx/take-until stopper))
          (rx/of (apply-content-modifiers)))))))
@@ -178,7 +178,7 @@
   (ptk/reify ::finish-move-selected
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
+      (let [id (dm/get-in state [:workspace-local :edition])]
         (-> state
             (update-in [:workspace-local :edit-path id] dissoc :current-move))))))
 
@@ -192,8 +192,8 @@
 
       ptk/UpdateEvent
       (update [_ state]
-        (let [id (get-in state [:workspace-local :edition])
-              current-move (get-in state [:workspace-local :edit-path id :current-move])]
+        (let [id (dm/get-in state [:workspace-local :edition])
+              current-move (dm/get-in state [:workspace-local :edit-path id :current-move])]
           (if (nil? current-move)
             (-> state
                 (assoc-in [:workspace-local :edit-path id :moving-nodes] true)
@@ -202,11 +202,11 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [id (get-in state [:workspace-local :edition])
-              current-move (get-in state [:workspace-local :edit-path id :current-move])]
+        (let [id (dm/get-in state [:workspace-local :edition])
+              current-move (dm/get-in state [:workspace-local :edit-path id :current-move])]
           ;; id can be null if we just selected the tool but we didn't start drawing
           (if (and id (= same-event current-move))
-            (let [points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+            (let [points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
 
                   move-events (->> stream
                                    (rx/filter (ptk/type? ::move-selected))
@@ -238,13 +238,13 @@
   (ptk/reify ::start-move-handler
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [id (get-in state [:workspace-local :edition])
+      (let [id (dm/get-in state [:workspace-local :edition])
             cx (d/prefix-keyword prefix :x)
             cy (d/prefix-keyword prefix :y)
             start-point @ms/mouse-position
-            modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
-            start-delta-x (get-in modifiers [index cx] 0)
-            start-delta-y (get-in modifiers [index cy] 0)
+            modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers])
+            start-delta-x (dm/get-in modifiers [index cx] 0)
+            start-delta-y (dm/get-in modifiers [index cy] 0)
 
             content (st/get-path state :content)
             points (upg/content->points content)
@@ -253,14 +253,12 @@
             handler (-> content (get index) (upc/get-handler prefix))
 
             [op-idx op-prefix] (upc/opposite-index content index prefix)
-            opposite (upc/handler->point content op-idx op-prefix)
-
-            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])]
+            opposite (upc/handler->point content op-idx op-prefix)]
 
         (streams/drag-stream
          (rx/concat
           (rx/of (dch/update-shapes [id] upsp/convert-to-path))
-          (->> (streams/move-handler-stream snap-toggled start-point point handler opposite points)
+          (->> (streams/move-handler-stream start-point point handler opposite points)
                (rx/take-until (->> stream (rx/filter #(or (ms/mouse-up? %)
                                                           (streams/finish-edition? %)))))
                (rx/map
@@ -283,36 +281,42 @@
   (ptk/reify ::start-path-edit
     ptk/UpdateEvent
     (update [_ state]
-      (let [edit-path (get-in state [:workspace-local :edit-path id])
+      (let [edit-path (dm/get-in state [:workspace-local :edit-path id])
             content (st/get-path state :content)
             state (st/set-content state (ups/close-subpaths content))]
         (cond-> state
           (or (not edit-path) (= :draw (:edit-mode edit-path)))
           (assoc-in [:workspace-local :edit-path id] {:edit-mode :move
                                                       :selected #{}
-                                                      :snap-toggled true})
+                                                      :snap-toggled false})
 
           (and (some? edit-path) (= :move (:edit-mode edit-path)))
           (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [mode (get-in state [:workspace-local :edit-path id :edit-mode])]
+      (let [mode (dm/get-in state [:workspace-local :edit-path id :edit-mode])
+            stopper (->> stream
+                         (rx/filter #(or
+                                      (= (ptk/type %) ::dwe/clear-edition-mode)
+                                      (= (ptk/type %) ::start-path-edit))))
+            interrupt (->> stream (rx/filter #(= % :interrupt)) (rx/take 1))]
         (rx/concat
          (rx/of (undo/start-path-undo))
          (rx/of (drawing/change-edit-mode mode))
-         (->> stream
-              (rx/take-until (->> stream (rx/filter (ptk/type? ::start-path-edit))))
-              (rx/filter #(= % :interrupt))
-              (rx/take 1)
-              (rx/map #(stop-path-edit))))))))
+         (->> interrupt
+              (rx/map #(stop-path-edit id))
+              (rx/take-until stopper)))))))
 
-(defn stop-path-edit []
+(defn stop-path-edit [id]
   (ptk/reify ::stop-path-edit
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
-        (update state :workspace-local dissoc :edit-path id)))))
+      (update state :workspace-local dissoc :edit-path id))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (ptk/data-event :layout/update [id])))))
 
 (defn split-segments
   [{:keys [from-p to-p t]}]

@@ -2,21 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.file
   (:require
     [app.common.data :as d]
+    [app.common.data.macros :as dm]
+    [app.common.files.features :as ffeat]
     [app.common.geom.point :as gpt]
     [app.common.geom.shapes :as gsh]
     [app.common.pages.common :refer [file-version]]
     [app.common.pages.helpers :as cph]
-    [app.common.spec :as us]
     [app.common.types.color :as ctc]
     [app.common.types.colors-list :as ctcl]
     [app.common.types.component :as ctk]
     [app.common.types.components-list :as ctkl]
     [app.common.types.container :as ctn]
+    [app.common.types.file.media-object :as ctfm]
     [app.common.types.page :as ctp]
     [app.common.types.pages-list :as ctpl]
     [app.common.types.shape-tree :as ctst]
@@ -28,24 +30,6 @@
 
 ;; Specs
 
-(s/def :internal.media-object/name string?)
-(s/def :internal.media-object/width ::us/safe-integer)
-(s/def :internal.media-object/height ::us/safe-integer)
-(s/def :internal.media-object/mtype string?)
-
-;; NOTE: This is marked as nilable for backward compatibility, but
-;; right now is just exists or not exists. We can thin in a gradual
-;; migration and then mark it as not nilable.
-(s/def :internal.media-object/path (s/nilable string?))
-
-(s/def ::media-object
-  (s/keys :req-un [::id
-                   ::name
-                   :internal.media-object/width
-                   :internal.media-object/height
-                   :internal.media-object/mtype]
-          :opt-un [:internal.media-object/path]))
-
 (s/def ::colors
   (s/map-of uuid? ::ctc/color))
 
@@ -53,24 +37,25 @@
   (s/coll-of ::ctc/recent-color :kind vector?))
 
 (s/def ::typographies
-  (s/map-of uuid? :ctst/typography))
+  (s/map-of uuid? ::cty/typography))
 
 (s/def ::pages
   (s/coll-of uuid? :kind vector?))
 
 (s/def ::media
-  (s/map-of uuid? ::media-object))
+  (s/map-of uuid? ::ctfm/media-object))
 
 (s/def ::pages-index
   (s/map-of uuid? ::ctp/page))
 
 (s/def ::components
-  (s/map-of uuid? ::ctp/container))
+  (s/map-of uuid? ::ctn/container))
 
 (s/def ::data
   (s/keys :req-un [::pages-index
                    ::pages]
           :opt-un [::colors
+                   ::components
                    ::recent-colors
                    ::typographies
                    ::media]))
@@ -83,16 +68,19 @@
    :pages-index {}})
 
 (defn make-file-data
-  ([file-id components-v2]
-   (make-file-data file-id (uuid/next) components-v2))
+  ([file-id]
+   (make-file-data file-id (uuid/next)))
 
-  ([file-id page-id components-v2]
-   (let [page (ctp/make-empty-page page-id "Page-1")]
+  ([file-id page-id]
+   (let [page (when (some? page-id)
+                (ctp/make-empty-page page-id "Page-1"))]
      (cond-> (-> empty-file-data
-                 (assoc :id file-id)
-                 (ctpl/add-page page))
+                 (assoc :id file-id))
 
-       components-v2
+       (some? page-id)
+       (ctpl/add-page page)
+
+       (contains? ffeat/*current* "components/v2")
        (assoc-in [:options :components-v2] true)))))
 
 ;; Helpers
@@ -126,7 +114,7 @@
   ([libraries component-id]
    (some #(ctkl/get-component (:data %) component-id) (vals libraries)))
   ([libraries library-id component-id]
-   (ctkl/get-component (get-in libraries [library-id :data]) component-id)))
+   (ctkl/get-component (dm/get-in libraries [library-id :data]) component-id)))
 
 (defn delete-component
   "Delete a component and store it to be able to be recovered later.
@@ -136,7 +124,7 @@
    (delete-component file-data component-id false))
 
   ([file-data component-id skip-undelete?]
-   (let [components-v2 (get-in file-data [:options :components-v2])
+   (let [components-v2 (dm/get-in file-data [:options :components-v2])
 
          add-to-deleted-components
          (fn [file-data]
@@ -162,12 +150,12 @@
 (defn get-deleted-component
   "Retrieve a component that has been deleted but still is in the safe store."
   [file-data component-id]
-  (get-in file-data [:deleted-components component-id]))
+  (dm/get-in file-data [:deleted-components component-id]))
 
 (defn restore-component
   "Recover a deleted component and put it again in place."
   [file-data component-id]
-  (let [component (-> (get-in file-data [:deleted-components component-id])
+  (let [component (-> (dm/get-in file-data [:deleted-components component-id])
                       (dissoc :main-instance-x :main-instance-y))]
     (cond-> file-data
       (some? component)
@@ -223,6 +211,18 @@
                   [[asset instances]])))
             assets-seq)))
 
+(defn used-in?
+  "Checks if a specific asset is used in a given file (by any shape in its pages or in
+  the components of the local library)."
+  [file-data library-id asset asset-type]
+  (letfn [(used-in-shape? [shape]
+            (uses-asset? asset-type shape library-id asset))
+
+          (used-in-container? [container]
+            (some used-in-shape? (ctn/shapes-seq container)))]
+
+    (some used-in-container? (containers-seq file-data))))
+
 (defn get-or-add-library-page
   "If exists a page named 'Library backup', get the id and calculate the position to start
   adding new components. If not, create it and start at (0, 0)."
@@ -248,7 +248,7 @@
   [file-data]
   (let [components (ctkl/components-seq file-data)]
     (if (or (empty? components)
-            (get-in file-data [:options :components-v2]))
+            (dm/get-in file-data [:options :components-v2]))
       (assoc-in file-data [:options :components-v2] true)
       (let [grid-gap 50
 
@@ -348,12 +348,12 @@
                 copy-component
                 (fn [file-data]
                   (ctkl/add-component file-data
-                                      (:id component)
-                                      (:name component)
-                                      (:path component)
-                                      (:id main-instance-shape)
-                                      page-id
-                                      (vals (:objects component))))
+                                      {:id (:id component)
+                                       :name (:name component)
+                                       :path (:path component)
+                                       :main-instance-id (:id main-instance-shape)
+                                       :main-instance-page page-id
+                                       :shapes (vals (:objects component))}))
 
                 ; Change all existing instances to point to the local file
                 remap-instances
@@ -506,10 +506,10 @@
                        component-file    (when component-file-id (get libraries component-file-id nil))
                        component         (when component-id
                                            (if component-file
-                                             (get-in component-file [:data :components component-id])
+                                             (dm/get-in component-file [:data :components component-id])
                                              (get components component-id)))
                        component-shape   (when (and component (:shape-ref shape))
-                                           (get-in component [:objects (:shape-ref shape)]))]
+                                           (dm/get-in component [:objects (:shape-ref shape)]))]
                    (str/format " %s--> %s%s%s"
                                (cond (:component-root? shape) "#"
                                      (:component-id shape) "@"
@@ -524,7 +524,7 @@
                                        component-file-id (:component-file shape)
                                        component-file    (when component-file-id (get libraries component-file-id nil))
                                        component         (if component-file
-                                                           (get-in component-file [:data :components component-id])
+                                                           (dm/get-in component-file [:data :components component-id])
                                                            (get components component-id))]
                                    (str/format " (%s%s)"
                                                (when component-file (str/format "<%s> " (:name component-file)))

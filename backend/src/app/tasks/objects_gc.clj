@@ -6,7 +6,7 @@
 
 (ns app.tasks.objects-gc
   "A maintenance task that performs a general purpose garbage collection
-  of deleted objects."
+  of deleted or unreachable objects."
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
@@ -16,154 +16,247 @@
    [app.storage :as sto]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [integrant.core :as ig]))
 
-(def target-tables
-  ["profile"
-   "team"
-   "file"
-   "project"
-   "team_font_variant"])
-
-(defmulti delete-objects :table)
-
-(def sql:delete-objects
-  "with deleted as (
-    select id from %(table)s
-     where deleted_at is not null
-       and deleted_at < now() - ?::interval
-     order by deleted_at
-     limit %(limit)s
-   )
-   delete from %(table)s
-    where id in (select id from deleted)
-   returning *")
-
-;; --- IMPL: generic object deletion
-
-(defmethod delete-objects :default
-  [{:keys [conn min-age table] :as cfg}]
-  (let [sql     (str/fmt sql:delete-objects
-                         {:table table :limit 50})
-        result  (db/exec! conn [sql min-age])]
-
-    (doseq [{:keys [id] :as item} result]
-      (l/debug :hint "permanently delete object" :table table :id id))
-
-    (count result)))
-
-;; --- IMPL: file deletion
-
-(defmethod delete-objects "file"
-  [{:keys [conn min-age table] :as cfg}]
-  (let [sql    (str/fmt sql:delete-objects {:table table :limit 50})
-        result (db/exec! conn [sql min-age])]
-
-    (doseq [{:keys [id] :as item} result]
-      (l/debug :hint "permanently delete object" :table table :id id))
-
-    (count result)))
-
-;; --- IMPL: team-font-variant deletion
-
-(defmethod delete-objects "team_font_variant"
-  [{:keys [conn min-age storage table] :as cfg}]
-  (let [sql     (str/fmt sql:delete-objects {:table table :limit 50})
-        fonts   (db/exec! conn [sql min-age])
-        storage (media/configure-assets-storage storage conn)]
-    (doseq [{:keys [id] :as font} fonts]
-      (l/debug :hint "permanently delete object" :table table :id id)
-      (some->> (:woff1-file-id font) (sto/touch-object! storage) deref)
-      (some->> (:woff2-file-id font) (sto/touch-object! storage) deref)
-      (some->> (:otf-file-id font)   (sto/touch-object! storage) deref)
-      (some->> (:ttf-file-id font)   (sto/touch-object! storage) deref))
-    (count fonts)))
-
-;; --- IMPL: team deletion
-
-(defmethod delete-objects "team"
-  [{:keys [conn min-age storage table] :as cfg}]
-  (let [sql     (str/fmt sql:delete-objects {:table table :limit 50})
-        teams   (db/exec! conn [sql min-age])
-        storage (media/configure-assets-storage storage conn)]
-
-    (doseq [{:keys [id] :as team} teams]
-      (l/debug :hint "permanently delete object" :table table :id id)
-      (some->> (:photo-id team) (sto/touch-object! storage) deref))
-
-    (count teams)))
-
-;; --- IMPL: profile deletion
-
-(def sql:retrieve-deleted-profiles
-  "select id, photo_id from profile
-    where deleted_at is not null
-      and deleted_at < now() - ?::interval
-    order by deleted_at
-    limit ?
-    for update")
-
-(defmethod delete-objects "profile"
-  [{:keys [conn min-age storage table] :as cfg}]
-  (let [profiles (db/exec! conn [sql:retrieve-deleted-profiles min-age 50])
-        storage  (media/configure-assets-storage storage conn)]
-
-    (doseq [{:keys [id] :as profile} profiles]
-      (l/debug :hint "permanently delete object" :table table :id id)
-
-      ;; Mark as deleted the storage object related with the photo-id
-      ;; field.
-      (some->> (:photo-id profile) (sto/touch-object! storage) deref)
-
-      ;; And finally, permanently delete the profile.
-      (db/delete! conn :profile {:id id}))
-
-    (count profiles)))
-
-;; --- INIT
-
-(defn- process-table
-  [{:keys [table] :as cfg}]
-  (loop [n 0]
-    (let [res (delete-objects cfg)]
-      (if (pos? res)
-        (recur (+ n res))
-        (do
-          (l/debug :hint "delete summary" :table table :total n)
-          n)))))
+(declare ^:private delete-profiles!)
+(declare ^:private delete-teams!)
+(declare ^:private delete-fonts!)
+(declare ^:private delete-projects!)
+(declare ^:private delete-files!)
+(declare ^:private delete-orphan-teams!)
 
 (s/def ::min-age ::dt/duration)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::sto/storage]
-          :opt-un [::min-age]))
+  (s/keys :req [::db/pool ::sto/storage]
+          :opt [::min-age]))
 
 (defmethod ig/prep-key ::handler
   [_ cfg]
-  (merge {:min-age cf/deletion-delay}
+  (merge {::min-age cf/deletion-delay}
          (d/without-nils cfg)))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [pool] :as cfg}]
+  [_ {:keys [::db/pool ::sto/storage] :as cfg}]
   (fn [params]
     (db/with-atomic [conn pool]
-      (let [min-age (or (:min-age params) (:min-age cfg))
+      (let [min-age (or (:min-age params) (::min-age cfg))
+            _       (l/info :hint "gc started"
+                            :min-age (dt/format-duration min-age)
+                            :rollback? (boolean (:rollback? params)))
+
+            storage (media/configure-assets-storage storage conn)
             cfg     (-> cfg
-                        (assoc :min-age (db/interval min-age))
-                        (assoc :conn conn))]
-        (loop [tables (seq target-tables)
-               total  0]
-          (if-let [table (first tables)]
-            (recur (rest tables)
-                   (+ total (process-table (assoc cfg :table table))))
-            (do
-              (l/info :hint "objects gc finished succesfully"
-                      :min-age (dt/format-duration min-age)
-                      :total total)
+                        (assoc ::min-age (db/interval min-age))
+                        (assoc ::conn conn)
+                        (assoc ::storage storage))
 
-              (when (:rollback? params)
-                (db/rollback! conn))
+            htotal  (+ (delete-profiles! cfg)
+                       (delete-teams! cfg)
+                       (delete-projects! cfg)
+                       (delete-files! cfg)
+                       (delete-fonts! cfg))
+            stotal  (delete-orphan-teams! cfg)]
 
-              {:processed total})))))))
+        (l/info :hint "gc finished"
+                :deleted htotal
+                :orphans stotal
+                :rollback? (boolean (:rollback? params)))
 
+        (when (:rollback? params)
+          (db/rollback! conn))
+
+        {:processed (+ stotal htotal)}))))
+
+
+(def ^:private sql:get-profiles-chunk
+  "select id, photo_id, created_at from profile
+    where deleted_at is not null
+      and deleted_at < now() - ?::interval
+      and created_at < ?
+    order by created_at desc
+    limit 10
+    for update skip locked")
+
+(defn- delete-profiles!
+  [{:keys [::conn ::min-age ::storage] :as cfg}]
+  (letfn [(get-chunk [cursor]
+            (let [rows (db/exec! conn [sql:get-profiles-chunk min-age cursor])]
+              [(some->> rows peek :created-at) rows]))]
+    (reduce
+     (fn [total {:keys [id photo-id]}]
+       (l/debug :hint "permanently delete profile" :id (str id))
+
+       ;; Mark as deleted the storage object related with the
+       ;; photo-id field.
+       (some->> photo-id (sto/touch-object! storage) deref)
+
+       ;; And finally, permanently delete the profile.
+       (db/delete! conn :profile {:id id})
+
+       (inc total))
+     0
+     (d/iteration get-chunk
+                  :vf second
+                  :kf first
+                  :initk (dt/now)))))
+
+(def ^:private sql:get-teams-chunk
+  "select id, photo_id, created_at from team
+    where deleted_at is not null
+      and deleted_at < now() - ?::interval
+      and created_at < ?
+    order by created_at desc
+    limit 10
+    for update skip locked")
+
+(defn- delete-teams!
+  [{:keys [::conn ::min-age ::storage] :as cfg}]
+  (letfn [(get-chunk [cursor]
+            (let [rows (db/exec! conn [sql:get-teams-chunk min-age cursor])]
+              [(some->> rows peek :created-at) rows]))]
+    (reduce
+     (fn [total {:keys [id photo-id]}]
+       (l/debug :hint "permanently delete team" :id (str id))
+
+       ;; Mark as deleted the storage object related with the
+       ;; photo-id field.
+       (some->> photo-id (sto/touch-object! storage) deref)
+
+       ;; And finally, permanently delete the team.
+       (db/delete! conn :team {:id id})
+
+       (inc total))
+     0
+     (d/iteration get-chunk
+                  :vf second
+                  :kf first
+                  :initk (dt/now)))))
+
+
+(def ^:private sql:get-orphan-teams-chunk
+  "select t.id, t.created_at
+     from team as t
+     left join team_profile_rel as tpr
+            on (t.id = tpr.team_id)
+    where tpr.profile_id is null
+      and t.created_at < ?
+    order by t.created_at desc
+    limit 10
+      for update of t skip locked;")
+
+(defn- delete-orphan-teams!
+  "Find all orphan teams (with no members and mark them for
+  deletion (soft delete)."
+  [{:keys [::conn] :as cfg}]
+  (letfn [(get-chunk [cursor]
+            (let [rows (db/exec! conn [sql:get-orphan-teams-chunk cursor])]
+              [(some->> rows peek :created-at) rows]))]
+    (reduce
+     (fn [total {:keys [id]}]
+       (l/debug :hint "mark team for deletion" :id (str id))
+
+       ;; And finally, permanently delete the team.
+       (db/update! conn :team
+                   {:deleted-at (dt/now)}
+                   {:id id})
+
+       (inc total))
+     0
+     (d/iteration get-chunk
+                  :vf second
+                  :kf first
+                  :initk (dt/now)))))
+
+(def ^:private sql:get-fonts-chunk
+  "select id, created_at, woff1_file_id, woff2_file_id, otf_file_id, ttf_file_id
+     from team_font_variant
+    where deleted_at is not null
+      and deleted_at < now() - ?::interval
+      and created_at < ?
+    order by created_at desc
+    limit 10
+    for update skip locked")
+
+(defn- delete-fonts!
+  [{:keys [::conn ::min-age ::storage] :as cfg}]
+  (letfn [(get-chunk [cursor]
+            (let [rows (db/exec! conn [sql:get-fonts-chunk min-age cursor])]
+              [(some->> rows peek :created-at) rows]))]
+    (reduce
+     (fn [total {:keys [id] :as font}]
+       (l/debug :hint "permanently delete font variant" :id (str id))
+
+       ;; Mark as deleted the all related storage objects
+       (some->> (:woff1-file-id font) (sto/touch-object! storage) deref)
+       (some->> (:woff2-file-id font) (sto/touch-object! storage) deref)
+       (some->> (:otf-file-id font)   (sto/touch-object! storage) deref)
+       (some->> (:ttf-file-id font)   (sto/touch-object! storage) deref)
+
+       ;; And finally, permanently delete the team font variant
+       (db/delete! conn :team-font-variant {:id id})
+
+       (inc total))
+     0
+     (d/iteration get-chunk
+                  :vf second
+                  :kf first
+                  :initk (dt/now)))))
+
+(def ^:private sql:get-projects-chunk
+  "select id, created_at
+     from project
+    where deleted_at is not null
+      and deleted_at < now() - ?::interval
+      and created_at < ?
+    order by created_at desc
+    limit 10
+    for update skip locked")
+
+(defn- delete-projects!
+  [{:keys [::conn ::min-age] :as cfg}]
+  (letfn [(get-chunk [cursor]
+            (let [rows (db/exec! conn [sql:get-projects-chunk min-age cursor])]
+              [(some->> rows peek :created-at) rows]))]
+    (reduce
+     (fn [total {:keys [id]}]
+       (l/debug :hint "permanently delete project" :id (str id))
+
+       ;; And finally, permanently delete the project.
+       (db/delete! conn :project {:id id})
+
+       (inc total))
+     0
+     (d/iteration get-chunk
+                  :vf second
+                  :kf first
+                  :initk (dt/now)))))
+
+(def ^:private sql:get-files-chunk
+  "select id, created_at
+     from file
+    where deleted_at is not null
+      and deleted_at < now() - ?::interval
+      and created_at < ?
+    order by created_at desc
+    limit 10
+    for update skip locked")
+
+(defn- delete-files!
+  [{:keys [::conn ::min-age] :as cfg}]
+  (letfn [(get-chunk [cursor]
+            (let [rows (db/exec! conn [sql:get-files-chunk min-age cursor])]
+              [(some->> rows peek :created-at) rows]))]
+    (reduce
+     (fn [total {:keys [id]}]
+       (l/debug :hint "permanently delete file" :id (str id))
+
+       ;; And finally, permanently delete the file.
+       (db/delete! conn :file {:id id})
+
+       (inc total))
+     0
+     (d/iteration get-chunk
+                  :vf second
+                  :kf first
+                  :initk (dt/now)))))

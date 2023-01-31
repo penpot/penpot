@@ -13,12 +13,15 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.loggers.webhooks :as-alias webhooks]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
+   [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams :refer [create-project-role create-project]]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.mutations.projects :refer [create-project-role create-project]]
    [app.rpc.queries.projects :as proj]
-   [app.rpc.queries.teams :as teams]
    [app.util.blob :as blob]
+   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -29,22 +32,23 @@
 (declare duplicate-file)
 
 (s/def ::id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::name ::us/string)
 
 (s/def ::duplicate-file
-  (s/keys :req-un [::profile-id ::file-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::file-id]
           :opt-un [::name]))
 
 (sv/defmethod ::duplicate-file
   "Duplicate a single file in the same team."
-  {::doc/added "1.16"}
-  [{:keys [pool] :as cfg} params]
+  {::doc/added "1.16"
+   ::webhooks/event? true}
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (duplicate-file conn params)))
+    (duplicate-file conn (assoc params :profile-id profile-id))))
 
 (defn- remap-id
   [item index key]
@@ -53,7 +57,7 @@
     (assoc key (get index (get item key) (get item key)))))
 
 (defn- process-file
-  [file index]
+  [conn {:keys [id] :as file} index]
   (letfn [(process-form [form]
             (cond-> form
               ;; Relink library items
@@ -97,18 +101,25 @@
                              res)))
                        media
                        media))]
-
-    (update file :data
-            (fn [data]
-              (-> data
-                  (blob/decode)
-                  (assoc :id (:id file))
-                  (pmg/migrate-data)
-                  (update :pages-index relink-shapes)
-                  (update :components relink-shapes)
-                  (update :media relink-media)
-                  (d/without-nils)
-                  (blob/encode))))))
+    (-> file
+        (update :id #(get index %))
+        (update :data
+                (fn [data]
+                  (binding [pmap/*load-fn* (partial files/load-pointer conn id)
+                            pmap/*tracked* (atom {})]
+                    (let [file-id (get index id)
+                          data    (-> data
+                                      (blob/decode)
+                                      (assoc :id file-id)
+                                      (pmg/migrate-data)
+                                      (update :pages-index relink-shapes)
+                                      (update :components relink-shapes)
+                                      (update :media relink-media)
+                                      (d/without-nils)
+                                      (files/process-pointers pmap/clone)
+                                      (blob/encode))]
+                      (files/persist-pointers! conn file-id)
+                      data)))))))
 
 (def sql:retrieve-used-libraries
   "select flr.*
@@ -125,7 +136,7 @@
       and so.deleted_at is null")
 
 (defn duplicate-file*
-  [conn {:keys [profile-id file index project-id name flibs fmeds]} {:keys [reset-shared-flag] :as opts}]
+  [conn {:keys [profile-id file index project-id name flibs fmeds]} {:keys [reset-shared-flag]}]
   (let [flibs    (or flibs (db/exec! conn [sql:retrieve-used-libraries (:id file)]))
         fmeds    (or fmeds (db/exec! conn [sql:retrieve-used-media-objects (:id file)]))
 
@@ -166,9 +177,9 @@
         file    (-> file
                     (assoc :created-at now)
                     (assoc :modified-at now)
-                    (assoc :ignore-sync-until ignore)
-                    (update :id #(get index %))
-                    (process-file index))]
+                    (assoc :ignore-sync-until ignore))
+
+        file    (process-file conn file index)]
 
     (db/insert! conn :file file)
     (db/insert! conn :file-profile-rel
@@ -194,22 +205,25 @@
     (proj/check-edition-permissions! conn profile-id (:project-id file))
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
     (-> (duplicate-file* conn params {:reset-shared-flag true})
-        (update :data blob/decode))))
+        (update :data blob/decode)
+        (update :features db/decode-pgarray #{}))))
 
 ;; --- COMMAND: Duplicate Project
 
 (declare duplicate-project)
 
 (s/def ::duplicate-project
-  (s/keys :req-un [::profile-id ::project-id]
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::project-id]
           :opt-un [::name]))
 
 (sv/defmethod ::duplicate-project
   "Duplicate an entire project with all the files"
-  {::doc/added "1.16"}
+  {::doc/added "1.16"
+   ::webhooks/event? true}
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (duplicate-project conn params)))
+    (duplicate-project conn (assoc params :profile-id (::rpc/profile-id params)))))
 
 (defn duplicate-project
   [conn {:keys [profile-id project-id name] :as params}]
@@ -237,9 +251,7 @@
     ;; create the duplicated project and assign the current profile as
     ;; a project owner
     (create-project conn project)
-    (create-project-role conn {:project-id (:id project)
-                               :profile-id profile-id
-                               :role :owner})
+    (create-project-role conn profile-id (:id project) :owner)
 
     ;; duplicate all files
     (let [index  (reduce #(assoc %1 (:id %2) (uuid/next)) {} files)
@@ -310,15 +322,16 @@
 
 (s/def ::ids (s/every ::us/uuid :kind set?))
 (s/def ::move-files
-  (s/keys :req-un [::profile-id ::ids ::project-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::ids ::project-id]))
 
 (sv/defmethod ::move-files
   "Move a set of files from one project to other."
-  {::doc/added "1.16"}
-  [{:keys [pool] :as cfg} params]
+  {::doc/added "1.16"
+   ::webhooks/event? true}
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (move-files conn params)))
-
+    (move-files conn (assoc params :profile-id profile-id))))
 
 ;; --- COMMAND: Move project
 
@@ -349,14 +362,16 @@
 
 
 (s/def ::move-project
-  (s/keys :req-un [::profile-id ::team-id ::project-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::team-id ::project-id]))
 
 (sv/defmethod ::move-project
   "Move projects between teams."
-  {::doc/added "1.16"}
-  [{:keys [pool] :as cfg} params]
+  {::doc/added "1.16"
+   ::webhooks/event? true}
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (move-project conn params)))
+    (move-project conn (assoc params :profile-id profile-id))))
 
 ;; --- COMMAND: Clone Template
 
@@ -364,15 +379,17 @@
 
 (s/def ::template-id ::us/not-empty-string)
 (s/def ::clone-template
-  (s/keys :req-un [::profile-id ::project-id ::template-id]))
+  (s/keys :req [::rpc/profile-id]
+          :req-un [::project-id ::template-id]))
 
 (sv/defmethod ::clone-template
   "Clone into the specified project the template by its id."
-  {::doc/added "1.16"}
-  [{:keys [pool] :as cfg} params]
+  {::doc/added "1.16"
+   ::webhooks/event? true}
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (-> (assoc cfg :conn conn)
-        (clone-template params))))
+        (clone-template (assoc params :profile-id profile-id)))))
 
 (defn- clone-template
   [{:keys [conn templates] :as cfg} {:keys [profile-id template-id project-id]}]

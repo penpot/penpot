@@ -6,6 +6,8 @@
 
 (ns app.main.ui.workspace.shapes.path.editor
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gsp]
    [app.common.path.commands :as upc]
@@ -183,8 +185,9 @@
         matches      (concat (second (:x snap-matches)) (second (:y snap-matches)))]
 
     [:g.snap-paths
-     (for [[from to] matches]
-       [:line {:x1 (:x from)
+     (for [[idx [from to]] (d/enumerate matches)]
+       [:line {:key (dm/str "snap-" idx "-" from "-" to)
+               :x1 (:x from)
                :y1 (:y from)
                :x2 (:x to)
                :y2 (:y to)
@@ -308,7 +311,7 @@
                         :start-path? start-p?
                         :zoom zoom}]])
 
-     (for [position points]
+     (for [[index position] (d/enumerate points)]
        (let [show-handler?
              (fn [[index prefix]]
                (let [handler-position (upc/handler->point content index prefix)]
@@ -322,16 +325,17 @@
              pos-handlers (->> pos-handlers (filter show-handler?))
              curve? (boolean (seq pos-handlers))]
 
-         [:g.path-node
+         [:g.path-node {:key (dm/str index "-" (:x position) "-" (:y position))}
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
-           (for [[index prefix] pos-handlers]
-             (let [handler-position (upc/handler->point content index prefix)
-                   handler-hover? (contains? hover-handlers [index prefix])
+           (for [[hindex prefix] pos-handlers]
+             (let [handler-position (upc/handler->point content hindex prefix)
+                   handler-hover? (contains? hover-handlers [hindex prefix])
                    moving-handler? (= handler-position moving-handler)
                    matching-handler? (matching-handler? content position pos-handlers)]
-               [:& path-handler {:point position
+               [:& path-handler {:key (dm/str (dm/str index "-" (:x position) "-" (:y position)) "-" hindex "-" (d/name prefix))
+                                 :point position
                                  :handler handler-position
-                                 :index index
+                                 :index hindex
                                  :prefix prefix
                                  :zoom zoom
                                  :hover? handler-hover?

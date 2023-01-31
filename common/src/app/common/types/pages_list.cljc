@@ -2,32 +2,29 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.pages-list
   (:require
-   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]))
 
 (defn get-page
   [file-data id]
-  (get-in file-data [:pages-index id]))
+  (dm/get-in file-data [:pages-index id]))
 
 (defn add-page
-  [file-data page]
-  (let [index (:index page)
-        page (dissoc page :index)
-
-        ; It's legitimate to add a page that is already there,
-        ; for example in an idempotent changes operation.
-        add-if-not-exists (fn [pages id]
-                            (cond
-                              (d/seek #(= % id) pages) pages
-                              (nil? index)             (conj pages id)
-                              :else                    (cph/insert-at-index pages index [id])))]
-    (-> file-data
-        (update :pages add-if-not-exists (:id page))
-        (update :pages-index assoc (:id page) page))))
+  [file-data {:keys [id index] :as page}]
+  (-> file-data
+      ;; It's legitimate to add a page that is already there, for
+      ;; example in an idempotent changes operation.
+      (update :pages (fn [pages]
+                       (let [exists? (some (partial = id) pages)]
+                         (cond
+                           exists?      pages
+                           (nil? index) (conj pages id)
+                           :else        (cph/insert-at-index pages index [id])))))
+      (update :pages-index assoc id (dissoc page :index))))
 
 (defn pages-seq
   [file-data]
@@ -42,4 +39,3 @@
   (-> file-data
       (update :pages (fn [pages] (filterv #(not= % page-id) pages)))
       (update :pages-index dissoc page-id)))
-

@@ -39,7 +39,7 @@
       [:& text/text-shape {:shape shape}]]
 
      (when (and (debug? :text-outline) (d/not-empty? (:position-data shape)))
-       [:g {:transform (gsh/transform-str shape {:no-flip true})}
+       [:g {:transform (gsh/transform-str shape)}
         (let [bounding-box (gsht/position-data-selrect shape)]
           [:rect {
                   :x (:x bounding-box)
@@ -58,7 +58,7 @@
                      :height height
                      :style {:fill "none" :stroke "red"}}]
 
-             ;; Text baselineazo
+             ;; Text baseline
              [:line {:x1 (mth/round x)
                      :y1 (mth/round (- (:y data) (:height data)))
                      :x2 (mth/round (+ x width))

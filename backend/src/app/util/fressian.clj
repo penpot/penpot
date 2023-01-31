@@ -6,6 +6,7 @@
 
 (ns app.util.fressian
   (:require
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [clojure.data.fressian :as fres])
@@ -17,13 +18,12 @@
    java.io.ByteArrayOutputStream
    java.time.Instant
    java.time.OffsetDateTime
+   java.util.List
    org.fressian.Reader
    org.fressian.StreamingWriter
    org.fressian.Writer
    org.fressian.handlers.ReadHandler
    org.fressian.handlers.WriteHandler))
-
-;; --- MISC
 
 (set! *warn-on-reflection* true)
 
@@ -33,231 +33,250 @@
   ([^String s, ^String encoding]
    (.getBytes s encoding)))
 
+;; --- LOW LEVEL FRESSIAN API
+
+(defn write-object!
+  ([^Writer w ^Object o]
+   (.writeObject w o))
+  ([^Writer w ^Object o ^Boolean cache?]
+   (.writeObject w o cache?)))
+
+(defn read-object!
+  [^Reader r]
+  (.readObject r))
+
+(defn write-tag!
+  ([^Writer w ^String n]
+   (.writeTag w n 1))
+  ([^Writer w ^String n ^long ni]
+   (.writeTag w n ni)))
+
+(defn write-bytes!
+  [^Writer w ^bytes data]
+  (.writeBytes w data))
+
+(defn write-int!
+  [^Writer w ^long val]
+  (.writeInt w val))
+
+(defn write-list!
+  [^Writer w ^List val]
+  (.writeList w val))
+
+;; --- READ AND WRITE HANDLERS
+
+(defn read-symbol
+  [r]
+  (symbol (read-object! r)
+          (read-object! r)))
+
+(defn read-keyword
+  [r]
+  (keyword (read-object! r)
+           (read-object! r)))
+
 (defn write-named
   [tag ^Writer w s]
-  (.writeTag w tag 2)
-  (.writeObject w (namespace s) true)
-  (.writeObject w (name s) true))
+  (write-tag! w tag 2)
+  (write-object! w (namespace s) true)
+  (write-object! w (name s) true))
 
 (defn write-list-like
-  ([^Writer w tag o]
-   (.writeTag w tag 1)
-   (.writeList w o)))
+  [tag ^Writer w o]
+  (write-tag! w tag 1)
+  (write-list! w o))
 
-(defn read-list-like
-  [^Reader rdr build-fn]
-  (build-fn (.readObject rdr)))
+(defn begin-closed-list!
+  [^StreamingWriter w]
+  (.beginClosedList w))
+
+(defn end-list!
+  [^StreamingWriter w]
+  (.endList w))
 
 (defn write-map-like
   "Writes a map as Fressian with the tag 'map' and all keys cached."
-  [^Writer w tag m]
-  (.writeTag w tag 1)
-  (.beginClosedList ^StreamingWriter w)
+  [tag ^Writer w m]
+  (write-tag! w tag 1)
+  (begin-closed-list! w)
   (loop [items (seq m)]
     (when-let [^clojure.lang.MapEntry item (first items)]
-      (.writeObject w (.key item) true)
-      (.writeObject w (.val item))
+      (write-object! w (.key item) true)
+      (write-object! w (.val item))
       (recur (rest items))))
-  (.endList ^StreamingWriter w))
+  (end-list! w))
 
 (defn read-map-like
   [^Reader rdr]
-  (let [kvs ^java.util.List (.readObject rdr)]
+  (let [kvs ^java.util.List (read-object! rdr)]
     (if (< (.size kvs) 16)
       (clojure.lang.PersistentArrayMap. (.toArray kvs))
       (clojure.lang.PersistentHashMap/create (seq kvs)))))
 
-(def write-handlers
-  { Character
-   {"char"
-    (reify WriteHandler
-      (write [_ w ch]
-        (.writeTag w "char" 1)
-        (.writeInt w (int ch))))}
+(def ^:dynamic *write-handler-lookup* nil)
+(def ^:dynamic *read-handler-lookup* nil)
 
-   app.common.geom.point.Point
-   {"penpot/point"
-    (reify WriteHandler
-      (write [_ w o]
-        (.writeTag ^Writer w "penpot/point" 1)
-        (.writeList ^Writer w (java.util.List/of (.-x ^Point o) (.-y ^Point o)))))}
+(def write-handlers (atom {}))
+(def read-handlers (atom {}))
 
-   app.common.geom.matrix.Matrix
-   {"penpot/matrix"
-    (reify WriteHandler
-      (write [_ w o]
-        (.writeTag ^Writer w "penpot/matrix" 1)
-        (.writeList ^Writer w (java.util.List/of (.-a ^Matrix o)
-                                                 (.-b ^Matrix o)
-                                                 (.-c ^Matrix o)
-                                                 (.-d ^Matrix o)
-                                                 (.-e ^Matrix o)
-                                                 (.-f ^Matrix o)))))}
+(defn add-handlers!
+  [& handlers]
+  (letfn [(adapt-write-handler [{:keys [name class wfn]}]
+            [class {name (reify WriteHandler
+                           (write [_ w o]
+                             (wfn name w o)))}])
 
-   Instant
-   {"java/instant"
-    (reify WriteHandler
-      (write [_ w ch]
-        (.writeTag w "java/instant" 1)
-        (.writeInt w (.toEpochMilli ^Instant ch))))}
+          (adapt-read-handler [{:keys [name rfn]}]
+            [name (reify ReadHandler
+                    (read [_ rdr _ _]
+                      (rfn rdr)))])
 
-   OffsetDateTime
-   {"java/instant"
-    (reify WriteHandler
-      (write [_ w ch]
-        (.writeTag w "java/instant" 1)
-        (.writeInt w (.toEpochMilli ^Instant (.toInstant ^OffsetDateTime ch)))))}
+          (merge-and-clean [m1 m2]
+            (-> (merge m1 m2)
+                (d/without-nils)))]
 
-   Ratio
-   {"ratio"
-    (reify WriteHandler
-      (write [_ w n]
-        (.writeTag w "ratio" 2)
-        (.writeObject w (.numerator ^Ratio n))
-        (.writeObject w (.denominator ^Ratio n))))}
+    (let [whs (into {}
+                    (comp
+                     (filter :wfn)
+                     (map adapt-write-handler))
+                    handlers)
+          rhs (into {}
+                    (comp
+                     (filter :rfn)
+                     (map adapt-read-handler))
+                    handlers)
+          cwh (swap! write-handlers merge-and-clean whs)
+          crh (swap! read-handlers merge-and-clean rhs)]
 
-   clojure.lang.IPersistentMap
-   {"clj/map"
-    (reify WriteHandler
-      (write [_ w d]
-        (write-map-like w "clj/map" d)))}
+      (alter-var-root #'*write-handler-lookup* (constantly (-> cwh fres/associative-lookup fres/inheritance-lookup)))
+      (alter-var-root #'*read-handler-lookup* (constantly (-> crh fres/associative-lookup)))
+      nil)))
 
-   clojure.lang.Keyword
-   {"clj/keyword"
-    (reify WriteHandler
-      (write [_ w s]
-        (write-named "clj/keyword" w s)))}
+(defn write-char
+  [n w o]
+  (write-tag! w n 1)
+  (write-int! w o))
 
-   clojure.lang.BigInt
-   {"bigint"
-    (reify WriteHandler
-      (write [_ w d]
-        (let [^BigInteger bi (if (instance? clojure.lang.BigInt d)
-                               (.toBigInteger ^clojure.lang.BigInt d)
-                               d)]
-          (.writeTag w "bigint" 1)
-          (.writeBytes w (.toByteArray bi)))))}
+(defn read-char
+  [rdr]
+  (char (read-object! rdr)))
 
-   ;; Persistent set
-   clojure.lang.IPersistentSet
-   {"clj/set"
-    (reify WriteHandler
-      (write [_ w o]
-        (write-list-like w "clj/set" o)))}
+(defn write-instant
+  [n w o]
+  (write-tag! w n 1)
+  (write-int! w (.toEpochMilli ^Instant o)))
 
-   ;; Persistent vector
-   clojure.lang.IPersistentVector
-   {"clj/vector"
-    (reify WriteHandler
-      (write [_ w o]
-        (write-list-like w "clj/vector" o)))}
+(defn write-offset-date-time
+  [n w o]
+  (write-tag! w n 1)
+  (write-int! w (.toEpochMilli ^Instant (.toInstant ^OffsetDateTime o))))
 
-   ;; Persistent list
-   clojure.lang.IPersistentList
-   {"clj/list"
-    (reify WriteHandler
-      (write [_ w o]
-        (write-list-like w "clj/list" o)))}
+(defn read-instant
+  [rdr]
+  (Instant/ofEpochMilli (.readInt ^Reader rdr)))
 
-   ;; Persistent seq & lazy seqs
-   clojure.lang.ISeq
-   {"clj/seq"
-    (reify WriteHandler
-      (write [_ w o]
-        (write-list-like w "clj/seq" o)))}
-   })
+(defn write-ratio
+  [n w o]
+  (write-tag! w n 2)
+  (write-object! w (.numerator ^Ratio o))
+  (write-object! w (.denominator ^Ratio o)))
 
+(defn read-ratio
+  [rdr]
+  (Ratio. (biginteger (read-object! rdr))
+          (biginteger (read-object! rdr))))
 
-(def read-handlers
-  {"bigint"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (let [^bytes bibytes (.readObject rdr)]
-         (bigint (BigInteger. bibytes)))))
+(defn write-bigint
+  [n w o]
+  (let [^BigInteger bi (if (instance? clojure.lang.BigInt o)
+                         (.toBigInteger ^clojure.lang.BigInt o)
+                         o)]
+    (write-tag! w n 1)
+    (write-bytes! w (.toByteArray bi))))
 
-   "byte"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (byte (.readObject rdr))))
+(defn read-bigint
+  [rdr]
+  (let [^bytes bibytes (read-object! rdr)]
+    (bigint (BigInteger. bibytes))))
 
-   "penpot/matrix"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (let [^java.util.List x (.readObject rdr)]
-         (Matrix. (.get x 0) (.get x 1) (.get x 2) (.get x 3) (.get x 4) (.get x 5)))))
+(add-handlers!
+ {:name "char"
+  :class Character
+  :wfn write-char
+  :rfn read-char}
 
-   "penpot/point"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (let [^java.util.List x (.readObject rdr)]
-         (Point. (.get x 0) (.get x 1)))))
+ {:name "java/instant"
+  :class Instant
+  :wfn write-instant
+  :rfn read-instant}
 
-   "char"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (char (.readObject rdr))))
+ {:name "java/instant"
+  :class OffsetDateTime
+  :wfn write-offset-date-time
+  :rfn read-instant}
 
-   "java/instant"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (Instant/ofEpochMilli (.readInt rdr))))
+ ;; LEGACY
+ {:name "ratio"
+  :rfn read-ratio}
 
+ {:name "clj/ratio"
+  :class Ratio
+  :wfn write-ratio
+  :rfn read-ratio}
 
-   "ratio"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (Ratio. (biginteger (.readObject rdr))
-               (biginteger (.readObject rdr)))))
+ {:name "clj/map"
+  :class clojure.lang.IPersistentMap
+  :wfn write-map-like
+  :rfn read-map-like}
 
-   "clj/keyword"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (keyword (.readObject rdr) (.readObject rdr))))
+ {:name "clj/keyword"
+  :class clojure.lang.Keyword
+  :wfn write-named
+  :rfn read-keyword}
 
-   "clj/map"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (read-map-like rdr)))
+ {:name "clj/symbol"
+  :class clojure.lang.Symbol
+  :wfn write-named
+  :rfn read-symbol}
 
-   "clj/set"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (read-list-like rdr set)))
+ ;; LEGACY
+ {:name "bigint"
+  :rfn read-bigint}
 
-   "clj/vector"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (read-list-like rdr vec)))
+ {:name "clj/bigint"
+  :class clojure.lang.BigInt
+  :wfn write-bigint
+  :rfn read-bigint}
 
-   "clj/list"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (read-list-like rdr #(apply list %))))
+ {:name "clj/set"
+  :class clojure.lang.IPersistentSet
+  :wfn write-list-like
+  :rfn (comp set read-object!)}
 
-   "clj/seq"
-   (reify ReadHandler
-     (read [_ rdr _ _]
-       (read-list-like rdr sequence)))
-   })
+ {:name "clj/vector"
+  :class clojure.lang.IPersistentVector
+  :wfn write-list-like
+  :rfn (comp vec read-object!)}
 
-(def write-handler-lookup
-  (-> write-handlers
-      fres/associative-lookup
-      fres/inheritance-lookup))
+ {:name "clj/list"
+  :class clojure.lang.IPersistentList
+  :wfn write-list-like
+  :rfn #(apply list (read-object! %))}
 
-(def read-handler-lookup
-  (-> read-handlers
-      (fres/associative-lookup)))
+ {:name "clj/seq"
+  :class clojure.lang.ISeq
+  :wfn write-list-like
+  :rfn (comp sequence read-object!)})
 
-;; --- Low-Level Api
+;; --- PUBLIC API
 
 (defn reader
   [istream]
-  (fres/create-reader istream :handlers read-handler-lookup))
+  (fres/create-reader istream :handlers *read-handler-lookup*))
 
 (defn writer
   [ostream]
-  (fres/create-writer ostream :handlers write-handler-lookup))
+  (fres/create-writer ostream :handlers *write-handler-lookup*))
 
 (defn read!
   [reader]
@@ -267,15 +286,40 @@
   [writer data]
   (fres/write-object writer data))
 
-;; --- High-Level Api
-
 (defn encode
   [data]
-  (with-open [out (ByteArrayOutputStream.)]
-    (write! (writer out) data)
-    (.toByteArray out)))
+  (with-open [^ByteArrayOutputStream output (ByteArrayOutputStream.)]
+    (-> (writer output)
+        (write! data))
+    (.toByteArray output)))
 
 (defn decode
   [data]
-  (with-open [input (ByteArrayInputStream. ^bytes data)]
-    (read! (reader input))))
+  (with-open [^ByteArrayInputStream input (ByteArrayInputStream. ^bytes data)]
+    (-> input reader read!)))
+
+;; --- ADDITIONAL
+
+(add-handlers!
+ {:name "penpot/point"
+  :class app.common.geom.point.Point
+  :wfn (fn [n w ^Point o]
+         (write-tag! w n 1)
+         (write-list! w (List/of (.-x o) (.-y o))))
+  :rfn (fn [^Reader rdr]
+         (let [^List x (read-object! rdr)]
+           (Point. (.get x 0) (.get x 1))))}
+
+ {:name "penpot/matrix"
+  :class app.common.geom.matrix.Matrix
+  :wfn (fn [^String n ^Writer w o]
+         (write-tag! w n 1)
+         (write-list! w (List/of (.-a ^Matrix o)
+                                 (.-b ^Matrix o)
+                                 (.-c ^Matrix o)
+                                 (.-d ^Matrix o)
+                                 (.-e ^Matrix o)
+                                 (.-f ^Matrix o))))
+  :rfn (fn [^Reader rdr]
+         (let [^List x (read-object! rdr)]
+           (Matrix. (.get x 0) (.get x 1) (.get x 2) (.get x 3) (.get x 4) (.get x 5))))})

@@ -1,0 +1,144 @@
+$width-left-toolbar: 48px;
+$width-settings-bar: 256px;
+
+.inspect-layout {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 48px auto;
+  grid-template-columns: 1fr;
+  user-select: none;
+
+  .viewer-header {
+    grid-column: 1 / span 1;
+    grid-row: 1 / span 1;
+  }
+
+  .viewer-content {
+    grid-column: 1 / span 1;
+    grid-row: 2 / span 1;
+  }
+}
+
+.fullscreen.inspect-layout.force-visible {
+  display: grid;
+  grid-template-rows: 1fr;
+
+  & .viewer-header {
+    position: fixed;
+    top: 0;
+    transition: top 400ms ease 300ms;
+    margin-bottom: 0;
+    z-index: 2;
+  }
+
+  & .viewer-bottom {
+    position: fixed;
+    bottom: 0;
+    transition: bottom 400ms ease 300ms;
+    z-index: 2;
+  }
+}
+
+.fullscreen.inspect-layout:not(.force-visible) {
+  & .viewer-header {
+    width: 100%;
+    position: fixed;
+    top: -48px;
+    left: 0;
+    transition: top 400ms ease 300ms;
+    z-index: 2;
+    margin-bottom: 48px;
+
+    &::after {
+      content: " ";
+      position: absolute;
+      width: 100%;
+      height: 1rem;
+      left: 0;
+      top: 48px;
+    }
+  }
+
+  & .viewer-header:hover {
+    top: 0;
+    transition: top 200ms;
+  }
+
+  & .viewer-bottom {
+    width: 100%;
+    position: fixed;
+    bottom: -48px;
+    left: 0;
+    transition: bottom 400ms ease 300ms;
+    z-index: 2;
+    &::after {
+      content: " ";
+      position: absolute;
+      width: 100%;
+      height: 1rem;
+      left: 0;
+      bottom: 0px;
+    }
+  }
+
+  & .viewer-bottom:hover {
+    bottom: 0px;
+    transition: bottom 200ms;
+  }
+
+  & .viewer-content {
+    grid-row: 1 / span 2;
+  }
+}
+
+.inspect-layout {
+  .viewer-section {
+    flex-wrap: nowrap;
+    margin-top: 0;
+    &.fullscreen {
+      .settings-bar,
+      .settings-bar {
+        padding-top: 48px;
+      }
+    }
+  }
+
+  .settings-bar {
+    transition: width 0.2s;
+    width: $width-settings-bar;
+    &.expanded {
+      width: $width-settings-bar * 3;
+    }
+
+    &.settings-bar-right,
+    &.settings-bar-left {
+      height: 100%;
+      position: relative;
+      left: unset;
+      right: unset;
+
+      .settings-bar-inside {
+        padding-top: 0.5rem;
+        overflow-y: auto;
+      }
+    }
+  }
+
+  .inspect-svg-wrapper {
+    flex: 1;
+    overflow: hidden;
+    flex-direction: column;
+    justify-content: flex-start;
+    position: relative;
+  }
+
+  .inspect-svg-container {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    align-items: center;
+    justify-content: safe center;
+    margin: 0 auto;
+  }
+}

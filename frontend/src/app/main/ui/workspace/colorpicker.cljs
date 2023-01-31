@@ -88,8 +88,44 @@
 
         on-select-library-color
         (mf/use-fn
-         (fn [color]
-           (on-change color)))
+         (fn [state color]
+           (let [type-origin (:type state)
+                 editig-stop-origin (:editing-stop state)
+                 is-gradient? (some? (:gradient color))
+                 change-to (fn [new-color]
+                             (st/emit! (dc/update-colorpicker new-color))
+                             (on-change new-color))
+                 clean-stop (fn [stops index color]
+                              (-> (nth stops index)
+                                  (merge color)
+                                  (assoc :offset index)
+                                  (dissoc :r)
+                                  (dissoc :g)
+                                  (dissoc :b)
+                                  (dissoc :alpha)
+                                  (dissoc :s)
+                                  (dissoc :h)
+                                  (dissoc :v)
+                                  (dissoc :hex)))
+                 set-new-gradient (fn [state color index]
+                                    (let [old-stops (:stops state)
+                                          old-gradient (:gradient state)
+                                          new-gradient (-> old-gradient
+                                                           (cond-> (= index 0) (assoc  :stops [(clean-stop old-stops 0 color) (nth old-stops 1)]))
+                                                           (cond-> (= index 1) (assoc  :stops [(nth old-stops 0) (clean-stop old-stops 1 color)]))
+                                                           (dissoc :shape-id))]
+                                      (change-to {:gradient new-gradient})))]
+             ;; If we have any kind of gradient and:
+             ;; Click on a solid color -> This color is applied to the selected offset
+             ;; Click on a color with transparency -> The same to solid color will happend
+             ;; Click on any kind of gradient -> The color changes completly to new gradient
+             
+             ;; If we have a non gradient color the new color is applied without any change
+             (if (or (= :radial-gradient type-origin) (= :linear-gradient type-origin))
+               (if is-gradient?
+                 (change-to color)
+                 (set-new-gradient state color editig-stop-origin))
+               (change-to color)))))
 
         on-add-library-color
         (mf/use-fn
@@ -107,13 +143,13 @@
         (mf/use-fn
          (fn []
            (reset! drag? true)
-           (st/emit! (dwu/start-undo-transaction))))
+           (st/emit! (dwu/start-undo-transaction (mf/ref-val node-ref)))))
 
         on-finish-drag
         (mf/use-fn
          (fn []
            (reset! drag? false)
-           (st/emit! (dwu/commit-undo-transaction))))]
+           (st/emit! (dwu/commit-undo-transaction (mf/ref-val node-ref)))))]
 
     ;; Initialize colorpicker state
     (mf/with-effect []
@@ -229,7 +265,8 @@
         :on-change handle-change-color}]
 
       [:& libraries
-       {:current-color current-color
+       {:state state
+        :current-color current-color
         :disable-gradient disable-gradient
         :disable-opacity disable-opacity
         :on-select-color on-select-library-color

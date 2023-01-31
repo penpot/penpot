@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns user
   (:require
@@ -12,32 +12,33 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as sgen]
    [clojure.test :as test]
+   [clojure.test.check.generators :as gen]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
-   [criterium.core :refer [quick-bench bench with-progress-reporting]]))
+   [criterium.core  :as crit]))
 
 ;; --- Benchmarking Tools
 
 (defmacro run-quick-bench
   [& exprs]
-  `(with-progress-reporting (quick-bench (do ~@exprs) :verbose)))
+  `(crit/with-progress-reporting (crit/quick-bench (do ~@exprs) :verbose)))
 
 (defmacro run-quick-bench'
   [& exprs]
-  `(quick-bench (do ~@exprs)))
+  `(crit/quick-bench (do ~@exprs)))
 
 (defmacro run-bench
   [& exprs]
-  `(with-progress-reporting (bench (do ~@exprs) :verbose)))
+  `(crit/with-progress-reporting (crit/bench (do ~@exprs) :verbose)))
 
 (defmacro run-bench'
   [& exprs]
-  `(bench (do ~@exprs)))
+  `(crit/bench (do ~@exprs)))
 
 ;; --- Development Stuff
 
 (defn- run-tests
-  ([] (run-tests #"^app.common.*-test$"))
+  ([] (run-tests #"^common-tests.*-test$"))
   ([o]
    (repl/refresh)
    (cond

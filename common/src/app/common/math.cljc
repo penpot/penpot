@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.math
   "A collection of math utils."
@@ -19,10 +19,13 @@
   #?(:cljs (js/isNaN v)
      :clj (Double/isNaN v)))
 
+;; NOTE: on cljs we don't need to check for `number?` so we explicitly
+;; ommit it for performance reasons.
+
 (defn finite?
   [v]
   #?(:cljs (and (not (nil? v)) (js/isFinite v))
-     :clj (and (not (nil? v)) (Double/isFinite v))))
+     :clj (and (not (nil? v)) (number? v) (Double/isFinite v))))
 
 (defn finite
   [v default]
@@ -101,15 +104,16 @@
 
 (defn round
   "Returns the value of a number rounded to
-  the nearest integer."
-  [v]
-  #?(:cljs (js/Math.round v)
-     :clj (Math/round (float v))))
+  the nearest integer.
+  If given step rounds to the next closest step, for example:
+  (round 13.4 0.5) => 13.5
+  (round 13.4 0.3) => 13.3"
+  ([v step]
+   (* (round (/ v step)) step))
 
-(defn half-round
-  "Returns a value rounded to the next point or half point"
-  [v]
-  (/ (round (* v 2)) 2))
+  ([v]
+   #?(:cljs (js/Math.round v)
+      :clj (Math/round (float v)))))
 
 (defn ceil
   "Returns the smallest integer greater than
@@ -124,6 +128,12 @@
     (let [d (pow 10 n)]
       (/ (round (* v d)) d))))
 
+(defn to-fixed
+  "Returns a string representing the given number, using fixed precision."
+  [v n]
+  #?(:cljs (.toFixed ^js v n)
+     :clj (str (precision v n))))
+
 (defn radians
   "Converts degrees to radians."
   [degrees]
@@ -136,12 +146,18 @@
   #?(:cljs (math/toDegrees radians)
      :clj (Math/toDegrees radians)))
 
+(defn hypot
+  "Square root of the squares addition"
+  [a b]
+  #?(:cljs (js/Math.hypot a b)
+     :clj (Math/hypot a b)))
+
 (defn distance
   "Calculate the distance between two points."
   [[x1 y1] [x2 y2]]
   (let [dx (- x1 x2)
         dy (- y1 y2)]
-    (-> (sqrt (+ (pow dx 2) (pow dy 2)))
+    (-> (hypot dx dy)
         (precision 2))))
 
 (defn log10
@@ -156,7 +172,14 @@
     (if (> num to) to num)))
 
 (defn almost-zero? [num]
-  (< (abs (double num)) 1e-5))
+  (< (abs (double num)) 1e-4))
+
+(defn round-to-zero
+  "Given a number if it's close enough to zero round to the zero to avoid precision problems"
+  [num]
+  (if (almost-zero? num)
+    0
+    num))
 
 (defonce float-equal-precision 0.001)
 
@@ -174,3 +197,9 @@
 (defn max-abs
   [a b]
   (max (abs a) (abs b)))
+
+(defn sign
+  "Get the sign (+1 / -1) for the number"
+  [n]
+  (if (neg? n) -1 1))
+

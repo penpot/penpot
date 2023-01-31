@@ -7,6 +7,7 @@
 (ns app.main.ui.components.forms
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -42,7 +43,6 @@
 
         touched?     (get-in @form [:touched input-name])
         error        (get-in @form [:errors input-name])
-
         value        (get-in @form [:data input-name] "")
 
         help-icon'   (cond
@@ -103,8 +103,11 @@
                          :on-blur on-blur
                          :placeholder label
                          :on-change on-change
-                         :type @type')
-                (cond-> (and value is-checkbox?) (assoc :default-checked value))
+                         :type @type'
+                         :tab-index "0")
+                  (cond-> (and value is-checkbox?) (assoc :default-checked value))
+                  (cond-> (and touched? (:message error)) (assoc "aria-invalid" "true"
+                                                                 "aria-describedby" (dm/str "error-" input-name)))
                   (obj/clj->props))]
 
     [:div
@@ -126,7 +129,8 @@
          help-icon'])
       (cond
         (and touched? (:message error))
-        [:span.error {:data-test (clojure.string/join [data-test "-error"]) }(tr (:message error))]
+        [:span.error {:id (dm/str "error-" input-name)
+                      :data-test (clojure.string/join [data-test "-error"]) }(tr (:message error))]
 
         (string? hint)
         [:span.hint hint])]]))
@@ -220,7 +224,11 @@
      {:name "submit"
       :class (when (or (not (:valid @form)) (true? disabled)) "btn-disabled")
       :disabled (or (not (:valid @form)) (true? disabled))
+      :tab-index "0"
       :on-click on-click
+      :on-key-down (fn [event]
+                     (when (kbd/enter? event)
+                       (on-click)))
       :value label
       :data-test data-test
       :type "submit"}]))

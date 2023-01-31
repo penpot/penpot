@@ -418,7 +418,7 @@
         elem-name (obj/get child "type")
         position  (or (obj/get props "position") 0)
         render-id (or (obj/get props "render-id") (mf/use-ctx muc/render-id))]
-    [:g {:id (dm/fmt "fills-%" (:id shape))}
+    [:g.fills {:id (dm/fmt "fills-%" (:id shape))}
      [:> elem-name (build-fill-props shape child position render-id)]]))
 
 (mf/defc shape-strokes
@@ -431,6 +431,7 @@
         stroke-id (dm/fmt "strokes-%" (:id shape))
         stroke-props (-> (obj/create)
                          (obj/set! "id" stroke-id)
+                         (obj/set! "className" "strokes")
                          (cond->
                           ;; There is a blur
                           (and (:blur shape) (not (cph/frame-shape? shape)) (-> shape :blur :hidden not))

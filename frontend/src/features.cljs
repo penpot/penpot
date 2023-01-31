@@ -9,9 +9,6 @@
   (:require
    [app.main.features :as features]))
 
-(defn ^:export autolayout []
-  (features/toggle-feature! :auto-layout))
-
 (defn ^:export components-v2 []
   (features/toggle-feature! :components-v2))
 

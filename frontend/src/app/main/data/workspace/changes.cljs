@@ -30,6 +30,7 @@
   (s/every ::us/uuid))
 
 (defonce page-change? #{:add-page :mod-page :del-page :mov-page})
+(defonce update-layout-attr? #{:hidden})
 
 (declare commit-changes)
 
@@ -50,18 +51,30 @@
              objects   (wsh/lookup-page-objects state page-id)
              ids       (into [] (filter some?) ids)
 
-             changes   (reduce
-                         (fn [changes id]
-                           (let [opts {:attrs attrs :ignore-geometry? (get ignore-tree id)}]
-                             (pcb/update-shapes changes [id] update-fn opts)))
-                         (-> (pcb/empty-changes it page-id)
-                             (pcb/set-save-undo? save-undo?)
-                             (pcb/with-objects objects))
-                         ids)]
+             update-layout-ids
+             (->> ids
+                  (map (d/getf objects))
+                  (filter #(some update-layout-attr? (pcb/changed-attrs % update-fn {:attrs attrs})))
+                  (map :id))
 
-         (when (seq (:redo-changes changes))
-           (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))]
-             (rx/of (commit-changes changes)))))))))
+             changes   (reduce
+                        (fn [changes id]
+                          (let [opts {:attrs attrs :ignore-geometry? (get ignore-tree id)}]
+                            (pcb/update-shapes changes [id] update-fn opts)))
+                        (-> (pcb/empty-changes it page-id)
+                            (pcb/set-save-undo? save-undo?)
+                            (pcb/with-objects objects))
+                        ids)]
+         (rx/concat
+          (if (seq (:redo-changes changes))
+            (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))]
+              (rx/of (commit-changes changes)))
+            (rx/empty))
+
+          ;; Update layouts for properties marked
+          (if (d/not-empty? update-layout-ids)
+            (rx/of (ptk/data-event :layout/update update-layout-ids))
+            (rx/empty))))))))
 
 (defn send-update-indices
   []
@@ -78,7 +91,7 @@
     ptk/EffectEvent
     (effect [_ state _]
       (doseq [[page-id changes] (::update-changes state)]
-        (uw/ask! {:cmd :update-page-indices
+        (uw/ask! {:cmd :update-page-index
                   :page-id page-id
                   :changes changes})))))
 
@@ -150,7 +163,8 @@
          :hint-origin (ptk/type origin)
          :changes redo-changes
          :page-id page-id
-         :frames frames})
+         :frames frames
+         :save-undo? save-undo?})
 
       ptk/UpdateEvent
       (update [_ state]

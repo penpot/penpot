@@ -7,18 +7,19 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
    [app.common.data :as d]
-   [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.texts :as dwt :refer [text-fill-attrs root-attrs paragraph-attrs text-attrs]]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu fill-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu text-fill-attrs root-attrs paragraph-attrs text-attrs]]
+   [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu]]
    [rumext.v2 :as mf]))
 
 (mf/defc options
@@ -28,6 +29,7 @@
 
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
         is-layout-child? (mf/deref is-layout-child-ref)
+        layout-container-values (select-keys shape layout-container-flex-attrs)
         state-map    (mf/deref refs/workspace-editor-state)
         shared-libs  (mf/deref refs/workspace-libraries)
 
@@ -70,6 +72,7 @@
        :type type
        :values (select-keys shape measure-attrs)
        :shape shape}]
+     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
 
      (when is-layout-child?
        [:& layout-item-menu
@@ -78,9 +81,11 @@
          :values layout-item-values
          :is-layout-child? true
          :shape shape}])
-     [:& constraints-menu
-      {:ids ids
-       :values (select-keys shape constraint-attrs)}]
+
+     (when (not is-layout-child?)
+       [:& constraints-menu
+        {:ids ids
+         :values (select-keys shape constraint-attrs)}])
 
      [:& layer-menu {:ids ids
                      :type type

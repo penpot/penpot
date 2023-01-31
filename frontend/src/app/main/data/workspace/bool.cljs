@@ -11,7 +11,6 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.path.shapes-to-path :as stp]
-   [app.common.types.shape-tree :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
@@ -20,15 +19,11 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
-(defn selected-shapes
+(defn selected-shapes-idx
   [state]
   (let [objects (wsh/lookup-page-objects state)]
     (->> (wsh/lookup-selected state)
-         (cph/clean-loops objects)
-         (map (d/getf objects))
-         (remove cph/frame-shape?)
-         (map #(assoc % ::index (cph/get-position-on-parent objects (:id %))))
-         (sort-by ::index))))
+         (cph/clean-loops objects))))
 
 (defn create-bool-data
   [bool-type name shapes objects]
@@ -89,13 +84,16 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state)
-            base-name (-> bool-type d/name str/capital (str "-1"))
-            name (-> (ctt/retrieve-used-names objects)
-                     (ctt/generate-unique-name base-name))
-            shapes  (selected-shapes state)]
+            name (-> bool-type d/name str/capital)
+            ids  (selected-shapes-idx state)
+            ordered-indexes (cph/order-by-indexed-shapes objects ids)
+            shapes (->> ordered-indexes
+                        (map (d/getf objects))
+                        (remove cph/frame-shape?))]
 
         (when-not (empty? shapes)
-          (let [[boolean-data index] (create-bool-data bool-type name shapes objects)
+          (let [[boolean-data index] (create-bool-data bool-type name (reverse shapes) objects)
+                index (inc index)
                 shape-id (:id boolean-data)
                 changes (-> (pcb/empty-changes it page-id)
                             (pcb/with-objects objects)

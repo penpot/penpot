@@ -19,7 +19,7 @@
 ;; CONSTANTS
 ;; ------------------------------------------------
 
-(def font-size 10)
+(def font-size 11)
 (def selection-rect-width 1)
 
 (def select-color "var(--color-select)")
@@ -40,7 +40,7 @@
 (def distance-color "var(--color-distance)")
 (def distance-text-color "var(--color-white)")
 (def distance-border-radius 2)
-(def distance-pill-width 40)
+(def distance-pill-width 50)
 (def distance-pill-height 16)
 (def distance-line-stroke 1)
 

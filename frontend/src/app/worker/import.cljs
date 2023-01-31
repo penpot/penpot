@@ -15,7 +15,6 @@
    [app.common.logging :as log]
    [app.common.media :as cm]
    [app.common.text :as ct]
-   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.util.http :as http]
@@ -127,17 +126,17 @@
 
 (defn create-file
   "Create a new file on the back-end"
-  [context components-v2]
-  (let [resolve (:resolve context)
-        file-id (resolve (:file-id context))]
-    (rp/mutation :create-temp-file
-                 {:id file-id
-                  :name (:name context)
-                  :is-shared (:shared context)
-                  :project-id (:project-id context)
-                  :data (-> ctf/empty-file-data
-                            (assoc :id file-id)
-                            (assoc-in [:options :components-v2] components-v2))})))
+  [context]
+  (let [resolve-fn (:resolve context)
+        file-id    (resolve-fn (:file-id context))
+        features   (into #{} (:features context))]
+    (rp/cmd! :create-temp-file
+             {:id file-id
+              :name (:name context)
+              :is-shared (:shared context)
+              :project-id (:project-id context)
+              :create-page false
+              :features features})))
 
 (defn link-file-libraries
   "Create a new file on the back-end"
@@ -147,7 +146,7 @@
         libraries (->> context :libraries (mapv resolve))]
     (->> (rx/from libraries)
          (rx/map #(hash-map :file-id file-id :library-id %))
-         (rx/flat-map (partial rp/mutation :link-file-to-library)))))
+         (rx/flat-map (partial rp/cmd! :link-file-to-library)))))
 
 (defn send-changes
   "Creates batches of changes to be sent to the backend"
@@ -165,17 +164,17 @@
      (->> (rx/from (d/enumerate batches))
           (rx/merge-map
            (fn [[i change-batch]]
-             (->> (rp/mutation :update-temp-file
-                               {:id file-id
-                                :session-id session-id
-                                :revn i
-                                :changes change-batch})
+             (->> (rp/cmd! :update-temp-file
+                           {:id file-id
+                            :session-id session-id
+                            :revn i
+                            :changes change-batch})
                   (rx/tap #(do (swap! processed inc)
                                (progress! context :upload-data @processed total))))))
           (rx/map first)
           (rx/ignore))
 
-     (->> (rp/mutation :persist-temp-file {:id file-id})
+     (->> (rp/cmd! :persist-temp-file {:id file-id})
           ;; We use merge to keep some information not stored in back-end
           (rx/map #(merge file %))))))
 
@@ -352,7 +351,7 @@
                        (mapv #(update % :starting-frame resolve)))
 
         guides    (-> (get-in page-data [:options :guides])
-                      (d/update-vals #(update % :frame-id resolve)))
+                      (update-vals #(update % :frame-id resolve)))
 
         page-data (-> page-data
                       (d/assoc-in-when [:options :flows] flows)
@@ -390,21 +389,22 @@
         old-id             (cip/get-id node)
         id                 (resolve old-id)
         path               (get-in node [:attrs :penpot:path] "")
+        type               (cip/get-type content)
         main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
         main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
-        data               (-> (cip/parse-data :group content)
+        data               (-> (cip/parse-data type content)
                                (assoc :path path)
                                (assoc :id id)
                                (assoc :main-instance-id main-instance-id)
                                (assoc :main-instance-page main-instance-page))
 
-        file               (-> file (fb/start-component data))
-        children            (cip/node-seq node)]
+        file               (-> file (fb/start-component data type))
+        children           (cip/node-seq node)]
 
     (->> (rx/from children)
          (rx/filter cip/shape?)
-         (rx/skip 1)
-         (rx/skip-last 1)
+         (rx/skip 1)       ;; Skip the outer component and the respective closint tag
+         (rx/skip-last 1)  ;; because they are handled in start-component an finish-component
          (rx/mapcat (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map fb/finish-component))))
@@ -420,8 +420,9 @@
         main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
         main-instance-x    (get-in node [:attrs :penpot:main-instance-x] "")
         main-instance-y    (get-in node [:attrs :penpot:main-instance-y] "")
+        type               (cip/get-type content)
 
-        data (-> (cip/parse-data :group content)
+        data (-> (cip/parse-data type content)
                  (assoc :path path)
                  (assoc :id id)
                  (assoc :main-instance-id main-instance-id)
@@ -565,14 +566,14 @@
           (rx/tap #(rx/end! progress-str)))]))
 
 (defn create-files
-  [context files components-v2]
+  [context files]
 
   (let [data (group-by :file-id files)]
     (rx/concat
      (->> (rx/from files)
           (rx/map #(merge context %))
           (rx/flat-map (fn [context]
-                         (->> (create-file context components-v2)
+                         (->> (create-file context)
                               (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
@@ -631,7 +632,7 @@
                                (rx/of {:uri (:uri file) :error error}))))))))))
 
 (defmethod impl/handler :import-files
-  [{:keys [project-id files components-v2]}]
+  [{:keys [project-id files]}]
 
   (let [context {:project-id project-id
                  :resolve    (resolve-factory)}
@@ -639,7 +640,7 @@
         binary-files (filter #(= "application/octet-stream" (:type %)) files)]
 
     (->> (rx/merge
-          (->> (create-files context zip-files components-v2)
+          (->> (create-files context zip-files)
                (rx/flat-map
                 (fn [[file data]]
                   (->> (uz/load-from-url (:uri data))

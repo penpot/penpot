@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
+   [app.util.strings :as ustr]
    [cuerdas.core :as str]))
 
 ;; Regex for XML ids per Spec
@@ -21,7 +22,7 @@
 (defonce matrices-regex #"(matrix|translate|scale|rotate|skewX|skewY)\(([^\)]*)\)")
 (defonce number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
 
-(defonce tags-to-remove #{:defs :linearGradient :radialGradient :metadata :mask :clipPath :filter :title})
+(defonce tags-to-remove #{:linearGradient :radialGradient :metadata :mask :clipPath :filter :title})
 
 ;; https://www.w3.org/TR/SVG11/eltindex.html
 (defonce svg-tags-list
@@ -566,19 +567,20 @@
 
 (defn clean-attrs
   "Transforms attributes to their react equivalent"
-  ([attrs] (clean-attrs attrs true))
+  ([attrs]
+   (clean-attrs attrs true))
+
   ([attrs whitelist?]
    (letfn [(known-property? [[key _]]
              (or (not whitelist?)
-                 (contains? svg-attr-list key )
-                 (contains? svg-present-list key )))
+                 (contains? svg-attr-list key)
+                 (contains? svg-present-list key)))
 
-           (transform-key [key]
+           (transform-att [key]
              (if (contains? non-react-props key)
                key
                (-> (d/name key)
-                   (str/replace ":" "-")
-                   (str/camel)
+                   (ustr/camelize)
                    (keyword))))
 
            (format-styles [style-str]
@@ -588,25 +590,27 @@
                   (group-by first)
                   (map (fn [[key val]]
                          (vector
-                          (transform-key key)
+                          (transform-att key)
                           (second (first val)))))
                   (into {})))
 
-           (map-fn [[key val]]
-             (let [key (keyword key)]
+           (clean-att [[att val]]
+             (let [att (keyword att)]
                (cond
-                 (= key :class) [:className val]
-                 (and (= key :style) (string? val)) [key (format-styles val)]
-                 (and (= key :style) (map? val)) [key (clean-attrs val false)]
-                 :else (vector (transform-key key) val))))
+                 (= att :class) [:className val]
+                 (and (= att :style) (string? val)) [att (format-styles val)]
+                 (and (= att :style) (map? val)) [att (clean-attrs val false)]
+                 :else [(transform-att att) val])))]
 
-           ]
+     ;; Removed this warning because slows a lot rendering with big svgs
+     #_(let [filtered-props (->> attrs (remove known-property?) (map first))]
+         (when (seq filtered-props)
+           (.warn js/console "Unknown properties: " (str/join ", " filtered-props  ))))
 
-     (let [filtered-props (->> attrs (remove known-property?) (map first))]
-       (when (seq filtered-props)
-         (.warn js/console "Unknown properties: " (str/join ", " filtered-props  ))))
-
-     (into {} (comp (filter known-property?) (map map-fn)) attrs))))
+     (into {}
+           (comp (filter known-property?)
+                 (map clean-att))
+           attrs))))
 
 (defn update-attr-ids
   "Replaces the ids inside a property"
@@ -890,8 +894,7 @@
 (defn calculate-ratio
   ;;  sqrt((actual-width)**2 + (actual-height)**2)/sqrt(2).
   [width height]
-  (/ (mth/sqrt (+ (mth/pow width 2)
-                  (mth/pow height 2)))
+  (/ (mth/hypot width height)
      (mth/sqrt 2)))
 
 (defn fix-percents

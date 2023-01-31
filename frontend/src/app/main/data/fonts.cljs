@@ -84,16 +84,44 @@
   map with temporal ID's associated to each font entry."
   [blobs team-id]
   (letfn [(prepare [{:keys [font type name data] :as params}]
-            (let [family  (or (.getEnglishName ^js font "preferredFamily")
-                              (.getEnglishName ^js font "fontFamily"))
-                  variant (or (.getEnglishName ^js font "preferredSubfamily")
-                              (.getEnglishName ^js font "fontSubfamily"))]
+            (let [family          (or (.getEnglishName ^js font "preferredFamily")
+                                      (.getEnglishName ^js font "fontFamily"))
+                  variant         (or (.getEnglishName ^js font "preferredSubfamily")
+                                      (.getEnglishName ^js font "fontSubfamily"))
+
+                 ;; Vertical metrics determine the baseline in a text and the space between lines of text.
+                 ;; For historical reasons, there are three pairs of ascender/descender values, known as hhea, OS/2 and uSWin metrics.
+                 ;; Depending on the font, operating system and application a different set will be used to render text on the screen.
+                 ;; On Mac, Safari and Chrome use the hhea values to render text. Firefox will respect the useTypoMetrics setting and will use the OS/2 if it is set.
+                 ;; If the useTypoMetrics is not set, Firefox will also use metrics from the hhea table.
+                 ;; On Windows, all browsers use the usWin metrics, but respect the useTypoMetrics setting and if set will use the OS/2 values.
+
+                  hhea-ascender   (abs (-> font .-tables .-hhea .-ascender))
+                  hhea-descender  (abs (-> font .-tables .-hhea .-descender))
+
+                  win-ascent      (abs (-> font .-tables .-os2 .-usWinAscent))
+                  win-descent     (abs (-> font .-tables .-os2 .-usWinDescent))
+
+                  os2-ascent      (abs (-> font .-tables .-os2 .-sTypoAscender))
+                  os2-descent     (abs (-> font .-tables .-os2 .-sTypoDescender))
+
+                  ;; useTypoMetrics can be read from the 7th bit
+                  f-selection     (-> (-> font .-tables .-os2 .-fsSelection)
+                                      (bit-test 7))
+
+                  height-warning? (or (not= hhea-ascender win-ascent)
+                                      (not= hhea-descender win-descent)
+                                      (and f-selection (or
+                                                        (not= hhea-ascender os2-ascent)
+                                                        (not= hhea-descender os2-descent))))]
+
               {:content {:data (js/Uint8Array. data)
                          :name name
                          :type type}
                :font-family (or family "")
                :font-weight (cm/parse-font-weight variant)
-               :font-style  (cm/parse-font-style variant)}))
+               :font-style  (cm/parse-font-style variant)
+               :height-warning? height-warning?}))
 
           (join [res {:keys [content] :as font}]
             (let [key-fn   (juxt :font-family :font-weight :font-style)
@@ -127,7 +155,7 @@
             (try
               (assoc params :font (ot/parse data))
               (catch :default _e
-                (log/warn :msg (str/fmt "skiping file %s, unsupported format" (:name params)))
+                (log/warn :msg (str/fmt "skipping file %s, unsupported format" (:name params)))
                 nil)))
 
           (read-blob [blob]
@@ -190,7 +218,7 @@
 
 (defn rename-and-regroup
   "Function responsible to rename a font in a local state and properly
-  regroup it to the apropriate `font-id` having in account current
+  regroup it to the appropriate `font-id` having in account current
   fonts and installed fonts."
   [current-fonts id name installed-fonts]
   (let [famdb   (-> (merge current-fonts installed-fonts)

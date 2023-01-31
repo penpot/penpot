@@ -81,7 +81,7 @@
        (when (> (count items) 0)
          [:*
           [:p (tr "ds.component-subtitle")]
-          [:ul
+          [:ul.component-list
            (for [item items]
              [:li.modal-item-element
               [:span.modal-component-icon i/component]

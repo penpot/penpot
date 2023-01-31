@@ -7,11 +7,12 @@
 (ns app.main.data.workspace.path.drawing
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as upg]
+   [app.common.geom.shapes.flex-layout :as gsl]
    [app.common.path.commands :as upc]
    [app.common.path.shapes-to-path :as upsp]
    [app.common.spec :as us]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
@@ -123,14 +124,11 @@
   (ptk/reify ::close-path-drag-start
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [id (st/get-path-id state)
-            stop-stream
+      (let [stop-stream
             (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                         (ms/mouse-up? %))))
 
             content (st/get-path state :content)
-            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
-            points (upg/content->points content)
 
             handlers (-> (upc/content->handlers content)
                          (get position))
@@ -139,7 +137,7 @@
                            (first handlers))
 
             drag-events-stream
-            (->> (streams/position-stream snap-toggled points)
+            (->> (streams/position-stream)
                  (rx/take-until stop-stream)
                  (rx/map #(drag-handler position idx prefix %)))]
 
@@ -162,16 +160,10 @@
 (defn start-path-from-point [position]
   (ptk/reify ::start-path-from-point
     ptk/WatchEvent
-    (watch [_ state stream]
+    (watch [_ _ stream]
       (let [mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                     (ms/mouse-up? %))))
-            content (st/get-path state :content)
-            points (upg/content->points content)
-
-            id (st/get-path-id state)
-            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
-
-            drag-events (->> (streams/position-stream snap-toggled points)
+            drag-events (->> (streams/position-stream)
                              (rx/take-until mouse-up)
                              (rx/map #(drag-handler %)))]
 
@@ -190,11 +182,11 @@
        (rx/merge-map #(rx/empty))))
 
 (defn make-drag-stream
-  [stream snap-toggled _zoom points down-event]
+  [stream down-event]
   (let [mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                 (ms/mouse-up? %))))
 
-        drag-events (->> (streams/position-stream snap-toggled points)
+        drag-events (->> (streams/position-stream)
                          (rx/take-until mouse-up)
                          (rx/map #(drag-handler %)))]
 
@@ -215,20 +207,13 @@
             (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))
 
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [zoom            (get-in state [:workspace-local :zoom])
-            mouse-down      (->> stream (rx/filter ms/mouse-down?))
+    (watch [_ _ stream]
+      (let [mouse-down      (->> stream (rx/filter ms/mouse-down?))
             end-path-events (->> stream (rx/filter helpers/end-path-event?))
-
-            content (st/get-path state :content)
-            points (upg/content->points content)
-
-            id (st/get-path-id state)
-            snap-toggled (get-in state [:workspace-local :edit-path id :snap-toggled])
 
             ;; Mouse move preview
             mousemove-events
-            (->> (streams/position-stream snap-toggled points)
+            (->> (streams/position-stream)
                  (rx/take-until end-path-events)
                  (rx/map #(preview-next-point %)))
 
@@ -236,12 +221,12 @@
             mousedown-events
             (->> mouse-down
                  (rx/take-until end-path-events)
-                 (rx/with-latest merge (streams/position-stream snap-toggled points))
+                 (rx/with-latest merge (streams/position-stream))
 
                  ;; We change to the stream that emits the first event
                  (rx/switch-map
                   #(rx/race (make-node-events-stream stream)
-                            (make-drag-stream stream snap-toggled zoom points %))))]
+                            (make-drag-stream stream %))))]
 
         (rx/concat
          (rx/of (undo/start-path-undo))
@@ -257,10 +242,14 @@
     (update [_ state]
       (let [objects  (wsh/lookup-page-objects state)
             content  (get-in state [:workspace-drawing :object :content] [])
-            position (get-in content [0 :params] nil)
-            frame-id (ctst/top-nested-frame objects position)]
+            position (gpt/point (get-in content [0 :params] nil))
+            frame-id (ctst/top-nested-frame objects position)
+            layout?    (ctl/layout? objects frame-id)
+            drop-index (when layout? (gsl/get-drop-index frame-id objects position))]
         (-> state
-            (assoc-in [:workspace-drawing :object :frame-id] frame-id))))))
+            (assoc-in [:workspace-drawing :object :frame-id] frame-id)
+            (cond-> (some? drop-index)
+              (update-in [:workspace-drawing :object] with-meta {:index drop-index})))))))
 
 (defn handle-new-shape-result [shape-id]
   (ptk/reify ::handle-new-shape-result
@@ -273,11 +262,14 @@
           state)))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (setup-frame-path)
-             (dwdc/handle-finish-drawing)
-             (dwe/start-edition-mode shape-id)
-             (change-edit-mode :draw)))))
+    (watch [_ state _]
+      (let [content (get-in state [:workspace-drawing :object :content] [])]
+        (if (seq content)
+          (rx/of (setup-frame-path)
+                 (dwdc/handle-finish-drawing)
+                 (dwe/start-edition-mode shape-id)
+                 (change-edit-mode :draw))
+          (rx/of (dwdc/handle-finish-drawing)))))))
 
 (defn handle-new-shape
   "Creates a new path shape"
@@ -287,7 +279,7 @@
     (update [_ state]
       (let [id (st/get-path-id state)]
         (-> state
-            (assoc-in [:workspace-local :edit-path id :snap-toggled] true))))
+            (assoc-in [:workspace-local :edit-path id :snap-toggled] false))))
 
     ptk/WatchEvent
     (watch [_ state stream]

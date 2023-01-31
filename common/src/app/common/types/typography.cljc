@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.typography
   (:require
@@ -68,5 +68,16 @@
             (fn [content]
               (txt/transform-nodes #(= (:typography-ref-id %) (:id typography))
                                    remap-typography
+                                   content)))))
+
+(defn remove-external-typographies
+  "Change the shape so that any use of an external typography now is removed"
+  [shape file-id]
+  (let [remove-ref-file #(dissoc % :typography-ref-file :typography-ref-id)]
+
+    (update shape :content
+            (fn [content]
+              (txt/transform-nodes #(not= (:typography-ref-file %) file-id)
+                                   remove-ref-file
                                    content)))))
 

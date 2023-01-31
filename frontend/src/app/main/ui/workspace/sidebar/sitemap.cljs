@@ -27,42 +27,46 @@
 
 (mf/defc page-item
   [{:keys [page index deletable? selected?] :as props}]
-  (let [local       (mf/use-state {})
-        input-ref   (mf/use-ref)
-        id          (:id page)
-        state       (mf/use-state {:menu-open false})
+  (let [local                (mf/use-state {})
+        input-ref            (mf/use-ref)
+        id                   (:id page)
+        state                (mf/use-state {:menu-open false})
 
-        delete-fn   (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
-        navigate-fn (mf/use-callback (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
+        delete-fn            (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
+        navigate-fn          (mf/use-callback (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         on-context-menu
         (mf/use-callback
-         (mf/deps id)
+         (mf/deps id workspace-read-only?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (let [pos (dom/get-client-position event)]
-             (swap! state assoc
-                    :menu-open true
-                    :top (:y pos)
-                    :left (:x pos)))))
+           (when-not workspace-read-only?
+             (let [pos (dom/get-client-position event)]
+               (swap! state assoc
+                      :menu-open true
+                      :top (:y pos)
+                      :left (:x pos))))))
 
         on-delete
         (mf/use-callback
          (mf/deps id)
          #(st/emit! (modal/show
-                      {:type :confirm
-                       :title (tr "modals.delete-page.title")
-                       :message (tr "modals.delete-page.body")
-                       :on-accept delete-fn})))
+                     {:type :confirm
+                      :title (tr "modals.delete-page.title")
+                      :message (tr "modals.delete-page.body")
+                      :on-accept delete-fn})))
 
         on-double-click
         (mf/use-callback
+         (mf/deps workspace-read-only?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (swap! local assoc :edition true)
-           (swap! state assoc :menu-open false)))
+           (when-not workspace-read-only?
+             (swap! local assoc :edition true)
+             (swap! state assoc :menu-open false))))
 
         on-blur
         (mf/use-callback
@@ -75,13 +79,13 @@
 
         on-key-down
         (mf/use-callback
-        (fn [event]
-          (cond
-            (kbd/enter? event)
-            (on-blur event)
+         (fn [event]
+           (cond
+             (kbd/enter? event)
+             (on-blur event)
 
-            (kbd/esc? event)
-            (swap! local assoc :edition false))))
+             (kbd/esc? event)
+             (swap! local assoc :edition false))))
 
         on-drop
         (mf/use-callback
@@ -100,7 +104,8 @@
          :on-drop on-drop
          :data {:id id
                 :index index
-                :name (:name page)})]
+                :name (:name page)}
+         :draggable? (not workspace-read-only?))]
 
     (mf/use-effect
       (mf/deps selected?)
@@ -141,22 +146,23 @@
          [:*
           [:span (:name page)]
           [:div.page-actions
-           (when deletable?
+           (when (and deletable? (not workspace-read-only?))
              [:a {:on-click on-delete} i/trash])]])]]
 
-     [:& context-menu
-      {:selectable false
-       :show (:menu-open @state)
-       :on-close #(swap! state assoc :menu-open false)
-       :top (:top @state)
-       :left (:left @state)
-       :options (cond-> []
-                  deletable?
-                  (conj [(tr "workspace.assets.delete") on-delete])
+     (when-not workspace-read-only?
+       [:& context-menu
+        {:selectable false
+         :show (:menu-open @state)
+         :on-close #(swap! state assoc :menu-open false)
+         :top (:top @state)
+         :left (:left @state)
+         :options (cond-> []
+                    deletable?
+                    (conj [(tr "workspace.assets.delete") on-delete])
 
-                  :always
-                  (-> (conj [(tr "workspace.assets.rename") on-double-click])
-                      (conj [(tr "workspace.assets.duplicate") on-duplicate])))}]]))
+                    :always
+                    (-> (conj [(tr "workspace.assets.rename") on-double-click])
+                        (conj [(tr "workspace.assets.duplicate") on-duplicate])))}])]))
 
 
 ;; --- Page Item Wrapper
@@ -198,26 +204,27 @@
 
 (mf/defc sitemap
   []
-  (let [file        (mf/deref refs/workspace-file)
-        create      (mf/use-callback
-                     (mf/deps file)
-                     (fn []
-                       (st/emit! (dw/create-page {:file-id (:id file)
-                                                  :project-id (:project-id file)}))))
-        show-pages? (mf/use-state true)
-
-        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+  (let [{:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
         (use-resize-hook :sitemap 200 38 400 :y false nil)
 
-        size (if @show-pages? size 38)
-        toggle-pages
-        (mf/use-callback #(reset! show-pages? not))]
+        file                 (mf/deref refs/workspace-file)
+        create               (mf/use-callback
+                              (mf/deps file)
+                              (fn []
+                                (st/emit! (dw/create-page {:file-id (:id file)
+                                                           :project-id (:project-id file)}))))
+        show-pages?          (mf/use-state true)
+        size                 (if @show-pages? size 38)
+        toggle-pages         (mf/use-callback #(reset! show-pages? not))
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)]
 
     [:div#sitemap.tool-window {:ref parent-ref
                                :style #js {"--height" (str size "px")}}
      [:div.tool-window-bar
       [:span (tr "workspace.sidebar.sitemap")]
-      [:div.add-page {:on-click create} i/close]
+      (if workspace-read-only?
+        [:div.view-only-mode (tr "labels.view-only")]
+        [:div.add-page {:on-click create} i/close])
       [:div.collapse-pages {:on-click toggle-pages
                             :style {:transform (when (not @show-pages?) "rotate(-90deg)")}} i/arrow-slide]]
 

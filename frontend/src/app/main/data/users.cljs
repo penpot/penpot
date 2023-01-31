@@ -87,7 +87,7 @@
   (ptk/reify ::fetch-teams
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/query! :teams)
+      (->> (rp/cmd! :get-teams)
            (rx/map teams-fetched)))))
 
 ;; --- EVENT: fetch-profile
@@ -164,6 +164,7 @@
                   (swap! storage dissoc :redirect-url)
                   (.replace js/location redirect-url))
                 (rt/nav' :dashboard-projects {:team-id team-id}))))]
+
     (ptk/reify ::logged-in
       IDeref
       (-deref [_] profile)
@@ -198,7 +199,7 @@
                     :invitation-token invitation-token}]
 
         ;; NOTE: We can't take the profile value from login because
-        ;; there are cases when login is successfull but the cookie is
+        ;; there are cases when login is successful but the cookie is
         ;; not set properly (because of possible misconfiguration).
         ;; So, we proceed to make an additional call to fetch the
         ;; profile, and ensure that cookie is set correctly. If
@@ -445,7 +446,7 @@
     (ptk/reify ::fetch-team-users
       ptk/WatchEvent
       (watch [_ _ _]
-        (->> (rp/query! :team-users {:team-id team-id})
+        (->> (rp/cmd! :get-team-users {:team-id team-id})
              (rx/map #(partial fetched %)))))))
 
 (defn fetch-file-comments-users

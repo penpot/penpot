@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.viewport.drawarea
   "Drawing components."
   (:require
-   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.main.ui.shapes.path :refer [path-shape]]
    [app.main.ui.workspace.shapes :as shapes]
@@ -22,7 +21,7 @@
 
   [:g.draw-area
    [:g {:style {:pointer-events "none"}}
-    [:& shapes/shape-wrapper {:shape (gsh/transform-shape shape)}]]
+    [:& shapes/shape-wrapper {:shape shape}]]
 
    (case tool
      :path      [:& path-editor {:shape shape :zoom zoom}]
@@ -31,7 +30,7 @@
 
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]
-  (let [{:keys [x y width height]} (:selrect (gsh/transform-shape shape))]
+  (let [{:keys [x y width height]} (:selrect shape)]
     (when (and x y
                (not (mth/nan? x))
                (not (mth/nan? y)))

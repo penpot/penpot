@@ -247,7 +247,62 @@
 
    {:name "0079-mod-profile-table"
     :fn (mg/resource "app/migrations/sql/0079-mod-profile-table.sql")}
-   ])
+
+   {:name "0080-mod-index-names"
+    :fn (mg/resource "app/migrations/sql/0080-mod-index-names.sql")}
+
+   {:name "0081-add-deleted-at-index-to-file-table"
+    :fn (mg/resource "app/migrations/sql/0081-add-deleted-at-index-to-file-table.sql")}
+
+   {:name "0082-add-features-column-to-file-table"
+    :fn (mg/resource "app/migrations/sql/0082-add-features-column-to-file-table.sql")}
+
+   {:name "0083-add-file-data-fragment-table"
+    :fn (mg/resource "app/migrations/sql/0083-add-file-data-fragment-table.sql")}
+
+   {:name "0084-add-features-column-to-file-change-table"
+    :fn (mg/resource "app/migrations/sql/0084-add-features-column-to-file-change-table.sql")}
+
+   {:name "0085-add-webhook-table"
+    :fn (mg/resource "app/migrations/sql/0085-add-webhook-table.sql")}
+
+   {:name "0086-add-webhook-delivery-table"
+    :fn (mg/resource "app/migrations/sql/0086-add-webhook-delivery-table.sql")}
+
+   {:name "0087-mod-task-table"
+    :fn (mg/resource "app/migrations/sql/0087-mod-task-table.sql")}
+
+   {:name "0088-mod-team-profile-rel-table"
+    :fn (mg/resource "app/migrations/sql/0088-mod-team-profile-rel-table.sql")}
+
+   {:name "0089-mod-project-profile-rel-table"
+    :fn (mg/resource "app/migrations/sql/0089-mod-project-profile-rel-table.sql")}
+
+   {:name "0090-mod-http-session-table"
+    :fn (mg/resource "app/migrations/sql/0090-mod-http-session-table.sql")}
+
+   {:name "0091-mod-team-project-profile-rel-table"
+    :fn (mg/resource "app/migrations/sql/0091-mod-team-project-profile-rel-table.sql")}
+
+   {:name "0092-mod-team-invitation-table"
+    :fn (mg/resource "app/migrations/sql/0092-mod-team-invitation-table.sql")}
+
+   {:name "0093-del-file-share-tokens-table"
+    :fn (mg/resource "app/migrations/sql/0093-del-file-share-tokens-table.sql")}
+
+   {:name "0094-del-profile-attr-table"
+    :fn (mg/resource "app/migrations/sql/0094-del-profile-attr-table.sql")}
+
+   {:name "0095-del-storage-data-table"
+    :fn (mg/resource "app/migrations/sql/0095-del-storage-data-table.sql")}
+
+   {:name "0096-del-storage-pending-table"
+    :fn (mg/resource "app/migrations/sql/0096-del-storage-pending-table.sql")}
+
+   {:name "0098-add-quotes-table"
+    :fn (mg/resource "app/migrations/sql/0098-add-quotes-table.sql")}
+
+  ])
 
 
 (defmethod ig/init-key ::migrations [_ _] migrations)

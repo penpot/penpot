@@ -7,9 +7,9 @@
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
    [app.http :as-alias http]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -26,16 +26,18 @@
 
 (defn get-context
   [request]
-  (merge
-   *context*
-   {:path          (:path request)
-    :method        (:method request)
-    :params        (:params request)
-    :ip-addr       (parse-client-ip request)
-    :profile-id    (:profile-id request)}
-   (let [headers (:headers request)]
-     {:user-agent (get headers "user-agent")
-      :frontend-version (get headers "x-frontend-version" "unknown")})))
+  (let [claims (:session-token-claims request)]
+    (merge
+     *context*
+     {:path          (:path request)
+      :method        (:method request)
+      :params        (:params request)
+      :ip-addr       (parse-client-ip request)}
+     (d/without-nils
+      {:user-agent (yrq/get-header request "user-agent")
+       :frontend-version (or (yrq/get-header request "x-frontend-version")
+                             "unknown")
+       :profile-id   (:uid claims)}))))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -61,7 +63,7 @@
   (let [{:keys [code] :as data} (ex-data err)]
     (cond
       (= code :spec-validation)
-      (let [explain (us/pretty-explain data)]
+      (let [explain (ex/explain data)]
         (yrs/response :status 400
                       :body   (-> data
                                   (dissoc ::s/problems ::s/value)
@@ -75,11 +77,11 @@
 
 (defmethod handle-exception :assertion
   [error request]
-  (let [edata (ex-data error)
-        explain (us/pretty-explain edata)]
-    (l/error ::l/raw (str (ex-message error) "\n" explain)
-             ::l/context (get-context request)
-             :cause error)
+  (let [edata   (ex-data error)
+        explain (ex/explain edata)]
+    (l/error :hint (ex-message error)
+             :cause error
+             ::l/context (get-context request))
     (yrs/response :status 500
                   :body   {:type :server-error
                            :code :assertion
@@ -91,12 +93,29 @@
   [err _]
   (yrs/response 404 (ex-data err)))
 
+(defmethod handle-exception :internal
+  [error request]
+  (let [{:keys [code] :as edata} (ex-data error)]
+    (cond
+      (= :concurrency-limit-reached code)
+      (yrs/response 429)
+
+      :else
+      (do
+        (l/error :hint (ex-message error)
+                 :cause error
+                 ::l/context (get-context request))
+        (yrs/response 500 {:type :server-error
+                           :code :unhandled
+                           :hint (ex-message error)
+                           :data edata})))))
+
 (defmethod handle-exception org.postgresql.util.PSQLException
   [error request]
   (let [state (.getSQLState ^java.sql.SQLException error)]
-    (l/error ::l/raw (ex-message error)
-             ::l/context (get-context request)
-             :cause error)
+    (l/error :hint (ex-message error)
+             :cause error
+             ::l/context (get-context request))
     (cond
       (= state "57014")
       (yrs/response 504 {:type :server-error
@@ -121,9 +140,9 @@
       ;; This means that exception is not a controlled exception.
       (nil? edata)
       (do
-        (l/error ::l/raw (ex-message error)
-                 ::l/context (get-context request)
-                 :cause error)
+        (l/error :hint (ex-message error)
+                 :cause error
+                 ::l/context (get-context request))
         (yrs/response 500 {:type :server-error
                            :code :unexpected
                            :hint (ex-message error)}))
@@ -139,9 +158,9 @@
 
       :else
       (do
-        (l/error ::l/raw (ex-message error)
-                 ::l/context (get-context request)
-                 :cause error)
+        (l/error :hint (ex-message error)
+                 :cause error
+                 ::l/context (get-context request))
         (yrs/response 500 {:type :server-error
                            :code :unhandled
                            :hint (ex-message error)

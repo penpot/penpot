@@ -163,7 +163,8 @@
              (when enter?
                (dom/blur! input-node))
              (when esc?
-               (update-input value-str)))))
+               (update-input value-str)
+               (dom/blur! input-node)))))
 
         handle-mouse-wheel
         (mf/use-callback
@@ -225,7 +226,7 @@
     (mf/use-layout-effect
      (mf/deps handle-mouse-wheel)
      (fn []
-       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:pasive false})]]
+       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:passive false})]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
@@ -240,7 +241,7 @@
     (mf/use-layout-effect
      (mf/deps handle-mouse-wheel)
      (fn []
-       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:pasive false})]]
+       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:passive false})]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
@@ -248,7 +249,7 @@
     (mf/use-layout-effect
      (mf/deps handle-mouse-wheel)
      (fn []
-       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:pasive false})]]
+       (let [keys [(events/listen (mf/ref-val ref) EventType.WHEEL handle-mouse-wheel #js {:passive false})]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 

@@ -25,10 +25,10 @@
                    ::password-2]))
 
 (defn- password-equality
-  [data]
+  [errors data]
   (let [password-1 (:password-1 data)
         password-2 (:password-2 data)]
-    (cond-> {}
+    (cond-> errors
       (and password-1 password-2
            (not= password-1 password-2))
       (assoc :password-2 {:message "errors.password-invalid-confirmation"})

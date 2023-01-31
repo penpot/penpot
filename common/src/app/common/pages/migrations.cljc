@@ -2,16 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.pages.migrations
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gsht]
-   [app.common.logging :as l]
+   [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
@@ -23,13 +24,15 @@
 
 (defmulti migrate :version)
 
+(log/set-level! :info)
+
 (defn migrate-data
   ([data] (migrate-data data cp/file-version))
   ([data to-version]
    (if (= (:version data) to-version)
      data
      (let [migrate-fn #(do
-                         (l/trace :hint "migrate file" :id (:id %) :version-from %2 :version-to (inc %2))
+                         (log/trace :hint "migrate file" :id (:id %) :version-from %2 :version-to (inc %2))
                          (migrate (assoc %1 :version (inc %2))))]
        (reduce migrate-fn data (range (:version data 0) to-version))))))
 
@@ -54,9 +57,9 @@
                                (into [] shapes)
                                shapes))))
           (update-page [page]
-            (update page :objects d/update-vals update-object))]
+            (update page :objects update-vals update-object))]
 
-    (update data :pages-index d/update-vals update-page)))
+    (update data :pages-index update-vals update-page)))
 
 ;; Changes paths formats
 (defmethod migrate 3
@@ -102,18 +105,12 @@
               (fix-frames-selrects)
 
               (and (empty? (:points object)) (not= (:id object) uuid/zero))
-              (fix-empty-points)
-
-              ;; Setup an empty transformation to re-calculate selrects
-              ;; and points data
-              :always
-              (-> (assoc :modifiers {:displacement (gmt/matrix)})
-                  (gsh/transform-shape))))
+              (fix-empty-points)))
 
           (update-page [page]
-            (update page :objects d/update-vals update-object))]
+            (update page :objects update-vals update-object))]
 
-    (update data :pages-index d/update-vals update-page)))
+    (update data :pages-index update-vals update-page)))
 
 ;; We did rollback version 4 migration.
 ;; Keep this in order to remember the next version to be 5
@@ -129,9 +126,9 @@
               object))
 
           (update-page [page]
-            (update page :objects d/update-vals update-object))]
+            (update page :objects update-vals update-object))]
 
-    (update data :pages-index d/update-vals update-page)))
+    (update data :pages-index update-vals update-page)))
 
 (defmethod migrate 6
   [data]
@@ -153,11 +150,11 @@
               shape))
 
           (update-container [container]
-            (update container :objects d/update-vals fix-line-paths))]
+            (update container :objects update-vals fix-line-paths))]
 
     (-> data
-        (update :pages-index d/update-vals update-container)
-        (update :components d/update-vals update-container))))
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
 
 ;; Remove interactions pointing to deleted frames
 (defmethod migrate 7
@@ -168,9 +165,9 @@
                              (filterv #(get-in page [:objects (:destination %)]) interactions))))
 
           (update-page [page]
-            (update page :objects d/update-vals (partial update-object page)))]
+            (update page :objects update-vals (partial update-object page)))]
 
-    (update data :pages-index d/update-vals update-page)))
+    (update data :pages-index update-vals update-page)))
 
 ;; Remove groups without any shape, both in pages and components
 
@@ -211,8 +208,8 @@
                   (assoc container :objects objects)))))]
 
     (-> data
-        (update :pages-index d/update-vals clean-container)
-        (update :components d/update-vals clean-container))))
+        (update :pages-index update-vals clean-container)
+        (update :components update-vals clean-container))))
 
 (defmethod migrate 9
   [data]
@@ -246,7 +243,7 @@
   [data]
   (letfn [(update-page [page]
             (d/update-in-when page [:objects uuid/zero] dissoc :points :selrect))]
-    (update data :pages-index d/update-vals update-page)))
+    (update data :pages-index update-vals update-page)))
 
 (defmethod migrate 11
   [data]
@@ -258,9 +255,9 @@
 
           (update-page [page]
             (update page :objects (fn [objects]
-                                    (d/update-vals objects (partial update-object objects)))))]
+                                    (update-vals objects (partial update-object objects)))))]
 
-    (update data :pages-index d/update-vals update-page)))
+    (update data :pages-index update-vals update-page)))
 
 (defmethod migrate 12
   [data]
@@ -270,9 +267,9 @@
               (assoc :size nil)))
 
           (update-page [page]
-            (d/update-in-when page [:options :saved-grids] d/update-vals update-grid))]
+            (d/update-in-when page [:options :saved-grids] update-vals update-grid))]
 
-    (update data :pages-index d/update-vals update-page)))
+    (update data :pages-index update-vals update-page)))
 
 ;; Add rx and ry to images
 (defmethod migrate 13
@@ -290,9 +287,9 @@
               (fix-radius)))
 
           (update-page [page]
-            (update page :objects d/update-vals update-object))]
+            (update page :objects update-vals update-object))]
 
-    (update data :pages-index d/update-vals update-page)))
+    (update data :pages-index update-vals update-page)))
 
 (defmethod migrate 14
   [data]
@@ -320,8 +317,8 @@
                 (assoc container :objects objects))))]
 
     (-> data
-        (update :pages-index d/update-vals update-container)
-        (update :components d/update-vals update-container))))
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
 
 
 (defmethod migrate 15 [data] data)
@@ -367,11 +364,11 @@
               (assign-fills)))
 
           (update-container [container]
-            (update container :objects d/update-vals update-object))]
+            (update container :objects update-vals update-object))]
 
     (-> data
-        (update :pages-index d/update-vals update-container)
-        (update :components d/update-vals update-container))))
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
 
 (defmethod migrate 17
   [data]
@@ -396,11 +393,11 @@
               (assoc :fills [])))
 
           (update-container [container]
-            (update container :objects d/update-vals update-object))]
+            (update container :objects update-vals update-object))]
 
     (-> data
-        (update :pages-index d/update-vals update-container)
-        (update :components d/update-vals update-container))))
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
 
 ;;Remove position-data to solve a bug with the text positioning
 (defmethod migrate 18
@@ -411,11 +408,11 @@
               (dissoc :position-data)))
 
           (update-container [container]
-            (update container :objects d/update-vals update-object))]
+            (update container :objects update-vals update-object))]
 
     (-> data
-        (update :pages-index d/update-vals update-container)
-        (update :components d/update-vals update-container))))
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
 
 (defmethod migrate 19
   [data]
@@ -427,11 +424,37 @@
               (dissoc :position-data)))
 
           (update-container [container]
-            (update container :objects d/update-vals update-object))]
+            (update container :objects update-vals update-object))]
 
     (-> data
-        (update :pages-index d/update-vals update-container)
-        (update :components d/update-vals update-container))))
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 20
+  [data]
+  (letfn [(update-object [objects object]
+            (let [frame-id (:frame-id object)
+                  calculated-frame-id
+                  (or (->> (cph/get-parent-ids objects (:id object))
+                           (map (d/getf objects))
+                           (d/seek cph/frame-shape?)
+                           :id)
+                      ;; If we cannot find any we let the frame-id as it was before
+                      frame-id)]
+              (when (not= frame-id calculated-frame-id)
+                (log/info :hint "Fix wrong frame-id"
+                          :shape (:name object)
+                          :id (:id object)
+                          :current (dm/get-in objects [frame-id :name])
+                          :calculated (get-in objects [calculated-frame-id :name])))
+              (assoc object :frame-id calculated-frame-id)))
+
+          (update-container [container]
+            (update container :objects #(update-vals % (partial update-object %))))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
 
 ;; TODO: pending to do a migration for delete already not used fill
 ;; and stroke props. This should be done for >1.14.x version.

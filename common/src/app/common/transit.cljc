@@ -2,10 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.transit
   (:require
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.uri :as uri]
@@ -13,7 +14,7 @@
    [lambdaisland.uri :as luri]
    [linked.core :as lk]
    [linked.set :as lks]
-
+   #?(:clj  [datoteka.fs :as fs])
    #?(:cljs ["luxon" :as lxn]))
   #?(:clj
      (:import
@@ -22,13 +23,40 @@
       java.io.ByteArrayInputStream
       java.io.ByteArrayOutputStream
       java.io.File
+      java.nio.file.Path
       java.time.Duration
       java.time.Instant
       java.time.OffsetDateTime
       lambdaisland.uri.URI
       linked.set.LinkedSet)))
 
-;; --- MISC
+(def write-handlers (atom nil))
+(def read-handlers (atom nil))
+(def write-handler-map (atom nil))
+(def read-handler-map (atom nil))
+
+;; A generic pointer; mainly used for deserialize backend pointer-map
+;; instances that serializes to pointer but may in other ways.
+(deftype Pointer [id metadata]
+  #?@(:clj
+      [clojure.lang.IObj
+       (meta [_] metadata)
+       (withMeta [_ meta] (Pointer. id meta))
+       clojure.lang.IDeref
+       (deref [_] id)]
+      :cljs
+      [cljs.core/IMeta
+       (-meta [_] metadata)
+       cljs.core/IWithMeta
+       (-with-meta [_ meta] (Pointer. id meta))
+       cljs.core/IDeref
+       (-deref [_] id)]))
+
+(defn pointer?
+  [o]
+  (instance? Pointer o))
+
+;; --- HELPERS
 
 #?(:clj
    (defn str->bytes
@@ -44,151 +72,124 @@
      ([^bytes data, ^String encoding]
       (String. data encoding))))
 
-#?(:clj
-   (def ^:private file-write-handler
-     (t/write-handler
-      (constantly "file")
-      (fn [v] (str v)))))
+(defn add-handlers!
+  [& handlers]
+  (letfn [(adapt-write-handler [{:keys [id class wfn]}]
+            [class (t/write-handler (constantly id) wfn)])
 
-#?(:cljs
-   (def bigint-read-handler
-     (t/read-handler
-      (fn [value]
-        (js/parseInt value 10)))))
+          (adapt-read-handler [{:keys [id rfn]}]
+            [id (t/read-handler rfn)])
 
-#?(:cljs
-   (def uuid-read-handler
-     (t/read-handler uuid)))
+          (merge-and-clean [m1 m2]
+            (-> (merge m1 m2)
+                (d/without-nils)))]
 
-;; --- GEOM
+    (let [rhs (into {}
+                    (comp
+                     (filter :rfn)
+                     (map adapt-read-handler))
+                    handlers)
+          whs (into {}
+                    (comp
+                     (filter :wfn)
+                     (map adapt-write-handler))
+                    handlers)
+          cwh (swap! write-handlers merge-and-clean whs)
+          crh (swap! read-handlers merge-and-clean rhs)]
 
-(def point-write-handler
-  (t/write-handler
-   (constantly "point")
-   (fn [v] (into {} v))))
-
-(def point-read-handler
-  (t/read-handler gpt/map->Point))
-
-(def matrix-write-handler
-  (t/write-handler
-   (constantly "matrix")
-   (fn [v] (into {} v))))
-
-(def matrix-read-handler
-  (t/read-handler (fn [data]
-                    #?(:cljs (gmt/map->Matrix data)
-                       :clj  (let [{:keys [a b c d e f]} data]
-                               (gmt/matrix (double a)
-                                           (double b)
-                                           (double c)
-                                           (double d)
-                                           (double e)
-                                           (double f)))))))
-
-;; --- ORDERED SET
-
-(def ordered-set-write-handler
-  (t/write-handler
-   (constantly "ordered-set")
-   (fn [v] (vec v))))
-
-(def ordered-set-read-handler
-  (t/read-handler #(into (lk/set) %)))
-
-;; --- DURATION
-
-(def duration-read-handler
-  #?(:cljs (t/read-handler #(.fromMillis ^js lxn/Duration %))
-     :clj  (t/read-handler #(Duration/ofMillis %))))
-
-(def duration-write-handler
-  (t/write-handler
-   (constantly "duration")
-   (fn [v] (inst-ms v))))
-
-;; --- TIME
-
-(def ^:private instant-read-handler
-  #?(:clj
-     (t/read-handler
-      (fn [v] (-> (Long/parseLong v)
-                  (Instant/ofEpochMilli))))
-     :cljs
-     (t/read-handler
-      (fn [v]
-        (let [ms (js/parseInt v 10)]
-          (.fromMillis ^js lxn/DateTime ms))))))
-
-(def ^:private instant-write-handler
-  (t/write-handler
-   (constantly "m")
-   (fn [v] (str (inst-ms v)))))
-
-;; --- URI
-
-(def uri-read-handler
-  (t/read-handler uri/uri))
-
-(def uri-write-handler
-  (t/write-handler
-   (constantly "uri")
-   (fn [v] (str v))))
+      (reset! write-handler-map #?(:clj (t/write-handler-map cwh) :cljs cwh))
+      (reset! read-handler-map #?(:clj (t/read-handler-map crh) :cljs crh))
+      nil)))
 
 ;; --- HANDLERS
 
-(def +read-handlers+
-  {"matrix"      matrix-read-handler
-   "ordered-set" ordered-set-read-handler
-   "point"       point-read-handler
-   "duration"    duration-read-handler
-   "m"           instant-read-handler
-   "uri"         uri-read-handler
-   #?@(:cljs ["n" bigint-read-handler
-              "u" uuid-read-handler])
-   })
+(add-handlers!
+ #?@(:clj
+     [{:id "file"
+       :class File
+       :wfn str
+       :rfn identity}
+      {:id "path"
+       :class Path
+       :wfn str
+       :rfn fs/path}])
 
-(def +write-handlers+
-  #?(:clj
-     {Matrix         matrix-write-handler
-      Point          point-write-handler
-      Instant        instant-write-handler
-      LinkedSet      ordered-set-write-handler
-      URI            uri-write-handler
-      File           file-write-handler
-      OffsetDateTime instant-write-handler}
-     :cljs
-     {gmt/Matrix     matrix-write-handler
-      gpt/Point      point-write-handler
-      lxn/DateTime   instant-write-handler
-      lxn/Duration   duration-write-handler
-      lks/LinkedSet  ordered-set-write-handler
-      luri/URI       uri-write-handler}
-     ))
+ #?(:cljs
+    {:id "n"
+     :rfn (fn [value]
+            (js/parseInt value 10))})
+ #?(:cljs
+    {:id "u"
+     :rfn parse-uuid})
+
+ {:id "point"
+  :class #?(:clj Point :cljs gpt/Point)
+  :wfn #(into {} %)
+  :rfn gpt/map->Point}
+
+ {:id "matrix"
+  :class #?(:clj Matrix :cljs gmt/Matrix)
+  :wfn #(into {} %)
+  :rfn #?(:cljs gmt/map->Matrix
+          :clj  (fn [{:keys [a b c d e f]}]
+                  (gmt/matrix (double a)
+                              (double b)
+                              (double c)
+                              (double d)
+                              (double e)
+                              (double f))))}
+
+ {:id "ordered-set"
+  :class #?(:clj LinkedSet :cljs lks/LinkedSet)
+  :wfn vec
+  :rfn #(into (lk/set) %)}
+
+ {:id "duration"
+  :class #?(:clj Duration :cljs lxn/Duration)
+  :rfn (fn [v]
+         #?(:clj  (Duration/ofMillis v)
+            :cljs (.fromMillis ^js lxn/Duration v)))
+  :wfn inst-ms}
+
+ {:id "m"
+  :class #?(:clj Instant :cljs lxn/DateTime)
+  :rfn (fn [v]
+         #?(:clj  (-> (Long/parseLong v)
+                      (Instant/ofEpochMilli))
+            :cljs (let [ms (js/parseInt v 10)]
+                    (.fromMillis ^js lxn/DateTime ms))))
+  :wfn (comp str inst-ms)}
+
+ {:id "penpot/pointer"
+  :class Pointer
+  :rfn (fn [[id meta]]
+         (Pointer. id meta))}
+
+ #?(:clj
+    {:id "m"
+     :class OffsetDateTime
+     :wfn (comp str inst-ms)})
+
+ {:id "uri"
+  :class #?(:clj URI :cljs luri/URI)
+  :rfn uri/uri
+  :wfn str})
 
 ;; --- Low-Level Api
-
-#?(:clj
-   (def read-handlers
-     (t/read-handler-map +read-handlers+)))
-
-#?(:clj
-   (def write-handlers
-     (t/write-handler-map +write-handlers+)))
 
 #?(:clj
    (defn reader
      ([istream]
       (reader istream nil))
      ([istream {:keys [type] :or {type :json}}]
-      (t/reader istream type {:handlers read-handlers}))))
+      (t/reader istream type {:handlers @read-handler-map}))))
 
 #?(:clj
    (defn writer
      ([ostream]
       (writer ostream nil))
      ([ostream {:keys [type] :or {type :json}}]
-      (t/writer ostream type {:handlers write-handlers}))))
+      (t/writer ostream type {:handlers @write-handler-map}))))
 
 #?(:clj
    (defn read!
@@ -199,7 +200,6 @@
    (defn write!
      [writer data]
      (t/write writer data)))
-
 
 ;; --- High-Level Api
 
@@ -223,7 +223,7 @@
   ([data opts]
    #?(:cljs
       (let [t (:type opts :json)
-            w (t/writer t {:handlers +write-handlers+})]
+            w (t/writer t {:handlers @write-handler-map})]
         (t/write w data))
       :clj
       (->> (encode data opts)
@@ -234,7 +234,7 @@
   ([data opts]
    #?(:cljs
       (let [t (:type opts :json)
-            r (t/reader t {:handlers +read-handlers+})]
+            r (t/reader t {:handlers @read-handler-map})]
         (t/read r data))
       :clj
       (-> (str->bytes data)

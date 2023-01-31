@@ -54,6 +54,9 @@
     span {
       color: $color-gray-60;
     }
+    input {
+      color: $color-white !important;
+    }
 
     .toggle-content {
       svg {
@@ -149,6 +152,9 @@
       span.element-name {
         color: $color-gray-60;
       }
+      input.element-name {
+        color: $color-white !important;
+      }
 
       svg {
         fill: $color-gray-60;
@@ -203,6 +209,14 @@
 
 input.element-name {
   max-width: 75%;
+  margin-right: 5px;
+  background-color: $color-gray-50;
+  color: $color-white;
+  &:focus,
+  &:focus-within {
+    outline: none;
+    border: 1px solid $color-primary;
+  }
 }
 
 span.element-name {
@@ -225,7 +239,6 @@ span.element-name {
   margin-left: auto;
   position: relative;
   width: 32px;
-  right: 20px;
 
   &.is-parent {
     right: 0;
@@ -306,12 +319,16 @@ span.element-name {
 
     &.search {
       .search-box {
-        border: 1px solid $color-primary;
+        border: 1px solid $color-gray-20;
         border-radius: 4px;
         height: 32px;
         width: 100%;
         display: flex;
         align-items: center;
+        &:active,
+        &:focus-within {
+          border: 1px solid $color-primary;
+        }
         input {
           border: 0;
           width: 100%;
@@ -319,6 +336,9 @@ span.element-name {
           color: $color-white;
           font-size: 12px;
           height: 16px;
+          &:focus {
+            outline: none;
+          }
         }
         span {
           height: 16px;

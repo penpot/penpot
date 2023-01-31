@@ -66,7 +66,7 @@
        [:li {:on-click on-zoom-fill}
         (tr "workspace.header.zoom-fill") [:span (sc/get-tooltip :toggle-zoom-style)]]
        [:li {:on-click on-fullscreen}
-        (tr "workspace.header.zoom-full-screen") [:span (sc/get-tooltip :toogle-fullscreen)]]]]]))
+        (tr "workspace.header.zoom-full-screen") [:span (sc/get-tooltip :toggle-fullscreen)]]]]]))
 
 
 (mf/defc header-options
@@ -118,7 +118,7 @@
         i/full-screen)]
 
      (when (:is-admin permissions)
-       [:span.btn-primary {:on-click open-share-dialog} i/export [:span (tr "labels.share-prototype")]])
+       [:span.btn-primary.tooltip.tooltip-bottom-left {:on-click open-share-dialog :alt (tr "labels.share-prototype")} i/export [:span (tr "labels.share-prototype")]])
 
      (when (:can-edit permissions)
        [:span.btn-text-dark {:on-click go-to-workspace} (tr "labels.edit-file")])
@@ -188,10 +188,10 @@
   (let [go-to-dashboard
         #(st/emit! (dv/go-to-dashboard))
 
-        go-to-handoff
+        go-to-inspect
         (fn[]
           (if (:is-logged permissions)
-           (st/emit! dv/close-thumbnails-panel (dv/go-to-section :handoff))
+           (st/emit! dv/close-thumbnails-panel (dv/go-to-section :inspect))
            (open-login-dialog)))
 
         navigate
@@ -228,9 +228,9 @@
                 (and (= (:type permissions) :share-link)
                      (= (:who-inspect permissions) "all")))
         [:button.mode-zone-button.tooltip.tooltip-bottom
-         {:on-click go-to-handoff
-          :class (dom/classnames :active (= section :handoff))
-          :alt (tr "viewer.header.handoff-section" (sc/get-tooltip :open-handoff))}
+         {:on-click go-to-inspect
+          :class (dom/classnames :active (= section :inspect))
+          :alt (tr "viewer.header.inspect-section" (sc/get-tooltip :open-inspect))}
          i/code])]
 
      [:& header-options {:section section

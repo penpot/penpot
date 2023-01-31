@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.mask
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]
    [cuerdas.core :as str]
@@ -50,9 +51,7 @@
           render-id   (mf/use-ctx muc/render-id)
           svg-text?   (and (= :text (:type mask)) (some? (:position-data mask)))
 
-          mask-bb (-> (gsh/transform-shape mask)
-                      (:points))
-
+          mask-bb      (:points mask)
           mask-bb-rect (gsh/points->rect mask-bb)]
       [:defs
        [:filter {:id (filter-id render-id mask)}
@@ -68,7 +67,7 @@
        [:clipPath {:class "mask-clip-path"
                    :id (clip-id render-id mask)}
         [:polyline {:points (->> mask-bb
-                                 (map #(str (:x %) "," (:y %)))
+                                 (map #(dm/str (:x %) "," (:y %)))
                                  (str/join " "))}]]
 
        ;; When te shape is a text we pass to the shape the info and disable the filter.
@@ -79,6 +78,13 @@
                :y (:y mask-bb-rect)
                :width (:width mask-bb-rect)
                :height (:height mask-bb-rect)
+
+               ;; This is necesary to prevent a race condition in the dynamic-modifiers whether the modifier
+               ;; triggers afte the render
+               :data-old-x (:x mask-bb-rect)
+               :data-old-y (:y mask-bb-rect)
+               :data-old-width (:width mask-bb-rect)
+               :data-old-height (:height mask-bb-rect)
                :mask-units "userSpaceOnUse"}
         [:g {:filter (when-not svg-text? (filter-url render-id mask))}
          [:& shape-wrapper {:shape (-> mask (dissoc :shadow :blur) (assoc :is-mask? true))}]]]])))

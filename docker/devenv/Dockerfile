@@ -3,9 +3,9 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v16.17.0 \
-    CLOJURE_VERSION=1.11.1.1165 \
-    CLJKONDO_VERSION=2022.09.08 \
+ENV NODE_VERSION=v18.12.0 \
+    CLOJURE_VERSION=1.11.1.1189 \
+    CLJKONDO_VERSION=2022.10.14 \
     BABASHKA_VERSION=0.9.162 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
@@ -108,12 +108,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='c640fc5e5710dba3f92099a791be50fab54f91cf2c3838cb536ded27ecc562a6'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu19.28.81-ca-jdk19.0.0-linux_aarch64.tar.gz'; \
+         ESUM='5f9c1ea91000a271afad3726149a6aefbca3c3b9e0fa790e9aa7fbf0f38aa9ed'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu19.30.11-ca-jdk19.0.1-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='6813da339124261092daab369a1c60dea5f27f4ba9608a16517191d30511a087'; \
-         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu19.28.81-ca-jdk19.0.0-linux_x64.tar.gz'; \
+         ESUM='2ac8cd9e7e1e30c8fba107164a2ded9fad698326899564af4b1254815adfaa8a'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu19.30.11-ca-jdk19.0.1-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \

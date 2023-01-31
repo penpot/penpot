@@ -10,10 +10,15 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
+   [app.main :as-alias main]
+   [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as cmd.auth]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.rpc.queries.profile :as profile]
+   [app.tokens :as tokens]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
@@ -32,15 +37,15 @@
 (sv/defmethod ::login-with-ldap
   "Performs the authentication using LDAP backend. Only works if LDAP
   is properly configured and enabled with `login-with-ldap` flag."
-  {:auth false
+  {::rpc/auth false
    ::doc/added "1.15"}
-  [{:keys [session tokens ldap] :as cfg} params]
-  (when-not ldap
+  [{:keys [::main/props ::ldap/provider session] :as cfg} params]
+  (when-not provider
     (ex/raise :type :restriction
               :code :ldap-not-initialized
               :hide "ldap auth provider is not initialized"))
 
-  (let [info (ldap/authenticate ldap params)]
+  (let [info (ldap/authenticate provider params)]
     (when-not info
       (ex/raise :type :validation
                 :code :wrong-credentials))
@@ -56,20 +61,20 @@
         ;; user comes from team-invitation process; in this case,
         ;; regenerate token and send back to the user a new invitation
         ;; token (and mark current session as logged).
-        (let [claims (tokens :verify {:token token :iss :team-invitation})
+        (let [claims (tokens/verify props {:token token :iss :team-invitation})
               claims (assoc claims
                             :member-id  (:id profile)
                             :member-email (:email profile))
-              token  (tokens :generate claims)]
-          (with-meta {:invitation-token token}
-            {:transform-response ((:create session) (:id profile))
-             ::audit/props (:props profile)
-             ::audit/profile-id (:id profile)}))
+              token  (tokens/generate props claims)]
+          (-> {:invitation-token token}
+              (rph/with-transform (session/create-fn session (:id profile)))
+              (rph/with-meta {::audit/props (:props profile)
+                              ::audit/profile-id (:id profile)})))
 
-        (with-meta profile
-          {:transform-response ((:create session) (:id profile))
-           ::audit/props (:props profile)
-           ::audit/profile-id (:id profile)})))))
+        (-> profile
+            (rph/with-transform (session/create-fn session (:id profile)))
+            (rph/with-meta {::audit/props (:props profile)
+                            ::audit/profile-id (:id profile)}))))))
 
 (defn- login-or-register
   [{:keys [pool] :as cfg} info]

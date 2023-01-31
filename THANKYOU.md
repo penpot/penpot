@@ -86,3 +86,12 @@ We want to thank to the amazing people that help us! Thank you! You're the best!
 * [yrd](https://hosted.weblate.org/user/yrd)
 * [YukiYuigishi](https://hosted.weblate.org/user/YukiYuigishi)
 * [zcraber](https://hosted.weblate.org/user/zcraber)
+
+## Libraries & templates
+* systxema
+* plumilla
+* victor crespo
+* xtech
+* candidexmedia
+* merih güz
+* klarr agency

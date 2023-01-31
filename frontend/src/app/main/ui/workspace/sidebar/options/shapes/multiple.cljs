@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :as cpc]
    [app.common.text :as txt]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
@@ -19,7 +20,7 @@
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-attrs layout-container-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
@@ -34,116 +35,134 @@
 ;;   - text: read it from all the content nodes, and then merging it.
 (def type->read-mode
   {:frame
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :children
-    :blur       :children
-    :stroke     :shape
-    :text       :children
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :children
+    :blur             :children
+    :stroke           :shape
+    :text             :children
+    :exports          :shape
+    :layout-container :shape
+    :layout-item      :shape}
 
    :group
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :children
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :children
-    :text       :children
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :children
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :children
+    :text             :children
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :path
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :text
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :text
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :text
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :text
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :text
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :image
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :ignore
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :ignore
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :ignore
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :ignore
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :rect
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :circle
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :svg-raw
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}
 
    :bool
-   {:measure    :shape
-    :layer      :shape
-    :constraint :shape
-    :fill       :shape
-    :shadow     :shape
-    :blur       :shape
-    :stroke     :shape
-    :text       :ignore
-    :exports    :shape}})
+   {:measure          :shape
+    :layer            :shape
+    :constraint       :shape
+    :fill             :shape
+    :shadow           :shape
+    :blur             :shape
+    :stroke           :shape
+    :text             :ignore
+    :exports          :shape
+    :layout-container :ignore
+    :layout-item      :shape}})
 
 (def group->attrs
-  {:measure     measure-attrs
-   :layer       layer-attrs
-   :constraint  constraint-attrs
-   :fill        fill-attrs
-   :shadow      shadow-attrs
-   :blur        blur-attrs
-   :stroke      stroke-attrs
-   :text        ot/attrs
-   :exports     exports-attrs
-   :layout      layout-container-attrs
-   :layout-item layout-item-attrs})
+  {:measure           measure-attrs
+   :layer             layer-attrs
+   :constraint        constraint-attrs
+   :fill              fill-attrs
+   :shadow            shadow-attrs
+   :blur              blur-attrs
+   :stroke            stroke-attrs
+   :text              dwt/attrs
+   :exports           exports-attrs
+   :layout-container  layout-container-flex-attrs
+   :layout-item       layout-item-attrs})
 
 (def shadow-keys [:style :color :offset-x :offset-y :blur :spread])
 
@@ -229,16 +248,40 @@
     (= (:type shape) :path)
     (dissoc :content)))
 
+(defn- is-bool-descendant?
+  [[_ shape] objects selected-shape-ids]
+
+  (let [parent-id (:parent-id shape)
+        parent (get objects parent-id)]
+    (cond
+      (nil? shape) false                                                   ;; failsafe
+      (contains? selected-shape-ids (:id shape)) false                     ;; if it is one of the selected shapes, it is considerer not a bool descendant
+      (= :bool (:type parent)) true                                        ;; if its parent is of type bool, it is a bool descendant
+      :else (recur [parent-id parent] objects selected-shape-ids))))  ;; else, check its parent
+
 (mf/defc options
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children" "page-id" "file-id"]))]
    ::mf/wrap-props false}
   [props]
   (let [shapes (unchecked-get props "shapes")
         shapes-with-children (unchecked-get props "shapes-with-children")
+
+        ;; remove children from bool shapes
+        shape-ids (into #{} (map :id) shapes)
+
+        objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
+        objects
+        (into {}
+              (filter #(not (is-bool-descendant? % objects shape-ids)))
+              objects)
+
+        workspace-modifiers (mf/deref refs/workspace-modifiers)
+        shapes (map #(gsh/transform-shape % (get-in workspace-modifiers [(:id %) :modifiers])) shapes)
+
         page-id (unchecked-get props "page-id")
         file-id (unchecked-get props "file-id")
         shared-libs (unchecked-get props "shared-libs")
-        objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
+
         show-caps (some #(and (= :path (:type %)) (gsh/open-path? %)) shapes)
 
         ;; Selrect/points only used for measures and it's the one that changes the most. We separate it
@@ -254,20 +297,19 @@
         is-layout-child? (mf/deref is-layout-child-ref)
 
         has-text? (contains? all-types :text)
-        
+
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
 
-
-        [layer-ids       layer-values
-         constraint-ids  constraint-values
-         fill-ids        fill-values
-         shadow-ids      shadow-values
-         blur-ids        blur-values
-         stroke-ids      stroke-values
-         text-ids        text-values
-         exports-ids     exports-values
-         layout-ids      layout-container-values
-         layout-item-ids layout-item-values]
+        [layer-ids            layer-values
+         constraint-ids       constraint-values
+         fill-ids             fill-values
+         shadow-ids           shadow-values
+         blur-ids             blur-values
+         stroke-ids           stroke-values
+         text-ids             text-values
+         exports-ids          exports-values
+         layout-container-ids layout-container-values
+         layout-item-ids      layout-item-values]
         (mf/use-memo
          (mf/deps objects-no-measures)
          (fn []
@@ -282,7 +324,7 @@
              (get-attrs shapes objects-no-measures :stroke)
              (get-attrs shapes objects-no-measures :text)
              (get-attrs shapes objects-no-measures :exports)
-             (get-attrs shapes objects-no-measures :layout)
+             (get-attrs shapes objects-no-measures :layout-container)
              (get-attrs shapes objects-no-measures :layout-item)
              ])))]
 
@@ -290,9 +332,8 @@
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
-     (when (:layout layout-container-values)
-       [:& layout-container-menu {:type type :ids layout-ids :values layout-container-values}])
-     
+     [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values :multiple true}]
+
      (when is-layout-child?
        [:& layout-item-menu
         {:type type
@@ -301,7 +342,7 @@
          :is-layout-container? true
          :values layout-item-values}])
 
-     (when-not (empty? constraint-ids)
+     (when-not (or (empty? constraint-ids) is-layout-child?)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? layer-ids)

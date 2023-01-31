@@ -15,7 +15,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc banner
-  [{:keys [type position status controls content actions on-close data-test] :as props}]
+  [{:keys [type position status controls content actions on-close data-test role] :as props}]
   [:div.banner {:class (dom/classnames
                         :warning  (= type :warning)
                         :error    (= type :error)
@@ -35,7 +35,8 @@
     [:div.content {:class (dom/classnames
                            :inline-actions (= controls :inline-actions)
                            :bottom-actions (= controls :bottom-actions))
-                   :data-test data-test}
+                   :data-test data-test
+                   :role role}
      content
      (when (or (= controls :bottom-actions) (= controls :inline-actions))
        [:div.actions
@@ -60,7 +61,7 @@
 
 (mf/defc inline-banner
   {::mf/wrap [mf/memo]}
-  [{:keys [type content on-close actions data-test] :as props}]
+  [{:keys [type content on-close actions data-test role] :as props}]
   [:& banner {:type type
               :position :inline
               :status :visible
@@ -72,5 +73,6 @@
               :content content
               :on-close on-close
               :actions actions
-              :data-test data-test}])
+              :data-test data-test
+              :role role}])
 

@@ -9,12 +9,16 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
+   [app.main.render :as render]
    [app.main.store :as st]
+   [app.main.ui.context :as muc]
+   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.workspace.viewport.outline :refer [outline]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
@@ -215,7 +219,7 @@
 
 
 (mf/defc overlay-marker
-  [{:keys [index orig-shape dest-shape position objects hover-disabled?] :as props}]
+  [{:keys [page-id index orig-shape dest-shape position objects hover-disabled?] :as props}]
   (let [start-move-position
         (fn [_]
           (st/emit! (dw/start-move-overlay-pos index)))]
@@ -225,13 +229,33 @@
             marker-x   (+ (:x orig-frame) (:x position))
             marker-y   (+ (:y orig-frame) (:y position))
             width      (:width dest-shape)
-            height     (:height dest-shape)]
+            height     (:height dest-shape)
+            dest-x     (:x dest-shape)
+            dest-y     (:y dest-shape)
+
+            shape-wrapper
+            (mf/use-memo
+             (mf/deps objects)
+             #(render/shape-wrapper-factory objects))
+
+            dest-shape-id (:id dest-shape)
+
+            thumbnail-data-ref (mf/use-memo (mf/deps page-id dest-shape-id) #(refs/thumbnail-frame-data page-id dest-shape-id))
+            thumbnail-data     (mf/deref thumbnail-data-ref)
+
+            dest-shape (cond-> dest-shape
+                         (some? thumbnail-data)
+                         (assoc :thumbnail thumbnail-data))]
         [:g {:on-mouse-down start-move-position
              :on-mouse-enter #(reset! hover-disabled? true)
              :on-mouse-leave #(reset! hover-disabled? false)}
+         [:g {:transform (gmt/translate-matrix (gpt/point (- marker-x dest-x) (- marker-y dest-y))) }
+          [:& (mf/provider muc/render-thumbnails) {:value true}
+           [:& (mf/provider embed/context) {:value false}
+            [:& shape-wrapper {:shape dest-shape}]]]]
          [:path {:stroke "var(--color-primary)"
                  :fill "var(--color-black)"
-                 :fill-opacity 0.3
+                 :fill-opacity 0.5
                  :stroke-width 1
                  :d (dm/str "M" marker-x " " marker-y " "
                             "h " width " "
@@ -247,15 +271,13 @@
                    :fill "var(--color-primary)"}]]))))
 
 (mf/defc interactions
-  [{:keys [current-transform objects zoom selected hover-disabled?] :as props}]
+  [{:keys [current-transform objects zoom selected hover-disabled? page-id] :as props}]
   (let [active-shapes (into []
-                            (comp (filter #(seq (:interactions %)))
-                                  (map gsh/transform-shape))
+                            (comp (filter #(seq (:interactions %))))
                             (vals objects))
 
         selected-shapes (into []
-                              (comp (map (d/getf objects))
-                                    (map gsh/transform-shape))
+                              (map (d/getf objects))
                               selected)
 
         {:keys [editing-interaction-index
@@ -321,13 +343,15 @@
                             (= (:overlay-pos-type interaction) :manual))
                    (if (and (some? move-overlay-to)
                             (= move-overlay-index index))
-                     [:& overlay-marker {:index index
+                     [:& overlay-marker {:page-id page-id
+                                         :index index
                                          :orig-shape shape
                                          :dest-shape dest-shape
                                          :position move-overlay-to
                                          :objects objects
                                          :hover-disabled? hover-disabled?}]
-                     [:& overlay-marker {:index index
+                     [:& overlay-marker {:page-id page-id
+                                         :index index
                                          :orig-shape shape
                                          :dest-shape dest-shape
                                          :position (:overlay-position interaction)
@@ -341,4 +365,3 @@
                                     :shape shape
                                     :selected selected
                                     :zoom zoom}])))]]))
-

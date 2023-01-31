@@ -19,7 +19,7 @@
         uri-data (mf/use-ref {})
         state (mf/use-state 0)]
 
-    (hooks/use-effect-ssr
+    (mf/use-ssr-effect
      (mf/deps embed? urls)
      (fn []
        (let [;; When not active the embedding we return the URI

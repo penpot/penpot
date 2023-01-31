@@ -6,26 +6,18 @@
 
 (ns app.main.data.workspace.persistence
   (:require
-   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.pages :as cp]
    [app.common.pages.changes-spec :as pcs]
    [app.common.spec :as us]
-   [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
-   [app.main.data.dashboard :as dd]
-   [app.main.data.fonts :as df]
-   [app.main.data.modal :as modal]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.util.http :as http]
-   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.core :as rx]
@@ -38,6 +30,7 @@
 (declare persist-changes)
 (declare persist-synchronous-changes)
 (declare shapes-changes-persisted)
+(declare shapes-changes-persisted-finished)
 (declare update-persistence-status)
 
 ;; --- Persistence
@@ -48,8 +41,9 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (log/debug :hint "initialize persistence")
-      (let [stoper   (rx/filter #(= ::finalize %) stream)
+      (let [stoper   (rx/filter (ptk/type? ::initialize-persistence) stream)
             commits  (l/atom [])
+            saving?  (l/atom false)
 
             local-file?
             #(as-> (:file-id %) event-file-id
@@ -69,13 +63,15 @@
 
             on-saving
             (fn []
+              (reset! saving? true)
               (st/emit! (update-persistence-status {:status :saving})))
 
             on-saved
             (fn []
               ;; Disable reload stoper
               (swap! st/ongoing-tasks disj :workspace-change)
-              (st/emit! (update-persistence-status {:status :saved})))]
+              (st/emit! (update-persistence-status {:status :saved}))
+              (reset! saving? false))]
 
         (rx/merge
          (->> stream
@@ -96,25 +92,33 @@
 
          (->> (rx/from-atom commits)
               (rx/filter (complement empty?))
-              (rx/sample-when (rx/merge
-                               (rx/interval 5000)
-                               (rx/filter #(= ::force-persist %) stream)
-                               (->> (rx/from-atom commits)
-                                    (rx/filter (complement empty?))
-                                    (rx/debounce 2000))))
+              (rx/sample-when
+               (rx/merge
+                (rx/filter #(= ::force-persist %) stream)
+                (->> (rx/merge
+                      (rx/interval 5000)
+                      (->> (rx/from-atom commits)
+                           (rx/filter (complement empty?))
+                           (rx/debounce 2000)))
+                     ;; Not sample while saving so there are no race conditions
+                     (rx/filter #(not @saving?)))))
               (rx/tap #(reset! commits []))
               (rx/tap on-saving)
               (rx/mapcat (fn [changes]
                            ;; NOTE: this is needed for don't start the
                            ;; next persistence before this one is
                            ;; finished.
-                           (rx/merge
-                            (rx/of (persist-changes file-id changes))
-                            (->> stream
-                                 (rx/filter (ptk/type? ::changes-persisted))
-                                 (rx/take 1)
-                                 (rx/tap on-saved)
-                                 (rx/ignore)))))
+                           (if-let [file-revn (dm/get-in @st/state [:workspace-file :revn])]
+                             (rx/merge
+                              (->> (rx/of (persist-changes file-id file-revn changes commits))
+                                   (rx/observe-on :async))
+                              (->> stream
+                                   ;; We wait for every change to be persisted
+                                   (rx/filter (ptk/type? ::shapes-changes-persisted-finished))
+                                   (rx/take 1)
+                                   (rx/tap on-saved)
+                                   (rx/ignore)))
+                             (rx/empty))))
               (rx/take-until (rx/delay 100 stoper))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: save loop"))))
@@ -131,48 +135,65 @@
                              (log/debug :hint "finalize persistence: synchronous save loop")))))))))
 
 (defn persist-changes
-  [file-id changes]
+  [file-id file-revn changes pending-commits]
   (log/debug :hint "persist changes" :changes (count changes))
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-changes
     ptk/WatchEvent
     (watch [_ state _]
-      (let [components-v2 (features/active-feature? state :components-v2)
-            sid           (:session-id state)
-            file          (get state :workspace-file)
-            params        {:id (:id file)
-                           :revn (:revn file)
-                           :session-id sid
-                           :changes-with-metadata (into [] changes)
-                           :components-v2 components-v2}]
+      (let [;; this features set does not includes the ffeat/enabled
+            ;; because they are already available on the backend and
+            ;; this request provides a set of features to enable in
+            ;; this request.
+            features (cond-> #{}
+                       (features/active-feature? state :components-v2)
+                       (conj "components/v2"))
+            sid      (:session-id state)
+            params   {:id file-id
+                      :revn file-revn
+                      :session-id sid
+                      :changes-with-metadata (into [] changes)
+                      :features features}]
 
-        (when (= file-id (:id params))
-          (->> (rp/mutation :update-file params)
-               (rx/mapcat (fn [lagged]
-                            (log/debug :hint "changes persisted" :lagged (count lagged))
-                            (let [lagged (cond->> lagged
-                                           (= #{sid} (into #{} (map :session-id) lagged))
-                                           (map #(assoc % :changes [])))
+        (->> (rp/cmd! :update-file params)
+             (rx/mapcat (fn [lagged]
+                          (log/debug :hint "changes persisted" :lagged (count lagged))
+                          (let [frame-updates
+                                (-> (group-by :page-id changes)
+                                    (update-vals #(into #{} (mapcat :frames) %)))
 
-                                  frame-updates
-                                  (-> (group-by :page-id changes)
-                                      (d/update-vals #(into #{} (mapcat :frames) %)))]
+                                commits
+                                (->> @pending-commits
+                                     (map #(assoc % :revn file-revn)))]
 
-                              (rx/merge
-                               (->> (rx/from frame-updates)
-                                    (rx/flat-map (fn [[page-id frames]]
-                                              (->> frames (map #(vector page-id %)))))
-                                    (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail (:id file) page-id frame-id))))
-                               (->> (rx/of lagged)
-                                    (rx/mapcat seq)
-                                    (rx/map #(shapes-changes-persisted file-id %)))))))
-               (rx/catch (fn [cause]
-                           (rx/concat
-                            (if (= :authentication (:type cause))
-                              (rx/empty)
-                              (rx/of (rt/assign-exception cause)))
-                            (rx/throw cause))))))))))
+                            (rx/concat
+                             (rx/merge
+                              (->> (rx/from frame-updates)
+                                   (rx/mapcat (fn [[page-id frames]]
+                                                (->> frames (map #(vector page-id %)))))
+                                   (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail file-id page-id frame-id))))
 
+                              (->> (rx/from (concat lagged commits))
+                                   (rx/merge-map
+                                    (fn [{:keys [changes] :as entry}]
+                                      (rx/merge
+                                       (rx/from
+                                        (for [[page-id changes] (group-by :page-id changes)]
+                                          (dch/update-indices page-id changes)))
+                                       (rx/of (shapes-changes-persisted file-id entry)))))))
+
+                             (rx/of (shapes-changes-persisted-finished))))))
+             (rx/catch (fn [cause]
+                         (rx/concat
+                          (if (= :authentication (:type cause))
+                            (rx/empty)
+                            (rx/of (rt/assign-exception cause)))
+                          (rx/throw cause)))))))))
+
+;; Event to be thrown after the changes have been persisted
+(defn shapes-changes-persisted-finished
+  []
+  (ptk/reify ::shapes-changes-persisted-finished))
 
 (defn persist-synchronous-changes
   [{:keys [file-id changes]}]
@@ -180,20 +201,21 @@
   (ptk/reify ::persist-synchronous-changes
     ptk/WatchEvent
     (watch [_ state _]
-      (let [components-v2 (features/active-feature? state :components-v2)
-            sid     (:session-id state)
-            file    (get-in state [:workspace-libraries file-id])
+      (let [features (cond-> #{}
+                       (features/active-feature? state :components-v2)
+                       (conj "components/v2"))
+            sid      (:session-id state)
+            file     (dm/get-in state [:workspace-libraries file-id])
 
             params  {:id (:id file)
                      :revn (:revn file)
                      :session-id sid
                      :changes changes
-                     :components-v2 components-v2}]
+                     :features features}]
 
         (when (:id params)
           (->> (rp/mutation :update-file params)
                (rx/ignore)))))))
-
 
 (defn update-persistence-status
   [{:keys [status reason]}]
@@ -207,6 +229,7 @@
                        :status status
                        :updated-at (dt/now)))))))
 
+(s/def ::revn ::us/integer)
 (s/def ::shapes-changes-persisted
   (s/keys :req-un [::revn ::pcs/changes]))
 
@@ -215,123 +238,34 @@
 
 (defn shapes-changes-persisted
   [file-id {:keys [revn changes] :as params}]
-  (us/verify ::us/uuid file-id)
-  (us/verify ::shapes-changes-persisted params)
-  (ptk/reify ::changes-persisted
+  (us/verify! ::us/uuid file-id)
+  (us/verify! ::shapes-changes-persisted params)
+  (ptk/reify ::shapes-changes-persisted
     ptk/UpdateEvent
     (update [_ state]
-      (let [changes (group-by :page-id changes)]
-        (if (= file-id (:current-file-id state))
-          (-> state
-              (update-in [:workspace-file :revn] max revn)
-              (update :workspace-data (fn [file]
-                                        (loop [fdata file
-                                               entries (seq changes)]
-                                          (if-let [[page-id changes] (first entries)]
-                                            (recur (-> fdata
-                                                       (cp/process-changes changes)
-                                                       (ctst/update-object-indices page-id))
-                                                   (rest entries))
-                                            fdata)))))
+      ;; NOTE: we don't set the file features context here because
+      ;; there are no useful context for code that need to be executed
+      ;; on the frontend side
+
+      (if-let [current-file-id (:current-file-id state)]
+        (if (= file-id current-file-id)
+          (let [changes (group-by :page-id changes)]
+            (-> state
+                (update-in [:workspace-file :revn] max revn)
+                (update :workspace-data (fn [file]
+                                          (loop [fdata file
+                                                 entries (seq changes)]
+                                            (if-let [[page-id changes] (first entries)]
+                                              (recur (-> fdata
+                                                         (cp/process-changes changes)
+                                                         (ctst/update-object-indices page-id))
+                                                     (rest entries))
+                                              fdata))))))
           (-> state
               (update-in [:workspace-libraries file-id :revn] max revn)
-              (update-in [:workspace-libraries file-id :data]
-                         cp/process-changes changes)))))))
+              (update-in [:workspace-libraries file-id :data] cp/process-changes changes)))
+
+        state))))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Data Fetching & Uploading
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- Specs
-
-(s/def ::id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
-(s/def ::name string?)
-(s/def ::type keyword?)
-(s/def ::file-id ::us/uuid)
-(s/def ::created-at ::us/inst)
-(s/def ::modified-at ::us/inst)
-(s/def ::version ::us/integer)
-(s/def ::revn ::us/integer)
-(s/def ::ordering ::us/integer)
-(s/def ::data ::ctf/data)
-
-(s/def ::file ::dd/file)
-(s/def ::project ::dd/project)
-(s/def ::page
-  (s/keys :req-un [::id
-                   ::name
-                   ::file-id
-                   ::revn
-                   ::created-at
-                   ::modified-at
-                   ::ordering
-                   ::data]))
-
-(declare fetch-libraries-content)
-(declare bundle-fetched)
-
-(defn fetch-bundle
-  [project-id file-id]
-  (ptk/reify ::fetch-bundle
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [share-id (-> state :viewer-local :share-id)
-            components-v2 (features/active-feature? state :components-v2)]
-        (->> (rx/zip (rp/query! :file-raw {:id file-id :components-v2 components-v2})
-                     (rp/query! :team-users {:file-id file-id})
-                     (rp/query! :project {:id project-id})
-                     (rp/query! :file-libraries {:file-id file-id})
-                     (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
-             (rx/take 1)
-             (rx/map (fn [[file-raw users project libraries file-comments-users]]
-                       {:file-raw file-raw
-                        :users users
-                        :project project
-                        :libraries libraries
-                        :file-comments-users file-comments-users}))
-             (rx/mapcat (fn [{:keys [project] :as bundle}]
-                          (rx/of (ptk/data-event ::bundle-fetched bundle)
-                                 (df/load-team-fonts (:team-id project)))))
-             (rx/catch (fn [err]
-                         (if (and (= (:type err) :restriction)
-                                  (= (:code err) :feature-disabled))
-                           (let [team-id (:current-team-id state)]
-                             (rx/of (modal/show
-                                      {:type :alert
-                                       :message (tr "errors.components-v2")
-                                       :on-accept #(st/emit! (rt/nav :dashboard-projects {:team-id team-id}))})))
-                           (rx/throw err)))))))))
-
-;; --- Helpers
-
-(defn purge-page
-  "Remove page and all related stuff from the state."
-  [state id]
-  (-> state
-      (update-in [:workspace-file :pages] #(filterv (partial not= id) %))
-      (update :workspace-pages dissoc id)))
-
-(defn preload-data-uris
-  "Preloads the image data so it's ready when necesary"
-  []
-  (ptk/reify ::preload-data-uris
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [extract-urls
-            (fn [{:keys [metadata fill-image]}]
-              (cond
-                (some? metadata)
-                [(cf/resolve-file-media metadata)]
-
-                (some? fill-image)
-                [(cf/resolve-file-media fill-image)]))
-
-            uris (into #{}
-                       (comp (mapcat extract-urls)
-                             (filter some?))
-                       (vals (wsh/lookup-page-objects state)))]
-        (->> (rx/from uris)
-             (rx/merge-map #(http/fetch-data-uri % false))
-             (rx/ignore))))))

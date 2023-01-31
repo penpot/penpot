@@ -101,8 +101,7 @@
   {::mf/wrap [mf/memo]}
   [{:keys [profile locale section]}]
   [:div.dashboard-sidebar.settings
-   [:div.sidebar-inside
-    [:& sidebar-content {:profile profile
-                         :section section}]
-    [:& profile-section {:profile profile
-                         :locale locale}]]])
+   [:& sidebar-content {:profile profile
+                        :section section}]
+   [:& profile-section {:profile profile
+                        :locale locale}]])

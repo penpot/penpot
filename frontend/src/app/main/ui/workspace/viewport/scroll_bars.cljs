@@ -11,7 +11,7 @@
    [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
-   [app.main.ui.workspace.viewport.utils :as utils]
+   [app.main.ui.workspace.viewport.viewport-ref :refer [point->viewport]]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
@@ -27,7 +27,7 @@
 
 (mf/defc viewport-scrollbars
   {::mf/wrap [mf/memo]}
-  [{:keys [objects viewport-ref zoom vbox]}]
+  [{:keys [objects zoom vbox]}]
 
   (let [v-scrolling?              (mf/use-state false)
         h-scrolling?              (mf/use-state false)
@@ -126,10 +126,9 @@
         on-mouse-move
         (fn [event axis]
           (when-let [_ (or @v-scrolling? @h-scrolling?)]
-            (let [viewport            (mf/ref-val viewport-ref)
-                  start-pt            (mf/ref-val start-ref)
+            (let [start-pt            (mf/ref-val start-ref)
                   current-pt          (dom/get-client-position event)
-                  current-pt-viewport (utils/translate-point-to-viewport viewport zoom current-pt)
+                  current-pt-viewport (point->viewport current-pt)
                   y-delta               (/ (* (mf/ref-val height-factor-ref) (- (:y current-pt) (:y start-pt))) zoom)
                   x-delta               (/ (* (mf/ref-val width-factor-ref) (- (:x current-pt) (:x start-pt))) zoom)
                   new-v-scrollbar-y   (-> current-pt-viewport
@@ -150,9 +149,8 @@
 
         on-mouse-down
         (fn [event axis]
-          (let [viewport              (mf/ref-val viewport-ref)
-                start-pt              (dom/get-client-position event)
-                viewport-point        (utils/translate-point-to-viewport viewport zoom start-pt)
+          (let [start-pt              (dom/get-client-position event)
+                viewport-point        (point->viewport start-pt)
                 new-h-scrollbar-x     (:x viewport-point)
                 new-v-scrollbar-y     (:y viewport-point)
                 v-scrollbar-y-padding (- v-scrollbar-y new-v-scrollbar-y)

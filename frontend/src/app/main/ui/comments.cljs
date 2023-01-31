@@ -6,6 +6,7 @@
 
 (ns app.main.ui.comments
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.config :as cfg]
    [app.main.data.comments :as dcm]
@@ -104,11 +105,17 @@
                             :on-blur on-blur
                             :on-focus on-focus
                             :on-change on-change}]
-     (when (or @show-buttons?
-               (seq @content))
+     (when (or @show-buttons? (seq @content))
        [:div.buttons
-        [:input.btn-primary {:type "button" :value "Post" :on-click on-submit :disabled (str/empty-or-nil? @content)}]
-        [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]])]))
+        [:input.btn-primary
+         {:type "button"
+          :value "Post"
+          :on-click on-submit
+          :disabled (str/empty-or-nil? @content)}]
+        [:input.btn-secondary
+         {:type "button"
+          :value "Cancel"
+          :on-click on-cancel}]])]))
 
 (mf/defc draft-thread
   [{:keys [draft zoom on-cancel on-submit position-modifier]}]
@@ -327,7 +334,7 @@
                           :thread thread
                           :origin origin}]
         (for [item (rest comments)]
-          [:*
+          [:* {:key (dm/str (:id item))}
            [:hr]
            [:& comment-item {:comment item
                              :users users

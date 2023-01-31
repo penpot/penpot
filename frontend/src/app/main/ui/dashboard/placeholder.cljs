@@ -19,9 +19,9 @@
            (create-fn "dashboard:empty-folder-placeholder")))]
     (cond
       (true? dragging?)
-      [:div.grid-row.no-wrap
+      [:ul.grid-row.no-wrap
        {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
-       [:div.grid-item]]
+       [:li.grid-item]]
 
       (= :libraries origin)
       [:div.grid-empty-placeholder.libs {:data-test "empty-placeholder"}

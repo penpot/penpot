@@ -229,9 +229,9 @@
                              (swap! st/ongoing-tasks disj :export))))
 
          ;; We hide need to hide the ui elements of the export after
-         ;; some interval. We also delay a litle bit more the stopper
+         ;; some interval. We also delay a little bit more the stopper
          ;; for ensure that after some security time, the stream is
-         ;; completelly closed.
+         ;; completely closed.
          (->> progress-stream
               (rx/filter #(= "ended" (:status %)))
               (rx/take 1)

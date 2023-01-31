@@ -72,7 +72,7 @@
     border-radius: 8px;
     min-height: 211px;
 
-    .img {
+    .thumbnail {
       border-top-left-radius: 6px;
       border-bottom-left-radius: 6px;
       padding: 30px;
@@ -89,9 +89,9 @@
         margin-bottom: 8px;
       }
       .info {
-        color: $color-gray-30;
+        color: $color-gray-50;
         margin-bottom: 20px;
-        font-size: $fs16;
+        font-size: $fs14;
       }
     }
     .action {
@@ -133,15 +133,10 @@
         display: none;
         width: 0;
       }
-      .text {
-        .info {
-          // font-size: $fs12;
-        }
-      }
     }
   }
   .walkthrough {
-    .img {
+    .thumbnail {
       background-image: url("/images/walkthrough-cover.png");
       background-position: center;
       background-repeat: no-repeat;
@@ -149,7 +144,7 @@
     }
   }
   .tutorial {
-    .img {
+    .thumbnail {
       background-image: url("/images/hands-on-tutorial.png");
       background-position: center;
       background-repeat: no-repeat;
@@ -169,8 +164,10 @@
   flex: 1 0 0;
   margin-right: $size-4;
   overflow-y: auto;
-  user-select: none;
   width: 100%;
+  &.dashboard-projects {
+    user-select: none;
+  }
   &.no-bg {
     background-color: transparent;
   }
@@ -255,10 +252,14 @@
       font-weight: 400;
       color: $color-gray-60;
       margin-left: 0.75rem;
+      @media (max-width: 760px) {
+        display: none;
+      }
     }
 
     .project-actions {
-      display: none;
+      display: flex;
+      opacity: 0;
       margin-left: $size-6;
 
       .btn-small {
@@ -273,6 +274,8 @@
       display: flex;
       align-items: center;
       margin-right: 14px;
+      background-color: transparent;
+      border: none;
       svg {
         width: 15px;
         height: 15px;
@@ -286,9 +289,12 @@
       }
     }
   }
-  &:hover {
+
+  &:hover,
+  &:focus,
+  &:focus-within {
     .project-actions {
-      display: flex;
+      opacity: 1;
     }
   }
 }
@@ -298,6 +304,9 @@
   line-height: 1rem;
   font-size: $fs14;
   font-weight: 400;
+  @media (max-width: 880px) {
+    display: none;
+  }
 }
 
 .dashboard-table {
@@ -439,7 +448,8 @@
     width: 100%;
     text-align: right;
     height: 56px;
-    div {
+    button {
+      border: none;
       cursor: pointer;
       height: 58px;
       display: inline-block;
@@ -518,11 +528,13 @@
 
     .card-container {
       width: 275px;
-      height: 100%;
       margin-top: 20px;
       display: inline-block;
       text-align: center;
       vertical-align: top;
+      background-color: transparent;
+      border: none;
+      padding: 0;
     }
 
     .template-card {
@@ -551,6 +563,10 @@
           width: 16px;
           height: 16px;
         }
+        span {
+          font-weight: 500;
+          font-size: $fs14;
+        }
       }
 
       .template-link {
@@ -567,7 +583,8 @@
 
       .template-link-text {
         font-size: 12px;
-        color: $color-gray-30;
+        margin-top: $size-2;
+        color: $color-gray-50;
       }
 
       &:hover {

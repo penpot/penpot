@@ -16,7 +16,8 @@
   [{:keys [session profile] :as props}]
   [:li.tooltip.tooltip-bottom
    {:alt (:fullname profile)}
-   [:img {:style {:border-color (:color session)}
+   [:img {:alt (:fullname profile)
+          :style {:border-color (:color session)}
           :src (cfg/resolve-profile-photo-url profile)}]])
 
 (mf/defc active-sessions

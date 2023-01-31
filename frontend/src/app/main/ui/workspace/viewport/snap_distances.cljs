@@ -9,10 +9,10 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
+   [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
+   [app.main.snap :as ams]
    [app.main.ui.formats :as fmt]
-   [app.main.worker :as uw]
    [beicon.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -151,7 +151,7 @@
         check-in-set
         (fn [value number-set]
           (->> number-set
-               (some #(<= (mth/abs (- value %)) 0.01))))
+               (some #(<= (mth/abs (- value %)) 1.5))))
 
         ;; Left/Top shapes and right/bottom shapes (depends on `coord` parameter)
 
@@ -217,21 +217,16 @@
         (fn [[selrect selected frame]]
           (let [lt-side (if (= coord :x) :left :top)
                 gt-side (if (= coord :x) :right :bottom)
-                container-selrec (or (:selrect frame)
-                                     (gsh/rect->selrect @refs/vbox))
-                areas (gsh/selrect->areas container-selrec selrect)
+
+                vbox (gsh/rect->selrect @refs/vbox)
+                areas (gsh/selrect->areas
+                       (or (gsh/clip-selrect (:selrect frame) vbox) vbox)
+                       selrect)
 
                 query-side (fn [side]
                              (let [rect (get areas side)]
                                (if (and (> (:width rect) 0) (> (:height rect) 0))
-                                 (->> (uw/ask! {:cmd :selection/query
-                                                :page-id page-id
-                                                :frame-id (:id frame)
-                                                :include-frames? true
-                                                :rect rect})
-                                      (rx/map #(cph/clean-loops @refs/workspace-page-objects %))
-                                      (rx/map #(set/difference % selected))
-                                      (rx/map #(->> % (map (partial get @refs/workspace-page-objects)))))
+                                 (ams/select-shapes-area page-id (:id frame) selected @refs/workspace-page-objects rect)
                                  (rx/of nil))))]
             (rx/combine-latest (query-side lt-side)
                                (query-side gt-side))))
@@ -272,18 +267,20 @@
         frame-id        (-> selected-shapes first :frame-id)
         frame           (mf/deref (refs/object-by-id frame-id))
         selrect         (gsh/selection-rect selected-shapes)]
-    [:g.distance
-     [:& shape-distance
-      {:selrect selrect
-       :page-id page-id
-       :frame frame
-       :zoom zoom
-       :coord :x
-       :selected selected}]
-     [:& shape-distance
-      {:selrect selrect
-       :page-id page-id
-       :frame frame
-       :zoom zoom
-       :coord :y
-       :selected selected}]]))
+
+    (when-not (ctl/layout? frame)
+      [:g.distance
+       [:& shape-distance
+        {:selrect selrect
+         :page-id page-id
+         :frame frame
+         :zoom zoom
+         :coord :x
+         :selected selected}]
+       [:& shape-distance
+        {:selrect selrect
+         :page-id page-id
+         :frame frame
+         :zoom zoom
+         :coord :y
+         :selected selected}]])))

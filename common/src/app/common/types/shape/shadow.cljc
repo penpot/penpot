@@ -2,14 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.shape.shadow
   (:require
    [app.common.spec :as us]
    [app.common.types.color :as ctc]
+   [app.common.types.shape.shadow.color :as-alias shadow-color]
    [clojure.spec.alpha :as s]))
-
 
 ;;; SHADOW EFFECT
 
@@ -21,14 +21,13 @@
 (s/def ::spread ::us/safe-number)
 (s/def ::hidden boolean?)
 
-
 (s/def ::color string?)
 (s/def ::opacity ::us/safe-number)
 (s/def ::gradient (s/nilable ::ctc/gradient))
 (s/def ::file-id (s/nilable uuid?))
 (s/def ::ref-id (s/nilable uuid?))
 
-(s/def :shadow/color
+(s/def ::shadow-color/color
   (s/keys :opt-un [::color
                    ::opacity
                    ::gradient
@@ -36,14 +35,14 @@
                    ::id]))
 
 (s/def ::shadow-props
-  (s/keys :req-un [:internal.shadow/id
-                   :internal.shadow/style
-                   :shadow/color
-                   :internal.shadow/offset-x
-                   :internal.shadow/offset-y
-                   :internal.shadow/blur
-                   :internal.shadow/spread
-                   :internal.shadow/hidden]))
+  (s/keys :req-un [::id
+                   ::style
+                   ::shadow-color/color
+                   ::offset-x
+                   ::offset-y
+                   ::blur
+                   ::spread
+                   ::hidden]))
 
 (s/def ::shadow
   (s/coll-of ::shadow-props :kind vector?))

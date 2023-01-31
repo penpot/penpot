@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
@@ -79,11 +80,21 @@
                      [shape])
         frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
 
+        selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
+        selection-parents     (mf/deref selection-parents-ref)
+
+        flex-child? (->> selection-parents (some ctl/layout?))
+
+        flex-container? (ctl/layout? shape)
+        flex-auto-width? (ctl/auto-width? shape)
+        flex-fill-width? (ctl/fill-width? shape)
+        flex-auto-height? (ctl/auto-height? shape)
+        flex-fill-height? (ctl/fill-height? shape)
+
         ;; To show interactively the measures while the user is manipulating
         ;; the shape with the mouse, generate a copy of the shapes applying
-        ;; the transient tranformations.
+        ;; the transient transformations.
         shapes (as-> old-shapes $
-                 (map gsh/transform-shape $)
                  (map gsh/translate-to-frame $ frames))
 
         ;; For rotated or stretched shapes, the origin point we show in the menu
@@ -237,9 +248,10 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (let [value (-> event dom/get-target dom/checked?)]
+           (let [value (-> event dom/get-target dom/checked?)
+                 undo-id (js/Symbol)]
              (do
-               (st/emit! (dwu/start-undo-transaction)
+               (st/emit! (dwu/start-undo-transaction undo-id)
                          (dch/update-shapes ids (fn [shape] (assoc shape :hide-in-viewer (not value)))))
 
                (when-not value
@@ -247,7 +259,7 @@
                  ;; interactions that navigate to it.
                  (apply st/emit! (map #(dwi/remove-all-interactions-nav-to %) ids)))
 
-               (st/emit! (dwu/commit-undo-transaction))))))
+               (st/emit! (dwu/commit-undo-transaction undo-id))))))
 
         select-all #(-> % (dom/get-target) (.select))]
 
@@ -267,9 +279,10 @@
 
        ;; FRAME PRESETS
        (when (and (options :presets)
-                  (or (nil? all-types) (= (count all-types) 1))) ;; Dont' show presets if multi selected
+                  (or (nil? all-types) (= (count all-types) 1))) ;; Don't show presets if multi selected
          [:div.row-flex                                          ;; some frames and some non frames
-          [:div.presets.custom-select.flex-grow {:on-click #(reset! show-presets-dropdown? true)}
+          [:div.presets.custom-select.flex-grow {:class (when @show-presets-dropdown? "opened")
+                                                 :on-click #(reset! show-presets-dropdown? true)}
            [:span (tr "workspace.options.size-presets")]
            [:span.dropdown-button i/arrow-down]
            [:& dropdown {:show @show-presets-dropdown?
@@ -296,6 +309,7 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-width-change
+                              :disabled (and (or flex-child? flex-container?) (or flex-auto-width? flex-fill-width?))
                               :value (:width values)}]]
 
           [:div.input-element.height {:title (tr "workspace.options.height")}
@@ -304,6 +318,7 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-height-change
+                              :disabled (and (or flex-child? flex-container?) (or flex-auto-height? flex-fill-height?))
                               :value (:height values)}]]
 
           [:div.lock-size {:class (dom/classnames
@@ -323,11 +338,13 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-pos-x-change
+                              :disabled flex-child?
                               :value (:x values)}]]
           [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
                               :on-click select-all
+                              :disabled flex-child?
                               :on-change on-pos-y-change
                               :value (:y values)}]]])
 
@@ -441,5 +458,3 @@
            (tr "workspace.options.show-in-viewer")]])
 
        ]]]))
-
-

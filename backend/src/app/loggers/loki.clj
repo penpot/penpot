@@ -8,58 +8,55 @@
   "A Loki integration."
   (:require
    [app.common.logging :as l]
-   [app.common.spec :as us]
-   [app.config :as cfg]
+   [app.config :as cf]
+   [app.http.client :as http]
+   [app.loggers.zmq :as lzmq]
    [app.util.json :as json]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [promesa.exec :as px]))
 
 (declare ^:private handle-event)
-(declare ^:private start-rcv-loop)
-
-(s/def ::uri ::us/string)
-(s/def ::receiver fn?)
-(s/def ::http-client fn?)
 
 (defmethod ig/pre-init-spec ::reporter [_]
-  (s/keys :req-un [ ::receiver ::http-client]
-          :opt-un [::uri]))
+  (s/keys :req [::http/client
+                ::lzmq/receiver]))
 
 (defmethod ig/init-key ::reporter
-  [_ {:keys [receiver uri] :as cfg}]
-  (when uri
-    (l/info :msg "initializing loki reporter" :uri uri)
-    (let [input (a/chan (a/dropping-buffer 2048))]
-      (receiver :sub input)
+  [_ cfg]
+  (when-let [uri (cf/get :loggers-loki-uri)]
+    (px/thread
+      {:name "penpot/loki-reporter"}
+      (l/info :hint "reporter started" :uri uri)
+      (let [input (a/chan (a/dropping-buffer 2048))
+            cfg   (assoc cfg ::uri uri)]
 
-      (doto (Thread. #(start-rcv-loop cfg input))
-        (.setDaemon true)
-        (.setName "penpot/loki-sender")
-        (.start))
+        (try
+          (lzmq/sub! (::lzmq/receiver cfg) input)
+          (loop []
+            (when-let [msg (a/<!! input)]
+              (handle-event cfg msg)
+              (recur)))
 
-      input)))
+          (catch InterruptedException _
+            (l/debug :hint "reporter interrupted"))
+          (catch Throwable cause
+            (l/error :hint "unexpected exception"
+                     :cause cause))
+          (finally
+            (a/close! input)
+            (l/info :hint "reporter terminated")))))))
 
 (defmethod ig/halt-key! ::reporter
-  [_ output]
-  (when output
-    (a/close! output)))
-
-(defn- start-rcv-loop
-  [cfg input]
-  (loop []
-    (let [msg (a/<!! input)]
-      (when-not (nil? msg)
-        (handle-event cfg msg)
-        (recur))))
-
-  (l/info :msg "stoping error reporting loop"))
+  [_ thread]
+  (some-> thread px/interrupt!))
 
 (defn- prepare-payload
   [event]
-  (let [labels {:host    (cfg/get :host)
-                :tenant  (cfg/get :tenant)
-                :version (:full cfg/version)
+  (let [labels {:host    (cf/get :host)
+                :tenant  (cf/get :tenant)
+                :version (:full cf/version)
                 :logger  (:logger/name event)
                 :level   (:logger/level event)}]
     {:streams
@@ -69,15 +66,15 @@
                       (when-let [error (:trace event)]
                         (str "\n" error)))]]}]}))
 
-
 (defn- make-request
-  [{:keys [http-client uri] :as cfg} payload]
-  (http-client {:uri uri
-                :timeout 3000
-                :method :post
-                :headers {"content-type" "application/json"}
-                :body (json/write payload)}
-               {:sync? true}))
+  [{:keys [::uri] :as cfg} payload]
+  (http/req! cfg
+             {:uri uri
+              :timeout 3000
+              :method :post
+              :headers {"content-type" "application/json"}
+              :body (json/encode payload)}
+             {:sync? true}))
 
 (defn- handle-event
   [cfg event]

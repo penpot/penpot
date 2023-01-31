@@ -53,6 +53,10 @@
   [^string title]
   (set! (.-title globals/document) title))
 
+(defn set-html-lang!
+  [^string lang]
+  (.setAttribute (.querySelector js/document "html") "lang" lang))
+
 (defn set-html-theme-color
   [^string color scheme]
   (let [meta-node (.querySelector js/document "meta[name='theme-color']")]
@@ -260,12 +264,14 @@
 (defn append-child!
   [^js el child]
   (when (some? el)
-    (.appendChild ^js el child)))
+    (.appendChild ^js el child))
+  el)
 
 (defn remove-child!
   [^js el child]
   (when (some? el)
-    (.removeChild ^js el child)))
+    (.removeChild ^js el child))
+  el)
 
 (defn get-first-child
   [^js el]
@@ -472,7 +478,11 @@
 
 (defn get-data [^js node ^string attr]
   (when (some? node)
-    (.getAttribute node (str "data-" attr))))
+    (.getAttribute node (dm/str "data-" attr))))
+
+(defn set-data! [^js node ^string attr value]
+  (when (some? node)
+    (.setAttribute node (dm/str "data-" attr) (dm/str value))))
 
 (defn set-attribute! [^js node ^string attr value]
   (when (some? node)
@@ -592,6 +602,10 @@
   []
   (.back (.-history js/window)))
 
+(defn reload-current-window
+  []
+  (.reload (.-location js/window)))
+
 (defn animate!
   ([item keyframes duration] (animate! item keyframes duration nil))
   ([item keyframes duration onfinish]
@@ -631,3 +645,13 @@
 
     {:ascent (.-fontBoundingBoxAscent measure)
      :descent (.-fontBoundingBoxDescent measure)}))
+
+(defn clone-node
+  ([^js node]
+   (clone-node node true))
+  ([^js node deep?]
+   (.cloneNode node deep?)))
+
+(defn has-children?
+  [^js node]
+  (> (-> node .-children .-length) 0))

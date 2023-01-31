@@ -11,7 +11,8 @@ penpot - error list
 <main class="horizontal-list">
   <ul>
     {% for item in items %}
-    <li><a href="/dbg/error/{{item.id}}">{{item.created-at}}</a></li>
+    <li><a class="date" href="/dbg/error/{{item.id}}">{{item.created-at}}</a> 
+        <span class="title">{{item.hint|abbreviate:150}}</span></li>
     {% endfor %}
   </ul>
 </main>

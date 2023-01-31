@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.shape.interactions
   (:require
@@ -22,12 +22,13 @@
 
 ;; -- Options depending on event type
 
-(s/def ::event-type #{:click
-                      :mouse-press
-                      :mouse-over
-                      :mouse-enter
-                      :mouse-leave
-                      :after-delay})
+(s/def ::event-type
+  #{:click
+    :mouse-press
+    :mouse-over
+    :mouse-enter
+    :mouse-leave
+    :after-delay})
 
 (s/def ::delay ::us/safe-integer)
 
@@ -40,26 +41,21 @@
   (s/keys :req-un []))
 
 (s/def ::event-opts
-  (s/multi-spec event-opts-spec ::event-type))
+  (s/multi-spec event-opts-spec :event-type))
 
 ;; -- Animation options
 
-(s/def ::animation-type #{:dissolve
-                          :slide
-                          :push})
+(s/def ::animation-type #{:dissolve :slide :push})
 (s/def ::duration ::us/safe-integer)
-(s/def ::easing #{:linear
-                  :ease
-                  :ease-in
-                  :ease-out
-                  :ease-in-out})
-(s/def ::way #{:in
-               :out})
-(s/def ::direction #{:right
-                     :left
-                     :up
-                     :down})
+(s/def ::way #{:in :out})
+(s/def ::direction #{:right :left :up :down})
 (s/def ::offset-effect ::us/boolean)
+(s/def ::easing
+  #{:linear
+    :ease
+    :ease-in
+    :ease-out
+    :ease-in-out})
 
 (defmulti animation-spec :animation-type)
 
@@ -80,26 +76,29 @@
                    ::direction]))
 
 (s/def ::animation
-  (s/multi-spec animation-spec ::animation-type))
+  (s/multi-spec animation-spec :animation-type))
 
 ;; -- Options depending on action type
 
-(s/def ::action-type #{:navigate
-                       :open-overlay
-                       :toggle-overlay
-                       :close-overlay
-                       :prev-screen
-                       :open-url})
+(s/def ::action-type
+  #{:navigate
+    :open-overlay
+    :toggle-overlay
+    :close-overlay
+    :prev-screen
+    :open-url})
+(s/def ::position-relative-to (s/nilable ::us/uuid))
+(s/def ::overlay-pos-type
+  #{:manual
+    :center
+    :top-left
+    :top-right
+    :top-center
+    :bottom-left
+    :bottom-right
+    :bottom-center})
 
 (s/def ::destination (s/nilable ::us/uuid))
-(s/def ::overlay-pos-type #{:manual
-                            :center
-                            :top-left
-                            :top-right
-                            :top-center
-                            :bottom-left
-                            :bottom-right
-                            :bottom-center})
 (s/def ::overlay-position ::gpt/point)
 (s/def ::url ::us/string)
 (s/def ::close-click-outside ::us/boolean)
@@ -111,7 +110,7 @@
 (defmethod action-opts-spec :navigate [_]
   (s/keys :opt-un [::destination
                    ::preserve-scroll
-                     ::animation]))
+                   ::animation]))
 
 (defmethod action-opts-spec :open-overlay [_]
   (s/keys :req-un [::overlay-position
@@ -119,7 +118,8 @@
           :opt-un [::destination
                    ::close-click-outside
                    ::background-overlay
-                   ::animation]))
+                   ::animation
+                   ::position-relative-to]))
 
 (defmethod action-opts-spec :toggle-overlay [_]
   (s/keys :req-un [::overlay-position
@@ -127,11 +127,13 @@
           :opt-un [::destination
                    ::close-click-outside
                    ::background-overlay
-                   ::animation]))
+                   ::animation
+                   ::position-relative-to]))
 
 (defmethod action-opts-spec :close-overlay [_]
   (s/keys :opt-un [::destination
-                   ::animation]))
+                   ::animation
+                   ::position-relative-to]))
 
 (defmethod action-opts-spec :prev-screen [_]
   (s/keys :req-un []))
@@ -140,7 +142,7 @@
   (s/keys :req-un [::url]))
 
 (s/def ::action-opts
-  (s/multi-spec action-opts-spec ::action-type))
+  (s/multi-spec action-opts-spec :action-type))
 
 ;; -- Interaction
 
@@ -160,6 +162,7 @@
   {:event-type :click
    :action-type :navigate
    :destination nil
+   :position-relative-to nil
    :preserve-scroll false})
 
 (def default-delay 600)
@@ -337,6 +340,13 @@
   (assert (has-overlay-opts interaction))
   (assoc interaction :background-overlay background-overlay))
 
+(defn set-position-relative-to
+  [interaction position-relative-to]
+  (us/verify ::interaction interaction)
+  (us/verify ::position-relative-to position-relative-to)
+  (assert (has-overlay-opts interaction))
+  (assoc interaction :position-relative-to position-relative-to))
+
 (defn- calc-overlay-pos-initial
   [destination shape objects overlay-pos-type]
   (if (and (= overlay-pos-type :manual) (some? destination))
@@ -351,43 +361,64 @@
     (gpt/point 0 0)))
 
 (defn calc-overlay-position
-  [interaction base-frame dest-frame frame-offset]
+  [interaction                        ;; interaction data
+   relative-to-shape                  ;; the interaction position is realtive to this sape
+   base-frame                         ;; the base frame of the current interaction
+   dest-frame                         ;; the frame to display with this interaction
+   frame-offset]                      ;; if this interaction starts in a frame opened on another interaction, this is the position of that frame
+
   (us/verify ::interaction interaction)
   (assert (has-overlay-opts interaction))
   (if (nil? dest-frame)
     (gpt/point 0 0)
-    (let [overlay-size    (:selrect dest-frame)
-          base-frame-size (:selrect base-frame)]
+    (let [overlay-size           (:selrect dest-frame)
+          base-frame-size        (:selrect base-frame)
+          relative-to-shape-size (:selrect relative-to-shape)
+          relative-to-adjusted-to-base-frame {:x (- (:x relative-to-shape-size) (:x base-frame-size))
+                                              :y (- (:y relative-to-shape-size) (:y base-frame-size))}
+          relative-to-is-auto?   (and (nil? (:position-relative-to interaction)) (not= :manual (:overlay-pos-type interaction)))
+          base-position          (if relative-to-is-auto?
+                                   {:x 0 :y 0}
+                                   {:x (+ (:x frame-offset)
+                                          (:x relative-to-adjusted-to-base-frame))
+                                    :y (+ (:y frame-offset)
+                                          (:y relative-to-adjusted-to-base-frame))})
+          overlay-position       (:overlay-position interaction)
+          overlay-position       (if (= (:type relative-to-shape) :frame)
+                                   overlay-position
+                                   {:x (- (:x overlay-position) (:x relative-to-adjusted-to-base-frame))
+                                    :y (- (:y overlay-position) (:y relative-to-adjusted-to-base-frame))})]
       (case (:overlay-pos-type interaction)
         :center
-        (gpt/point (/ (- (:width base-frame-size) (:width overlay-size)) 2)
-                   (/ (- (:height base-frame-size) (:height overlay-size)) 2))
+        (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
+                   (+ (:y base-position) (/ (- (:height relative-to-shape-size) (:height overlay-size)) 2)))
 
         :top-left
-        (gpt/point 0 0)
+        (gpt/point (:x base-position) (:y base-position))
 
         :top-right
-        (gpt/point (- (:width base-frame-size) (:width overlay-size))
-                   0)
+        (gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
+                   (:y base-position))
 
         :top-center
-        (gpt/point (/ (- (:width base-frame-size) (:width overlay-size)) 2)
-                   0)
+        (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
+                   (:y base-position))
 
         :bottom-left
-        (gpt/point 0
-                   (- (:height base-frame-size) (:height overlay-size)))
+        (gpt/point (:x base-position)
+                   (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
 
         :bottom-right
-        (gpt/point (- (:width base-frame-size) (:width overlay-size))
-                   (- (:height base-frame-size) (:height overlay-size)))
+        (gpt/point (+ (:x base-position) (- (:width relative-to-shape-size) (:width overlay-size)))
+                   (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
 
         :bottom-center
-        (gpt/point (/ (- (:width base-frame-size) (:width overlay-size)) 2)
-                   (- (:height base-frame-size) (:height overlay-size)))
+        (gpt/point (+ (:x base-position) (/ (- (:width relative-to-shape-size) (:width overlay-size)) 2))
+                   (+ (:y base-position) (- (:height relative-to-shape-size) (:height overlay-size))))
 
         :manual
-        (gpt/add (:overlay-position interaction) frame-offset)))))
+        (gpt/point (+ (:x base-position) (:x overlay-position))
+                   (+ (:y base-position) (:y overlay-position)))))))
 
 (defn has-animation?
   [interaction]
@@ -412,6 +443,7 @@
   (us/verify (s/nilable ::animation-type) animation-type)
   (assert (has-animation? interaction))
   (assert (allowed-animation? (:action-type interaction) animation-type))
+
   (if (= (-> interaction :animation :animation-type) animation-type)
     interaction
     (if (nil? animation-type)

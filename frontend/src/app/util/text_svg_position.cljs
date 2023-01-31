@@ -16,7 +16,7 @@
 
 (defn parse-text-nodes
   "Given a text node retrieves the rectangles for everyone of its paragraphs and its text."
-  [parent-node direction text-node]
+  [parent-node direction text-node text-align]
 
   (letfn [(parse-entry [^js entry]
             (when (some? (.-position entry))
@@ -27,7 +27,7 @@
     (into
      []
      (keep parse-entry)
-     (tpd/parse-text-nodes parent-node text-node))))
+     (tpd/parse-text-nodes parent-node text-node text-align))))
 
 (def load-promises (atom {}))
 
@@ -63,17 +63,21 @@
   [shape-id]
 
   (when (some? shape-id)
-    (let [text-nodes (dom/query-all (dm/str "#html-text-node-" shape-id " .text-node"))
+    (let [text-nodes (-> (dom/query (dm/fmt "#html-text-node-%" shape-id))
+                         (dom/query-all ".text-node"))
           load-fonts (->> text-nodes (map resolve-font))
 
           process-text-node
           (fn [parent-node]
             (let [root (dom/get-parent-with-selector parent-node ".text-node-html")
+                  paragraph (dom/get-parent-with-selector parent-node ".paragraph")
                   shape-x (-> (dom/get-attribute root "data-x") d/parse-double)
                   shape-y (-> (dom/get-attribute root "data-y") d/parse-double)
-                  direction (.-direction (js/getComputedStyle parent-node))]
+                  direction (.-direction (js/getComputedStyle parent-node))
+                  text-align (.-textAlign (js/getComputedStyle paragraph))]
+
               (->> (.-childNodes parent-node)
-                   (mapcat #(parse-text-nodes parent-node direction %))
+                   (mapcat #(parse-text-nodes parent-node direction % text-align))
                    (mapv #(-> %
                               (update-in [:position :x] + shape-x)
                               (update-in [:position :y] + shape-y))))))]

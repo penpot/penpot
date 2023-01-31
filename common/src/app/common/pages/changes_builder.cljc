@@ -2,17 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.pages.changes-builder
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.features :as ffeat]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.bool :as gshb]
-   [app.common.geom.shapes.rect :as gshr]
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
@@ -50,10 +49,12 @@
 
 (defn with-objects
   [changes objects]
-  (let [file-data (-> (ctf/make-file-data (uuid/next) uuid/zero true)
-                      (assoc-in [:pages-index uuid/zero :objects] objects))]
-    (vary-meta changes assoc ::file-data file-data
-                             ::applied-changes-count 0)))
+  (let [fdata (binding [ffeat/*current* #{"components/v2"}]
+                (ctf/make-file-data (uuid/next) uuid/zero))
+        fdata (assoc-in fdata [:pages-index uuid/zero :objects] objects)]
+    (vary-meta changes assoc
+               ::file-data fdata
+               ::applied-changes-count 0)))
 
 (defn with-library-data
   [changes data]
@@ -243,37 +244,44 @@
    (assert-page-id changes)
    (assert-objects changes)
    (let [objects (lookup-objects changes)
-
          set-parent-change
          (cond-> {:type :mov-objects
                   :parent-id parent-id
                   :page-id (::page-id (meta changes))
-                  :shapes (->> shapes (mapv :id))}
+                  :shapes (->> shapes reverse (mapv :id))}
 
            (some? index)
            (assoc :index index))
 
          mk-undo-change
          (fn [change-set shape]
-           (let [idx (or (cph/get-position-on-parent objects (:id shape)) 0)
-                 ;; Different index if the movement was from top to bottom or the other way
-                 ;; Similar that on frontend/src/app/main/ui/workspace/sidebar/layers.cljs
-                 ;; with the 'side' property of the on-drop
-                 idx (if (< index idx)
-                       (inc idx)
-                       idx)]
+           (let [prev-sibling (cph/get-prev-sibling objects (:id shape))]
            (d/preconj
              change-set
              {:type :mov-objects
               :page-id (::page-id (meta changes))
               :parent-id (:parent-id shape)
               :shapes [(:id shape)]
-              :index idx})))] 
+              :after-shape prev-sibling
+              :index 0})))] ; index is used in case there is no after-shape (moving bottom shapes)
 
      (-> changes
          (update :redo-changes conj set-parent-change)
          (update :undo-changes #(reduce mk-undo-change % shapes))
          (apply-changes-local)))))
+
+(defn changed-attrs
+  "Returns the list of attributes that will change when `update-fn` is applied"
+  [object update-fn {:keys [attrs]}]
+  (let [changed?
+        (fn [old new attr]
+          (let [old-val (get old attr)
+                new-val (get new attr)]
+            (not= old-val new-val)))
+        new-obj (update-fn object)]
+    (when-not (= object new-obj)
+      (let [attrs (or attrs (d/concat-set (keys object) (keys new-obj)))]
+        (filter (partial changed? object new-obj) attrs)))))
 
 (defn update-shapes
   "Calculate the changes and undos to be done when a function is applied to a
@@ -369,14 +377,16 @@
 
         add-undo-change-parent
         (fn [change-set id]
-          (let [shape (get objects id)]
+          (let [shape (get objects id)
+                prev-sibling (cph/get-prev-sibling objects (:id shape))]
             (d/preconj
              change-set
              {:type :mov-objects
               :page-id page-id
               :parent-id (:parent-id shape)
               :shapes [id]
-              :index (cph/get-position-on-parent objects id)
+              :after-shape prev-sibling
+              :index 0
               :ignore-touched true})))]
 
     (-> changes
@@ -416,7 +426,7 @@
                           (every? #(apply gpt/close? %) (d/zip old-val new-val))
 
                           (= attr :selrect)
-                          (gshr/close-selrect? old-val new-val)
+                          (gsh/close-selrect? old-val new-val)
 
                           :else
                           (= old-val new-val))]
@@ -435,7 +445,7 @@
                                  nil               ;; so it does not need resize
 
                                  (= (:type parent) :bool)
-                                 (gshb/update-bool-selrect parent children objects)
+                                 (gsh/update-bool-selrect parent children objects)
 
                                  (= (:type parent) :group)
                                  (if (:masked-group? parent)
@@ -592,7 +602,7 @@
                              :main-instance-page main-instance-page
                              :shapes new-shapes})
                       (into (map mk-change) updated-shapes))))
-        (update :undo-changes 
+        (update :undo-changes
                 (fn [undo-changes]
                   (-> undo-changes
                       (d/preconj {:type :del-component

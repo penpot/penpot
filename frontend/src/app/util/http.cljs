@@ -139,6 +139,7 @@
   [{:keys [body headers] :as response}]
   (let [contenttype (get headers "content-type")]
     (if (and (str/starts-with? contenttype "application/transit+json")
+             (string? body)
              (pos? (count body)))
       (assoc response :body (t/decode-str body))
       response)))

@@ -9,13 +9,15 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.config :as cf]
+   [app.loggers.zmq.receiver :as-alias receiver]
    [app.util.json :as json]
    [app.util.time :as dt]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
    org.zeromq.SocketType
    org.zeromq.ZMQ$Socket
@@ -24,38 +26,56 @@
 (declare prepare)
 (declare start-rcv-loop)
 
-(s/def ::endpoint ::us/string)
-
-(defmethod ig/pre-init-spec ::receiver [_]
-  (s/keys :opt-un [::endpoint]))
-
 (defmethod ig/init-key ::receiver
-  [_ {:keys [endpoint] :as cfg}]
-  (l/info :msg "initializing ZMQ receiver" :bind endpoint)
-  (let [buffer (a/chan 1)
+  [_ cfg]
+  (let [uri    (cf/get :loggers-zmq-uri)
+        buffer (a/chan 1)
         output (a/chan 1 (comp (filter map?)
                                (keep prepare)))
-        mult   (a/mult output)]
-    (when endpoint
-      (let [thread (Thread. #(start-rcv-loop {:out buffer :endpoint endpoint}))]
-        (.setDaemon thread false)
-        (.setName thread "penpot/zmq-logger-receiver")
-        (.start thread)))
+        mult   (a/mult output)
+        thread (when uri
+                 (px/thread
+                   {:name "penpot/zmq-receiver"
+                    :daemon false}
+                   (l/info :hint "receiver started")
+                   (try
+                     (start-rcv-loop buffer uri)
+                     (catch InterruptedException _
+                       (l/debug :hint "receiver interrupted"))
+                     (catch java.lang.IllegalStateException cause
+                       (if (= "errno 4" (ex-message cause))
+                         (l/debug :hint "receiver interrupted")
+                         (l/error :hint "unhandled error" :cause cause)))
+                     (catch Throwable cause
+                       (l/error :hint "unhandled error" :cause cause))
+                     (finally
+                       (l/info :hint "receiver terminated")))))]
 
     (a/pipe buffer output)
-    (with-meta
-      (fn [cmd ch]
-        (case cmd
-          :sub (a/tap mult ch)
-          :unsub (a/untap mult ch))
-        ch)
-      {::output output
-       ::buffer buffer
-       ::mult mult})))
+    (-> cfg
+        (assoc ::receiver/mult mult)
+        (assoc ::receiver/thread thread)
+        (assoc ::receiver/output output)
+        (assoc ::receiver/buffer buffer))))
+
+(s/def ::receiver/mult some?)
+(s/def ::receiver/thread #(instance? Thread %))
+(s/def ::receiver/output some?)
+(s/def ::receiver/buffer some?)
+(s/def ::receiver
+  (s/keys :req [::receiver/mult
+                ::receiver/thread
+                ::receiver/output
+                ::receiver/buffer]))
+
+(defn sub!
+  [{:keys [::receiver/mult]} ch]
+  (a/tap mult ch))
 
 (defmethod ig/halt-key! ::receiver
-  [_ f]
-  (a/close! (::buffer (meta f))))
+  [_ {:keys [::receiver/buffer ::receiver/thread]}]
+  (some-> thread px/interrupt!)
+  (some-> buffer a/close!))
 
 (def ^:private json-mapper
   (json/mapper
@@ -63,23 +83,23 @@
     :decode-key-fn (comp keyword str/kebab)}))
 
 (defn- start-rcv-loop
-  ([] (start-rcv-loop nil))
-  ([{:keys [out endpoint] :or {endpoint "tcp://localhost:5556"}}]
-   (let [out    (or out (a/chan 1))
-         zctx   (ZContext. 1)
-         socket (.. zctx (createSocket SocketType/SUB))]
-     (.. socket (connect ^String endpoint))
-     (.. socket (subscribe ""))
-     (.. socket (setReceiveTimeOut 5000))
-     (loop []
-       (let [msg (.recv ^ZMQ$Socket socket)
-             msg (ex/ignoring (json/read msg json-mapper))
-             msg (if (nil? msg) :empty msg)]
-         (if (a/>!! out msg)
-           (recur)
-           (do
-             (.close ^java.lang.AutoCloseable socket)
-             (.destroy ^ZContext zctx))))))))
+  [output endpoint]
+  (let [zctx   (ZContext. 1)
+        socket (.. zctx (createSocket SocketType/SUB))]
+    (try
+      (.. socket (connect ^String endpoint))
+      (.. socket (subscribe ""))
+      (.. socket (setReceiveTimeOut 5000))
+      (loop []
+        (let [msg (.recv ^ZMQ$Socket socket)
+              msg (ex/ignoring (json/decode msg json-mapper))
+              msg (if (nil? msg) :empty msg)]
+          (when (a/>!! output msg)
+            (recur))))
+
+      (finally
+        (.close ^java.lang.AutoCloseable socket)
+        (.destroy ^ZContext zctx)))))
 
 (s/def ::logger-name string?)
 (s/def ::level string?)

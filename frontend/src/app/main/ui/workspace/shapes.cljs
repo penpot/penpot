@@ -12,7 +12,9 @@
   others are defined using a generic wrapper implemented in
   common."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.uuid :as uuid]
    [app.main.ui.context :as ctx]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.image :as image]
@@ -55,33 +57,33 @@
          (mf/deps objects)
          #(cph/objects-by-frame objects))]
 
-    [:& (mf/provider ctx/active-frames) {:value active-frames}
-     ;; Render font faces only for shapes that are part of the root
-     ;; frame but don't belongs to any other frame.
-     (let [xform (comp
-                  (remove cph/frame-shape?)
-                  (mapcat #(cph/get-children-with-self objects (:id %))))]
-       [:& ff/fontfaces-style {:shapes (into [] xform shapes)}])
+    [:g {:id (dm/str "shape-" uuid/zero)}
+     [:& (mf/provider ctx/active-frames) {:value active-frames}
+      ;; Render font faces only for shapes that are part of the root
+      ;; frame but don't belongs to any other frame.
+      (let [xform (comp
+                   (remove cph/frame-shape?)
+                   (mapcat #(cph/get-children-with-self objects (:id %))))]
+        [:& ff/fontfaces-style {:shapes (into [] xform shapes)}])
 
-     (for [shape shapes]
-       (cond
-         (not (cph/frame-shape? shape))
-         [:& shape-wrapper
-          {:shape shape
-           :key (:id shape)}]
+      [:g.frame-children
+       (for [shape shapes]
+         [:g.ws-shape-wrapper {:key (:id shape)}
+          (cond
+            (not (cph/frame-shape? shape))
+            [:& shape-wrapper
+             {:shape shape}]
 
-         (cph/root-frame? shape)
-         [:& root-frame-wrapper
-          {:shape shape
-           :key (:id shape)
-           :objects (get frame-objects (:id shape))
-           :thumbnail? (not (contains? active-frames (:id shape)))}]
+            (cph/root-frame? shape)
+            [:& root-frame-wrapper
+             {:shape shape
+              :objects (get frame-objects (:id shape))
+              :thumbnail? (not (contains? active-frames (:id shape)))}]
 
-         :else
-         [:& nested-frame-wrapper
-          {:shape shape
-           :key (:id shape)
-           :objects (get frame-objects (:id shape))}]))]))
+            :else
+            [:& nested-frame-wrapper
+             {:shape shape
+              :objects (get frame-objects (:id shape))}])])]]]))
 
 (mf/defc shape-wrapper
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
@@ -96,22 +98,29 @@
         (and (some? active-frames)
              (not (contains? active-frames (:id shape))))
 
-        opts  #js {:shape shape :thumbnail? thumbnail?}]
+        opts  #js {:shape shape :thumbnail? thumbnail?}
+
+        svg-leaf? (and (= :svg-raw (:type shape)) (string? (:content shape)))
+
+        [wrapper wrapper-props]
+        (if svg-leaf?
+          [mf/Fragment nil]
+          ["g" #js {:className "workspace-shape-wrapper"}])]
+
     (when (and (some? shape) (not (:hidden shape)))
-      (case (:type shape)
-        :path    [:> path/path-wrapper opts]
-        :text    [:> text/text-wrapper opts]
-        :group   [:> group-wrapper opts]
-        :rect    [:> rect-wrapper opts]
-        :image   [:> image-wrapper opts]
-        :circle  [:> circle-wrapper opts]
-        :svg-raw [:> svg-raw-wrapper opts]
-        :bool    [:> bool-wrapper opts]
+      [:> wrapper wrapper-props
+       (case (:type shape)
+         :path    [:> path/path-wrapper opts]
+         :text    [:> text/text-wrapper opts]
+         :group   [:> group-wrapper opts]
+         :rect    [:> rect-wrapper opts]
+         :image   [:> image-wrapper opts]
+         :circle  [:> circle-wrapper opts]
+         :svg-raw [:> svg-raw-wrapper opts]
+         :bool    [:> bool-wrapper opts]
+         :frame   [:> nested-frame-wrapper opts]
 
-        ;; Only used when drawing a new frame.
-        :frame [:> nested-frame-wrapper opts]
-
-        nil))))
+         nil)])))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))

@@ -22,7 +22,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
    [app.main.streams :as ms]
@@ -222,7 +222,7 @@
      ptk/UpdateEvent
      (update [_ state]
 
-       ;; Only deselect if there is no modal openned
+       ;; Only deselect if there is no modal opened
        (cond-> state
          (or (not check-modal)
              (not (::md/modal state)))
@@ -281,8 +281,6 @@
 
 
 ;; --- Duplicate Shapes
-(declare prepare-duplicate-change)
-(declare prepare-duplicate-frame-change)
 (declare prepare-duplicate-shape-change)
 (declare prepare-duplicate-flows)
 (declare prepare-duplicate-guides)
@@ -304,93 +302,59 @@
 
         changes
         (->> shapes
-             (reduce #(prepare-duplicate-change %1
-                                                all-objects
-                                                page
-                                                unames
-                                                update-unames!
-                                                ids-map
-                                                %2
-                                                delta)
+             (reduce #(prepare-duplicate-shape-change %1
+                                                      all-objects
+                                                      page
+                                                      unames
+                                                      update-unames!
+                                                      ids-map
+                                                      %2
+                                                      delta)
                      init-changes))]
 
     (-> changes
         (prepare-duplicate-flows shapes page ids-map)
         (prepare-duplicate-guides shapes page ids-map delta))))
 
-(defn- prepare-duplicate-change
-  [changes objects page unames update-unames! ids-map shape delta]
-  (if (cph/frame-shape? shape)
-    (prepare-duplicate-frame-change changes objects page unames update-unames! ids-map shape delta)
-    (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map shape delta (:frame-id shape) (:parent-id shape))))
-
-(defn- prepare-duplicate-frame-change
-  [changes objects page unames update-unames! ids-map obj delta]
-  (let [new-id     (ids-map (:id obj))
-        frame-name (ctt/generate-unique-name @unames (:name obj))
-        _          (update-unames! frame-name)
-
-        new-frame  (-> obj
-                       (assoc :id new-id
-                              :name frame-name
-                              :shapes [])
-                       (dissoc :use-for-thumbnail?)
-                       (gsh/move delta)
-                       (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
-
-        changes (-> (pcb/add-object changes new-frame)
-                    (pcb/amend-last-change #(assoc % :old-id (:id obj))))
-
-        changes (reduce (fn [changes child]
-                          (prepare-duplicate-shape-change changes
-                                                          objects
-                                                          page
-                                                          unames
-                                                          update-unames!
-                                                          ids-map
-                                                          child
-                                                          delta
-                                                          new-id
-                                                          new-id))
-                        changes
-                        (map (d/getf objects) (:shapes obj)))]
-    changes))
-
 (defn- prepare-duplicate-shape-change
-  [changes objects page unames update-unames! ids-map obj delta frame-id parent-id]
-  (if (some? obj)
-    (let [new-id      (ids-map (:id obj))
-          parent-id   (or parent-id frame-id)
-          name        (ctt/generate-unique-name @unames (:name obj))
-          _           (update-unames! name)
+  ([changes objects page unames update-unames! ids-map obj delta]
+   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta (:frame-id obj) (:parent-id obj)))
 
-          new-obj     (-> obj
-                          (assoc :id new-id
-                                 :name name
-                                 :parent-id parent-id
-                                 :frame-id frame-id)
-                          (dissoc :shapes
-                                  :main-instance?)
-                          (gsh/move delta)
-                          (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
+  ([changes objects page unames update-unames! ids-map obj delta frame-id parent-id]
+   (if (some? obj)
+     (let [frame?      (cph/frame-shape? obj)
+           new-id      (ids-map (:id obj))
+           parent-id   (or parent-id frame-id)
+           name        (:name obj)
 
-          changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
-                      (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
+           new-obj     (-> obj
+                           (assoc :id new-id
+                                  :name name
+                                  :parent-id parent-id
+                                  :frame-id frame-id)
+                           (dissoc :shapes
+                                   :main-instance?
+                                   :use-for-thumbnail?)
+                           (gsh/move delta)
+                           (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects)))
 
-      (reduce (fn [changes child]
-                (prepare-duplicate-shape-change changes
-                                                objects
-                                                page
-                                                unames
-                                                update-unames!
-                                                ids-map
-                                                child
-                                                delta
-                                                frame-id
-                                                new-id))
-              changes
-              (map (d/getf objects) (:shapes obj))))
-    changes))
+           changes (-> (pcb/add-object changes new-obj {:ignore-touched true})
+                       (pcb/amend-last-change #(assoc % :old-id (:id obj))))]
+
+       (reduce (fn [changes child]
+                 (prepare-duplicate-shape-change changes
+                                                 objects
+                                                 page
+                                                 unames
+                                                 update-unames!
+                                                 ids-map
+                                                 child
+                                                 delta
+                                                 (if frame? new-id frame-id)
+                                                 new-id))
+               changes
+               (map (d/getf objects) (:shapes obj))))
+     changes)))
 
 (defn- prepare-duplicate-flows
   [changes shapes page ids-map]
@@ -502,8 +466,11 @@
   [obj state objects]
   (let [{:keys [id-original id-duplicated]}
         (get-in state [:workspace-local :duplicated])]
-    (if (and (not= id-original (:id obj))
-             (not= id-duplicated (:id obj)))
+    (if (or (and (not= id-original (:id obj))
+                 (not= id-duplicated (:id obj)))
+            ;; As we can remove duplicated elements may be we can still caching a deleted id
+            (not (contains? objects id-original))
+            (not (contains? objects id-duplicated)))
 
       ;; The default is leave normal shapes in place, but put
       ;; new frames to the right of the original.
@@ -545,23 +512,21 @@
                                        (map #(get-in % [:obj :id]))
                                        (into (d/ordered-set)))
 
-                  dup-frames      (->> changes
-                                       :redo-changes
-                                       (filter #(= (:type %) :add-obj))
-                                       (filter #(selected (:old-id %)))
-                                       (filter #(= :frame (get-in % [:obj :type])))
-                                       (map #(vector (:old-id %) (get-in % [:obj :id]))))
+                  id-duplicated   (first new-selected)
 
-                  id-duplicated   (first new-selected)]
+                  frames (into #{}
+                               (map #(get-in objects [% :frame-id]))
+                               selected)
+                  undo-id (js/Symbol)]
 
-              (rx/concat
-               (->> (rx/from dup-frames)
-                    (rx/map (fn [[old-id new-id]] (dwt/duplicate-thumbnail old-id new-id))))
-
-               ;; Warning: This order is important for the focus mode.
-               (rx/of (dch/commit-changes changes)
-                      (select-shapes new-selected)
-                      (memorize-duplicated id-original id-duplicated))))))))))
+              ;; Warning: This order is important for the focus mode.
+              (rx/of
+                (dwu/start-undo-transaction undo-id)
+                (dch/commit-changes changes)
+                (select-shapes new-selected)
+                (ptk/data-event :layout/update frames)
+                (memorize-duplicated id-original id-duplicated)
+                (dwu/commit-undo-transaction undo-id)))))))))
 
 (defn change-hover-state
   [id value]

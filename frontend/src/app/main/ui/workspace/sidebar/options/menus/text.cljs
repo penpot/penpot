@@ -12,6 +12,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -20,67 +21,11 @@
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry typography-options]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.timers :as tm]
+   [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(def text-typography-attrs
-  [:typography-ref-id
-   :typography-ref-file])
 
-(def text-fill-attrs
-  [:fill-color
-   :fill-opacity
-   :fill-color-ref-id
-   :fill-color-ref-file
-   :fill-color-gradient])
-
-(def text-font-attrs
-  [:font-id
-   :font-family
-   :font-variant-id
-   :font-size
-   :font-weight
-   :font-style])
-
-(def text-align-attrs
-  [:text-align])
-
-(def text-direction-attrs
-  [:text-direction])
-
-(def text-spacing-attrs
-  [:line-height
-   :letter-spacing])
-
-(def text-valign-attrs
-  [:vertical-align])
-
-(def text-decoration-attrs
-  [:text-decoration])
-
-(def text-transform-attrs
-  [:text-transform])
-
-(def shape-attrs
-  [:grow-type])
-
-(def root-attrs text-valign-attrs)
-
-(def paragraph-attrs
-  (d/concat-vec
-   text-align-attrs
-   text-direction-attrs))
-
-(def text-attrs
-  (d/concat-vec
-   text-typography-attrs
-   text-font-attrs
-   text-spacing-attrs
-   text-decoration-attrs
-   text-transform-attrs))
-
-(def attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-attrs))
 
 (mf/defc text-align-options
   [{:keys [values on-change on-blur] :as props}]
@@ -164,7 +109,12 @@
   (let [grow-type (:grow-type values)
         handle-change-grow
         (fn [_ grow-type]
-          (st/emit! (dch/update-shapes ids #(assoc % :grow-type grow-type)))
+          (let [uid (js/Symbol)]
+            (st/emit!
+             (dwu/start-undo-transaction uid)
+             (dch/update-shapes ids #(assoc % :grow-type grow-type)))
+            ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
+            (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
           (when (some? on-blur) (on-blur)))]
 
     [:div.align-icons
@@ -231,20 +181,9 @@
         (mf/use-callback
          (mf/deps values)
          (fn [id attrs]
-           (st/emit! (dwt/save-font (-> (merge txt/default-text-attrs values attrs)
-                                        (select-keys text-attrs))))
-
-           (let [attrs (select-keys attrs root-attrs)]
-             (when-not (empty? attrs)
-               (st/emit! (dwt/update-root-attrs {:id id :attrs attrs}))))
-
-           (let [attrs (select-keys attrs paragraph-attrs)]
-             (when-not (empty? attrs)
-               (st/emit! (dwt/update-paragraph-attrs {:id id :attrs attrs}))))
-
-           (let [attrs (select-keys attrs text-attrs)]
-             (when-not (empty? attrs)
-               (st/emit! (dwt/update-text-attrs {:id id :attrs attrs}))))))
+         (st/emit! (dwt/save-font (-> (merge txt/default-text-attrs values attrs)
+                                      (select-keys dwt/text-attrs)))
+                   (dwt/update-attrs id attrs))))
 
         on-change
         (mf/use-callback
@@ -273,9 +212,9 @@
         (fn [_]
           (let [set-values (-> (d/without-nils values)
                                (select-keys
-                                (d/concat-vec text-font-attrs
-                                              text-spacing-attrs
-                                              text-transform-attrs)))
+                                (d/concat-vec dwt/text-font-attrs
+                                              dwt/text-spacing-attrs
+                                              dwt/text-transform-attrs)))
                 typography (merge txt/default-typography set-values)
                 typography (generate-typography-name typography)
                 id         (uuid/next)]
@@ -304,7 +243,7 @@
                   :show-recent true
                   :on-blur
                   (fn []
-                    (tm/schedule
+                    (ts/schedule
                      100
                      (fn []
                        (when (not= "INPUT" (-> (dom/get-active) (dom/get-tag-name)))
@@ -320,7 +259,7 @@
      (cond
        typography
        [:& typography-entry {:typography typography
-                             :read-only? (not= (:typography-ref-file values) file-id)
+                             :local? (= (:typography-ref-file values) file-id)
                              :file (get shared-libs (:typography-ref-file values))
                              :on-detach handle-detach-typography
                              :on-change handle-change-typography}]

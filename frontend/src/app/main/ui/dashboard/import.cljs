@@ -13,7 +13,6 @@
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
-   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.icons :as i]
@@ -52,7 +51,7 @@
   [{:keys [project-id on-finish-import]} external-ref]
 
   (let [on-file-selected (use-import-file project-id on-finish-import)]
-    [:form.import-file
+    [:form.import-file {:aria-hidden "true"}
      [:& file-uploader {:accept ".penpot,.zip"
                         :multi true
                         :ref external-ref
@@ -248,8 +247,6 @@
                 :files (->> files
                             (mapv #(assoc % :status :analyzing)))})
 
-        components-v2 (features/use-feature :components-v2)
-
         analyze-import
         (mf/use-callback
          (fn [files]
@@ -271,7 +268,6 @@
                                             :num-files (count files)}))
            (->> (uw/ask-many!
                  {:cmd :import-files
-                  :components-v2 components-v2
                   :project-id project-id
                   :files files})
                 (rx/subs

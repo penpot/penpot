@@ -47,10 +47,15 @@ $height-palette-max: 80px;
   }
 
   .settings-bar.settings-bar-right {
+    transition: width 0.2s;
     min-width: $width-settings-bar;
-    max-width: 500px;
+    max-width: $width-settings-bar * 3;
     width: $width-settings-bar;
     grid-area: right-sidebar;
+
+    &.expanded {
+      width: $width-settings-bar * 3;
+    }
   }
 
   .workspace-loader {
@@ -261,9 +266,16 @@ $height-palette-max: 80px;
     }
 
     .render-shapes {
+      height: 100%;
       position: absolute;
       width: 100%;
-      height: 100%;
+    }
+
+    .frame-thumbnail-wrapper {
+      .fills,
+      .frame-clip-def {
+        opacity: 0;
+      }
     }
 
     .viewport-controls {

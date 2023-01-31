@@ -12,6 +12,18 @@
    [app.util.http :as http]
    [beicon.core :as rx]))
 
+(derive :get-file ::query)
+(derive :get-file-object-thumbnails ::query)
+(derive :get-file-libraries ::query)
+(derive :get-file-fragment ::query)
+(derive :search-files ::query)
+(derive :get-teams ::query)
+(derive :get-team-users ::query)
+(derive :get-team-members ::query)
+(derive :get-team-stats ::query)
+(derive :get-team-invitations ::query)
+(derive :get-team-shared-files ::query)
+
 (defn handle-response
   [{:keys [status body] :as response}]
   (cond
@@ -48,13 +60,13 @@
   query api."
   ([id params]
    (send-query! id params nil))
-
   ([id params {:keys [raw-transit?]}]
    (let [decode-transit (if raw-transit?
                           http/conditional-error-decode-transit
                           http/conditional-decode-transit)]
      (->> (http/send! {:method :get
                        :uri (u/join @cf/public-uri "api/rpc/query/" (name id))
+                       :headers {"accept" "application/transit+json"}
                        :credentials "include"
                        :query params})
           (rx/map decode-transit)
@@ -66,6 +78,7 @@
   [id params]
   (->> (http/send! {:method :post
                     :uri (u/join @cf/public-uri "api/rpc/mutation/" (name id))
+                    :headers {"accept" "application/transit+json"}
                     :credentials "include"
                     :body (http/transit-data params)})
        (rx/map http/conditional-decode-transit)
@@ -74,14 +87,25 @@
 (defn- send-command!
   "A simple helper for a common case of sending and receiving transit
   data to the penpot mutation api."
-  [id params {:keys [response-type form-data?]}]
-  (->> (http/send! {:method :post
-                    :uri (u/join @cf/public-uri "api/rpc/command/" (name id))
-                    :credentials "include"
-                    :body (if form-data? (http/form-data params) (http/transit-data params))
-                    :response-type (or response-type :text)})
-       (rx/map http/conditional-decode-transit)
-       (rx/mapcat handle-response)))
+  [id params {:keys [response-type form-data? raw-transit?]}]
+  (let [decode-fn (if raw-transit?
+                    http/conditional-error-decode-transit
+                    http/conditional-decode-transit)
+        method    (if (isa? id ::query) :get :post)]
+
+    (->> (http/send! {:method method
+                      :uri (u/join @cf/public-uri "api/rpc/command/" (name id))
+                      :credentials "include"
+                      :headers {"accept" "application/transit+json"}
+                      :body (when (= method :post)
+                              (if form-data?
+                                (http/form-data params)
+                                (http/transit-data params)))
+                      :query (when (= method :get)
+                               params)
+                      :response-type (or response-type :text)})
+         (rx/map decode-fn)
+         (rx/mapcat handle-response))))
 
 (defn- dispatch [& args] (first args))
 
@@ -93,9 +117,9 @@
   [id params]
   (send-query! id params))
 
-(defmethod query :file-raw
+(defmethod command :get-raw-file
   [_id params]
-  (send-query! :file params {:raw-transit? true}))
+  (send-command! :get-file params {:raw-transit? true}))
 
 (defmethod mutation :default
   [id params]

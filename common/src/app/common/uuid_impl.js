@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright (c) UXBOX Labs SL
+ * Copyright (c) KALEIDOS INC
  */
 "use strict";
 
@@ -24,8 +24,10 @@ goog.scope(function() {
       };
     } else if (typeof require === "function") {
       const crypto = require("crypto");
+      const randomBytes = crypto["randomBytes"];
+
       return (buf) => {
-        const bytes = crypto.randomBytes(buf.length);
+        const bytes = randomBytes(buf.length);
         buf.set(bytes)
         return buf;
       };

@@ -41,7 +41,7 @@
 (defn encode
   ([data] (encode data nil))
   ([data {:keys [version]}]
-   (let [version (or version (cf/get :default-blob-version 4))]
+   (let [version (or version (cf/get :default-blob-version 5))]
      (case (long version)
        1 (encode-v1 data)
        3 (encode-v3 data)

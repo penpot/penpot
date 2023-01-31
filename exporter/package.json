@@ -13,15 +13,15 @@
     "cookies": "^0.8.0",
     "generic-pool": "^3.9.0",
     "inflation": "^2.0.0",
-    "ioredis": "^5.2.3",
-    "luxon": "^3.0.4",
-    "playwright": "^1.26.1",
+    "ioredis": "^5.2.4",
+    "luxon": "^3.1.1",
+    "playwright": "^1.29.1",
     "raw-body": "^2.5.1",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.1"
   },
   "devDependencies": {
-    "shadow-cljs": "^2.20.2",
+    "shadow-cljs": "^2.20.16",
     "source-map-support": "^0.5.21"
   }
 }

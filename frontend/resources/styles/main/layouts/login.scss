@@ -23,9 +23,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  background-color: #feecfd;
-  background-image: url("/images/login-pink.svg");
-  background-position: center;
+  background-color: #151035;
+  background-image: url("/images/login-penpot.svg");
+  background-position: center 30vh;
   background-size: 96%;
   background-repeat: no-repeat;
 
@@ -34,14 +34,20 @@
     width: 280px;
     font-size: $fs18;
     margin-top: 2vh;
-    color: #2c233e;
+    color: white;
   }
 
   .logo {
     svg {
-      fill: #2c233e;
+      fill: white;
       max-width: 11vw;
       height: 80px;
+    }
+    .hidden-name {
+      visibility: hidden;
+      width: 0;
+      height: 0;
+      float: left;
     }
   }
 }
@@ -87,7 +93,6 @@
   .btn-large {
     flex-grow: 1;
     font-size: 14px;
-    font-family: sourcesanspro;
     font-style: normal;
     font-weight: normal;
   }
@@ -102,7 +107,8 @@
       height: 20px;
       margin-right: 1rem;
     }
-    &:hover {
+    &:hover,
+    &:focus {
       background-color: #2065d7;
       color: $color-white;
     }
@@ -120,7 +126,8 @@
       margin-right: 1rem;
     }
 
-    &:hover {
+    &:hover,
+    &:focus {
       background-color: #ee5f18;
       color: $color-white;
     }
@@ -138,7 +145,8 @@
       margin-right: 1rem;
     }
 
-    &:hover {
+    &:hover,
+    &:focus {
       background-color: #2f2f2f;
       color: $color-white;
     }
@@ -186,7 +194,12 @@
       margin-bottom: 10px;
       a {
         font-size: $fs14;
-        color: $color-primary-dark;
+        font-weight: 500;
+        color: $color-gray-50;
+        &:hover,
+        &:focus {
+          text-decoration: underline;
+        }
       }
     }
   }
@@ -198,6 +211,7 @@
 
     span {
       margin: 0 $size-2;
+      color: $color-gray-40;
     }
   }
 }

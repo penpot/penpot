@@ -9,6 +9,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
@@ -20,6 +21,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.export :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks.resize :as r]
@@ -106,19 +108,20 @@
 
 (mf/defc menu
   [{:keys [layout project file team-id] :as props}]
-  (let [show-menu?     (mf/use-state false)
-        show-sub-menu? (mf/use-state false)
-        editing?       (mf/use-state false)
-        edit-input-ref (mf/use-ref nil)
-        objects        (mf/deref refs/workspace-page-objects)
-        frames         (->> (cph/get-immediate-children objects uuid/zero)
-                            (filterv cph/frame-shape?))
+  (let [show-menu?           (mf/use-state false)
+        show-sub-menu?       (mf/use-state false)
+        editing?             (mf/use-state false)
+        edit-input-ref       (mf/use-ref nil)
+        objects              (mf/deref refs/workspace-page-objects)
+        frames               (->> (cph/get-immediate-children objects uuid/zero)
+                                  (filterv cph/frame-shape?))
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         add-shared-fn
         #(st/emit! (dwl/set-file-shared (:id file) true))
 
-        del-shared-fn
-        #(st/emit! (dwl/set-file-shared (:id file) false))
+
+
 
         on-add-shared
         (mf/use-fn
@@ -136,14 +139,15 @@
         on-remove-shared
         (mf/use-fn
          (mf/deps file)
-         #(st/emit! (modal/show
-                     {:type :confirm
-                      :message ""
-                      :title (tr "modals.remove-shared-confirm.message" (:name file))
-                      :hint (tr "modals.remove-shared-confirm.hint")
-                      :cancel-label :omit
-                      :accept-label (tr "modals.remove-shared-confirm.accept")
-                      :on-accept del-shared-fn})))
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (st/emit! (dd/fetch-libraries-using-files [file]))
+           (st/emit! (modal/show
+                      {:type :delete-shared
+                       :origin :unpublish
+                       :on-accept #(st/emit! (dwl/set-file-shared (:id file) false))
+                       :count-libraries 1}))))
 
         handle-blur (fn [_]
                       (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
@@ -282,7 +286,7 @@
       [:ul.sub-menu.file
        (if (:is-shared file)
          [:li {:on-click on-remove-shared}
-          [:span (tr "dashboard.remove-shared")]]
+          [:span (tr "dashboard.unpublish-shared")]]
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
        [:li.export-file {:on-click on-export-shapes}
@@ -326,25 +330,27 @@
            (tr "workspace.header.menu.show-grid"))]
         [:span.shortcut (sc/get-tooltip :toggle-grid)]]
 
-       [:li {:on-click (fn []
-                         (r/set-resize-type! :bottom)
-                         (st/emit! (dw/remove-layout-flag :textpalette)
-                                   (toggle-flag :colorpalette)))}
-        [:span
-         (if (contains? layout :colorpalette)
-           (tr "workspace.header.menu.hide-palette")
-           (tr "workspace.header.menu.show-palette"))]
-        [:span.shortcut (sc/get-tooltip :toggle-colorpalette)]]
+       (when-not workspace-read-only?
+         [:*
+          [:li {:on-click (fn []
+                            (r/set-resize-type! :bottom)
+                            (st/emit! (dw/remove-layout-flag :textpalette)
+                                      (toggle-flag :colorpalette)))}
+           [:span
+            (if (contains? layout :colorpalette)
+              (tr "workspace.header.menu.hide-palette")
+              (tr "workspace.header.menu.show-palette"))]
+           [:span.shortcut (sc/get-tooltip :toggle-colorpalette)]]
 
-       [:li {:on-click (fn []
-                         (r/set-resize-type! :bottom)
-                         (st/emit! (dw/remove-layout-flag :colorpalette)
-                                   (toggle-flag :textpalette)))}
-        [:span
-         (if (contains? layout :textpalette)
-           (tr "workspace.header.menu.hide-textpalette")
-           (tr "workspace.header.menu.show-textpalette"))]
-        [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]
+          [:li {:on-click (fn []
+                            (r/set-resize-type! :bottom)
+                            (st/emit! (dw/remove-layout-flag :colorpalette)
+                                      (toggle-flag :textpalette)))}
+           [:span
+            (if (contains? layout :textpalette)
+              (tr "workspace.header.menu.hide-textpalette")
+              (tr "workspace.header.menu.show-textpalette"))]
+           [:span.shortcut (sc/get-tooltip :toggle-textpalette)]]])
 
        [:li {:on-click #(st/emit! (toggle-flag :display-artboard-names))}
         [:span
@@ -410,11 +416,11 @@
         [:span (tr "labels.tutorials")]]
        [:li {:on-click show-release-notes}
         [:span (tr "labels.release-notes")]]
-       [:li.separator {:on-click #(dom/open-new-window "https://penpot.app/libraries-templates.html")}
+       [:li.separator {:on-click #(dom/open-new-window "https://penpot.app/libraries-templates")}
         [:span (tr "labels.libraries-and-templates")]]
        [:li {:on-click #(dom/open-new-window "https://github.com/penpot/penpot")}
         [:span (tr "labels.github-repo")]]
-       [:li  {:on-click #(dom/open-new-window "https://penpot.app/terms.html")}
+       [:li  {:on-click #(dom/open-new-window "https://penpot.app/terms")}
         [:span (tr "auth.terms-of-service")]]
        [:li.separator {:on-click #(st/emit! (when (contains? layout :collapse-left-sidebar) (dw/toggle-layout-flag :collapse-left-sidebar))
                                             (-> (dw/toggle-layout-flag :shortcuts)
@@ -434,6 +440,7 @@
   (let [team-id             (:team-id project)
         zoom                (mf/deref refs/selected-zoom)
         params              {:page-id page-id :file-id (:id file) :section "interactions"}
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         close-modals
         (mf/use-callback
@@ -472,12 +479,14 @@
       [:div.options-section
        [:& persistence-state-widget]
        [:& export-progress-widget]
-       [:button.document-history
-        {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
-         :class (when (contains? layout :document-history) "selected")
-         :on-click #(st/emit! (-> (dw/toggle-layout-flag :document-history)
-                                  (vary-meta assoc ::ev/origin "workspace-header")))}
-        i/recent]]
+       (when-not workspace-read-only?
+         [:button.document-history
+          {:alt (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+           :aria-label (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+           :class (when (contains? layout :document-history) "selected")
+           :on-click #(st/emit! (-> (dw/toggle-layout-flag :document-history)
+                                    (vary-meta assoc ::ev/origin "workspace-header")))}
+          i/recent])]
 
       [:div.options-section
        [:& zoom-widget-workspace

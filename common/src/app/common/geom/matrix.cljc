@@ -2,22 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.matrix
   (:require
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.spec :as us]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [clojure.test.check.generators :as tgen]))
 
 (def precision 6)
 
 ;; --- Matrix Impl
-
 (defrecord Matrix [^double a
                    ^double b
                    ^double c
@@ -26,28 +27,18 @@
                    ^double f]
   Object
   (toString [_]
-    (str "matrix("
-         (mth/precision a precision) ","
-         (mth/precision b precision) ","
-         (mth/precision c precision) ","
-         (mth/precision d precision) ","
-         (mth/precision e precision) ","
-         (mth/precision f precision) ")")))
+    (dm/fmt "matrix(%, %, %, %, %, %)"
+      (mth/to-fixed a precision)
+      (mth/to-fixed b precision)
+      (mth/to-fixed c precision)
+      (mth/to-fixed d precision)
+      (mth/to-fixed e precision)
+      (mth/to-fixed f precision))))
 
 (defn matrix?
   "Return true if `v` is Matrix instance."
   [v]
   (instance? Matrix v))
-
-(s/def ::a ::us/safe-number)
-(s/def ::b ::us/safe-number)
-(s/def ::c ::us/safe-number)
-(s/def ::d ::us/safe-number)
-(s/def ::e ::us/safe-number)
-(s/def ::f ::us/safe-number)
-
-(s/def ::matrix
-  (s/and (s/keys :req-un [::a ::b ::c ::d ::e ::f]) matrix?))
 
 (defn matrix
   "Create a new matrix instance."
@@ -55,6 +46,21 @@
    (Matrix. 1 0 0 1 0 0))
   ([a b c d e f]
    (Matrix. a b c d e f)))
+
+(s/def ::a ::us/safe-float)
+(s/def ::b ::us/safe-float)
+(s/def ::c ::us/safe-float)
+(s/def ::d ::us/safe-float)
+(s/def ::e ::us/safe-float)
+(s/def ::f ::us/safe-float)
+
+(s/def ::matrix-attrs
+  (s/keys :req-un [::a ::b ::c ::d ::e ::f]))
+
+(s/def ::matrix
+  (s/with-gen
+    (s/and ::matrix-attrs matrix?)
+    #(tgen/fmap map->Matrix (s/gen ::matrix-attrs))))
 
 (def number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
 
@@ -85,30 +91,66 @@
 
 (defn multiply
   ([^Matrix m1 ^Matrix m2]
-   (let [m1a (.-a m1)
-         m1b (.-b m1)
-         m1c (.-c m1)
-         m1d (.-d m1)
-         m1e (.-e m1)
-         m1f (.-f m1)
+   (cond
+     ;; nil matrixes are equivalent to unit-matrix
+     (and (nil? m1) (nil? m2)) (matrix)
+     (nil? m1) m2
+     (nil? m2) m1
 
-         m2a (.-a m2)
-         m2b (.-b m2)
-         m2c (.-c m2)
-         m2d (.-d m2)
-         m2e (.-e m2)
-         m2f (.-f m2)]
+     :else
+     (let [m1a (.-a m1)
+           m1b (.-b m1)
+           m1c (.-c m1)
+           m1d (.-d m1)
+           m1e (.-e m1)
+           m1f (.-f m1)
 
-     (Matrix.
-      (+ (* m1a m2a) (* m1c m2b))
-      (+ (* m1b m2a) (* m1d m2b))
-      (+ (* m1a m2c) (* m1c m2d))
-      (+ (* m1b m2c) (* m1d m2d))
-      (+ (* m1a m2e) (* m1c m2f) m1e)
-      (+ (* m1b m2e) (* m1d m2f) m1f))))
+           m2a (.-a m2)
+           m2b (.-b m2)
+           m2c (.-c m2)
+           m2d (.-d m2)
+           m2e (.-e m2)
+           m2f (.-f m2)]
+
+       (Matrix.
+        (+ (* m1a m2a) (* m1c m2b))
+        (+ (* m1b m2a) (* m1d m2b))
+        (+ (* m1a m2c) (* m1c m2d))
+        (+ (* m1b m2c) (* m1d m2d))
+        (+ (* m1a m2e) (* m1c m2f) m1e)
+        (+ (* m1b m2e) (* m1d m2f) m1f)))))
 
   ([m1 m2 & others]
    (reduce multiply (multiply m1 m2) others)))
+
+(defn multiply!
+  [^Matrix m1 ^Matrix m2]
+  (let [m1a (.-a m1)
+        m1b (.-b m1)
+        m1c (.-c m1)
+        m1d (.-d m1)
+        m1e (.-e m1)
+        m1f (.-f m1)
+        m2a (.-a m2)
+        m2b (.-b m2)
+        m2c (.-c m2)
+        m2d (.-d m2)
+        m2e (.-e m2)
+        m2f (.-f m2)]
+    #?@(:cljs [(set! (.-a m1) (+ (* m1a m2a) (* m1c m2b)))
+               (set! (.-b m1) (+ (* m1b m2a) (* m1d m2b)))
+               (set! (.-c m1) (+ (* m1a m2c) (* m1c m2d)))
+               (set! (.-d m1) (+ (* m1b m2c) (* m1d m2d)))
+               (set! (.-e m1) (+ (* m1a m2e) (* m1c m2f) m1e))
+               (set! (.-f m1) (+ (* m1b m2e) (* m1d m2f) m1f))
+               m1]
+        :clj  [(Matrix.
+                (+ (* m1a m2a) (* m1c m2b))
+                (+ (* m1b m2a) (* m1d m2b))
+                (+ (* m1a m2c) (* m1c m2d))
+                (+ (* m1b m2c) (* m1d m2d))
+                (+ (* m1a m2e) (* m1c m2f) m1e)
+                (+ (* m1b m2e) (* m1d m2f) m1f))])))
 
 (defn add-translate
   "Given two TRANSLATE matrixes (only e and f have significative
@@ -134,26 +176,31 @@
   (= v base))
 
 (defn translate-matrix
-  ([{x :x y :y :as pt}]
+  ([pt]
    (assert (gpt/point? pt))
-   (Matrix. 1 0 0 1 x y))
+   (Matrix. 1 0 0 1
+            (dm/get-prop pt :x)
+            (dm/get-prop pt :y)))
 
   ([x y]
-   (translate-matrix (gpt/point x y))))
+   (Matrix. 1 0 0 1 x y)))
 
 (defn scale-matrix
   ([pt center]
-   (multiply (translate-matrix center)
-             (scale-matrix pt)
-             (translate-matrix (gpt/negate center))))
-  ([{x :x y :y :as pt}]
+   (-> (matrix)
+       (multiply! (translate-matrix center))
+       (multiply! (scale-matrix pt))
+       (multiply! (translate-matrix (gpt/negate center)))))
+  ([pt]
    (assert (gpt/point? pt))
-   (Matrix. x 0 0 y 0 0)))
+   (Matrix. (dm/get-prop pt :x) 0 0 (dm/get-prop pt :y) 0 0)))
 
 (defn rotate-matrix
-  ([angle point] (multiply (translate-matrix point)
-                           (rotate-matrix angle)
-                           (translate-matrix (gpt/negate point))))
+  ([angle point]
+   (-> (matrix)
+       (multiply! (translate-matrix point))
+       (multiply! (rotate-matrix angle))
+       (multiply! (translate-matrix (gpt/negate point)))))
   ([angle]
    (let [a (mth/radians angle)]
      (Matrix. (mth/cos a)
@@ -187,10 +234,22 @@
   ([m scale center]
    (multiply m (scale-matrix scale center))))
 
+(defn scale!
+  "Apply scale transformation to the matrix."
+  ([m scale]
+   (multiply! m (scale-matrix scale)))
+  ([m scale center]
+   (multiply! m (scale-matrix scale center))))
+
 (defn translate
   "Apply translate transformation to the matrix."
   [m pt]
   (multiply m (translate-matrix pt)))
+
+(defn translate!
+  "Apply translate transformation to the matrix."
+  [m pt]
+  (multiply! m (translate-matrix pt)))
 
 (defn skew
   "Apply translate transformation to the matrix."
@@ -228,14 +287,15 @@
 (defn inverse
   "Gets the inverse of the affinity transform `mtx`"
   [{:keys [a b c d e f] :as mtx}]
-  (let [det (determinant mtx)
-        a' (/  d det)
-        b' (/ (- b) det)
-        c' (/ (- c) det)
-        d' (/  a det)
-        e' (/ (- (* c f) (* d e)) det)
-        f' (/ (- (* b e) (* a f)) det)]
-    (Matrix. a' b' c' d' e' f')))
+  (let [det (determinant mtx)]
+    (when-not (mth/almost-zero? det)
+      (let [a' (/  d det)
+            b' (/ (- b) det)
+            c' (/ (- c) det)
+            d' (/  a det)
+            e' (/ (- (* c f) (* d e)) det)
+            f' (/ (- (* b e) (* a f)) det)]
+        (Matrix. a' b' c' d' e' f')))))
 
 (defn round
   [mtx]
@@ -246,3 +306,21 @@
       (update :d mth/precision 4)
       (update :e mth/precision 4)
       (update :f mth/precision 4)))
+
+(defn transform-point-center
+  "Transform a point around the shape center"
+  [point center matrix]
+  (if (and (some? point) (some? matrix) (some? center))
+    (gpt/transform
+     point
+     (multiply (translate-matrix center)
+               matrix
+               (translate-matrix (gpt/negate center))))
+    point))
+
+(defn move?
+  [{:keys [a b c d _ _]}]
+  (and (mth/almost-zero? (- a 1))
+       (mth/almost-zero? b)
+       (mth/almost-zero? c)
+       (mth/almost-zero? (- d 1))))

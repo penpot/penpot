@@ -71,7 +71,7 @@
 
     [:*
      [:header.dashboard-header {:ref rowref}
-      [:div.dashboard-title
+      [:div.dashboard-title#dashboard-libraries-title
        [:h1 (tr "dashboard.libraries-title")]]]
      [:section.dashboard-container.no-bg.dashboard-shared 
       [:& grid {:files files

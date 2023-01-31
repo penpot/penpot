@@ -9,21 +9,28 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.features :as ffeat]
    [app.common.logging :as l]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.loggers.audit :as-alias audit]
+   [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
+   [app.rpc :as-alias rpc]
+   [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
-   [app.rpc.queries.files :as files]
+   [app.rpc.helpers :as rph]
    [app.rpc.queries.projects :as projects]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
    [app.util.blob :as blob]
    [app.util.fressian :as fres]
+   [app.util.objects-map :as omap]
+   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -269,7 +276,7 @@
      (when (not= readed# expected#)
        (ex/raise :type :validation
                  :code :unexpected-label
-                 :hint (format "unxpected label found: %s, expected: %s" readed# expected#)))))
+                 :hint (format "unexpected label found: %s, expected: %s" readed# expected#)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
@@ -289,9 +296,11 @@
 
 (defn- retrieve-file
   [pool file-id]
-  (->> (db/query pool :file {:id file-id})
-       (map files/decode-row)
-       (first)))
+  (with-open [^AutoCloseable conn (db/open pool)]
+    (binding [pmap/*load-fn* (partial files/load-pointer conn file-id)]
+      (some-> (db/get* conn :file {:id file-id})
+              (files/decode-row)
+              (update :data files/process-pointers deref)))))
 
 (def ^:private sql:file-media-objects
   "SELECT * FROM file_media_object WHERE id = ANY(?)")
@@ -367,7 +376,7 @@
 (def ^:dynamic *state*)
 (def ^:dynamic *options*)
 
-;; --- EXPORT WRITTER
+;; --- EXPORT WRITER
 
 (defn- embed-file-assets
   [data conn file-id]
@@ -397,8 +406,8 @@
               form))
 
           (process-group-of-assets [data [lib-id items]]
-            ;; NOTE: there are a posibility that shape refers to a not
-            ;; existing file because the file was removed. In this
+            ;; NOTE: there is a possibility that shape refers to an
+            ;; non-existant file because the file was removed. In this
             ;; case we just ignore the asset.
             (if-let [lib (retrieve-file conn lib-id)]
               (reduce (partial process-asset lib) data items)
@@ -434,14 +443,14 @@
           :opt    [::include-libraries? ::embed-assets?]))
 
 (defn write-export!
-  "Do the exportation of a speficied file in custom penpot binary
+  "Do the exportation of a specified file in custom penpot binary
   format. There are some options available for customize the output:
 
-  `::include-libraries?`: additionaly to the specified file, all the
+  `::include-libraries?`: additionally to the specified file, all the
   linked libraries also will be included (including transitive
   dependencies).
 
-  `::embed-assets?`: instead of including the libraryes, embedd in the
+  `::embed-assets?`: instead of including the libraries, embed in the
   same file library all assets used from external libraries."
   [{:keys [::include-libraries? ::embed-assets?] :as options}]
   (us/assert! ::write-export-options options)
@@ -557,7 +566,7 @@
   format. There are some options for customize the importation
   behavior:
 
-  `::overwrite?`: if true, instead of creating new files and remaping id references,
+  `::overwrite?`: if true, instead of creating new files and remapping id references,
   it reuses all ids and updates existing objects; defaults to `false`.
 
   `::migrate?`: if true, applies the migration before persisting the
@@ -602,12 +611,23 @@
     (vswap! *state* update :index update-index files)
     (vswap! *state* assoc :version version :files files)))
 
+(defn- postprocess-file
+  [data]
+  (let [omap-wrap ffeat/*wrap-with-objects-map-fn*
+        pmap-wrap ffeat/*wrap-with-pointer-map-fn*]
+    (-> data
+        (update :pages-index update-vals #(update % :objects omap-wrap))
+        (update :pages-index update-vals pmap-wrap)
+        (update :components update-vals #(update % :objects omap-wrap))
+        (update :components pmap-wrap))))
+
 (defmethod read-section :v1/files
   [{:keys [conn ::input ::migrate? ::project-id ::timestamp ::overwrite?]}]
   (doseq [expected-file-id (-> *state* deref :files)]
-    (let [file    (read-obj! input)
-          media'  (read-obj! input)
-          file-id (:id file)]
+    (let [file     (read-obj! input)
+          media'   (read-obj! input)
+          file-id  (:id file)
+          features files/default-features]
 
       (when (not= file-id expected-file-id)
         (ex/raise :type :validation
@@ -622,33 +642,42 @@
       (l/debug :hint "update media references" ::l/async false)
       (vswap! *state* update :media into (map #(update % :id lookup-index)) media')
 
-      (l/debug :hint "procesing file" :file-id file-id ::l/async false)
+      (l/debug :hint "processing file" :file-id file-id ::features features ::l/async false)
 
-      (let [file-id' (lookup-index file-id)
-            data     (-> (:data file)
-                         (assoc :id file-id')
-                         (cond-> migrate? (pmg/migrate-data))
-                         (update :pages-index relink-shapes)
-                         (update :components relink-shapes)
-                         (update :media relink-media))
+      (binding [ffeat/*current* features
+                ffeat/*wrap-with-objects-map-fn* (if (features "storage/objects-map") omap/wrap identity)
+                ffeat/*wrap-with-pointer-map-fn* (if (features "storage/pointer-map") pmap/wrap identity)
+                pmap/*tracked* (atom {})]
 
-            params  {:id file-id'
-                     :project-id project-id
-                     :name (:name file)
-                     :revn (:revn file)
-                     :is-shared (:is-shared file)
-                     :data (blob/encode data)
-                     :created-at timestamp
-                     :modified-at timestamp}]
+        (let [file-id' (lookup-index file-id)
+              data     (-> (:data file)
+                           (assoc :id file-id')
+                           (cond-> migrate? (pmg/migrate-data))
+                           (update :pages-index relink-shapes)
+                           (update :components relink-shapes)
+                           (update :media relink-media)
+                           (postprocess-file))
 
-        (l/debug :hint "create file" :id file-id' ::l/async false)
+              params  {:id file-id'
+                       :project-id project-id
+                       :features (db/create-array conn "text" features)
+                       :name (:name file)
+                       :revn (:revn file)
+                       :is-shared (:is-shared file)
+                       :data (blob/encode data)
+                       :created-at timestamp
+                       :modified-at timestamp}]
 
-        (if overwrite?
-          (create-or-update-file conn params)
-          (db/insert! conn :file params))
+          (l/debug :hint "create file" :id file-id' ::l/async false)
 
-        (when overwrite?
-          (db/delete! conn :file-thumbnail {:file-id file-id'}))))))
+          (if overwrite?
+            (create-or-update-file conn params)
+            (db/insert! conn :file params))
+
+          (files/persist-pointers! conn file-id')
+
+          (when overwrite?
+            (db/delete! conn :file-thumbnail {:file-id file-id'})))))))
 
 (defmethod read-section :v1/rels
   [{:keys [conn ::input ::timestamp]}]
@@ -807,7 +836,7 @@
         cs (volatile! nil)]
     (try
       (l/info :hint "start exportation" :export-id id)
-      (with-open [output (io/output-stream output)]
+      (with-open [^AutoCloseable output (io/output-stream output)]
         (binding [*position* (atom 0)]
           (write-export! (assoc cfg ::output output))))
 
@@ -830,19 +859,19 @@
 (defn export-to-tmpfile!
   [cfg]
   (let [path (tmp/tempfile :prefix "penpot.export.")]
-    (with-open [output (io/output-stream path)]
+    (with-open [^AutoCloseable output (io/output-stream path)]
       (export! cfg output)
       path)))
 
 (defn import!
   [{:keys [::input] :as cfg}]
   (let [id (uuid/next)
-        ts (dt/now)
+        tp (dt/tpoint)
         cs (volatile! nil)]
+    (l/info :hint "import: started" :import-id id)
     (try
-      (l/info :hint "start importation" :import-id id)
       (binding [*position* (atom 0)]
-        (with-open [input (io/input-stream input)]
+        (with-open [^AutoCloseable input (io/input-stream input)]
           (read-import! (assoc cfg ::input input))))
 
       (catch Throwable cause
@@ -850,27 +879,29 @@
         (throw cause))
 
       (finally
-        (l/info :hint "importation finished" :import-id id
-                :elapsed (str (inst-ms (dt/diff ts (dt/now))) "ms")
+        (l/info :hint "import: terminated"
+                :import-id id
+                :elapsed (dt/format-duration (tp))
                 :error? (some? @cs)
-                :cause @cs)))))
+                :cause @cs
+                )))))
 
 ;; --- Command: export-binfile
 
 (s/def ::file-id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
 (s/def ::include-libraries? ::us/boolean)
 (s/def ::embed-assets? ::us/boolean)
 
 (s/def ::export-binfile
-  (s/keys :req-un [::profile-id ::file-id ::include-libraries? ::embed-assets?]))
+  (s/keys :req [::rpc/profile-id] :req-un [::file-id ::include-libraries? ::embed-assets?]))
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
-  {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id include-libraries? embed-assets?] :as params}]
+  {::doc/added "1.15"
+   ::webhooks/event? true}
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id include-libraries? embed-assets?] :as params}]
   (files/check-read-permissions! pool profile-id file-id)
-  (let [resp (reify yrs/StreamableResponseBody
+  (let [body (reify yrs/StreamableResponseBody
                (-write-body-to-stream [_ _ output-stream]
                  (-> cfg
                      (assoc ::file-ids [file-id])
@@ -878,23 +909,23 @@
                      (assoc ::include-libraries? include-libraries?)
                      (export! output-stream))))]
 
-    (with-meta (sv/wrap nil)
-      {:transform-response (fn [_ response]
-                             (-> response
-                                 (assoc :body resp)
-                                 (assoc :headers {"content-type" "application/octet-stream"})))})))
+    (fn [_]
+      (yrs/response 200 body {"content-type" "application/octet-stream"}))))
 
 (s/def ::file ::media/upload)
 (s/def ::import-binfile
-  (s/keys :req-un [::profile-id ::project-id ::file]))
+  (s/keys :req [::rpc/profile-id] :req-un [::project-id ::file]))
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."
-  {::doc/added "1.15"}
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id file] :as params}]
+  {::doc/added "1.15"
+   ::webhooks/event? true}
+  [{:keys [pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
   (db/with-atomic [conn pool]
     (projects/check-read-permissions! conn profile-id project-id)
-    (import! (assoc cfg
-                    ::input (:path file)
-                    ::project-id project-id
-                    ::ignore-index-errors? true))))
+    (let [ids (import! (assoc cfg
+                              ::input (:path file)
+                              ::project-id project-id
+                              ::ignore-index-errors? true))]
+      (rph/with-meta ids
+        {::audit/props {:file nil :file-ids ids}}))))

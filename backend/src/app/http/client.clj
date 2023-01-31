@@ -7,34 +7,45 @@
 (ns app.http.client
   "Http client abstraction layer."
   (:require
+   [app.common.spec :as us]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
-   [java-http-clj.core :as http]))
+   [java-http-clj.core :as http]
+   [promesa.core :as p])
+  (:import
+   java.net.http.HttpClient))
 
-(s/def ::client fn?)
+(s/def ::client #(instance? HttpClient %))
+(s/def ::client-holder
+  (s/keys :req [::client]))
 
-(defmethod ig/pre-init-spec :app.http/client [_]
-  (s/keys :req-un [::wrk/executor]))
+(defmethod ig/pre-init-spec ::client [_]
+  (s/keys :req [::wrk/executor]))
 
-(defmethod ig/init-key :app.http/client
-  [_ {:keys [executor] :as cfg}]
-  (let [client (http/build-client {:executor executor
-                                   :connect-timeout 30000 ;; 10s
-                                   :follow-redirects :always})]
-    (with-meta
-      (fn send
-        ([req] (send req {}))
-        ([req {:keys [response-type sync?] :or {response-type :string sync? false}}]
-         (if sync?
-           (http/send req {:client client :as response-type})
-           (http/send-async req {:client client :as response-type}))))
-      {::client client})))
+(defmethod ig/init-key ::client
+  [_ {:keys [::wrk/executor] :as cfg}]
+  (http/build-client {:executor executor
+                      :connect-timeout 30000 ;; 10s
+                      :follow-redirects :always}))
+
+(defn send!
+  ([client req] (send! client req {}))
+  ([client req {:keys [response-type sync?] :or {response-type :string sync? false}}]
+   (us/assert! ::client client)
+   (if sync?
+     (http/send req {:client client :as response-type})
+     (try
+       (http/send-async req {:client client :as response-type})
+       (catch Throwable cause
+         (p/rejected cause))))))
 
 (defn req!
   "A convencience toplevel function for gradual migration to a new API
   convention."
-  ([client request]
-   (client request))
-  ([client request options]
-   (client request options)))
+  ([{:keys [::client] :as holder} request]
+   (us/assert! ::client-holder holder)
+   (send! client request {}))
+  ([{:keys [::client] :as holder} request options]
+   (us/assert! ::client-holder holder)
+   (send! client request options)))

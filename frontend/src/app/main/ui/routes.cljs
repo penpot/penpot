@@ -10,9 +10,9 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.users :as du]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.router :as rt]
-   [app.util.storage :refer [storage]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -66,6 +66,7 @@
    ["/dashboard/team/:team-id"
     ["/members"              :dashboard-team-members]
     ["/invitations"          :dashboard-team-invitations]
+    ["/webhooks"             :dashboard-team-webhooks]
     ["/settings"             :dashboard-team-settings]
     ["/projects"             :dashboard-projects]
     ["/search"               :dashboard-search]
@@ -92,32 +93,17 @@
 
 (defn on-navigate
   [router path]
-  (let [match     (match-path router path)
-        profile   (:profile @storage)
-        nopath?   (or (= path "") (= path "/"))
-        path-name (-> match :data :name)
-        authpath? (some #(= path-name %) '(:auth-login
-                                           :auth-register
-                                           :auth-register-validate
-                                           :auth-register-success
-                                           :auth-recovery-request
-                                           :auth-recovery))
-        authed?   (and (not (nil? profile))
-                       (not= (:id profile) uuid/zero))]
+  (if-let [match (match-path router path)]
+    (st/emit! (rt/navigated match))
 
-    (cond
-      (or (and nopath? authed? (nil? match))
-          (and authpath? authed?))
-      (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))
-
-      (and (not authed?) (nil? match))
-      (st/emit! (rt/nav :auth-login))
-
-      (nil? match)
-      (st/emit! (rt/assign-exception {:type :not-found}))
-
-      :else
-      (st/emit! (rt/navigated match)))))
+    ;; We just recheck with an additional profile request; this avoids
+    ;; some race conditions that causes unexpected redirects on
+    ;; invitations workflows (and probably other cases).
+    (->> (rp/query! :profile)
+         (rx/subs (fn [{:keys [id] :as profile}]
+                    (if (= id uuid/zero)
+                      (st/emit! (rt/nav :auth-login))
+                      (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))))))))
 
 (defn init-routes
   []

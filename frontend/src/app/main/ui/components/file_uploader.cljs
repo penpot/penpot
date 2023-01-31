@@ -39,5 +39,6 @@
        :type "file"
        :ref input-ref
        :on-change on-files-selected
-       :data-test data-test}]]))
+       :data-test data-test
+       :aria-label "uploader"}]]))
 

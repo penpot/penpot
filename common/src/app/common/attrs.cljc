@@ -2,11 +2,11 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.attrs
   (:require
-    [app.common.geom.shapes.transforms :as gst]
+    [app.common.geom.shapes.transforms :as gtr]
     [app.common.math :as mth]))
 
 (defn- get-attr
@@ -16,7 +16,7 @@
     (cond
       ;; For rotated or stretched shapes, the origin point we show in the menu
       ;; is not the (:x :y) shape attribute, but the top left coordinate of the
-      ;; wrapping recangle (see measures.cljs). As the :points attribute cannot
+      ;; wrapping rectangle (see measures.cljs). As the :points attribute cannot
       ;; be merged for several objects, we calculate the origin point in two fake
       ;; attributes to be used in the measures menu.
       (#{:ox :oy} attr)
@@ -24,7 +24,7 @@
         value
         (if-let [points (:points obj)]
           (if (not= points :multiple)
-            (let [rect (gst/selection-rect [obj])]
+            (let [rect (gtr/selection-rect [obj])]
               (if (= attr :ox) (:x rect) (:y rect)))
             :multiple)
           (get obj attr ::unset)))

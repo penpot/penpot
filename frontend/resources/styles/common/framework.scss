@@ -14,6 +14,7 @@
   border-radius: 3px;
   cursor: pointer;
   display: flex;
+  font-family: "worksans", sans-serif;
   font-size: $fs12;
   height: 30px;
   justify-content: center;
@@ -42,7 +43,8 @@
   @extend %btn;
   background: $color-primary;
   color: $color-black;
-  &:hover {
+  &:hover,
+  &:focus {
     background: $color-black;
     color: $color-primary;
   }
@@ -396,6 +398,10 @@ ul.slider-dots {
     width: 43px;
   }
 
+  &.auto {
+    width: auto;
+  }
+
   // Input amounts
 
   &.pixels {
@@ -497,16 +503,6 @@ input[type="checkbox"] {
   cursor: pointer;
   line-height: normal;
   margin-top: 1px 0 0;
-}
-
-input:focus,
-select:focus,
-textarea:focus,
-input[type="file"]:focus,
-input[type="radio"]:focus,
-input[type="checkbox"]:focus {
-  box-shadow: none;
-  outline: none;
 }
 
 .form-errors {

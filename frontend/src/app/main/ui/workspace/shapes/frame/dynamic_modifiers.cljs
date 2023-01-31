@@ -11,84 +11,35 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages.helpers :as cph]
+   [app.common.types.modifiers :as ctm]
    [app.main.store :as st]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
+   [debug :refer [debug?]]
    [rumext.v2 :as mf]))
 
-(defn- transform-no-resize
-  "If we apply a scale directly to the texts it will show deformed so we need to create this
-  correction matrix to \"undo\" the resize but keep the other transformations."
-  [{:keys [x y width height points transform transform-inverse] :as shape} current-transform modifiers]
+(defn get-shape-node
+  ([id]
+   (get-shape-node js/document id))
 
-  (let [corner-pt (first points)
-        corner-pt (cond-> corner-pt (some? transform-inverse) (gpt/transform transform-inverse))
-
-        resize-x? (some? (:resize-vector modifiers))
-        resize-y? (some? (:resize-vector-2 modifiers))
-
-        flip-x? (neg? (get-in modifiers [:resize-vector :x]))
-        flip-y? (or (neg? (get-in modifiers [:resize-vector :y]))
-                    (neg? (get-in modifiers [:resize-vector-2 :y])))
-
-        result (cond-> (gmt/matrix)
-                 (and (some? transform) (or resize-x? resize-y?))
-                 (gmt/multiply transform)
-
-                 resize-x?
-                 (gmt/scale (gpt/inverse (:resize-vector modifiers)) corner-pt)
-
-                 resize-y?
-                 (gmt/scale (gpt/inverse (:resize-vector-2 modifiers)) corner-pt)
-
-                 flip-x?
-                 (gmt/scale (gpt/point -1 1) corner-pt)
-
-                 flip-y?
-                 (gmt/scale (gpt/point 1 -1) corner-pt)
-
-                 (and (some? transform) (or resize-x? resize-y?))
-                 (gmt/multiply transform-inverse))
-
-        [width height]
-        (if (or resize-x? resize-y?)
-          (let [pc (cond-> (gpt/point x y)
-                     (some? transform)
-                     (gpt/transform transform)
-
-                     (some? current-transform)
-                     (gpt/transform current-transform))
-
-                pw (cond-> (gpt/point (+ x width) y)
-                     (some? transform)
-                     (gpt/transform transform)
-
-                     (some? current-transform)
-                     (gpt/transform current-transform))
-
-                ph (cond-> (gpt/point x (+ y height))
-                     (some? transform)
-                     (gpt/transform transform)
-
-                     (some? current-transform)
-                     (gpt/transform current-transform))]
-            [(gpt/distance pc pw) (gpt/distance pc ph)])
-          [width height])]
-
-    [result width height]))
+  ([base-node id]
+   (if (= (.-id base-node) (dm/str "shape-" id))
+     base-node
+     (dom/query base-node (dm/str "#shape-" id)))))
 
 (defn get-nodes
   "Retrieve the DOM nodes to apply the matrix transformation"
-  [base-node {:keys [id type masked-group?] :as shape}]
+  [base-node {:keys [id parent-id] :as shape}]
   (when (some? base-node)
-    (let [shape-node (if (= (.-id base-node) (dm/str "shape-" id))
-                       base-node
-                       (dom/query base-node (dm/str "#shape-" id)))
-
-          frame? (= :frame type)
-          group? (= :group type)
-          text? (= :text type)
-          mask?  (and group? masked-group?)]
+    (let [shape-node     (get-shape-node base-node id)
+          parent-node    (get-shape-node base-node parent-id)
+          frame?         (cph/frame-shape? shape)
+          group?         (cph/group-shape? shape)
+          text?          (cph/text-shape? shape)
+          masking-child? (:masking-child? (meta shape))]
       (cond
         frame?
         [shape-node
@@ -99,22 +50,30 @@
 
         ;; For groups we don't want to transform the whole group but only
         ;; its filters/masks
-        mask?
-        [(dom/query shape-node ".mask-clip-path")
-         (dom/query shape-node ".mask-shape")]
+        masking-child?
+        [shape-node
+         (dom/query parent-node ".mask-clip-path")
+         (dom/query parent-node ".mask-shape")
+         (when (debug? :shape-titles)
+           (dom/query (dm/str "#frame-title-" id)))]
 
         group?
         (let [shape-defs (dom/query shape-node "defs")]
           (d/concat-vec
+           [(when (debug? :shape-titles)
+              (dom/query (dm/str "#frame-title-" id)))]
            (dom/query-all shape-defs ".svg-def")
            (dom/query-all shape-defs ".svg-mask-wrapper")))
 
         text?
         [shape-node
-         (dom/query shape-node ".text-container")]
+         (when (debug? :shape-titles)
+           (dom/query (dm/str "#frame-title-" id)))]
 
         :else
-        [shape-node]))))
+        [shape-node
+         (when (debug? :shape-titles)
+           (dom/query (dm/str "#frame-title-" id)))]))))
 
 (defn transform-region!
   [node modifiers]
@@ -126,10 +85,12 @@
              (-> (dom/get-attribute node "data-old-width") d/parse-double)
              (-> (dom/get-attribute node "data-old-height") d/parse-double))
             (gsh/transform-selrect modifiers))]
-    (dom/set-attribute! node "x" x)
-    (dom/set-attribute! node "y" y)
-    (dom/set-attribute! node "width" width)
-    (dom/set-attribute! node "height" height)))
+
+    (when (and (some? x) (some? y) (some? width) (some? height))
+      (dom/set-attribute! node "x" x)
+      (dom/set-attribute! node "y" y)
+      (dom/set-attribute! node "width" width)
+      (dom/set-attribute! node "height" height))))
 
 (defn start-transform!
   [base-node shapes]
@@ -164,7 +125,7 @@
 
 (defn set-transform-att!
   [node att value]
-  
+
   (let [old-att (dom/get-attribute node (dm/str "data-old-" att))
         new-value (if (some? old-att)
                     (dm/str value " " old-att)
@@ -177,37 +138,20 @@
 
 (defn update-transform!
   [base-node shapes transforms modifiers]
-  (doseq [{:keys [id type] :as shape} shapes]
+  (doseq [{:keys [id _type] :as shape} shapes]
     (when-let [nodes (get-nodes base-node shape)]
       (let [transform (get transforms id)
-            modifiers (get-in modifiers [id :modifiers])
-            text? (= type :text)
-            transform-text? (and text? (and (nil? (:resize-vector modifiers)) (nil? (:resize-vector-2 modifiers))))]
+            modifiers (get-in modifiers [id :modifiers])]
 
         (doseq [node nodes]
           (cond
-            ;; Text shapes need special treatment because their resize only change
-            ;; the text area, not the change size/position
-            (dom/class? node "frame-thumbnail")
-            (let [[transform] (transform-no-resize shape transform modifiers)]
-              (set-transform-att! node "transform" transform))
-
             (dom/class? node "frame-children")
             (set-transform-att! node "transform" (gmt/inverse transform))
 
-            (dom/class? node "text-container")
-            (let [modifiers (dissoc modifiers :displacement :rotation)]
-              (when (not (gsh/empty-modifiers? modifiers))
-                (let [mtx (-> shape
-                              (assoc :modifiers modifiers)
-                              (gsh/transform-shape)
-                              (gsh/transform-matrix {:no-flip true}))]
-                  (override-transform-att! node "transform" mtx))))
-
             (dom/class? node "frame-title")
-            (let [shape (-> shape (assoc :modifiers modifiers) gsh/transform-shape)
-                  zoom (get-in @st/state [:workspace-local :zoom] 1)
-                  mtx  (vwu/title-transform shape zoom)]
+            (let [shape (gsh/transform-shape shape modifiers)
+                  zoom  (get-in @st/state [:workspace-local :zoom] 1)
+                  mtx   (vwu/title-transform shape zoom)]
               (override-transform-att! node "transform" mtx))
 
             (or (= (dom/get-tag-name node) "mask")
@@ -221,7 +165,7 @@
             (= (dom/get-tag-name node) "pattern")
             (set-transform-att! node "patternTransform" transform)
 
-            (and (some? transform) (some? node) (or (not text?) transform-text?))
+            (and (some? transform) (some? node))
             (set-transform-att! node "transform" transform)))))))
 
 (defn remove-transform!
@@ -232,22 +176,52 @@
         (when (some? node)
           (cond
             (= (dom/get-tag-name node) "foreignObject")
-            ;; The shape width/height will be automaticaly setup when the modifiers are applied
+            ;; The shape width/height will be automatically setup when the modifiers are applied
             nil
 
             (or (= (dom/get-tag-name node) "mask")
                 (= (dom/get-tag-name node) "filter"))
             (do
+              (dom/set-attribute! node "x" (dom/get-attribute node "data-old-x"))
+              (dom/set-attribute! node "y" (dom/get-attribute node "data-old-y"))
+              (dom/set-attribute! node "width" (dom/get-attribute node "data-old-width"))
+              (dom/set-attribute! node "height" (dom/get-attribute node "data-old-height"))
+
               (dom/remove-attribute! node "data-old-x")
               (dom/remove-attribute! node "data-old-y")
               (dom/remove-attribute! node "data-old-width")
               (dom/remove-attribute! node "data-old-height"))
+
+            (dom/class? node "frame-title")
+            (dom/remove-attribute! node "data-old-transform")
 
             :else
             (let [old-transform (dom/get-attribute node "data-old-transform")]
               (if (some? old-transform)
                 (dom/remove-attribute! node "data-old-transform")
                 (dom/remove-attribute! node "transform")))))))))
+
+(defn adapt-text-modifiers
+  [modifiers shape]
+  (let [shape' (gsh/transform-shape shape modifiers)
+        scalev
+        (gpt/point (/ (:width shape) (:width shape'))
+                   (/ (:height shape) (:height shape')))]
+    ;; Reverse the change in size so we can recalculate the layout
+    (-> modifiers
+        (ctm/resize scalev (-> shape' :points first) (:transform shape') (:transform-inverse shape')))))
+
+(defn add-masking-child?
+  "Adds to the object the information about if the current shape is a masking child. We use the metadata
+  to not adding new parameters to the object."
+  [objects]
+  (fn [{:keys [id parent-id] :as shape}]
+    (let [parent (get objects parent-id)
+          masking-child? (and (cph/mask-shape? parent) (= id (first (:shapes parent))))]
+
+      (cond-> shape
+        masking-child?
+        (with-meta {:masking-child? true})))))
 
 (defn use-dynamic-modifiers
   [objects node modifiers]
@@ -257,43 +231,79 @@
          (mf/deps modifiers)
          (fn []
            (when (some? modifiers)
-             (d/mapm (fn [id {modifiers :modifiers}]
+             (d/mapm (fn [id {current-modifiers :modifiers}]
                        (let [shape (get objects id)
-                             center (gsh/center-shape shape)
-                             modifiers (cond-> modifiers
-                                         ;; For texts we only use the displacement because
-                                         ;; resize needs to recalculate the text layout
-                                         (= :text (:type shape))
-                                         (select-keys [:displacement :rotation]))]
-                         (gsh/modifiers->transform center modifiers)))
+                             adapt-text? (and (= :text (:type shape)) (not (ctm/only-move? current-modifiers)))
+
+                             current-modifiers
+                             (cond-> current-modifiers
+                               adapt-text?
+                               (adapt-text-modifiers shape))]
+                         (ctm/modifiers->transform current-modifiers)))
                      modifiers))))
+
+        add-children (mf/use-memo (mf/deps modifiers) #(ctm/added-children-frames modifiers))
+        add-children (hooks/use-equal-memo add-children)
+        add-children-prev (hooks/use-previous add-children)
 
         shapes
         (mf/use-memo
          (mf/deps transforms)
          (fn []
            (->> (keys transforms)
-                (mapv (d/getf objects)))))
+                (filter #(some? (get transforms %)))
+                (mapv (comp (add-masking-child? objects) (d/getf objects))))))
 
         prev-shapes (mf/use-var nil)
         prev-modifiers (mf/use-var nil)
         prev-transforms (mf/use-var nil)]
 
+    (mf/use-effect
+     (mf/deps add-children)
+     (fn []
+       (doseq [{:keys [shape]} add-children-prev]
+         (let [shape-node (get-shape-node shape)
+               mirror-node (dom/query (dm/fmt ".mirror-shape[href='#shape-%'" shape))]
+           (when mirror-node (.remove mirror-node))
+           (dom/remove-attribute! (dom/get-parent shape-node) "display")))
+
+       (doseq [{:keys [frame shape]} add-children]
+         (let [frame-node (get-shape-node frame)
+               shape-node (get-shape-node shape)
+
+               clip-id
+               (dom/get-attribute (dom/query frame-node ":scope > defs > .frame-clip-def") "id")
+
+               use-node
+               (.createElementNS globals/document "http://www.w3.org/2000/svg" "use")
+
+               contents-node
+               (or (dom/query frame-node ".frame-children") frame-node)]
+
+           (dom/set-attribute! use-node "href" (dm/fmt "#shape-%" shape))
+           (dom/set-attribute! use-node "clip-path" (dm/fmt "url(#%)" clip-id))
+           (dom/add-class! use-node "mirror-shape")
+           (dom/append-child! contents-node use-node)
+           (dom/set-attribute! (dom/get-parent shape-node) "display" "none")))))
+
     (mf/use-layout-effect
      (mf/deps transforms)
      (fn []
-       (let [is-prev-val? (d/not-empty? @prev-modifiers)
-             is-cur-val? (d/not-empty? modifiers)]
+       (let [curr-shapes-set (into #{} (map :id) shapes)
+             prev-shapes-set (into #{} (map :id) @prev-shapes)
 
-         (when (and (not is-prev-val?) is-cur-val?)
-           (start-transform! node shapes))
+             new-shapes      (->> shapes (remove #(contains? prev-shapes-set (:id %))))
+             removed-shapes  (->> @prev-shapes (remove #(contains? curr-shapes-set (:id %))))]
 
-         (when is-cur-val?
+         (when (d/not-empty? new-shapes)
+           (start-transform! node new-shapes))
+
+         (when (d/not-empty? shapes)
            (update-transform! node shapes transforms modifiers))
 
-         (when (and is-prev-val? (not is-cur-val?))
-           (remove-transform! node @prev-shapes))
+         (when (d/not-empty? removed-shapes)
+           (remove-transform! node removed-shapes)))
 
-         (reset! prev-modifiers modifiers)
-         (reset! prev-transforms transforms)
-         (reset! prev-shapes shapes))))))
+       (reset! prev-modifiers modifiers)
+       (reset! prev-transforms transforms)
+       (reset! prev-shapes shapes)))))

@@ -6,6 +6,7 @@
 
 (ns app.worker.snaps
   (:require
+   [app.common.geom.shapes.rect :as gpr]
    [app.util.snap-data :as sd]
    [app.worker.impl :as impl]
    [okulary.core :as l]))
@@ -13,25 +14,25 @@
 (defonce state (l/atom {}))
 
 ;; Public API
-(defmethod impl/handler :snaps/initialize-index
-  [{:keys [data] :as message}]
-
-  (let [pages (vals (:pages-index data))]
-    (reset! state (reduce sd/add-page (sd/make-snap-data) pages)))
-
+(defmethod impl/handler :snaps/initialize-page-index
+  [{:keys [page] :as message}]
+  (swap! state sd/add-page page)
   nil)
 
-(defmethod impl/handler :snaps/update-index
+(defmethod impl/handler :snaps/update-page-index
   [{:keys [old-page new-page] :as message}]
   (swap! state sd/update-page old-page new-page)
   nil)
 
 (defmethod impl/handler :snaps/range-query
-  [{:keys [page-id frame-id axis ranges] :as message}]
-
-  (into []
-        (comp (mapcat #(sd/query @state page-id frame-id axis %))
-              (distinct))
-        ranges))
+  [{:keys [page-id frame-id axis ranges bounds] :as message}]
+  (let [match-bounds?
+        (fn [[_ data]]
+          (some #(gpr/contains-point? bounds %) (map :pt data)))]
+    (->> (into []
+               (comp (mapcat #(sd/query @state page-id frame-id axis %))
+                     (distinct))
+               ranges)
+         (filter match-bounds?))))
 
 

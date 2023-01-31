@@ -2,44 +2,51 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.point
-  (:refer-clojure :exclude [divide min max])
+  (:refer-clojure :exclude [divide min max abs])
   (:require
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.math :as mth]
    [app.common.spec :as us]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [clojure.test.check.generators :as tgen]))
 
 ;; --- Point Impl
 
 (defrecord Point [x y])
 
-(defn s [{:keys [x y]}] (str "(" x "," y ")"))
+(defn s
+  [pt]
+  (dm/str "(" (dm/get-prop pt :x) "," (dm/get-prop pt :y) ")"))
 
 (defn point?
   "Return true if `v` is Point instance."
   [v]
-  (or (instance? Point v)
-      (and (map? v) (contains? v :x) (contains? v :y))))
+  (instance? Point v))
 
 (s/def ::x ::us/safe-number)
 (s/def ::y ::us/safe-number)
 
+(s/def ::point-attrs
+  (s/keys :req-un [::x ::y]))
+
 (s/def ::point
-  (s/and (s/keys :req-un [::x ::y]) point?))
+  (s/with-gen (s/and ::point-attrs point?)
+    #(tgen/fmap map->Point (s/gen ::point-attrs))))
 
 (defn point-like?
   [{:keys [x y] :as v}]
   (and (map? v)
-       (not (nil? x))
-       (not (nil? y))
-       (number? x)
-       (number? y)))
+       (d/num? x)
+       (d/num? y)))
 
 (defn point
   "Create a Point instance."
@@ -47,207 +54,282 @@
   ([v]
    (cond
      (point? v)
-     (Point. (:x v) (:y v))
+     v
 
      (number? v)
      (point v v)
 
      (point-like? v)
-     (point (:x v) (:y v))
+     (Point. (:x v) (:y v))
 
      :else
-     (throw (ex-info "Invalid arguments" {:v v}))))
+     (ex/raise :hint "invalid arguments (on pointer constructor)" :value v)))
   ([x y]
    (Point. x y)))
 
 (defn close?
   [p1 p2]
-  (and (mth/close? (:x p1) (:x p2))
-       (mth/close? (:y p1) (:y p2))))
+  (and (mth/close? (dm/get-prop p1 :x)
+                   (dm/get-prop p2 :x))
+       (mth/close? (dm/get-prop p1 :y)
+                   (dm/get-prop p2 :y))))
 
-(defn angle->point [{:keys [x y]} angle distance]
+(defn angle->point
+  [pt angle distance]
   (point
-   (+ x (* distance (mth/cos angle)))
-   (- y (* distance (mth/sin angle)))))
+   (+ (dm/get-prop pt :x) (* distance (mth/cos angle)))
+   (- (dm/get-prop pt :y) (* distance (mth/sin angle)))))
 
 (defn add
   "Returns the addition of the supplied value to both
   coordinates of the point as a new point."
-  [{x :x y :y :as p} {ox :x oy :y :as other}]
-  (assert (point? p))
-  (assert (point? other))
-  (Point. (+ x ox) (+ y oy)))
+  [p1 p2]
+  (assert (and (point? p1)
+               (point? p2))
+          "arguments should be pointer instance")
+  (Point. (+ (dm/get-prop p1 :x)
+             (dm/get-prop p2 :x))
+          (+ (dm/get-prop p1 :y)
+             (dm/get-prop p2 :y))))
 
 (defn subtract
   "Returns the subtraction of the supplied value to both
   coordinates of the point as a new point."
-  [{x :x y :y :as p} {ox :x oy :y :as other}]
-  (assert (point? p))
-  (assert (point? other))
-  (Point. (- x ox) (- y oy)))
+  [p1 p2]
+  (assert (and (point? p1)
+               (point? p2))
+          "arguments should be pointer instance")
+  (Point. (- (dm/get-prop p1 :x)
+             (dm/get-prop p2 :x))
+          (- (dm/get-prop p1 :y)
+             (dm/get-prop p2 :y))))
 
 (defn multiply
   "Returns the subtraction of the supplied value to both
   coordinates of the point as a new point."
-  [{x :x y :y :as p} {ox :x oy :y :as other}]
-  (assert (point? p))
-  (assert (point? other))
-  (Point. (* x ox) (* y oy)))
+  [p1 p2]
+  (assert (and (point? p1)
+               (point? p2))
+          "arguments should be pointer instance")
+  (Point. (* (dm/get-prop p1 :x)
+             (dm/get-prop p2 :x))
+          (* (dm/get-prop p1 :y)
+             (dm/get-prop p2 :y))))
 
 (defn divide
-  [{x :x y :y :as p} {ox :x oy :y :as other}]
-  (assert (point? p))
-  (assert (point? other))
-  (Point. (/ x ox) (/ y oy)))
+  [p1 p2]
+  (assert (and (point? p1)
+               (point? p2))
+          "arguments should be pointer instance")
+  (Point. (/ (dm/get-prop p1 :x)
+             (dm/get-prop p2 :x))
+          (/ (dm/get-prop p1 :y)
+             (dm/get-prop p2 :y))))
 
 (defn min
-  ([] (min nil nil))
-  ([p1] (min p1 nil))
-  ([{x1 :x y1 :y :as p1} {x2 :x y2 :y :as p2}]
+  ([] nil)
+  ([p1] p1)
+  ([p1 p2]
    (cond
      (nil? p1) p2
      (nil? p2) p1
-     :else (Point. (c/min x1 x2) (c/min y1 y2)))))
-
+     :else (Point. (c/min (dm/get-prop p1 :x)
+                          (dm/get-prop p2 :x))
+                   (c/min (dm/get-prop p1 :y)
+                          (dm/get-prop p2 :y))))))
 (defn max
-  ([] (max nil nil))
-  ([p1] (max p1 nil))
-  ([{x1 :x y1 :y :as p1} {x2 :x y2 :y :as p2}]
+  ([] nil)
+  ([p1] p1)
+  ([p1 p2]
    (cond
      (nil? p1) p2
      (nil? p2) p1
-     :else (Point. (c/max x1 x2) (c/max y1 y2)))))
-
+     :else (Point. (c/max (dm/get-prop p1 :x)
+                          (dm/get-prop p2 :x))
+                   (c/max (dm/get-prop p1 :y)
+                          (dm/get-prop p2 :y))))))
 (defn inverse
-  [{:keys [x y] :as p}]
-  (assert (point? p))
-  (Point. (/ 1 x) (/ 1 y)))
+  [pt]
+  (assert (point? pt) "point instance expected")
+  (Point. (/ 1.0 (dm/get-prop pt :x))
+          (/ 1.0 (dm/get-prop pt :y))))
 
 (defn negate
-  [{x :x y :y :as p}]
-  (assert (point? p))
-  (Point. (- x) (- y)))
+  [pt]
+  (assert (point? pt) "point instance expected")
+  (Point. (- (dm/get-prop pt :x))
+          (- (dm/get-prop pt :y))))
 
 (defn distance
   "Calculate the distance between two points."
-  [{x :x y :y :as p} {ox :x oy :y :as other}]
-  (assert (point? p))
-  (assert (point? other))
-  (let [dx (- x ox)
-        dy (- y oy)]
-    (mth/sqrt (+ (mth/pow dx 2)
-                 (mth/pow dy 2)))))
+  [p1 p2]
+  (assert (and (point? p1)
+               (point? p2))
+          "arguments should be point instances")
+  (let [dx (- (dm/get-prop p1 :x)
+              (dm/get-prop p2 :x))
+        dy (- (dm/get-prop p1 :y)
+              (dm/get-prop p2 :y))]
+    (mth/hypot dx dy)))
 
 (defn distance-vector
   "Calculate the distance, separated x and y."
-  [{x :x y :y :as p} {ox :x oy :y :as other}]
-  (assert (point? p))
-  (assert (point? other))
-  (let [dx (mth/abs (- x ox))
-        dy (mth/abs (- y oy))]
-    (Point. dx dy)))
+  [p1 p2]
+  (assert (and (point? p1)
+               (point? p2))
+          "arguments should be point instances")
+  (let [dx (- (dm/get-prop p1 :x)
+              (dm/get-prop p2 :x))
+        dy (- (dm/get-prop p1 :y)
+              (dm/get-prop p2 :y))]
+    (Point. (mth/abs dx)
+            (mth/abs dy))))
 
 (defn length
-  [{x :x y :y :as p}]
-  (assert (point? p))
-  (mth/sqrt (+ (mth/pow x 2)
-               (mth/pow y 2))))
+  [pt]
+  (assert (point? pt) "point instance expected")
+  (let [x (dm/get-prop pt :x)
+        y (dm/get-prop pt :y)]
+    (mth/hypot x y)))
 
 (defn angle
   "Returns the smaller angle between two vectors.
   If the second vector is not provided, the angle
   will be measured from x-axis."
-  ([{x :x y :y :as p}]
-   (-> (mth/atan2 y x)
-       (mth/degrees)))
-  ([p center]
-   (angle (subtract p center))))
+  ([pt]
+   (assert (point? pt) "point instance expected")
+   (let [x (dm/get-prop pt :x)
+         y (dm/get-prop pt :y)]
+     (-> (mth/atan2 y x)
+         (mth/degrees))))
+  ([pt center]
+   (assert (point? pt) "point instance expected")
+   (assert (point? center) "point instance expected")
+   (let [x (- (dm/get-prop pt :x)
+              (dm/get-prop center :x))
+         y (- (dm/get-prop pt :y)
+              (dm/get-prop center :y))]
+     (-> (mth/atan2 y x)
+         (mth/degrees)))))
 
 (defn angle-with-other
   "Consider point as vector and calculate
   the angle between two vectors."
-  [{x :x y :y :as p} {ox :x oy :y :as other}]
-  (assert (point? p))
-  (assert (point? other))
-
-  (let [length-p (length p)
-        length-other (length other)]
-    (if (or (mth/almost-zero? length-p)
-            (mth/almost-zero? length-other))
+  [p1 p2]
+  (assert (and (point? p1)
+               (point? p2))
+          "arguments should be point instances")
+  (let [length-p1 (length p1)
+        length-p2 (length p2)]
+    (if (or (mth/almost-zero? length-p1)
+            (mth/almost-zero? length-p2))
       0
-      (let [a (/ (+ (* x ox)
-                    (* y oy))
-                 (* length-p length-other))
+      (let [a (/ (+ (* (dm/get-prop p1 :x)
+                       (dm/get-prop p2 :x))
+                    (* (dm/get-prop p1 :y)
+                       (dm/get-prop p2 :y)))
+                 (* length-p1 length-p2))
             a (mth/acos (if (< a -1) -1 (if (> a 1) 1 a)))
             d (mth/degrees a)]
         (if (mth/nan? d) 0 d)))))
 
-(defn angle-sign [v1 v2]
-  (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1))
+(defn angle-sign
+  [p1 p2]
+  (if (> (* (dm/get-prop p1 :y) (dm/get-prop p2 :x))
+         (* (dm/get-prop p1 :x) (dm/get-prop p2 :y)))
+    -1
+    1))
+
+(defn signed-angle-with-other
+  [v1 v2]
+  (* (angle-sign v1 v2) (angle-with-other v1 v2)))
 
 (defn update-angle
   "Update the angle of the point."
   [p angle]
-  (assert (point? p))
-  (assert (number? angle))
-  (let [len (length p)
+  (assert (number? angle) "expected number")
+  (let [len   (length p)
         angle (mth/radians angle)]
     (Point. (* (mth/cos angle) len)
             (* (mth/sin angle) len))))
 
 (defn quadrant
   "Return the quadrant of the angle of the point."
-  [{:keys [x y] :as p}]
-  (assert (point? p))
-  (if (>= x 0)
-    (if (>= y 0) 1 4)
-    (if (>= y 0) 2 3)))
+  [p]
+  (assert (point? p) "expected point instance")
+  (let [x (dm/get-prop p :x)
+        y (dm/get-prop p :y)]
+    (if (>= x 0)
+      (if (>= y 0) 1 4)
+      (if (>= y 0) 2 3))))
 
 (defn round
   "Round the coordinates of the point to a precision"
   ([point]
    (round point 0))
 
-  ([{:keys [x y] :as p} decimals]
-   (assert (point? p))
-   (assert (number? decimals))
-   (Point. (mth/precision x decimals)
-           (mth/precision y decimals))))
+  ([pt decimals]
+   (assert (point? pt) "expected point instance")
+   (assert (number? decimals) "expected number instance")
+   (Point. (mth/precision (dm/get-prop pt :x) decimals)
+           (mth/precision (dm/get-prop pt :y) decimals))))
 
-(defn half-round
+(defn round-step
   "Round the coordinates to the closest half-point"
-  [{:keys [x y] :as p}]
-  (assert (point? p))
-  (Point. (mth/half-round x)
-          (mth/half-round y)))
+  [pt step]
+  (assert (point? pt) "expected point instance")
+  (Point. (mth/round (dm/get-prop pt :x) step)
+          (mth/round (dm/get-prop pt :y) step)))
 
 (defn transform
   "Transform a point applying a matrix transformation."
-  [{:keys [x y] :as p} {:keys [a b c d e f]}]
-  (assert (point? p))
-  (Point. (+ (* x a) (* y c) e)
-          (+ (* x b) (* y d) f)))
+  [p m]
+  (when (point? p)
+    (if (nil? m)
+      p
+      (let [x (dm/get-prop p :x)
+            y (dm/get-prop p :y)
+            a (dm/get-prop m :a)
+            b (dm/get-prop m :b)
+            c (dm/get-prop m :c)
+            d (dm/get-prop m :d)
+            e (dm/get-prop m :e)
+            f (dm/get-prop m :f)]
+        (Point. (+ (* x a) (* y c) e)
+                (+ (* x b) (* y d) f))))))
+
 
 ;; Vector functions
 (defn to-vec [p1 p2]
   (subtract p2 p1))
 
-(defn scale [v scalar]
-  (-> v
-      (update :x * scalar)
-      (update :y * scalar)))
+(defn scale
+  [p scalar]
+  (Point. (* (dm/get-prop p :x) scalar)
+          (* (dm/get-prop p :y) scalar)))
 
-(defn dot [{x1 :x y1 :y} {x2 :x y2 :y}]
-  (+ (* x1 x2) (* y1 y2)))
+(defn dot
+  [p1 p2]
+  (+ (* (dm/get-prop p1 :x)
+        (dm/get-prop p2 :x))
+     (* (dm/get-prop p1 :y)
+        (dm/get-prop p2 :y))))
 
-(defn unit [v]
-  (let [v-length (length v)]
-    (divide v (point v-length v-length))))
+(defn unit
+  [p1]
+  (let [p-length (length p1)]
+    (Point. (/ (dm/get-prop p1 :x) p-length)
+            (/ (dm/get-prop p1 :y) p-length))))
+
+(defn perpendicular
+  [pt]
+  (Point. (- (dm/get-prop pt :y))
+          (dm/get-prop pt :x)))
 
 (defn project
   "V1 perpendicular projection on vector V2"
   [v1 v2]
-  (let [v2-unit (unit v2)
+  (let [v2-unit     (unit v2)
         scalar-proj (dot v1 v2-unit)]
     (scale v2-unit scalar-proj)))
 
@@ -270,43 +352,53 @@
 (defn point-line-distance
   "Returns the distance from a point to a line defined by two points"
   [point line-point1 line-point2]
-  (let [{x0 :x y0 :y} point
-        {x1 :x y1 :y} line-point1
-        {x2 :x y2 :y} line-point2
-        num (mth/abs
-             (+ (* x0 (- y2 y1))
-                (- (* y0 (- x2 x1)))
-                (* x2 y1)
-                (- (* y2 x1))))
-        dist (distance line-point2 line-point1)]
-    (/ num dist)))
+  (let [x0  (dm/get-prop point :x)
+        y0  (dm/get-prop point :y)
+        x1  (dm/get-prop line-point1 :x)
+        y1  (dm/get-prop line-point1 :y)
+        x2  (dm/get-prop line-point2 :x)
+        y2  (dm/get-prop line-point2 :y)]
+    (/ (mth/abs (+ (* x0 (- y2 y1))
+                   (- (* y0 (- x2 x1)))
+                   (* x2 y1)
+                   (- (* y2 x1))))
+       (distance line-point2 line-point1))))
 
-(defn almost-zero? [{:keys [x y] :as p}]
-  (assert (point? p))
-  (and (mth/almost-zero? x)
-       (mth/almost-zero? y)))
+(defn almost-zero?
+  [p]
+  (assert (point? p) "point instance expected")
+  (and ^boolean (mth/almost-zero? (dm/get-prop p :x))
+       ^boolean (mth/almost-zero? (dm/get-prop p :y))))
 
 (defn lerp
   "Calculates a linear interpolation between two points given a tvalue"
   [p1 p2 t]
-  (let [x (mth/lerp (:x p1) (:x p2) t)
-        y (mth/lerp (:y p1) (:y p2) t)]
-    (point x y)))
+  (let [x (mth/lerp (dm/get-prop p1 :x) (dm/get-prop p2 :x) t)
+        y (mth/lerp (dm/get-prop p1 :y) (dm/get-prop p2 :y) t)]
+    (Point. x y)))
 
 (defn rotate
   "Rotates the point around center with an angle"
-  [{px :x py :y} {cx :x cy :y} angle]
+  [p c angle]
+  (prn "ROTATE" p c angle)
+  (assert (point? p) "point instance expected")
+  (assert (point? c) "point instance expected")
   (let [angle (mth/radians angle)
+        px    (dm/get-prop p :x)
+        py    (dm/get-prop p :y)
+        cx    (dm/get-prop c :x)
+        cy    (dm/get-prop c :y)
 
-        x (+ (* (mth/cos angle) (- px cx))
-             (* (mth/sin angle) (- py cy) -1)
-             cx)
+        sa    (mth/sin angle)
+        ca    (mth/cos angle)
 
-        y (+ (* (mth/sin angle) (- px cx))
-             (* (mth/cos angle) (- py cy))
-             cy)]
-    (point x y)))
-
+        x     (+ (* ca (- px cx))
+                 (* sa (- py cy) -1)
+                 cx)
+        y     (+ (* sa (- px cx))
+                 (* ca (- py cy))
+                 cy)]
+    (Point. x y)))
 
 (defn scale-from
   "Moves a point in the vector that creates with center with a scale
@@ -319,10 +411,18 @@
 
 (defn no-zeros
   "Remove zero values from either coordinate"
+  [p]
+  (let [x (dm/get-prop p :x)
+        y (dm/get-prop p :y)]
+    (Point. (if (mth/almost-zero? x) 0.001 x)
+            (if (mth/almost-zero? y) 0.001 y))))
+
+
+(defn abs
   [point]
   (-> point
-      (update :x #(if (mth/almost-zero? %) 0.001 %))
-      (update :y #(if (mth/almost-zero? %) 0.001 %))))
+      (update :x mth/abs)
+      (update :y mth/abs)))
 
 ;; --- Debug
 

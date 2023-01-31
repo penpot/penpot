@@ -11,6 +11,7 @@
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
@@ -28,6 +29,7 @@
         fill-values (select-keys shape fill-attrs)
         stroke-values (select-keys shape stroke-attrs)
         layout-item-values (select-keys shape layout-item-attrs)
+        layout-container-values (select-keys shape layout-container-flex-attrs)
 
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
         is-layout-child? (mf/deref is-layout-child-ref)]
@@ -36,6 +38,8 @@
                         :type type
                         :values measure-values
                         :shape shape}]
+     [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
+     
      (when is-layout-child?
        [:& layout-item-menu
         {:ids ids
@@ -44,8 +48,9 @@
          :is-layout-child? true
          :shape shape}])
 
-     [:& constraints-menu {:ids ids
-                           :values constraint-values}]
+     (when (not is-layout-child?)
+       [:& constraints-menu {:ids ids
+                             :values constraint-values}])
 
      [:& layer-menu {:ids ids
                      :type type

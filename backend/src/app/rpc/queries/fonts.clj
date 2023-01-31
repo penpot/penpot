@@ -8,31 +8,16 @@
   (:require
    [app.common.spec :as us]
    [app.db :as db]
-   [app.rpc.queries.files :as files]
+   [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams]
+   [app.rpc.doc :as-alias doc]
    [app.rpc.queries.projects :as projects]
-   [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
-;; --- Query: Team Font Variants
-
-;; TODO: deprecated, should be removed on 1.7.x
-
-(s/def ::team-id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
-(s/def ::team-font-variants
-  (s/keys :req-un [::profile-id ::team-id]))
-
-(sv/defmethod ::team-font-variants
-  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
-  (with-open [conn (db/open pool)]
-    (teams/check-read-permissions! conn profile-id team-id)
-    (db/query conn :team-font-variant
-              {:team-id team-id
-               :deleted-at nil})))
-
 ;; --- Query: Font Variants
 
+(s/def ::team-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
 (s/def ::font-variants
@@ -47,6 +32,7 @@
          (contains? o :project-id)))))
 
 (sv/defmethod ::font-variants
+  {::doc/added "1.7"}
   [{:keys [pool] :as cfg} {:keys [profile-id team-id file-id project-id] :as params}]
   (with-open [conn (db/open pool)]
     (cond

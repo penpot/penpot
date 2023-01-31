@@ -183,16 +183,9 @@ msgstr "Το Penpot σας"
 msgid "dashboard.delete-team"
 msgstr "Διαγραφή ομάδας"
 
-msgid "dashboard.draft-title"
-msgstr "Προσχέδιο"
-
 #: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "Αντιγραφή"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.empty-files"
-msgstr "Δεν έχετε ακόμα αρχεία εδώ"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -374,10 +367,6 @@ msgstr "Ok"
 msgid "ds.confirm-title"
 msgstr "Είσαι σίγουρος;"
 
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "ds.updated-at"
-msgstr "Ενημερώθηκε: %s"
-
 #: src/app/main/data/workspace.cljs
 msgid "errors.clipboard-not-implemented"
 msgstr "Το πρόγραμμα περιήγησής σας δεν μπορεί να εκτελέσει αυτήν τη λειτουργία"
@@ -403,15 +392,8 @@ msgid "errors.generic"
 msgstr "Έχει συμβεί κάτι λάθος."
 
 #: src/app/main/ui/auth/login.cljs
-msgid "errors.google-auth-not-enabled"
-msgstr "Ο έλεγχος ταυτότητας με το Google απενεργοποιήθηκε στο backend"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "errors.ldap-disabled"
 msgstr "Ο έλεγχος ταυτότητας LDAP είναι απενεργοποιημένος."
-
-msgid "errors.media-format-unsupported"
-msgstr "Η μορφή εικόνας δεν αναγνωρίζεται (πρέπει να είναι svg, jpg ή png)."
 
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
@@ -433,9 +415,6 @@ msgstr ""
 "Το προφίλ που προσκαλείτε σταματά τα μηνύματα ηλεκτρονικού ταχυδρομείου "
 "(λόγω ανεπιθύμητων αναφορών ή υψηλού ποσοστού εγκατάλειψης)."
 
-msgid "errors.network"
-msgstr "Δεν είναι δυνατή η σύνδεση με διακομιστή backend."
-
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
 msgstr "Ο κωδικός επιβεβαίωσης πρέπει να ταιριάζει"
@@ -448,12 +427,7 @@ msgstr "Ο κωδικός πρόσβασης πρέπει να είναι του
 msgid "errors.registration-disabled"
 msgstr "Η εγγραφή είναι απενεργοποιημένη αυτήν τη στιγμή."
 
-msgid "errors.terms-privacy-agreement-invalid"
-msgstr ""
-"Πρέπει να αποδεχτείτε τους όρους παροχής υπηρεσιών και την πολιτική "
-"απορρήτου."
-
-#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Προέκυψε ένα μη αναμενόμενο σφάλμα."
 
@@ -468,10 +442,6 @@ msgstr "Το όνομα χρήστη ή ο κωδικός πρόσβασης φ�
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "Ο παλιός κωδικός πρόσβασης είναι λάθος "
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-start"
-msgstr "Συμμετοχή στη συνομιλία"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.chat-subtitle"
@@ -500,216 +470,205 @@ msgstr "Email"
 msgid "generic.error"
 msgstr "Παρουσιάστηκε σφάλμα"
 
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur"
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur"
 msgstr "Θολούρα"
 
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur.value"
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur.value"
 msgstr "αξία"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hex"
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hsla"
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.rgba"
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/handoff/attributes/fill.cljs
-msgid "handoff.attributes.fill"
+#: src/app/main/ui/inspect/attributes/fill.cljs
+msgid "inspect.attributes.fill"
 msgstr "Γέμισμα"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.download"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.download"
 msgstr "Λήψη εικόνας πηγής"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
 msgstr "Υψος"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.width"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.width"
 msgstr "Πλάτος"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout"
 msgstr "Διάταξη"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.height"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.height"
 msgstr "Υψος"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.left"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.left"
 msgstr "Αριστερά"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs, src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.radius"
+#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.radius"
 msgstr "Aκτίνα"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.rotation"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.rotation"
 msgstr "Περιστροφή"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.top"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.top"
 msgstr "Πάνω"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
 msgstr "Πλάτος"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow"
 msgstr "Σκιά "
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.blur"
-msgstr "B"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-x"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.offset-x"
 msgstr "X"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.spread"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow.shorthand.spread"
 msgstr "S"
 
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke"
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke"
 msgstr "περίγραμμα"
 
 #, permanent
-msgid "handoff.attributes.stroke.alignment.center"
+msgid "inspect.attributes.stroke.alignment.center"
 msgstr "Κέντρο"
 
 #, permanent
-msgid "handoff.attributes.stroke.alignment.inner"
+msgid "inspect.attributes.stroke.alignment.inner"
 msgstr "Μέσα"
 
 #, permanent
-msgid "handoff.attributes.stroke.alignment.outer"
+msgid "inspect.attributes.stroke.alignment.outer"
 msgstr "Εξω"
 
-msgid "handoff.attributes.stroke.style.dotted"
+msgid "inspect.attributes.stroke.style.dotted"
 msgstr "Διάστικτο"
 
-msgid "handoff.attributes.stroke.style.mixed"
+msgid "inspect.attributes.stroke.style.mixed"
 msgstr "Μικτός"
 
-msgid "handoff.attributes.stroke.style.none"
+msgid "inspect.attributes.stroke.style.none"
 msgstr "Κανένας"
 
-msgid "handoff.attributes.stroke.style.solid"
+msgid "inspect.attributes.stroke.style.solid"
 msgstr "Στερεός"
 
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke.width"
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke.width"
 msgstr "Πλάτος"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography"
 msgstr "Τυπογραφία"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-family"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-family"
 msgstr "Οικογένεια γραμματοσειρών"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-size"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-size"
 msgstr "Μέγεθος γραμματοσειράς"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-style"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-style"
 msgstr "Στυλ γραμματοσειράς"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.letter-spacing"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Διάστημα γραμμάτων"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.line-height"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.line-height"
 msgstr "Ύψος γραμμής"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-decoration"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-decoration"
 msgstr "Διακόσμηση κειμένου"
 
-msgid "handoff.attributes.typography.text-decoration.none"
+msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Κανένα"
 
-msgid "handoff.attributes.typography.text-decoration.strikethrough"
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
 msgstr "διαγραφή"
 
-msgid "handoff.attributes.typography.text-decoration.underline"
+msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "υπογράμμιση"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.text-transform"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-transform"
 msgstr "Μετασχηματισμός κειμένου"
 
-msgid "handoff.attributes.typography.text-transform.lowercase"
+msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "Πεζά γράμματα"
 
-msgid "handoff.attributes.typography.text-transform.none"
+msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Κανένα"
 
-msgid "handoff.attributes.typography.text-transform.titlecase"
+msgid "inspect.attributes.typography.text-transform.titlecase"
 msgstr "Πρώτα κεφαλαία"
 
-msgid "handoff.attributes.typography.text-transform.uppercase"
+msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Κεφαλαία γράμματα"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code"
 msgstr "Κώδικας"
 
-msgid "handoff.tabs.code.selected.circle"
+msgid "inspect.tabs.code.selected.circle"
 msgstr "Κύκλος"
 
-msgid "handoff.tabs.code.selected.curve"
+msgid "inspect.tabs.code.selected.curve"
 msgstr "Κυρτότητα"
 
-msgid "handoff.tabs.code.selected.frame"
+msgid "inspect.tabs.code.selected.frame"
 msgstr "Τραπέζι εργασίας"
 
-msgid "handoff.tabs.code.selected.group"
+msgid "inspect.tabs.code.selected.group"
 msgstr "Ομάδα"
 
-msgid "handoff.tabs.code.selected.image"
+msgid "inspect.tabs.code.selected.image"
 msgstr "Εικόνα"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code.selected.multiple"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code.selected.multiple"
 msgstr "%s Επιλεγμένα"
 
-msgid "handoff.tabs.code.selected.path"
+msgid "inspect.tabs.code.selected.path"
 msgstr "Σχέδιο"
 
-msgid "handoff.tabs.code.selected.rect"
+msgid "inspect.tabs.code.selected.rect"
 msgstr "Ορθωγώνιο"
 
-msgid "handoff.tabs.code.selected.svg-raw"
+msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-msgid "handoff.tabs.code.selected.text"
+msgid "inspect.tabs.code.selected.text"
 msgstr "Κείμενο"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.info"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.info"
 msgstr "Πληροφορίες"
-
-msgid "history.alert-message"
-msgstr "Βλέπετε την έκδοση %s"
 
 msgid "labels.accept"
 msgstr "Αποδέχομαι"
@@ -736,9 +695,6 @@ msgstr "Bad Gateway"
 msgid "labels.cancel"
 msgstr "ακύρωση"
 
-msgid "labels.centered"
-msgstr "Κέντρο"
-
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.comments"
 msgstr "Σχόλια"
@@ -746,9 +702,6 @@ msgstr "Σχόλια"
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Επιβεβαίωση Κωδικού"
-
-msgid "labels.content"
-msgstr "περιεχόμενα"
 
 #: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
@@ -782,10 +735,6 @@ msgstr "Edit"
 msgid "labels.editor"
 msgstr "Editor"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.email"
-msgstr "Email"
-
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
 msgstr "Τα σχόλια απενεργοποιήθηκαν"
@@ -804,9 +753,6 @@ msgstr "Πίσω"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Απόκρυψη επιλυμένων σχολίων"
-
-msgid "labels.icons"
-msgstr "εικόνες"
 
 msgid "labels.images"
 msgstr "εικόνες"
@@ -833,10 +779,6 @@ msgstr "Αποσύνδεση"
 msgid "labels.members"
 msgstr "Μέλη"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "Ονομα"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.new-password"
 msgstr "Νέος κωδικός πρόσβασης"
@@ -844,10 +786,6 @@ msgstr "Νέος κωδικός πρόσβασης"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
 msgstr "Δεν έχετε εκκρεμείς ειδοποιήσεις σχολίων"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.not-found.auth-info"
-msgstr "Έχετε συνδεθεί ως"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -887,10 +825,6 @@ msgstr "Ιδιοκτήτης"
 msgid "labels.password"
 msgstr "Κωδικός πρόσβασης"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "Άδειες"
-
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.profile"
 msgstr "Προφίλ"
@@ -898,9 +832,6 @@ msgstr "Προφίλ"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "Εργα"
-
-msgid "labels.recent"
-msgstr "Πρόσφατο"
 
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
@@ -960,10 +891,6 @@ msgstr "Εμφάνιση όλων των σχολίων"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Εμφάνιση μόνο των δικών σας σχολίων"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.sign-out"
-msgstr "Αποσύνδεση"
 
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
@@ -1214,11 +1141,11 @@ msgstr "Μεταβείτε στη σύνδεση"
 msgid "settings.multiple"
 msgstr "Μικτός "
 
-#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.empty-state"
 msgstr "Δεν βρέθηκαν πλαίσια στη σελίδα"
 
-#: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
 msgid "viewer.frame-not-found"
 msgstr "Το πλαίσιο δεν βρέθηκε."
 
@@ -1235,16 +1162,8 @@ msgid "viewer.header.share.copy-link"
 msgstr "Αντιγραφή  link"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.create-link"
-msgstr "Δημιουργία link"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.placeholder"
 msgstr "Μοιραστείτε το link θα εμφανιστεί εδώ"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.remove-link"
-msgstr "Κατάργηση link"
 
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
@@ -1301,9 +1220,6 @@ msgstr "Περιουσιακά στοιχεία"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.box-filter-all"
 msgstr "Όλα τα περιουσιακά στοιχεία"
-
-msgid "workspace.assets.box-filter-graphics"
-msgstr "Γραφικά"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
@@ -1377,7 +1293,7 @@ msgstr "Διάστημα γραμμάτων"
 msgid "workspace.assets.typography.line-height"
 msgstr "Υψος γραμμής"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/handoff/attributes/text.cljs, src/app/main/ui/handoff/attributes/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/inspect/attributes/text.cljs, src/app/main/ui/inspect/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
@@ -1465,10 +1381,6 @@ msgstr "Προσθήκη"
 msgid "workspace.libraries.colors"
 msgstr "%s χρώματα"
 
-#: src/app/main/ui/workspace/colorpalette.cljs
-msgid "workspace.libraries.colors.big-thumbnails"
-msgstr "Μεγάλες μικρογραφίες"
-
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.file-library"
 msgstr "Βιβλιοθήκη αρχείων"
@@ -1480,10 +1392,6 @@ msgstr "Πρόσφατα χρώματα"
 #: src/app/main/ui/workspace/colorpicker.cljs
 msgid "workspace.libraries.colors.save-color"
 msgstr "Αποθηκεύστε το στυλ χρώματος"
-
-#: src/app/main/ui/workspace/colorpalette.cljs
-msgid "workspace.libraries.colors.small-thumbnails"
-msgstr "Μικρές μικρογραφίες"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
@@ -1549,20 +1457,11 @@ msgstr "Ενημέρωση"
 msgid "workspace.libraries.updates"
 msgstr "ΕΝΗΜΕΡΩΣΕΙΣ"
 
-msgid "workspace.library.all"
-msgstr "Όλες οι βιβλιοθήκες"
-
 msgid "workspace.library.libraries"
 msgstr "βιβλιοθήκες"
 
-msgid "workspace.library.own"
-msgstr "Οι βιβλιοθήκες μου"
-
 msgid "workspace.library.store"
 msgstr "Προκαθορισμένες"
-
-msgid "workspace.options.blur-options.background-blur"
-msgstr "Φόντο"
 
 msgid "workspace.options.blur-options.layer-blur"
 msgstr "Στρώμα"
@@ -1591,11 +1490,11 @@ msgstr "Συστατικό"
 msgid "workspace.options.design"
 msgstr "Σχέδιο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export"
 msgstr "Εξαγωγή"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-object"
 msgstr "Εξαγωγή σχήματος"
 
@@ -1603,7 +1502,7 @@ msgstr "Εξαγωγή σχήματος"
 msgid "workspace.options.export.suffix"
 msgstr "Κατάληξη"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.exporting-object"
 msgstr "Εξαγωγή ..."
 
@@ -1804,10 +1703,6 @@ msgstr ""
 "Επιλέξτε ένα σχήμα, ένα artboard ή μια ομάδα για να σύρετε μια σύνδεση με "
 "άλλο artboard."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.select-artboard"
-msgstr "Επιλέξτε artboard"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.selection-fill"
 msgstr "Συμπλήρωση επιλογής"
@@ -1920,9 +1815,6 @@ msgstr "Για ευθυγράμμιση προς τα δεξιά"
 msgid "workspace.options.text-options.align-top"
 msgstr "Ευθυγραμμίστε την κορυφή"
 
-msgid "workspace.options.text-options.decoration"
-msgstr "Στολισμός"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.google"
 msgstr "Google"
@@ -1955,16 +1847,9 @@ msgstr "Πεζά"
 msgid "workspace.options.text-options.none"
 msgstr "Κανένας"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
-msgid "workspace.options.text-options.preset"
-msgstr "Προεπιλογή"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Διαγράμμιση"
-
-msgid "workspace.options.text-options.text-case"
-msgstr "Υπόθεση"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -1989,9 +1874,6 @@ msgstr "υπογράμμιση"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"
 msgstr "κεφαλαία"
-
-msgid "workspace.options.text-options.vertical-align"
-msgstr "Κάθετη ευθυγράμμιση"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
@@ -2099,7 +1981,7 @@ msgstr "Ιστορικό (%s)"
 msgid "workspace.sidebar.layers"
 msgstr "στρώσεις"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/inspect/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Εισαγόμενα χαρακτηριστικά SVG"
 

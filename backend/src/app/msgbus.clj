@@ -20,7 +20,8 @@
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [promesa.exec :as px]))
 
 (set! *warn-on-reflection* true)
 
@@ -52,8 +53,8 @@
 (s/def ::rcv-ch ::aa/channel)
 (s/def ::pub-ch ::aa/channel)
 (s/def ::state ::us/agent)
-(s/def ::pconn ::redis/connection)
-(s/def ::sconn ::redis/connection)
+(s/def ::pconn ::redis/connection-holder)
+(s/def ::sconn ::redis/connection-holder)
 (s/def ::msgbus
   (s/keys :req [::cmd-ch ::rcv-ch ::pub-ch ::state ::pconn ::sconn ::wrk/executor]))
 
@@ -122,8 +123,8 @@
 
 (defn- redis-disconnect
   [{:keys [::pconn ::sconn] :as cfg}]
-  (redis/close! pconn)
-  (redis/close! sconn))
+  (d/close! pconn)
+  (d/close! sconn))
 
 (defn- conj-subscription
   "A low level function that is responsible to create on-demand
@@ -138,7 +139,7 @@
 
 (defn- disj-subscription
   "A low level function responsible on removing subscriptions. The
-  subscription is trully removed from redis once no single local
+  subscription is truly removed from redis once no single local
   subscription is look for it. Intended to be executed in agent."
   [nsubs cfg topic chan]
   (let [nsubs (disj nsubs chan)]
@@ -159,7 +160,7 @@
               topics))))
 
 (defn- unsubscribe-single-channel
-  "Auxiliar function responsible on removing a single local
+  "Auxiliary function responsible on removing a single local
   subscription from the state."
   [state cfg chan]
   (let [topics (get-in state [:chans chan])
@@ -205,31 +206,33 @@
               (when-let [closed (a/<! (send-to-topic topic message))]
                 (send-via executor state unsubscribe-channels cfg closed nil))))
           ]
+    (px/thread
+      {:name "penpot/msgbus-io-loop"}
+      (loop []
+        (let [[val port] (a/alts!! [pub-ch rcv-ch])]
+          (cond
+            (nil? val)
+            (do
+              (l/trace :hint "stopping io-loop, nil received")
+              (send-via executor state (fn [state]
+                                         (->> (vals state)
+                                              (mapcat identity)
+                                              (filter some?)
+                                              (run! a/close!))
+                                         nil)))
 
-  (a/go-loop []
-    (let [[val port] (a/alts! [pub-ch rcv-ch])]
-      (cond
-        (nil? val)
-        (do
-          (l/trace :hint "stoping io-loop, nil received")
-          (send-via executor state (fn [state]
-                                     (->> (vals state)
-                                          (mapcat identity)
-                                          (filter some?)
-                                          (run! a/close!))
-                                     nil)))
+            (= port rcv-ch)
+            (do
+              (a/<!! (process-incoming val))
+              (recur))
 
-        (= port rcv-ch)
-        (do
-          (a/<! (process-incoming val))
-          (recur))
-
-        (= port pub-ch)
-        (let [result (a/<! (redis-pub cfg val))]
-          (when (ex/exception? result)
-            (l/error :hint "unexpected error on publishing" :message val
-                     :cause result))
-          (recur)))))))
+            (= port pub-ch)
+            (let [result (a/<!! (redis-pub cfg val))]
+              (when (ex/exception? result)
+                (l/error :hint "unexpected error on publishing"
+                         :message val
+                         :cause result))
+              (recur))))))))
 
 (defn- redis-pub
   "Publish a message to the redis server. Asynchronous operation,

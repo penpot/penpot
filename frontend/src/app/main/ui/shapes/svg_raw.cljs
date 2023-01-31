@@ -110,7 +110,7 @@
          (for [item childs]
            [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 
-        (and svg-leaf? valid-tag?)
+        svg-leaf?
         content
 
         :else nil))))

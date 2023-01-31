@@ -121,9 +121,9 @@
          (rx/concat
            (rx/of (dch/update-shapes [(:id shape)]
                     (fn [shape]
-                      (let [new-interaction (ctsi/set-destination
-                                             ctsi/default-interaction
-                                             destination)]
+                      (let [new-interaction (-> ctsi/default-interaction
+                                                (ctsi/set-destination destination)
+                                                (assoc :position-relative-to (:id shape)))]
                         (update shape :interactions
                                 ctsi/add-interaction new-interaction)))))
            (when (and (not (connected-frame? objects (:id frame)))
@@ -245,10 +245,11 @@
                 (ctsi/set-action-type :navigate)
 
                 :always
-                (ctsi/set-destination (:id target-frame))))]
+                (ctsi/set-destination (:id target-frame))))
+            undo-id (js/Symbol)]
 
         (rx/of
-          (dwu/start-undo-transaction)
+          (dwu/start-undo-transaction undo-id)
 
           (when (:hide-in-viewer target-frame)
             ; If the target frame is hidden, we need to unhide it so
@@ -274,7 +275,7 @@
             :else
             (update-interaction shape index change-interaction))
 
-          (dwu/commit-undo-transaction))))))
+          (dwu/commit-undo-transaction undo-id))))))
 
 ;; --- Overlays
 

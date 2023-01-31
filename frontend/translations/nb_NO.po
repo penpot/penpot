@@ -78,9 +78,6 @@ msgstr "Din Penpot"
 msgid "dashboard.delete-team"
 msgstr "Slett lag"
 
-msgid "dashboard.draft-title"
-msgstr "Kladd"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
 msgstr "Inviter til lag"
@@ -211,17 +208,9 @@ msgstr "Er du sikker?"
 msgid "errors.invalid-color"
 msgstr "Ugyldig farge"
 
-#, fuzzy
-msgid "errors.media-format-unsupported"
-msgstr "Bildeformatet støttes ikke (må være SVG, JPG, eller PNG)."
-
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Ukjent symbol"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-start"
-msgstr "Ta del i sludringen"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
@@ -231,82 +220,82 @@ msgstr "Beskrivelse"
 msgid "feedback.subject"
 msgstr "Emne"
 
-#: src/app/main/ui/handoff/attributes/blur.cljs
-msgid "handoff.attributes.blur.value"
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur.value"
 msgstr "Verdi"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.download"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.download"
 msgstr "Last ned kildebilde"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
 msgstr "Høyde"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.width"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.width"
 msgstr "Bredde"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.height"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.height"
 msgstr "Høyde"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.left"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.left"
 msgstr "Venstre"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
 msgstr "Bredde"
 
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow"
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow"
 msgstr "Skygge"
 
-#: src/app/main/ui/handoff/attributes/stroke.cljs
-msgid "handoff.attributes.stroke.width"
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke.width"
 msgstr "Bredde"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography"
 msgstr "Typografi"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-family"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-family"
 msgstr "Skriftfamilie"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-size"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-size"
 msgstr "Skriftstørrelse"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-style"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-style"
 msgstr "Skriftstil"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.code"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code"
 msgstr "Kode"
 
-msgid "handoff.tabs.code.selected.circle"
+msgid "inspect.tabs.code.selected.circle"
 msgstr "Sirkel"
 
-msgid "handoff.tabs.code.selected.group"
+msgid "inspect.tabs.code.selected.group"
 msgstr "Gruppe"
 
-msgid "handoff.tabs.code.selected.image"
+msgid "inspect.tabs.code.selected.image"
 msgstr "Bilde"
 
-msgid "handoff.tabs.code.selected.path"
+msgid "inspect.tabs.code.selected.path"
 msgstr "Sti"
 
-msgid "handoff.tabs.code.selected.svg-raw"
+msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-msgid "handoff.tabs.code.selected.text"
+msgid "inspect.tabs.code.selected.text"
 msgstr "Tekst"
 
-#: src/app/main/ui/handoff/right_sidebar.cljs
-msgid "handoff.tabs.info"
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.info"
 msgstr "Info"
 
 msgid "labels.accept"
@@ -319,9 +308,6 @@ msgstr "Avbryt"
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.confirm-password"
 msgstr "Bekreft passord"
-
-msgid "labels.content"
-msgstr "Innhold"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
@@ -375,9 +361,6 @@ msgstr "Skrifttilbydere"
 msgid "labels.fonts"
 msgstr "Skrifter"
 
-msgid "labels.icons"
-msgstr "Ikoner"
-
 msgid "labels.images"
 msgstr "Bilder"
 
@@ -397,17 +380,9 @@ msgstr "Logg ut"
 msgid "labels.members"
 msgstr "Medlemmer"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.name"
-msgstr "Navn"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.new-password"
 msgstr "Nytt passord"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.not-found.auth-info"
-msgstr "Du er innlogget som"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "labels.old-password"
@@ -421,10 +396,6 @@ msgstr "Eier"
 msgid "labels.password"
 msgstr "Passord"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.permissions"
-msgstr "Tilganger"
-
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.profile"
 msgstr "Profil"
@@ -432,10 +403,6 @@ msgstr "Profil"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.projects"
 msgstr "Prosjekter"
-
-#, fuzzy
-msgid "labels.recent"
-msgstr "Nylige"
 
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
@@ -480,10 +447,6 @@ msgstr "Delte bibliotek"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"
 msgstr "Vis alle kommentarer"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.sign-out"
-msgstr "Logg ut"
 
 msgid "labels.upload"
 msgstr "Last opp"
@@ -592,15 +555,8 @@ msgid "title.workspace"
 msgstr "%s - Penpot"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.create-link"
-msgstr "Opprett lenke"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.remove-link"
 msgstr "Fjern lenke"
-
-msgid "workspace.assets.box-filter-graphics"
-msgstr "Grafikk"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
@@ -686,10 +642,6 @@ msgstr "Nylige farger"
 msgid "workspace.libraries.colors.save-color"
 msgstr "Lagre fargestil"
 
-#: src/app/main/ui/workspace/colorpalette.cljs
-msgid "workspace.libraries.colors.small-thumbnails"
-msgstr "Små miniatyrbilder"
-
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
 msgstr "%s komponenter"
@@ -697,9 +649,6 @@ msgstr "%s komponenter"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
 msgstr "Filbibliotek"
-
-msgid "workspace.options.blur-options.background-blur"
-msgstr "Bakgrunn"
 
 msgid "workspace.options.blur-options.layer-blur"
 msgstr "Lag"
@@ -712,7 +661,7 @@ msgstr "Komponent"
 msgid "workspace.options.design"
 msgstr "Design"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.exporting-object"
 msgstr "Eksporterer …"
 

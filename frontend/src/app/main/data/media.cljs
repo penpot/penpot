@@ -41,7 +41,7 @@
   (when-not (contains? cm/valid-image-types (.-type file))
     (ex/raise :type :validation
               :code :media-type-not-allowed
-              :hint (str/fmt "media type %s is not supported" (.-type file))))
+              :hint (str/ffmt "media type % is not supported" (.-type file))))
   file)
 
 (defn notify-start-loading

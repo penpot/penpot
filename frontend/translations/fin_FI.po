@@ -1,0 +1,260 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2022-12-20 20:48+0000\n"
+"Last-Translator: Midka <me@midka.dev>\n"
+"Language-Team: Finnish "
+"<https://hosted.weblate.org/projects/penpot/frontend/fin_FI/>\n"
+"Language: fin_FI\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.15.1-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Onko sinulla jo käyttäjä?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Tarkista sähköpostisi ja paina vahvistuslinkkiä käyttääksesi "
+"Penpot-ohjelmaa."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Vahvista salasana"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Luo testikäyttäjä"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Haluatko vain kokeilla?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Tämä on DEMO versio, ÄLÄ KÄYTÄ oikeaan työhön, projektit tullaan määräajoin "
+"poistamaan."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Sähköposti"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Unohditko salasanasi?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Koko nimi"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Kirjaudu sisään"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Kirjaudu"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Mahtavaa nähdä sinut uudelleen!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Syötä uusi salasana"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Palautustunnus on virheellinen."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Salasanan vaihto onnistui"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "Käyttäjäsi ei ole vahvistettu, vahvista se jatkaaksesi."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Salasanan vaihtoon tarvittava linkki lähetetty sähköpostiisi."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Ryhmään liittyminen onnistui"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Salasana"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Vähintään 8 merkkiä"
+
+msgid "auth.privacy-policy"
+msgstr "Tietosuojaseloste"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Palauta salasana"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Lähetämme sinulle sähköpostin, jossa lukee ohjeet"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Unohtuiko salasana?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Vaihda salasanasi"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Ei käyttäjää?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Luo uusi käyttäjä"
+
+#: src/app/main/ui/auth/register.cljs
+#, fuzzy
+msgid "auth.register-subtitle"
+msgstr "Se on ilmainen, sekä avointa lähdekoodia"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Luo uusi käyttäjä"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Avoimen lähdekoodin ratkaisu suunnitteluun ja prototyyppien valmistukseen."
+
+msgid "auth.terms-of-service"
+msgstr "Käyttöehdot"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr "Kun luot uuden käyttäjän, hyväksyt käyttöehdot ja tietosuojaselosteen."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Lähetimme vahvistussähköpostin osoitteeseen"
+
+msgid "common.publish"
+msgstr "Julkaise"
+
+msgid "common.share-link.all-users"
+msgstr "Kaikki Penpotin käyttäjät"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Oletko varma, että haluat poistaa tämän linkin? Sen jälkeen kukaan ei voi "
+"käyttää sitä"
+
+msgid "common.share-link.current-tag"
+msgstr "(nykyinen)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Poista linkki"
+
+msgid "common.share-link.get-link"
+msgstr "Hanki linkki"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Linkin kopiointi onnistui"
+
+msgid "common.share-link.manage-ops"
+msgstr "Muokkaa käyttöoikeuksia"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "Yksi sivu jaettu"
+msgstr[1] "%s sivua jaettu"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Voi kommentoida"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Voi tarkastella koodia"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Kaikilla linkin saaneilla on käyttöoikeus"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Sivut jaettu"
+
+msgid "common.share-link.placeholder"
+msgstr "Jaettava linkki ilmestyy tähän"
+
+msgid "common.share-link.team-members"
+msgstr "Vain ryhmän jäsenet"
+
+msgid "common.share-link.title"
+msgstr "Jaa prototyypit"
+
+msgid "common.share-link.view-all"
+msgstr "Valitse kaikki"
+
+msgid "common.unpublish"
+msgstr "Peruuta julkaisu"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Ryhmän hallinta"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot on tarkoitettu ryhmille. Kutsu jäseniä työstääksenne projekteja "
+"yhdessä"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.team-hero.title"
+msgstr "Ryhmäydy!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Opettele Penpotin perusteet pitämällä hauskaa tämän opastuskierroksen "
+"kanssa."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Aloita opastuskierros"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Käytännön opastus"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Ota opastuskierros Penpotin erilaisista toiminnoista"

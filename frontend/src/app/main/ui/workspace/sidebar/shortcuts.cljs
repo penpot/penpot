@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.config :as cf]
    [app.main.data.dashboard.shortcuts]
+   [app.main.data.events :as ev]
    [app.main.data.shortcuts :as ds]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
@@ -18,6 +19,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.strings :refer [matches-search]]
    [clojure.set :as set]
    [clojure.string]
@@ -49,10 +51,142 @@
 
 (defn translation-keyname
   [type keyname]
+  ;; Execution time translation strings:
+  ;;   shortcut-subsection.alignment
+  ;;   shortcut-subsection.edit
+  ;;   shortcut-subsection.general-dashboard
+  ;;   shortcut-subsection.general-viewer
+  ;;   shortcut-subsection.main-menu
+  ;;   shortcut-subsection.modify-layers
+  ;;   shortcut-subsection.navigation-dashboard
+  ;;   shortcut-subsection.navigation-viewer
+  ;;   shortcut-subsection.navigation-workspace
+  ;;   shortcut-subsection.panels
+  ;;   shortcut-subsection.path-editor
+  ;;   shortcut-subsection.shape
+  ;;   shortcut-subsection.tools
+  ;;   shortcut-subsection.zoom-viewer
+  ;;   shortcut-subsection.zoom-workspace
+  ;;   shortcuts.add-comment
+  ;;   shortcuts.add-node
+  ;;   shortcuts.align-bottom
+  ;;   shortcuts.align-hcenter
+  ;;   shortcuts.align-left
+  ;;   shortcuts.align-right
+  ;;   shortcuts.align-top
+  ;;   shortcuts.align-vcenter
+  ;;   shortcuts.artboard-selection
+  ;;   shortcuts.bool-difference
+  ;;   shortcuts.bool-exclude
+  ;;   shortcuts.bool-intersection
+  ;;   shortcuts.bool-union
+  ;;   shortcuts.bring-back
+  ;;   shortcuts.bring-backward
+  ;;   shortcuts.bring-forward
+  ;;   shortcuts.bring-front
+  ;;   shortcuts.clear-undo
+  ;;   shortcuts.copy
+  ;;   shortcuts.create-component
+  ;;   shortcuts.create-new-project
+  ;;   shortcuts.cut
+  ;;   shortcuts.decrease-zoom
+  ;;   shortcuts.delete
+  ;;   shortcuts.delete-node
+  ;;   shortcuts.detach-component
+  ;;   shortcuts.draw-curve
+  ;;   shortcuts.draw-ellipse
+  ;;   shortcuts.draw-frame
+  ;;   shortcuts.draw-nodes
+  ;;   shortcuts.draw-path
+  ;;   shortcuts.draw-rect
+  ;;   shortcuts.draw-text
+  ;;   shortcuts.duplicate
+  ;;   shortcuts.escape
+  ;;   shortcuts.export-shapes
+  ;;   shortcuts.fit-all
+  ;;   shortcuts.flip-horizontal
+  ;;   shortcuts.flip-vertical
+  ;;   shortcuts.go-to-drafts
+  ;;   shortcuts.go-to-libs
+  ;;   shortcuts.go-to-search
+  ;;   shortcuts.group
+  ;;   shortcuts.h-distribute
+  ;;   shortcuts.hide-ui
+  ;;   shortcuts.increase-zoom
+  ;;   shortcuts.insert-image
+  ;;   shortcuts.join-nodes
+  ;;   shortcuts.make-corner
+  ;;   shortcuts.make-curve
+  ;;   shortcuts.mask
+  ;;   shortcuts.merge-nodes
+  ;;   shortcuts.move
+  ;;   shortcuts.move-fast-down
+  ;;   shortcuts.move-fast-left
+  ;;   shortcuts.move-fast-right
+  ;;   shortcuts.move-fast-up
+  ;;   shortcuts.move-nodes
+  ;;   shortcuts.move-unit-down
+  ;;   shortcuts.move-unit-left
+  ;;   shortcuts.move-unit-right
+  ;;   shortcuts.move-unit-up
+  ;;   shortcuts.next-frame
+  ;;   shortcuts.opacity-0
+  ;;   shortcuts.opacity-1
+  ;;   shortcuts.opacity-2
+  ;;   shortcuts.opacity-3
+  ;;   shortcuts.opacity-4
+  ;;   shortcuts.opacity-5
+  ;;   shortcuts.opacity-6
+  ;;   shortcuts.opacity-7
+  ;;   shortcuts.opacity-8
+  ;;   shortcuts.opacity-9
+  ;;   shortcuts.open-color-picker
+  ;;   shortcuts.open-comments
+  ;;   shortcuts.open-dashboard
+  ;;   shortcuts.open-inspect
+  ;;   shortcuts.open-interactions
+  ;;   shortcuts.open-viewer
+  ;;   shortcuts.open-workspace
+  ;;   shortcuts.paste
+  ;;   shortcuts.prev-frame
+  ;;   shortcuts.redo
+  ;;   shortcuts.reset-zoom
+  ;;   shortcuts.select-all
+  ;;   shortcuts.separate-nodes
+  ;;   shortcuts.show-pixel-grid
+  ;;   shortcuts.show-shortcuts
+  ;;   shortcuts.snap-nodes
+  ;;   shortcuts.snap-pixel-grid
+  ;;   shortcuts.start-editing
+  ;;   shortcuts.start-measure
+  ;;   shortcuts.stop-measure
+  ;;   shortcuts.thumbnail-set
+  ;;   shortcuts.toggle-alignment
+  ;;   shortcuts.toggle-assets
+  ;;   shortcuts.toggle-colorpalette
+  ;;   shortcuts.toggle-focus-mode
+  ;;   shortcuts.toggle-grid
+  ;;   shortcuts.toggle-history
+  ;;   shortcuts.toggle-layers
+  ;;   shortcuts.toggle-lock
+  ;;   shortcuts.toggle-lock-size
+  ;;   shortcuts.toggle-rules
+  ;;   shortcuts.toggle-scale-text
+  ;;   shortcuts.toggle-snap-grid
+  ;;   shortcuts.toggle-snap-guide
+  ;;   shortcuts.toggle-textpalette
+  ;;   shortcuts.toggle-visibility
+  ;;   shortcuts.toggle-zoom-style
+  ;;   shortcuts.toggle-fullscreen
+  ;;   shortcuts.undo
+  ;;   shortcuts.ungroup
+  ;;   shortcuts.unmask
+  ;;   shortcuts.v-distribute
+  ;;   shortcuts.zoom-selected
   (let [translat-pre (case type
-                 :sc      "shortcuts."
-                 :sec     "shortcut-section."
-                 :sub-sec "shortcut-subsection.")]
+                       :sc      "shortcuts."
+                       :sec     "shortcut-section."
+                       :sub-sec "shortcut-subsection.")]
     (tr (str translat-pre (d/name keyname)))))
 
 (defn add-translation
@@ -60,7 +194,7 @@
   (map (fn [[k v]] [k (assoc v :translation (translation-keyname type k))]) item))
 
 (defn shortcuts->subsections
-  "A function to obtain the list of subsections and their 
+  "A function to obtain the list of subsections and their
    associated shortcus from the general map of shortcuts"
   [shortcuts]
   (let [subsections (into #{} (mapcat :subsections) (vals shortcuts))
@@ -318,7 +452,24 @@
         (mf/use-callback
          (fn [_]
            (reset! open-sections [[1]])
-           (reset! filter-term "")))]
+           (reset! filter-term "")))
+
+        manage-key-down
+        (mf/use-callback
+         (fn [event]
+           (when (kbd/esc? event)
+             (st/emit! (-> (dw/toggle-layout-flag :shortcuts)
+                           (vary-meta assoc ::ev/origin "shortcuts-panel"))))))
+
+        on-key-down
+        (mf/use-callback
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-search-clear-click)
+             (dom/focus! (dom/get-element "shortcut-search")))))]
+    
+      (mf/with-effect []
+        (dom/focus! (dom/get-element "shortcut-search")))
 
     [:div.shortcuts
      [:div.shortcuts-header
@@ -333,13 +484,16 @@
          :type "text"
          :value @filter-term
          :on-change on-search-term-change
-         :auto-complete "off"}]
+         :auto-complete "off"
+         :on-key-down manage-key-down}]
        (if (str/empty? @filter-term)
          [:span.icon-wrapper
           i/search]
-         [:span.icon-wrapper.close
-          {:on-click on-search-clear-click}
-          i/close])]]
+         [:button.icon-wrapper
+          {:on-click on-search-clear-click
+           :on-key-down on-key-down}
+          [:span.icon.close
+           i/close]])]]
      (if match-any?
        [:div.shortcut-list
         (for [section all-shortcuts]

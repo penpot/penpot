@@ -12,17 +12,18 @@ RUN set -ex; \
     brew install ghostscript; \
     brew install mailhog; \
     brew install openldap; \
-    brew install poppler-utils; \
+    brew install poppler; \
     sudo mkdir -p /var/log/nginx; \
     sudo chown gitpod:gitpod /var/log/nginx
 
-COPY docker/gitpod/files/nginx.conf /etc/nginx/nginx.conf
+COPY files/nginx.conf /etc/nginx/nginx.conf
 
 USER root
 
-ENV CLOJURE_VERSION=1.10.3.822 \
-    CLJKONDO_VERSION=2021.03.31 \
-    BABASHKA_VERSION=0.3.2 \
+ENV NODE_VERSION=v16.17.0 \
+    CLOJURE_VERSION=1.11.1.1165 \
+    CLJKONDO_VERSION=2022.09.08 \
+    BABASHKA_VERSION=0.9.162 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -114,7 +115,7 @@ ENV PATH="/usr/lib/jvm/openjdk16/bin:/usr/local/nodejs/bin:$PATH" \
     PENPOT_SMTP_TLS=false \
     PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com \
     PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com \
-    PENPOT_DATABASE_URI="postgresql://localhost/penpot"
+    PENPOT_DATABASE_URI="postgresql://localhost/penpot" \
     PENPOT_REDIS_URI="redis://localhost/0"
 
 # TODO Retrieve OpenLDAP from rroemhild/docker-test-openldap

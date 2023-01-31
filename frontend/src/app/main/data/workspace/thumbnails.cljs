@@ -15,6 +15,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
+   [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -28,23 +29,27 @@
        (rx/filter #(= % id))
        (rx/take 1)))
 
-(defn thumbnail-stream
+(defn thumbnail-canvas-blob-stream
   [object-id]
-  (rx/create
-   (fn [subs]
-     ;; We look in the DOM a canvas that 1) matches the id and 2) that it's not empty
-     ;; will be empty on first rendering before drawing the thumbnail and we don't want to store that
-     (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'][data-empty='false']" object-id))]
-       (if (some? node)
-         (-> node
-             (.toBlob (fn [blob]
-                        (rx/push! subs blob)
-                        (rx/end! subs))
-                      "image/png"))
+  ;; Look for the thumbnail canvas to send the data to the backend
+  (let [node (dom/query (dm/fmt "canvas.thumbnail-canvas[data-object-id='%'][data-ready='true']" object-id))
+        stopper (->> st/stream
+                     (rx/filter (ptk/type? :app.main.data.workspace/finalize-page))
+                     (rx/take 1))]
+    (if (some? node)
+      ;; Success: we generate the blob (async call)
+      (rx/create
+       (fn [subs]
+         (ts/raf
+          #(.toBlob node (fn [blob]
+                           (rx/push! subs blob)
+                           (rx/end! subs))
+                    "image/png"))))
 
-         ;; If we cannot find the node we send `nil` and the upsert will delete the thumbnail
-         (do (rx/push! subs nil)
-             (rx/end! subs)))))))
+      ;; Not found, we retry after delay
+      (->> (rx/timer 250)
+           (rx/flat-map #(thumbnail-canvas-blob-stream object-id))
+           (rx/take-until stopper)))))
 
 (defn clear-thumbnail
   [page-id frame-id]
@@ -52,7 +57,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [object-id  (dm/str page-id frame-id)]
-        (assoc-in state [:workspace-file :thumbnails object-id] nil)))))
+        (update state :workspace-thumbnails dissoc object-id)))))
 
 (defn update-thumbnail
   "Updates the thumbnail information for the given frame `id`"
@@ -63,28 +68,36 @@
    (ptk/reify ::update-thumbnail
      ptk/WatchEvent
      (watch [_ state _]
-       (let [object-id  (dm/str page-id frame-id)
-             file-id (or file-id (:current-file-id state))
-             blob-result (thumbnail-stream object-id)]
+       (let [object-id   (dm/str page-id frame-id)
+             file-id     (or file-id (:current-file-id state))
+             blob-result (thumbnail-canvas-blob-stream object-id)
+             params {:file-id file-id :object-id object-id :data nil}]
 
-         (->> blob-result
-              (rx/merge-map
-               (fn [blob]
-                 (if (some? blob)
-                   (wapi/read-file-as-data-url blob)
-                   (rx/of nil))))
+         (rx/concat
+          ;; Delete the thumbnail first so if we interrupt we can regenerate after
+          (->> (rp/cmd! :upsert-file-object-thumbnail params)
+               (rx/catch #(rx/empty)))
+          (->> blob-result
+               (rx/merge-map
+                (fn [blob]
+                  (if (some? blob)
+                    (wapi/read-file-as-data-url blob)
+                    (rx/of nil))))
 
-              (rx/merge-map
-               (fn [data]
-                 (if (some? file-id)
-                   (let [params {:file-id file-id :object-id object-id :data data}]
-                     (rx/merge
-                      ;; Update the local copy of the thumbnails so we don't need to request it again
-                      (rx/of #(assoc-in % [:workspace-file :thumbnails object-id] data))
-                      (->> (rp/mutation! :upsert-file-object-thumbnail params)
-                           (rx/ignore))))
+               (rx/merge-map
+                (fn [data]
+                  (if (and (some? data) (some? file-id))
+                    (let [params (assoc params :data data)]
+                      (rx/merge
+                       ;; Update the local copy of the thumbnails so we don't need to request it again
+                       (rx/of #(update % :workspace-thumbnails assoc object-id data))
+                       (->> (rp/cmd! :upsert-file-object-thumbnail params)
+                            (rx/catch #(rx/empty))
+                            (rx/ignore))))
 
-                   (rx/empty))))))))))
+                    (rx/empty))))
+               (rx/catch #(do (.error js/console %)
+                              (rx/empty))))))))))
 
 (defn- extract-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"
@@ -169,6 +182,6 @@
   (ptk/reify ::duplicate-thumbnail
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (get state :current-page-id)
-            old-shape-thumbnail (get-in state [:workspace-file :thumbnails (dm/str page-id old-id)])]
-        (-> state (assoc-in [:workspace-file :thumbnails (dm/str page-id new-id)] old-shape-thumbnail))))))
+      (let [page-id   (:current-page-id state)
+            thumbnail (dm/get-in state [:workspace-thumbnails (dm/str page-id old-id)])]
+        (update state :workspace-thumbnails assoc (dm/str page-id new-id) thumbnail)))))

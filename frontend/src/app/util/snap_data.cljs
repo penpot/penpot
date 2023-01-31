@@ -5,14 +5,15 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.util.snap-data
-  "Data structure that holds and retrieves the data to make the snaps. Internaly
-   is implemented with a balanced binary tree that queries by range.
+  "Data structure that holds and retrieves the data to make the snaps.
+   Internally is implemented with a balanced binary tree that queries by range.
    https://en.wikipedia.org/wiki/Range_tree"
   (:require
    [app.common.data :as d]
    [app.common.pages.diff :as diff]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.util.geom.grid :as gg]
    [app.util.geom.snap-points :as snap]
@@ -70,7 +71,7 @@
            (mapv grid->snap)))))
 
 (defn- add-frame
-  [page-data frame]
+  [objects page-data frame]
   (let [frame-id (:id frame)
         parent-id (:parent-id frame)
         frame-data (->> (snap/shape-snap-points frame)
@@ -79,21 +80,24 @@
                                           :pt %)))
         grid-x-data (get-grids-snap-points frame :x)
         grid-y-data (get-grids-snap-points frame :y)]
-    (-> page-data
-        ;; Update root frame information
-        (assoc-in [uuid/zero :objects-data frame-id] frame-data)
-        (update-in [parent-id :x] (make-insert-tree-data frame-data :x))
-        (update-in [parent-id :y] (make-insert-tree-data frame-data :y))
 
-        ;; Update frame information
-        (assoc-in  [frame-id :objects-data frame-id] (d/concat-vec frame-data grid-x-data grid-y-data))
-        (update-in [frame-id :x] #(or % (rt/make-tree)))
-        (update-in [frame-id :y] #(or % (rt/make-tree)))
-        (update-in [frame-id :x] (make-insert-tree-data (d/concat-vec frame-data grid-x-data) :x))
-        (update-in [frame-id :y] (make-insert-tree-data (d/concat-vec frame-data grid-y-data) :y)))))
+    (cond-> page-data
+      (not (ctl/layout-descent? objects frame))
+
+      (-> ;; Update root frame information
+       (assoc-in [uuid/zero :objects-data frame-id] frame-data)
+       (update-in [parent-id :x] (make-insert-tree-data frame-data :x))
+       (update-in [parent-id :y] (make-insert-tree-data frame-data :y))
+
+       ;; Update frame information
+       (assoc-in  [frame-id :objects-data frame-id] (d/concat-vec frame-data grid-x-data grid-y-data))
+       (update-in [frame-id :x] #(or % (rt/make-tree)))
+       (update-in [frame-id :y] #(or % (rt/make-tree)))
+       (update-in [frame-id :x] (make-insert-tree-data (d/concat-vec frame-data grid-x-data) :x))
+       (update-in [frame-id :y] (make-insert-tree-data (d/concat-vec frame-data grid-y-data) :y))))))
 
 (defn- add-shape
-  [page-data shape]
+  [objects page-data shape]
   (let [frame-id    (:frame-id shape)
         snap-points (snap/shape-snap-points shape)
         shape-data  (->> snap-points
@@ -101,11 +105,11 @@
                                  :type :shape
                                  :id (:id shape)
                                  :pt %)))]
-    (-> page-data
-        (assoc-in [frame-id :objects-data (:id shape)] shape-data)
-        (update-in [frame-id :x] (make-insert-tree-data shape-data :x))
-        (update-in [frame-id :y] (make-insert-tree-data shape-data :y)))))
-
+    (cond-> page-data
+      (not (ctl/layout-descent? objects shape))
+      (-> (assoc-in [frame-id :objects-data (:id shape)] shape-data)
+          (update-in [frame-id :x] (make-insert-tree-data shape-data :x))
+          (update-in [frame-id :y] (make-insert-tree-data shape-data :y))))))
 
 (defn- add-guide
   [objects page-data guide]
@@ -164,22 +168,22 @@
           (update-in [:guides (:axis guide)] (make-delete-tree-data guide-data (:axis guide)))))))
 
 (defn- update-frame
-  [page-data [_ new-frame]]
+  [objects page-data [_ new-frame]]
   (let [frame-id (:id new-frame)
         root-data (get-in page-data [uuid/zero :objects-data frame-id])
         frame-data (get-in page-data [frame-id :objects-data frame-id])]
-    (-> page-data
-        (update-in [uuid/zero :x] (make-delete-tree-data root-data :x))
-        (update-in [uuid/zero :y] (make-delete-tree-data root-data :y))
-        (update-in [frame-id :x]  (make-delete-tree-data frame-data :x))
-        (update-in [frame-id :y]  (make-delete-tree-data frame-data :y))
-        (add-frame new-frame))))
+    (as-> page-data $
+      (update-in $ [uuid/zero :x] (make-delete-tree-data root-data :x))
+      (update-in $ [uuid/zero :y] (make-delete-tree-data root-data :y))
+      (update-in $ [frame-id :x]  (make-delete-tree-data frame-data :x))
+      (update-in $ [frame-id :y]  (make-delete-tree-data frame-data :y))
+      (add-frame objects $ new-frame))))
 
 (defn- update-shape
-  [page-data [old-shape new-shape]]
-  (-> page-data
-      (remove-shape old-shape)
-      (add-shape new-shape)))
+  [objects page-data [old-shape new-shape]]
+  (as-> page-data $
+    (remove-shape $ old-shape)
+    (add-shape objects $ new-shape)))
 
 (defn- update-guide
   [objects page-data [old-guide new-guide]]
@@ -205,8 +209,8 @@
         page-data
         (as-> {} $
           (add-root-frame $)
-          (reduce add-frame $ frames)
-          (reduce add-shape $ shapes)
+          (reduce (partial add-frame objects) $ frames)
+          (reduce (partial add-shape objects) $ shapes)
           (reduce (partial add-guide objects) $ guides))]
     (assoc snap-data (:id page) page-data)))
 
@@ -233,16 +237,16 @@
                     (diff/calculate-page-diff old-page page snap-attrs)]
 
                 (as-> page-data $
-                  (reduce update-shape   $ change-frame-shapes)
+                  (reduce (partial update-shape objects) $ change-frame-shapes)
                   (reduce remove-frame   $ removed-frames)
                   (reduce remove-shape   $ removed-shapes)
-                  (reduce update-frame   $ updated-frames)
-                  (reduce update-shape   $ updated-shapes)
-                  (reduce add-frame      $ new-frames)
-                  (reduce add-shape      $ new-shapes)
-                  (reduce remove-guide   $ removed-guides)
+                  (reduce (partial update-frame objects) $ updated-frames)
+                  (reduce (partial update-shape objects) $ updated-shapes)
+                  (reduce (partial add-frame objects)    $ new-frames)
+                  (reduce (partial add-shape objects)    $ new-shapes)
 
                   ;; Guides functions. Need objects to get its frame data
+                  (reduce remove-guide                     $ removed-guides)
                   (reduce (partial update-guide objects)   $ change-frame-guides)
                   (reduce (partial update-guide objects)   $ updated-guides)
                   (reduce (partial add-guide objects)      $ new-guides)))))

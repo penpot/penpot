@@ -10,6 +10,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.rpc :as-alias rpc]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
@@ -36,7 +37,7 @@
   (s/keys :opt-un [::profile-id]))
 
 (sv/defmethod ::profile
-  {:auth false}
+  {::rpc/auth false}
   [{:keys [pool] :as cfg} {:keys [profile-id] :as params}]
   ;; We need to return the anonymous profile object in two cases, when
   ;; no profile-id is in session, and when db call raises not found. In all other

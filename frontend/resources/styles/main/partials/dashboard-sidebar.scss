@@ -7,13 +7,10 @@
 .dashboard-sidebar {
   background-color: $color-white;
   z-index: 1;
-
-  .sidebar-inside {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding-top: $size-2;
-  }
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-top: $size-2;
 
   .sidebar-content {
     display: flex;
@@ -67,7 +64,8 @@
       justify-content: center;
       align-items: center;
       cursor: pointer;
-
+      background-color: transparent;
+      border: none;
       svg {
         width: 15px;
         height: 13px;
@@ -78,15 +76,18 @@
     .current-team {
       cursor: pointer;
       display: flex;
+      align-items: center;
       flex-grow: 1;
       font-size: $fs14;
       padding: 0px 10px;
+      background-color: transparent;
+      border: none;
     }
 
     .team-name {
       flex-grow: 1;
       display: flex;
-      height: 48px;
+      height: 40px;
       align-items: center;
 
       &.action {
@@ -138,6 +139,7 @@
         color: $color-gray-60;
         @include text-ellipsis;
         width: 130px;
+        text-align: left;
       }
 
       .icon {
@@ -151,7 +153,7 @@
     .switch-icon {
       display: flex;
       align-items: center;
-
+      justify-content: center;
       svg {
         width: 10px;
         height: 10px;
@@ -184,6 +186,7 @@
     flex-direction: column;
     overflow-y: auto;
     margin: 0;
+    user-select: none;
 
     // TODO: should be deprecated / unclear name
     &.dashboard-common {
@@ -200,6 +203,13 @@
       display: flex;
       flex-shrink: 0;
       padding: $size-2;
+      a {
+        font-weight: 400;
+        width: 100%;
+        &:hover {
+          text-decoration: none;
+        }
+      }
 
       svg {
         fill: $color-black;
@@ -214,7 +224,6 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        user-select: none;
       }
 
       &::before {
@@ -274,7 +283,9 @@
       }
 
       &.current {
-        font-weight: bold;
+        a {
+          font-weight: bold;
+        }
 
         &::before {
           background-color: $color-primary;

@@ -15,6 +15,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.util.dom :as dom]
@@ -271,7 +272,7 @@
         current-transform (mf/deref refs/current-transform)
 
         selrect (:selrect shape)
-        transform (gsh/transform-str shape {:no-flip true})]
+        transform (gsh/transform-str shape)]
 
     (when (not (#{:move :rotate} current-transform))
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
@@ -286,27 +287,44 @@
 (mf/defc controls-handlers
   {::mf/wrap-props false}
   [props]
-  (let [shape             (obj/get props "shape")
-        zoom              (obj/get props "zoom")
-        color             (obj/get props "color")
-        on-resize         (obj/get props "on-resize")
-        on-rotate         (obj/get props "on-rotate")
-        disable-handlers  (obj/get props "disable-handlers")
-        current-transform (mf/deref refs/current-transform)
+  (let [shape                (obj/get props "shape")
+        zoom                 (obj/get props "zoom")
+        color                (obj/get props "color")
+        on-resize            (obj/get props "on-resize")
+        on-rotate            (obj/get props "on-rotate")
+        disable-handlers     (obj/get props "disable-handlers")
+        current-transform    (mf/deref refs/current-transform)
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         selrect (:selrect shape)
-        transform (gsh/transform-matrix shape {:no-flip true})
+        transform (gsh/transform-matrix shape)
 
         rotation (-> (gpt/point 1 0)
                      (gpt/transform (:transform shape))
                      (gpt/angle)
                      (mod 360))]
 
-    (when (not (#{:move :rotate} current-transform))
+    (when (and (not (#{:move :rotate} current-transform))
+               (not workspace-read-only?))
       [:g.controls {:pointer-events (if disable-handlers "none" "visible")}
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect shape zoom)]
-         (let [common-props {:key (dm/str (name type) "-" (name position))
+         (let [rotation
+               (cond
+                 (and (#{:top-left :bottom-right} position)
+                      (or (and (:flip-x shape) (not (:flip-y shape)))
+                          (and (:flip-y shape) (not (:flip-x shape)))))
+                 (- rotation 90)
+
+                 (and (#{:top-right :bottom-left} position)
+                      (or (and (:flip-x shape) (not (:flip-y shape)))
+                          (and (:flip-y shape) (not (:flip-x shape)))))
+                 (+ rotation 90)
+
+                 :else
+                 rotation)
+
+               common-props {:key (dm/str (name type) "-" (name position))
                              :zoom zoom
                              :position position
                              :on-rotate on-rotate
@@ -341,7 +359,6 @@
   (let [shape (mf/use-memo
                (mf/deps shapes)
                #(->> shapes
-                     (map gsh/transform-shape)
                      (gsh/selection-rect)
                      (cts/setup-shape)))
         on-resize
@@ -369,7 +386,6 @@
   (let [shape (mf/use-memo
                (mf/deps shapes)
                #(->> shapes
-                     (map gsh/transform-shape)
                      (gsh/selection-rect)
                      (cts/setup-shape)))]
 
@@ -384,7 +400,6 @@
 (mf/defc single-handlers
   [{:keys [shape zoom color disable-handlers] :as props}]
   (let [shape-id (:id shape)
-        shape (gsh/transform-shape shape)
 
         on-resize
         (fn [current-position _initial-position event]
@@ -408,14 +423,13 @@
 
 (mf/defc single-selection
   [{:keys [shape zoom color disable-handlers on-move-selected on-context-menu] :as props}]
-  (let [shape (gsh/transform-shape shape)]
-    [:& controls-selection
-     {:shape shape
-      :zoom zoom
-      :color color
-      :disable-handlers disable-handlers
-      :on-move-selected on-move-selected
-      :on-context-menu on-context-menu}]))
+  [:& controls-selection
+   {:shape shape
+    :zoom zoom
+    :color color
+    :disable-handlers disable-handlers
+    :on-move-selected on-move-selected
+    :on-context-menu on-context-menu}])
 
 (mf/defc selection-area
   {::mf/wrap [mf/memo]}

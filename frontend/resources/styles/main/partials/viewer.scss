@@ -85,7 +85,7 @@
   }
 
   & .viewer-go-next.right-bar {
-    right: 256px;
+    right: 0;
   }
 
   & .viewer-go-prev {
@@ -97,7 +97,7 @@
   }
 
   & .viewer-go-prev.left-bar {
-    left: 256px;
+    left: 0;
   }
 
   & .viewer-bottom {
@@ -111,7 +111,7 @@
     z-index: 2;
 
     &.left-bar {
-      width: calc(100% - 512px);
+      width: 100%;
     }
 
     .reset {

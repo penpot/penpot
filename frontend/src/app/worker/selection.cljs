@@ -153,40 +153,34 @@
           result)))
 
 
-(defmethod impl/handler :selection/initialize-index
-  [{:keys [data] :as message}]
-  (letfn [(index-page [state page]
-            (let [id      (:id page)
-                  objects (:objects page)]
-              (assoc state id (create-index objects))))
-
-          (update-state [state]
-            (reduce index-page state (vals (:pages-index data))))]
-    (swap! state update-state)
+(defmethod impl/handler :selection/initialize-page-index
+  [{:keys [page] :as message}]
+  (letfn [(add-page [state {:keys [id objects] :as page}]
+            (assoc state id (create-index objects)))]
+    (swap! state add-page page)
     nil))
 
-(defmethod impl/handler :selection/update-index
+(defmethod impl/handler :selection/update-page-index
   [{:keys [page-id old-page new-page] :as message}]
-  (let [old-objects (:objects old-page)
-        new-objects (:objects new-page)
-        update-page-index
-        (fn [index]
-          (let [old-bounds (:bounds index)
-                new-bounds (objects-bounds new-objects)]
+  (swap! state update page-id
+         (fn [index]
+           (let [old-objects (:objects old-page)
+                 new-objects (:objects new-page)
+                 old-bounds  (:bounds index)
+                 new-bounds  (objects-bounds new-objects)]
 
-            ;; If the new bounds are contained within the old bounds we can
-            ;; update the index.
-            ;; Otherwise we need to re-create it
-            (if (and (some? index)
-                     (gsh/contains-selrect? old-bounds new-bounds))
-              (update-index index old-objects new-objects)
-              (create-index new-objects))))]
-    (swap! state update page-id update-page-index))
+             ;; If the new bounds are contained within the old bounds
+             ;; we can update the index. Otherwise we need to
+             ;; re-create it.
+             (if (and (some? index)
+                      (gsh/contains-selrect? old-bounds new-bounds))
+               (update-index index old-objects new-objects)
+               (create-index new-objects)))))
   nil)
 
 (defmethod impl/handler :selection/query
   [{:keys [page-id rect frame-id full-frame? include-frames? ignore-groups? clip-children?]
-    :or {full-frame? false include-frames? false clip-children? true} :as message}]
+    :or {full-frame? false include-frames? false clip-children? true}
+    :as message}]
   (when-let [index (get @state page-id)]
     (query-index index rect frame-id full-frame? include-frames? ignore-groups? clip-children?)))
-

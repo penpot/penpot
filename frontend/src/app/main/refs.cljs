@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [okulary.core :as l]))
@@ -73,6 +74,9 @@
 (def dashboard-team-invitations
   (l/derived :dashboard-team-invitations st/state))
 
+(def dashboard-team-webhooks
+  (l/derived :dashboard-team-webhooks st/state))
+
 (def dashboard-selected-project
   (l/derived (fn [state]
                (dm/get-in state [:dashboard-local :selected-project]))
@@ -99,6 +103,9 @@
 
 (def workspace-drawing
   (l/derived :workspace-drawing st/state))
+
+(def workspace-ready?
+  (l/derived :workspace-ready? st/state))
 
 ;; TODO: rename to workspace-selected (?)
 ;; Don't use directly from components, this is a proxy to improve performance of selected-shapes
@@ -161,6 +168,12 @@
 (def options-mode
   (l/derived :options-mode workspace-local))
 
+(def options-mode-global
+  (l/derived :options-mode workspace-global))
+
+(def inspect-expanded
+  (l/derived :inspect-expanded workspace-local))
+
 (def vbox
   (l/derived :vbox workspace-local))
 
@@ -169,6 +182,12 @@
 
 (def context-menu
   (l/derived :context-menu workspace-local))
+
+(def file-library-listing-thumbs?
+  (l/derived :file-library-listing-thumbs workspace-global))
+
+(def file-library-reverse-sort?
+  (l/derived :file-library-reverse-sort workspace-global))
 
 (def current-hover-ids
   (l/derived :hover-ids context-menu))
@@ -257,6 +276,9 @@
 (def workspace-page-objects
   (l/derived wsh/lookup-page-objects st/state =))
 
+(def workspace-read-only?
+  (l/derived :read-only? workspace-global))
+
 (defn object-by-id
   [id]
   (l/derived #(get % id) workspace-page-objects))
@@ -264,6 +286,14 @@
 (defn objects-by-id
   [ids]
   (l/derived #(into [] (keep (d/getf %)) ids) workspace-page-objects =))
+
+(defn parents-by-ids
+  [ids]
+  (l/derived
+   (fn [objects]
+     (let [parent-ids (into #{} (keep #(get-in objects [% :parent-id])) ids)]
+       (into [] (keep #(get objects %)) parent-ids)))
+   workspace-page-objects =))
 
 (defn children-objects
   [id]
@@ -294,12 +324,7 @@
   (l/derived :workspace-editor-state st/state))
 
 (def workspace-modifiers
-  (l/derived :workspace-modifiers st/state))
-
-(defn workspace-modifiers-by-id
-  [ids]
-  (l/derived #(select-keys % ids) workspace-modifiers))
-
+  (l/derived :workspace-modifiers st/state =))
 
 (def workspace-modifiers-with-objects
   (l/derived
@@ -311,20 +336,29 @@
      (and (= (:modifiers a) (:modifiers b))
           (identical? (:objects a) (:objects b))))))
 
-(defn workspace-modifiers-by-frame-id
-  [frame-id]
+(def workspace-frame-modifiers
   (l/derived
    (fn [{:keys [modifiers objects]}]
-     (let [keys (->> modifiers
-                     (keys)
-                     (filter (fn [id]
-                               (let [shape (get objects id)]
-                                 (or (= frame-id id)
-                                     (and (= frame-id (:frame-id shape))
-                                          (not (= :frame (:type shape)))))))))]
-       (select-keys modifiers keys)))
-   workspace-modifiers-with-objects
-   =))
+     (->> modifiers
+          (reduce
+           (fn [result [id modifiers]]
+             (let [shape (get objects id)
+                   frame-id (:frame-id shape)]
+               (cond
+                 (cph/frame-shape? shape)
+                 (assoc-in result [id id] modifiers)
+
+                 (some? frame-id)
+                 (assoc-in result [frame-id id] modifiers)
+
+                 :else
+                 result)))
+           {})))
+   workspace-modifiers-with-objects))
+
+(defn workspace-modifiers-by-frame-id
+  [frame-id]
+  (l/derived #(get % frame-id) workspace-frame-modifiers =))
 
 (defn select-bool-children [id]
   (l/derived (partial wsh/select-bool-children id) st/state =))
@@ -361,7 +395,26 @@
 (def workspace-focus-selected
   (l/derived :workspace-focus-selected st/state))
 
+(defn workspace-get-flex-child
+  [ids]
+  (l/derived
+   (fn [state]
+     (let [objects  (wsh/lookup-page-objects state)]
+       (into []
+             (comp (map (d/getf objects))
+                   (filter (partial ctl/layout-immediate-child? objects)))
+             ids)))
+   st/state =))
+
+;; Remove this when deprecating components-v2
+(def remove-graphics
+  (l/derived :remove-graphics st/state))
+
 ;; ---- Viewer refs
+
+(defn lookup-viewer-objects-by-id
+  [page-id]
+  (l/derived #(wsh/lookup-viewer-objects % page-id) st/state =))
 
 (def viewer-data
   (l/derived :viewer st/state))
@@ -380,6 +433,9 @@
 
 (def viewer-local
   (l/derived :viewer-local st/state))
+
+(def viewer-overlays
+  (l/derived :viewer-overlays st/state))
 
 (def comment-threads
   (l/derived :comment-threads st/state))
@@ -404,7 +460,7 @@
              st/state))
 
 (def thumbnail-data
-  (l/derived #(dm/get-in % [:workspace-file :thumbnails] {}) st/state))
+  (l/derived #(get % :workspace-thumbnails {}) st/state))
 
 (defn thumbnail-frame-data
   [page-id frame-id]
@@ -424,8 +480,33 @@
   (l/derived
    (fn [objects]
      (->> ids
-          (some #(-> (cph/get-parent objects %) :layout))))
+          (map (d/getf objects))
+          (some (partial ctl/layout-immediate-child? objects))))
    workspace-page-objects))
+
+(defn get-flex-child-viewer
+  [ids page-id]
+  (l/derived
+   (fn [state]
+     (let [objects (wsh/lookup-viewer-objects state page-id)]
+       (into []
+             (comp (map (d/getf objects))
+                   (filter (partial ctl/layout-immediate-child? objects)))
+             ids)))
+   st/state =))
+
+
+(defn get-viewer-objects
+  ([]
+   (let [route      (deref route)
+         page-id    (:page-id (:query-params route))]
+     (get-viewer-objects page-id)))
+  ([page-id]
+   (l/derived
+    (fn [state]
+      (let [objects (wsh/lookup-viewer-objects state page-id)]
+        objects))
+    st/state =)))
 
 (def colorpicker
   (l/derived :colorpicker st/state))

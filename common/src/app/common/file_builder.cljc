@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.file-builder
   "A version parsing helper."
@@ -21,6 +21,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [clojure.spec.alpha :as spec]
    [cuerdas.core :as str]))
 
 (def root-frame uuid/zero)
@@ -43,7 +44,12 @@
    (let [component-id (:current-component-id file)
          change (cond-> change
                   (and add-container? (some? component-id))
-                  (assoc :component-id component-id)
+                  (cond->
+                   :always
+                    (assoc :component-id component-id)
+
+                    (some? (:current-frame-id file))
+                    (assoc :frame-id (:current-frame-id file)))
 
                   (and add-container? (nil? component-id))
                   (assoc :page-id  (:current-page-id file)
@@ -52,9 +58,18 @@
      (when fail-on-spec?
        (us/verify ::pcs/change change))
 
-     (let [valid? (us/valid? ::pcs/change change)]
+     (let [valid? (us/valid? ::pcs/change change)
+           explain (spec/explain-str ::pcs/change change)]
        #?(:cljs
-          (when-not valid? (.warn js/console "Invalid shape" (clj->js change))))
+          (when-not valid?
+            (do
+              (.warn js/console "Invalid shape" (clj->js change))
+              (.warn js/console explain)))
+          :clj
+          (when-not valid?
+            (do
+              (prn "Invalid shape" change)
+              (prn explain))))
 
        (cond-> file
          valid?
@@ -78,6 +93,7 @@
   (let [parent-id (-> file :parent-stack peek)
         change {:type :add-obj
                 :id (:id obj)
+                :ignore-touched true
                 :obj obj
                 :parent-id parent-id}
 
@@ -212,7 +228,6 @@
       (clear-names)))
 
 (defn add-artboard [file data]
-  (assert (nil? (:current-component-id file)))
   (let [obj (-> (cts/make-minimal-shape :frame)
                 (merge data)
                 (check-name file :frame)
@@ -226,11 +241,11 @@
         (update :parent-stack conjv (:id obj)))))
 
 (defn close-artboard [file]
-  (assert (nil? (:current-component-id file)))
-
   (let [parent-id (-> file :parent-id peek)
         parent (lookup-shape file parent-id)
-        current-frame-id (or (:frame-id parent) root-frame)]
+        current-frame-id (or (:frame-id parent)
+                             (when (nil? (:current-component-id file))
+                               root-frame))]
     (-> file
         (assoc :current-frame-id current-frame-id)
         (update :parent-stack pop))))
@@ -260,6 +275,7 @@
           (commit-change
            file
            {:type :del-obj
+            :ignore-touched true
             :id group-id}
            {:add-container? true})
 
@@ -270,14 +286,14 @@
              {:type :mod-obj
               :id group-id
               :operations
-              [{:type :set :attr :x :val (-> mask :selrect :x)}
-               {:type :set :attr :y :val (-> mask :selrect :y)}
-               {:type :set :attr :width :val (-> mask :selrect :width)}
-               {:type :set :attr :height :val (-> mask :selrect :height)}
-               {:type :set :attr :flip-x :val (-> mask :flip-x)}
-               {:type :set :attr :flip-y :val (-> mask :flip-y)}
-               {:type :set :attr :selrect :val (-> mask :selrect)}
-               {:type :set :attr :points :val (-> mask :points)}]}
+              [{:type :set :attr :x :val (-> mask :selrect :x) :ignore-touched true}
+               {:type :set :attr :y :val (-> mask :selrect :y) :ignore-touched true}
+               {:type :set :attr :width :val (-> mask :selrect :width) :ignore-touched true}
+               {:type :set :attr :height :val (-> mask :selrect :height) :ignore-touched true}
+               {:type :set :attr :flip-x :val (-> mask :flip-x) :ignore-touched true}
+               {:type :set :attr :flip-y :val (-> mask :flip-y) :ignore-touched true}
+               {:type :set :attr :selrect :val (-> mask :selrect) :ignore-touched true}
+               {:type :set :attr :points :val (-> mask :points) :ignore-touched true}]}
              {:add-container? true}))
 
           :else
@@ -287,12 +303,12 @@
              {:type :mod-obj
               :id group-id
               :operations
-              [{:type :set :attr :selrect :val (:selrect group')}
-               {:type :set :attr :points  :val (:points group')}
-               {:type :set :attr :x       :val (-> group' :selrect :x)}
-               {:type :set :attr :y       :val (-> group' :selrect :y)}
-               {:type :set :attr :width   :val (-> group' :selrect :width)}
-               {:type :set :attr :height  :val (-> group' :selrect :height)}]}
+              [{:type :set :attr :selrect :val (:selrect group') :ignore-touched true}
+               {:type :set :attr :points  :val (:points group') :ignore-touched true}
+               {:type :set :attr :x       :val (-> group' :selrect :x) :ignore-touched true}
+               {:type :set :attr :y       :val (-> group' :selrect :y) :ignore-touched true}
+               {:type :set :attr :width   :val (-> group' :selrect :width) :ignore-touched true}
+               {:type :set :attr :height  :val (-> group' :selrect :height) :ignore-touched true}]}
 
              {:add-container? true})))]
 
@@ -327,6 +343,7 @@
           (commit-change
            file
            {:type :del-obj
+            :ignore-touched true
             :id bool-id}
            {:add-container? true})
 
@@ -338,12 +355,12 @@
              {:type :mod-obj
               :id bool-id
               :operations
-              [{:type :set :attr :selrect :val (:selrect bool')}
-               {:type :set :attr :points  :val (:points bool')}
-               {:type :set :attr :x       :val (-> bool' :selrect :x)}
-               {:type :set :attr :y       :val (-> bool' :selrect :y)}
-               {:type :set :attr :width   :val (-> bool' :selrect :width)}
-               {:type :set :attr :height  :val (-> bool' :selrect :height)}]}
+              [{:type :set :attr :selrect :val (:selrect bool') :ignore-touched true}
+               {:type :set :attr :points  :val (:points bool') :ignore-touched true}
+               {:type :set :attr :x       :val (-> bool' :selrect :x) :ignore-touched true}
+               {:type :set :attr :y       :val (-> bool' :selrect :y) :ignore-touched true}
+               {:type :set :attr :width   :val (-> bool' :selrect :width) :ignore-touched true}
+               {:type :set :attr :height  :val (-> bool' :selrect :height) :ignore-touched true}]}
 
              {:add-container? true})))]
 
@@ -480,7 +497,7 @@
           :id from-id
 
           :operations
-          [{:type :set :attr :interactions :val interactions}]})))))
+          [{:type :set :attr :interactions :val interactions :ignore-touched true}]})))))
 
 (defn generate-changes
   [file]
@@ -488,14 +505,29 @@
 
 (defn add-library-color
   [file color]
-
   (let [id (or (:id color) (uuid/next))]
     (-> file
         (commit-change
          {:type :add-color
-          :id id
           :color (assoc color :id id)})
         (assoc :last-id id))))
+
+(defn update-library-color
+  [file color]
+  (let [id (uuid/uuid (:id color))]
+    (-> file
+        (commit-change
+         {:type :mod-color
+          :color (assoc color :id id)})
+        (assoc :last-id (:id color)))))
+
+(defn delete-library-color
+  [file color-id]
+  (let [id (uuid/uuid color-id)]
+    (-> file
+        (commit-change
+         {:type :del-color
+          :id id}))))
 
 (defn add-library-typography
   [file typography]
@@ -507,6 +539,14 @@
           :typography (assoc typography :id id)})
         (assoc :last-id id))))
 
+(defn delete-library-typography
+  [file typography-id]
+  (let [id (uuid/uuid typography-id)]
+    (-> file
+        (commit-change
+         {:type :del-typography
+          :id id}))))
+
 (defn add-library-media
   [file media]
   (let [id (or (:id media) (uuid/next))]
@@ -516,36 +556,46 @@
           :object (assoc media :id id)})
         (assoc :last-id id))))
 
-(defn start-component
-  [file data]
-
-  (let [selrect cts/empty-selrect
-        name               (:name data)
-        path               (:path data)
-        main-instance-id   (:main-instance-id data)
-        main-instance-page (:main-instance-page data)
-        obj (-> (cts/make-minimal-group nil selrect name)
-                (merge data)
-                (dissoc :path
-                        :main-instance-id
-                        :main-instance-page
-                        :main-instance-x
-                        :main-instance-y)
-                (check-name file :group)
-                (d/without-nils))]
+(defn delete-library-media
+  [file media-id]
+  (let [id (uuid/uuid media-id)]
     (-> file
         (commit-change
-         {:type :add-component
-          :id (:id obj)
-          :name name
-          :path path
-          :main-instance-id main-instance-id
-          :main-instance-page main-instance-page
-          :shapes [obj]})
+         {:type :del-media
+          :id id}))))
 
-        (assoc :last-id (:id obj))
-        (update :parent-stack conjv (:id obj))
-        (assoc :current-component-id (:id obj)))))
+(defn start-component
+  ([file data] (start-component file data :group))
+  ([file data root-type]
+   (let [selrect (or (gsh/make-selrect (:x data) (:y data) (:width data) (:height data))
+                     cts/empty-selrect)
+         name               (:name data)
+         path               (:path data)
+         main-instance-id   (:main-instance-id data)
+         main-instance-page (:main-instance-page data)
+         obj (-> (cts/make-shape root-type selrect data)
+                 (dissoc :path
+                         :main-instance-id
+                         :main-instance-page
+                         :main-instance-x
+                         :main-instance-y)
+                 (check-name file root-type)
+                 (d/without-nils))]
+     (-> file
+         (commit-change
+          {:type :add-component
+           :id (:id obj)
+           :name name
+           :path path
+           :main-instance-id main-instance-id
+           :main-instance-page main-instance-page
+           :shapes [obj]})
+
+         (assoc :last-id (:id obj))
+         (update :parent-stack conjv (:id obj))
+         (assoc :current-component-id (:id obj))
+         (assoc :current-frame-id (when (= (:type obj) :frame)
+                                    (:id obj)))))))
 
 (defn finish-component
   [file]
@@ -569,35 +619,37 @@
              {:type :mod-obj
               :id component-id
               :operations
-              [{:type :set :attr :x :val (-> mask :selrect :x)}
-               {:type :set :attr :y :val (-> mask :selrect :y)}
-               {:type :set :attr :width :val (-> mask :selrect :width)}
-               {:type :set :attr :height :val (-> mask :selrect :height)}
-               {:type :set :attr :flip-x :val (-> mask :flip-x)}
-               {:type :set :attr :flip-y :val (-> mask :flip-y)}
-               {:type :set :attr :selrect :val (-> mask :selrect)}
-               {:type :set :attr :points :val (-> mask :points)}]}
+              [{:type :set :attr :x :val (-> mask :selrect :x) :ignore-touched true}
+               {:type :set :attr :y :val (-> mask :selrect :y) :ignore-touched true}
+               {:type :set :attr :width :val (-> mask :selrect :width) :ignore-touched true}
+               {:type :set :attr :height :val (-> mask :selrect :height) :ignore-touched true}
+               {:type :set :attr :flip-x :val (-> mask :flip-x) :ignore-touched true}
+               {:type :set :attr :flip-y :val (-> mask :flip-y) :ignore-touched true}
+               {:type :set :attr :selrect :val (-> mask :selrect) :ignore-touched true}
+               {:type :set :attr :points :val (-> mask :points) :ignore-touched true}]}
 
              {:add-container? true}))
 
-          :else
+          (= (:type component) :group)
           (let [component' (gsh/update-group-selrect component children)]
             (commit-change
              file
              {:type :mod-obj
               :id component-id
               :operations
-              [{:type :set :attr :selrect :val (:selrect component')}
-               {:type :set :attr :points  :val (:points component')}
-               {:type :set :attr :x      :val (-> component' :selrect :x)}
-               {:type :set :attr :y      :val (-> component' :selrect :y)}
-               {:type :set :attr :width  :val (-> component' :selrect :width)}
-               {:type :set :attr :height :val (-> component' :selrect :height)}]}
+              [{:type :set :attr :selrect :val (:selrect component') :ignore-touched true}
+               {:type :set :attr :points  :val (:points component') :ignore-touched true}
+               {:type :set :attr :x      :val (-> component' :selrect :x) :ignore-touched true}
+               {:type :set :attr :y      :val (-> component' :selrect :y) :ignore-touched true}
+               {:type :set :attr :width  :val (-> component' :selrect :width) :ignore-touched true}
+               {:type :set :attr :height :val (-> component' :selrect :height) :ignore-touched true}]}
+             {:add-container? true}))
 
-             {:add-container? true})))]
+          :else file)]
 
     (-> file
         (dissoc :current-component-id)
+        (dissoc :current-frame-id)
         (update :parent-stack pop))))
 
 (defn finish-deleted-component
@@ -624,6 +676,7 @@
                                :page-id (:id page)
                                :parent-id (:parent-id %2)
                                :frame-id (:frame-id %2)
+                               :ignore-touched true
                                :obj %2})
               $
               shapes)
@@ -631,9 +684,45 @@
                         :id component-id})
       (reduce #(commit-change %1 {:type :del-obj
                                   :page-id page-id
+                                  :ignore-touched true
                                   :id (:id %2)})
               $
               shapes)
+      (dissoc $ :current-component-id))))
+
+(defn create-component-instance
+  [file data]
+  (let [component-id     (uuid/uuid (:component-id data))
+        x                (:x data)
+        y                (:y data)
+        file             (assoc file :current-component-id component-id)
+        page-id          (:current-page-id file)
+        page             (ctpl/get-page (:data file) page-id)
+        component        (ctkl/get-component (:data file) component-id)
+        ;; main-instance-id (:main-instance-id component)
+
+        [shape shapes]
+        (ctn/make-component-instance page
+                                     component
+                                     (:id file)
+                                     (gpt/point x
+                                                y)
+                                     #_{:main-instance? true
+                                        :force-id main-instance-id})]
+
+    (as-> file $
+      (reduce #(commit-change %1
+                              {:type :add-obj
+                               :id (:id %2)
+                               :page-id (:id page)
+                               :parent-id (:parent-id %2)
+                               :frame-id (:frame-id %2)
+                               :ignore-touched true
+                               :obj %2})
+              $
+              shapes)
+
+      (assoc $ :last-id (:id shape))
       (dissoc $ :current-component-id))))
 
 (defn delete-object
@@ -643,6 +732,7 @@
      file
      {:type :del-obj
       :page-id page-id
+      :ignore-touched true
       :id id})))
 
 (defn update-object
@@ -656,13 +746,14 @@
                 new-val (get new-obj attr)]
             (if (= old-val new-val)
               changes
-              (conj changes {:type :set :attr attr :val new-val}))))]
+              (conj changes {:type :set :attr attr :val new-val :ignore-touched true}))))]
     (-> file
         (commit-change
          {:type :mod-obj
           :operations (reduce generate-operation [] attrs)
           :page-id page-id
-          :id (:id old-obj)}))))
+          :id (:id old-obj)})
+        (assoc :last-id (:id old-obj)))))
 
 (defn get-current-page
   [file]

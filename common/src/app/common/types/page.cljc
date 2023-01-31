@@ -2,90 +2,31 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.page
   (:require
    [app.common.data :as d]
+   [app.common.files.features :as ffeat]
    [app.common.spec :as us]
+   [app.common.types.page.flow :as ctpf]
+   [app.common.types.page.grid :as ctpg]
+   [app.common.types.page.guide :as ctpu]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [clojure.spec.alpha :as s]))
 
-;; --- Grid options
+;; --- Background color
 
-(s/def :internal.grid.color/color string?)
-(s/def :internal.grid.color/opacity ::us/safe-number)
+(s/def ::background ::us/rgb-color-str)
 
-(s/def :internal.grid/size (s/nilable ::us/safe-integer))
-(s/def :internal.grid/item-length (s/nilable ::us/safe-number))
-
-(s/def :internal.grid/color (s/keys :req-un [:internal.grid.color/color
-                                             :internal.grid.color/opacity]))
-(s/def :internal.grid/type #{:stretch :left :center :right})
-(s/def :internal.grid/gutter (s/nilable ::us/safe-integer))
-(s/def :internal.grid/margin (s/nilable ::us/safe-integer))
-
-(s/def :internal.grid/square
-  (s/keys :req-un [:internal.grid/size
-                   :internal.grid/color]))
-
-(s/def :internal.grid/column
-  (s/keys :req-un [:internal.grid/color]
-          :opt-un [:internal.grid/size
-                   :internal.grid/type
-                   :internal.grid/item-length
-                   :internal.grid/margin
-                   :internal.grid/gutter]))
-
-(s/def :internal.grid/row :internal.grid/column)
-
-(s/def ::saved-grids
-  (s/keys :opt-un [:internal.grid/square
-                   :internal.grid/row
-                   :internal.grid/column]))
-
-;; --- Background options
-
-(s/def ::background string?)
-
-;; --- Flow options
-
-(s/def :internal.flow/id uuid?)
-(s/def :internal.flow/name string?)
-(s/def :internal.flow/starting-frame uuid?)
-
-(s/def ::flow
-  (s/keys :req-un [:internal.flow/id
-                   :internal.flow/name
-                   :internal.flow/starting-frame]))
-
-(s/def ::flows
-  (s/coll-of ::flow :kind vector?))
-
-;; --- Guides
-
-(s/def :internal.guides/id uuid?)
-(s/def :internal.guides/axis #{:x :y})
-(s/def :internal.guides/position ::us/safe-number)
-(s/def :internal.guides/frame-id (s/nilable uuid?))
-
-(s/def ::guide
-  (s/keys :req-un [:internal.guides/id
-                   :internal.guides/axis
-                   :internal.guides/position]
-          :opt-un [:internal.guides/frame-id]))
-
-(s/def ::guides
-  (s/map-of uuid? ::guide))
-
-;; --- Page Options
+;; --- Page options
 
 (s/def ::options
   (s/keys :opt-un [::background
-                   ::saved-grids
-                   ::flows
-                   ::guides]))
+                   ::ctpg/saved-grids
+                   ::ctpf/flows
+                   ::ctpu/guides]))
 
 ;; --- Page
 
@@ -109,9 +50,13 @@
 
 (defn make-empty-page
   [id name]
-  (assoc empty-page-data
-         :id id
-         :name name))
+  (let [wrap-objects-fn ffeat/*wrap-with-objects-map-fn*
+        wrap-pointer-fn ffeat/*wrap-with-pointer-map-fn*]
+    (-> empty-page-data
+        (assoc :id id)
+        (assoc :name name)
+        (update :objects wrap-objects-fn)
+        (wrap-pointer-fn))))
 
 ;; --- Helpers for flow
 

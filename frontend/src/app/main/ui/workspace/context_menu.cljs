@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
@@ -19,6 +20,8 @@
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -212,7 +215,7 @@
 
   (let [multiple? (> (count shapes) 1)
         single?   (= (count shapes) 1)
-        do-create-artboard-from-selection #(st/emit! (dw/create-artboard-from-selection))
+        do-create-artboard-from-selection #(st/emit! (dwsh/create-artboard-from-selection))
 
         has-frame? (->> shapes (d/seek cph/frame-shape?))
         has-group? (->> shapes (d/seek cph/group-shape?))
@@ -364,25 +367,52 @@
 
           [:& menu-entry {:title (tr "workspace.shape.menu.flow-start")
                           :on-click do-add-flow}])))))
+(mf/defc context-menu-flex
+  [{:keys [shapes]}]
+  (let [single?            (= (count shapes) 1)
+        has-frame?         (->> shapes (d/seek cph/frame-shape?))
+        is-frame?          (and single? has-frame?)
+        is-flex-container? (and is-frame? (= :flex (:layout (first shapes))))
+        ids                (->> shapes (map :id))
+        add-flex           #(st/emit! (if is-frame?
+                                        (dwsl/create-layout-from-id ids :flex true)
+                                        (dwsl/create-layout-from-selection :flex)))
+        remove-flex        #(st/emit! (dwsl/remove-layout ids))]
+
+    [:*
+     (when (not is-flex-container?)
+       [:div
+        [:& menu-separator]
+        [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
+                        :shortcut (sc/get-tooltip :toggle-layout-flex)
+                        :on-click add-flex}]])
+     (when  is-flex-container?
+       [:div
+        [:& menu-separator]
+        [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
+                        :shortcut (sc/get-tooltip :toggle-layout-flex)
+                        :on-click remove-flex}]])]))
 
 (mf/defc context-menu-component
   [{:keys [shapes]}]
   (let [single?             (= (count shapes) 1)
 
-        has-frame?          (->> shapes (d/seek cph/frame-shape?))
         has-component?      (some true? (map #(contains? % :component-id) shapes))
         is-component?       (and single? (-> shapes first :component-id some?))
+        is-non-root?        (and single? (ctk/in-component-instance-not-root? (first shapes)))
 
-        shape-id            (->> shapes first :id)
-        component-id        (->> shapes first :component-id)
+        shape-id            (-> shapes first :id)
+        component-id        (-> shapes first :component-id)
         component-file      (-> shapes first :component-file)
-        main-component?     (->> shapes first :main-instance?)
+        main-component?     (-> shapes first :main-instance?)
         component-shapes    (filter #(contains? % :component-id) shapes)
 
         components-v2       (features/use-feature :components-v2)
 
         current-file-id     (mf/use-ctx ctx/current-file-id)
         local-component?    (= component-file current-file-id)
+        remote-components   (filter #(not= (:component-file %) current-file-id)
+                                    component-shapes)
 
         workspace-data      (deref refs/workspace-data)
         workspace-libraries (deref refs/workspace-libraries)
@@ -395,12 +425,15 @@
         do-detach-component-in-bulk #(st/emit! dwl/detach-selected-components)
         do-reset-component #(st/emit! (dwl/reset-component shape-id))
         do-show-component #(st/emit! (dw/go-to-component component-id))
+        do-show-in-assets #(st/emit! (if components-v2
+                                       (dw/show-component-in-assets component-id)
+                                       (dw/go-to-component component-id)))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file component-file))
         do-update-component #(st/emit! (dwl/update-component-sync shape-id component-file))
         do-update-component-in-bulk #(st/emit! (dwl/update-component-in-bulk component-shapes component-file))
-        do-restore-component #(st/emit! (dwl/restore-component component-id))
+        do-restore-component #(st/emit! (dwl/restore-component component-file component-id))
 
-        _do-update-remote-component
+        do-update-remote-component
         #(st/emit! (modal/show
                     {:type :confirm
                      :message ""
@@ -411,50 +444,52 @@
                      :accept-style :primary
                      :on-accept do-update-component}))
 
-        do-update-in-bulk #(st/emit! (modal/show
-                                      {:type :confirm
-                                       :message ""
-                                       :title (tr "modals.update-remote-component-in-bulk.message")
-                                       :hint (tr "modals.update-remote-component-in-bulk.hint")
-                                       :items component-shapes
-                                       :cancel-label (tr "modals.update-remote-component.cancel")
-                                       :accept-label (tr "modals.update-remote-component.accept")
-                                       :accept-style :primary
-                                       :on-accept do-update-component-in-bulk}))]
+        do-update-in-bulk (fn []
+                            (if (empty? remote-components)
+                              (do-update-component-in-bulk)
+                              #(st/emit! (modal/show
+                                          {:type :confirm
+                                           :message ""
+                                           :title (tr "modals.update-remote-component-in-bulk.message")
+                                           :hint (tr "modals.update-remote-component-in-bulk.hint")
+                                           :items remote-components
+                                           :cancel-label (tr "modals.update-remote-component.cancel")
+                                           :accept-label (tr "modals.update-remote-component.accept")
+                                           :accept-style :primary
+                                           :on-accept do-update-component-in-bulk}))))]
     [:*
-     (when (not has-frame?)
-       [:*
-        [:& menu-separator]
+     [:*
+      (when (or (not is-non-root?) (and has-component? (not single?)))
+        [:& menu-separator])
+      (when-not is-non-root?
         [:& menu-entry {:title (tr "workspace.shape.menu.create-component")
                         :shortcut (sc/get-tooltip :create-component)
-                        :on-click do-add-component}]
-        (when (and has-component? (not single?))
-          [:*
-           [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")
-                           :shortcut (sc/get-tooltip :detach-component)
-                           :on-click do-detach-component-in-bulk}]
-           [:& menu-entry {:title (tr "workspace.shape.menu.update-components-in-bulk")
-                           :on-click do-update-in-bulk}]])])
+                        :on-click do-add-component}])
+      (when (and has-component? (not single?))
+        [:*
+         [:& menu-entry {:title (tr "workspace.shape.menu.detach-instances-in-bulk")
+                         :shortcut (sc/get-tooltip :detach-component)
+                         :on-click do-detach-component-in-bulk}]
+         [:& menu-entry {:title (tr "workspace.shape.menu.update-components-in-bulk")
+                         :on-click do-update-in-bulk}]])]
 
      (when is-component?
        ;; WARNING: this menu is the same as the context menu at the sidebar.
        ;;          If you change it, you must change equally the file
        ;;          app/main/ui/workspace/sidebar/options/menus/component.cljs
-
        [:*
         [:& menu-separator]
         (if main-component?
           [:& menu-entry {:title (tr "workspace.shape.menu.show-in-assets")
-                          :on-click do-show-component}]
+                          :on-click do-show-in-assets}]
           (if local-component?
             (if is-dangling?
               [:*
                [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
                                :shortcut (sc/get-tooltip :detach-component)
                                :on-click do-detach-component}]
-               ;; This is commented due this functionality is not yet available
-               ;; [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
-               ;;                 :on-click do-reset-component}]
+               [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                               :on-click do-reset-component}]
                (when components-v2
                  [:& menu-entry {:title (tr "workspace.shape.menu.restore-main")
                                  :on-click do-restore-component}])]
@@ -473,9 +508,8 @@
                [:& menu-entry {:title (tr "workspace.shape.menu.detach-instance")
                                :shortcut (sc/get-tooltip :detach-component)
                                :on-click do-detach-component}]
-               ;; This is commented due this functionality is not yet available
-               ;; [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
-               ;;                 :on-click do-reset-component}]
+               [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
+                               :on-click do-reset-component}]
                (when components-v2
                  [:& menu-entry {:title (tr "workspace.shape.menu.restore-main")
                                  :on-click do-restore-component}])]
@@ -486,7 +520,7 @@
                [:& menu-entry {:title (tr "workspace.shape.menu.reset-overrides")
                                :on-click do-reset-component}]
                [:& menu-entry {:title (tr "workspace.shape.menu.update-main")
-                               :on-click _do-update-remote-component}]
+                               :on-click do-update-remote-component}]
                [:& menu-entry {:title (tr "workspace.shape.menu.go-main")
                                :on-click do-navigate-component-file}]])))])
      [:& menu-separator]]))
@@ -517,6 +551,7 @@
        [:> context-menu-path props]
        [:> context-menu-layer-options props]
        [:> context-menu-prototype props]
+       [:> context-menu-flex props]
        [:> context-menu-component props]
        [:> context-menu-delete props]])))
 

@@ -8,11 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages.helpers :as cph]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.viewer.inspect.right-sidebar :as hrs]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options]]
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu]]
@@ -37,38 +39,47 @@
 (mf/defc shape-options
   {::mf/wrap [#(mf/throttle % 60)]}
   [{:keys [shape shapes-with-children page-id file-id shared-libs]}]
-  [:*
-   (case (:type shape)
-     :frame   [:& frame/options {:shape shape}]
-     :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
-     :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
-     :rect    [:& rect/options {:shape shape}]
-     :circle  [:& circle/options {:shape shape}]
-     :path    [:& path/options {:shape shape}]
-     :image   [:& image/options {:shape shape}]
-     :svg-raw [:& svg-raw/options {:shape shape}]
-     :bool    [:& bool/options {:shape shape}]
-     nil)
-   [:& exports-menu
-    {:ids [(:id shape)]
-     :values (select-keys shape [:exports])
-     :shape shape
-     :page-id page-id
-     :file-id file-id}]])
+  (let [workspace-modifiers (mf/deref refs/workspace-modifiers)
+        modifiers (get-in workspace-modifiers [(:id shape) :modifiers])
+        shape (gsh/transform-shape shape modifiers)]
+    [:*
+     (case (:type shape)
+       :frame   [:& frame/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
+       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
+       :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
+       :rect    [:& rect/options {:shape shape}]
+       :circle  [:& circle/options {:shape shape}]
+       :path    [:& path/options {:shape shape}]
+       :image   [:& image/options {:shape shape}]
+       :svg-raw [:& svg-raw/options {:shape shape}]
+       :bool    [:& bool/options {:shape shape}]
+       nil)
+     [:& exports-menu
+      {:ids [(:id shape)]
+       :values (select-keys shape [:exports])
+       :shape shape
+       :page-id page-id
+       :file-id file-id}]]))
 
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
   [{:keys [selected section shapes shapes-with-children page-id file-id]}]
-  (let [drawing           (mf/deref refs/workspace-drawing)
-        base-objects      (-> (mf/deref refs/workspace-page-objects))
-        shared-libs       (mf/deref refs/workspace-libraries)
-        modifiers         (mf/deref refs/workspace-modifiers)
-        objects-modified  (mf/with-memo [base-objects modifiers]
-                            (gsh/merge-modifiers base-objects modifiers))
-        selected-shapes   (into [] (keep (d/getf objects-modified)) selected)]
+  (let [drawing              (mf/deref refs/workspace-drawing)
+        objects              (mf/deref refs/workspace-page-objects)
+        shared-libs          (mf/deref refs/workspace-libraries)
+        selected-shapes      (into [] (keep (d/getf objects)) selected)
+        first-selected-shape (first selected-shapes)
+        shape-parent-frame   (cph/get-frame objects (:frame-id first-selected-shape))
+        on-change-tab
+        (fn [options-mode]
+          (st/emit! (udw/set-options-mode options-mode)
+                    (udw/set-inspect-expanded false))
+          (if (= options-mode :inspect) ;;TODO maybe move this logic to set-options-mode
+            (st/emit! :interrupt (udw/set-workspace-read-only true))
+            (st/emit! :interrupt (udw/set-workspace-read-only false))))]
     [:div.tool-window
      [:div.tool-window-content
-      [:& tab-container {:on-change-tab #(st/emit! (udw/set-options-mode %))
+      [:& tab-container {:on-change-tab on-change-tab
                          :selected section}
        [:& tab-element {:id :design
                         :title (tr "workspace.options.design")}
@@ -95,7 +106,16 @@
        [:& tab-element {:id :prototype
                         :title (tr "workspace.options.prototype")}
         [:div.element-options
-         [:& interactions-menu {:shape (first shapes)}]]]]]]))
+         [:& interactions-menu {:shape (first shapes)}]]]
+
+       [:& tab-element {:id :inspect
+                        :title (tr "workspace.options.inspect")}
+        [:div.element-options
+         [:& hrs/right-sidebar {:page-id  page-id
+                                :file-id  file-id
+                                :frame    shape-parent-frame
+                                :shapes   selected-shapes
+                                :from :workspace}]]]]]]))
 
 ;; TODO: this need optimizations, selected-objects and
 ;; selected-objects-with-children are derefed always but they only

@@ -9,6 +9,7 @@
    [app.common.colors :as clr]
    [app.common.data.macros :as dm]
    [app.main.data.messages :as msg]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.features :as features]
@@ -26,6 +27,7 @@
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
+   [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.dom :as dom]
@@ -71,6 +73,10 @@
        (when (debug? :coordinates)
          [:& coordinates/coordinates {:colorpalette? colorpalette?}])
 
+       (when (debug? :history-overlay)
+         [:div.history-debug-overlay
+          [:button {:on-click #(st/emit! dw/reinitialize-undo)} "CLEAR"]
+          [:& history-toolbox]])
        [:& viewport {:file file
                      :wlocal wlocal
                      :wglobal wglobal
@@ -81,14 +87,15 @@
        [:*
         [:& left-toolbar {:layout layout}]
         (if (:collapse-left-sidebar layout)
-          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar))}
+          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar))
+                                               :aria-label (tr "workspace.sidebar.expand")}
            i/arrow-slide]
           [:& left-sidebar {:layout layout}])
         [:& right-sidebar {:section options-mode
                            :selected selected
                            :layout layout}]])]))
 
-(def trimmed-page-ref (l/derived :trimmed-page st/state =))
+(def trimmed-page-ref (l/derived :workspace-trimmed-page st/state =))
 
 (mf/defc workspace-page
   [{:keys [file layout page-id wglobal] :as props}]
@@ -115,10 +122,12 @@
 (mf/defc workspace
   {::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name] :as props}]
-  (let [file    (mf/deref refs/workspace-file)
-        project (mf/deref refs/workspace-project)
-        layout  (mf/deref refs/workspace-layout)
-        wglobal (mf/deref refs/workspace-global)
+  (let [file                 (mf/deref refs/workspace-file)
+        project              (mf/deref refs/workspace-project)
+        layout               (mf/deref refs/workspace-layout)
+        wglobal              (mf/deref refs/workspace-global)
+        ready?  (mf/deref refs/workspace-ready?)
+        workspace-read-only? (mf/deref refs/workspace-read-only?)
 
         components-v2 (features/use-feature :components-v2)
 
@@ -126,7 +135,7 @@
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]
-      (st/emit! (dw/initialize layout-name)))
+      (st/emit! (dw/initialize-layout layout-name)))
 
     (mf/with-effect [project-id file-id]
       (st/emit! (dw/initialize-file project-id file-id))
@@ -149,21 +158,58 @@
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:& (mf/provider ctx/components-v2) {:value components-v2}
-         [:section#workspace {:style {:background-color background-color}}
-          (when (not (:hide-ui layout))
-            [:& header {:file file
-                        :page-id page-id
-                        :project project
-                        :layout layout}])
+         [:& (mf/provider ctx/workspace-read-only?) {:value workspace-read-only?}
+          [:section#workspace {:style {:background-color background-color}}
+           (when (not (:hide-ui layout))
+             [:& header {:file file
+                         :page-id page-id
+                         :project project
+                         :layout layout}])
 
-          [:& context-menu]
+           [:& context-menu]
 
-          (if (and (and file project)
-                   (:initialized file))
-            [:& workspace-page {:key (dm/str "page-" page-id)
-                                :page-id page-id
-                                :file file
-                                :wglobal wglobal
-                                :layout layout}]
-            [:& workspace-loader])]]]]]]))
+          (if ready?
+             [:& workspace-page {:key (dm/str "page-" page-id)
+                                 :page-id page-id
+                                 :file file
+                                 :wglobal wglobal
+                                 :layout layout}]
+             [:& workspace-loader])]]]]]]]))
 
+(mf/defc remove-graphics-dialog
+  {::mf/register modal/components
+   ::mf/register-as :remove-graphics-dialog}
+  [{:keys [] :as ctx}]
+  (let [remove-state (mf/deref refs/remove-graphics)
+        close #(modal/hide!)
+        reload-file #(dom/reload-current-window)]
+    (mf/use-effect
+      (fn []
+        #(st/emit! (dw/clear-remove-graphics))))
+    [:div.modal-overlay
+     [:div.modal-container.remove-graphics-dialog
+      [:div.modal-header
+       [:div.modal-header-title
+        [:h2 (tr "workspace.remove-graphics.title" (:file-name ctx))]]
+       (when (and (:completed remove-state) (:error remove-state))
+         [:div.modal-close-button
+          {:on-click close} i/close])]
+      (if-not (and (:completed remove-state) (:error remove-state))
+        [:div.modal-content
+         [:p (tr "workspace.remove-graphics.text1")]
+         [:p (tr "workspace.remove-graphics.text2")]
+         [:p.progress-message (tr "workspace.remove-graphics.progress"
+                                  (:current remove-state)
+                                  (:total remove-state))]]
+        [:*
+         [:div.modal-content
+          [:p.error-message [:span i/close] (tr "workspace.remove-graphics.error-msg")]
+          [:p (tr "workspace.remove-graphics.error-hint")]]
+         [:div.modal-footer
+          [:div.action-buttons
+           [:input.button-secondary {:type "button"
+                                     :value (tr "labels.close")
+                                     :on-click close}]
+           [:input.button-primary {:type "button"
+                                   :value (tr "labels.reload-file")
+                                   :on-click reload-file}]]]])]]))

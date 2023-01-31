@@ -6,17 +6,21 @@
 
 (ns app.main.ui.auth.login
   (:require
+   [app.common.data :as d]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.ui.components.button-link :as bl]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as k]
    [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -28,14 +32,6 @@
          :login-with-github
          :login-with-gitlab
          :login-with-oidc]))
-
-(s/def ::email ::us/email)
-(s/def ::password ::us/not-empty-string)
-(s/def ::invitation-token ::us/not-empty-string)
-
-(s/def ::login-form
-  (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token]))
 
 (defn- login-with-oidc
   [event provider params]
@@ -74,19 +70,40 @@
                       :else
                       (st/emit! (dm/error (tr "errors.generic")))))))))
 
+(s/def ::email ::us/email)
+(s/def ::password ::us/not-empty-string)
+(s/def ::invitation-token ::us/not-empty-string)
+
+(s/def ::login-form
+  (s/keys :req-un [::email ::password]
+          :opt-un [::invitation-token]))
+
+(defn handle-error-messages
+  [errors _data]
+  (d/update-when errors :email
+                 (fn [{:keys [code] :as error}]
+                   (cond-> error
+                     (= code ::us/email)
+                     (assoc :message (tr "errors.email-invalid"))))))
 
 (mf/defc login-form
   [{:keys [params on-success-callback] :as props}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
 
         error   (mf/use-state false)
-        form    (fm/use-form :spec ::login-form :initial initial)
+        form    (fm/use-form :spec ::login-form
+                             :validators [handle-error-messages]
+                             :initial initial)
 
         on-error
         (fn [cause]
           (cond
             (and (= :restriction (:type cause))
                  (= :profile-blocked (:code cause)))
+            (reset! error (tr "errors.profile-blocked"))
+
+            (and (= :restriction (:type cause))
+                 (= :admin-only-profile (:code cause)))
             (reset! error (tr "errors.profile-blocked"))
 
             (and (= :validation (:type cause))
@@ -109,8 +126,7 @@
         (fn [data]
           (if (nil? on-success-callback)
             (on-success-default data)
-            (on-success-callback)
-          ))
+            (on-success-callback)))
 
         on-submit
         (mf/use-callback
@@ -136,26 +152,27 @@
         {:type :warning
          :content message
          :on-close #(reset! error nil)
-         :data-test "login-banner"}])
+         :data-test "login-banner"
+         :role "alert"}])
 
      [:& fm/form {:on-submit on-submit :form form}
       [:div.fields-row
        [:& fm/input
         {:name :email
          :type "email"
-         :tab-index "2"
          :help-icon i/at
          :label (tr "auth.email")}]]
+
       [:div.fields-row
        [:& fm/input
         {:type "password"
          :name :password
-         :tab-index "3"
          :help-icon i/eye
          :label (tr "auth.password")}]]
 
       [:div.buttons-stack
-       (when (contains? @cf/flags :login)
+       (when (or (contains? @cf/flags :login)
+                 (contains? @cf/flags :login-with-password))
          [:& fm/submit-button
           {:label (tr "auth.login-submit")
            :data-test "login-submit"}])
@@ -169,34 +186,38 @@
   [{:keys [params] :as props}]
   [:div.auth-buttons
    (when (contains? @cf/flags :login-with-google)
-     [:a.btn-primary.btn-large.btn-google-auth
-      {:on-click #(login-with-oidc % :google params)}
-      [:span.logo i/brand-google]
-      (tr "auth.login-with-google-submit")])
+     [:& bl/button-link {:action #(login-with-oidc % :google params)
+                         :icon i/brand-google
+                         :name (tr "auth.login-with-google-submit")
+                         :klass "btn-google-auth"}])
 
    (when (contains? @cf/flags :login-with-github)
-     [:a.btn-primary.btn-large.btn-github-auth
-      {:on-click #(login-with-oidc % :github params)}
-      [:span.logo i/brand-github]
-      (tr "auth.login-with-github-submit")])
+     [:& bl/button-link {:action #(login-with-oidc % :github params)
+                         :icon i/brand-github
+                         :name (tr "auth.login-with-github-submit")
+                         :klass "btn-github-auth"}])
 
    (when (contains? @cf/flags :login-with-gitlab)
-     [:a.btn-primary.btn-large.btn-gitlab-auth
-      {:on-click #(login-with-oidc % :gitlab params)}
-      [:span.logo i/brand-gitlab]
-      (tr "auth.login-with-gitlab-submit")])
+     [:& bl/button-link {:action #(login-with-oidc % :gitlab params)
+                         :icon i/brand-gitlab
+                         :name (tr "auth.login-with-gitlab-submit")
+                         :klass "btn-gitlab-auth"}])
 
    (when (contains? @cf/flags :login-with-oidc)
-     [:a.btn-primary.btn-large.btn-github-auth
-      {:on-click #(login-with-oidc % :oidc params)}
-      [:span.logo i/brand-openid]
-      (tr "auth.login-with-oidc-submit")])])
+     [:& bl/button-link {:action #(login-with-oidc % :oidc params)
+                         :icon i/brand-openid
+                         :name (tr "auth.login-with-oidc-submit")
+                         :klass "btn-github-auth"}])])
 
 (mf/defc login-button-oidc
   [{:keys [params] :as props}]
   (when (contains? @cf/flags :login-with-oidc)
     [:div.link-entry.link-oidc
-     [:a {:on-click #(login-with-oidc % :oidc params)}
+     [:a {:tab-index "0"
+          :on-key-down (fn [event]
+                        (when (k/enter? event)
+                          (login-with-oidc event :oidc params)))
+          :on-click #(login-with-oidc % :oidc params)}
       (tr "auth.login-with-oidc-submit")]]))
 
 (mf/defc login-methods
@@ -209,10 +230,10 @@
        [:span.text (tr "labels.continue-with")]
        [:span.line]]
 
-      [:div.buttons
-       [:& login-buttons {:params params}]]
+      [:& login-buttons {:params params}]
 
       (when (or (contains? @cf/flags :login)
+                (contains? @cf/flags :login-with-password)
                 (contains? @cf/flags :login-with-ldap))
         [:span.separator
          [:span.line]
@@ -220,6 +241,7 @@
          [:span.line]])])
 
    (when (or (contains? @cf/flags :login)
+             (contains? @cf/flags :login-with-password)
              (contains? @cf/flags :login-with-ldap))
      [:& login-form {:params params :on-success-callback on-success-callback}])])
 
@@ -232,23 +254,24 @@
     [:& login-methods {:params params}]
 
     [:div.links
-     (when (contains? @cf/flags :login)
+     (when (or (contains? @cf/flags :login)
+               (contains? @cf/flags :login-with-password))
        [:div.link-entry
-        [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))
-             :data-test "forgot-password"}
+        [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
+                     :data-test "forgot-password"}
          (tr "auth.forgot-password")]])
 
      (when (contains? @cf/flags :registration)
        [:div.link-entry
         [:span (tr "auth.register") " "]
-        [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))
-             :data-test "register-submit"}
+        [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
+                     :data-test "register-submit"}
          (tr "auth.register-submit")]])]
 
     (when (contains? @cf/flags :demo-users)
       [:div.links.demo
        [:div.link-entry
         [:span (tr "auth.create-demo-profile") " "]
-        [:a {:on-click #(st/emit! (du/create-demo-profile))
-             :data-test "demo-account-link"}
+        [:& lk/link {:action #(st/emit! (du/create-demo-profile))
+                     :data-test "demo-account-link"}
          (tr "auth.create-demo-account")]]])]])

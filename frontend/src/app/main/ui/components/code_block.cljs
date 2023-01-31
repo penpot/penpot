@@ -14,7 +14,7 @@
     (mf/use-effect
      (mf/deps code type block-ref)
      (fn []
-       (hljs/highlightBlock (mf/ref-val block-ref))))
+       (hljs/highlightElement (mf/ref-val block-ref))))
     [:pre.code-display {:class type
                         :ref block-ref} code]))
 

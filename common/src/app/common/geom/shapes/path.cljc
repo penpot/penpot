@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.geom.shapes.path
   (:require
@@ -117,7 +117,7 @@
         [x y] (->> coords (mapv solve-derivative))
 
         ;; normalize value
-        d (mth/sqrt (+ (* x x) (* y y)))]
+        d (mth/hypot x y)]
 
     (if (mth/almost-zero? d)
       (gpt/point 0 0)

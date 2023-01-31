@@ -64,9 +64,9 @@
    (or (find-node node :penpot:shape)
        (find-node node :penpot:page)))
 
-   ([node tag]
-    (-> (get-data node)
-        (find-node tag))))
+  ([node tag]
+   (-> (get-data node)
+       (find-node tag))))
 
 (defn get-type
   [node]
@@ -217,10 +217,10 @@
       (let [;; Old .penpot files doesn't have "g" nodes. They have a clipPath reference as a node attribute
             to-url #(dm/str "url(#" % ")")
             frame-clip-rect-node  (->> (find-all-nodes node :defs)
-                                   (mapcat #(find-all-nodes % :clipPath))
-                                   (filter #(= (to-url (:id (:attrs %))) (:clip-path node-attrs)))
-                                   (mapcat #(find-all-nodes % #{:rect :path}))
-                                   (first))
+                                       (mapcat #(find-all-nodes % :clipPath))
+                                       (filter #(= (to-url (:id (:attrs %))) (:clip-path node-attrs)))
+                                       (mapcat #(find-all-nodes % #{:rect :path}))
+                                       (first))
 
             ;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have
             g-nodes    (find-all-nodes node :g)
@@ -869,6 +869,54 @@
           :style
           parse-style))))
 
+(defn add-layout-container-data [props node]
+  (if-let [data (get-data node :penpot:layout)]
+    (merge props
+           (d/without-nils
+            {:layout (get-meta data :layout keyword)
+             :layout-flex-dir (get-meta data :layout-flex-dir keyword)
+             :layout-wrap-type (get-meta data :layout-wrap-type keyword)
+
+             :layout-gap-type (get-meta data :layout-gap-type keyword)
+             :layout-gap
+             (d/without-nils
+              {:row-gap (get-meta data :layout-gap-row d/parse-double)
+               :column-gap (get-meta data :layout-gap-column d/parse-double)})
+
+             :layout-padding-type (get-meta data :layout-padding-type keyword)
+             :layout-padding
+             (d/without-nils
+              {:p1 (get-meta data :layout-padding-p1 d/parse-double)
+               :p2 (get-meta data :layout-padding-p2 d/parse-double)
+               :p3 (get-meta data :layout-padding-p3 d/parse-double)
+               :p4 (get-meta data :layout-padding-p4 d/parse-double)})
+
+             :layout-justify-content (get-meta data :layout-justify-content keyword)
+             :layout-align-items (get-meta data :layout-align-items keyword)
+             :layout-align-content (get-meta data :layout-align-content keyword)}))
+    props))
+
+(defn add-layout-item-data [props node]
+  (if-let [data (get-data node :penpot:layout-item)]
+    (merge props
+           (d/without-nils
+            {:layout-item-margin
+             (d/without-nils
+              {:m1 (get-meta data :layout-item-margin-m1 d/parse-double)
+               :m2 (get-meta data :layout-item-margin-m2 d/parse-double)
+               :m3 (get-meta data :layout-item-margin-m3 d/parse-double)
+               :m4 (get-meta data :layout-item-margin-m4 d/parse-double)})
+
+             :layout-item-margin-type (get-meta data :layout-item-margin-type keyword)
+             :layout-item-h-sizing (get-meta data :layout-item-h-sizing keyword)
+             :layout-item-v-sizing (get-meta data :layout-item-v-sizing keyword)
+             :layout-item-max-h (get-meta data :layout-item-max-h d/parse-double)
+             :layout-item-min-h (get-meta data :layout-item-min-h d/parse-double)
+             :layout-item-max-w (get-meta data :layout-item-max-w d/parse-double)
+             :layout-item-min-w (get-meta data :layout-item-min-w d/parse-double)
+             :layout-item-align-self (get-meta data :layout-item-align-self keyword)}))
+    props))
+
 (defn parse-data
   [type node]
 
@@ -894,7 +942,10 @@
             (add-svg-content node))
 
           (cond-> (= :frame type)
-            (add-frame-data node))
+            (-> (add-frame-data node)
+                (add-layout-container-data node)))
+
+          (add-layout-item-data node)
 
           (cond-> (= :group type)
             (add-group-data node))
@@ -956,8 +1007,8 @@
                      (ctsi/has-overlay-opts interaction)
                      (assoc :overlay-pos-type    (get-meta node :overlay-pos-type keyword)
                             :overlay-position    (gpt/point
-                                                   (get-meta node :overlay-position-x d/parse-double)
-                                                   (get-meta node :overlay-position-y d/parse-double))
+                                                  (get-meta node :overlay-position-x d/parse-double)
+                                                  (get-meta node :overlay-position-y d/parse-double))
                             :close-click-outside (get-meta node :close-click-outside str->bool)
                             :background-overlay  (get-meta node :background-overlay str->bool)))))))))
 

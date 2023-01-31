@@ -2,16 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.pages.changes-spec
   (:require
    [app.common.spec :as us]
    [app.common.types.color :as ctc]
-   [app.common.types.file :as ctf]
+   [app.common.types.file.media-object :as ctfm]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.typography :as ctt]
+   [app.common.uuid :as uuid]
    [clojure.spec.alpha :as s]))
 
 (s/def ::index integer?)
@@ -61,7 +62,7 @@
            (some? (:frame-id o)))
       (and (contains? o :component-id)
            (not (contains? o :page-id))
-           (nil? (:frame-id o)))))
+           (not= (:frame-id o) uuid/zero))))
 
 (defn- valid-container-id?
   [o]
@@ -126,7 +127,7 @@
   (s/keys :req-un [:internal.changes.add-recent-color/color]))
 
 
-(s/def :internal.changes.add-media/object ::ctf/media-object)
+(s/def :internal.changes.add-media/object ::ctfm/media-object)
 (defmethod change-spec :add-media [_]
   (s/keys :req-un [:internal.changes.add-media/object]))
 

@@ -8,8 +8,10 @@
   "A  main namespace for server repl."
   #_:clj-kondo/ignore
   (:require
+   [app.auth :refer [derive-password]]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.features :as ffeat]
    [app.common.logging :as l]
    [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
@@ -20,15 +22,19 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.main :refer [system]]
-   [app.rpc.commands.auth :refer [derive-password]]
+   [app.rpc.commands.files :as files]
    [app.rpc.queries.profile :as prof]
    [app.util.blob :as blob]
+   [app.util.objects-map :as omap]
+   [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [clojure.stacktrace :as strace]
    [clojure.walk :as walk]
    [cuerdas.core :as str]
    [expound.alpha :as expound]))
+
+(def ^:dynamic *conn*)
 
 (defn reset-password!
   "Reset a password to a specific one for a concrete user or all users
@@ -64,19 +70,33 @@
   [system & {:keys [update-fn id save? migrate? inc-revn?]
              :or {save? false migrate? true inc-revn? true}}]
   (db/with-atomic [conn (:app.db/pool system)]
-    (let [file (db/get-by-id conn :file id {:for-update true})
-          file (-> file
-                   (update :data blob/decode)
-                   (cond-> migrate? (update :data pmg/migrate-data))
-                   (update :data update-fn)
-                   (update :data blob/encode)
-                   (cond-> inc-revn? (update :revn inc)))]
-      (when save?
-        (db/update! conn :file
-                    {:data (:data file)
-                     :revn (:revn file)}
-                    {:id (:id file)}))
-      (update file :data blob/decode))))
+    (let [file (-> (db/get-by-id conn :file id {:for-update true})
+                   (update :features db/decode-pgarray #{}))]
+      (binding [*conn* conn
+                pmap/*tracked* (atom {})
+                pmap/*load-fn* (partial files/load-pointer conn id)
+                ffeat/*wrap-with-pointer-map-fn*
+                (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
+                ffeat/*wrap-with-objects-map-fn*
+                (if (contains? (:features file) "storage/objectd-map") omap/wrap identity)]
+        (let [file (-> file
+                       (update :data blob/decode)
+                       (cond-> migrate? (update :data pmg/migrate-data))
+                       (update-fn)
+                       (cond-> inc-revn? (update :revn inc)))]
+          (when save?
+            (let [features (db/create-array conn "text" (:features file))
+                  data     (blob/encode (:data file))]
+              (db/update! conn :file
+                          {:data data
+                           :revn (:revn file)
+                           :features features}
+                          {:id id})
+
+              (when (contains? (:features file) "storage/pointer-map")
+                (files/persist-pointers! conn id))))
+
+          (dissoc file :data))))))
 
 (def ^:private sql:retrieve-files-chunk
   "SELECT id, name, created_at, data FROM file
@@ -122,27 +142,12 @@
             (on-end state)
             state))))))
 
-
-(defn analyze-file-data
-  [system & {:keys [id on-form on-data]}]
-  (let [file (get-file system id)]
-    (cond
-      (fn? on-data)
-      (on-data (:data file))
-
-      (fn? on-form)
-      (walk/postwalk (fn [form]
-                       (on-form form)
-                       form)
-                     (:data file)))
-    nil))
-
 (defn update-pages
   "Apply a function to all pages of one file. The function receives a page and returns an updated page."
   [data f]
-  (update data :pages-index d/update-vals f))
+  (update data :pages-index update-vals f))
 
 (defn update-shapes
   "Apply a function to all shapes of one page The function receives a shape and returns an updated shape"
   [page f]
-  (update page :objects d/update-vals f))
+  (update page :objects update-vals f))

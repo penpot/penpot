@@ -189,7 +189,6 @@
 (s/def ::file-change-event
   (s/keys :req-un [::type ::profile-id ::file-id ::session-id ::revn ::changes]))
 
-
 (defn handle-file-change
   [{:keys [file-id changes] :as msg}]
   (us/assert ::file-change-event msg)
@@ -219,7 +218,7 @@
             (fn [[page-id changes]]
               (dch/update-indices page-id changes))
 
-            ;; We update `position-data` from the incomming message
+            ;; We update `position-data` from the incoming message
             changes (->> changes (mapv update-position-data))
             changes-by-pages (group-by :page-id changes)]
 

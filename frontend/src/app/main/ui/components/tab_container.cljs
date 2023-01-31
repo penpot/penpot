@@ -20,7 +20,9 @@
 (mf/defc tab-container
   {::mf/wrap-props false}
   [props]
-  (let [children  (unchecked-get props "children")
+  (let [children  (->>
+                   (unchecked-get props "children")
+                   (filter some?))
         selected  (unchecked-get props "selected")
         on-change (unchecked-get props "on-change-tab")
 

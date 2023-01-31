@@ -7,9 +7,7 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [app.common.data.macros :as dm]
    [app.common.pages :as cp]
-   [app.common.uuid :as uuid]
    [app.main.broadcast :as mbc]
    [app.main.data.shortcuts :as dsc]
    [app.main.refs :as refs]
@@ -21,11 +19,6 @@
    [beicon.core :as rx]
    [goog.functions :as f]
    [rumext.v2 :as mf]))
-
-(defn use-id
-  "Get a stable id value across rerenders."
-  []
-  (mf/use-memo #(dm/str (uuid/next))))
 
 (defn use-rxsub
   [ob]
@@ -91,7 +84,9 @@
 ;; things go weird.
 
 (defn use-sortable
-  [& {:keys [data-type data on-drop on-drag on-hold disabled detect-center?] :as opts}]
+  [& {:keys [data-type data on-drop on-drag on-hold disabled detect-center? draggable?]
+      :or {draggable? true}
+      :as opts}]
   (let [ref   (mf/use-ref)
         state (mf/use-state {:over nil
                              :timer nil
@@ -115,7 +110,7 @@
 
         on-drag-start
         (fn [event]
-          (if disabled
+          (if (or disabled (not draggable?))
             (dom/prevent-default event)
             (do
               (dom/stop-propagation event)
@@ -176,7 +171,7 @@
         on-mount
         (fn []
           (let [dom (mf/ref-val ref)]
-            (.setAttribute dom "draggable" true)
+            (.setAttribute dom "draggable" draggable?)
 
             ;; Register all events in the (default) bubble mode, so that they
             ;; are captured by the most leaf item. The handler will stop
@@ -196,7 +191,7 @@
                (.removeEventListener dom "dragend" on-drag-end))))]
 
     (mf/use-effect
-     (mf/deps data on-drop)
+     (mf/deps data on-drop draggable?)
      on-mount)
 
     [(deref state) ref]))
@@ -214,7 +209,7 @@
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
 (defn use-previous
-  "Returns the value from previuous render cycle."
+  "Returns the value from previous render cycle."
   [value]
   (let [ref (mf/use-ref value)]
     (mf/use-effect
@@ -234,7 +229,7 @@
 (defn use-ref-callback
   "Returns a stable callback pointer what calls the interned
   callback. The interned callback will be automatically updated on
-  each reander if the reference changes and works as noop if the
+  each render if the reference changes and works as noop if the
   pointer references to nil value."
   [f]
   (let [ptr (mf/use-ref nil)]
@@ -252,24 +247,6 @@
     (when-not (= (mf/ref-val ref) val)
       (mf/set-ref-val! ref val))
     (mf/ref-val ref)))
-
-(defn- ssr?
-  "Checks if the current environment is run under a SSR context"
-  []
-  (try
-    (not js/window)
-    (catch :default _e
-      ;; When exception accessing window we're in ssr
-      true)))
-
-(defn use-effect-ssr
-  "Use effect that handles SSR"
-  [deps effect-fn]
-
-  (if (ssr?)
-    (let [ret (effect-fn)]
-      (when (fn? ret) (ret)))
-    (mf/use-effect deps effect-fn)))
 
 (defn with-focus-objects
   ([objects]
@@ -298,7 +275,7 @@
   localStorage. And it will keep watching events with type equals to
   `key` for new values."
   [key default]
-  (let [id     (use-id)
+  (let [id     (mf/use-id)
         state  (mf/use-state (get @storage key default))
         stream (mf/with-memo [id]
                  (->> mbc/stream
@@ -311,7 +288,6 @@
       (swap! storage assoc key @state))
 
     (use-stream stream (partial reset! state))
-
     state))
 
 (defonce ^:private intersection-subject (rx/subject))

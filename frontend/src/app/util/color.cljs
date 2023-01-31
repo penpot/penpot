@@ -7,8 +7,8 @@
 (ns app.util.color
   "Color conversion utils."
   (:require
-   [app.common.exceptions :as ex]
    [app.util.object :as obj]
+   [app.util.strings :as ust]
    [cuerdas.core :as str]
    [goog.color :as gcolor]))
 
@@ -55,6 +55,14 @@
   [^string data ^number opacity]
   (-> (hex->hsl data)
       (conj opacity)))
+
+(defn format-hsla
+  [[h s l a]]
+  (let [precision 2
+        rounded-s (* 100 (ust/format-precision s precision))
+        rounded-l (* 100 (ust/format-precision l precision))]
+
+    (str/fmt "%s, %s%, %s%, %s" h rounded-s rounded-l a)))
 
 (defn hsl->rgb
   [[h s l]]
@@ -117,9 +125,9 @@
 
         stops-css (str/join "," (map parse-stop stops))]
 
-      (if (= type :linear)
-        (str/fmt "linear-gradient(to bottom, %s)" stops-css)
-        (str/fmt "radial-gradient(circle, %s)" stops-css))))
+    (if (= type :linear)
+      (str/fmt "linear-gradient(to bottom, %s)" stops-css)
+      (str/fmt "radial-gradient(circle, %s)" stops-css))))
 
 ;; TODO: REMOVE `VALUE` WHEN COLOR IS INTEGRATED
 (defn color->background [{:keys [color opacity gradient value]}]
@@ -162,7 +170,7 @@
   [[r g b]]
   (cond
     (and (= 255 r) (= 255 g) (= 255 b))
-    (ex/raise "Cannot get next color")
+    (throw (ex-info "cannot get next color" {:r r :g g :b b}))
 
     (and (= 255 g) (= 255 b))
     [(inc r) 0 0]

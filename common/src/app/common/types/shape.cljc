@@ -2,7 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.shape
   (:require
@@ -19,22 +19,25 @@
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
+   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
-   [clojure.spec.alpha :as s]))
+   [clojure.spec.alpha :as s]
+   [clojure.test.check.generators :as tgen]))
 
 ;; --- Specs
 
 (s/def ::frame-id uuid?)
 (s/def ::id uuid?)
-(s/def ::name string?)
-(s/def ::path (s/nilable string?))
+(s/def ::name ::us/string)
+(s/def ::path (s/nilable ::us/string))
 (s/def ::page-id uuid?)
 (s/def ::parent-id uuid?)
-(s/def ::string string?)
-(s/def ::type keyword?)
+(s/def ::string ::us/string)
+(s/def ::type #{:frame :text :rect :path :image :circle :group :bool :svg-raw})
 (s/def ::uuid uuid?)
 
 (s/def ::component-id uuid?)
@@ -52,7 +55,7 @@
 (s/def ::blocked boolean?)
 (s/def ::collapsed boolean?)
 
-(s/def ::fill-color string?)
+(s/def ::fill-color ::us/rgb-color-str)
 (s/def ::fill-opacity ::us/safe-number)
 (s/def ::fill-color-gradient (s/nilable ::ctc/gradient))
 (s/def ::fill-color-ref-file (s/nilable uuid?))
@@ -64,10 +67,10 @@
 
 (s/def ::file-thumbnail boolean?)
 (s/def ::masked-group? boolean?)
-(s/def ::font-family string?)
+(s/def ::font-family ::us/string)
 (s/def ::font-size ::us/safe-integer)
-(s/def ::font-style string?)
-(s/def ::font-weight string?)
+(s/def ::font-style ::us/string)
+(s/def ::font-weight ::us/string)
 (s/def ::hidden boolean?)
 (s/def ::letter-spacing ::us/safe-number)
 (s/def ::line-height ::us/safe-number)
@@ -75,7 +78,7 @@
 (s/def ::page-id uuid?)
 (s/def ::proportion ::us/safe-number)
 (s/def ::proportion-lock boolean?)
-(s/def ::stroke-color string?)
+(s/def ::stroke-color ::us/string)
 (s/def ::stroke-color-gradient (s/nilable ::ctc/gradient))
 (s/def ::stroke-color-ref-file (s/nilable uuid?))
 (s/def ::stroke-color-ref-id (s/nilable uuid?))
@@ -118,11 +121,12 @@
   (s/every uuid? :kind vector?))
 
 (s/def ::fill
-  (s/keys :opt-un [::fill-color
-                   ::fill-opacity
-                   ::fill-color-gradient
-                   ::fill-color-ref-file
-                   ::fill-color-ref-id]))
+  (s/and (s/keys :opt-un [::fill-color
+                          ::fill-opacity
+                          ::fill-color-gradient
+                          ::fill-color-ref-file
+                          ::fill-color-ref-id])
+         (comp boolean seq)))
 
 (s/def ::fills
   (s/coll-of ::fill :kind vector?))
@@ -162,140 +166,70 @@
     :color
     :luminosity})
 
+(s/def ::shape-base-attrs
+  (s/keys :opt-un [::id
+                   ::name
+                   ::component-id
+                   ::component-file
+                   ::component-root?
+                   ::shape-ref
+                   ::selrect
+                   ::points
+                   ::blocked
+                   ::collapsed
+                   ::fills
+                   ::hide-fill-on-export
+                   ::font-family
+                   ::font-size
+                   ::font-style
+                   ::font-weight
+                   ::hidden
+                   ::letter-spacing
+                   ::line-height
+                   ::locked
+                   ::proportion
+                   ::proportion-lock
+                   ::constraints-h
+                   ::constraints-v
+                   ::fixed-scroll
+                   ::ctsr/rx
+                   ::ctsr/ry
+                   ::ctsr/r1
+                   ::ctsr/r2
+                   ::ctsr/r3
+                   ::ctsr/r4
+                   ::x
+                   ::y
+                   ::exports
+                   ::shapes
+                   ::strokes
+                   ::text-align
+                   ::transform
+                   ::transform-inverse
+                   ::width
+                   ::height
+                   ::masked-group?
+                   ::ctsi/interactions
+                   ::ctss/shadow
+                   ::ctsb/blur
+                   ::opacity
+                   ::blend-mode]))
+
 (s/def ::shape-attrs
-  (s/and
-   ::ctsl/layout-container-props
-   ::ctsl/layout-child-props
-   (s/keys :opt-un [::id
-                    ::type
-                    ::name
-                    ::component-id
-                    ::component-file
-                    ::component-root?
-                    ::shape-ref
-                    ::selrect
-                    ::points
-                    ::blocked
-                    ::collapsed
-                    ::fills
-                    ::fill-color         ;; TODO: remove these attributes
-                    ::fill-opacity       ;;       when backward compatibility
-                    ::fill-color-gradient ;;       is no longer needed
-                    ::fill-color-ref-file ;;
-                    ::fill-color-ref-id   ;;
-                    ::hide-fill-on-export
-                    ::font-family
-                    ::font-size
-                    ::font-style
-                    ::font-weight
-                    ::hidden
-                    ::letter-spacing
-                    ::line-height
-                    ::locked
-                    ::proportion
-                    ::proportion-lock
-                    ::constraints-h
-                    ::constraints-v
-                    ::fixed-scroll
-                    ::ctsr/rx
-                    ::ctsr/ry
-                    ::ctsr/r1
-                    ::ctsr/r2
-                    ::ctsr/r3
-                    ::ctsr/r4
-                    ::x
-                    ::y
-                    ::exports
-                    ::shapes
-                    ::strokes
-                    ::stroke-color         ;; TODO: same thing
-                    ::stroke-color-ref-file ;;
-                    ::stroke-color-ref-i    ;;
-                    ::stroke-opacity        ;;
-                    ::stroke-style
-                    ::stroke-width
-                    ::stroke-alignment
-                    ::stroke-cap-start
-                    ::stroke-cap-end
-                    ::text-align
-                    ::transform
-                    ::transform-inverse
-                    ::width
-                    ::height
-                    ::masked-group?
-                    ::ctsi/interactions
-                    ::ctss/shadow
-                    ::ctsb/blur
-                    ::opacity
-                    ::blend-mode])))
+  (s/with-gen
+    (s/merge
+     ::shape-base-attrs
+     ::ctsl/layout-container-props
+     ::ctsl/layout-child-props
 
-(s/def :internal.shape.text/type #{"root" "paragraph-set" "paragraph"})
-(s/def :internal.shape.text/children
-  (s/coll-of :internal.shape.text/content
-             :kind vector?
-             :min-count 1))
-
-(s/def :internal.shape.text/text string?)
-(s/def :internal.shape.text/key string?)
-
-(s/def :internal.shape.text/content
-  (s/nilable
-   (s/or :text-container
-         (s/keys :req-un [:internal.shape.text/type]
-                 :opt-un [:internal.shape.text/key
-                          :internal.shape.text/children])
-         :text-content
-         (s/keys :req-un [:internal.shape.text/text]))))
-
-(s/def :internal.shape.text/position-data
-  (s/coll-of :internal.shape.text/position-data-element
-             :kind vector?
-             :min-count 1))
-
-(s/def :internal.shape.text/position-data-element
-  (s/keys :req-un [:internal.shape.text.position-data/x
-                   :internal.shape.text.position-data/y
-                   :internal.shape.text.position-data/width
-                   :internal.shape.text.position-data/height]
-          :opt-un [:internal.shape.text.position-data/fill-color
-                   :internal.shape.text.position-data/fill-opacity
-                   :internal.shape.text.position-data/font-family
-                   :internal.shape.text.position-data/font-size
-                   :internal.shape.text.position-data/font-style
-                   :internal.shape.text.position-data/font-weight
-                   :internal.shape.text.position-data/rtl
-                   :internal.shape.text.position-data/text
-                   :internal.shape.text.position-data/text-decoration
-                   :internal.shape.text.position-data/text-transform]))
-
-(s/def :internal.shape.text.position-data/x ::us/safe-number)
-(s/def :internal.shape.text.position-data/y ::us/safe-number)
-(s/def :internal.shape.text.position-data/width ::us/safe-number)
-(s/def :internal.shape.text.position-data/height ::us/safe-number)
-
-(s/def :internal.shape.text.position-data/fill-color ::fill-color)
-(s/def :internal.shape.text.position-data/fill-opacity ::fill-opacity)
-(s/def :internal.shape.text.position-data/fill-color-gradient ::fill-color-gradient)
-
-(s/def :internal.shape.text.position-data/font-family string?)
-(s/def :internal.shape.text.position-data/font-size string?)
-(s/def :internal.shape.text.position-data/font-style string?)
-(s/def :internal.shape.text.position-data/font-weight string?)
-(s/def :internal.shape.text.position-data/rtl boolean?)
-(s/def :internal.shape.text.position-data/text string?)
-(s/def :internal.shape.text.position-data/text-decoration string?)
-(s/def :internal.shape.text.position-data/text-transform string?)
-
-(s/def :internal.shape.path/command keyword?)
-(s/def :internal.shape.path/params
-  (s/nilable (s/map-of keyword? any?)))
-
-(s/def :internal.shape.path/command-item
-  (s/keys :req-un [:internal.shape.path/command]
-          :opt-un [:internal.shape.path/params]))
-
-(s/def :internal.shape.path/content
-  (s/coll-of :internal.shape.path/command-item :kind vector?))
+     ;; For BACKWARD COMPATIBILITY we need to spec fill and stroke
+     ;; attrs as shape toplevel attrs
+     ::fill
+     ::stroke)
+    #(tgen/let [attrs1 (s/gen ::shape-base-attrs)
+                attrs2 (s/gen ::ctsl/layout-container-props)
+                attrs3 (s/gen ::ctsl/layout-child-props)]
+       (merge attrs1 attrs2 attrs3))))
 
 (defmulti shape-spec :type)
 
@@ -303,26 +237,31 @@
   (s/spec ::shape-attrs))
 
 (defmethod shape-spec :text [_]
-  (s/and ::shape-attrs
-         (s/keys :opt-un [:internal.shape.text/content
-                          :internal.shape.text/position-data])))
+  (s/merge ::shape-attrs
+           (s/keys :opt-un [::ctsx/content
+                            ::ctsx/position-data])))
 
 (defmethod shape-spec :path [_]
-  (s/and ::shape-attrs
-         (s/keys :opt-un [:internal.shape.path/content])))
+  (s/merge ::shape-attrs
+           (s/keys :opt-un [::ctsp/content])))
 
 (defmethod shape-spec :frame [_]
-  (s/and ::shape-attrs
-         (s/keys :opt-un [::file-thumbnail
-                          ::hide-fill-on-export
-                          ::show-content
-                          ::hide-in-viewer])))
+  (s/merge ::shape-attrs
+           (s/keys :opt-un [::file-thumbnail
+                            ::hide-fill-on-export
+                            ::show-content
+                            ::hide-in-viewer])))
 
 (s/def ::shape
-  (s/and (s/multi-spec shape-spec :type)
-         #(contains? % :type)
-         #(contains? % :name)))
-
+  (s/with-gen
+    (s/merge
+     (s/keys :req-un [::type ::name])
+     (s/multi-spec shape-spec :type))
+    (fn []
+      (tgen/let [type  (s/gen ::type)
+                 name  (s/gen ::name)
+                 attrs (s/gen ::shape-attrs)]
+        (assoc attrs :type type :name name)))))
 
 ;; --- Initialization
 
@@ -339,7 +278,7 @@
 
 (def ^:private minimal-shapes
   [{:type :rect
-    :name "Rect-1"
+    :name "Rectangle"
     :fills [{:fill-color default-color
              :fill-opacity 1}]
     :strokes []
@@ -353,13 +292,13 @@
     :strokes []}
 
    {:type :circle
-    :name "Circle-1"
+    :name "Ellipse"
     :fills [{:fill-color default-color
              :fill-opacity 1}]
     :strokes []}
 
    {:type :path
-    :name "Path-1"
+    :name "Path"
     :fills []
     :strokes [{:stroke-style :solid
                :stroke-alignment :center
@@ -368,7 +307,7 @@
                :stroke-opacity 1}]}
 
    {:type :frame
-    :name "Board-1"
+    :name "Board"
     :fills [{:fill-color clr/white
              :fill-opacity 1}]
     :strokes []
@@ -381,7 +320,7 @@
     :ry 0}
 
    {:type :text
-    :name "Text-1"
+    :name "Text"
     :content nil}
 
    {:type :svg-raw}])
@@ -436,7 +375,10 @@
   "Initializes the selrect and points for a shape."
   [shape]
   (let [selrect (gsh/rect->selrect shape)
-        points  (gsh/rect->points shape)]
+        points  (gsh/rect->points shape)
+        points  (cond-> points
+                  (:transform shape)
+                  (gsh/transform-points (gsh/center-points points) (:transform shape)))]
     (-> shape
         (assoc :selrect selrect
                :points points))))
@@ -449,12 +391,14 @@
       (setup-rect-selrect)))
 
 (defn- setup-image
-  [{:keys [metadata] :as shape} props]
-  (-> (setup-rect shape props)
-      (assoc
-       :proportion (/ (:width metadata)
-                      (:height metadata))
-       :proportion-lock true)))
+  [shape props]
+  (let [metadata (or (:metadata shape) (:metadata props))]
+    (-> (setup-rect shape props)
+        (assoc
+          :metadata metadata
+          :proportion (/ (:width metadata)
+                         (:height metadata))
+          :proportion-lock true))))
 
 (defn setup-shape
   "A function that initializes the geometric data of
@@ -470,7 +414,9 @@
 (defn make-shape
   "Make a non group shape, ready to use."
   [type geom-props attrs]
-  (-> (make-minimal-shape type)
+  (-> (if-not (= type :group)
+        (make-minimal-shape type)
+        (make-minimal-group uuid/zero geom-props (:name attrs)))
       (setup-shape geom-props)
       (merge attrs)))
 

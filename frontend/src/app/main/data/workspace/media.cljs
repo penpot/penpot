@@ -7,18 +7,26 @@
 (ns app.main.data.workspace.media
   (:require
    [app.common.exceptions :as ex]
+   [app.common.logging :as log]
+   [app.common.math :as mth]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.spec :as us]
+   [app.common.types.container :as ctn]
+   [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
+   [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.main.data.media :as dmm]
    [app.main.data.messages :as dm]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.svg-upload :as svg]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.http :as http]
    [app.util.i18n :refer [tr]]
-   [app.util.svg :as usvg]
-   [app.util.webapi :as wapi]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -35,27 +43,6 @@
     (catch :default _err
       (rx/throw {:type :svg-parser}))))
 
-(defn extract-name [url]
-  (let [query-idx (str/last-index-of url "?")
-        url (if (> query-idx 0) (subs url 0 query-idx) url)
-        filename (->> (str/split url "/") (last))
-        ext-idx (str/last-index-of filename ".")]
-    (if (> ext-idx 0) (subs filename 0 ext-idx) filename)))
-
-(defn data-uri->blob
-  [data-uri]
-  (let [[mtype b64-data] (str/split data-uri ";base64,")
-        mtype   (subs mtype (inc (str/index-of mtype ":")))
-        decoded (.atob js/window b64-data)
-        size    (.-length ^js decoded)
-        content (js/Uint8Array. size)]
-
-    (doseq [i (range 0 size)]
-      (aset content i (.charCodeAt decoded i)))
-
-    (wapi/create-blob content mtype)))
-
-
 ;; TODO: rename to bitmap-image-uploaded
 (defn image-uploaded
   [image {:keys [x y]}]
@@ -66,8 +53,8 @@
             shape {:name name
                    :width width
                    :height height
-                   :x (- x (/ width 2))
-                   :y (- y (/ height 2))
+                   :x (mth/round (- x (/ width 2)))
+                   :y (mth/round (- y (/ height 2)))
                    :metadata {:width width
                               :height height
                               :mtype mtype
@@ -82,26 +69,8 @@
       ;; Once the SVG is uploaded, we need to extract all the bitmap
       ;; images and upload them separately, then proceed to create
       ;; all shapes.
-      (->> (rx/from (usvg/collect-images svg-data))
-           (rx/map (fn [uri]
-                     (merge
-                      {:file-id file-id
-                       :is-local true}
-                      (if (str/starts-with? uri "data:")
-                        {:name "image"
-                         :content (data-uri->blob uri)}
-                        {:name (extract-name uri)
-                         :url uri}))))
-           (rx/mapcat (fn [uri-data]
-                        (->> (rp/mutation! (if (contains? uri-data :content)
-                                             :upload-file-media-object
-                                             :create-file-media-object-from-url) uri-data)
-                             ;; When the image uploaded fail we skip the shape
-                             ;; returning `nil` will afterward not create the shape.
-                             (rx/catch #(rx/of nil))
-                             (rx/map #(vector (:url uri-data) %)))))
-           (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})
-           (rx/map #(svg/create-svg-shapes (assoc svg-data :image-data %) position))))))
+      (->> (svg/upload-images svg-data file-id)
+           (rx/map #(svg/add-svg-shapes (assoc svg-data :image-data %) position))))))
 
 (defn- process-uris
   [{:keys [file-id local? name uris mtype on-image on-svg]}]
@@ -112,20 +81,20 @@
           (prepare [uri]
             {:file-id file-id
              :is-local local?
-             :name (or name (extract-name uri))
+             :name (or name (svg/extract-name uri))
              :url uri})
 
           (fetch-svg [name uri]
             (->> (http/send! {:method :get :uri uri :mode :no-cors})
                  (rx/map #(vector
-                           (or name (extract-name uri))
+                           (or name (svg/extract-name uri))
                            (:body %)))))]
 
     (rx/merge
      (->> (rx/from uris)
           (rx/filter (comp not svg-url?))
           (rx/map prepare)
-          (rx/mapcat #(rp/mutation! :create-file-media-object-from-url %))
+          (rx/mapcat #(rp/command! :create-file-media-object-from-url %))
           (rx/do on-image))
 
      (->> (rx/from uris)
@@ -234,6 +203,7 @@
               (rx/catch handle-error)
               (rx/finalize #(st/emit! (dm/hide-tag :media-loading)))))))))
 
+;; Deprecated in components-v2
 (defn upload-media-asset
   [params]
   (let [params (assoc params
@@ -242,9 +212,8 @@
                       :on-image #(st/emit! (dwl/add-media %)))]
     (process-media-objects params)))
 
-
 ;; TODO: it is really need handle SVG here, looks like it already
-;; handled separatelly
+;; handled separately
 (defn upload-media-workspace
   [{:keys [position file-id] :as params}]
   (let [params (assoc params
@@ -255,6 +224,120 @@
 
 
 ;; --- Upload File Media objects
+
+(defn load-and-parse-svg
+  "Load the contents of a media-obj of type svg, and parse it
+  into a clojure structure."
+  [media-obj]
+  (let [path (cfg/resolve-file-media media-obj)]
+    (->> (http/send! {:method :get :uri path :mode :no-cors})
+         (rx/map :body)
+         (rx/map #(vector (:name media-obj) %))
+         (rx/merge-map svg->clj)
+         (rx/catch  ; When error downloading media-obj, skip it and continue with next one
+           #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
+                       :hint (ex-message %)
+                       :error %)))))
+
+(defn create-shapes-svg
+  "Convert svg elements into penpot shapes."
+  [file-id objects pos svg-data]
+  (let [upload-images
+        (fn [svg-data]
+          (->> (svg/upload-images svg-data file-id)
+               (rx/map #(assoc svg-data :image-data %))))
+
+        process-svg
+        (fn [svg-data]
+          (let [[shape children]
+                (svg/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)]
+            [shape children]))]
+
+    (->> (upload-images svg-data)
+         (rx/map process-svg))))
+
+(defn create-shapes-img
+  "Convert a media object that contains a bitmap image into shapes,
+  one shape of type :image and one group that contains it."
+  [pos {:keys [name width height id mtype] :as media-obj}]
+  (let [group-shape (cts/make-shape :group
+                                    {:x (:x pos)
+                                     :y (:y pos)
+                                     :width width
+                                     :height height}
+                                    {:name name
+                                     :frame-id uuid/zero
+                                     :parent-id uuid/zero})
+
+        img-shape (cts/make-shape :image
+                                  {:x (:x pos)
+                                   :y (:y pos)
+                                   :width width
+                                   :height height
+                                   :metadata {:id id
+                                              :width width
+                                              :height height
+                                              :mtype mtype}}
+                                  {:name name
+                                   :frame-id uuid/zero
+                                   :parent-id (:id group-shape)})]
+    (rx/of [group-shape [img-shape]])))
+
+(defn- add-shapes-and-component
+  [it file-data page name [shape children]]
+  (let [page'  (reduce #(ctst/add-shape (:id %2) %2 %1 uuid/zero (:parent-id %2) nil false)
+                       page
+                       (cons shape children))
+
+        shape' (ctn/get-shape page' (:id shape))
+
+        [component-shape component-shapes updated-shapes]
+        (ctn/make-component-shape shape' (:objects page') (:id file-data) true)
+
+        changes (-> (pcb/empty-changes it)
+                    (pcb/with-page page')
+                    (pcb/with-objects (:objects page'))
+                    (pcb/with-library-data file-data)
+                    (pcb/add-objects (cons shape children))
+                    (pcb/add-component (:id component-shape)
+                                       ""
+                                       name
+                                       component-shapes
+                                       updated-shapes
+                                       (:id shape)
+                                       (:id page)))]
+
+    (dch/commit-changes changes)))
+
+(defn- process-img-component
+  [media-obj]
+  (ptk/reify ::process-img-component
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-data (wsh/get-local-file state)
+            page      (wsh/lookup-page state)
+            pos       (wsh/viewport-center state)]
+        (->> (create-shapes-img pos media-obj)
+             (rx/map (partial add-shapes-and-component it file-data page (:name media-obj))))))))
+
+(defn- process-svg-component
+  [svg-data]
+  (ptk/reify ::process-svg-component
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-data (wsh/get-local-file state)
+            page      (wsh/lookup-page state)
+            pos       (wsh/viewport-center state)]
+        (->> (create-shapes-svg (:id file-data) (:objects page) pos svg-data)
+             (rx/map (partial add-shapes-and-component it file-data page (:name svg-data))))))))
+
+(defn upload-media-components
+  [params]
+  (let [params (assoc params
+                      :local? false
+                      :on-image #(st/emit! (process-img-component %))
+                      :on-svg #(st/emit! (process-svg-component %)))]
+    (process-media-objects params)))
 
 (s/def ::object-id ::us/uuid)
 

@@ -9,13 +9,14 @@
 
   funcool/beicon {:mvn/version "2021.07.05-1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
-  funcool/potok {:mvn/version "2022.04.28-67"}
+  funcool/potok {:mvn/version "2022.12.16-71"}
   funcool/tubax {:mvn/version "2021.05.20-0"}
 
   funcool/rumext
-  {:git/tag "v2.0"
-   :git/sha "fc617a8"
-   :git/url "https://github.com/funcool/rumext.git"}
+  {:git/tag "v2.1"
+   :git/sha "6343102"
+   :git/url "https://github.com/funcool/rumext.git"
+  }
 
   instaparse/instaparse {:mvn/version "1.4.12"}
   garden/garden {:git/url "https://github.com/noprompt/garden"
@@ -32,13 +33,12 @@
    {com.bhauman/rebel-readline {:mvn/version "RELEASE"}}
    :main-opts ["-m" "rebel-readline.main"]}
 
-
   :dev
   {:extra-paths ["dev"]
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.20.2"}
+   {thheller/shadow-cljs {:mvn/version "2.20.16"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    cider/cider-nrepl {:mvn/version "0.28.4"}}}
+    cider/cider-nrepl {:mvn/version "0.29.0"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}

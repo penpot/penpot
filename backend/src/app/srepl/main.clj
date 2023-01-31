@@ -16,7 +16,11 @@
    [app.rpc.queries.profile :as profile]
    [app.srepl.fixes :as f]
    [app.srepl.helpers :as h]
+   [app.util.blob :as blob]
+   [app.util.objects-map :as omap]
+   [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.pprint :refer [pprint]]
    [cuerdas.core :as str]))
 
@@ -33,6 +37,16 @@
      (if-let [task-fn (get tasks name)]
        (task-fn params)
        (println (format "no task '%s' found" name))))))
+
+(defn schedule-task!
+  ([system name]
+   (schedule-task! system name {}))
+  ([system name props]
+   (let [pool (:app.db/pool system)]
+     (wrk/submit!
+      ::wrk/conn pool
+      ::wrk/task name
+      ::wrk/props props))))
 
 (defn send-test-email!
   [system destination]
@@ -62,31 +76,18 @@
     (cmd.auth/send-email-verification! pool sprops profile)
     :email-sent))
 
-(defn update-profile!
-  "Update a limited set of profile attrs."
-  [system & {:keys [email id active? deleted? blocked?]}]
-
-  (us/verify!
-   :expr (some? system)
-   :hint "system should be provided")
-
-  (us/verify!
-   :expr (or (string? email) (uuid? id))
-   :hint "email or id should be provided")
-
-  (let [params (cond-> {}
-                 (true? active?) (assoc :is-active true)
-                 (false? active?) (assoc :is-active false)
-                 (true? deleted?) (assoc :deleted-at (dt/now))
-                 (true? blocked?) (assoc :is-blocked true)
-                 (false? blocked?) (assoc :is-blocked false))
-        opts   (cond-> {}
-                 (some? email) (assoc :email (str/lower email))
-                 (some? id)    (assoc :id id))]
-
-    (db/with-atomic [conn (:app.db/pool system)]
-      (some-> (db/update! conn :profile params opts)
-              (profile/decode-profile-row)))))
+(defn mark-profile-as-active!
+  "Mark the profile blocked and removes all the http sessiones
+  associated with the profile-id."
+  [system email]
+  (db/with-atomic [conn (:app.db/pool system)]
+    (when-let [profile (db/get-by-params conn :profile
+                                         {:email (str/lower email)}
+                                         {:columns [:id :email]
+                                          :check-not-found false})]
+      (when-not (:is-blocked profile)
+        (db/update! conn :profile {:is-active true} {:id (:id profile)})
+        :activated))))
 
 (defn mark-profile-as-blocked!
   "Mark the profile blocked and removes all the http sessiones
@@ -101,3 +102,47 @@
         (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
         (db/delete! conn :http-session {:profile-id (:id profile)})
         :blocked))))
+
+
+(defn enable-objects-map-feature-on-file!
+  [system & {:keys [save? id]}]
+  (letfn [(update-file [{:keys [features] :as file}]
+            (if (contains? features "storage/objects-map")
+              file
+              (-> file
+                  (update :data migrate)
+                  (update :features conj "storage/objects-map"))))
+
+          (migrate [data]
+            (-> data
+                (update :pages-index update-vals #(update % :objects omap/wrap))
+                (update :components update-vals #(update % :objects omap/wrap))))]
+
+    (h/update-file! system
+                    :id id
+                    :update-fn update-file
+                    :save? save?)))
+
+(defn enable-pointer-map-feature-on-file!
+  [system & {:keys [save? id]}]
+  (letfn [(update-file [{:keys [features] :as file}]
+            (if (contains? features "storage/pointer-map")
+              file
+              (-> file
+                  (update :data migrate)
+                  (update :features conj "storage/pointer-map"))))
+
+          (migrate [data]
+            (-> data
+                (update :pages-index update-vals pmap/wrap)
+                (update :components pmap/wrap)))]
+
+    (h/update-file! system
+                    :id id
+                    :update-fn update-file
+                    :save? save?)))
+
+(defn enable-storage-features-on-file!
+  [system & {:as params}]
+  (enable-objects-map-feature-on-file! system params)
+  (enable-pointer-map-feature-on-file! system params))

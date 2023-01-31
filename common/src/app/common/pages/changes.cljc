@@ -2,15 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) UXBOX Labs SL
+;; Copyright (c) KALEIDOS INC
 
 (ns app.common.pages.changes
   #_:clj-kondo/ignore
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.bool :as gshb]
    [app.common.math :as mth]
    [app.common.pages.common :refer [component-sync-attrs]]
    [app.common.pages.helpers :as cph]
@@ -39,7 +39,27 @@
 ;; Page Transformation Changes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; === Changes Processing Impl
+;; Changes Processing Impl
+
+(defn validate-shapes!
+  [data objects items]
+  (letfn [(validate-shape! [[page-id {:keys [id] :as shape}]]
+            (when-not (= shape (dm/get-in data [:pages-index page-id :objects id]))
+              ;; If object has change verify is correct
+              (us/verify ::cts/shape shape)))]
+    (let [lookup (d/getf objects)]
+      (->> (into #{} (map :page-id) items)
+           (mapcat (fn [page-id]
+                     (filter #(= page-id (:page-id %)) items)))
+           (mapcat (fn [{:keys [type id page-id] :as item}]
+                     (sequence
+                      (comp (keep lookup)
+                            (map (partial vector page-id)))
+                      (case type
+                        (:add-obj :mod-obj :del-obj) (cons id nil)
+                        (:mov-objects :reg-objects)  (:shapes item)
+                        nil))))
+           (run! validate-shape!)))))
 
 (defmulti process-change (fn [_ change] (:type change)))
 (defmulti process-operation (fn [_ op] (:type op)))
@@ -56,14 +76,7 @@
 
    (let [result (reduce #(or (process-change %1 %2) %1) data items)]
      ;; Validate result shapes (only on the backend)
-     #?(:clj
-        (doseq [page-id (into #{} (map :page-id) items)]
-          (let [page (get-in result [:pages-index page-id])]
-            (doseq [[id shape] (:objects page)]
-              (when-not (= shape (get-in data [:pages-index page-id :objects id]))
-                ;; If object has change verify is correct
-                (us/verify ::cts/shape shape))))))
-
+     #?(:clj (validate-shapes! data result items))
      result)))
 
 (defmethod process-change :set-option
@@ -156,7 +169,7 @@
                 group
 
                 (= :bool (:type group))
-                (gshb/update-bool-selrect group children objects)
+                (gsh/update-bool-selrect group children objects)
 
                 (:masked-group? group)
                 (set-mask-selrect group children)
@@ -169,7 +182,7 @@
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id ignore-touched]}]
+  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape]}]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
@@ -187,21 +200,9 @@
                 (cph/insert-at-index prev-shapes index shapes)
                 (cph/append-at-the-end prev-shapes shapes))))
 
-          (check-insert-items [prev-shapes parent index shapes]
-            (if-not (:masked-group? parent)
-              (insert-items prev-shapes index shapes)
-              ;; For masked groups, the first shape is the mask
-              ;; and it cannot be moved.
-              (let [mask-id         (first prev-shapes)
-                    other-ids       (rest prev-shapes)
-                    not-mask-shapes (without-obj shapes mask-id)
-                    new-index       (if (nil? index) nil (max (dec index) 0))
-                    new-shapes      (insert-items other-ids new-index not-mask-shapes)]
-                (into [mask-id] new-shapes))))
-
           (add-to-parent [parent index shapes]
             (let [parent (-> parent
-                             (update :shapes check-insert-items parent index shapes)
+                             (update :shapes insert-items index shapes)
                              ;; We need to ensure that no `nil` in the
                              ;; shapes list after adding all the
                              ;; incoming shapes to the parent.
@@ -211,8 +212,8 @@
                 (-> (update :touched cph/set-touched-group :shapes-group)
                     (dissoc :remote-synced?)))))
 
-          (remove-from-old-parent [cpindex objects shape-id]
-            (let [prev-parent-id (get cpindex shape-id)]
+          (remove-from-old-parent [old-objects objects shape-id]
+            (let [prev-parent-id (dm/get-in old-objects [shape-id :parent-id])]
               ;; Do nothing if the parent id of the shape is the same as
               ;; the new destination target parent id.
               (if (= prev-parent-id parent-id)
@@ -247,20 +248,13 @@
                 (not= :frame (:type obj))
                 (as-> $$ (reduce (partial assign-frame-id frame-id) $$ (:shapes obj))))))
 
+
+
           (move-objects [objects]
             (let [valid?   (every? (partial is-valid-move? objects) shapes)
-
-                  ;; Create a index of shape ids pointing to the
-                  ;; corresponding parents; used mainly for update old
-                  ;; parents after move operation.
-                  cpindex  (reduce (fn [index id]
-                                     (let [obj (get objects id)]
-                                       (assoc! index id (:parent-id obj))))
-                                   (transient {})
-                                   (keys objects))
-                  cpindex  (persistent! cpindex)
-
                   parent   (get objects parent-id)
+                  after-shape-index (d/index-of (:shapes parent) after-shape)
+                  index (if (nil? after-shape-index) index (inc after-shape-index))
                   frame-id (if (= :frame (:type parent))
                              (:id parent)
                              (:frame-id parent))]
@@ -276,12 +270,12 @@
                   ;; Analyze the old parents and clear the old links
                   ;; only if the new parent is different form old
                   ;; parent.
-                  (reduce (partial remove-from-old-parent cpindex) $ shapes)
+                  (reduce (partial remove-from-old-parent objects) $ shapes)
 
                   ;; Ensure that all shapes of the new parent has a
                   ;; correct link to the topside frame.
                   (reduce (partial assign-frame-id frame-id) $ shapes))
-              objects)))]
+                objects)))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] move-objects)
@@ -347,27 +341,12 @@
 ;; -- Components
 
 (defmethod process-change :add-component
-  [data {:keys [id name path main-instance-id main-instance-page shapes]}]
-  (ctkl/add-component data
-                      id
-                      name
-                      path
-                      main-instance-id
-                      main-instance-page
-                      shapes))
+  [data params]
+  (ctkl/add-component data params))
 
 (defmethod process-change :mod-component
-  [data {:keys [id name path objects]}]
-  (update-in data [:components id]
-             #(cond-> %
-                  (some? name)
-                  (assoc :name name)
-
-                  (some? path)
-                  (assoc :path path)
-
-                  (some? objects)
-                  (assoc :objects objects))))
+  [data params]
+  (ctkl/mod-component data params))
 
 (defmethod process-change :del-component
   [data {:keys [id skip-undelete?]}]
@@ -408,6 +387,10 @@
         is-geometry?    (and (or (= group :geometry-group)
                                  (and (= group :content-group) (= (:type shape) :path)))
                              (not (#{:width :height} attr))) ;; :content in paths are also considered geometric
+                        ;; TODO: the check of :width and :height probably may be removed
+                        ;;       after the check added in data/workspace/modifiers/check-delta
+                        ;;       function. Better check it and test toroughly when activating
+                        ;;       components-v2 mode.
         shape-ref       (:shape-ref shape)
         root-name?      (and (= group :name-group)
                              (:component-root? shape))
@@ -479,7 +462,7 @@
                                  (into [id] (cph/get-parent-ids (:objects page) id)))
           need-sync? (fn [operation]
                        ; We need to trigger a sync if the shape has changed any
-                       ; attribute that participates in components syncronization.
+                       ; attribute that participates in components synchronization.
                        (and (= (:type operation) :set)
                             (component-sync-attrs (:attr operation))))
           any-sync? (some need-sync? operations)]

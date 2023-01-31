@@ -24,7 +24,7 @@
 
 (defn create-manifest
   "Creates a manifest entry for the given files"
-  [team-id file-id export-type files]
+  [team-id file-id export-type files components-v2]
   (letfn [(format-page [manifest page]
             (-> manifest
                 (assoc (str (:id page))
@@ -37,10 +37,14 @@
                                  (mapv str))
                   index     (->> (get-in file [:data :pages-index])
                                  (vals)
-                                 (reduce format-page {}))]
+                                 (reduce format-page {}))
+                  features  (cond-> []
+                              components-v2
+                              (conj "components/v2"))]
               (-> manifest
                   (assoc (str (:id file))
                          {:name                 name
+                          :features             features
                           :shared               is-shared
                           :pages                pages
                           :pagesIndex           index
@@ -155,14 +159,15 @@
   (->> (r/render-components (:data file) :deleted-components)
        (rx/map #(vector (str (:id file) "/deleted-components.svg") %))))
 
-(defn fetch-file-with-libraries [file-id components-v2]
-  (->> (rx/zip (rp/query :file {:id file-id :components-v2 components-v2})
-               (rp/query :file-libraries {:file-id file-id}))
-       (rx/map
-        (fn [[file file-libraries]]
-          (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
-            (-> file
-                (assoc :libraries libraries-ids)))))))
+(defn fetch-file-with-libraries
+  [file-id components-v2]
+  (let [features (cond-> #{} components-v2 (conj "components/v2"))]
+    (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
+                 (rp/cmd! :get-file-libraries {:file-id file-id}))
+         (rx/map
+          (fn [[file file-libraries]]
+            (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
+              (assoc file :libraries libraries-ids)))))))
 
 (defn get-component-ref-file
   [objects shape]
@@ -394,7 +399,7 @@
 
         manifest-stream
         (->> files-stream
-             (rx/map #(create-manifest team-id file-id export-type %))
+             (rx/map #(create-manifest team-id file-id export-type % components-v2))
              (rx/map #(vector "manifest.json" %)))
 
         render-stream
