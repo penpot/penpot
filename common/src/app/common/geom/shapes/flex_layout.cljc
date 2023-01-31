@@ -13,6 +13,7 @@
    [app.common.geom.shapes.flex-layout.modifiers :as fmo]))
 
 (dm/export fbo/layout-content-bounds)
+(dm/export fbo/layout-content-points)
 (dm/export fbo/child-layout-bound-points)
 (dm/export fdr/get-drop-index)
 (dm/export fdr/get-drop-areas)

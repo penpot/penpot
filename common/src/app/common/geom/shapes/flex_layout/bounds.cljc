@@ -6,6 +6,7 @@
 
 (ns app.common.geom.shapes.flex-layout.bounds
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.points :as gpo]
    [app.common.types.shape.layout :as ctl]))
@@ -27,16 +28,19 @@
         h-center? (ctl/h-center? parent)
         h-end? (ctl/h-end? parent)
 
+        fill-w? (ctl/fill-width? child)
+        fill-h? (ctl/fill-height? child)
+
         base-p (gpo/origin child-bounds)
 
         width (gpo/width-points child-bounds)
         height (gpo/height-points child-bounds)
 
-        min-width (if (ctl/fill-width? child)
+        min-width (if fill-w?
                     (ctl/child-min-width child)
                     width)
 
-        min-height (if (ctl/fill-height? child)
+        min-height (if fill-h?
                      (ctl/child-min-height child)
                      height)
 
@@ -60,26 +64,49 @@
         min-width (max min-width 0.01)
         min-height (max min-height 0.01)]
 
-    (-> [base-p]
-        (conj (cond-> base-p
-                (or row? h-start?)
-                (gpt/add (hv min-width))
+    (cond-> [base-p]
+      (or col? h-start?)
+      (conj (gpt/add base-p (hv min-width)))
 
-                (and col? h-center?)
-                (gpt/add (hv (/ min-width 2)))
+      (and col? h-center?)
+      (conj (gpt/add base-p (hv (/ min-width 2))))
 
-                (and col? h-center?)
-                (gpt/subtract (hv min-width))))
+      (and col? h-center?)
+      (conj (gpt/subtract base-p (hv min-width)))
 
-        (conj (cond-> base-p
-                (or col? v-start?)
-                (gpt/add (vv min-height))
+      (or row? v-start?)
+      (conj (gpt/add base-p (vv min-height)))
 
-                (and row? v-center?)
-                (gpt/add (vv (/ min-height 2)))
+      (and row? v-center?)
+      (conj (gpt/add base-p (vv (/ min-height 2))))
 
-                (and row? v-end?)
-                (gpt/subtract (vv min-height)))))))
+      (and row? v-end?)
+      (conj (gpt/subtract base-p (vv min-height))))))
+
+(defn layout-content-points
+  [bounds parent children]
+
+  (let [parent-id (:id parent)
+        parent-bounds @(get bounds parent-id)
+        get-child-bounds
+        (fn [child]
+          (let [child-id (:id child)
+                child-bounds  @(get bounds child-id)
+                [margin-top margin-right margin-bottom margin-left] (ctl/child-margins child)
+
+                child-bounds
+                (if (or (ctl/fill-width? child) (ctl/fill-height? child))
+                  (child-layout-bound-points parent child parent-bounds child-bounds)
+                  child-bounds)
+
+                child-bounds
+                (when (d/not-empty? child-bounds)
+                  (-> (gpo/parent-coords-bounds child-bounds parent-bounds)
+                      (gpo/pad-points (- margin-top) (- margin-right) (- margin-bottom) (- margin-left))))]
+
+            child-bounds))]
+
+    (->> children (map get-child-bounds))))
 
 (defn layout-content-bounds
   [bounds {:keys [layout-padding] :as parent} children]
@@ -109,21 +136,12 @@
         pad-bottom (+ (or pad-bottom 0) row-pad)
         pad-left   (+ (or pad-left 0) col-pad)
 
-        child-bounds
-        (fn [child]
-          (let [child-id (:id child)
-                child-bounds  @(get bounds child-id)
-                child-bounds
-                (if (or (ctl/fill-height? child) (ctl/fill-height? child))
-                  (child-layout-bound-points parent child parent-bounds child-bounds)
-                  child-bounds)
+        layout-points
+        (layout-content-points bounds parent children)]
 
-                [margin-top margin-right margin-bottom margin-left] (ctl/child-margins child)]
-            (-> (gpo/parent-coords-bounds child-bounds parent-bounds)
-                (gpo/pad-points (- margin-top) (- margin-right) (- margin-bottom) (- margin-left)))))]
-
-    (as-> children $
-      (map child-bounds $)
-      (gpo/merge-parent-coords-bounds $ parent-bounds)
-      (gpo/pad-points $ (- pad-top) (- pad-right) (- pad-bottom) (- pad-left)))))
-
+    (if (d/not-empty? layout-points)
+      (-> layout-points
+          (gpo/merge-parent-coords-bounds parent-bounds)
+          (gpo/pad-points (- pad-top) (- pad-right) (- pad-bottom) (- pad-left)))
+      ;; Cannot create some bounds from the children so we return the parent's
+      parent-bounds)))
