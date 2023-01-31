@@ -375,7 +375,7 @@
         is-flex-container? (and is-frame? (= :flex (:layout (first shapes))))
         ids                (->> shapes (map :id))
         add-flex           #(st/emit! (if is-frame?
-                                        (dwsl/create-layout-from-id ids :flex)
+                                        (dwsl/create-layout-from-id ids :flex true)
                                         (dwsl/create-layout-from-selection :flex)))
         remove-flex        #(st/emit! (dwsl/remove-layout ids))]
 
