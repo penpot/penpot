@@ -25,6 +25,7 @@
   [props]
 
   (let [objects            (unchecked-get props "objects")
+        zoom               (unchecked-get props "zoom")
         selected-shapes    (unchecked-get props "selected-shapes")
         hover-top-frame-id (unchecked-get props "hover-top-frame-id")
 
@@ -37,10 +38,19 @@
     (when (and shape (:layout shape))
       (let [children (->> (cph/get-immediate-children objects (:id shape))
                           (remove :hidden))
-            layout-bounds (gsl/layout-content-bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points])) shape children)]
+            bounds (d/lazy-map (keys objects) #(dm/get-in objects [% :points]))
+            layout-bounds (gsl/layout-content-bounds bounds shape children)
+            layout-points (flatten (gsl/layout-content-points bounds shape children))]
         [:g.debug-layout {:pointer-events "none"}
          [:polygon {:points (->> layout-bounds (map #(dm/fmt "%, %" (:x %) (:y %))) (str/join " "))
-                    :style  {:stroke "red" :fill "none"}}]]))))
+                    :style  {:stroke "red" :fill "none"}}]
+
+         [:*
+          (for [p layout-points]
+            [:circle {:cx (:x p)
+                      :cy (:y p)
+                      :r (/ 4 zoom)
+                      :style {:fill "red"}}])]]))))
 
 (mf/defc debug-layout-lines
   "Debug component to show the auto-layout drop areas"

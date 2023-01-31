@@ -131,6 +131,7 @@
           i2 (gsi/line-line-intersect minv-start minv-end maxh-start maxh-end)
           i3 (gsi/line-line-intersect maxv-start maxv-end maxh-start maxh-end)
           i4 (gsi/line-line-intersect maxv-start maxv-end minh-start minh-end)]
+
       [i1 i2 i3 i4])))
 
 (defn merge-parent-coords-bounds
@@ -143,3 +144,8 @@
         height (height-points points)
         center (gco/center-points points)]
     (gre/center->selrect center width height)))
+
+(defn move
+  [bounds vector]
+  (->> bounds
+       (map #(gpt/add % vector))))
