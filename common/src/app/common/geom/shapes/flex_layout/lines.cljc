@@ -238,6 +238,30 @@
               (and col? (< total-min-width rest-layout-width total-max-width) (not (ctl/auto-width? parent)))
               (distribute-space :line-width :line-min-width :line-max-width total-min-width rest-layout-width))
 
+            ;; Add information to limit the growth of width: 100% shapes to the bounds of the layout
+            layout-lines
+            (cond
+              row?
+              (->> layout-lines
+                   (reduce
+                    (fn [[result rest-layout-height] {:keys [line-height] :as line}]
+                      [(conj result (assoc line :to-bound-height rest-layout-height))
+                       (- rest-layout-height line-height layout-gap-row)])
+                    [[] layout-height])
+                   (first))
+
+              col?
+              (->> layout-lines
+                   (reduce
+                    (fn [[result rest-layout-width] {:keys [line-width] :as line}]
+                      [(conj result (assoc line :to-bound-width rest-layout-width))
+                       (- rest-layout-width line-width layout-gap-col)])
+                    [[] layout-width])
+                   (first))
+
+              :else
+              layout-lines)
+
             [total-width total-height] (->> layout-lines (reduce add-lines [0 0]))
 
             base-p (flp/get-base-line parent layout-bounds total-width total-height num-lines)]

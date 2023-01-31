@@ -20,7 +20,7 @@
    transform-inverse
    child
    child-origin child-width
-   {:keys [children-data line-width] :as layout-data}]
+   {:keys [children-data line-width to-bound-width] :as layout-data}]
 
   (cond
     (ctl/row? parent)
@@ -30,7 +30,8 @@
        :modifiers (ctm/resize-modifiers (gpt/point fill-scale 1) child-origin transform transform-inverse)})
 
     (ctl/col? parent)
-    (let [target-width (max (- line-width (ctl/child-width-margin child)) 0.01)
+    (let [line-width (min line-width (or to-bound-width line-width))
+          target-width (max (- line-width (ctl/child-width-margin child)) 0.01)
           max-width (ctl/child-max-width child)
           target-width (min max-width target-width)
           fill-scale (/ target-width child-width)]
@@ -43,7 +44,7 @@
    transform transform-inverse
    child
    child-origin child-height
-   {:keys [children-data line-height] :as layout-data}]
+   {:keys [children-data line-height to-bound-height] :as layout-data}]
 
   (cond
     (ctl/col? parent)
@@ -53,7 +54,8 @@
        :modifiers (ctm/resize-modifiers (gpt/point 1 fill-scale) child-origin transform transform-inverse)})
 
     (ctl/row? parent)
-    (let [target-height (max (- line-height (ctl/child-height-margin child)) 0.01)
+    (let [line-height (min line-height (or to-bound-height line-height))
+          target-height (max (- line-height (ctl/child-height-margin child)) 0.01)
           max-height (ctl/child-max-height child)
           target-height (min max-height target-height)
           fill-scale (/ target-height child-height)]
@@ -71,8 +73,13 @@
         (when (or (ctl/fill-width? child) (ctl/fill-height? child))
           (gtr/calculate-geometry @parent-bounds))
 
-        fill-width   (when (ctl/fill-width? child)  (calc-fill-width-data parent transform transform-inverse child child-origin child-width layout-line))
-        fill-height  (when (ctl/fill-height? child) (calc-fill-height-data parent transform transform-inverse child child-origin child-height layout-line))
+        fill-width
+        (when (ctl/fill-width? child)
+          (calc-fill-width-data parent transform transform-inverse child child-origin child-width layout-line))
+
+        fill-height
+        (when (ctl/fill-height? child)
+          (calc-fill-height-data parent transform transform-inverse child child-origin child-height layout-line))
 
         child-width (or (:width fill-width) child-width)
         child-height (or (:height fill-height) child-height)
