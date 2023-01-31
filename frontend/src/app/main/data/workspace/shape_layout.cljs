@@ -56,14 +56,17 @@
   {:layout :grid})
 
 (defn get-layout-initializer
-  [type]
+  [type from-frame?]
   (let [initial-layout-data (if (= type :flex) initial-flex-layout initial-grid-layout)]
     (fn [shape]
       (-> shape
-          (merge shape initial-layout-data)))))
+          (merge initial-layout-data)
+          ;; If the original shape is not a frame we set clip content and show-viewer to false
+          (cond-> (not from-frame?)
+            (assoc :show-content true :hide-in-viewer true))))))
 
 (defn create-layout-from-id
-  [ids type]
+  [ids type from-frame?]
   (ptk/reify ::create-layout-from-id
     ptk/WatchEvent
     (watch [_ state _]
@@ -71,7 +74,7 @@
             children-ids (into [] (mapcat #(get-in objects [% :shapes])) ids)
             undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes ids (get-layout-initializer type))
+               (dwc/update-shapes ids (get-layout-initializer type from-frame?))
                (ptk/data-event :layout/update ids)
                (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v))
                (dwu/commit-undo-transaction undo-id))))))
@@ -173,7 +176,7 @@
              (dws/create-artboard-from-selection new-shape-id parent-id group-index)
              (cl/remove-all-fills [new-shape-id] {:color clr/black
                                                   :opacity 1})
-             (create-layout-from-id [new-shape-id] type)
+             (create-layout-from-id [new-shape-id] type false)
              (dwc/update-shapes
               [new-shape-id]
               (fn [shape]
@@ -193,7 +196,7 @@
              (dws/create-artboard-from-selection new-shape-id)
              (cl/remove-all-fills [new-shape-id] {:color clr/black
                                                   :opacity 1})
-             (create-layout-from-id [new-shape-id] type)
+             (create-layout-from-id [new-shape-id] type false)
              (dwc/update-shapes
               [new-shape-id]
               (fn [shape]
@@ -233,7 +236,7 @@
         (if (and single? is-frame?)
           (rx/of
            (dwu/start-undo-transaction undo-id)
-           (create-layout-from-id [(first selected)] :flex)
+           (create-layout-from-id [(first selected)] :flex true)
            (dwu/commit-undo-transaction undo-id))
           (rx/of
            (dwu/start-undo-transaction undo-id)

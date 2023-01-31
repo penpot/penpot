@@ -169,7 +169,7 @@
        [:div.template-card
         [:div.img-container
          [:a {:tab-index "0"
-              :href "https://penpot.app/libraries-templates.html" :target "_blank" :on-click handle-template-link}
+              :href "https://penpot.app/libraries-templates" :target "_blank" :on-click handle-template-link}
           [:div.template-link
            [:div.template-link-title (tr "dashboard.libraries-and-templates")]
            [:div.template-link-text (tr "dashboard.libraries-and-templates.explore")]]]]]]]

@@ -426,8 +426,8 @@
            (rx/ignore)))))
 
 (defn update-team-photo
-  [{:keys [file] :as params}]
-  (us/assert! ::di/file file)
+  [file]
+  (us/assert! ::di/blob file)
   (ptk/reify ::update-team-photo
     ptk/WatchEvent
     (watch [_ state _]

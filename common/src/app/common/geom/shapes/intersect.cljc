@@ -363,10 +363,10 @@
         c2 (+ (* a2 (:x c)) (* b2 (:y c)))
 
         ;; Cramer's rule
-        det (- (* a1 b2) (* a2 b1))]
+        det (- (* a1 b2) (* a2 b1))
+        det (if (mth/almost-zero? det) 0.001 det)
 
-    ;; If almost zero the lines are parallel
-    (when (not (mth/almost-zero? det))
-      (let [x (/ (- (* b2 c1) (* b1 c2)) det)
-            y (/ (- (* c2 a1) (* c1 a2)) det)]
-        (gpt/point x y)))))
+        x (/ (- (* b2 c1) (* b1 c2)) det)
+        y (/ (- (* c2 a1) (* c1 a2)) det)]
+
+    (gpt/point x y)))

@@ -252,9 +252,9 @@
          [:span
           (tr "auth.terms-privacy-agreement")
           [:div
-           [:a {:href "https://penpot.app/terms.html" :target "_blank"} (tr "auth.terms-of-service")]
+           [:a {:href "https://penpot.app/terms" :target "_blank"} (tr "auth.terms-of-service")]
            [:span ",\u00A0"]
-           [:a {:href "https://penpot.app/privacy.html" :target "_blank"} (tr "auth.privacy-policy")]]]]])
+           [:a {:href "https://penpot.app/privacy" :target "_blank"} (tr "auth.privacy-policy")]]]]])
 
      [:& fm/submit-button
       {:label (tr "auth.register-submit")

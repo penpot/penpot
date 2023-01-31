@@ -4,10 +4,13 @@ set -x
 DOCKER_CLI_EXPERIMENTAL=enabled
 ORG=${PENPOT_DOCKER_NAMESPACE:-penpotapp};
 PLATFORM=${PENPOT_BUILD_PLATFORM:-linux/amd64};
-IMAGE=${1:-backend};
+
+IMAGE=${PENPOT_BUILD_IMAGE:-backend}
+PLATFORM=${PENPOT_BUILD_PLATFORM:-linux/amd64};
+VERSION=${PENPOT_BUILD_VERSION:-latest}
 
 DOCKER_IMAGE="$ORG/$IMAGE";
-OPTIONS="-t $DOCKER_IMAGE:$PENPOT_BUILD_VERSION";
+OPTIONS="-t $DOCKER_IMAGE:$VERSION";
 
 IFS=", "
 read -a TAGS <<< $PENPOT_BUILD_TAGS;
@@ -15,10 +18,6 @@ read -a TAGS <<< $PENPOT_BUILD_TAGS;
 for element in "${TAGS[@]}"; do
     OPTIONS="$OPTIONS -t $DOCKER_IMAGE:$element";
 done
-
-if [ "$PENPOT_BUILD_PUSH" = "true" ]; then
-    OPTIONS="--push $OPTIONS"
-fi
 
 docker buildx inspect penpot > /dev/null 2>&1;
 docker run --privileged --rm tonistiigi/binfmt --install all
@@ -32,4 +31,5 @@ else
 fi
 
 unset IFS;
+
 docker buildx build --platform ${PLATFORM// /,} $OPTIONS -f Dockerfile.$IMAGE "$@" .;

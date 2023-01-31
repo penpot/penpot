@@ -888,7 +888,7 @@
 
         on-file-selected
         (fn [file]
-          (st/emit! (dd/update-team-photo {:file file})))]
+          (st/emit! (dd/update-team-photo file)))]
 
 
     (mf/use-effect

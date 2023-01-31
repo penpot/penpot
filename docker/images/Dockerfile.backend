@@ -1,15 +1,35 @@
-FROM ubuntu:22.04 as jre-build
+FROM ubuntu:22.04
 
-ENV DEBIAN_FRONTEND=noninteractive \
+LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+ENV LANG='en_US.UTF-8' \
+    LC_ALL='en_US.UTF-8' \
+    JAVA_HOME="/opt/jdk" \
+    PATH=/opt/jdk/bin:$PATH \
+    DEBIAN_FRONTEND=noninteractive \
     TZ=Etc/UTC
 
-RUN set -eux; \
+RUN set -ex; \
+    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     apt-get -qq update; \
+    apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install \
-      curl \
-      ca-certificates \
-      binutils \
+        curl \
+        tzdata \
+        locales \
+        ca-certificates \
+        imagemagick \
+        webp \
+        rlwrap \
+        fontconfig \
+        woff-tools \
+        woff2 \
+        python3 \
+        fontforge \
     ; \
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
+    locale-gen; \
+    mkdir -p /opt/penpot/assets; \
+    chown -R penpot:penpot /opt/penpot; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -eux; \
@@ -39,49 +59,6 @@ RUN set -eux; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
     rm -rf /tmp/openjdk.tar.gz;
 
-RUN /opt/jdk/bin/jlink \
-    --verbose \
-    --module-path /opt/jdk/jmods \
-    --strip-debug \
-    --no-man-pages \
-    --no-header-files \
-    --compress 0 \
-    --add-modules java.base,java.naming,java.xml,java.logging,java.net.http,java.sql,java.management,java.desktop,jdk.jfr,jdk.unsupported,jdk.management.jfr \
-    --output /opt/jre
-
-
-FROM ubuntu:22.04
-
-LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
-ENV LANG='en_US.UTF-8' \
-    LC_ALL='en_US.UTF-8' \
-    JAVA_HOME="/opt/jre" \
-    PATH=/opt/jre/bin:$PATH \
-    TZ=Etc/UTC
-
-COPY --from=jre-build /opt/jre /opt/jre
-
-RUN set -ex; \
-    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
-    apt-get -qq update; \
-    apt-get -qqy --no-install-recommends install \
-        curl \
-        tzdata \
-        locales \
-        ca-certificates \
-        imagemagick \
-        webp \
-        fontconfig \
-        woff-tools \
-        woff2 \
-        python3 \
-        fontforge \
-    ; \
-    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
-    locale-gen; \
-    mkdir -p /opt/penpot/assets; \
-    chown -R penpot:penpot /opt/penpot; \
-    rm -rf /var/lib/apt/lists/*;
 
 COPY --chown=penpot:penpot ./bundle-backend/ /opt/penpot/backend/
 
