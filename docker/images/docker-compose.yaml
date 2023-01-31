@@ -260,40 +260,6 @@ services:
     ports:
       - "1080:1080"
 
-  ## An optional admin application for pentpot. It allows manage users, teams and inspect
-  ## some parts of the database. You can read more about it on:
-  ## https://github.com/penpot/penpot-admin
-  ##
-  ## If you are going to use admin, ensure to have `enable-prepl-server` in backend flags
-  ## and uncomment the `PENPOT_PREPL_HOST` environment variable.
-  ##
-  ## Status: EXPERIMENTAL
-
-  # penpot-admin:
-  #   image: "penpotapp/admin:latest"
-  #   networks:
-  #     - penpot
-  #
-  #   depends_on:
-  #     - penpot-postgres
-  #     - penpot-backend
-  #
-  #   environment:
-  #     ## Adjust to the same value as on backend
-  #     - PENPOT_PUBLIC_URI=http://localhost:9001
-  #
-  #     ## Do not touch it, this is an internal routes
-  #     - PENPOT_API_URI=http://penpot-frontend/
-  #     - PENPOT_PREPL_URI=tcp://penpot-backend:6063/
-  #     - PENPOT_DEBUG="false"
-  #
-  #     ## Adjust to the same values as on backend
-  #     - PENPOT_DATABASE_HOST=penpot-postgres
-  #     - PENPOT_DATABASE_NAME=penpot
-  #     - PENPOT_DATABASE_USERNAME=penpot
-  #     - PENPOT_DATABASE_PASSWORD=penpot
-  #     - PENPOT_REDIS_URI=redis://penpot-redis/0
-
   ## Example configuration of MiniIO (S3 compatible object storage service); If you don't
   ## have preference, then just use filesystem, this is here just for the completeness.
 
