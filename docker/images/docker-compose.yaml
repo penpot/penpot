@@ -134,7 +134,7 @@ services:
       ## environment variables for the backend here:
       ## https://help.penpot.app/technical-guide/configuration/#advanced-configuration
 
-      - PENPOT_FLAGS=enable-registration enable-login disable-email-verification enable-smtp enable-prepl-server
+      - PENPOT_FLAGS=enable-registration enable-login-with-password disable-email-verification enable-smtp enable-prepl-server
 
       ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
       ## (eg http sessions) are derived.
