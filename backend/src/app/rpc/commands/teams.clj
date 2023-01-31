@@ -786,7 +786,8 @@
   {::doc/added "1.17"}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id emails role] :as params}]
   (db/with-atomic [conn pool]
-    (let [team     (create-team conn params)
+    (let [params   (assoc params :profile-id profile-id)
+          team     (create-team conn params)
           profile  (db/get-by-id conn :profile profile-id)
           cfg      (assoc cfg ::conn conn)]
 
