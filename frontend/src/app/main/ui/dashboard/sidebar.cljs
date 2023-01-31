@@ -746,10 +746,10 @@
        [:li.separator {:tab-index (if show
                                     "0"
                                     "-1")
-                       :on-click #(dom/open-new-window "https://penpot.app/libraries-templates.html")
+                       :on-click #(dom/open-new-window "https://penpot.app/libraries-templates")
                        :on-key-down (fn [event]
                                       (when (kbd/enter? event)
-                                        (dom/open-new-window "https://penpot.app/libraries-templates.html")))
+                                        (dom/open-new-window "https://penpot.app/libraries-templates")))
                        :data-test "libraries-templates-profile-opt"}
         [:span.text (tr "labels.libraries-and-templates")]]
        [:li {:tab-index (if show
@@ -763,10 +763,10 @@
        [:li  {:tab-index (if show
                            "0"
                            "-1")
-              :on-click #(dom/open-new-window "https://penpot.app/terms.html")
+              :on-click #(dom/open-new-window "https://penpot.app/terms")
               :on-key-down (fn [event]
                              (when (kbd/enter? event)
-                               (dom/open-new-window "https://penpot.app/terms.html")))}
+                               (dom/open-new-window "https://penpot.app/terms")))}
         [:span (tr "auth.terms-of-service")]]
 
        (when (contains? @cf/flags :user-feedback)

@@ -416,11 +416,11 @@
         [:span (tr "labels.tutorials")]]
        [:li {:on-click show-release-notes}
         [:span (tr "labels.release-notes")]]
-       [:li.separator {:on-click #(dom/open-new-window "https://penpot.app/libraries-templates.html")}
+       [:li.separator {:on-click #(dom/open-new-window "https://penpot.app/libraries-templates")}
         [:span (tr "labels.libraries-and-templates")]]
        [:li {:on-click #(dom/open-new-window "https://github.com/penpot/penpot")}
         [:span (tr "labels.github-repo")]]
-       [:li  {:on-click #(dom/open-new-window "https://penpot.app/terms.html")}
+       [:li  {:on-click #(dom/open-new-window "https://penpot.app/terms")}
         [:span (tr "auth.terms-of-service")]]
        [:li.separator {:on-click #(st/emit! (when (contains? layout :collapse-left-sidebar) (dw/toggle-layout-flag :collapse-left-sidebar))
                                             (-> (dw/toggle-layout-flag :shortcuts)
