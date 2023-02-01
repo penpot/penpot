@@ -446,10 +446,7 @@
                         :editing renaming?)
           :value (cph/merge-path-item (:path component) (:name component))
           :tooltip (cph/merge-path-item (:path component) (:name component))
-          :display-value (if listing-thumbs?
-                           (:name component)
-                           (cph/compact-name (:path component)
-                                             (:name component)))
+          :display-value (:name component)
           :editing? renaming?
           :disable-dbl-click? true
           :on-change do-rename
@@ -831,10 +828,7 @@
                           :editing renaming?)
              :value (cph/merge-path-item (:path object) (:name object))
              :tooltip (cph/merge-path-item (:path object) (:name object))
-             :display-value (if listing-thumbs?
-                              (:name object)
-                              (cph/compact-name (:path object)
-                                                (:name object)))
+             :display-value (:name object)
              :editing? renaming?
              :disable-dbl-click? true
              :on-change do-rename
