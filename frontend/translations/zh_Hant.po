@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-01 16:38+0000\n"
+"PO-Revision-Date: 2023-02-04 11:38+0000\n"
 "Last-Translator: im424 <424@live.hk>\n"
 "Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hant/>\n"
@@ -2165,3 +2165,174 @@ msgstr "儀表板"
 
 msgid "shortcut-section.viewer"
 msgstr "檢視者"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "無效的閘道"
+
+msgid "workspace.viewport.click-to-close-path"
+msgstr "點擊以關閉路徑"
+
+msgid "labels.search-font"
+msgstr "搜尋字體"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.lowercase"
+msgstr "小寫"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.width"
+msgstr "寬度"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.position"
+msgstr "位置"
+
+msgid "workspace.undo.entry.single.curve"
+msgstr "曲線"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "毫秒"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr "我們有許多協助你開始使用Penpot的資源，例如使用者指南及我們的 Youtube 頻道。"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.unknown"
+msgstr "操作覆蓋%s"
+
+msgid "workspace.undo.entry.single.frame"
+msgstr "畫板"
+
+msgid "shortcuts.draw-path"
+msgstr "路徑"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "切換調色板"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "切換專注模式"
+
+msgid "shortcuts.toggle-rules"
+msgstr "顯示/隱藏尺規"
+
+msgid "shortcuts.group"
+msgstr "群組"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.underline"
+msgstr "底線"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.message"
+msgstr "您是此團隊的當前擁有者。您是否確實要使 %s 成為團隊的新擁有者？"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr "這是與整個社群和 Penpot 核心團隊一起學習、分享和討論 "
+"Penpot、它的現在和未來的公共空間。"
+
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "物件"
+
+msgid "workspace.undo.entry.multiple.page"
+msgstr "頁"
+
+msgid "workspace.undo.entry.multiple.path"
+msgstr "路徑"
+
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "圖形"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr "你正開啟的檔案包含Penpot尚未支援或停用'%s' 功能。"
+
+msgid "inspect.tabs.code.selected.circle"
+msgstr "圖形"
+
+msgid "inspect.tabs.code.selected.curve"
+msgstr "曲線"
+
+msgid "inspect.tabs.code.selected.frame"
+msgstr "畫板"
+
+msgid "inspect.tabs.code.selected.group"
+msgstr "群組"
+
+msgid "inspect.empty.help"
+msgstr "如果您想瞭解更多關於設計檢查的資訊，請訪問Penpot的幫助中心"
+
+msgid "inspect.tabs.code.selected.rect"
+msgstr "矩形"
+
+msgid "inspect.empty.more-info"
+msgstr "有關檢查的詳細資訊"
+
+msgid "inspect.tabs.code.selected.path"
+msgstr "路徑"
+
+msgid "modals.leave-and-reassign.forbidden"
+msgstr "如果沒有其他成員晉升為團隊的擁有者，您則不能離開團隊。或者您可以選擇刪除該團"
+"隊。"
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr "我們只會向您發送相關電子郵件。您可以隨時在我們的通訊中通過取消訂閱連結來取消"
+"訂閱。"
+
+msgid "shortcuts.draw-curve"
+msgstr "曲線"
+
+msgid "shortcuts.draw-frame"
+msgstr "畫板"
+
+msgid "shortcuts.go-to-search"
+msgstr "搜尋"
+
+msgid "shortcuts.or"
+msgstr " 或 "
+
+msgid "shortcuts.toggle-alignment"
+msgstr "切換動態對齊"
+
+msgid "shortcuts.toggle-history"
+msgstr "切換歷史記錄"
+
+msgid "shortcuts.toggle-lock"
+msgstr "鎖定選擇"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "鎖定比例"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-delay"
+msgstr "延遲"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.prototype"
+msgstr "原型"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.uppercase"
+msgstr "大寫"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.edit"
+msgstr "編輯"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.group"
+msgstr "群組"
+
+msgid "workspace.shape.menu.path"
+msgstr "路徑"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "workspace.sidebar.sitemap"
+msgstr "頁"
+
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "曲線"
+
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "畫板"
