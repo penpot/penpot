@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http.client :as http]
@@ -22,10 +23,15 @@
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
+(defn decode-row
+  [{:keys [uri] :as row}]
+  (cond-> row
+    (string? uri) (assoc :uri (u/uri uri))))
+
 ;; --- Mutation: Create Webhook
 
 (s/def ::team-id ::us/uuid)
-(s/def ::uri ::us/not-empty-string)
+(s/def ::uri ::us/uri)
 (s/def ::is-active ::us/boolean)
 (s/def ::mtype
   #{"application/json"
@@ -59,7 +65,7 @@
 
     (if (not= (:uri whook) (:uri params))
       (->> (http/req! cfg {:method :head
-                           :uri (:uri params)
+                           :uri (str (:uri params))
                            :timeout (dt/duration "3s")})
            (p/hmap (fn [response exception]
                      (if exception
@@ -79,22 +85,24 @@
 
 (defn- insert-webhook!
   [{:keys [::db/pool]} {:keys [team-id uri mtype is-active] :as params}]
-  (db/insert! pool :webhook
-              {:id (uuid/next)
-               :team-id team-id
-               :uri uri
-               :is-active is-active
-               :mtype mtype}))
+  (-> (db/insert! pool :webhook
+                  {:id (uuid/next)
+                   :team-id team-id
+                   :uri (str uri)
+                   :is-active is-active
+                   :mtype mtype})
+      (decode-row)))
 
 (defn- update-webhook!
   [{:keys [::db/pool] :as cfg} {:keys [id] :as wook} {:keys [uri mtype is-active] :as params}]
-  (db/update! pool :webhook
-              {:uri uri
-               :is-active is-active
-               :mtype mtype
-               :error-code nil
-               :error-count 0}
-              {:id id}))
+  (-> (db/update! pool :webhook
+                  {:uri (str uri)
+                   :is-active is-active
+                   :mtype mtype
+                   :error-code nil
+                   :error-count 0}
+                  {:id id})
+      (decode-row)))
 
 (sv/defmethod ::create-webhook
   {::doc/added "1.17"}
@@ -110,7 +118,7 @@
 (sv/defmethod ::update-webhook
   {::doc/added "1.17"}
   [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [::rpc/profile-id id] :as params}]
-  (let [whook (db/get pool :webhook {:id id})]
+  (let [whook (-> (db/get pool :webhook {:id id}) (decode-row))]
     (check-edition-permissions! pool profile-id (:team-id whook))
     (->> (validate-webhook! cfg whook params)
          (p/fmap executor (fn [_] (update-webhook! cfg whook params))))))
@@ -123,7 +131,7 @@
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
   (db/with-atomic [conn pool]
-    (let [whook (db/get conn :webhook {:id id})]
+    (let [whook (-> (db/get conn :webhook {:id id}) decode-row)]
       (check-edition-permissions! conn profile-id (:team-id whook))
       (db/delete! conn :webhook {:id id})
       nil)))
@@ -143,4 +151,5 @@
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
   (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
-    (db/exec! conn [sql:get-webhooks team-id])))
+    (->> (db/exec! conn [sql:get-webhooks team-id])
+         (mapv decode-row))))
