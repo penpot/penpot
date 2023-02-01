@@ -109,7 +109,8 @@
 
 (defn setup-keyboard [alt? mod? space? z?]
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
-  (hooks/use-stream ms/keyboard-mod #(reset! mod? %))
+  (hooks/use-stream ms/keyboard-mod #((reset! mod? %)
+                                      (when-not % (reset! z? false)))) ;; In mac after command+z there is no event for the release of the z key
   (hooks/use-stream ms/keyboard-space #(reset! space? %))
   (hooks/use-stream ms/keyboard-z #(reset! z? %)))
 
