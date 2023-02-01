@@ -73,7 +73,7 @@
                               (pcb/with-objects objects))]
           (let [group-name (if (= 1 (count shapes))
                              (:name (first shapes))
-                             "Component-1")]
+                             "Component 1")]
             (dwg/prepare-create-group it
                                       objects
                                       page-id
