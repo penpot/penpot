@@ -12,6 +12,10 @@
 
 ### :heart: Community contributions by (Thank you!)
 
+## 1.17.1
+
+### :bug: Bugs fixed
+- Fix components groups items show the component name in list mode [Taiga #4770](https://tree.taiga.io/project/penpot/issue/4770)
 
 ## 1.17.0
 

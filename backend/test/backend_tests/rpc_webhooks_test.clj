@@ -6,11 +6,12 @@
 
 (ns backend-tests.rpc-webhooks-test
   (:require
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
-   [app.storage :as sto]
    [app.rpc :as-alias rpc]
+   [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))
@@ -31,7 +32,7 @@
         (let [params {::th/type :create-webhook
                       ::rpc/profile-id (:id prof)
                       :team-id team-id
-                      :uri "http://example.com"
+                      :uri (u/uri "http://example.com")
                       :mtype "application/json"}
               out    (th/command! params)]
 
