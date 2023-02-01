@@ -996,7 +996,8 @@
           :opt-un [::data]))
 
 (sv/defmethod ::upsert-file-object-thumbnail
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::audit/skip true}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
@@ -1026,7 +1027,8 @@
 (sv/defmethod ::upsert-file-thumbnail
   "Creates or updates the file thumbnail. Mainly used for paint the
   grid thumbnails."
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::audit/skip true}
   [{:keys [pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)

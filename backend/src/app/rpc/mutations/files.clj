@@ -10,7 +10,7 @@
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.loggers.audit :as audit]
+   [app.loggers.audit :as-alias audit]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as cmd.files]
    [app.rpc.commands.files.create :as cmd.files.create]
@@ -176,7 +176,8 @@
 
 (sv/defmethod ::upsert-file-object-thumbnail
   {::doc/added "1.13"
-   ::doc/deprecated "1.17"}
+   ::doc/deprecated "1.17"
+   ::audit/skip true}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (cmd.files/check-edition-permissions! conn profile-id file-id)
@@ -192,7 +193,8 @@
   "Creates or updates the file thumbnail. Mainly used for paint the
   grid thumbnails."
   {::doc/added "1.13"
-   ::doc/deprecated "1.17"}
+   ::doc/deprecated "1.17"
+   ::audit/skip true}
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (cmd.files/check-edition-permissions! conn profile-id file-id)
