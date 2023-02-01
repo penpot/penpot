@@ -32,7 +32,7 @@
     (ctl/col? parent)
     (let [line-width (min line-width (or to-bound-width line-width))
           target-width (max (- line-width (ctl/child-width-margin child)) 0.01)
-          max-width (ctl/child-max-width child)
+          max-width (max (ctl/child-max-width child) 0.01)
           target-width (min max-width target-width)
           fill-scale (/ target-width child-width)]
       {:width target-width
@@ -56,7 +56,7 @@
     (ctl/row? parent)
     (let [line-height (min line-height (or to-bound-height line-height))
           target-height (max (- line-height (ctl/child-height-margin child)) 0.01)
-          max-height (ctl/child-max-height child)
+          max-height (max (ctl/child-max-height child) 0.01)
           target-height (min max-height target-height)
           fill-scale (/ target-height child-height)]
       {:height target-height
