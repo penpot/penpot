@@ -50,7 +50,7 @@ Being web based, Penpot is not dependent on operating systems or local installat
 Using SVG as no other design and prototyping tool does, Penpot files sport compatibility with most of the vectorial tools, are tech friendly and extremely easy to use on the web. We make sure you will always own your work.
 
 <p align="center">
-  <img src="https://penpot.app/images/open-source.png" alt="Open Source">
+  <img src="https://penpot.app/images/readme/open-source.png" alt="Open Source">
 </p>
 
 
@@ -93,7 +93,7 @@ You will find the following categories:
 - [Penpot in your language](https://community.penpot.app/c/penpot-in-your-language/12)
 
 <p align="center">
-  <img src="https://penpot.app/images/cross-teams.webp" alt="Community">
+  <img src="https://penpot.app/images/readme/cross-teams.webp" alt="Community">
 </p>
 
 ## Contributing ##
