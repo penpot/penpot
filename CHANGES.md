@@ -5,6 +5,8 @@
 ### :bug: Bugs fixed
 - Fix components groups items show the component name in list mode [Taiga #4770](https://tree.taiga.io/project/penpot/issue/4770)
 - Fix typing CMD+Z on MacOS turns the cursor into a Zoom cursor [Taiga #4778](https://tree.taiga.io/project/penpot/issue/4778)
+- Fix white space on small screens [Taiga #4774](https://tree.taiga.io/project/penpot/issue/4774)
+- Fix button spacing on delete acount modal [Taiga #4762](https://tree.taiga.io/project/penpot/issue/4762)
 
 
 ## 1.17.0
