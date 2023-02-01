@@ -34,7 +34,7 @@
 (defn abs
   [v]
   #?(:cljs (js/Math.abs v)
-     :clj (Math/abs v)))
+     :clj (Math/abs (double v))))
 
 (defn sin
   "Returns the sine of a number"

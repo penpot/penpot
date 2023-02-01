@@ -210,7 +210,7 @@
         ;; after-vec will contain the side length of the grown side
         ;; we scale the shape by the diference and translate it by the start
         ;; displacement (so its left+top position is constant)
-        scale        (/ (gpt/length after-vec) (gpt/length before-vec))
+        scale        (/ (gpt/length after-vec) (max 0.01 (gpt/length before-vec)))
 
         resize-origin (gpo/origin child-points-after)
 
@@ -268,11 +268,11 @@
 
         scale-x (if (= :scale constraints-h)
                   1
-                  (/ (gpo/width-points child-bb-before) (gpo/width-points child-bb-after)))
+                  (/ (gpo/width-points child-bb-before) (max 0.01 (gpo/width-points child-bb-after))))
 
         scale-y (if (= :scale constraints-v)
                   1
-                  (/ (gpo/height-points child-bb-before) (gpo/height-points child-bb-after)))
+                  (/ (gpo/height-points child-bb-before) (max 0.01 (gpo/height-points child-bb-after))))
 
         resize-vector (gpt/point scale-x scale-y)
         resize-origin (gpo/origin transformed-child-bounds)
