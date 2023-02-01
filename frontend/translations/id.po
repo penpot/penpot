@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-26 16:52+0000\n"
+"PO-Revision-Date: 2023-02-01 16:38+0000\n"
 "Last-Translator: Linerly <linerly@protonmail.com>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
@@ -854,58 +854,30 @@ msgstr "Akun dukungan Twitter"
 msgid "generic.error"
 msgstr "Sebuah kesalahan telah terjadi"
 
-#: src/app/main/ui/handoff/attributes/common.cljs
-msgid "handoff.attributes.color.hsla"
-msgstr "HSLA"
-
 #: src/app/main/ui/handoff/attributes/image.cljs
 msgid "handoff.attributes.image.height"
 msgstr "Tinggi"
 
 #: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.left"
-msgstr "Kiri"
-
-#: src/app/main/ui/handoff/attributes/layout.cljs
 msgid "handoff.attributes.layout.width"
 msgstr "Lebar"
-
-#: src/app/main/ui/handoff/attributes/shadow.cljs
-msgid "handoff.attributes.shadow.shorthand.offset-y"
-msgstr "Y"
 
 #, permanent
 msgid "handoff.attributes.stroke.alignment.inner"
 msgstr "Dalam"
 
-msgid "handoff.attributes.stroke.style.none"
-msgstr "Tidak Ada"
-
 #: src/app/main/ui/handoff/attributes/text.cljs
 msgid "handoff.attributes.typography.font-family"
 msgstr "Keluarga Fon"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.line-height"
-msgstr "Ketinggian Garis"
-
 msgid "handoff.attributes.typography.text-decoration.underline"
 msgstr "Garis Bawah"
-
-msgid "handoff.attributes.typography.text-transform.titlecase"
-msgstr "Huruf Judul"
 
 msgid "handoff.tabs.code.selected.component"
 msgstr "Komponen"
 
-msgid "handoff.tabs.code.selected.image"
-msgstr "Gambar"
-
 msgid "handoff.tabs.code.selected.rect"
 msgstr "Persegi Panjang"
-
-msgid "history.alert-message"
-msgstr "Anda melihat versi %s"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -1684,9 +1656,9 @@ msgstr "Kami peduli tentang privasi, di sini Anda dapat membaca "
 
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
-"Kami hanya akan mengirim surel yang relevan kepada Anda. Anda dapat "
-"berhenti berlangganan kapan pun melalui tautan berhenti langganan di "
-"buletin apa pun dari kami."
+"Kami hanya akan mengirim surel yang relevan. Anda dapat berhenti "
+"berlangganan kapan pun melalui tautan berhenti langganan di buletin apa pun "
+"dari kami."
 
 msgid "onboarding-v2.newsletter.updates"
 msgstr "Kirimkan saya pembaruan produk (fitur baru, rilis, perbaikan...)."
@@ -1747,9 +1719,6 @@ msgstr "Buat tim dang kirim undangan"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Undang dengan peran:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Anda dapat mengakses"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Ya, berlangganan"
 
@@ -1764,14 +1733,8 @@ msgstr "Kebijakan Privasi kami."
 msgid "onboarding.newsletter.title"
 msgstr "Ingin menerima berita Penpot?"
 
-msgid "onboarding.slide.0.title"
-msgstr "Pustaka, gaya, dan komponen desain"
-
 msgid "onboarding.slide.1.title"
 msgstr "Buat desain Anda nyata dengan interaksi"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Pelepasan dan kode rendah"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Buat sebuah tim"
@@ -2330,10 +2293,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Salin tautan"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Siapa pun dengan tautan akan mendapatkan akses"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Tampilkan interaksi"
 
@@ -2764,9 +2723,6 @@ msgstr "Perbarui"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "PEMBARUAN"
-
-msgid "workspace.library.store"
-msgstr "Penyimpanan pustaka"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
@@ -3275,20 +3231,12 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Opsi tingkat lanjut"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-min-w"
-msgstr "Lebar Min"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 msgid "workspace.options.layout-item.title.layout-min-h"
 msgstr "Tinggi minimum"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Bawah"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Kolom terbalik"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3341,10 +3289,6 @@ msgstr "ruang di antara"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.top"
 msgstr "Atas"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.wrap"
-msgstr "bungkusan"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.more-colors"
@@ -3540,7 +3484,7 @@ msgstr "Paskan ke tengah"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Justify"
+msgstr "Rata Kiri Kanan"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
