@@ -16,11 +16,6 @@
    {:src-dirs ["src" "resources"]
     :target-dir class-dir})
 
-  (b/compile-clj
-   {:basis basis
-    :src-dirs ["src"]
-    :class-dir class-dir})
-
   (b/uber
    {:class-dir class-dir
     :uber-file jar-file
