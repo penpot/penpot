@@ -484,6 +484,15 @@
           (some (partial ctl/layout-immediate-child? objects))))
    workspace-page-objects))
 
+(defn all-layout-child?
+  [ids]
+  (l/derived
+   (fn [objects]
+     (->> ids
+          (map (d/getf objects))
+          (every? (partial ctl/layout-immediate-child? objects))))
+   workspace-page-objects))
+
 (defn get-flex-child-viewer
   [ids page-id]
   (l/derived
