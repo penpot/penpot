@@ -205,45 +205,47 @@
 
 (defn error-handler
   [{:keys [::db/pool]} request]
-  (letfn [(parse-id [request]
-            (let [id (get-in request [:path-params :id])
-                  id (parse-uuid id)]
-              (when (uuid? id)
-                id)))
-
-          (retrieve-report [id]
+  (letfn [(get-report [{:keys [path-params]}]
             (ex/ignoring
-             (some-> (db/get-by-id pool :server-error-report id) :content db/decode-transit-pgobject)))
+             (let [report-id (some-> path-params :id parse-uuid)]
+               (some-> (db/get-by-id pool :server-error-report report-id)
+                       (update :content db/decode-transit-pgobject)))))
 
-          (render-template [report]
-            (let [context (dissoc report
+          (render-template-v1 [{:keys [content]}]
+            (let [context (dissoc content
                                   :trace :cause :params :data :spec-problems :message
                                   :spec-explain :spec-value :error :explain :hint)
                   params  {:context       (pp/pprint-str context :width 200)
-                           :hint          (:hint report)
-                           :spec-explain  (:spec-explain report)
-                           :spec-problems (:spec-problems report)
-                           :spec-value    (:spec-value report)
-                           :data          (:data report)
-                           :trace         (or (:trace report)
-                                              (some-> report :error :trace))
-                           :params        (:params report)}]
+                           :hint          (:hint content)
+                           :spec-explain  (:spec-explain content)
+                           :spec-problems (:spec-problems content)
+                           :spec-value    (:spec-value content)
+                           :data          (:data content)
+                           :trace         (or (:trace content)
+                                              (some-> content :error :trace))
+                           :params        (:params content)}]
               (-> (io/resource "app/templates/error-report.tmpl")
-                  (tmpl/render params))))]
+                  (tmpl/render params))))
+
+          (render-template-v2 [{report :content}]
+            (-> (io/resource "app/templates/error-report.v2.tmpl")
+                (tmpl/render report)))
+
+          ]
 
     (when-not (authorized? pool request)
       (ex/raise :type :authentication
                 :code :only-admins-allowed))
 
-    (let [result (some-> (parse-id request)
-                         (retrieve-report)
-                         (render-template))]
-      (if result
+    (if-let [report (get-report request)]
+      (let [result (if (= 1 (:version report))
+                     (render-template-v1 report)
+                     (render-template-v2 report))]
         (yrs/response :status 200
                       :body result
                       :headers {"content-type" "text/html; charset=utf-8"
-                                "x-robots-tag" "noindex"})
-        (yrs/response 404 "not found")))))
+                                "x-robots-tag" "noindex"}))
+      (yrs/response 404 "not found"))))
 
 (def sql:error-reports
   "SELECT id, created_at,

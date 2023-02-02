@@ -7,24 +7,35 @@
 (ns app.loggers.mattermost
   "A mattermost integration for error reporting."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.spec :as us]
    [app.config :as cf]
    [app.http.client :as http]
    [app.loggers.database :as ldb]
-   [app.loggers.zmq :as lzmq]
    [app.util.json :as json]
-   [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [promesa.exec.csp :as sp]))
 
-(defonce enabled (atom true))
+(defonce enabled (atom false))
 
 (defn- send-mattermost-notification!
-  [cfg {:keys [host id public-uri] :as event}]
-  (let [text (str "Exception on (host: " host ", url: " public-uri "/dbg/error/" id ")\n"
-             (when-let [pid (:profile-id event)]
-               (str "- profile-id: #uuid-" pid "\n")))
+  [cfg {:keys [id public-uri] :as report}]
+  (let [text (str "Exception: " public-uri "/dbg/error/" id " "
+                  (when-let [pid (:profile-id report)]
+                    (str "(pid: #uuid-" pid ")"))
+                  "\n"
+                  "```\n"
+                  "- host: `" (:host report) "`\n"
+                  "- tenant: `" (:tenant report) "`\n"
+                  "- version: `" (:version report) "`\n"
+                  "\n"
+                  "Trace:\n"
+                  (:trace report)
+                  "```")
+
         resp (http/req! cfg
                         {:uri (cf/get :error-report-webhook)
                          :method :post
@@ -36,32 +47,41 @@
       (l/warn :hint "error on sending data"
               :response (pr-str resp)))))
 
+(defn record->report
+  [{:keys [::l/context ::l/id ::l/cause] :as record}]
+  (us/assert! ::l/record record)
+  {:id         id
+   :tenant     (cf/get :tenant)
+   :host       (cf/get :host)
+   :public-uri (cf/get :public-uri)
+   :version    (:full cf/version)
+   :profile-id (:profile-id context)
+   :trace      (ex/format-throwable cause :detail? false :header? false)})
+
 (defn handle-event
-  [cfg event]
+  [cfg record]
   (when @enabled
     (try
-      (let [event (ldb/parse-event event)]
-        (send-mattermost-notification! cfg event))
+      (let [report (record->report record)]
+        (send-mattermost-notification! cfg report))
       (catch Throwable cause
-        (l/warn :hint "unhandled error"
-                :cause cause)))))
+        (l/warn :hint "unhandled error" :cause cause)))))
 
 (defmethod ig/pre-init-spec ::reporter [_]
-  (s/keys :req [::http/client
-                ::lzmq/receiver]))
+  (s/keys :req [::http/client]))
 
 (defmethod ig/init-key ::reporter
   [_ cfg]
   (when-let [uri (cf/get :error-report-webhook)]
     (px/thread
-      {:name "penpot/mattermost-reporter"}
-      (l/info :msg "initializing error reporter" :uri uri)
-      (let [input (a/chan (a/sliding-buffer 128)
-                          (filter #(= (:logger/level %) "error")))]
+      {:name "penpot/mattermost-reporter"
+       :virtual true}
+      (l/info :hint "initializing error reporter" :uri uri)
+      (let [input (sp/chan (sp/sliding-buffer 128) (filter ldb/error-record?))]
+        (add-watch l/log-record ::reporter #(sp/put! input %4))
         (try
-          (lzmq/sub! (::lzmq/receiver cfg) input)
           (loop []
-            (when-let [msg (a/<!! input)]
+            (when-let [msg (sp/take! input)]
               (handle-event cfg msg)
               (recur)))
           (catch InterruptedException _
@@ -69,7 +89,8 @@
           (catch Throwable cause
             (l/error :hint "unexpected error" :cause cause))
           (finally
-            (a/close! input)
+            (sp/close! input)
+            (remove-watch l/log-record ::reporter)
             (l/info :hint "reporter terminated")))))))
 
 (defmethod ig/halt-key! ::reporter

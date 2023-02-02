@@ -308,6 +308,9 @@
    {:name "0100-mod-profile-indexes"
     :fn (mg/resource "app/migrations/sql/0100-mod-profile-indexes.sql")}
 
+   {:name "0101-mod-server-error-report-table"
+    :fn (mg/resource "app/migrations/sql/0101-mod-server-error-report-table.sql")}
+
   ])
 
 

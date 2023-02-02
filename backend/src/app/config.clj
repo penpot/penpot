@@ -51,7 +51,6 @@
    :database-password "penpot"
 
    :default-blob-version 5
-   :loggers-zmq-uri "tcp://localhost:45556"
 
    :rpc-rlimit-config (fs/path "resources/rlimit.edn")
    :rpc-climit-config (fs/path "resources/climit.edn")
@@ -175,8 +174,6 @@
 (s/def ::ldap-ssl ::us/boolean)
 (s/def ::ldap-starttls ::us/boolean)
 (s/def ::ldap-user-query ::us/string)
-(s/def ::loggers-loki-uri ::us/string)
-(s/def ::loggers-zmq-uri ::us/string)
 (s/def ::media-directory ::us/string)
 (s/def ::media-uri ::us/string)
 (s/def ::profile-bounce-max-age ::dt/duration)
@@ -272,8 +269,6 @@
                    ::ldap-starttls
                    ::ldap-user-query
                    ::local-assets-uri
-                   ::loggers-loki-uri
-                   ::loggers-zmq-uri
                    ::media-max-file-size
                    ::profile-bounce-max-age
                    ::profile-bounce-threshold
@@ -357,7 +352,7 @@
          (merge defaults)
          (us/conform ::config))
     (catch Throwable e
-      (when (ex/ex-info? e)
+      (when (ex/error? e)
         (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
         (println "Error on validating configuration:")
         (println (some-> e ex-data ex/explain))

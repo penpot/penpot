@@ -80,8 +80,8 @@
     (fn [request respond raise]
       (let [request (ex/try! (process-request request))]
         (if (ex/exception? request)
-          (if (instance? RuntimeException request)
-            (handle-error raise (or (ex/cause request) request))
+          (if (ex/runtime-exception? request)
+            (handle-error raise (or (ex-cause request) request))
             (handle-error raise request))
           (handler request respond raise))))))
 

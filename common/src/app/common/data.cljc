@@ -13,18 +13,19 @@
      (:require-macros [app.common.data]))
 
   (:require
-   [app.common.math :as mth]
-   [clojure.set :as set]
-   [cuerdas.core :as str]
    #?(:cljs [cljs.reader :as r]
       :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
+   [app.common.math :as mth]
+   [clojure.set :as set]
+   [cuerdas.core :as str]
+   [linked.map :as lkm]
    [linked.set :as lks])
-
   #?(:clj
      (:import
       linked.set.LinkedSet
+      linked.map.LinkedMap
       java.lang.AutoCloseable)))
 
 (def boolean-or-nil?
@@ -39,10 +40,20 @@
   ([a] (conj lks/empty-linked-set a))
   ([a & xs] (apply conj lks/empty-linked-set a xs)))
 
+(defn ordered-map
+  ([] lkm/empty-linked-map)
+  ([a] (conj lkm/empty-linked-map a))
+  ([a & xs] (apply conj lkm/empty-linked-map a xs)))
+
 (defn ordered-set?
   [o]
   #?(:cljs (instance? lks/LinkedSet o)
      :clj (instance? LinkedSet o)))
+
+(defn ordered-map?
+  [o]
+  #?(:cljs (instance? lkm/LinkedMap o)
+     :clj (instance? LinkedMap o)))
 
 #?(:clj
    (defmethod print-method clojure.lang.PersistentQueue [q, w]

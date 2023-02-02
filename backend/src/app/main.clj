@@ -23,7 +23,6 @@
    [app.loggers.audit :as-alias audit]
    [app.loggers.audit.tasks :as-alias audit.tasks]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.loggers.zmq :as-alias lzmq]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
    [app.msgbus :as-alias mbus]
@@ -430,9 +429,6 @@
    {:pool (ig/ref ::db/pool)
     :key  (cf/get :secret-key)}
 
-   ::lzmq/receiver
-   {}
-
    ::audit/collector
    {::db/pool           (ig/ref ::db/pool)
     ::wrk/executor      (ig/ref ::wrk/executor)
@@ -454,17 +450,11 @@
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)}
 
-   :app.loggers.loki/reporter
-   {::lzmq/receiver      (ig/ref ::lzmq/receiver)
-    ::http.client/client (ig/ref ::http.client/client)}
-
    :app.loggers.mattermost/reporter
-   {::lzmq/receiver      (ig/ref ::lzmq/receiver)
-    ::http.client/client (ig/ref ::http.client/client)}
+   {::http.client/client (ig/ref ::http.client/client)}
 
    :app.loggers.database/reporter
-   {::lzmq/receiver (ig/ref :app.loggers.zmq/receiver)
-    ::db/pool       (ig/ref ::db/pool)}
+   {::db/pool (ig/ref ::db/pool)}
 
    ::sto/storage
    {:pool     (ig/ref ::db/pool)

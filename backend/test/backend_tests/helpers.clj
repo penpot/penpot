@@ -80,9 +80,9 @@
                       :path (-> "backend_tests/test_files/template.penpot" io/resource fs/path)}]
           system (-> (merge main/system-config main/worker-config)
                      (assoc-in [:app.redis/redis :app.redis/uri] (:redis-uri config))
-                     (assoc-in [:app.db/pool :uri] (:database-uri config))
-                     (assoc-in [:app.db/pool :username] (:database-username config))
-                     (assoc-in [:app.db/pool :password] (:database-password config))
+                     (assoc-in [::db/pool ::db/uri] (:database-uri config))
+                     (assoc-in [::db/pool ::db/username] (:database-username config))
+                     (assoc-in [::db/pool ::db/password] (:database-password config))
                      (assoc-in [:app.rpc/methods :templates] templates)
                      (dissoc :app.srepl/server
                              :app.http/server
@@ -390,7 +390,7 @@
 
 (defn ex-info?
   [v]
-  (instance? clojure.lang.ExceptionInfo v))
+  (ex/error? v))
 
 (defn ex-type
   [e]

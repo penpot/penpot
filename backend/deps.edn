@@ -3,9 +3,6 @@
   org.clojure/clojure {:mvn/version "1.11.1"}
   org.clojure/core.async {:mvn/version "1.6.673"}
 
-  ;; Logging
-  org.zeromq/jeromq {:mvn/version "0.5.3"}
-
   com.github.luben/zstd-jni {:mvn/version "1.5.2-5"}
   org.clojure/data.fressian {:mvn/version "1.0.0"}
 

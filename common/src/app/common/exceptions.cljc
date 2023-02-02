@@ -12,7 +12,12 @@
    [app.common.pprint :as pp]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [expound.alpha :as expound]))
+   [expound.alpha :as expound])
+  #?(:clj
+     (:import
+      clojure.lang.IPersistentMap)))
+
+#?(:clj (set! *warn-on-reflection* true))
 
 (defmacro error
   [& {:keys [type hint] :as params}]
@@ -41,44 +46,22 @@
   [& exprs]
   `(try* (^:once fn* [] ~@exprs) identity))
 
-(defn cause
-  "Retrieve chained cause if available of the exception."
-  [^Throwable throwable]
-  (.getCause throwable))
-
 (defn ex-info?
   [v]
-  (instance? #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core.ExceptionInfo) v))
+  (instance? #?(:clj clojure.lang.IExceptionInfo :cljs cljs.core.ExceptionInfo) v))
+
+(defn error?
+  [v]
+  (instance? #?(:clj clojure.lang.IExceptionInfo :cljs cljs.core.ExceptionInfo) v))
 
 (defn exception?
   [v]
   (instance? #?(:clj java.lang.Throwable :cljs js/Error) v))
 
-#?(:cljs
-   (deftype WrappedException [cause meta]
-     cljs.core/IMeta
-     (-meta [_] meta)
-
-     cljs.core/IDeref
-     (-deref [_] cause))
-   :clj
-   (deftype WrappedException [cause meta]
-     clojure.lang.IMeta
-     (meta [_] meta)
-
-     clojure.lang.IDeref
-     (deref [_] cause)))
-
-#?(:clj (ns-unmap 'app.common.exceptions '->WrappedException))
-#?(:clj (ns-unmap 'app.common.exceptions 'map->WrappedException))
-
-(defn wrapped?
-  [o]
-  (instance? WrappedException o))
-
-(defn wrap-with-context
-  [cause context]
-  (WrappedException. cause context))
+#?(:clj
+   (defn runtime-exception?
+     [v]
+     (instance? RuntimeException v)))
 
 (defn explain
   ([data] (explain data nil))
@@ -97,15 +80,17 @@
          (s/explain-out (update data ::s/problems #(take max-problems %))))))))
 
 #?(:clj
-(defn print-throwable
-  [^Throwable cause
-   & {:keys [trace? data? chain? data-level data-length trace-length explain-length]
-      :or {trace? true
-           data? true
-           chain? true
-           explain-length 10
-           data-length 10
-           data-level 3}}]
+(defn format-throwable
+  [^Throwable cause & {:keys [summary? detail? header? data? explain? chain? data-level data-length trace-length]
+                       :or {summary? true
+                            detail? true
+                            header? true
+                            data? true
+                            explain? true
+                            chain? true
+                            data-length 10
+                            data-level 3}}]
+
   (letfn [(print-trace-element [^StackTraceElement e]
             (let [class (.getClassName e)
                   method (.getMethodName e)]
@@ -132,28 +117,29 @@
                 (doseq [line lines]
                   (println "       " line)))))
 
-          (print-trace-title [cause]
+          (print-trace-title [^Throwable cause]
             (print   " →  ")
             (printf "%s: %s" (.getName (class cause)) (first (str/lines (ex-message cause))))
 
-            (when-let [e (first (.getStackTrace cause))]
+            (when-let [^StackTraceElement e (first (.getStackTrace ^Throwable cause))]
               (printf " (%s:%d)" (or (.getFileName e) "") (.getLineNumber e)))
 
             (newline))
 
-          (print-summary [cause]
-            (let [causes (loop [cause (.getCause cause)
+          (print-summary [^Throwable cause]
+            (let [causes (loop [cause (ex-cause cause)
                                 result []]
                            (if cause
-                             (recur (.getCause cause)
+                             (recur (ex-cause cause)
                                     (conj result cause))
                              result))]
-              (println "TRACE:")
+              (when header?
+                (println "SUMMARY:"))
               (print-trace-title cause)
               (doseq [cause causes]
                 (print-trace-title cause))))
 
-          (print-trace [cause]
+          (print-trace [^Throwable cause]
             (print-trace-title cause)
             (let [st (.getStackTrace cause)]
               (print "    at: ")
@@ -167,35 +153,35 @@
                 (print-trace-element e)
                 (newline))))
 
-          (print-all [cause]
-            (print-summary cause)
-            (println "DETAIL:")
-            (when trace?
-              (print-trace cause))
-
-            (when data?
-              (when-let [data (ex-data cause)]
+          (print-detail [^Throwable cause]
+            (print-trace cause)
+            (when-let [data (ex-data cause)]
+              (when data?
+                (print-data (dissoc data ::s/problems ::s/spec ::s/value)))
+              (when explain?
                 (if-let [explain (explain data)]
-                  (print-explain explain)
-                  (print-data data))))
+                  (print-explain explain)))))
 
-            (when chain?
-              (loop [cause cause]
-                (when-let [cause (.getCause cause)]
-                  (newline)
-                  (print-trace cause)
+          (print-all [^Throwable cause]
+            (when summary?
+              (print-summary cause))
 
-                  (when data?
-                    (when-let [data (ex-data cause)]
-                      (if-let [explain (explain data)]
-                        (print-explain explain)
-                        (print-data data))))
+            (when detail?
+              (when header?
+                (println "DETAIL:"))
 
-                  (recur cause)))))
+              (print-detail cause)
+              (when chain?
+                (loop [cause cause]
+                  (when-let [cause (ex-cause cause)]
+                    (newline)
+                    (print-detail cause)
+                    (recur cause))))))
           ]
+    (with-out-str
+      (print-all cause)))))
 
-    (println
-     (with-out-str
-       (print-all cause))))))
-
-
+#?(:clj
+(defn print-throwable
+  [cause & {:as opts}]
+  (println (format-throwable cause opts))))

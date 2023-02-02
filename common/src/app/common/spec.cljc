@@ -435,6 +435,6 @@
   [cause]
   (if (and (map? cause) (= :spec-validation (:type cause)))
     cause
-    (when (ex/ex-info? cause)
+    (when (ex/error? cause)
       (validation-error? (ex-data cause)))))
 
