@@ -114,7 +114,8 @@
            (let [canvas-node (mf/ref-val frame-canvas-ref)
                  img-node    (mf/ref-val frame-image-ref)]
              (when (draw-thumbnail-canvas! canvas-node img-node)
-               (reset! image-url nil)
+               (when-not (cf/check-browser? :safari)
+                 (reset! image-url nil))
 
                (when @show-frame-thumbnail
                  (reset! show-frame-thumbnail false))
@@ -277,6 +278,7 @@
           :height height
           :style {;; Safari has a problem with the positioning of the canvas. All this is to fix Safari behavior
                   ;; https://bugs.webkit.org/show_bug.cgi?id=23113
+                  :display (when (cf/check-browser? :safari) "none")
                   :position "fixed"
                   :transform-origin "top left"
                   :transform (when (cf/check-browser? :safari) (dm/fmt "scale(%)" zoom))
