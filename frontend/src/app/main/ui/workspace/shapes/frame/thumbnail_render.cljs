@@ -273,8 +273,8 @@
          {:key (dm/str "thumbnail-canvas-" (:id shape))
           :ref frame-canvas-ref
           :data-object-id (dm/str page-id (:id shape))
-          :width fixed-width
-          :height fixed-height
+          :width width
+          :height height
           :style {;; Safari has a problem with the positioning of the canvas. All this is to fix Safari behavior
                   ;; https://bugs.webkit.org/show_bug.cgi?id=23113
                   :position "fixed"
@@ -295,8 +295,8 @@
        (when (some? @image-url)
          [:foreignObject {:x x
                           :y y
-                          :width width
-                          :height height}
+                          :width fixed-width
+                          :height fixed-height}
           [:img {:ref frame-image-ref
                  :src @image-url
                  :width fixed-width
