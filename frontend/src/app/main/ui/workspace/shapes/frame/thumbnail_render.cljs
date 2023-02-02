@@ -110,7 +110,9 @@
            (let [canvas-node (mf/ref-val frame-canvas-ref)
                  img-node    (mf/ref-val frame-image-ref)]
              (when (draw-thumbnail-canvas! canvas-node img-node)
-               (reset! image-url nil)
+               (when-not (cf/check-browser? :safari)
+                 (reset! image-url nil))
+
                (when @show-frame-thumbnail
                  (reset! show-frame-thumbnail false))
                ;; If we don't have the thumbnail data saved (normally the first load) we update the data
@@ -272,8 +274,7 @@
           :height fixed-height
           ;; DEBUG
           :style {:filter (when (and (not (cf/check-browser? :safari)) (debug? :thumbnails)) "invert(1)")
-                  :width "100%"
-                  :height "100%"}}]]
+                  :display (when (cf/check-browser? :safari) "none")}}]]
 
        ;; Safari don't support filters so instead we add a rectangle around the thumbnail
        (when (and (cf/check-browser? :safari) (debug? :thumbnails))
