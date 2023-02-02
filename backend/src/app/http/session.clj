@@ -8,6 +8,7 @@
   (:refer-clojure :exclude [read])
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.config :as cf]
@@ -230,17 +231,18 @@
 
   (let [{:keys [::wrk/executor ::main/props]} (meta manager)]
     (fn [request respond raise]
-      (let [token (get-token request)]
-        (->> (px/submit! executor (partial decode-token props token))
-             (p/fnly (fn [claims cause]
-                       (when cause
-                         (l/trace :hint "exception on decoding malformed token" :cause cause))
-
-                       (let [request (cond-> request
-                                       (map? claims)
-                                       (-> (assoc ::token-claims claims)
-                                           (assoc ::token token)))]
-                         (handler request respond raise)))))))))
+      (let [token (ex/try! (get-token request))]
+        (if (ex/exception? token)
+          (raise token)
+          (->> (px/submit! executor (partial decode-token props token))
+               (p/fnly (fn [claims cause]
+                         (when cause
+                           (l/trace :hint "exception on decoding malformed token" :cause cause))
+                         (let [request (cond-> request
+                                         (map? claims)
+                                         (-> (assoc ::token-claims claims)
+                                             (assoc ::token token)))]
+                           (handler request respond raise))))))))))
 
 (defn- wrap-authz
   [handler {:keys [::manager]}]

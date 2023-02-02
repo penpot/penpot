@@ -13,7 +13,7 @@
 
 (s/def ::name string?)
 (s/def ::step (s/keys :req-un [::name ::fn]))
-(s/def ::steps (s/every ::step :kind vector?))
+(s/def ::steps (s/every ::step))
 (s/def ::migrations
   (s/keys :req-un [::name ::steps]))
 

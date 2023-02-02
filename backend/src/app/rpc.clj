@@ -93,7 +93,7 @@
          (p/mcat (partial handle-response request))
          (p/fnly (fn [response cause]
                    (if cause
-                     (raise (ex/wrap-with-context cause {:profile-id profile-id}))
+                     (raise cause)
                      (respond response)))))))
 
 (defn- rpc-mutation-handler
@@ -117,7 +117,7 @@
          (p/mcat (partial handle-response request))
          (p/fnly (fn [response cause]
                    (if cause
-                     (raise (ex/wrap-with-context cause {:profile-id profile-id}))
+                     (raise cause)
                      (respond response)))))))
 
 (defn- rpc-command-handler
@@ -144,7 +144,7 @@
            (p/mcat (partial handle-response request))
            (p/fnly (fn [response cause]
                      (if cause
-                       (raise (ex/wrap-with-context cause {:profile-id profile-id}))
+                       (raise cause)
                        (respond response))))))))
 
 (defn- wrap-metrics

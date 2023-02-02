@@ -32,7 +32,7 @@
 
 (defn- capacity-exception?
   [o]
-  (and (ex/ex-info? o)
+  (and (ex/error? o)
        (let [data (ex-data o)]
          (and (= :bulkhead-error (:type data))
               (= :capacity-limit-reached (:code data))))))

@@ -79,7 +79,7 @@
 
     (us/verify! ::msgbus msgbus)
 
-    (set-error-handler! state #(l/error :cause % :hint "unexpected error on agent" ::l/async false))
+    (set-error-handler! state #(l/error :cause % :hint "unexpected error on agent" ::l/sync? true))
     (set-error-mode! state :continue)
     (start-io-loop! msgbus)
 
@@ -133,7 +133,7 @@
   [nsubs cfg topic chan]
   (let [nsubs (if (nil? nsubs) #{chan} (conj nsubs chan))]
     (when (= 1 (count nsubs))
-      (l/trace :hint "open subscription" :topic topic ::l/async false)
+      (l/trace :hint "open subscription" :topic topic ::l/sync? true)
       (redis-sub cfg topic))
     nsubs))
 
@@ -144,7 +144,7 @@
   [nsubs cfg topic chan]
   (let [nsubs (disj nsubs chan)]
     (when (empty? nsubs)
-      (l/trace :hint "close subscription" :topic topic ::l/async false)
+      (l/trace :hint "close subscription" :topic topic ::l/sync? true)
       (redis-unsub cfg topic))
     nsubs))
 

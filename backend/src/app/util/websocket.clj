@@ -242,7 +242,7 @@
                   (let [result (a/<! (handler wsp v))]
                     ;; (l/trace :hint "message received" :message v)
                     (cond
-                      (ex/ex-info? result)
+                      (ex/error? result)
                       (a/>! output-ch {:type :error :error (ex-data result)})
 
                       (ex/exception? result)

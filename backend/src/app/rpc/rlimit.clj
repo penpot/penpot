@@ -363,7 +363,7 @@
                        (let [state (read-config path)]
                          (l/info :hint "config refreshed"
                                  :loaded-limits (count (::limits state))
-                                 ::l/async false)
+                                 ::l/sync? true)
                          state)))))
 
           (schedule-next [state]
@@ -380,10 +380,10 @@
   (when-not (instance? java.util.concurrent.RejectedExecutionException cause)
     (if-let [explain (-> cause ex-data ex/explain)]
       (l/warn ::l/raw (str "unable to refresh config, invalid format:\n" explain)
-              ::l/async false)
+              ::l/sync? true)
       (l/warn :hint "unexpected exception on loading config"
               :cause cause
-              ::l/async false))))
+              ::l/sync? true))))
 
 (defn- get-config-path
   []

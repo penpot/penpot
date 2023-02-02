@@ -45,7 +45,7 @@
 
 (defmethod ig/init-key ::executor
   [skey {:keys [::parallelism]}]
-  (let [prefix  (if (vector? skey) (-> skey first name keyword) "default")
+  (let [prefix  (if (vector? skey) (-> skey first name) "default")
         tname   (str "penpot/" prefix "/%s")
         factory (px/forkjoin-thread-factory :name tname)]
     (px/forkjoin-executor

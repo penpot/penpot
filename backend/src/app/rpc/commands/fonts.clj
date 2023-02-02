@@ -41,7 +41,6 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::style valid-style)
 (s/def ::team-id ::us/uuid)
-(s/def ::team-id ::us/uuid)
 (s/def ::weight valid-weight)
 
 ;; --- QUERY: Get font variants

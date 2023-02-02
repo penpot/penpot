@@ -144,3 +144,23 @@
   [system & {:as params}]
   (enable-objects-map-feature-on-file! system params)
   (enable-pointer-map-feature-on-file! system params))
+
+(defn instrument-var
+  [var]
+  (alter-var-root var (fn [f]
+                        (let [mf (meta f)]
+                          (if (::original mf)
+                            f
+                            (with-meta
+                              (fn [& params]
+                                (tap> params)
+                                (let [result (apply f params)]
+                                  (tap> result)
+                                  result))
+                              {::original f}))))))
+
+(defn uninstrument-var
+  [var]
+  (alter-var-root var (fn [f]
+                        (or (::original (meta f)) f))))
+

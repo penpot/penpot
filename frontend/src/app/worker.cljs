@@ -19,9 +19,7 @@
    [cljs.spec.alpha :as s]
    [promesa.core :as p]))
 
-(log/initialize!)
-(log/set-level! :root :warn)
-(log/set-level! :app :info)
+(log/setup! {:app :info})
 
 ;; --- Messages Handling
 
