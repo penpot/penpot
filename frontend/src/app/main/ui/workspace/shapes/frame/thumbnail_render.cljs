@@ -27,23 +27,21 @@
 
 (defn- draw-thumbnail-canvas!
   [canvas-node img-node]
-  (ts/raf
-   (fn []
-     (try
-       (when (and (some? canvas-node) (some? img-node))
-         (let [canvas-context (.getContext canvas-node "2d")
-               canvas-width   (.-width canvas-node)
-               canvas-height  (.-height canvas-node)]
-           (.clearRect canvas-context 0 0 canvas-width canvas-height)
-           (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
+  (try
+    (when (and (some? canvas-node) (some? img-node))
+      (let [canvas-context (.getContext canvas-node "2d")
+            canvas-width   (.-width canvas-node)
+            canvas-height  (.-height canvas-node)]
+        (.clearRect canvas-context 0 0 canvas-width canvas-height)
+        (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
 
-           ;; Set a true on the next animation frame, we make sure the drawImage is completed
-           (ts/raf
-            #(dom/set-data! canvas-node "ready" "true"))
-           true))
-       (catch :default err
-         (.error js/console err)
-         false)))))
+        ;; Set a true on the next animation frame, we make sure the drawImage is completed
+        (ts/raf
+         #(dom/set-data! canvas-node "ready" "true"))
+        true))
+    (catch :default err
+      (.error js/console err)
+      false)))
 
 (defn- remove-image-loading
   "Remove the changes related to change a url for its embed value. This is necessary
@@ -78,8 +76,12 @@
           (gsh/selection-rect (concat [shape] all-children))
           (-> shape :points gsh/points->selrect))
 
-        fixed-width (mth/clamp width 250 2000)
-        fixed-height (/ (* height fixed-width) width)
+        [fixed-width fixed-height]
+        (if (> width height)
+          [(mth/clamp width 250 2000)
+           (/ (* height (mth/clamp width 250 2000)) width)]
+          [(/ (* width (mth/clamp height 250 2000)) height)
+           (mth/clamp height 250 2000)])
 
         image-url    (mf/use-state nil)
         observer-ref (mf/use-var nil)
@@ -289,6 +291,6 @@
                           :height height}
           [:img {:ref frame-image-ref
                  :src @image-url
-                 :width width
-                 :height height
+                 :width fixed-width
+                 :height fixed-height
                  :on-load on-image-load}]])])]))

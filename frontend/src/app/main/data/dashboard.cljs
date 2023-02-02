@@ -7,6 +7,7 @@
 (ns app.main.data.dashboard
   (:require
    [app.common.data :as d]
+   [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -664,10 +665,12 @@
   (ptk/reify ::create-project
     ptk/WatchEvent
     (watch [_ state _]
-      (let [name    (name (gensym (str (tr "dashboard.new-project-prefix") " ")))
-            team-id (:current-team-id state)
-            params  {:name name
-                     :team-id team-id}
+      (let [projects (get state :dashboard-projects)
+            unames   (cp/retrieve-used-names projects)
+            name     (cp/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))
+            team-id  (:current-team-id state)
+            params   {:name name
+                      :team-id team-id}
             {:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
@@ -875,7 +878,9 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)
 
-            name     (name (gensym (str (tr "dashboard.new-file-prefix") " ")))
+            files    (get state :dashboard-files)
+            unames   (cp/retrieve-used-names files)
+            name     (cp/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1"))
             features (cond-> #{}
                        (features/active-feature? state :components-v2)
                        (conj "components/v2"))
@@ -1067,8 +1072,12 @@
             pparams       (:path-params route)
             in-project?   (contains? pparams :project-id)
             name          (if in-project?
-                            (name (gensym (str (tr "dashboard.new-file-prefix") " ")))
-                            (name (gensym (str (tr "dashboard.new-project-prefix") " "))))
+                            (let [files  (get state :dashboard-files)
+                                  unames (cp/retrieve-used-names files)]
+                              (cp/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
+                            (let [projects (get state :dashboard-projects)
+                                  unames   (cp/retrieve-used-names projects)]
+                              (cp/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))))
             params        (if in-project?
                             {:project-id (:project-id pparams)
                              :name name}

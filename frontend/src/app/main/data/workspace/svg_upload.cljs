@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us :refer [max-safe-int min-safe-int]]
@@ -493,7 +494,7 @@
                (- y vb-y (/ vb-height 2))
                y))
 
-          unames (ctst/retrieve-used-names objects)
+          unames (cp/retrieve-used-names objects)
 
           svg-name (str/replace (:name svg-data) ".svg" "")
 

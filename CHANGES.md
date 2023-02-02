@@ -8,6 +8,7 @@
 - Fix white space on small screens [Taiga #4774](https://tree.taiga.io/project/penpot/issue/4774)
 - Fix button spacing on delete acount modal [Taiga #4762](https://tree.taiga.io/project/penpot/issue/4762)
 - Fix invitations input on team management and onboarding modal [Taiga #4760](https://tree.taiga.io/project/penpot/issue/4760)
+- Fix weird numeration creating new elements in dashboard [Taiga #4755](https://tree.taiga.io/project/penpot/issue/4755)
 
 ## 1.17.0
 

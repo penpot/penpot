@@ -166,12 +166,12 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Component-1*           #--> Component-1
+                      ;   Component 1*           #--> Component 1
                       ;       #{:shapes-group}
                       ;     Rect 2               ---> Rect 2
                       ;
-                      ; [Component-1]
-                      ; Component-1
+                      ; [Component 1]
+                      ; Component 1
                       ;   Rect 1
                       ;   Rect 2
                       ;
@@ -180,14 +180,14 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Component-1"))
+                        (t/is (= (:name group) "Component 1"))
                         (t/is (= (:touched group) #{:shapes-group}))
                         (t/is (not= (:shape-ref group) nil))
                         (t/is (= (:name shape2) "Rect 2"))
                         (t/is (= (:touched shape2) nil))
                         (t/is (not= (:shape-ref shape2) nil))
 
-                        (t/is (= (:name c-group) "Component-1"))
+                        (t/is (= (:name c-group) "Component 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:shape-ref c-group) nil))
                         (t/is (= (:name c-shape2) "Rect 1"))
@@ -227,14 +227,14 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Component-1*        #--> Component-1
+                      ;   Component 1*        #--> Component 1
                       ;       #{:shapes-group}
                       ;     Rect 2            ---> Rect 2
                       ;     Rect 1            ---> Rect 1
                       ;     Rect 3            ---> Rect 3
                       ;
-                      ; [Component-1]
-                      ; Component-1
+                      ; [Component 1]
+                      ; Component 1
                       ;   Rect 1
                       ;   Rect 2
                       ;   Rect 3
@@ -245,7 +245,7 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Component-1"))
+                        (t/is (= (:name group) "Component 1"))
                         (t/is (= (:touched group) #{:shapes-group}))
                         (t/is (= (:name shape1) "Rect 2"))
                         (t/is (= (:touched shape1) nil))
@@ -257,7 +257,7 @@
                         (t/is (= (:touched shape3) nil))
                         (t/is (not= (:shape-ref shape3) nil))
 
-                        (t/is (= (:name c-group) "Component-1"))
+                        (t/is (= (:name c-group) "Component 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:shape-ref c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
@@ -389,7 +389,7 @@
                               new-state
                               (thp/id :instance2))]
 
-                        ; TODO: get and check the instance inside component [Group-1]
+                        ; TODO: get and check the instance inside component [Group 1]
 
                         (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
@@ -478,7 +478,7 @@
                               new-state
                               (thp/id :instance2))]
 
-                        ; TODO: get and check the instance inside component [Group-1]
+                        ; TODO: get and check the instance inside component [Group 1]
 
                         (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
@@ -567,7 +567,7 @@
                               new-state
                               (thp/id :instance2))]
 
-                        ; TODO: get and check the instance inside component [Group-1]
+                        ; TODO: get and check the instance inside component [Group 1]
 
                         (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
@@ -737,12 +737,12 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Component-1         #--> Component-1
+                      ;   Component 1         #--> Component 1
                       ;     Rect 1            ---> Rect 1
                       ;     Rect 2            ---> Rect 2
                       ;
-                      ; [Component-1]
-                      ; Component-1
+                      ; [Component 1]
+                      ; Component 1
                       ;   Rect 1
                       ;   Rect 2
                       ;
@@ -752,7 +752,7 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Component-1"))
+                        (t/is (= (:name group) "Component 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (not= (:shape-ref group) nil))
                         (t/is (= (:name shape1) "Rect 1"))
@@ -762,7 +762,7 @@
                         (t/is (= (:touched shape2) nil))
                         (t/is (not= (:shape-ref shape2) nil))
 
-                        (t/is (= (:name c-group) "Component-1"))
+                        (t/is (= (:name c-group) "Component 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:shape-ref c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
@@ -803,13 +803,13 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Component-1         #--> Component-1
+                      ;   Component 1         #--> Component 1
                       ;     Rect 1            ---> Rect 1
                       ;     Rect 2            ---> Rect 2
                       ;     Rect 3            ---> Rect 3
                       ;
-                      ; [Component-1]
-                      ; Component-1
+                      ; [Component 1]
+                      ; Component 1
                       ;   Rect 1
                       ;   Rect 2
                       ;   Rect 3
@@ -819,7 +819,7 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Component-1"))
+                        (t/is (= (:name group) "Component 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (not= (:shape-ref group) nil))
                         (t/is (= (:name shape1) "Rect 1"))
@@ -832,7 +832,7 @@
                         (t/is (= (:touched shape3) nil))
                         (t/is (not= (:shape-ref shape3) nil))
 
-                        (t/is (= (:name c-group) "Component-1"))
+                        (t/is (= (:name c-group) "Component 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:shape-ref c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 1"))
@@ -1144,7 +1144,7 @@
                               new-state
                               (thp/id :instance2))]
 
-                        ; TODO: get and check the instance inside component [Group-1]
+                        ; TODO: get and check the instance inside component [Group 1]
 
                         (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
@@ -1517,11 +1517,11 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Component-1            #--> Component-1
+                      ;   Component 1            #--> Component 1
                       ;     Rect 2               ---> Rect 2
                       ;
-                      ; [Component-1]
-                      ; Component-1
+                      ; [Component 1]
+                      ; Component 1
                       ;   Rect 2
                       ;
                       (let [[[group shape2] [c-group c-shape2] component]
@@ -1529,14 +1529,14 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Component-1"))
+                        (t/is (= (:name group) "Component 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (not= (:shape-ref group) nil))
                         (t/is (= (:name shape2) "Rect 2"))
                         (t/is (= (:touched shape2) nil))
                         (t/is (not= (:shape-ref shape2) nil))
 
-                        (t/is (= (:name c-group) "Component-1"))
+                        (t/is (= (:name c-group) "Component 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:shape-ref c-group) nil))
                         (t/is (= (:name c-shape2) "Rect 2"))
@@ -1576,13 +1576,13 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Component-1         #--> Component-1
+                      ;   Component 1         #--> Component 1
                       ;     Rect 2            ---> Rect 2
                       ;     Rect 1            ---> Rect 1
                       ;     Rect 3            ---> Rect 3
                       ;
-                      ; [Component-1]
-                      ; Component-1
+                      ; [Component 1]
+                      ; Component 1
                       ;   Rect 2
                       ;   Rect 1
                       ;   Rect 3
@@ -1592,7 +1592,7 @@
                               new-state
                               (thp/id :instance1))]
 
-                        (t/is (= (:name group) "Component-1"))
+                        (t/is (= (:name group) "Component 1"))
                         (t/is (= (:touched group) nil))
                         (t/is (not= (:shape-ref group) nil))
                         (t/is (= (:touched shape1) nil))
@@ -1605,7 +1605,7 @@
                         (t/is (not= (:shape-ref shape3) nil))
                         (t/is (= (:name shape3) "Rect 3"))
 
-                        (t/is (= (:name c-group) "Component-1"))
+                        (t/is (= (:name c-group) "Component 1"))
                         (t/is (= (:touched c-group) nil))
                         (t/is (= (:shape-ref c-group) nil))
                         (t/is (= (:name c-shape1) "Rect 2"))
@@ -1737,7 +1737,7 @@
                               new-state
                               (thp/id :instance2))]
 
-                        ; TODO: get and check the instance inside component [Group-1]
+                        ; TODO: get and check the instance inside component [Group 1]
 
                         (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
@@ -1826,7 +1826,7 @@
                               new-state
                               (thp/id :instance2))]
 
-                        ; TODO: get and check the instance inside component [Group-1]
+                        ; TODO: get and check the instance inside component [Group 1]
 
                         (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
@@ -1916,7 +1916,7 @@
                               new-state
                               (thp/id :instance2))]
 
-                        ; TODO: get and check the instance inside component [Group-1]
+                        ; TODO: get and check the instance inside component [Group 1]
 
                         (t/is (= (:name instance2) "Group"))
                         (t/is (= (:touched instance2) nil))
