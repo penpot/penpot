@@ -200,7 +200,7 @@
 
   (assert (nil? (:current-component-id file)))
   (let [page-id (or (:id data) (uuid/next))
-        page (-> (ctp/make-empty-page page-id "Page-1")
+        page (-> (ctp/make-empty-page page-id "Page 1")
                  (d/deep-merge data))]
     (-> file
         (commit-change

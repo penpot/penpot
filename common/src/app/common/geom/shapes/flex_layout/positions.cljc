@@ -20,9 +20,13 @@
         hv            (partial gpo/start-hv layout-bounds)
         vv            (partial gpo/start-vv layout-bounds)
 
-        end?     (ctl/content-end? parent)
-        center?  (ctl/content-center? parent)
-        around?  (ctl/content-around? parent)
+        wrap?    (ctl/wrap? parent)
+
+        end?     (or (and wrap? (ctl/content-end? parent))
+                     (and (not wrap?) (ctl/align-items-end? parent)))
+        center?  (or (and wrap? (ctl/content-center? parent))
+                     (and (not wrap?) (ctl/align-items-center? parent)))
+        around?  (and wrap? (ctl/content-around? parent))
 
         ;; Adjust the totals so it takes into account the gaps
         [layout-gap-row layout-gap-col] (ctl/gaps parent)

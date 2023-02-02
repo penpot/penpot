@@ -19,7 +19,7 @@
 
   (t/testing "Add empty page (only root-frame)"
     (let [page (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/get-current-page))
 
           data (-> (sd/make-snap-data)
@@ -28,7 +28,7 @@
 
   (t/testing "Create simple shape on root"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/create-rect
                     {:x 0
                      :y 0
@@ -57,7 +57,7 @@
 
   (t/testing "Add page with single empty frame"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-artboard
                     {:x 0
                      :y 0
@@ -81,7 +81,7 @@
 
   (t/testing "Add page with some shapes inside frames"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-artboard
                     {:x 0
                      :y 0
@@ -112,7 +112,7 @@
 
   (t/testing "Add a global guide"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-guide {:position 50 :axis :x})
                    (fb/add-artboard {:x 200 :y 200 :width 100 :height 100})
                    (fb/close-artboard))
@@ -140,7 +140,7 @@
 
   (t/testing "Add a frame guide"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-artboard {:x 200 :y 200 :width 100 :height 100})
                    (fb/close-artboard))
 
@@ -171,7 +171,7 @@
 (t/deftest test-update-index
   (t/testing "Create frame on root and then remove it."
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-artboard
                     {:x 0
                      :y 0
@@ -201,7 +201,7 @@
 
   (t/testing "Create simple shape on root. Then remove it"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/create-rect
                     {:x 0
                      :y 0
@@ -229,7 +229,7 @@
 
   (t/testing "Create shape inside frame, then remove it"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-artboard
                     {:x 0
                      :y 0
@@ -260,7 +260,7 @@
 
   (t/testing "Create global guide then remove it"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-guide {:position 50 :axis :x}))
 
           guide-id (:last-id file)
@@ -293,7 +293,7 @@
 
   (t/testing "Create frame guide then remove it"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-artboard {:x 200 :y 200 :width 100 :height 100})
                    (fb/close-artboard))
 
@@ -324,7 +324,7 @@
 
   (t/testing "Update frame coordinates"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-artboard
                     {:x 0
                      :y 0
@@ -358,7 +358,7 @@
 
   (t/testing "Update shape coordinates"
     (let [file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/create-rect
                     {:x 0
                      :y 0
@@ -388,7 +388,7 @@
   (t/testing "Update global guide"
     (let [guide {:position 50 :axis :x}
           file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page-1"})
+                   (fb/add-page {:name "Page 1"})
                    (fb/add-guide guide))
 
           guide-id (:last-id file)

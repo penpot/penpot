@@ -73,7 +73,7 @@
 
   ([file-id page-id]
    (let [page (when (some? page-id)
-                (ctp/make-empty-page page-id "Page-1"))]
+                (ctp/make-empty-page page-id "Page 1"))]
      (cond-> (-> empty-file-data
                  (assoc :id file-id))
 

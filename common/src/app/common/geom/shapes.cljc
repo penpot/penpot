@@ -43,13 +43,13 @@
 (defn bounding-box
   "Returns a rect that wraps the shape after all transformations applied."
   [shape]
-  ; TODO: perhaps we need to store this calculation in a shape attribute
+  ;; TODO: perhaps we need to store this calculation in a shape attribute
   (gpr/points->rect (:points shape)))
 
 (defn left-bound
   "Returns the lowest x coord of the shape BEFORE applying transformations."
-  ; TODO: perhaps some day we want after transformations, but for the
-  ;       moment it's enough as is now.
+  ;; TODO: perhaps some day we want after transformations, but for the
+  ;;       moment it's enough as is now.
   [shape]
   (or (:x shape) (:x (:selrect shape)))) ; Paths don't have :x attribute
 
@@ -106,8 +106,8 @@
 
   ([attr val1 val2 precision]
    (let [close-val? (fn [num1 num2]
-                     (when (and (number? num1) (number? num2))
-                       (< (mth/abs (- num1 num2)) precision)))]
+                      (when (and (number? num1) (number? num2))
+                        (< (mth/abs (- num1 num2)) precision)))]
      (cond
        (and (number? val1) (number? val2))
        (close-val? val1 val2)

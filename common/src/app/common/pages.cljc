@@ -19,6 +19,8 @@
 (dm/export common/file-version)
 (dm/export common/default-color)
 (dm/export common/component-sync-attrs)
+(dm/export common/retrieve-used-names)
+(dm/export common/generate-unique-name)
 
 ;; Focus
 (dm/export focus/focus-objects)

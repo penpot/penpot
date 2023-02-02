@@ -82,7 +82,7 @@
         (when (:is-admin permissions)
           {:value "admin" :label (tr "labels.admin")})
         ;; Temporarily disabled viewer roles
-        ;; https://tree.taiga.io/project/uxboxproject/issue/1083
+        ;; https://tree.taiga.io/project/penpot/issue/1083
         ;; {:value "viewer" :label (tr "labels.viewer")}
         ]
        (filterv identity)))
@@ -209,7 +209,7 @@
        [:li {:on-click set-admin} (tr "labels.admin")]
        [:li {:on-click set-editor} (tr "labels.editor")]
         ;; Temporarily disabled viewer role
-        ;; https://tree.taiga.io/project/uxboxproject/issue/1083
+        ;; https://tree.taiga.io/project/penpot/issue/1083
         ;;  [:li {:on-click set-viewer} (tr "labels.viewer")]
        (when you-owner?
          [:li {:on-click (partial set-owner member)} (tr "labels.owner")])]]]))

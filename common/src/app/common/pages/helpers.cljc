@@ -109,6 +109,20 @@
         (recur (conj result parent-id) parent-id)
         result))))
 
+(defn get-parent-ids-with-index
+  "Returns a tuple with the list of parents and a map with the position within each parent"
+  [objects shape-id]
+  (loop [parent-list []
+         parent-indices {}
+         current shape-id]
+    (let [parent-id (dm/get-in objects [current :parent-id])
+          parent (get objects parent-id)]
+      (if (and (some? parent) (not= parent-id current))
+        (let [parent-list (conj parent-list parent-id)
+              parent-indices (assoc parent-indices parent-id (d/index-of (:shapes parent) current))]
+          (recur parent-list parent-indices parent-id))
+        [parent-list parent-indices]))))
+
 (defn get-siblings-ids
   [objects id]
   (let [parent (get-parent objects id)]

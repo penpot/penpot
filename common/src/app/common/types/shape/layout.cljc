@@ -275,6 +275,21 @@
   (or (= :stretch layout-align-content)
       (nil? layout-align-content)))
 
+(defn align-items-center?
+  [{:keys [layout-align-items]}]
+  (= layout-align-items :center))
+
+(defn align-items-start?
+  [{:keys [layout-align-items]}]
+  (= layout-align-items :start))
+
+(defn align-items-end?
+  [{:keys [layout-align-items]}]
+  (= layout-align-items :end))
+
+(defn align-items-stretch?
+  [{:keys [layout-align-items]}]
+  (= layout-align-items :stretch))
 
 (defn reverse?
   [{:keys [layout-flex-dir]}]

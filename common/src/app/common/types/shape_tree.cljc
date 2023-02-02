@@ -132,43 +132,34 @@
 (defn get-base
   [objects id-a id-b]
 
-  (let [parents-a (reverse (cons id-a (cph/get-parent-ids objects id-a)))
-        parents-b (reverse (cons id-b (cph/get-parent-ids objects id-b)))
+  (let [[parents-a parents-a-index] (cph/get-parent-ids-with-index objects id-a)
+        [parents-b parents-b-index] (cph/get-parent-ids-with-index objects id-b)
 
-        [base base-child-a base-child-b]
-        (loop [parents-a (rest parents-a)
-               parents-b (rest parents-b)
-               base uuid/zero]
-          (cond
-            (not= (first parents-a) (first parents-b))
-            [base (first parents-a) (first parents-b)]
+        parents-a (cons id-a parents-a)
+        parents-b (into #{id-b} parents-b)
 
-            (or (empty? parents-a) (empty? parents-b))
-            [uuid/zero (first parents-a) (first parents-b)]
+        ;; Search for the common frame in order
+        base (or (d/seek parents-b parents-a) uuid/zero)
 
-            :else
-            (recur (rest parents-a) (rest parents-b) (first parents-a))))
+        idx-a (get parents-a-index base)
+        idx-b (get parents-b-index base)]
 
-        index-base-a (when base-child-a (cph/get-position-on-parent objects base-child-a))
-        index-base-b (when base-child-b (cph/get-position-on-parent objects base-child-b))]
-
-    [base index-base-a index-base-b]))
+    [base idx-a idx-b]))
 
 (defn is-shape-over-shape?
   [objects base-shape-id over-shape-id]
 
   (let [[base index-a index-b] (get-base objects base-shape-id over-shape-id)]
     (cond
+      ;; The base the base shape, so the other item is bellow
       (= base base-shape-id)
-      (let [object (get objects base-shape-id)]
-        (or (cph/frame-shape? object)
-            (cph/root-frame? object)))
+      false
 
+      ;; The base is the testing over, so it's over
       (= base over-shape-id)
-      (let [object (get objects over-shape-id)]
-        (or (not (cph/frame-shape? object))
-            (not (cph/root-frame? object))))
+      true
 
+      ;; Check which index is lower
       :else
       (< index-a index-b))))
 
@@ -283,35 +274,6 @@
 (defn rotated-frame?
   [frame]
   (not (mth/almost-zero? (:rotation frame 0))))
-
-(defn retrieve-used-names
-  [objects]
-  (into #{} (comp (map :name) (remove nil?)) (vals objects)))
-
-(defn- extract-numeric-suffix
-  [basename]
-  (if-let [[_ p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
-    [p1 (+ 1 (d/parse-integer p2))]
-    [basename 1]))
-
-(s/def ::set-of-strings
-  (s/every ::us/string :kind set?))
-
-(defn generate-unique-name
-  "A unique name generator"
-  [used basename]
-  (us/assert! ::set-of-strings used)
-  (us/assert! ::us/string basename)
-  ;; We have add a condition because UX doesn't want numbers on 
-  ;; layer names. 
-  (if-not (contains? used basename)
-    basename
-    (let [[prefix initial] (extract-numeric-suffix basename)]
-      (loop [counter initial]
-        (let [candidate (str prefix "-" counter)]
-          (if (contains? used candidate)
-            (recur (inc counter))
-            candidate))))))
 
 (defn clone-object
   "Gets a copy of the object and all its children, with new ids

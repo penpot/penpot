@@ -15,6 +15,7 @@
    [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
+   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -408,8 +409,8 @@
       ptk/WatchEvent
       (watch [it state _]
         (let [pages   (get-in state [:workspace-data :pages-index])
-              unames  (ctst/retrieve-used-names pages)
-              name    (ctst/generate-unique-name unames "Page-1")
+              unames  (cp/retrieve-used-names pages)
+              name    (cp/generate-unique-name unames "Page 1")
 
               changes (-> (pcb/empty-changes it)
                           (pcb/add-empty-page id name))]
@@ -423,9 +424,9 @@
     (watch [it state _]
       (let [id      (uuid/next)
             pages   (get-in state [:workspace-data :pages-index])
-            unames  (ctst/retrieve-used-names pages)
+            unames  (cp/retrieve-used-names pages)
             page    (get-in state [:workspace-data :pages-index page-id])
-            name    (ctst/generate-unique-name unames (:name page))
+            name    (cp/generate-unique-name unames (:name page))
 
             no_thumbnails_objects (->> (:objects page)
                                       (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))

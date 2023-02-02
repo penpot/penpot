@@ -162,14 +162,14 @@
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file)
         on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing?
-                                                 drawing-path? create-comment? space? panning workspace-read-only?)
+                                                 drawing-path? create-comment? space? panning z? workspace-read-only?)
         on-mouse-up       (actions/on-mouse-up disable-paste)
         on-pointer-down   (actions/on-pointer-down)
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
         on-pointer-move   (actions/on-pointer-move move-stream)
         on-pointer-up     (actions/on-pointer-up)
-        on-move-selected  (actions/on-move-selected hover hover-ids selected space? workspace-read-only?)
+        on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? workspace-read-only?)
         on-menu-selected  (actions/on-menu-selected hover hover-ids selected workspace-read-only?)
 
         on-frame-enter    (actions/on-frame-enter frame-hover)

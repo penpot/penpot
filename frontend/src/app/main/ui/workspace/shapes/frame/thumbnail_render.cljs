@@ -27,23 +27,21 @@
 
 (defn- draw-thumbnail-canvas!
   [canvas-node img-node]
-  (ts/raf
-   (fn []
-     (try
-       (when (and (some? canvas-node) (some? img-node))
-         (let [canvas-context (.getContext canvas-node "2d")
-               canvas-width   (.-width canvas-node)
-               canvas-height  (.-height canvas-node)]
-           (.clearRect canvas-context 0 0 canvas-width canvas-height)
-           (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
+  (try
+    (when (and (some? canvas-node) (some? img-node))
+      (let [canvas-context (.getContext canvas-node "2d")
+            canvas-width   (.-width canvas-node)
+            canvas-height  (.-height canvas-node)]
+        (.clearRect canvas-context 0 0 canvas-width canvas-height)
+        (.drawImage canvas-context img-node 0 0 canvas-width canvas-height)
 
-           ;; Set a true on the next animation frame, we make sure the drawImage is completed
-           (ts/raf
-            #(dom/set-data! canvas-node "ready" "true"))
-           true))
-       (catch :default err
-         (.error js/console err)
-         false)))))
+        ;; Set a true on the next animation frame, we make sure the drawImage is completed
+        (ts/raf
+         #(dom/set-data! canvas-node "ready" "true"))
+        true))
+    (catch :default err
+      (.error js/console err)
+      false)))
 
 (defn- remove-image-loading
   "Remove the changes related to change a url for its embed value. This is necessary
@@ -78,8 +76,12 @@
           (gsh/selection-rect (concat [shape] all-children))
           (-> shape :points gsh/points->selrect))
 
-        fixed-width (mth/clamp width 250 2000)
-        fixed-height (/ (* height fixed-width) width)
+        [fixed-width fixed-height]
+        (if (> width height)
+          [(mth/clamp width 250 2000)
+           (/ (* height (mth/clamp width 250 2000)) width)]
+          [(/ (* width (mth/clamp height 250 2000)) height)
+           (mth/clamp height 250 2000)])
 
         image-url    (mf/use-state nil)
         observer-ref (mf/use-var nil)
@@ -90,6 +92,10 @@
 
         thumbnail-data-ref (mf/use-memo (mf/deps page-id id) #(refs/thumbnail-frame-data page-id id))
         thumbnail-data     (mf/deref thumbnail-data-ref)
+
+        ;; We only need the zoom level in Safari. For other browsers we don't want to activate this because
+        ;; will render for every zoom change
+        zoom (when (cf/check-browser? :safari) (mf/deref refs/selected-zoom))
 
         prev-thumbnail-data (hooks/use-previous thumbnail-data)
 
@@ -108,7 +114,9 @@
            (let [canvas-node (mf/ref-val frame-canvas-ref)
                  img-node    (mf/ref-val frame-image-ref)]
              (when (draw-thumbnail-canvas! canvas-node img-node)
-               (reset! image-url nil)
+               (when-not (cf/check-browser? :safari)
+                 (reset! image-url nil))
+
                (when @show-frame-thumbnail
                  (reset! show-frame-thumbnail false))
                ;; If we don't have the thumbnail data saved (normally the first load) we update the data
@@ -266,12 +274,16 @@
          {:key (dm/str "thumbnail-canvas-" (:id shape))
           :ref frame-canvas-ref
           :data-object-id (dm/str page-id (:id shape))
-          :width fixed-width
-          :height fixed-height
-          ;; DEBUG
-          :style {:filter (when (and (not (cf/check-browser? :safari)) (debug? :thumbnails)) "invert(1)")
-                  :width "100%"
-                  :height "100%"}}]]
+          :width width
+          :height height
+          :style {;; Safari has a problem with the positioning of the canvas. All this is to fix Safari behavior
+                  ;; https://bugs.webkit.org/show_bug.cgi?id=23113
+                  :display (when (cf/check-browser? :safari) "none")
+                  :position "fixed"
+                  :transform-origin "top left"
+                  :transform (when (cf/check-browser? :safari) (dm/fmt "scale(%)" zoom))
+                  ;; DEBUG
+                  :filter (when (debug? :thumbnails) "invert(1)")}}]]
 
        ;; Safari don't support filters so instead we add a rectangle around the thumbnail
        (when (and (cf/check-browser? :safari) (debug? :thumbnails))
@@ -285,10 +297,10 @@
        (when (some? @image-url)
          [:foreignObject {:x x
                           :y y
-                          :width width
-                          :height height}
+                          :width fixed-width
+                          :height fixed-height}
           [:img {:ref frame-image-ref
                  :src @image-url
-                 :width width
-                 :height height
+                 :width fixed-width
+                 :height fixed-height
                  :on-load on-image-load}]])])]))

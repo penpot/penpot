@@ -17,7 +17,7 @@ $height-palette-max: 80px;
 
 #workspace {
   width: 100vw;
-  height: 100vh;
+  height: 100%;
   user-select: none;
   background-color: $color-canvas;
   display: grid;
@@ -37,6 +37,8 @@ $height-palette-max: 80px;
   .left-toolbar {
     grid-area: toolbar;
     width: $width-left-toolbar;
+    overflow-y: scroll;
+    overflow-x: hidden;
   }
 
   .settings-bar.settings-bar-left {

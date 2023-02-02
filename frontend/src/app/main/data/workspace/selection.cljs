@@ -15,7 +15,6 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.page :as ctp]
-   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
@@ -290,7 +289,7 @@
   move to the desired position, and recalculate parents and frames as needed."
   [all-objects page ids delta it]
   (let [shapes         (map (d/getf all-objects) ids)
-        unames         (volatile! (ctt/retrieve-used-names (:objects page)))
+        unames         (volatile! (cp/retrieve-used-names (:objects page)))
         update-unames! (fn [new-name] (vswap! unames conj new-name))
         all-ids        (reduce #(into %1 (cons %2 (cph/get-children-ids all-objects %2))) (d/ordered-set) ids)
         ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
@@ -367,7 +366,7 @@
       (let [update-flows (fn [flows]
                            (reduce
                              (fn [flows frame]
-                               (let [name     (ctt/generate-unique-name @unames "Flow-1")
+                               (let [name     (cp/generate-unique-name @unames "Flow 1")
                                      _        (vswap! unames conj name)
                                      new-flow {:id (uuid/next)
                                                :name name
