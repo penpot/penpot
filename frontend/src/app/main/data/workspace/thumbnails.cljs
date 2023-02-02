@@ -77,6 +77,11 @@
           ;; Delete the thumbnail first so if we interrupt we can regenerate after
           (->> (rp/cmd! :upsert-file-object-thumbnail params)
                (rx/catch #(rx/empty)))
+
+          ;; Remove the thumbnail temporary. If the user changes pages the thumbnail is regenerated
+          (rx/of #(update % :workspace-thumbnails assoc object-id nil))
+
+          ;; Send the update to the back-end
           (->> blob-result
                (rx/merge-map
                 (fn [blob]

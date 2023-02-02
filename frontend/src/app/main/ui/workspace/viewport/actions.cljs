@@ -34,70 +34,71 @@
 
 (defn on-mouse-down
   [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
-   node-editing? drawing-path? create-comment? space? panning workspace-read-only?]
+   node-editing? drawing-path? create-comment? space? panning z? workspace-read-only?]
   (mf/use-callback
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
-            node-editing? drawing-path? create-comment? @space?
+            node-editing? drawing-path? create-comment? @z? @space?
             panning workspace-read-only?)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
                (dom/class? (dom/get-target bevent) "viewport-selrect"))
        (dom/stop-propagation bevent)
 
-       (let [event  (.-nativeEvent bevent)
-             ctrl?  (kbd/ctrl? event)
-             meta?  (kbd/meta? event)
-             shift? (kbd/shift? event)
-             alt?   (kbd/alt? event)
-             mod?   (kbd/mod? event)
+       (when-not @z?
+         (let [event  (.-nativeEvent bevent)
+               ctrl?  (kbd/ctrl? event)
+               meta?  (kbd/meta? event)
+               shift? (kbd/shift? event)
+               alt?   (kbd/alt? event)
+               mod?   (kbd/mod? event)
 
-             left-click?   (and (not panning) (= 1 (.-which event)))
-             middle-click? (and (not panning) (= 2 (.-which event)))]
+               left-click?   (and (not panning) (= 1 (.-which event)))
+               middle-click? (and (not panning) (= 2 (.-which event)))]
 
-         (cond
-           (or middle-click? (and left-click? @space?))
-           (do
-             (dom/prevent-default bevent)
-             (if mod?
-               (let [raw-pt   (dom/get-client-position event)
-                     pt       (uwvv/point->viewport raw-pt)]
-                 (st/emit! (dw/start-zooming pt)))
-               (st/emit! (dw/start-panning))))
+           (cond
+             (or middle-click? (and left-click? @space?))
+             (do
+               (dom/prevent-default bevent)
+               (if mod?
+                 (let [raw-pt   (dom/get-client-position event)
+                       pt       (uwvv/point->viewport raw-pt)]
+                   (st/emit! (dw/start-zooming pt)))
+                 (st/emit! (dw/start-panning))))
 
 
-           left-click?
-           (do
-             (st/emit! (ms/->MouseEvent :down ctrl? shift? alt? meta?))
+             left-click?
+             (do
+               (st/emit! (ms/->MouseEvent :down ctrl? shift? alt? meta?))
 
-             (when (and (not= edition id) text-editing?)
-               (st/emit! dw/clear-edition-mode))
+               (when (and (not= edition id) text-editing?)
+                 (st/emit! dw/clear-edition-mode))
 
-             (when (and (not text-editing?)
-                        (not blocked)
-                        (not hidden)
-                        (not create-comment?)
-                        (not drawing-path?))
-               (cond
-                 node-editing?
+               (when (and (not text-editing?)
+                          (not blocked)
+                          (not hidden)
+                          (not create-comment?)
+                          (not drawing-path?))
+                 (cond
+                   node-editing?
                  ;; Handle path node area selection
-                 (when-not workspace-read-only?
-                   (st/emit! (dwdp/handle-area-selection shift?)))
+                   (when-not workspace-read-only?
+                     (st/emit! (dwdp/handle-area-selection shift?)))
 
-                 drawing-tool
-                 (when-not workspace-read-only?
-                   (st/emit! (dd/start-drawing drawing-tool)))
+                   drawing-tool
+                   (when-not workspace-read-only?
+                     (st/emit! (dd/start-drawing drawing-tool)))
 
-                 (or (not id) mod?)
-                 (st/emit! (dw/handle-area-selection shift? mod?))
+                   (or (not id) mod?)
+                   (st/emit! (dw/handle-area-selection shift? mod?))
 
-                 (not drawing-tool)
-                 (when-not workspace-read-only?
-                   (st/emit! (dw/start-move-selected id shift?))))))))))))
+                   (not drawing-tool)
+                   (when-not workspace-read-only?
+                     (st/emit! (dw/start-move-selected id shift?)))))))))))))
 
 (defn on-move-selected
-  [hover hover-ids selected space? workspace-read-only?]
+  [hover hover-ids selected space? z? workspace-read-only?]
   (mf/use-callback
-   (mf/deps @hover @hover-ids selected @space? workspace-read-only?)
+   (mf/deps @hover @hover-ids selected @space? @z? workspace-read-only?)
    (fn [bevent]
      (let [event (.-nativeEvent bevent)
            shift? (kbd/shift? event)
@@ -110,7 +111,7 @@
                   (not @space?))
          (dom/prevent-default bevent)
          (dom/stop-propagation bevent)
-         (when-not workspace-read-only?
+         (when-not (or workspace-read-only? @z?)
            (st/emit! (dw/start-move-selected))))))))
 
 (defn on-frame-select

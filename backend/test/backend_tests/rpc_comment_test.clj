@@ -154,7 +154,7 @@
           (t/is (th/success? out))
           (let [[thread :as result] (:result out)]
             (t/is (= 1 (count result)))
-            (t/is (= "Page-1" (:page-name thread)))
+            (t/is (= "Page 1" (:page-name thread)))
             (t/is (= "hello world" (:content thread)))
             (t/is (= 2 (:count-comments thread)))
             (t/is (true? (:is-resolved thread))))))

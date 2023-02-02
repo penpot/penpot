@@ -473,7 +473,7 @@
 (s/def ::team-id ::us/uuid)
 (s/def ::member-id ::us/uuid)
 ;; Temporarily disabled viewer role
-;; https://tree.taiga.io/project/uxboxproject/issue/1083
+;; https://tree.taiga.io/project/penpot/issue/1083
 ;; (s/def ::role #{:owner :admin :editor :viewer})
 (s/def ::role #{:owner :admin :editor})
 

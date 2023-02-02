@@ -11,6 +11,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :as cpc]
    [app.common.text :as txt]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
@@ -26,7 +27,7 @@
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
-      [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]))
 
 ;; Define how to read each kind of attribute depending on the shape type:
 ;;   - shape: read the attribute directly from the shape.
@@ -298,6 +299,13 @@
 
         has-text? (contains? all-types :text)
 
+        has-layout-container? (->> shapes (some ctl/layout?))
+
+        all-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/all-layout-child? ids))
+        all-layout-child? (mf/deref all-layout-child-ref)
+
+        all-layout-container? (->> shapes (every? ctl/layout?))
+
         [measure-ids    measure-values]    (get-attrs shapes objects :measure)
 
         [layer-ids            layer-values
@@ -332,14 +340,15 @@
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
-     [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values :multiple true}]
+     (when has-layout-container?
+       [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values :multiple true}])
 
-     (when is-layout-child?
+     (when (or is-layout-child? has-layout-container?)
        [:& layout-item-menu
         {:type type
          :ids layout-item-ids
-         :is-layout-child? true
-         :is-layout-container? true
+         :is-layout-child? all-layout-child?
+         :is-layout-container? all-layout-container?
          :values layout-item-values}])
 
      (when-not (or (empty? constraint-ids) is-layout-child?)
