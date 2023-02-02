@@ -52,7 +52,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.9.0" :git/sha "8c93e0c"}}
+   {io.github.clojure/tools.build {:git/tag "v0.9.3" :git/sha "e537cd1"}}
    :ns-default build}
 
   :test
