@@ -126,7 +126,7 @@
     (fn [file-data]
       (let [id (uuid/next)
             props (merge {:id id
-                          :name "Color-1"
+                          :name "Color 1"
                           :color "#000000"
                           :opacity 1}
                          props)]
@@ -140,7 +140,7 @@
     (fn [file-data]
       (let [id (uuid/next)
             props (merge {:id id
-                          :name "Typography-1"
+                          :name "Typography 1"
                           :font-id "sourcesanspro"
                           :font-family "sourcesanspro"
                           :font-size "14"

@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.pages.common :as common]
    [app.common.spec :as us]
    [app.common.types.shape-tree :as ctst]
    [clojure.spec.alpha :as s]))
@@ -130,7 +131,7 @@
          delta           (gpt/subtract position orig-pos)
 
          objects         (:objects container)
-         unames          (volatile! (ctst/retrieve-used-names objects))
+         unames          (volatile! (common/retrieve-used-names objects))
 
          frame-id        (ctst/frame-id-by-position objects (gpt/add orig-pos delta))
          frame-ids-map   (volatile! {})

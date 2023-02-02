@@ -30,7 +30,7 @@
       (let [state (-> thp/initial-state
                       (thp/sample-page)
                       (thp/sample-shape :shape1 :rect
-                                        {:name "Rect-1"}))
+                                        {:name "Rect 1"}))
 
             store (the/prepare-store state done
                     (fn [new-state]
@@ -43,12 +43,12 @@
                       ;
                       ; [Page]
                       ; Root Frame
-                      ;   Rect-1              #--> Rect-1
-                      ;     Rect-1            ---> Rect-1
+                      ;   Rect 1              #--> Rect 1
+                      ;     Rect 1            ---> Rect 1
                       ;
-                      ; [Rect-1]
-                      ; Rect-1
-                      ;   Rect-1
+                      ; [Rect 1]
+                      ; Rect 1
+                      ;   Rect 1
                       ;
                       (let [shape1 (thp/get-shape new-state :shape1)
 
@@ -59,11 +59,11 @@
 
                             file (wsh/get-local-file new-state)]
 
-                        (t/is (= (:name shape1) "Rect-1"))
-                        (t/is (= (:name group) "Rect-1"))
-                        (t/is (= (:name component) "Rect-1"))
-                        (t/is (= (:name c-shape1) "Rect-1"))
-                        (t/is (= (:name c-group) "Rect-1"))
+                        (t/is (= (:name shape1) "Rect 1"))
+                        (t/is (= (:name group) "Rect 1"))
+                        (t/is (= (:name component) "Rect 1"))
+                        (t/is (= (:name c-shape1) "Rect 1"))
+                        (t/is (= (:name c-group) "Rect 1"))
 
                         (thl/is-from-file group file))))]
 
@@ -81,7 +81,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"}))]
+                                     {:name "Rect 1"}))]
 
      (->> state
           (the/do-update (dw/select-shape (thp/id :shape1)))
@@ -97,11 +97,11 @@
 
                     file (wsh/get-local-file new-state)]
 
-                (t/is (= (:name shape1) "Rect-1"))
-                (t/is (= (:name group) "Component-1"))
-                (t/is (= (:name component) "Component-1"))
-                (t/is (= (:name c-shape1) "Rect-1"))
-                (t/is (= (:name c-group) "Component-1"))
+                (t/is (= (:name shape1) "Rect 1"))
+                (t/is (= (:name group) "Component 1"))
+                (t/is (= (:name component) "Component 1"))
+                (t/is (= (:name c-shape1) "Rect 1"))
+                (t/is (= (:name c-group) "Component 1"))
 
                 (thl/is-from-file group file))))
 
@@ -113,7 +113,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/sample-shape :shape2 :rect
                                      {:name "Rect-2"}))
 
@@ -123,13 +123,13 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Component-1         #--> Component-1
-                   ;     Rect-1            ---> Rect-1
+                   ;   Component 1         #--> Component 1
+                   ;     Rect 1            ---> Rect 1
                    ;     Rect-2            ---> Rect-2
                    ;
-                   ; [Component-1]
-                   ; Component-1
-                   ;   Rect-1
+                   ; [Component 1]
+                   ; Component 1
+                   ;   Rect 1
                    ;   Rect-2
                    ;
                    (let [shape1 (thp/get-shape new-state :shape1)
@@ -143,12 +143,12 @@
 
                          file   (wsh/get-local-file new-state)]
 
-                     (t/is (= (:name group) "Component-1"))
-                     (t/is (= (:name shape1) "Rect-1"))
+                     (t/is (= (:name group) "Component 1"))
+                     (t/is (= (:name shape1) "Rect 1"))
                      (t/is (= (:name shape2) "Rect-2"))
-                     (t/is (= (:name component) "Component-1"))
-                     (t/is (= (:name c-group) "Component-1"))
-                     (t/is (= (:name c-shape1) "Rect-1"))
+                     (t/is (= (:name component) "Component 1"))
+                     (t/is (= (:name c-group) "Component 1"))
+                     (t/is (= (:name c-shape1) "Rect 1"))
                      (t/is (= (:name c-shape2) "Rect-2"))
 
                      (thl/is-from-file group file))))]
@@ -166,7 +166,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/sample-shape :shape2 :rect
                                      {:name "Rect-2"})
                    (thp/group-shapes :group1
@@ -180,12 +180,12 @@
                    ; [Page]
                    ; Root Frame
                    ;   Group               #--> Group
-                   ;     Rect-1            ---> Rect-1
+                   ;     Rect 1            ---> Rect 1
                    ;     Rect-2            ---> Rect-2
                    ;
                    ; [Group]
                    ; Group
-                   ;   Rect-1
+                   ;   Rect 1
                    ;   Rect-2
                    ;
                    (let [[[group shape1 shape2]
@@ -197,11 +197,11 @@
 
                          file   (wsh/get-local-file new-state)]
 
-                     (t/is (= (:name shape1) "Rect-1"))
+                     (t/is (= (:name shape1) "Rect 1"))
                      (t/is (= (:name shape2) "Rect-2"))
                      (t/is (= (:name group) "Group"))
                      (t/is (= (:name component) "Group"))
-                     (t/is (= (:name c-shape1) "Rect-1"))
+                     (t/is (= (:name c-shape1) "Rect 1"))
                      (t/is (= (:name c-shape2) "Rect-2"))
                      (t/is (= (:name c-group) "Group"))
 
@@ -219,7 +219,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/make-component :instance1 :component1
                                        [(thp/id :shape1)]))
 
@@ -229,18 +229,18 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-1              #--> Rect-1
-                   ;     Rect-1            @--> Rect-1
-                   ;       Rect-1          ---> Rect-1
+                   ;   Rect 1              #--> Rect 1
+                   ;     Rect 1            @--> Rect 1
+                   ;       Rect 1          ---> Rect 1
                    ;
-                   ; [Rect-1]
-                   ; Rect-1
-                   ;   Rect-1
+                   ; [Rect 1]
+                   ; Rect 1
+                   ;   Rect 1
                    ;
-                   ; [Rect-1]
-                   ; Rect-1
-                   ;   Rect-1              @--> Rect-1
-                   ;     Rect-1            ---> Rect-1
+                   ; [Rect 1]
+                   ; Rect 1
+                   ;   Rect 1              @--> Rect 1
+                   ;     Rect 1            ---> Rect 1
                    ;
                    (let [[[instance1 shape1]
                           [c-instance1 c-shape1]
@@ -257,19 +257,19 @@
                            new-state
                            (:parent-id instance1))]
 
-                     (t/is (= (:name shape1) "Rect-1"))
-                     (t/is (= (:name instance1) "Rect-1"))
-                     (t/is (= (:name component1) "Rect-1"))
-                     (t/is (= (:name c-shape1) "Rect-1"))
-                     (t/is (= (:name c-instance1) "Rect-1"))
+                     (t/is (= (:name shape1) "Rect 1"))
+                     (t/is (= (:name instance1) "Rect 1"))
+                     (t/is (= (:name component1) "Rect 1"))
+                     (t/is (= (:name c-shape1) "Rect 1"))
+                     (t/is (= (:name c-instance1) "Rect 1"))
 
-                     (t/is (= (:name shape1') "Rect-1"))
-                     (t/is (= (:name instance1') "Rect-1"))
-                     (t/is (= (:name instance2) "Rect-1"))
-                     (t/is (= (:name component2) "Rect-1"))
-                     (t/is (= (:name c-shape1') "Rect-1"))
-                     (t/is (= (:name c-instance1') "Rect-1"))
-                     (t/is (= (:name c-instance2) "Rect-1")))))]
+                     (t/is (= (:name shape1') "Rect 1"))
+                     (t/is (= (:name instance1') "Rect 1"))
+                     (t/is (= (:name instance2) "Rect 1"))
+                     (t/is (= (:name component2) "Rect 1"))
+                     (t/is (= (:name c-shape1') "Rect 1"))
+                     (t/is (= (:name c-instance1') "Rect 1"))
+                     (t/is (= (:name c-instance2) "Rect 1")))))]
 
      (ptk/emit!
        store
@@ -283,7 +283,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/make-component :instance1 :component-1
                                        [(thp/id :shape1)]))
 
@@ -296,11 +296,11 @@
                    ; [Page]
                    ; Root Frame
                    ;   Rect-2              #--> Renamed component
-                   ;     Rect-1            ---> Rect-1
+                   ;     Rect 1            ---> Rect 1
                    ;
                    ; [Renamed]
                    ; Renamed component
-                   ;   Rect-1
+                   ;   Rect 1
                    (let [libs      (wsh/get-libraries new-state)
                          component (cph/get-component libs
                                                       (:component-file instance1)
@@ -319,7 +319,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/make-component :instance1 :component-1
                                        [(thp/id :shape1)]))
 
@@ -332,16 +332,16 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-1              #--> Rect-1
-                   ;     Rect-1            ---> Rect-1
+                   ;   Rect 1              #--> Rect 1
+                   ;     Rect 1            ---> Rect 1
                    ;
-                   ; [Rect-1]
-                   ; Rect-1
-                   ;   Rect-1
+                   ; [Rect 1]
+                   ; Rect 1
+                   ;   Rect 1
                    ;
-                   ; [Rect-1]
-                   ; Rect-1
-                   ;   Rect-1
+                   ; [Rect 1]
+                   ; Rect 1
+                   ;   Rect 1
                    ;
                    (let [new-component-id (->> (get-in new-state
                                                        [:workspace-data
@@ -363,7 +363,7 @@
                            new-state
                            new-component-id)]
 
-                     (t/is (= (:name component2) "Rect-1")))))]
+                     (t/is (= (:name component2) "Rect 1")))))]
 
      (ptk/emit!
        store
@@ -376,7 +376,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/make-component :instance1 :component-1
                                        [(thp/id :shape1)]))
 
@@ -392,7 +392,7 @@
                    ; [Page]
                    ; Root Frame
                    ;  Rect-2
-                   ;    Rect-1
+                   ;    Rect 1
                    ;
                    (let [[instance1 shape1]
                          (thl/resolve-noninstance
@@ -420,7 +420,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/make-component :instance1 :component-1
                                        [(thp/id :shape1)]))
 
@@ -434,14 +434,14 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-1              #--> Rect-1
-                   ;     Rect-1            ---> Rect-1
-                   ;   Rect-1              #--> Rect-1
-                   ;     Rect-1            ---> Rect-1
+                   ;   Rect 1              #--> Rect 1
+                   ;     Rect 1            ---> Rect 1
+                   ;   Rect 1              #--> Rect 1
+                   ;     Rect 1            ---> Rect 1
                    ;
-                   ; [Rect-1]
-                   ; Rect-1
-                   ;   Rect-1
+                   ; [Rect 1]
+                   ; Rect 1
+                   ;   Rect 1
                    ;
                    (let [new-instance-id (-> new-state
                                              wsh/lookup-selected
@@ -456,10 +456,10 @@
 
                      (t/is (not= (:id instance1) (:id instance2)))
                      (t/is (= (:id component) component-id))
-                     (t/is (= (:name instance2) "Rect-1"))
-                     (t/is (= (:name shape2) "Rect-1"))
-                     (t/is (= (:name c-instance2) "Rect-1"))
-                     (t/is (= (:name c-shape2) "Rect-1"))
+                     (t/is (= (:name instance2) "Rect 1"))
+                     (t/is (= (:name shape2) "Rect 1"))
+                     (t/is (= (:name c-instance2) "Rect 1"))
+                     (t/is (= (:name c-shape2) "Rect 1"))
                      (t/is (= (:component-file instance2)
                               thp/current-file-id)))))]
 
@@ -476,7 +476,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/make-component :instance1 :component-1
                                        [(thp/id :shape1)])
                    (thp/move-to-library :lib1 "Library 1")
@@ -491,8 +491,8 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-1              #--> <Library 1> Rect-1
-                   ;     Rect-1            ---> <Library 1> Rect-1
+                   ;   Rect 1              #--> <Library 1> Rect 1
+                   ;     Rect 1            ---> <Library 1> Rect 1
                    ;
                    (let [new-instance-id (-> new-state
                                              wsh/lookup-selected
@@ -506,10 +506,10 @@
                            new-instance-id)]
 
                      (t/is (= (:id component) component-id))
-                     (t/is (= (:name instance2) "Rect-1"))
-                     (t/is (= (:name shape2) "Rect-1"))
-                     (t/is (= (:name c-instance2) "Rect-1"))
-                     (t/is (= (:name c-shape2) "Rect-1"))
+                     (t/is (= (:name instance2) "Rect 1"))
+                     (t/is (= (:name shape2) "Rect 1"))
+                     (t/is (= (:name c-instance2) "Rect 1"))
+                     (t/is (= (:name c-shape2) "Rect 1"))
                      (t/is (= (:component-file instance2) library-id)))))]
 
         (ptk/emit!
@@ -525,7 +525,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/make-component :instance1 :component-1
                                        [(thp/id :shape1)]))
 
@@ -539,11 +539,11 @@
                    ; [Page]
                    ; Root Frame
                    ;   Rect-2
-                   ;     Rect-1
+                   ;     Rect 1
                    ;
                    ; [Rect-2]
                    ; Rect-2
-                   ;   Rect-1
+                   ;   Rect 1
                    ;
                    (let [[instance1 shape1]
                          (thl/resolve-noninstance
@@ -564,7 +564,7 @@
     (let [state (-> thp/initial-state
                     (thp/sample-page)
                     (thp/sample-shape :shape1 :rect
-                                      {:name "Rect-1"}))
+                                      {:name "Rect 1"}))
 
           file         (wsh/get-local-file state)
           instance1    (thp/get-shape state :instance1)
@@ -577,17 +577,17 @@
                     ; [Page]
                     ; Root Frame
                     ;   Group               #--> Group
-                    ;     Rect-1            @--> Rect-1
-                    ;       Rect-1          ---> Rect-1
+                    ;     Rect 1            @--> Rect 1
+                    ;       Rect 1          ---> Rect 1
                     ;
-                    ; [Rect-1]
-                    ; Rect-1
-                    ;   Rect-1
+                    ; [Rect 1]
+                    ; Rect 1
+                    ;   Rect 1
                     ;
                     ; [Group]
                     ; Group
-                    ;   Rect-1              @--> Rect-1
-                    ;     Rect-1            ---> Rect-1
+                    ;   Rect 1              @--> Rect 1
+                    ;     Rect 1            ---> Rect 1
                     ;
                     (let [page    (thp/current-page new-state)
                           shape1  (thp/get-shape new-state :shape1)
@@ -601,12 +601,12 @@
                             (:parent-id parent1))]
 
                       (t/is (= (:name group) "Group"))
-                      (t/is (= (:name shape1) "Rect-1"))
-                      (t/is (= (:name shape2) "Rect-1"))
+                      (t/is (= (:name shape1) "Rect 1"))
+                      (t/is (= (:name shape2) "Rect 1"))
                       (t/is (= (:name component) "Group"))
                       (t/is (= (:name c-group) "Group"))
-                      (t/is (= (:name c-shape1) "Rect-1"))
-                      (t/is (= (:name c-shape2) "Rect-1")))))]
+                      (t/is (= (:name c-shape1) "Rect 1"))
+                      (t/is (= (:name c-shape2) "Rect 1")))))]
 
       (ptk/emit!
         store
@@ -622,7 +622,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/make-component :instance1 :component-1
                                        [(thp/id :shape1)])
                    (thp/group-shapes :group1
@@ -641,21 +641,21 @@
                    ;
                    ; [Page]
                    ; Root Frame
-                   ;   Rect-1              #--> Rect-1
-                   ;     Rect-1            @--> Rect-1
-                   ;       Rect-1          ---> Rect-1
-                   ;   Rect-1              #--> Rect-1
-                   ;     Rect-1            @--> Rect-1
-                   ;       Rect-1          ---> Rect-1
+                   ;   Rect 1              #--> Rect 1
+                   ;     Rect 1            @--> Rect 1
+                   ;       Rect 1          ---> Rect 1
+                   ;   Rect 1              #--> Rect 1
+                   ;     Rect 1            @--> Rect 1
+                   ;       Rect 1          ---> Rect 1
                    ;
-                   ; [Rect-1]
-                   ; Rect-1
-                   ;   Rect-1
+                   ; [Rect 1]
+                   ; Rect 1
+                   ;   Rect 1
                    ;
-                   ; [Rect-1]
-                   ; Rect-1
-                   ;   Rect-1              @--> Rect-1
-                   ;     Rect-1            ---> Rect-1
+                   ; [Rect 1]
+                   ; Rect 1
+                   ;   Rect 1              @--> Rect 1
+                   ;     Rect 1            ---> Rect 1
                    ;
                    (let [new-instance-id (-> new-state
                                              wsh/lookup-selected
@@ -672,12 +672,12 @@
 
                      (t/is (not= (:id instance1) (:id instance3)))
                      (t/is (= (:id component) component-id))
-                     (t/is (= (:name instance3) "Rect-1"))
-                     (t/is (= (:name shape3) "Rect-1"))
-                     (t/is (= (:name shape4) "Rect-1"))
-                     (t/is (= (:name c-instance3) "Rect-1"))
-                     (t/is (= (:name c-shape3) "Rect-1"))
-                     (t/is (= (:name c-shape4) "Rect-1")))))]
+                     (t/is (= (:name instance3) "Rect 1"))
+                     (t/is (= (:name shape3) "Rect 1"))
+                     (t/is (= (:name shape4) "Rect 1"))
+                     (t/is (= (:name c-instance3) "Rect 1"))
+                     (t/is (= (:name c-shape3) "Rect 1"))
+                     (t/is (= (:name c-shape4) "Rect 1")))))]
 
         (ptk/emit!
           store
@@ -692,7 +692,7 @@
    (let [state (-> thp/initial-state
                    (thp/sample-page)
                    (thp/sample-shape :shape1 :rect
-                                     {:name "Rect-1"})
+                                     {:name "Rect 1"})
                    (thp/make-component :instance1 :component-1
                                        [(thp/id :shape1)])
                    (thp/move-to-library :lib1 "Library 1")
@@ -711,13 +711,13 @@
                    ; [Page]
                    ; Root Frame
                    ;   Group             #--> Group
-                   ;     Rect-1            @--> <Library 1> Rect-1
-                   ;       Rect-1          ---> <Library 1> Rect-1
+                   ;     Rect 1            @--> <Library 1> Rect 1
+                   ;       Rect 1          ---> <Library 1> Rect 1
                    ;
                    ; [Group]
                    ; Group
-                   ;   Rect-1              @--> <Library 1> Rect-1
-                   ;     Rect-1            ---> <Library 1> Rect-1
+                   ;   Rect 1              @--> <Library 1> Rect 1
+                   ;     Rect 1            ---> <Library 1> Rect 1
                    ;
                    (let [instance2 (thp/get-shape new-state :instance2)
 
@@ -727,11 +727,11 @@
                            (:parent-id instance2))]
 
                      (t/is (= (:name group1) "Group"))
-                     (t/is (= (:name shape1) "Rect-1"))
-                     (t/is (= (:name shape2) "Rect-1"))
+                     (t/is (= (:name shape1) "Rect 1"))
+                     (t/is (= (:name shape2) "Rect 1"))
                      (t/is (= (:name c-group1) "Group"))
-                     (t/is (= (:name c-shape1) "Rect-1"))
-                     (t/is (= (:name c-shape2) "Rect-1"))
+                     (t/is (= (:name c-shape1) "Rect 1"))
+                     (t/is (= (:name c-shape2) "Rect 1"))
                      (t/is (= (:component-file group1) thp/current-file-id))
                      (t/is (= (:component-file shape1) library-id))
                      (t/is (= (:component-file shape2) nil))

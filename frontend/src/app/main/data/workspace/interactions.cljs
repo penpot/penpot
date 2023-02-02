@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.pages :as cp]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -33,7 +34,7 @@
 
             flows   (get-in page [:options :flows] [])
             unames  (into #{} (map :name flows))
-            name    (ctst/generate-unique-name unames "Flow-1")
+            name    (cp/generate-unique-name unames "Flow 1")
 
             new-flow {:id (uuid/next)
                       :name name
