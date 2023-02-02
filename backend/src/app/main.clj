@@ -161,15 +161,13 @@
 
 (def system-config
   {::db/pool
-   {:uri        (cf/get :database-uri)
-    :username   (cf/get :database-username)
-    :password   (cf/get :database-password)
-    :read-only  (cf/get :database-readonly false)
-    :metrics    (ig/ref ::mtx/metrics)
-    :migrations (ig/ref :app.migrations/all)
-    :name       :main
-    :min-size   (cf/get :database-min-pool-size 0)
-    :max-size   (cf/get :database-max-pool-size 60)}
+   {::db/uri        (cf/get :database-uri)
+    ::db/username   (cf/get :database-username)
+    ::db/password   (cf/get :database-password)
+    ::db/read-only? (cf/get :database-readonly false)
+    ::db/min-size   (cf/get :database-min-pool-size 0)
+    ::db/max-size   (cf/get :database-max-pool-size 60)
+    ::mtx/metrics   (ig/ref ::mtx/metrics)}
 
    ;; Default thread pool for IO operations
    ::wrk/executor
@@ -184,16 +182,13 @@
     ::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.migrations/migrations
-   {}
+   {::db/pool (ig/ref ::db/pool)}
 
    ::mtx/metrics
    {:default default-metrics}
 
    ::mtx/routes
    {::mtx/metrics (ig/ref ::mtx/metrics)}
-
-   :app.migrations/all
-   {:main (ig/ref :app.migrations/migrations)}
 
    ::rds/redis
    {::rds/uri     (cf/get :redis-uri)
@@ -426,8 +421,12 @@
    {::http.client/client (ig/ref ::http.client/client)}
 
    :app.setup/props
-   {:pool (ig/ref ::db/pool)
-    :key  (cf/get :secret-key)}
+   {::db/pool    (ig/ref ::db/pool)
+    ::key        (cf/get :secret-key)
+
+    ;; NOTE: this dependency is only necessary for proper initialization ordering, props
+    ;; module requires the migrations to run before initialize.
+    ::migrations (ig/ref :app.migrations/migrations)}
 
    ::audit/collector
    {::db/pool           (ig/ref ::db/pool)
