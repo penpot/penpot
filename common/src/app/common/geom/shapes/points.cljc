@@ -54,11 +54,11 @@
 
 (defn width-points
   [[p0 p1 _ _]]
-  (gpt/length (gpt/to-vec p0 p1)))
+  (max 0.01 (gpt/length (gpt/to-vec p0 p1))))
 
 (defn height-points
   [[p0 _ _ p3]]
-  (gpt/length (gpt/to-vec p0 p3)))
+  (max 0.01 (gpt/length (gpt/to-vec p0 p3))))
 
 (defn pad-points
   [[p0 p1 p2 p3 :as points] pad-top pad-right pad-bottom pad-left]
