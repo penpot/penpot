@@ -130,7 +130,7 @@
       (cond
         (and touched? (:message error))
         [:span.error {:id (dm/str "error-" input-name)
-                      :data-test (clojure.string/join [data-test "-error"]) }(tr (:message error))]
+                      :data-test (clojure.string/join [data-test "-error"])} (tr (:message error))]
 
         (string? hint)
         [:span.hint hint])]]))
@@ -328,7 +328,13 @@
         remove-item!
         (mf/use-fn
          (fn [item]
-           (swap! items #(into [] (remove (fn [x] (= x item))) %))))]
+           (swap! items #(into [] (remove (fn [x] (= x item))) %))))
+
+        manage-key-down
+        (mf/use-fn
+         (fn [item event]
+           (when (kbd/enter? event)
+             (remove-item! item))))]
 
     (mf/with-effect [result @value]
       (let [val (cond-> @value trim str/trim)
@@ -337,14 +343,6 @@
         (update-form! values)))
 
     [:div {:class klass}
-     (when-let [items (seq @items)]
-       [:div.selected-items
-        (for [item items]
-          [:div.selected-item {:key (:text item)}
-           [:span.around {:class (when-not (:valid item) "invalid")}
-            [:span.text (:text item)]
-            [:span.icon {:on-click #(remove-item! item)} i/cross]]])])
-
      [:input {:id (name input-name)
               :class in-klass
               :type "text"
@@ -355,4 +353,14 @@
               :value @value
               :on-change on-change
               :placeholder (when empty? label)}]
-     [:label {:for (name input-name)} label]]))
+     [:label {:for (name input-name)} label]
+
+     (when-let [items (seq @items)]
+       [:div.selected-items
+        (for [item items]
+          [:div.selected-item {:key (:text item)
+                               :tab-index "0"
+                               :on-key-down (partial manage-key-down item)}
+           [:span.around {:class (when-not (:valid item) "invalid")}
+            [:span.text (:text item)]
+            [:span.icon {:on-click #(remove-item! item)} i/cross]]])])]))
