@@ -93,6 +93,10 @@
         thumbnail-data-ref (mf/use-memo (mf/deps page-id id) #(refs/thumbnail-frame-data page-id id))
         thumbnail-data     (mf/deref thumbnail-data-ref)
 
+        ;; We only need the zoom level in Safari. For other browsers we don't want to activate this because
+        ;; will render for every zoom change
+        zoom (when (cf/check-browser? :safari) (mf/deref refs/selected-zoom))
+
         prev-thumbnail-data (hooks/use-previous thumbnail-data)
 
         ;; State to indicate to the parent that should render the frame
@@ -110,8 +114,7 @@
            (let [canvas-node (mf/ref-val frame-canvas-ref)
                  img-node    (mf/ref-val frame-image-ref)]
              (when (draw-thumbnail-canvas! canvas-node img-node)
-               (when-not (cf/check-browser? :safari)
-                 (reset! image-url nil))
+               (reset! image-url nil)
 
                (when @show-frame-thumbnail
                  (reset! show-frame-thumbnail false))
@@ -270,11 +273,15 @@
          {:key (dm/str "thumbnail-canvas-" (:id shape))
           :ref frame-canvas-ref
           :data-object-id (dm/str page-id (:id shape))
-          :width fixed-width
-          :height fixed-height
-          ;; DEBUG
-          :style {:filter (when (and (not (cf/check-browser? :safari)) (debug? :thumbnails)) "invert(1)")
-                  :display (when (cf/check-browser? :safari) "none")}}]]
+          :width width
+          :height height
+          :style {;; Safari has a problem with the positioning of the canvas. All this is to fix Safari behavior
+                  ;; https://bugs.webkit.org/show_bug.cgi?id=23113
+                  :position "fixed"
+                  :transform-origin "top left"
+                  :transform (when (cf/check-browser? :safari) (dm/fmt "scale(%)" zoom))
+                  ;; DEBUG
+                  :filter (when (debug? :thumbnails) "invert(1)")}}]]
 
        ;; Safari don't support filters so instead we add a rectangle around the thumbnail
        (when (and (cf/check-browser? :safari) (debug? :thumbnails))
@@ -288,8 +295,8 @@
        (when (some? @image-url)
          [:foreignObject {:x x
                           :y y
-                          :width width
-                          :height height}
+                          :width fixed-width
+                          :height fixed-height}
           [:img {:ref frame-image-ref
                  :src @image-url
                  :width fixed-width
