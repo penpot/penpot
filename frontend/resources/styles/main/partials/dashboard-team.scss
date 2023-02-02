@@ -29,7 +29,35 @@
 
   .custom-input {
     width: 100%;
-    height: 115px;
+    min-height: 116px;
+    max-height: 176px;
+    overflow-y: hidden;
+    input {
+      &.no-padding {
+        padding-top: 12px;
+      }
+      min-height: 40px;
+    }
+    .selected-items {
+      gap: 8px;
+      padding: 8px;
+      max-height: 132px;
+      overflow-y: scroll;
+      .selected-item {
+        .around {
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          width: fit-content;
+          .icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+      }
+    }
   }
 
   .custom-select {
