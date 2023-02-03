@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-01 16:38+0000\n"
+"PO-Revision-Date: 2023-02-04 11:38+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -895,7 +895,7 @@ msgstr "Ein Fehler ist aufgetreten"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur"
-msgstr "Unschärfe"
+msgstr "Weichzeichnen"
 
 #: src/app/main/ui/inspect/attributes/blur.cljs
 msgid "inspect.attributes.blur.value"
@@ -2324,7 +2324,7 @@ msgid "shortcuts.open-dashboard"
 msgstr "Zum Dashboard"
 
 msgid "shortcuts.open-interactions"
-msgstr "Zur Zuschauerinteraktionen"
+msgstr "Zum Ansichtsmodus"
 
 msgid "shortcuts.open-viewer"
 msgstr "Zum Ansichtsmodus"
@@ -2828,7 +2828,7 @@ msgstr "Hilfe und Infos"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.preferences"
-msgstr "Präferenzen"
+msgstr "Einstellungen"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.option.view"
@@ -3011,15 +3011,15 @@ msgstr "Klicken Sie auf den + Button um Interaktionen hinzuzufügen."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
-msgstr "Unschärfe"
+msgstr "Weichzeichnen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title.group"
-msgstr "Gruppe unschärfe"
+msgstr "Gruppe weichzeichnen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title.multiple"
-msgstr "Auswahl unschärfe"
+msgstr "Auswahl weichzeichnen"
 
 #: src/app/main/ui/workspace/sidebar/options/page.cljs
 msgid "workspace.options.canvas-background"
@@ -3682,7 +3682,7 @@ msgstr "Auswahl einrahmen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.blur"
-msgstr "Unschärfe"
+msgstr "Weichzeichnen"
 
 msgid "workspace.options.shadow-options.color"
 msgstr "Schattenfarbe"
@@ -4153,7 +4153,7 @@ msgid "workspace.sidebar.layers.masks"
 msgstr "Masken"
 
 msgid "workspace.sidebar.layers.search"
-msgstr "Layer durchsuchen"
+msgstr "Ebenen durchsuchen"
 
 msgid "workspace.sidebar.layers.shapes"
 msgstr "Formen"
@@ -4535,7 +4535,7 @@ msgid "workspace.remove-graphics.progress"
 msgstr "Konvertieren von %s/%s"
 
 msgid "workspace.options.inspect"
-msgstr "Inspizieren"
+msgstr "Spezifikation"
 
 msgid "workspace.options.interaction-auto"
 msgstr "Automatisch"
@@ -4606,3 +4606,12 @@ msgstr[1] ""
 msgid "dashboard.webhooks.active.explain"
 msgstr ""
 "Wenn dieser Hook ausgelöst wird, dann werden die Eventdetails übermittelt."
+
+msgid "shortcuts.open-inspect"
+msgstr "Zur Spezifikation im Ansichtsmodus"
+
+msgid "webhooks.last-delivery.success"
+msgstr "Die letzte Übertragung war erfolgreich."
+
+msgid "viewer.header.inspect-section"
+msgstr "Spezifikation (%s)"
