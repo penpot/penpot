@@ -259,6 +259,8 @@ services:
       - '1025'
     ports:
       - "1080:1080"
+    networks:
+      - penpot
 
   ## Example configuration of MiniIO (S3 compatible object storage service); If you don't
   ## have preference, then just use filesystem, this is here just for the completeness.
