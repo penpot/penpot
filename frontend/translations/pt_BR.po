@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-04 11:38+0000\n"
-"Last-Translator: Dias Stebanäk <diasatreader@gmail.com>\n"
+"PO-Revision-Date: 2023-02-06 15:38+0000\n"
+"Last-Translator: Fernando Krik <fernandokrik@hotmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -800,7 +800,7 @@ msgstr "Token desconhecido"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
-msgstr "O nome de usuário ou a senha parecem estar errados."
+msgstr "E-mail ou senha está incorreto."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
@@ -922,10 +922,6 @@ msgstr "Largura"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Sombra"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -1265,17 +1261,16 @@ msgstr "Nova senha"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "Você não tem notificações de comentários pendentes"
+msgstr "Você não tem notificações! Novas notificações irão aparecer aqui."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
-msgstr "Não há convites."
+msgstr "Não há convites pendentes."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr ""
-"Pressione o botão \"Convidar para equipe\" para convidar mais membros para "
-"esta equipe."
+"Clique no botão **Convidar pessoas** para convidar membros para esta equipe."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1731,18 +1726,14 @@ msgid "modals.small-nudge"
 msgstr "Pequeno deslocamento"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Cancelar publicação"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
-"Se você cancelar a publicação, os ativos nele se tornarão uma biblioteca "
+"Se você cancelar a publicação, os recursos serão movidos para a biblioteca "
 "desse arquivo."
 msgstr[1] ""
-"Se você cancelar a publicação, os ativos nele se tornarão uma biblioteca "
-"desses arquivos."
+"Se você cancelar as publicações, os recursos serão movidos para a biblioteca "
+"desse arquivo."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1753,8 +1744,8 @@ msgstr[1] "Tem certeza de que deseja cancelar a publicação dessas bibliotecas?
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Está em uso neste arquivo:"
-msgstr[1] "Está em uso nestes arquivos:"
+msgstr[0] "Alguns dos recursos dessa biblioteca estão em uso aqui:"
+msgstr[1] "Alguns dos recursos dessas bibliotecas estão em uso aqui:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
@@ -1909,9 +1900,6 @@ msgstr "Crie uma equipe e envie convites"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Convide com a função:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Você pode acessar o"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Sim, assinar"
 
@@ -1926,14 +1914,8 @@ msgstr "Politica de privacidade."
 msgid "onboarding.newsletter.title"
 msgstr "Deseja receber novidades sobre o Penpot?"
 
-msgid "onboarding.slide.0.title"
-msgstr "Bibliotecas de design, estilos e componentes"
-
 msgid "onboarding.slide.1.title"
 msgstr "Dê vida aos seus projetos com interações"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Inspect e lowcode"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Crie uma equipe"
@@ -2495,10 +2477,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Copiar link"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Qualquer pessoa com o link terá acesso"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Mostrar interações"
 
@@ -2933,9 +2911,6 @@ msgstr "Atualizar"
 msgid "workspace.libraries.updates"
 msgstr "ATUALIZAÇÔES"
 
-msgid "workspace.library.store"
-msgstr "Bibliotecas da loja"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Clique no botão + para adicionar interações."
@@ -3279,7 +3254,7 @@ msgstr "Abrir diálogo: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
-msgstr "Abrir url"
+msgstr "Abrir URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-out"
@@ -3476,10 +3451,6 @@ msgstr "Largura mínima"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Inferior"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Coluna inversa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3819,10 +3790,10 @@ msgid "workspace.options.width"
 msgstr "Largura"
 
 msgid "workspace.options.x"
-msgstr "X"
+msgstr "eixo X"
 
 msgid "workspace.options.y"
-msgstr "Y"
+msgstr "eixo Y"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Adicionar ponto (%s)"
@@ -4277,3 +4248,71 @@ msgstr "Aperte o botão \"Adicionar Webhook\" para adicionar um Webhook."
 
 msgid "dashboard.webhooks.empty.no-webhooks"
 msgstr "Nenhum Webhook criado ainda."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Por favor, insira um email válido"
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Você atingiu a cotação '%s'. Entre em contato com o suporte."
+
+msgid "inspect.empty.more-info"
+msgstr "Mais informações sobre inspecionar"
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook atualizado com sucesso."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Copiar link"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Recurso '%s' não é suportado."
+
+msgid "errors.webhooks.connection"
+msgstr "Erro de conexão, URL não acessível"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "A URL não passa na validação."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Erro na validação SSL."
+
+msgid "errors.webhooks.timeout"
+msgstr "Tempo esgotado"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Erro inesperado ao validar"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Status inesperado %s"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Tamanho e posição"
+
+msgid "inspect.empty.select"
+msgstr ""
+"Selecione uma forma, prancheta ou grupo para inspecionar suas propriedades e "
+"código"
+
+msgid "labels.active"
+msgstr "Ativo"
+
+msgid "labels.inactive"
+msgstr "Inativo"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Recarregar arquivo"
+
+msgid "labels.webhooks"
+msgstr "Webhooks"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Criar webhook"
+
+msgid "modals.create-webhook.title"
+msgstr "Criar webhook"
