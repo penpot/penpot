@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-04 11:38+0000\n"
+"PO-Revision-Date: 2023-02-06 15:38+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -1749,9 +1749,9 @@ msgstr "הינד קטן"
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] "ביטול הפרסום יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[1] "ביטול הפרסום יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[2] "ביטול הפרסום יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
-msgstr[3] "ביטול הפרסום יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
+msgstr[1] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
+msgstr[2] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
+msgstr[3] "ביטול הפרסומים יעביר את המשאבים לספרייה המקומית של הקובץ הזה."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1932,9 +1932,6 @@ msgstr "מדיניות פרטיות."
 
 msgid "onboarding.newsletter.title"
 msgstr "מעניין אותך לקבל חדשות על Penpot?"
-
-msgid "onboarding.slide.1.title"
-msgstr "העיצובים שלך קמים לחיים עם אינטראקציות"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "יצירת צוות"
