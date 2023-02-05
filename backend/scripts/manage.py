@@ -19,10 +19,10 @@ PREPL_URI = "tcp://localhost:6063"
 def get_prepl_conninfo():
     uri_data = urlparse(PREPL_URI)
     if uri_data.scheme != "tcp":
-        raise RuntimeException(f"invalid PREPL_URI: {PREPL_URI}")
+        raise RuntimeError(f"invalid PREPL_URI: {PREPL_URI}")
 
     if not isinstance(uri_data.netloc, str):
-        raise RuntimeException(f"invalid PREPL_URI: {PREPL_URI}")
+        raise RuntimeError(f"invalid PREPL_URI: {PREPL_URI}")
 
     host, port = uri_data.netloc.split(":", 2)
 
@@ -46,7 +46,7 @@ def send_eval(expr):
             result = json.load(f)
             tag = result.get("tag", None)
             if tag != "ret":
-                raise RuntimeException("unexpected response from PREPL")
+                raise RuntimeError("unexpected response from PREPL")
             return result.get("val", None), result.get("exception", None)
 
 def encode(val):
