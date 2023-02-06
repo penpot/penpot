@@ -59,8 +59,8 @@
 (s/def ::read-only? ::us/boolean)
 
 (s/def ::pool-options
-  (s/keys :req [::uri]
-          :opt [::name
+  (s/keys :opt [::uri
+                ::name
                 ::min-size
                 ::max-size
                 ::connection-timeout
@@ -89,15 +89,16 @@
 
 (defmethod ig/init-key ::pool
   [_ {:keys [::uri ::read-only?] :as cfg}]
-  (l/info :hint "initialize connection pool"
-          :name (d/name (::name cfg))
-          :uri uri
-          :read-only read-only?
-          :with-credentials (and (contains? cfg ::username)
-                                 (contains? cfg ::password))
-          :min-size (::min-size cfg)
+  (when uri
+    (l/info :hint "initialize connection pool"
+            :name (d/name (::name cfg))
+            :uri uri
+            :read-only read-only?
+            :with-credentials (and (contains? cfg ::username)
+                                   (contains? cfg ::password))
+            :min-size (::min-size cfg)
           :max-size (::max-size cfg))
-  (create-pool cfg))
+    (create-pool cfg)))
 
 (defmethod ig/halt-key! ::pool
   [_ pool]
@@ -144,6 +145,7 @@
   [v]
   (instance? javax.sql.DataSource v))
 
+(s/def ::conn some?)
 (s/def ::pool pool?)
 (s/def ::nilable-pool (s/nilable ::pool))
 (s/def ::conn-or-pool some?)
@@ -429,6 +431,11 @@
     (doto (org.postgresql.util.PGobject.)
       (.setType "jsonb")
       (.setValue (json/encode-str data)))))
+
+(defn get-update-count
+  [result]
+  (:next.jdbc/update-count result))
+
 
 ;; --- Locks
 
