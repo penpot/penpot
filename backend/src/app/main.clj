@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.db :as-alias db]
    [app.email :as-alias email]
+   [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.http.assets :as-alias http.assets]
    [app.http.awsns :as http.awsns]
@@ -234,15 +235,15 @@
     ::http.client/client (ig/ref ::http.client/client)
     ::wrk/executor       (ig/ref ::wrk/executor)}
 
-   :app.http/server
-   {:port        (cf/get :http-server-port)
-    :host        (cf/get :http-server-host)
-    :router      (ig/ref :app.http/router)
-    :metrics     (ig/ref ::mtx/metrics)
-    :executor    (ig/ref ::wrk/executor)
-    :io-threads  (cf/get :http-server-io-threads)
-    :max-body-size           (cf/get :http-server-max-body-size)
-    :max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}
+   ::http/server
+   {::http/port                    (cf/get :http-server-port)
+    ::http/host                    (cf/get :http-server-host)
+    ::http/router                  (ig/ref ::http/router)
+    ::http/metrics                 (ig/ref ::mtx/metrics)
+    ::http/executor                (ig/ref ::wrk/executor)
+    ::http/io-threads              (cf/get :http-server-io-threads)
+    ::http/max-body-size           (cf/get :http-server-max-body-size)
+    ::http/max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}
 
    ::ldap/provider
    {:host           (cf/get :ldap-host)
