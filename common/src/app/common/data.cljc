@@ -8,7 +8,8 @@
   "A collection if helpers for working with data structures and other
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
-                            parse-double group-by iteration concat mapcat])
+                            parse-double group-by iteration concat mapcat
+                            parse-uuid])
   #?(:cljs
      (:require-macros [app.common.data]))
 
@@ -17,6 +18,7 @@
       :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
+   [app.common.exceptions :as ex]
    [app.common.math :as mth]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -515,6 +517,10 @@
      (if (or (nil? v) (nan? v))
        default
        v))))
+
+(defn parse-uuid
+  [v]
+  (ex/ignoring (c/parse-uuid v)))
 
 (defn num-string? [v]
   ;; https://stackoverflow.com/questions/175739/built-in-way-in-javascript-to-check-if-a-string-is-a-valid-number

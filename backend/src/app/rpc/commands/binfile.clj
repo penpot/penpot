@@ -516,7 +516,7 @@
     (write-obj! output rels)))
 
 (defmethod write-section :v1/sobjects
-  [{:keys [storage ::output]}]
+  [{:keys [::sto/storage ::output]}]
   (let [sids    (-> *state* deref :sids)
         storage (media/configure-assets-storage storage)]
     (l/debug :hint "found sobjects"

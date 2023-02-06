@@ -365,9 +365,10 @@
 
 (defmethod ig/init-key ::methods
   [_ cfg]
-  {:mutations (resolve-mutation-methods cfg)
-   :queries   (resolve-query-methods cfg)
-   :commands  (resolve-command-methods cfg)})
+  (let [cfg (d/without-nils cfg)]
+    {:mutations (resolve-mutation-methods cfg)
+     :queries   (resolve-query-methods cfg)
+     :commands  (resolve-command-methods cfg)}))
 
 (s/def ::mutations
   (s/map-of keyword? fn?))

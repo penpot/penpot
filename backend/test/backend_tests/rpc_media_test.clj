@@ -44,8 +44,8 @@
       (let [storage (:app.storage/storage th/*system*)
             mobj1   @(sto/get-object storage media-id)
             mobj2   @(sto/get-object storage thumbnail-id)]
-        (t/is (sto/storage-object? mobj1))
-        (t/is (sto/storage-object? mobj2))
+        (t/is (sto/object? mobj1))
+        (t/is (sto/object? mobj2))
         (t/is (= 122785 (:size mobj1)))
         ;; This is because in ubuntu 21.04 generates different
         ;; thumbnail that in ubuntu 22.04. This hack should be removed
@@ -85,8 +85,8 @@
       (let [storage (:app.storage/storage th/*system*)
             mobj1   @(sto/get-object storage media-id)
             mobj2   @(sto/get-object storage thumbnail-id)]
-        (t/is (sto/storage-object? mobj1))
-        (t/is (sto/storage-object? mobj2))
+        (t/is (sto/object? mobj1))
+        (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3887   (:size mobj2)))))
     ))
@@ -164,8 +164,8 @@
       (let [storage (:app.storage/storage th/*system*)
             mobj1   @(sto/get-object storage media-id)
             mobj2   @(sto/get-object storage thumbnail-id)]
-        (t/is (sto/storage-object? mobj1))
-        (t/is (sto/storage-object? mobj2))
+        (t/is (sto/object? mobj1))
+        (t/is (sto/object? mobj2))
         (t/is (= 122785 (:size mobj1)))
         ;; This is because in ubuntu 21.04 generates different
         ;; thumbnail that in ubuntu 22.04. This hack should be removed
@@ -205,8 +205,8 @@
       (let [storage (:app.storage/storage th/*system*)
             mobj1   @(sto/get-object storage media-id)
             mobj2   @(sto/get-object storage thumbnail-id)]
-        (t/is (sto/storage-object? mobj1))
-        (t/is (sto/storage-object? mobj2))
+        (t/is (sto/object? mobj1))
+        (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
         (t/is (= 3887   (:size mobj2)))))
     ))

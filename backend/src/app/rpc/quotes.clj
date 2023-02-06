@@ -23,7 +23,7 @@
 ;; PUBLIC API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::conn ::db/conn-or-pool)
+(s/def ::conn ::db/pool-or-conn)
 (s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
@@ -53,7 +53,7 @@
 
 (defn check-quote!
   [conn quote]
-  (us/assert! ::db/conn-or-pool conn)
+  (us/assert! ::db/pool-or-conn conn)
   (us/assert! ::quote quote)
   (when (contains? cf/flags :quotes)
     (when @enabled
