@@ -11,6 +11,7 @@ volumes:
   postgres_data_pg15:
   user_data:
   minio_data:
+  redis_data:
 
 services:
   main:
@@ -116,6 +117,8 @@ services:
     hostname: "penpot-devenv-redis"
     container_name: "penpot-devenv-redis"
     restart: always
+    volumes:
+      - "redis_data:/data"
 
   mailer:
     image: sj26/mailcatcher:latest
