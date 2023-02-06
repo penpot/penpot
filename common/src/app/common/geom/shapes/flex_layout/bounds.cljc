@@ -28,8 +28,6 @@
         h-center? (ctl/h-center? parent)
         h-end? (ctl/h-end? parent)
 
-        around? (ctl/space-around? parent)
-        between? (ctl/space-between? parent)
         fill-w? (ctl/fill-width? child)
         fill-h? (ctl/fill-height? child)
 
@@ -70,7 +68,7 @@
              (gpt/add base-p (hv 0.01))
              (gpt/add base-p (vv 0.01))]
 
-      (or col? h-start? around? between?)
+      (and col? h-start?)
       (conj (gpt/add base-p (hv min-width)))
 
       (and col? h-center?)
@@ -79,7 +77,7 @@
       (and col? h-center?)
       (conj (gpt/subtract base-p (hv min-width)))
 
-      (or row? v-start? around? between?)
+      (and row? v-start?)
       (conj (gpt/add base-p (vv min-height)))
 
       (and row? v-center?)
