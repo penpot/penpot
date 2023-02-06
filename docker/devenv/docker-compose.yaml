@@ -80,22 +80,6 @@ services:
       - 9000:9000
       - 9001:9001
 
-  # keycloak:
-  #   image: "quay.io/keycloak/keycloak:15.0.2"
-  #   environment:
-  #     - DB_VENDOR=POSTGRES
-  #     - DB_ADDR=postgres
-  #     - DB_DATABASE=keycloak
-  #     - DB_USER=keycloak
-  #     - DB_SCHEMA=public
-  #     - DB_PASSWORD=keycloak
-  #     - KEYCLOAK_USER=admin
-  #     - KEYCLOAK_PASSWORD=admin
-  #   expose:
-  #     - '8080'
-  #   ports:
-  #     - "8080:8080"
-
   postgres:
     image: postgres:15
     command: postgres -c config_file=/etc/postgresql.conf
