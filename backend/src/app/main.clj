@@ -411,12 +411,12 @@
     ::props              (ig/ref :app.setup/props)}
 
    [::srepl/urepl ::srepl/server]
-   {:port (cf/get :urepl-port 6062)
-    :host (cf/get :urepl-host "localhost")}
+   {::srepl/port (cf/get :urepl-port 6062)
+    ::srepl/host (cf/get :urepl-host "localhost")}
 
    [::srepl/prepl ::srepl/server]
-   {:port (cf/get :prepl-port 6063)
-    :host (cf/get :prepl-host "localhost")}
+   {::srepl/port (cf/get :prepl-port 6063)
+    ::srepl/host (cf/get :prepl-host "localhost")}
 
    :app.setup/builtin-templates
    {::http.client/client (ig/ref ::http.client/client)}

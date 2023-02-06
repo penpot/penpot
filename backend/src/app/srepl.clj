@@ -50,15 +50,14 @@
 
 (defmethod ig/pre-init-spec ::server
   [_]
-  (s/keys :req [::flag]
-          :req-un [::port ::host]))
+  (s/keys :req [::flag ::host ::port]))
 
 (defmethod ig/prep-key ::server
   [[type _] cfg]
   (assoc cfg ::flag (keyword (str (name type) "-server"))))
 
 (defmethod ig/init-key ::server
-  [[type _] {:keys [::flag port host] :as cfg}]
+  [[type _] {:keys [::flag ::port ::host] :as cfg}]
   (when (contains? cf/flags flag)
     (let [accept (case type
                    ::prepl 'app.srepl/json-repl
