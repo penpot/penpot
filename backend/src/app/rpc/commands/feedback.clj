@@ -11,7 +11,7 @@
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
-   [app.emails :as eml]
+   [app.email :as eml]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]

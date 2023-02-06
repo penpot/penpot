@@ -231,7 +231,7 @@
 
 (t/deftest prepare-register-and-register-profile-2
   (with-redefs [app.rpc.commands.auth/register-retry-threshold (dt/duration 500)]
-    (with-mocks [mock {:target 'app.emails/send! :return nil}]
+    (with-mocks [mock {:target 'app.email/send! :return nil}]
       (let [current-token (atom nil)]
 
         ;; PREPARE REGISTER
@@ -409,7 +409,7 @@
       (t/is (= :email-as-password (:code edata))))))
 
 (t/deftest email-change-request
-  (with-mocks [mock {:target 'app.emails/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
@@ -443,7 +443,7 @@
 
 
 (t/deftest email-change-request-without-smtp
-  (with-mocks [mock {:target 'app.emails/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
     (with-redefs [app.config/flags #{}]
       (let [profile (th/create-profile* 1)
             pool    (:app.db/pool th/*system*)
@@ -459,7 +459,7 @@
 
 
 (t/deftest request-profile-recovery
-  (with-mocks [mock {:target 'app.emails/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
     (let [profile1 (th/create-profile* 1)
           profile2 (th/create-profile* 2 {:is-active true})
           pool  (:app.db/pool th/*system*)

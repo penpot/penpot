@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.emails
+(ns app.email
   "Main api for send emails."
   (:require
    [app.common.exceptions :as ex]
@@ -14,7 +14,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.emails.invite-to-team :as-alias emails.invite-to-team]
+   [app.email.invite-to-team :as-alias email.invite-to-team]
    [app.metrics :as mtx]
    [app.util.template :as tmpl]
    [app.worker :as wrk]
@@ -71,7 +71,7 @@
         (.addFrom ^MimeMessage mmsg from)))))
 
 (defn- assign-reply-to
-  [mmsg {:keys [default-reply-to] :as cfg} {:keys [reply-to] :as params}]
+  [mmsg {:keys [::default-reply-to] :as cfg} {:keys [reply-to] :as params}]
   (let [reply-to (or reply-to default-reply-to)]
     (when reply-to
       (let [reply-to (parse-address reply-to)]
@@ -127,9 +127,8 @@
     mmsg))
 
 (defn- opts->props
-  [{:keys [username tls host port timeout default-from]
-    :or {timeout 30000}
-    :as opts}]
+  [{:keys [::username ::tls ::host ::port ::timeout ::default-from]
+    :or {timeout 30000}}]
   (reduce-kv
    (fn [^Properties props k v]
      (if (nil? v)
@@ -150,8 +149,8 @@
     "mail.smtp.connectiontimeout" timeout}))
 
 (defn- create-smtp-session
-  [opts]
-  (let [props (opts->props opts)]
+  [cfg]
+  (let [props (opts->props cfg)]
     (Session/getInstance props)))
 
 (defn- create-smtp-message
@@ -171,7 +170,7 @@
 ;; TEMPLATE EMAIL IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private email-path "app/emails/%(id)s/%(lang)s.%(type)s")
+(def ^:private email-path "app/email/%(id)s/%(lang)s.%(type)s")
 
 (defn- render-email-template-part
   [type id context]
@@ -283,14 +282,14 @@
 (s/def ::default-from ::cf/smtp-default-from)
 
 (s/def ::smtp-config
-  (s/keys :opt-un [::username
-                   ::password
-                   ::tls
-                   ::ssl
-                   ::host
-                   ::port
-                   ::default-from
-                   ::default-reply-to]))
+  (s/keys :opt [::username
+                ::password
+                ::tls
+                ::ssl
+                ::host
+                ::port
+                ::default-from
+                ::default-reply-to]))
 
 (declare send-to-logger!)
 
@@ -306,8 +305,8 @@
       (let [session (create-smtp-session cfg)]
         (with-open [transport (.getTransport session (if (:ssl cfg) "smtps" "smtp"))]
           (.connect ^Transport transport
-                    ^String (:username cfg)
-                    ^String (:password cfg))
+                    ^String (::username cfg)
+                    ^String (::password cfg))
 
           (let [^MimeMessage message (create-smtp-message cfg session params)]
             (.sendMessage ^Transport transport
@@ -319,10 +318,10 @@
       (send-to-logger! cfg params))))
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::sendmail ::mtx/metrics]))
+  (s/keys :req [::sendmail ::mtx/metrics]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [sendmail]}]
+  [_ {:keys [::sendmail]}]
   (fn [{:keys [props] :as task}]
     (sendmail props)))
 
@@ -380,14 +379,14 @@
   "Password change confirmation email"
   (template-factory ::change-email))
 
-(s/def ::emails.invite-to-team/invited-by ::us/string)
-(s/def ::emails.invite-to-team/team ::us/string)
-(s/def ::emails.invite-to-team/token ::us/string)
+(s/def ::email.invite-to-team/invited-by ::us/string)
+(s/def ::email.invite-to-team/team ::us/string)
+(s/def ::email.invite-to-team/token ::us/string)
 
 (s/def ::invite-to-team
-  (s/keys :req-un [::emails.invite-to-team/invited-by
-                   ::emails.invite-to-team/token
-                   ::emails.invite-to-team/team]))
+  (s/keys :req-un [::email.invite-to-team/invited-by
+                   ::email.invite-to-team/token
+                   ::email.invite-to-team/team]))
 
 (def invite-to-team
   "Teams member invitation email."

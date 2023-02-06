@@ -452,6 +452,7 @@
   `::embed-assets?`: instead of including the libraries, embed in the
   same file library all assets used from external libraries."
   [{:keys [::include-libraries? ::embed-assets?] :as options}]
+
   (us/assert! ::write-export-options options)
   (us/verify!
    :expr (not (and include-libraries? embed-assets?))

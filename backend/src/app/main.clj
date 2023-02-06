@@ -12,6 +12,7 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as-alias db]
+   [app.email :as-alias email]
    [app.http.access-token :as-alias actoken]
    [app.http.assets :as-alias http.assets]
    [app.http.awsns :as http.awsns]
@@ -375,20 +376,19 @@
      :run-webhook
      (ig/ref ::webhooks/run-webhook-handler)}}
 
+   ::email/sendmail
+   {::email/host             (cf/get :smtp-host)
+    ::email/port             (cf/get :smtp-port)
+    ::email/ssl              (cf/get :smtp-ssl)
+    ::email/tls              (cf/get :smtp-tls)
+    ::email/username         (cf/get :smtp-username)
+    ::email/password         (cf/get :smtp-password)
+    ::email/default-reply-to (cf/get :smtp-default-reply-to)
+    ::email/default-from     (cf/get :smtp-default-from)}
 
-   :app.emails/sendmail
-   {:host             (cf/get :smtp-host)
-    :port             (cf/get :smtp-port)
-    :ssl              (cf/get :smtp-ssl)
-    :tls              (cf/get :smtp-tls)
-    :username         (cf/get :smtp-username)
-    :password         (cf/get :smtp-password)
-    :default-reply-to (cf/get :smtp-default-reply-to)
-    :default-from     (cf/get :smtp-default-from)}
-
-   :app.emails/handler
-   {:sendmail (ig/ref :app.emails/sendmail)
-    :metrics  (ig/ref ::mtx/metrics)}
+   ::email/handler
+   {::email/sendmail (ig/ref ::email/sendmail)
+    ::mtx/metrics    (ig/ref ::mtx/metrics)}
 
    :app.tasks.tasks-gc/handler
    {:pool    (ig/ref ::db/pool)

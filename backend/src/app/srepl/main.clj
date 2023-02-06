@@ -58,7 +58,7 @@
    :expr (string? destination)
    :hint "destination should be provided")
 
-  (let [handler (:app.emails/sendmail system)]
+  (let [handler (:app.email/sendmail system)]
     (handler {:body "test email"
               :subject "test email"
               :to [destination]})))
