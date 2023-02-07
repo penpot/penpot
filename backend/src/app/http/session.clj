@@ -168,7 +168,7 @@
 
         (->> (write! manager token params)
              (p/fmap (fn [session]
-                       (l/trace :hint "create" :profile-id profile-id)
+                       (l/trace :hint "create" :profile-id (str profile-id))
                        (-> response
                            (assign-auth-token-cookie session)
                            (assign-authenticated-cookie session)))))))))
@@ -301,13 +301,16 @@
 (defn- assign-authenticated-cookie
   [response {updated-at :updated-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
+        domain     (cf/get :authenticated-cookie-domain)
+        cname      (cf/get :authenticated-cookie-name "authenticated")
+
         created-at (or updated-at (dt/now))
         renewal    (dt/plus created-at default-renewal-max-age)
         expires    (dt/plus created-at max-age)
+
         comment    (str "Renewal at: " (dt/format-instant renewal :rfc1123))
         secure?    (contains? cf/flags :secure-session-cookies)
-        domain     (cf/get :authenticated-cookie-domain)
-        name       (cf/get :authenticated-cookie-name "authenticated")
+
         cookie     {:domain domain
                     :expires expires
                     :path "/"
@@ -317,20 +320,20 @@
                     :secure secure?}]
     (cond-> response
       (string? domain)
-      (update :cookies assoc name cookie))))
+      (update :cookies assoc cname cookie))))
 
 (defn- clear-auth-token-cookie
   [response]
   (let [cname (cf/get :auth-token-cookie-name default-auth-token-cookie-name)]
-    (update response :cookies assoc cname {:path "/" :value "" :max-age -1})))
+    (update response :cookies assoc cname {:path "/" :value "" :max-age 0})))
 
 (defn- clear-authenticated-cookie
   [response]
-  (let [cname   (cf/get :authenticated-cookie-name default-authenticated-cookie-name)
+  (let [cname  (cf/get :authenticated-cookie-name default-authenticated-cookie-name)
         domain (cf/get :authenticated-cookie-domain)]
     (cond-> response
       (string? domain)
-      (update :cookies assoc cname {:domain domain :path "/" :value "" :max-age -1}))))
+      (update :cookies assoc cname {:domain domain :path "/" :value "" :max-age 0}))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
