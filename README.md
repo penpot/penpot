@@ -111,7 +111,7 @@ Every sort of contribution will be very helpful to enhance Penpot. How you’ll 
 To find (almost) everything you need to know on how to contribute to Penpot, refer to the [contributing-guide](https://help.penpot.app/contributing-guide/).
 
 <p align="center">
-  <img src="https://help.penpot.app/img/home-contributing.png" alt="Contributing">
+  <img src="https://penpot.app/images/readme/git-community.png" alt="Contributing">
 </p>
 
 ## Resources ##
