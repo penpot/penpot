@@ -162,10 +162,10 @@
 
 
 (defn- wrap-authentication
-  [_ f {:keys [::auth] :as mdata}]
+  [_ f mdata]
   (fn [cfg params]
     (let [profile-id (::profile-id params)]
-      (if (and auth (not (uuid? profile-id)))
+      (if (and (::auth mdata true) (not (uuid? profile-id)))
         (p/rejected
          (ex/error :type :authentication
                    :code :authentication-required
