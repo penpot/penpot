@@ -64,8 +64,11 @@
         min-width (max min-width 0.01)
         min-height (max min-height 0.01)]
 
-    (cond-> [base-p]
-      (or col? h-start?)
+    (cond-> [base-p
+             (gpt/add base-p (hv 0.01))
+             (gpt/add base-p (vv 0.01))]
+
+      (and col? h-start?)
       (conj (gpt/add base-p (hv min-width)))
 
       (and col? h-center?)
@@ -74,7 +77,7 @@
       (and col? h-center?)
       (conj (gpt/subtract base-p (hv min-width)))
 
-      (or row? v-start?)
+      (and row? v-start?)
       (conj (gpt/add base-p (vv min-height)))
 
       (and row? v-center?)

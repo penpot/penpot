@@ -13,6 +13,7 @@ RUN set -ex; \
     apt-get -qq update; \
     apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install \
+        nano \
         curl \
         tzdata \
         locales \

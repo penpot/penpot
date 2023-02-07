@@ -174,42 +174,62 @@
         modif-tree)))
 
 (defn build-change-frame-modifiers
-  [modif-tree objects selected target-frame drop-index]
+  [modif-tree objects selected target-frame-id drop-index]
 
   (let [origin-frame-ids (->> selected (group-by #(get-in objects [% :frame-id])))
-        child-set (set (get-in objects [target-frame :shapes]))
-        layout? (ctl/layout? objects target-frame)
+        child-set (set (get-in objects [target-frame-id :shapes]))
+
+        target-frame (get objects target-frame-id)
+        target-layout? (ctl/layout? target-frame)
+
+        children-ids (concat (:shapes target-frame) selected)
 
         set-parent-ids
-        (fn [modif-tree shapes target-frame]
+        (fn [modif-tree shapes target-frame-id]
           (reduce
            (fn [modif-tree id]
              (update-in
               modif-tree
               [id :modifiers]
               #(-> %
-                   (ctm/change-property :frame-id target-frame)
-                   (ctm/change-property :parent-id target-frame))))
+                   (ctm/change-property :frame-id target-frame-id)
+                   (ctm/change-property :parent-id target-frame-id))))
            modif-tree
            shapes))
 
         update-frame-modifiers
         (fn [modif-tree [original-frame shapes]]
-          (let [shapes (->> shapes (d/removev #(= target-frame %)))
+          (let [shapes (->> shapes (d/removev #(= target-frame-id %)))
                 shapes (cond->> shapes
-                         (and layout? (= original-frame target-frame))
+                         (and target-layout? (= original-frame target-frame-id))
                          ;; When movining inside a layout frame remove the shapes that are not immediate children
-                         (filterv #(contains? child-set %)))]
+                         (filterv #(contains? child-set %)))
+                children-ids (->> (dm/get-in objects [original-frame :shapes])
+                                  (remove (set selected)))
+
+                h-sizing? (ctl/change-h-sizing? original-frame objects children-ids)
+                v-sizing? (ctl/change-v-sizing? original-frame objects children-ids)]
             (cond-> modif-tree
-              (not= original-frame target-frame)
+              (not= original-frame target-frame-id)
               (-> (modifier-remove-from-parent objects shapes)
-                  (update-in [target-frame :modifiers] ctm/add-children shapes drop-index)
-                  (set-parent-ids shapes target-frame))
+                  (update-in [target-frame-id :modifiers] ctm/add-children shapes drop-index)
+                  (set-parent-ids shapes target-frame-id)
+                  (cond-> h-sizing?
+                    (update-in [original-frame :modifiers] ctm/change-property :layout-item-h-sizing :fix))
+                  (cond-> v-sizing?
+                    (update-in [original-frame :modifiers] ctm/change-property :layout-item-v-sizing :fix)))
 
-              (and layout? (= original-frame target-frame))
-              (update-in [target-frame :modifiers] ctm/add-children shapes drop-index))))]
+              (and target-layout? (= original-frame target-frame-id))
+              (update-in [target-frame-id :modifiers] ctm/add-children shapes drop-index))))]
 
-    (reduce update-frame-modifiers modif-tree origin-frame-ids)))
+    (as-> modif-tree $
+      (reduce update-frame-modifiers $ origin-frame-ids)
+      (cond-> $
+        (ctl/change-h-sizing? target-frame-id objects children-ids)
+        (update-in [target-frame-id :modifiers] ctm/change-property :layout-item-h-sizing :fix))
+      (cond-> $
+        (ctl/change-v-sizing? target-frame-id objects children-ids)
+        (update-in [target-frame-id :modifiers] ctm/change-property :layout-item-v-sizing :fix)))))
 
 (defn modif->js
      [modif-tree objects]

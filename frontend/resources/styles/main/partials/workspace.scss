@@ -37,7 +37,7 @@ $height-palette-max: 80px;
   .left-toolbar {
     grid-area: toolbar;
     width: $width-left-toolbar;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
   }
 
