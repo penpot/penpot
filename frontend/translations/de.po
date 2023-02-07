@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-04 11:38+0000\n"
+"PO-Revision-Date: 2023-02-08 14:36+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -1477,7 +1477,7 @@ msgid "labels.upload-custom-fonts"
 msgstr "Eigene Schriftarten hochladen"
 
 msgid "labels.uploading"
-msgstr "Lädt hoch…"
+msgstr "Hochladen…"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
@@ -1652,8 +1652,8 @@ msgstr[1] "Möchten Sie diese Dateien wirklich löschen?"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Diese Datei enthält Bibliotheken, die in dieser Datei verwendet werden:"
-msgstr[1] "Diese Datei enthält Bibliotheken, die in diesen Dateien verwendet werden:"
+msgstr[0] "Einige Assets aus der Bibliothek dieser Datei werden hier verwendet:"
+msgstr[1] "Einige Assets aus den Bibliotheken dieser Datei werden hier verwendet:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1791,11 +1791,11 @@ msgstr "Minimal"
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
-"Wenn Sie die Veröffentlichung aufheben, werden die darin enthaltenen "
-"Elemente zu einer Bibliothek dieser Datei."
+"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokale "
+"Bibliothek dieser Datei verschoben."
 msgstr[1] ""
-"Wenn Sie die Veröffentlichung aufheben, werden die darin enthaltenen "
-"Elemente zu einer Bibliothek dieser Dateien."
+"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokale "
+"Bibliothek dieser Datei verschoben."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1808,8 +1808,8 @@ msgstr[1] "Möchten Sie die Veröffentlichung dieser Bibliotheken wirklich aufhe
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Es wird in dieser Datei verwendet:"
-msgstr[1] "Es wird in diesen Dateien verwendet:"
+msgstr[0] "Einige Assets in dieser Bibliothek werden hier verwendet:"
+msgstr[1] "Einige Assets in diesen Bibliotheken werden hier verwendet:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -4475,7 +4475,7 @@ msgstr "Durchgezogen"
 msgid "inspect.empty.select"
 msgstr ""
 "Wählen Sie eine Form, ein Board oder eine Gruppe aus, um deren Eigenschaften "
-"und Code zu überprüfen."
+"und Code zu überprüfen"
 
 msgid "inspect.empty.more-info"
 msgstr "Weitere Informationen zur Inspektion"
@@ -4563,7 +4563,7 @@ msgstr "Die letzte Übertragung war nicht erfolgreich."
 msgid "inspect.empty.help"
 msgstr ""
 "Für weitere Informationen zum Thema \"Auswerten von Design-Spezifikationen\""
-", besuchen Sie bitte das Penpot-Hilfezentrum."
+", besuchen Sie bitte das Penpot-Hilfezentrum"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.hint-many"
@@ -4605,7 +4605,7 @@ msgstr[1] ""
 
 msgid "dashboard.webhooks.active.explain"
 msgstr ""
-"Wenn dieser Hook ausgelöst wird, dann werden die Eventdetails übermittelt."
+"Wenn dieser Hook ausgelöst wird, dann werden die Eventdetails übermittelt"
 
 msgid "shortcuts.open-inspect"
 msgstr "Zur Spezifikation im Ansichtsmodus"
@@ -4615,3 +4615,25 @@ msgstr "Die letzte Übertragung war erfolgreich."
 
 msgid "viewer.header.inspect-section"
 msgstr "Spezifikation (%s)"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] ""
+"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokalen "
+"Bibliotheken dieser Dateien verschoben."
+msgstr[1] ""
+"Wenn Sie die Veröffentlichung aufheben, werden diese Assets in die lokalen "
+"Bibliotheken dieser Dateien verschoben."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
+msgstr[0] "Einige Assets in dieser Bibliothek werden hier verwendet:"
+msgstr[1] "Einige Assets in diesen Bibliotheken werden hier verwendet:"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "Keines der Assets in dieser Bibliothek wird verwendet."
+msgstr[1] "Keines der Assets in diesen Bibliotheken wird verwendet."
