@@ -15,7 +15,7 @@
    [promesa.core :as p]))
 
 (enable-console-print!)
-(l/initialize!)
+(l/setup! {:app :info})
 
 (defn start
   [& _]
