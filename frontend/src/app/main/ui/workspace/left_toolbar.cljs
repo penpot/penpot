@@ -49,8 +49,8 @@
              (st/emit! (dwm/upload-media-workspace params)))))]
 
     [:li
-     [:button.tooltip.tooltip-right
-      {:alt (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
+     [:button
+      {:title (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :on-click on-click}
       [:*
@@ -73,8 +73,8 @@
     [:aside.left-toolbar
      [:ul.left-toolbar-options
       [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
+       [:button
+        {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
          :aria-label (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
          :class (when (and (nil? selected-drawtool)
                            (not edition)) "selected")
@@ -83,32 +83,32 @@
       (when-not workspace-read-only?
         [:*
          [:li
-          [:button.tooltip.tooltip-right
-           {:alt (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
+          [:button
+           {:title (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
             :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
             :class (when (= selected-drawtool :frame) "selected")
             :on-click (partial select-drawtool :frame)
             :data-test "artboard-btn"}
            i/artboard]]
          [:li
-          [:button.tooltip.tooltip-right
-           {:alt (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
+          [:button
+           {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
             :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
             :class (when (= selected-drawtool :rect) "selected")
             :on-click (partial select-drawtool :rect)
             :data-test "rect-btn"}
            i/box]]
          [:li
-          [:button.tooltip.tooltip-right
-           {:alt (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
+          [:button
+           {:title (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
             :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
             :class (when (= selected-drawtool :circle) "selected")
             :on-click (partial select-drawtool :circle)
             :data-test "ellipse-btn"}
            i/circle]]
          [:li
-          [:button.tooltip.tooltip-right
-           {:alt (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
+          [:button
+           {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
             :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
             :class (when (= selected-drawtool :text) "selected")
             :on-click (partial select-drawtool :text)}
@@ -117,16 +117,16 @@
          [:& image-upload]
 
          [:li
-          [:button.tooltip.tooltip-right
-           {:alt (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
+          [:button
+           {:title  (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
             :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
             :class (when (= selected-drawtool :curve) "selected")
             :on-click (partial select-drawtool :curve)
             :data-test "curve-btn"}
            i/pencil]]
          [:li
-          [:button.tooltip.tooltip-right
-           {:alt (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
+          [:button
+           {:title (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
             :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
             :class (when (= selected-drawtool :path) "selected")
             :on-click (partial select-drawtool :path)
@@ -134,8 +134,8 @@
            i/pen]]])
 
       [:li
-       [:button.tooltip.tooltip-right
-        {:alt (tr "workspace.toolbar.comments" (sc/get-tooltip :add-comment))
+       [:button
+        {:title (tr "workspace.toolbar.comments" (sc/get-tooltip :add-comment))
          :aria-label (tr "workspace.toolbar.comments" (sc/get-tooltip :add-comment))
          :class (when (= selected-drawtool :comments) "selected")
          :on-click (partial select-drawtool :comments)}
@@ -145,8 +145,8 @@
       (when-not workspace-read-only?
         [:*
          [:li
-          [:button.tooltip.tooltip-right
-           {:alt (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
+          [:button
+           {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
             :aria-label (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
             :class (when (contains? layout :textpalette) "selected")
             :on-click (fn []
@@ -158,8 +158,8 @@
            "Ag"]]
 
          [:li
-          [:button.tooltip.tooltip-right
-           {:alt (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
+          [:button
+           {:title (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
             :aria-label (tr "workspace.toolbar.color-palette" (sc/get-tooltip :toggle-colorpalette))
             :class (when (contains? layout :colorpalette) "selected")
             :on-click (fn []
@@ -170,8 +170,8 @@
                                                         (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))}
            i/palette]]])
       [:li
-       [:button.tooltip.tooltip-right.separator
-        {:alt (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))
+       [:button
+        {:title (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))
          :aria-label (tr "workspace.toolbar.shortcuts" (sc/get-tooltip :show-shortcuts))
          :class (when (contains? layout :shortcuts) "selected")
          :on-click (fn []
@@ -183,8 +183,8 @@
         i/shortcut]
 
        (when *assert*
-         [:button.tooltip.tooltip-right
-          {:alt "Debugging tool"
+         [:button
+          {:title "Debugging tool"
            :class (when (contains? layout :debug-panel) "selected")
            :on-click (fn []
                        (let [is-sidebar-closed? (contains? layout :collapse-left-sidebar)]
