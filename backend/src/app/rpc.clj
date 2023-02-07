@@ -181,8 +181,7 @@
                                            (merge (::audit/props resultm))
                                            (dissoc :profile-id)
                                            (dissoc :type)))
-                                   (d/without-qualified)
-                                   (d/without-nils))
+                                   (audit/clean-props))
 
                     event      {:type (or (::audit/type resultm)
                                           (::type cfg))

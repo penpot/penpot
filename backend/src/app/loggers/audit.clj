@@ -77,28 +77,20 @@
       (merge (:props profile))
       (d/without-nils)))
 
-(defn clean-props
-  [{:keys [profile-id] :as event}]
-  (let [invalid-keys #{:session-id
-                       :password
-                       :old-password
-                       :token}
-        xform (comp
-               (remove (fn [kv]
-                         (qualified-keyword? (first kv))))
-               (remove (fn [kv]
-                         (contains? invalid-keys (first kv))))
-               (remove (fn [[k v]]
-                         (and (= k :profile-id)
-                              (= v profile-id))))
-               (filter (fn [[_ v]]
-                         (or (string? v)
-                             (keyword? v)
-                             (uuid? v)
-                             (boolean? v)
-                             (number? v)))))]
+(def reserved-props
+  #{:session-id
+    :password
+    :old-password
+    :token})
 
-    (update event :props #(into {} xform %))))
+(defn clean-props
+  [props]
+  (into {}
+        (comp
+         (d/without-nils)
+         (d/without-qualified)
+         (remove #(contains? reserved-props (key %))))
+        props))
 
 ;; --- SPECS
 

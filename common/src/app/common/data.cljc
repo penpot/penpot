@@ -203,19 +203,22 @@
   ([coll value]
    (sequence (replace-by-id value) coll)))
 
-(defn without-nils
-  "Given a map, return a map removing key-value
-  pairs when value is `nil`."
-  [data]
-  (into {} (remove (comp nil? second)) data))
-
 (defn vec-without-nils
   [coll]
   (into [] (remove nil?) coll))
 
+(defn without-nils
+  "Given a map, return a map removing key-value
+  pairs when value is `nil`."
+  ([] (remove (comp nil? val)))
+  ([data]
+   (into {} (without-nils) data)))
+
 (defn without-qualified
-  [data]
-  (into {} (remove (comp qualified-keyword? first)) data))
+  ([]
+   (remove (comp qualified-keyword? key)))
+  ([data]
+   (into {} (without-qualified) data)))
 
 (defn without-keys
   "Return a map without the keys provided
