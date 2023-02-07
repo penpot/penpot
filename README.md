@@ -74,7 +74,7 @@ Here’s a step-by-step guide on [getting started with Docker.](https://help.pen
 If you prefer not to install Penpot in a local environment, [login or register on our Penpot cloud app](https://design.penpot.app). Create a team to work together on projects and share design assets or jump right away into Penpot and **start designing** on your own.
 
 <p align="center">
-  <img src="https://help.penpot.app/img/home-techguide.png" alt="Getting started">
+  <img src="https://help.penpot.app/img/home-techguide.png" alt="Getting started" style="max-width: 65%;">
 </p>
 
 ## Community ##
