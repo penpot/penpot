@@ -11,6 +11,7 @@
 - Fix weird numeration creating new elements in dashboard [Taiga #4755](https://tree.taiga.io/project/penpot/issue/4755)
 - Fix can move shape with lens zoom active [Taiga #4787](https://tree.taiga.io/project/penpot/issue/4787)
 - Fix social links broken [Taiga #4759](https://tree.taiga.io/project/penpot/issue/4759)
+- Fix tooltips on left toolbar [Taiga #4793](https://tree.taiga.io/project/penpot/issue/4793)
 
 ## 1.17.0
 
