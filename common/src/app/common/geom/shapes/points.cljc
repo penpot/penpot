@@ -6,6 +6,7 @@
 
 (ns app.common.geom.shapes.points
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.intersect :as gsi]
@@ -115,7 +116,9 @@
                (max tv-max ctv)]))
 
           [th-min th-max tv-min tv-max]
-          (->> child-bounds (reduce find-boundary-ts [##Inf ##-Inf ##Inf ##-Inf]))
+          (->> child-bounds
+               (filter #(and (d/num? (:x %)) (d/num? (:y %))))
+               (reduce find-boundary-ts [##Inf ##-Inf ##Inf ##-Inf]))
 
           minv-start (pv tv-min)
           minv-end   (gpt/add minv-start hv)

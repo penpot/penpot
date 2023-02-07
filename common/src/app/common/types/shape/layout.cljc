@@ -134,25 +134,41 @@
 (defn wrap? [{:keys [layout-wrap-type]}]
   (= layout-wrap-type :wrap))
 
-(defn fill-width? [child]
-  (= :fill (:layout-item-h-sizing child)))
+(defn fill-width?
+  ([objects id]
+   (= :fill (dm/get-in objects [id :layout-item-h-sizing])))
+  ([child]
+   (= :fill (:layout-item-h-sizing child))))
 
-(defn fill-height? [child]
-  (= :fill (:layout-item-v-sizing child)))
+(defn fill-height?
+  ([objects id]
+   (= :fill (dm/get-in objects [id :layout-item-v-sizing])))
+  ([child]
+   (= :fill (:layout-item-v-sizing child))))
 
-(defn auto-width? [child]
-  (= :auto (:layout-item-h-sizing child)))
+(defn auto-width?
+  ([objects id]
+   (= :auto (dm/get-in objects [id :layout-item-h-sizing])))
+  ([child]
+   (= :auto (:layout-item-h-sizing child))))
 
-(defn auto-height? [child]
-  (= :auto (:layout-item-v-sizing child)))
+(defn auto-height?
+  ([objects id]
+   (= :auto (dm/get-in objects [id :layout-item-v-sizing])))
+  ([child]
+   (= :auto (:layout-item-v-sizing child))))
 
 (defn col?
-  [{:keys [layout-flex-dir]}]
-  (or (= :column layout-flex-dir) (= :column-reverse layout-flex-dir)))
+  ([objects id]
+   (col? (get objects id)))
+  ([{:keys [layout-flex-dir]}]
+   (or (= :column layout-flex-dir) (= :column-reverse layout-flex-dir))))
 
 (defn row?
-  [{:keys [layout-flex-dir]}]
-  (or (= :row layout-flex-dir) (= :row-reverse layout-flex-dir)))
+  ([objects id]
+   (row? (get objects id)))
+  ([{:keys [layout-flex-dir]}]
+   (or (= :row layout-flex-dir) (= :row-reverse layout-flex-dir))))
 
 (defn gaps
   [{:keys [layout-gap]}]
@@ -315,3 +331,22 @@
 
 (defn align-self-stretch? [{:keys [layout-item-align-self]}]
   (= :stretch layout-item-align-self))
+
+(defn change-h-sizing?
+  [frame-id objects children-ids]
+  (and (layout? objects frame-id)
+       (auto-width? objects frame-id)
+       (or (and (col? objects frame-id)
+                (every? (partial fill-width? objects) children-ids))
+           (and (row? objects frame-id)
+                (some (partial fill-width? objects) children-ids)))))
+
+(defn change-v-sizing?
+  [frame-id objects children-ids]
+  (and (layout? objects frame-id)
+       (auto-height? objects frame-id)
+       (or (and (col? objects frame-id)
+                (some (partial fill-height? objects) children-ids))
+           (and (row? objects frame-id)
+                (every? (partial fill-height? objects) children-ids)))))
+

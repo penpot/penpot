@@ -651,20 +651,20 @@
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
 
-        ; Move the shapes
+        ;; Move the shapes
         (pcb/change-parent parent-id
                            shapes
                            to-index)
 
-        ; Remove empty groups
+        ;; Remove empty groups
         (pcb/remove-objects groups-to-delete)
 
-        ; Unmask groups whose mask have moved outside
+        ;; Unmask groups whose mask have moved outside
         (pcb/update-shapes groups-to-unmask
                            (fn [shape]
                              (assoc shape :masked-group? false)))
 
-        ; Detach shapes moved out of their component
+        ;; Detach shapes moved out of their component
         (pcb/update-shapes shapes-to-detach
                            (fn [shape]
                              (assoc shape :component-id nil
@@ -674,17 +674,17 @@
                                     :shape-ref nil
                                     :touched nil)))
 
-        ; Make non root a component moved inside another one
+        ;; Make non root a component moved inside another one
         (pcb/update-shapes shapes-to-deroot
                            (fn [shape]
                              (assoc shape :component-root? nil)))
 
-        ; Make root a subcomponent moved outside its parent component
+        ;; Make root a subcomponent moved outside its parent component
         (pcb/update-shapes shapes-to-reroot
                            (fn [shape]
                              (assoc shape :component-root? true)))
 
-        ; Reset constraints depending on the new parent
+        ;; Reset constraints depending on the new parent
         (pcb/update-shapes shapes-to-unconstraint
                            (fn [shape]
                              (let [parent      (get objects parent-id)
@@ -699,7 +699,19 @@
                                       :constraints-v (gsh/default-constraints-v moved-shape))))
                            {:ignore-touched true})
 
-        ; Resize parent containers that need to
+        ;; Fix the sizing when moving a shape
+        (pcb/update-shapes parents
+                           (fn [parent]
+                             (if (ctl/layout? parent)
+                               (cond-> parent
+                                 (ctl/change-h-sizing? (:id parent) objects (:shapes parent))
+                                 (assoc :layout-item-h-sizing :fix)
+
+                                 (ctl/change-v-sizing? (:id parent) objects (:shapes parent))
+                                 (assoc :layout-item-v-sizing :fix))
+                               parent)))
+
+        ;; Resize parent containers that need to
         (pcb/resize-parents parents))))
 
 (defn relocate-shapes
@@ -719,9 +731,9 @@
 
             ;; If we try to move a parent into a child we remove it
             ids      (filter #(not (cph/is-parent? objects parent-id %)) ids)
-            parents  (if ignore-parents?
-                       #{parent-id}
-                       (into #{parent-id} (map #(cph/get-parent-id objects %)) ids))
+
+            all-parents (into #{parent-id} (map #(cph/get-parent-id objects %)) ids)
+            parents  (if ignore-parents? #{parent-id} all-parents)
 
             groups-to-delete
             (loop [current-id  (first parents)
@@ -814,17 +826,12 @@
                                              shapes-to-reroot
                                              shapes-to-deroot
                                              ids)
-
-            layouts-to-update
-            (into #{}
-                  (filter (partial ctl/layout? objects))
-                  (concat [parent-id] (cph/get-parent-ids objects parent-id)))
             undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (dwco/expand-collapse parent-id)
-               (ptk/data-event :layout/update layouts-to-update)
+               (ptk/data-event :layout/update (concat all-parents ids))
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn relocate-selected-shapes

@@ -50,7 +50,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- discover-oidc-config
-  [cfg {:keys [::base-uri] :as opts}]
+  [cfg {:keys [base-uri] :as opts}]
   (let [discovery-uri (u/join base-uri ".well-known/openid-configuration")
         response      (ex/try! (http/req! cfg
                                           {:method :get :uri (str discovery-uri)}
