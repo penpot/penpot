@@ -4,7 +4,7 @@
 
 <h1 align="center">
   <br>
-  <img src="https://penpot.app/images/readme/gitreadme-header.png" alt="PENPOT">
+  <img src="https://penpot.app/images/readme/git-readme-header.png" alt="PENPOT">
 </h1>
 
 <p align="center"><a href="https://www.mozilla.org/en-US/MPL/2.0" rel="nofollow"><img src="https://camo.githubusercontent.com/3fcf3d6b678ea15fde3cf7d6af0e242160366282d62a7c182d83a50bfee3f45e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4d504c2d322e302d626c75652e737667" alt="License: MPL-2.0" data-canonical-src="https://img.shields.io/badge/MPL-2.0-blue.svg" style="max-width:100%;"></a>
