@@ -4,7 +4,7 @@
 
 <h1 align="center">
   <br>
-  <img src="https://penpot.app/images/readme/readme-logo.jpg" alt="PENPOT">
+  <img src="https://penpot.app/images/readme/gitreadme-header.png" alt="PENPOT">
 </h1>
 
 <p align="center"><a href="https://www.mozilla.org/en-US/MPL/2.0" rel="nofollow"><img src="https://camo.githubusercontent.com/3fcf3d6b678ea15fde3cf7d6af0e242160366282d62a7c182d83a50bfee3f45e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4d504c2d322e302d626c75652e737667" alt="License: MPL-2.0" data-canonical-src="https://img.shields.io/badge/MPL-2.0-blue.svg" style="max-width:100%;"></a>
@@ -50,7 +50,7 @@ Being web based, Penpot is not dependent on operating systems or local installat
 Using SVG as no other design and prototyping tool does, Penpot files sport compatibility with most of the vectorial tools, are tech friendly and extremely easy to use on the web. We make sure you will always own your work.
 
 <p align="center">
-  <img src="https://penpot.app/images/readme/open-source.png" alt="Open Source">
+  <img src="https://penpot.app/images/readme/git-open.png" alt="Open Source" style="width: 65%;">
 </p>
 
 
@@ -74,7 +74,7 @@ Here’s a step-by-step guide on [getting started with Docker.](https://help.pen
 If you prefer not to install Penpot in a local environment, [login or register on our Penpot cloud app](https://design.penpot.app). Create a team to work together on projects and share design assets or jump right away into Penpot and **start designing** on your own.
 
 <p align="center">
-  <img src="https://help.penpot.app/img/home-techguide.png" alt="Getting started" style="max-width: 65%;">
+  <img src="https://penpot.app/images/readme/git-self-host.png" alt="Getting started" style="width: 65%;">
 </p>
 
 ## Community ##
@@ -93,7 +93,7 @@ You will find the following categories:
 - [Penpot in your language](https://community.penpot.app/c/penpot-in-your-language/12)
 
 <p align="center">
-  <img src="https://penpot.app/images/readme/cross-teams.webp" alt="Community">
+  <img src="https://penpot.app/images/readme/git-collaborate.png" alt="Communnity" style="width: 65%;">
 </p>
 
 ## Contributing ##
