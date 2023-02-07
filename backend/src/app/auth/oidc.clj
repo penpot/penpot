@@ -64,10 +64,17 @@
         nil)
 
       (= 200 (:status response))
-      (let [data (json/decode (:body response))]
-        {:token-uri (get data :token_endpoint)
-         :auth-uri  (get data :authorization_endpoint)
-         :user-uri  (get data :userinfo_endpoint)})
+      (let [data      (json/decode (:body response))
+            token-uri (get data :token_endpoint)
+            auth-uri  (get data :authorization_endpoint)
+            user-uri  (get data :userinfo_endpoint)]
+        (l/debug :hint "oidc uris discovered"
+                 :token-uri token-uri
+                 :auth-uri auth-uri
+                 :user-uri user-uri)
+        {:token-uri token-uri
+         :auth-uri  auth-uri
+         :user-uri  user-uri})
 
       :else
       (do
@@ -110,7 +117,7 @@
     (if-let [opts (prepare-oidc-opts cfg)]
       (do
         (l/info :hint "provider initialized"
-                :provider :oidc
+                :provider "oidc"
                 :method (if (:discover? opts) "discover" "manual")
                 :client-id (:client-id opts)
                 :client-secret (obfuscate-string (:client-secret opts))
@@ -122,7 +129,7 @@
                 :roles      (:roles opts))
         opts)
       (do
-        (l/warn :hint "unable to initialize auth provider, missing configuration" :provider :oidc)
+        (l/warn :hint "unable to initialize auth provider, missing configuration" :provider "oidc")
         nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -144,13 +151,13 @@
                (string? (:client-secret opts)))
         (do
           (l/info :hint "provider initialized"
-                  :provider :google
+                  :provider "google"
                   :client-id (:client-id opts)
                   :client-secret (obfuscate-string (:client-secret opts)))
           opts)
 
         (do
-          (l/warn :hint "unable to initialize auth provider, missing configuration" :provider :google)
+          (l/warn :hint "unable to initialize auth provider, missing configuration" :provider "google")
           nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -196,13 +203,13 @@
                (string? (:client-secret opts)))
         (do
           (l/info :hint "provider initialized"
-                  :provider :github
+                  :provider "github"
                   :client-id (:client-id opts)
                   :client-secret (obfuscate-string (:client-secret opts)))
           opts)
 
         (do
-          (l/warn :hint "unable to initialize auth provider, missing configuration" :provider :github)
+          (l/warn :hint "unable to initialize auth provider, missing configuration" :provider "github")
           nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -225,14 +232,14 @@
                (string? (:client-secret opts)))
         (do
           (l/info :hint "provider initialized"
-                  :provider :gitlab
+                  :provider "gitlab"
                   :base-uri base
                   :client-id (:client-id opts)
                   :client-secret (obfuscate-string (:client-secret opts)))
           opts)
 
         (do
-          (l/warn :hint "unable to initialize auth provider, missing configuration" :provider :gitlab)
+          (l/warn :hint "unable to initialize auth provider, missing configuration" :provider "gitlab")
           nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -275,8 +282,19 @@
                           "accept" "application/json"}
                 :uri (:token-uri provider)
                 :body (u/map->query-string params)}]
+
+    (l/trace :hint "request access token"
+             :provider (:name provider)
+             :client-id (:client-id provider)
+             :client-secret (obfuscate-string (:client-secret provider))
+             :grant-type (:grant_type params)
+             :redirect-uri (:redirect_uri params))
+
     (->> (http/req! cfg req)
          (p/map (fn [{:keys [status body] :as res}]
+                  (l/trace :hint "access token response"
+                           :status status
+                           :body body)
                   (if (= status 200)
                     (let [data (json/decode body)]
                       {:token (get data :access_token)
@@ -289,12 +307,19 @@
 (defn- retrieve-user-info
   [{:keys [provider] :as cfg} tdata]
   (letfn [(retrieve []
+            (l/trace :hint "request user info"
+                     :uri (:user-uri provider)
+                     :token (obfuscate-string (:token tdata))
+                     :token-type (:type tdata))
             (http/req! cfg
                        {:uri (:user-uri provider)
                         :headers {"Authorization" (str (:type tdata) " " (:token tdata))}
                         :timeout 6000
                         :method :get}))
           (validate-response [response]
+            (l/trace :hint "user info response"
+                     :status (:status response)
+                     :body   (:body response))
             (when-not (s/int-in-range? 200 300 (:status response))
               (ex/raise :type :internal
                         :code :unable-to-retrieve-user-info
@@ -309,7 +334,7 @@
             (if-let [get-email-fn (:get-email-fn provider)]
               (get-email-fn tdata info)
               (let [attr-kw (cf/get :oidc-email-attr :email)]
-                (get info attr-kw))))
+                (p/resolved (get info attr-kw)))))
 
           (get-name [info]
             (let [attr-kw (cf/get :oidc-name-attr :name)]
@@ -325,6 +350,7 @@
                               (qualify-props provider))}))
 
           (validate-info [info]
+            (l/trace :hint "authentication info" :info info)
             (when-not (s/valid? ::info info)
               (l/warn :hint "received incomplete profile info object (please set correct scopes)"
                       :info (pr-str info))
@@ -334,10 +360,10 @@
                         :info info))
             info)]
 
-    (-> (retrieve)
-        (p/then validate-response)
-        (p/then process-response)
-        (p/then validate-info))))
+    (->> (retrieve)
+         (p/fmap validate-response)
+         (p/mcat process-response)
+         (p/fmap validate-info))))
 
 (s/def ::backend ::us/not-empty-string)
 (s/def ::email ::us/not-empty-string)

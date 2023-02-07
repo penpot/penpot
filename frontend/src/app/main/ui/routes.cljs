@@ -8,7 +8,6 @@
   (:require
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -35,12 +34,9 @@
 (def routes
   [["/auth"
     ["/login"            :auth-login]
-    (when (contains? @cf/flags :registration)
-      ["/register"         :auth-register])
-    (when (contains? @cf/flags :registration)
-      ["/register/validate" :auth-register-validate])
-    (when (contains? @cf/flags :registration)
-      ["/register/success" :auth-register-success])
+    ["/register"         :auth-register]
+    ["/register/validate" :auth-register-validate]
+    ["/register/success" :auth-register-success]
     ["/recovery/request" :auth-recovery-request]
     ["/recovery"         :auth-recovery]
     ["/verify-token"     :auth-verify-token]]
