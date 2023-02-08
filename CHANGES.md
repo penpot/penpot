@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.17.2
+
+### :bug: Bugs fixed
+- Fix paste board inside itself [Taiga #4775](https://tree.taiga.io/project/penpot/issue/4775)
+
 ## 1.17.1
 
 ### :bug: Bugs fixed
