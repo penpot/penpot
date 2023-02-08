@@ -196,9 +196,8 @@
                                                        :name name
                                                        :step 2}))}
           (tr "labels.back")]
-         [:div {:title (tr "onboarding.choice.team-up.invite-members-submit")}
-          [:& fm/submit-button
-           {:label (tr "onboarding.choice.team-up.invite-members-submit")}]]]
+         [:& fm/submit-button
+          {:label (tr "onboarding.choice.team-up.invite-members-submit")}]]
         [:div.skip-action
          {:on-click on-skip}
          [:div.action (tr "onboarding.choice.team-up.invite-members-skip")]]]]
