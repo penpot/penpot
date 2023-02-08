@@ -181,7 +181,6 @@
                            :placeholder "--"
                            :on-click (select-text adv-spread-ref)
                            :on-change (update-attr index :spread valid-number?)
-                           :min 0
                            :value (:spread value)}]
         [:span.after (tr "workspace.options.shadow-options.spread")]]]
 
