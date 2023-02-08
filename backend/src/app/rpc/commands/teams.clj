@@ -13,7 +13,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.emails :as eml]
+   [app.email :as eml]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]

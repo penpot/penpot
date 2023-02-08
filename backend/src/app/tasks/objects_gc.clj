@@ -25,16 +25,12 @@
 (declare ^:private delete-files!)
 (declare ^:private delete-orphan-teams!)
 
-(s/def ::min-age ::dt/duration)
-
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool ::sto/storage]
-          :opt [::min-age]))
+  (s/keys :req [::db/pool ::sto/storage]))
 
 (defmethod ig/prep-key ::handler
   [_ cfg]
-  (merge {::min-age cf/deletion-delay}
-         (d/without-nils cfg)))
+  (assoc cfg ::min-age cf/deletion-delay))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::db/pool ::sto/storage] :as cfg}]
@@ -133,7 +129,6 @@
                   :kf first
                   :initk (dt/now)))))
 
-
 (def ^:private sql:get-orphan-teams-chunk
   "select t.id, t.created_at
      from team as t
@@ -154,14 +149,15 @@
               [(some->> rows peek :created-at) rows]))]
     (reduce
      (fn [total {:keys [id]}]
-       (l/debug :hint "mark team for deletion" :id (str id))
+       (let [result (db/update! conn :team
+                                {:deleted-at (dt/now)}
+                                {:id id :deleted-at nil}
+                                {::db/return-keys? false})
+             count  (db/get-update-count result)]
+         (when (pos? count)
+           (l/debug :hint "mark team for deletion" :id (str id) ))
 
-       ;; And finally, permanently delete the team.
-       (db/update! conn :team
-                   {:deleted-at (dt/now)}
-                   {:id id})
-
-       (inc total))
+         (+ total count)))
      0
      (d/iteration get-chunk
                   :vf second

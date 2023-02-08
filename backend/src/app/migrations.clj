@@ -317,12 +317,11 @@
 
   ])
 
-(defn- apply-migrations!
-  [pool migrations]
-  ;; (app.common.pprint/pprint migrations)
+(defn apply-migrations!
+  [pool name migrations]
   (dm/with-open [conn (db/open pool)]
     (mg/setup! conn)
-    (mg/migrate! conn {:name "main" :steps migrations})))
+    (mg/migrate! conn {:name name :steps migrations})))
 
 (defmethod ig/pre-init-spec ::migrations
   [_]
@@ -332,4 +331,4 @@
   [module {:keys [::db/pool]}]
   (when-not (db/read-only? pool)
     (l/info :hint "running migrations" :module module)
-    (some->> (seq migrations) (apply-migrations! pool))))
+    (some->> (seq migrations) (apply-migrations! pool "main"))))

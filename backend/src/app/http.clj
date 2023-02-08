@@ -46,46 +46,53 @@
 (s/def ::max-body-size integer?)
 (s/def ::max-multipart-body-size integer?)
 (s/def ::io-threads integer?)
-(s/def ::worker-threads integer?)
 
 (defmethod ig/prep-key ::server
   [_ cfg]
-  (merge {:name "http"
-          :port 6060
-          :host "0.0.0.0"
-          :max-body-size (* 1024 1024 30)             ; 30 MiB
-          :max-multipart-body-size (* 1024 1024 120)} ; 120 MiB
+  (merge {::port 6060
+          ::host "0.0.0.0"
+          ::max-body-size (* 1024 1024 30)             ; 30 MiB
+          ::max-multipart-body-size (* 1024 1024 120)} ; 120 MiB
          (d/without-nils cfg)))
 
 (defmethod ig/pre-init-spec ::server [_]
-  (s/and
-   (s/keys :req-un [::port ::host ::name ::max-body-size ::max-multipart-body-size]
-           :opt-un [::router ::handler ::io-threads ::worker-threads ::wrk/executor])
-   (fn [cfg]
-     (or (contains? cfg :router)
-         (contains? cfg :handler)))))
+  (s/keys :req [::port ::host]
+          :opt [::max-body-size
+                ::max-multipart-body-size
+                ::router
+                ::handler
+                ::io-threads
+                ::wrk/executor]))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [handler router port name host] :as cfg}]
-  (l/info :hint "starting http server" :port port :host host :name name)
+  [_ {:keys [::handler ::router ::host ::port] :as cfg}]
+  (l/info :hint "starting http server" :port port :host host)
   (let [options {:http/port port
                  :http/host host
-                 :http/max-body-size (:max-body-size cfg)
-                 :http/max-multipart-body-size (:max-multipart-body-size cfg)
-                 :xnio/io-threads (:io-threads cfg)
-                 :xnio/dispatch (:executor cfg)
+                 :http/max-body-size (::max-body-size cfg)
+                 :http/max-multipart-body-size (::max-multipart-body-size cfg)
+                 :xnio/io-threads (::io-threads cfg)
+                 :xnio/dispatch (::wrk/executor cfg)
                  :ring/async true}
 
-        handler (if (some? router)
+        handler (cond
+                  (some? router)
                   (wrap-router router)
 
-                  handler)
-        server  (yt/server handler (d/without-nils options))]
-    (assoc cfg :server (yt/start! server))))
+                  (some? handler)
+                  handler
+
+                  :else
+                  (throw (UnsupportedOperationException. "handler or router are required")))
+
+        options (d/without-nils options)
+        server  (yt/server handler options)]
+
+    (assoc cfg ::server (yt/start! server))))
 
 (defmethod ig/halt-key! ::server
-  [_ {:keys [server name port] :as cfg}]
-  (l/info :msg "stopping http server" :name name :port port)
+  [_ {:keys [::server ::port] :as cfg}]
+  (l/info :msg "stopping http server" :port port)
   (yt/stop! server))
 
 (defn- not-found-handler

@@ -90,10 +90,10 @@
 (s/def ::registry (s/map-of ::us/string fn?))
 
 (defmethod ig/pre-init-spec ::registry [_]
-  (s/keys :req-un [::mtx/metrics ::tasks]))
+  (s/keys :req [::mtx/metrics ::tasks]))
 
 (defmethod ig/init-key ::registry
-  [_ {:keys [metrics tasks]}]
+  [_ {:keys [::mtx/metrics ::tasks]}]
   (l/info :hint "registry initialized" :tasks (count tasks))
   (reduce-kv (fn [registry k v]
                (let [tname (name k)]

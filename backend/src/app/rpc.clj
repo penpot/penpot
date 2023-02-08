@@ -162,10 +162,10 @@
 
 
 (defn- wrap-authentication
-  [_ f {:keys [::auth] :as mdata}]
+  [_ f mdata]
   (fn [cfg params]
     (let [profile-id (::profile-id params)]
-      (if (and auth (not (uuid? profile-id)))
+      (if (and (::auth mdata true) (not (uuid? profile-id)))
         (p/rejected
          (ex/error :type :authentication
                    :code :authentication-required
@@ -219,8 +219,7 @@
                                            (merge (::audit/props resultm))
                                            (dissoc :profile-id)
                                            (dissoc :type)))
-                                   (d/without-qualified)
-                                   (d/without-nils))
+                                   (audit/clean-props))
 
                     event      {:type (or (::audit/type resultm)
                                           (::type cfg))
@@ -365,9 +364,10 @@
 
 (defmethod ig/init-key ::methods
   [_ cfg]
-  {:mutations (resolve-mutation-methods cfg)
-   :queries   (resolve-query-methods cfg)
-   :commands  (resolve-command-methods cfg)})
+  (let [cfg (d/without-nils cfg)]
+    {:mutations (resolve-mutation-methods cfg)
+     :queries   (resolve-query-methods cfg)
+     :commands  (resolve-command-methods cfg)}))
 
 (s/def ::mutations
   (s/map-of keyword? fn?))

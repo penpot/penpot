@@ -23,6 +23,10 @@ input[type=text], input[type=submit] {
   padding: 3px;
 }
 
+pre {
+  white-space: pre-wrap;
+}
+
 main {
   margin: 20px;
 }

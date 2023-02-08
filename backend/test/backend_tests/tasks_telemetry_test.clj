@@ -8,7 +8,6 @@
   (:require
    [backend-tests.helpers :as th]
    [app.db :as db]
-   [app.emails :as emails]
    [app.util.time :as dt]
    [clojure.pprint :refer [pprint]]
    [clojure.test :as t]

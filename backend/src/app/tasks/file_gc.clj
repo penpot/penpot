@@ -32,27 +32,24 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::min-age ::dt/duration)
-
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::min-age]))
+  (s/keys :req [::db/pool]))
 
 (defmethod ig/prep-key ::handler
   [_ cfg]
-  (merge {:min-age cf/deletion-delay}
-         (d/without-nils cfg)))
+  (assoc cfg ::min-age cf/deletion-delay))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [pool] :as cfg}]
+  [_ {:keys [::db/pool] :as cfg}]
   (fn [{:keys [file-id] :as params}]
     (db/with-atomic [conn pool]
-      (let [min-age (or (:min-age params) (:min-age cfg))
-            cfg     (assoc cfg :min-age min-age :conn conn :file-id file-id)]
+      (let [min-age (or (:min-age params) (::min-age cfg))
+            cfg     (assoc cfg ::min-age min-age ::conn conn ::file-id file-id)]
         (loop [total 0
                files (retrieve-candidates cfg)]
           (if-let [file (first files)]
             (do
-              (process-file cfg file)
+              (process-file conn file)
               (recur (inc total)
                      (rest files)))
             (do
@@ -84,7 +81,7 @@
     for update skip locked")
 
 (defn- retrieve-candidates
-  [{:keys [conn min-age file-id] :as cfg}]
+  [{:keys [::conn ::min-age ::file-id]}]
   (if (uuid? file-id)
     (do
       (l/warn :hint "explicit file id passed on params" :file-id file-id)
@@ -256,7 +253,7 @@
       (db/delete! conn :file-data-fragment {:id fragment-id :file-id file-id}))))
 
 (defn- process-file
-  [{:keys [conn] :as cfg} {:keys [id data revn modified-at features] :as file}]
+  [conn {:keys [id data revn modified-at features] :as file}]
   (l/debug :hint "processing file" :id id :modified-at modified-at)
 
   (binding [pmap/*load-fn* (partial files/load-pointer conn id)]

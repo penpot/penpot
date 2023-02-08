@@ -12,6 +12,8 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.config :as cf]
+   [app.db :as-alias db]
+   [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
    [app.util.svg :as svg]
    [buddy.core.bytes :as bb]
@@ -297,8 +299,7 @@
   "Given storage map, returns a storage configured with the appropriate
   backend for assets and optional connection attached."
   ([storage]
-   (assoc storage :backend (cf/get :assets-storage-backend :assets-fs)))
-  ([storage conn]
-   (-> storage
-       (assoc :conn conn)
-       (assoc :backend (cf/get :assets-storage-backend :assets-fs)))))
+   (assoc storage ::sto/backend (cf/get :assets-storage-backend :assets-fs)))
+  ([storage pool-or-conn]
+   (-> (configure-assets-storage storage)
+       (assoc ::db/pool-or-conn pool-or-conn))))
