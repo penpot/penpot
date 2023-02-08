@@ -4,6 +4,7 @@
 
 ### :bug: Bugs fixed
 - Fix paste board inside itself [Taiga #4775](https://tree.taiga.io/project/penpot/issue/4775)
+- Fix middle button panning can drag guides [Taiga #4266](https://tree.taiga.io/project/penpot/issue/4266)
 
 ## 1.17.1
 
