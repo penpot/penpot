@@ -252,22 +252,17 @@
                (st/emit! (dd/clear-selected-files)))
              (st/emit! (dd/toggle-file-select file)))
 
-           (let [position (dom/get-client-position event)]
-
-
-             (if (and (nil? (:y position)) (nil? (:x position)))
-               (let [target-element (dom/get-target event)
-                     points (dom/get-bounding-rect target-element)
-                     position? (let [x (:top points)
-                                     y (:left points)]
-                                 (gpt/point x y))]
-
-                 (swap! local assoc
-                        :menu-open true
-                        :menu-pos position?))
-               (swap! local assoc
-                      :menu-open true
-                      :menu-pos position)))))
+           (let [client-position (dom/get-client-position event)
+                 position (if (and (nil? (:y client-position)) (nil? (:x client-position)))
+                            (let [target-element (dom/get-target event)
+                                  points         (dom/get-bounding-rect target-element)
+                                  y              (:top points)
+                                  x              (:left points)]
+                              (gpt/point x y))
+                            client-position)]
+             (swap! local assoc
+                    :menu-open true
+                    :menu-pos position))))
 
         edit
         (mf/use-fn
