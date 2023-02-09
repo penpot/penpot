@@ -340,8 +340,7 @@
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
 
-     (when has-layout-container?
-       [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values :multiple true}])
+     [:& layout-container-menu {:type type :ids layout-container-ids :values layout-container-values :multiple true}]
 
      (when (or is-layout-child? has-layout-container?)
        [:& layout-item-menu
