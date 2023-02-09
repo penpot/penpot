@@ -1,4 +1,8 @@
 # CHANGELOG
+## 1.17.2
+
+### :bug: Bugs fixed
+- Fix invite members button text [Taiga #4794](https://tree.taiga.io/project/penpot/issue/4794)
 
 ## 1.17.2
 
