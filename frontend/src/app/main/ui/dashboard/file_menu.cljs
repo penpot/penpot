@@ -17,6 +17,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
+   [app.util.timers :as tm]
    [beicon.core :as rx]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
@@ -211,6 +212,15 @@
               (rx/map group-by-team)
               (rx/subs #(when (mf/ref-val mounted-ref)
                           (reset! teams %)))))))
+    
+    (mf/with-effect [multi?]
+      (tm/schedule-on-idle 
+       #(when-let [id (if multi?
+                        "file-duplicate-multi"
+                        "file-open-new-tab")]
+          (prn id)
+          (.log js/console (clj->js (dom/get-element id)))
+          (dom/focus! (dom/get-element id)))))
 
     (when current-team
       (let [sub-options (conj (vec (for [project current-projects]
@@ -230,7 +240,7 @@
             options (if multi?
                       [[(tr "dashboard.duplicate-multi" file-count) "file-duplicate-multi" on-duplicate nil "duplicate-multi"]
                        (when (or (seq current-projects) (seq other-teams))
-                         [(tr "dashboard.move-to-multi"file-count)  "file-move-multi"nil sub-options "move-to-multi"])
+                         [(tr "dashboard.move-to-multi" file-count)  "file-move-multi" nil sub-options "move-to-multi"])
                        [(tr "dashboard.export-binary-multi" file-count) "file-binari-export-multi" on-export-binary-files]
                        [(tr "dashboard.export-standard-multi" file-count)  "file-standard-export-multi" on-export-standard-files]
                        (when (:is-shared file)
@@ -248,13 +258,12 @@
                          [(tr "dashboard.unpublish-shared") "file-del-shared" on-del-shared nil "file-del-shared"]
                          [(tr "dashboard.add-shared") "file-add-shared" on-add-shared nil "file-add-shared"])
                        [:separator]
-                       [(tr "dashboard.download-binary-file") "file-downolad-binary"on-export-binary-files nil "download-binary-file"]
+                       [(tr "dashboard.download-binary-file") "file-downolad-binary" on-export-binary-files nil "download-binary-file"]
                        [(tr "dashboard.download-standard-file") "file-download-standard" on-export-standard-files nil "download-standard-file"]
                        (when (not is-lib-page?)
                          [:separator]
                          [(tr "labels.delete") "file-delete" on-delete nil "file-delete"])])
-_ (.log js/console (clj->js options) )
-]
+            _ (.log js/console (clj->js options))]
 
         [:& context-menu-a11y {:on-close on-menu-close
                                :show show?
@@ -262,5 +271,4 @@ _ (.log js/console (clj->js options) )
                                :min-width? true
                                :top top
                                :left left
-                               :options options
-                               }]))))
+                               :options options}]))))

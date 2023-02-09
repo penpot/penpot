@@ -13,7 +13,9 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.timers :as tm]
    [goog.object :as gobj]
    [rumext.v2 :as mf]))
 
@@ -56,7 +58,7 @@
         min-width?    (gobj/get props "min-width?" false)
         route         (mf/deref refs/route)
         in-dashboard? (= :dashboard-projects (:name (:data route)))
-
+        _ (prn "options" options)
         local         (mf/use-state {:offset-y 0
                                      :offset-x 0
                                      :levels nil})
@@ -103,12 +105,56 @@
            (dom/stop-propagation event)
            (swap! local update :levels pop)))
 
-        props (obj/merge props #js {:on-close on-local-close})]
+        props (obj/merge props #js {:on-close on-local-close})
+
+
+        ;; on-key-down
+        ;; (fn [event]
+        ;;   (let [first-id (dom/get-element (first ids))
+        ;;         first-element (dom/get-element first-id)
+        ;;         len (count ids)]
+
+        ;;     (when (kbd/home? event)
+        ;;       (when first-element
+        ;;         (dom/focus! first-element)))
+
+        ;;     (when (kbd/up-arrow? event)
+        ;;       (let [actual-selected (dom/get-active)
+        ;;             actual-id (dom/get-attribute actual-selected "id")
+        ;;             actual-index (d/index-of ids actual-id)
+        ;;             previous-id (if (= 0 actual-index)
+        ;;                           (last ids)
+        ;;                           (nth ids (- actual-index 1)))]
+        ;;         (dom/focus! (dom/get-element previous-id))))
+
+        ;;     (when (kbd/down-arrow? event)
+        ;;       (let [actual-selected (dom/get-active)
+        ;;             actual-id (dom/get-attribute actual-selected "id")
+        ;;             actual-index (d/index-of ids actual-id)
+        ;;             next-id (if (= (- len 1) actual-index)
+        ;;                       (first ids)
+        ;;                       (nth ids (+ 1 actual-index)))]
+        ;;         (dom/focus! (dom/get-element next-id))))
+
+        ;;     (when (kbd/tab? event)
+        ;;       (on-close))))
+
+
+]
 
     (mf/use-effect
      (mf/deps options)
      #(swap! local assoc :levels [{:parent-option nil
                                    :options options}]))
+    
+    (mf/with-effect []
+      (tm/schedule-on-idle
+       #(when-let [id (if false
+                        "file-duplicate-multi"
+                        "file-open-new-tab")]
+          (prn id)
+          (.log js/console (clj->js (dom/get-element id)))
+          (dom/focus! (dom/get-element id)))))
 
     (when (and open? (some? (:levels @local)))
       [:> dropdown' props
@@ -124,7 +170,7 @@
            (when-let [parent-option (:parent-option level)]
              [:*
               [:li.context-menu-item
-               [:a.context-menu-action.submenu-back
+               [:button.context-menu-action.submenu-back
                 {:data-no-close true
                  :on-click exit-submenu}
                 [:span i/arrow-slide]
@@ -137,7 +183,8 @@
                  [:li.context-menu-item
                   {:id id
                    :class (dom/classnames :is-selected (and selected (= option-name selected)))
-                   :key (dm/str "context-item-" index)}
+                   :key (dm/str "context-item-" index)
+                   :tab-index "0"}
                   (if-not sub-options
                     [:a.context-menu-action {:on-click #(do (dom/stop-propagation %)
                                                             (on-close)
