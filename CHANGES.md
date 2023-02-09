@@ -5,6 +5,10 @@
 ### :bug: Bugs fixed
 - Fix paste board inside itself [Taiga #4775](https://tree.taiga.io/project/penpot/issue/4775)
 
+### :heart: Community contributions by (Thank you!)
+
+- To @ondrejkonec: for some code contributions on this release.
+
 ## 1.17.1
 
 ### :bug: Bugs fixed
