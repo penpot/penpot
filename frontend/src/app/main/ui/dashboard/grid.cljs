@@ -342,7 +342,6 @@
                           :on-menu-close on-menu-close
                           :origin origin
                           :dashboard-local dashboard-local}])]]]]]))
-    ))
 
 
 (mf/defc grid
