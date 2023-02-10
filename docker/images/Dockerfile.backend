@@ -29,7 +29,7 @@ RUN set -ex; \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
-    mkdir -p /opt/data; \
+    mkdir -p /opt/data/assets; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot; \
     chown -R penpot:penpot /opt/data; \
