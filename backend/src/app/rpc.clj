@@ -7,6 +7,7 @@
 (ns app.rpc
   (:require
    [app.auth.ldap :as-alias ldap]
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
