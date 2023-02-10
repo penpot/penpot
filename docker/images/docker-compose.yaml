@@ -97,7 +97,7 @@ services:
   penpot-backend:
     image: "penpotapp/backend:latest"
     volumes:
-      - penpot_assets:/opt/penpot/assets
+      - penpot_assets:/opt/data/assets
 
     depends_on:
       - penpot-postgres
