@@ -46,7 +46,7 @@
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")
   (assert (vector? (gobj/get props "options")) "missing `options` prop")
-
+  
   (let [open?         (gobj/get props "show")
         on-close      (gobj/get props "on-close")
         options       (gobj/get props "options")
@@ -58,7 +58,6 @@
         min-width?    (gobj/get props "min-width?" false)
         route         (mf/deref refs/route)
         in-dashboard? (= :dashboard-projects (:name (:data route)))
-        _ (prn "options" options)
         local         (mf/use-state {:offset-y 0
                                      :offset-x 0
                                      :levels nil})
@@ -106,55 +105,48 @@
            (swap! local update :levels pop)))
 
         props (obj/merge props #js {:on-close on-local-close})
+        ids (->> options
+                 (map :id)
+                 (filter some?))
+        on-key-down
+        (fn [event]
+          (let [first-id (dom/get-element (first ids))
+                first-element (dom/get-element first-id)
+                len (count ids)]
 
+            (when (kbd/home? event)
+              (when first-element
+                (dom/focus! first-element)))
 
-        ;; on-key-down
-        ;; (fn [event]
-        ;;   (let [first-id (dom/get-element (first ids))
-        ;;         first-element (dom/get-element first-id)
-        ;;         len (count ids)]
+            (when (kbd/up-arrow? event)
+              (let [actual-selected (dom/get-active)
+                    actual-id (dom/get-attribute actual-selected "id")
+                    actual-index (d/index-of ids actual-id)
+                    previous-id (if (= 0 actual-index)
+                                  (last ids)
+                                  (nth ids (- actual-index 1)))]
+                (dom/focus! (dom/get-element previous-id))))
 
-        ;;     (when (kbd/home? event)
-        ;;       (when first-element
-        ;;         (dom/focus! first-element)))
+            (when (kbd/down-arrow? event)
+              (let [actual-selected (dom/get-active)
+                    actual-id (dom/get-attribute actual-selected "id")
+                    actual-index (d/index-of ids actual-id)
+                    next-id (if (= (- len 1) actual-index)
+                              (first ids)
+                              (nth ids (+ 1 actual-index)))]
+                (dom/focus! (dom/get-element next-id))))
 
-        ;;     (when (kbd/up-arrow? event)
-        ;;       (let [actual-selected (dom/get-active)
-        ;;             actual-id (dom/get-attribute actual-selected "id")
-        ;;             actual-index (d/index-of ids actual-id)
-        ;;             previous-id (if (= 0 actual-index)
-        ;;                           (last ids)
-        ;;                           (nth ids (- actual-index 1)))]
-        ;;         (dom/focus! (dom/get-element previous-id))))
-
-        ;;     (when (kbd/down-arrow? event)
-        ;;       (let [actual-selected (dom/get-active)
-        ;;             actual-id (dom/get-attribute actual-selected "id")
-        ;;             actual-index (d/index-of ids actual-id)
-        ;;             next-id (if (= (- len 1) actual-index)
-        ;;                       (first ids)
-        ;;                       (nth ids (+ 1 actual-index)))]
-        ;;         (dom/focus! (dom/get-element next-id))))
-
-        ;;     (when (kbd/tab? event)
-        ;;       (on-close))))
-
-
-]
+            (when (kbd/tab? event)
+              (on-close))))]
 
     (mf/use-effect
      (mf/deps options)
      #(swap! local assoc :levels [{:parent-option nil
                                    :options options}]))
     
-    (mf/with-effect []
+    (mf/with-effect [ids]
       (tm/schedule-on-idle
-       #(when-let [id (if false
-                        "file-duplicate-multi"
-                        "file-open-new-tab")]
-          (prn id)
-          (.log js/console (clj->js (dom/get-element id)))
-          (dom/focus! (dom/get-element id)))))
+       (dom/focus! (dom/get-element (first ids)))))
 
     (when (and open? (some? (:levels @local)))
       [:> dropdown' props
@@ -162,7 +154,9 @@
                                                   :fixed fixed?
                                                   :is-selectable is-selectable)
                            :style {:top (+ top (:offset-y @local))
-                                   :left (+ left (:offset-x @local))}}
+                                   :left (+ left (:offset-x @local))}
+                           :on-key-down on-key-down
+                           }
         (let [level (-> @local :levels peek)]
           [:ul.context-menu-items {:class (dom/classnames :min-width min-width?)
                                    :role "menu"
@@ -176,8 +170,14 @@
                 [:span i/arrow-slide]
                 parent-option]]
               [:li.separator]])
-           (for [[index [option-name id option-handler sub-options data-test]] (d/enumerate (:options level))]
-             (when option-name
+           (for [[index option] (d/enumerate (:options level))]
+             
+             (let [option-name (:option-name option)
+                   id (:id option)
+                   sub-options (:sub-options option)
+                   option-handler (:option-handler option)
+                   data-test (:data-test option)]
+               (when option-name
                (if (= option-name :separator)
                  [:li.separator {:key (dm/str "context-item-" index)}]
                  [:li.context-menu-item
@@ -198,7 +198,7 @@
                       :on-click (enter-submenu option-name sub-options)
                       :data-test data-test}
                      option-name
-                     [:span i/arrow-slide]])])))])]])))
+                     [:span i/arrow-slide]])]))))])]])))
 
 (mf/defc context-menu-a11y
   {::mf/wrap-props false}

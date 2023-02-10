@@ -142,7 +142,7 @@
      [:div.text
       [:h2.title (tr "dasboard.walkthrough-hero.title")]
       [:p.info (tr "dasboard.walkthrough-hero.info")]
-      [:a.btn-primary.action 
+      [:a.btn-primary.action
        {:href " https://design.penpot.app/walkthrough"
         :target "_blank"
         :on-click handle-walkthrough-link}
@@ -205,9 +205,7 @@
                  position-active (dom/get-element-offset-position active-element)
                  position (dom/get-client-position event)
                  _ (prn "active" position-active)
-                 _ (prn "client" position)
-                 
-                 ]
+                 _ (prn "client" position)]
              (dom/prevent-default event)
              (swap! local assoc
                     :menu-open true
@@ -337,25 +335,25 @@
           :on-key-down (fn [event]
                          (when (kbd/enter? event)
                            (on-menu-click-2 event)))}
-         i/actions]]]
-
-      (when (and (> limit 0)
-                 (> file-count limit))
-        [:button.show-more {:on-click on-nav
-                            :tab-index "0"
-                            :on-key-down (fn [event]
-                                           (when (kbd/enter? event)
-                                             (on-nav)))}
-         [:div.placeholder-label
-          (tr "dashboard.show-all-files")]
-         [:div.placeholder-icon i/arrow-down]])]
+         i/actions]]]]
 
      [:& line-grid
       {:project project
        :team team
        :files files
        :create-fn create-file
-       :limit limit}]]))
+       :limit limit}]
+
+     (when (and (> limit 0)
+                (> file-count limit))
+       [:button.show-more {:on-click on-nav
+                           :tab-index "0"
+                           :on-key-down (fn [event]
+                                          (when (kbd/enter? event)
+                                            (on-nav)))}
+        [:div.placeholder-label
+         (tr "dashboard.show-all-files")]
+        [:div.placeholder-icon i/arrow-down]])]))
 
 
 (def recent-files-ref

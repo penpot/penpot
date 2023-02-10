@@ -43,6 +43,24 @@ textarea {
       font-size: $fs14;
       margin-top: 13px;
     }
+    #accept-terms-and-privacy {
+      display: block;
+      width: 27px;
+      height: 20px;
+      margin: 5px;
+      border-radius: 3px;
+      margin-right: 10px;
+      background-color: #e3e3e3;
+      border: 1px solid #7b7d85;
+      box-shadow: inset 0 0 0 0 #31efb8;
+      box-sizing: border-box;
+    }
+    &.input-visible {
+      .input-checkbox {
+        label:before {
+        display: none;}
+      }
+    }
   }
 
   .field {

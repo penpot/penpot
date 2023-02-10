@@ -66,13 +66,14 @@
 
         current-team-id  (mf/use-ctx ctx/current-team-id)
         teams            (mf/use-state nil)
-
         current-team     (get @teams current-team-id)
+        _ (prn "current-team" current-team)
         other-teams      (remove #(= (:id %) current-team-id) (vals @teams))
 
+        _ (prn "other-teams" other-teams)
         current-projects (remove #(= (:id %) (:project-id file))
                                  (:projects current-team))
-
+        _ (prn "current-projects" current-projects)
         on-new-tab
         (fn [_]
           (let [path-params  {:project-id (:project-id file)
@@ -212,15 +213,6 @@
               (rx/map group-by-team)
               (rx/subs #(when (mf/ref-val mounted-ref)
                           (reset! teams %)))))))
-    
-    (mf/with-effect [multi?]
-      (tm/schedule-on-idle 
-       #(when-let [id (if multi?
-                        "file-duplicate-multi"
-                        "file-open-new-tab")]
-          (prn id)
-          (.log js/console (clj->js (dom/get-element id)))
-          (dom/focus! (dom/get-element id)))))
 
     (when current-team
       (let [sub-options (conj (vec (for [project current-projects]
@@ -237,33 +229,105 @@
                                                 (:id sub-project))])])
                                  "move-to-other-team"]))
 
-            options (if multi?
-                      [[(tr "dashboard.duplicate-multi" file-count) "file-duplicate-multi" on-duplicate nil "duplicate-multi"]
-                       (when (or (seq current-projects) (seq other-teams))
-                         [(tr "dashboard.move-to-multi" file-count)  "file-move-multi" nil sub-options "move-to-multi"])
-                       [(tr "dashboard.export-binary-multi" file-count) "file-binari-export-multi" on-export-binary-files]
-                       [(tr "dashboard.export-standard-multi" file-count)  "file-standard-export-multi" on-export-standard-files]
-                       (when (:is-shared file)
-                         [(tr "labels.unpublish-multi-files" file-count)  "file-unpublish-multi" on-del-shared nil "file-del-shared"])
-                       (when (not is-lib-page?)
-                         [:separator]
-                         [(tr "labels.delete-multi-files" file-count)  "file-delete-multi" on-delete nil "delete-multi-files"])]
 
-                      [[(tr "dashboard.open-in-new-tab")  "file-open-new-tab" on-new-tab]
-                       [(tr "labels.rename") "file-rename" on-edit nil "file-rename"]
-                       [(tr "dashboard.duplicate") "file-duplicate" on-duplicate nil "file-duplicate"]
-                       (when (and (not is-lib-page?) (or (seq current-projects) (seq other-teams)))
-                         [(tr "dashboard.move-to") "file-move-to" nil sub-options "file-move-to"])
-                       (if (:is-shared file)
-                         [(tr "dashboard.unpublish-shared") "file-del-shared" on-del-shared nil "file-del-shared"]
-                         [(tr "dashboard.add-shared") "file-add-shared" on-add-shared nil "file-add-shared"])
-                       [:separator]
-                       [(tr "dashboard.download-binary-file") "file-downolad-binary" on-export-binary-files nil "download-binary-file"]
-                       [(tr "dashboard.download-standard-file") "file-download-standard" on-export-standard-files nil "download-standard-file"]
-                       (when (not is-lib-page?)
-                         [:separator]
-                         [(tr "labels.delete") "file-delete" on-delete nil "file-delete"])])
-            _ (.log js/console (clj->js options))]
+            options (if multi?
+                       [{:option-name    (tr "dashboard.duplicate-multi" file-count) 
+                         :id             "file-duplicate-multi" 
+                         :option-handler on-duplicate 
+                         :sub-options    nil 
+                         :data-test      "duplicate-multi"}
+                        (when (or (seq current-projects) (seq other-teams))
+                          {:option-name    (tr "dashboard.move-to-multi" file-count) 
+                           :id             "file-move-multi" 
+                           :option-handler nil 
+                           :sub-options    sub-options 
+                           :data-test      "move-to-multi"})
+                        {:option-name    (tr "dashboard.export-binary-multi" file-count)
+                         :id             "file-binari-export-multi" 
+                         :option-handler on-export-binary-files 
+                         :sub-options    nil 
+                         :data-test      nil}
+                        {:option-name    (tr "dashboard.export-standard-multi" file-count) 
+                         :id             "file-standard-export-multi" 
+                         :option-handler on-export-standard-files 
+                         :sub-options    nil 
+                         :data-test      nil}
+                        (when (:is-shared file)
+                          {:option-name    (tr "labels.unpublish-multi-files" file-count)
+                           :id             "file-unpublish-multi"
+                           :option-handler on-del-shared
+                           :sub-options    nil
+                           :data-test      "file-del-shared"})
+                        (when (not is-lib-page?)
+                          {:option-name    :separator
+                           :id             nil
+                           :option-handler nil
+                           :sub-options    nil
+                           :data-test      nil}
+                          {:option-name    (tr "labels.delete-multi-files" file-count)
+                           :id             "file-delete-multi"
+                           :option-handler on-delete
+                           :sub-options    nil
+                           :data-test      "delete-multi-files"})]
+
+                       [{:option-name    (tr "dashboard.open-in-new-tab")
+                         :id             "file-open-new-tab"
+                         :option-handler on-new-tab
+                         :sub-options    nil
+                         :data-test      nil}
+                        {:option-name    (tr "labels.rename")
+                         :id             "file-rename"
+                         :option-handler on-edit
+                         :sub-options    nil
+                         :data-test      "file-rename"}
+                        {:option-name    (tr "dashboard.duplicate")
+                         :id             "file-duplicate"
+                         :option-handler on-duplicate
+                         :sub-options    nil
+                         :data-test      "file-duplicate"}
+                        (when (and (not is-lib-page?) (or (seq current-projects) (seq other-teams)))
+                          {:option-name    (tr "dashboard.move-to")
+                           :id             "file-move-to"
+                           :option-handler nil
+                           :sub-options    sub-options
+                           :data-test      "file-move-to"})
+                        (if (:is-shared file)
+                          {:option-name    (tr "dashboard.unpublish-shared")
+                           :id             "file-del-shared"
+                           :option-handler on-del-shared
+                           :sub-options    nil
+                           :data-test      "file-del-shared"}
+                          {:option-name    (tr "dashboard.add-shared")
+                           :id             "file-add-shared"
+                           :option-handler on-add-shared
+                           :sub-options    nil
+                           :data-test      "file-add-shared"})
+                        {:option-name   :separator
+                         :id             nil
+                         :option-handler nil
+                         :sub-options    nil
+                         :data-test      nil}
+                        {:option-name    (tr "dashboard.download-binary-file")
+                         :id             "file-download-binary"
+                         :option-handler on-export-binary-files
+                         :sub-options    nil
+                         :data-test      "download-binary-file"}
+                        {:option-name    (tr "dashboard.download-standard-file")
+                         :id             "file-download-standard"
+                         :option-handler on-export-standard-files
+                         :sub-options    nil
+                         :data-test      "download-standard-file"}
+                        (when (not is-lib-page?)
+                          {:option-name   :separator
+                           :id             nil
+                           :option-handler nil
+                           :sub-options    nil
+                           :data-test      nil}
+                          {:option-name    (tr "labels.delete")
+                           :id             "file-delete"
+                           :option-handler on-delete
+                           :sub-options    nil
+                           :data-test      "file-delete"})])]
 
         [:& context-menu-a11y {:on-close on-menu-close
                                :show show?
