@@ -1495,10 +1495,6 @@
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 8px;
-        .btn-large {
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
         .btn-primary {
           max-width: 250px;
         }
@@ -1587,7 +1583,19 @@
         }
       }
       .buttons {
-        margin-top: 12px;
+        margin: 12px 0;
+        button {
+          height: auto;
+        }
+        input {
+          white-space: break-spaces;
+          word-break: break-word;
+          height: fit-content;
+          margin: 0;
+          padding: 5px 10px;
+          min-height: 40px;
+          max-height: 90px;
+        }
       }
     }
   }

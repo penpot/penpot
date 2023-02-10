@@ -12,6 +12,22 @@
 
 ### :heart: Community contributions by (Thank you!)
 
+
+## 1.17.2
+
+### :bug: Bugs fixed
+- Fix invite members button text [Taiga #4794](https://tree.taiga.io/project/penpot/issue/4794)
+
+## 1.17.2
+
+### :bug: Bugs fixed
+- Fix paste board inside itself [Taiga #4775](https://tree.taiga.io/project/penpot/issue/4775)
+- Fix middle button panning can drag guides [Taiga #4266](https://tree.taiga.io/project/penpot/issue/4266)
+
+### :heart: Community contributions by (Thank you!)
+
+- To @ondrejkonec: for some code contributions on this release.
+
 ## 1.17.1
 
 ### :bug: Bugs fixed
