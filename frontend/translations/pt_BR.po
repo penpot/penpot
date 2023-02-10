@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-06 15:38+0000\n"
-"Last-Translator: Fernando Krik <fernandokrik@hotmail.com>\n"
+"PO-Revision-Date: 2023-02-12 02:37+0000\n"
+"Last-Translator: Renan Castro <renandf@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -305,9 +305,9 @@ msgstr "Duplicar %s arquivos"
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Arquivos adicionados á Bibliotecas vão aparecer aqui. Tente compartilhar "
+"Arquivos adicionados à Bibliotecas vão aparecer aqui. Tente compartilhar "
 "seus arquivos ou adicione das nossas [Bibliotecas & modelos](https://penpot."
-"app/libraries-templates.html)"
+"app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Baixar %s arquivos Penpot (.penpot)"
@@ -690,7 +690,7 @@ msgid "errors.auth.unable-to-login"
 msgstr "Parece que você não está autenticado ou a sessão expirou."
 
 msgid "errors.bad-font"
-msgstr "A fonte %s não pode ser carregada"
+msgstr "A fonte %s não pôde ser carregada"
 
 msgid "errors.bad-font-plural"
 msgstr "As fontes %s não puderam ser carregadas"
@@ -1595,8 +1595,8 @@ msgstr[1] "Tem certeza de que deseja excluir estes arquivos?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Este arquivo possui bibliotecas que estão sendo usadas neste arquivo:"
-msgstr[1] "Este arquivo possui bibliotecas que estão sendo usadas nestes arquivos:"
+msgstr[0] "Alguns itens da biblioteca deste arquivo estão sendo usados aqui:"
+msgstr[1] "Alguns itens das bibliotecas deste arquivo estão sendo usados aqui:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -1913,9 +1913,6 @@ msgstr "Politica de privacidade."
 
 msgid "onboarding.newsletter.title"
 msgstr "Deseja receber novidades sobre o Penpot?"
-
-msgid "onboarding.slide.1.title"
-msgstr "Dê vida aos seus projetos com interações"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Crie uma equipe"
@@ -2242,10 +2239,10 @@ msgid "shortcuts.open-color-picker"
 msgstr "Selector de cores"
 
 msgid "shortcuts.open-comments"
-msgstr "Ir para secção de comentários"
+msgstr "Ir para seção de comentários"
 
 msgid "shortcuts.open-dashboard"
-msgstr "Ir para o painel"
+msgstr "Ir para o dashboard"
 
 msgid "shortcuts.open-interactions"
 msgstr "Ir para seção de interação"
@@ -2989,10 +2986,6 @@ msgstr "Exportar"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "Exportar seleção"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
-msgid "workspace.options.export-object"
-msgstr "Exportar 1 elemento"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3827,7 +3820,7 @@ msgstr "Ajustar ao ponto (%s)"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
-msgstr "Enviar para trás"
+msgstr "Enviar para o fundo"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.backward"
@@ -4316,3 +4309,195 @@ msgstr "Criar webhook"
 
 msgid "modals.create-webhook.title"
 msgstr "Criar webhook"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.no-files-message"
+msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgstr[0] ""
+"Nenhum item da biblioteca deste arquivo está em uso. Eles serão deletados "
+"junto com o arquivo."
+msgstr[1] ""
+"Nenhum item das bibliotecas destes arquivos estão em uso. Eles serão "
+"deletados junto com os arquivos."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Link do convite copiado"
+
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
+msgid "viewer.header.inspect-section"
+msgstr "Inspeção (%s)"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text1"
+msgstr ""
+"A partir de agora os gráficos da biblioteca são Componentes, o que os "
+"tornarão bem mais poderosos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Despublicar"
+msgstr[1] "Despublicar"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Parece que você está abrindo um arquivo que tem a funcionalidade '%s' "
+"habilitada, mas o seu frontend no penpot não a suporta ou ela está "
+"desabilitada."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "O último envio não foi bem-sucedido."
+
+msgid "inspect.empty.help"
+msgstr ""
+"Se quiser saber mais sobre inspecionar o design, visite a central de ajuda "
+"da Penpot"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Despublicar arquivos %s"
+
+msgid "labels.view-only"
+msgstr "VISUALIZAR"
+
+msgid "modals.create-webhook.url.label"
+msgstr "URL do payload"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://exemplo.com/postreceive"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint"
+msgid_plural "modals.delete-shared-confirm.hint"
+msgstr[0] ""
+"Se você deletar, este item será movido para a biblioteca local deste "
+"arquivo. Itens não utilizados serão perdidos."
+msgstr[1] ""
+"Se você deletar, estes itens serão movidos para a biblioteca local deste "
+"arquivo. Itens não utilizados serão perdidos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.hint-many"
+msgid_plural "modals.delete-shared-confirm.hint-many"
+msgstr[0] ""
+"Se você deletar, este item será movido para as bibliotecas locais deste "
+"arquivo. Itens não utilizados serão perdidos."
+msgstr[1] ""
+"Se você deletar, estes itens serão movidos para as bibliotecas locais deste "
+"arquivo. Itens não utilizados serão perdidos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.scd-message-many"
+msgid_plural "modals.delete-shared-confirm.scd-message-many"
+msgstr[0] "Alguns itens da biblioteca deste arquivo estão sendo usados aqui:"
+msgstr[1] "Alguns itens das bibliotecas deste arquivo estão sendo usados aqui:"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Excluir webhook"
+
+msgid "modals.delete-webhook.message"
+msgstr "Tem certeza que deseja excluir este webhook?"
+
+msgid "modals.delete-webhook.title"
+msgstr "Excluindo webhook"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Editar webhook"
+
+msgid "modals.edit-webhook.title"
+msgstr "Editar webhook"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.hint-many"
+msgid_plural "modals.unpublish-shared-confirm.hint-many"
+msgstr[0] ""
+"Se você despublicá-lo, este item será movido para a biblioteca local destes "
+"arquivos."
+msgstr[1] ""
+"Se você despublicá-los, estes itens serão movidos para a biblioteca local "
+"destes arquivos."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.no-files-message"
+msgid_plural "modals.unpublish-shared-confirm.no-files-message"
+msgstr[0] "Nenhum dos itens desta biblioteca está em uso."
+msgstr[1] "Nenhum dos itens destas bibliotecas estão em uso."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.scd-message-many"
+msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
+msgstr[0] "Alguns itens nesta biblioteca estão em uso aqui:"
+msgstr[1] "Alguns itens nestas bibliotecas estão em uso aqui:"
+
+msgid "shortcuts.open-inspect"
+msgstr "Ir para seção de inspeção"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Adicionar/remover layout flex"
+
+msgid "webhooks.last-delivery.success"
+msgstr "O último envio foi bem-sucedido."
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Estilos de texto"
+
+msgid "workspace.options.inspect"
+msgstr "Inspecionar"
+
+msgid "workspace.options.interaction-auto"
+msgstr "automático"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relativo a"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column"
+msgstr "Coluna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.reverse-column"
+msgstr "Coluna invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.reverse-row"
+msgstr "Linha invertida"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row"
+msgstr "Linha"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-hint"
+msgstr ""
+"Para tentar novamente, recarregue este arquivo. Se o problema persistir, "
+"sugerimos olhar a lista e considerar excluir gráficos que não estejam "
+"funcionando."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.error-msg"
+msgstr "Alguns gráficos não puderam ser atualizados."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.progress"
+msgstr "Convertendo %s/%s"
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.text2"
+msgstr "Essa atualização acontecerá apenas uma vez."
+
+#: src/app/main/ui/workspace.cljs
+msgid "workspace.remove-graphics.title"
+msgstr "Atualizando %s..."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Adicionar layout flex"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Excluir layout flex"
