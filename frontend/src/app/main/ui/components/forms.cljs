@@ -95,12 +95,6 @@
           (when-not (get-in @form [:touched input-name])
             (swap! form assoc-in [:touched input-name] true)))
 
-        on-key-down (fn [event]
-                      (when (kbd/enter? event)
-                        (dom/prevent-default event)
-                        (prn "debo activar el checkbox")
-                        (on-change event)))
-
         props (-> props
                   (dissoc :help-icon :form :trim :children)
                   (assoc :id (name input-name)
@@ -114,7 +108,6 @@
                          :type @type'
                          :tab-index "0")
                   (cond-> (and value is-checkbox?) (assoc :default-checked value))
-                  (cond-> (and value is-checkbox?) (assoc :on-key-down on-key-down))
                   (cond-> (and touched? (:message error)) (assoc "aria-invalid" "true"
                                                                  "aria-describedby" (dm/str "error-" input-name)))
                   (obj/clj->props))]
