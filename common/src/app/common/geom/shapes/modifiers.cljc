@@ -46,46 +46,51 @@
    :expr (or (nil? ids) (set? ids))
    :hint (dm/str "tree sequence from not set: " ids))
 
-  (letfn [(get-tree-root ;; Finds the tree root for the current id
-            [id]
+  (let [get-tree-root
+        (fn ;; Finds the tree root for the current id
+          [id]
 
-            (loop [current id
-                   result  id]
-              (let [shape (get objects current)
-                    parent (get objects (:parent-id shape))]
-                (cond
-                  (or (not shape) (= uuid/zero current))
+          (loop [current id
+                 result  id]
+            (let [shape (get objects current)
+                  parent (get objects (:parent-id shape))]
+              (cond
+                (or (not shape) (= uuid/zero current))
+                result
+
+                ;; Frame found, but not layout we return the last layout found (or the id)
+                (and (= :frame (:type parent))
+                     (not (ctl/any-layout? parent)))
+                result
+
+                ;; Layout found. We continue upward but we mark this layout
+                (ctl/any-layout? parent)
+                (recur (:id parent) (:id parent))
+
+                ;; If group or boolean or other type of group we continue with the last result
+                :else
+                (recur (:id parent) result)))))
+
+        is-child? #(cph/is-child? objects %1 %2)
+
+        calculate-common-roots
+        (fn ;; Given some roots retrieves the minimum number of tree roots
+          [result id]
+          (if (= id uuid/zero)
+            result
+            (let [root (get-tree-root id)
+
+                  ;; Remove the children from the current root
                   result
+                  (if (cph/has-children? objects root)
+                    (into #{} (remove #(is-child? root %)) result)
+                    result)
 
-                  ;; Frame found, but not layout we return the last layout found (or the id)
-                  (and (= :frame (:type parent))
-                       (not (ctl/layout? parent)))
-                  result
-
-                  ;; Layout found. We continue upward but we mark this layout
-                  (ctl/layout? parent)
-                  (recur (:id parent) (:id parent))
-
-                  ;; If group or boolean or other type of group we continue with the last result
-                  :else
-                  (recur (:id parent) result)))))
-
-          (calculate-common-roots ;; Given some roots retrieves the minimum number of tree roots
-            [result id]
-            (if (= id uuid/zero)
-              result
-              (let [root (get-tree-root id)
-
-                    ;; Remove the children from the current root
-                    result
-                    (into #{} (remove #(cph/is-child? objects root %)) result)
-
-                    contains-parent?
-                    (some #(cph/is-child? objects % root) result)]
-
-                (cond-> result
-                  (not contains-parent?)
-                  (conj root)))))]
+                  root-parents (cph/get-parent-ids objects root)
+                  contains-parent? (some #(contains? result %) root-parents)]
+              (cond-> result
+                (not contains-parent?)
+                (conj root)))))]
 
     (let [roots (->> ids (reduce calculate-common-roots #{}))]
       (concat

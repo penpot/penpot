@@ -76,6 +76,12 @@
   (and (not (frame-shape? shape))
        (= (:frame-id shape) uuid/zero)))
 
+(defn has-children?
+  ([objects id]
+   (has-children? (get objects id)))
+  ([shape]
+   (d/not-empty? (:shapes shape))))
+
 (defn get-children-ids
   [objects id]
   (letfn [(get-children-ids-rec
@@ -487,8 +493,17 @@
 
 (defn is-child?
   [objects parent-id candidate-child-id]
-  (let [parents (get-parent-ids objects candidate-child-id)]
-    (some? (d/seek #(= % parent-id) parents))))
+  (loop [cur-id candidate-child-id]
+    (let [cur-parent-id (dm/get-in objects [cur-id :parent-id])]
+      (cond
+        (= parent-id cur-parent-id)
+        true
+
+        (or (= cur-parent-id uuid/zero) (nil? cur-parent-id))
+        false
+
+        :else
+        (recur cur-parent-id)))))
 
 (defn reduce-objects
   ([objects reducer-fn init-val]

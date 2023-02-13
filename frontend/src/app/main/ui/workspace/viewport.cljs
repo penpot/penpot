@@ -51,17 +51,20 @@
 
 (defn apply-modifiers-to-selected
   [selected objects text-modifiers modifiers]
-  (into []
-        (comp
-         (keep (d/getf objects))
-         (map (fn [{:keys [id] :as shape}]
-                (cond-> shape
-                  (and (cph/text-shape? shape) (contains? text-modifiers id))
-                  (dwm/apply-text-modifier (get text-modifiers id))
+  (reduce
+   (fn [objects id]
+     (update
+      objects id
+      (fn [shape]
+        (cond-> shape
+          (and (cph/text-shape? shape) (contains? text-modifiers id))
+          (dwm/apply-text-modifier (get text-modifiers id))
 
-                  (contains? modifiers id)
-                  (gsh/transform-shape (dm/get-in modifiers [id :modifiers]))))))
-        selected))
+          (contains? modifiers id)
+          (gsh/transform-shape (dm/get-in modifiers [id :modifiers]))))))
+
+   objects
+   selected))
 
 (mf/defc viewport
   [{:keys [wlocal wglobal selected layout file] :as props}]
@@ -97,8 +100,11 @@
         modifiers         (mf/deref refs/workspace-modifiers)
         text-modifiers    (mf/deref refs/workspace-text-modifier)
 
-        objects-modified  (mf/with-memo [base-objects modifiers]
-                            (gsh/apply-objects-modifiers base-objects modifiers selected))
+        objects-modified  (mf/with-memo
+                            [base-objects text-modifiers modifiers]
+                            (apply-modifiers-to-selected selected base-objects text-modifiers modifiers))
+
+        selected-shapes   (->> selected (keep (d/getf objects-modified)))
 
         background        (get options :background clr/canvas)
 
@@ -138,7 +144,6 @@
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
-        selected-shapes   (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)
 
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
