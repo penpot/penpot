@@ -213,6 +213,15 @@
               (rx/map group-by-team)
               (rx/subs #(when (mf/ref-val mounted-ref)
                           (reset! teams %)))))))
+    
+    (mf/with-effect [multi?]
+      (tm/schedule-on-idle 
+       #(when-let [id (if multi?
+                        "file-duplicate-multi"
+                        "file-open-new-tab")]
+          (prn id)
+          (.log js/console (clj->js (dom/get-element id)))
+          (dom/focus! (dom/get-element id)))))
 
     (when current-team
       (let [sub-options (conj (vec (for [project current-projects]

@@ -45,8 +45,7 @@
   [props]
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")
-  (assert (vector? (gobj/get props "options")) "missing `options` prop")
-  
+  (assert (vector? (gobj/get props "options")) "missing `options` prop") 
   (let [open?         (gobj/get props "show")
         on-close      (gobj/get props "on-close")
         options       (gobj/get props "options")

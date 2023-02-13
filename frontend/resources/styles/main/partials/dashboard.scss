@@ -205,7 +205,31 @@
       min-height: 32px;
       margin-left: $size-2;
     }
-    
+    .show-more {
+      align-items: center;
+      color: $color-gray-30;
+      display: flex;
+      font-size: $fs14;
+      justify-content: space-between;
+      cursor: pointer;
+      background-color: transparent;
+      border: none;
+      .placeholder-icon {
+        transform: rotate(-90deg);
+        margin-left: 10px;
+        svg {
+          height: 14px;
+          width: 14px;
+          fill: $color-gray-30;
+        }
+      }
+      &:hover {
+        color: $color-primary-dark;
+        svg {
+          fill: $color-primary-dark;
+        }
+      }
+    }
 
     .btn-secondary {
       border: none;

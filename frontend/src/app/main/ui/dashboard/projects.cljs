@@ -203,9 +203,7 @@
          (fn [event]
            (let [active-element (dom/get-active)
                  position-active (dom/get-element-offset-position active-element)
-                 position (dom/get-client-position event)
-                 _ (prn "active" position-active)
-                 _ (prn "client" position)]
+                 position (dom/get-client-position event)]
              (dom/prevent-default event)
              (swap! local assoc
                     :menu-open true
@@ -335,7 +333,18 @@
           :on-key-down (fn [event]
                          (when (kbd/enter? event)
                            (on-menu-click-2 event)))}
-         i/actions]]]]
+         i/actions]]]
+
+      (when (and (> limit 0)
+                 (> file-count limit))
+        [:button.show-more {:on-click on-nav
+                            :tab-index "0"
+                            :on-key-down (fn [event]
+                                           (when (kbd/enter? event)
+                                             (on-nav)))}
+         [:div.placeholder-label
+          (tr "dashboard.show-all-files")]
+         [:div.placeholder-icon i/arrow-down]])]
 
      [:& line-grid
       {:project project
