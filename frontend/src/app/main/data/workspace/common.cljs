@@ -27,6 +27,7 @@
 
 (defn interrupt? [e] (= e :interrupt))
 
+(declare undo-to-index)
 
 (defn- assure-valid-current-page
   []
@@ -60,13 +61,25 @@
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
             (when-not (or (empty? items) (= index -1))
-              (let [changes (get-in items [index :undo-changes])]
-                (rx/of (dwu/materialize-undo changes (dec index))
-                       (dch/commit-changes {:redo-changes changes
-                                            :undo-changes []
-                                            :save-undo? false
-                                            :origin it})
-                       (assure-valid-current-page))))))))))
+              (let [item (get items index)
+                    changes (:undo-changes item)
+                    group-id (:group-id item)
+                    find-first-group-idx (fn ffgidx[index]
+                                           (let [item (get items index)]
+                                             (if (= (:group-id item) group-id)
+                                               (ffgidx (dec index))
+                                               (inc index))))
+
+                    undo-group-index (when group-id
+                                       (find-first-group-idx index))]
+                (if group-id
+                  (rx/of (undo-to-index (dec undo-group-index)))
+                  (rx/of (dwu/materialize-undo changes (dec index))
+                         (dch/commit-changes {:redo-changes changes
+                                              :undo-changes []
+                                              :save-undo? false
+                                              :origin it})
+                         (assure-valid-current-page)))))))))))
 
 (def redo
   (ptk/reify ::redo
@@ -79,12 +92,24 @@
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
             (when-not (or (empty? items) (= index (dec (count items))))
-              (let [changes (get-in items [(inc index) :redo-changes])]
-                (rx/of (dwu/materialize-undo changes (inc index))
-                       (dch/commit-changes {:redo-changes changes
-                                            :undo-changes []
-                                            :origin it
-                                            :save-undo? false}))))))))))
+              (let [item (get items (inc index))
+                    changes (:redo-changes item)
+                    group-id (:group-id item)
+                    find-last-group-idx (fn flgidx [index]
+                                          (let [item (get items index)]
+                                            (if (= (:group-id item) group-id)
+                                              (flgidx (inc index))
+                                              (dec index))))
+
+                    redo-group-index (when group-id
+                                       (find-last-group-idx (inc index)))]
+                (if group-id
+                  (rx/of (undo-to-index redo-group-index))
+                  (rx/of (dwu/materialize-undo changes (inc index))
+                         (dch/commit-changes {:redo-changes changes
+                                              :undo-changes []
+                                              :origin it
+                                              :save-undo? false})))))))))))
 
 (defn undo-to-index
   "Repeat undoing or redoing until dest-index is reached."
@@ -99,7 +124,7 @@
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
             (when (and (some? items)
-                       (<= 0 dest-index (dec (count items))))
+                       (<= -1 dest-index (dec (count items))))
               (let [changes (vec (apply concat
                                         (cond
                                           (< dest-index index)
