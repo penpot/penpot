@@ -36,7 +36,7 @@
           (next))]
     [:div.modal-container.onboarding.onboarding-v2
      [:div.modal-left.welcome
-      [:img {:src "images/onboarding-welcome.jpg" :border "0" :alt (tr "onboarding.welcome.alt")}]]
+      [:img {:src "images/onboarding-welcome.png" :border "0" :alt (tr "onboarding.welcome.alt")}]]
      [:div.modal-right
       [:div.release-container [:span.release "Version " (:main @cf/version)]]
       [:div.right-content
@@ -71,7 +71,7 @@
           (next))]
     [:div.modal-container.onboarding.onboarding-v2
      [:div.modal-left.welcome
-      [:img {:src "images/onboarding-people.jpg" :border "0" :alt (tr "onboarding.welcome.alt")}]]
+      [:img {:src "images/onboarding-people.png" :border "0" :alt (tr "onboarding.welcome.alt")}]]
      [:div.modal-right
       [:div.release-container [:span.release "Version " (:main @cf/version)]]
       [:div.right-content
