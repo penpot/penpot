@@ -10,6 +10,9 @@
 - Fix paste board inside itself [Taiga #4775](https://tree.taiga.io/project/penpot/issue/4775)
 - Fix middle button panning can drag guides [Taiga #4266](https://tree.taiga.io/project/penpot/issue/4266)
 
+### :sparkles: New features
+- Adds paddings and gaps prediction on layout creation [Taiga #4838](https://tree.taiga.io/project/penpot/task/4838)
+
 ### :heart: Community contributions by (Thank you!)
 
 - To @ondrejkonec: for some code contributions on this release.
