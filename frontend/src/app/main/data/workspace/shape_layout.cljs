@@ -53,11 +53,25 @@
    :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
 
 (def initial-grid-layout ;; TODO
-  {:layout :grid})
+  {:layout :grid
+   :layout-gap-type        :multiple
+   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-align-items     :start
+   :layout-align-content   :stretch
+   :layout-justify-items   :start
+   :layout-justify-content :start
+   :layout-padding-type    :simple
+   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}
+
+   :layout-grid-rows       []
+   :layout-grid-columns    []})
 
 (defn get-layout-initializer
   [type from-frame?]
-  (let [initial-layout-data (if (= type :flex) initial-flex-layout initial-grid-layout)]
+  (let [initial-layout-data
+        (case type
+          :flex initial-flex-layout
+          :grid initial-grid-layout)]
     (fn [shape]
       (-> shape
           (merge initial-layout-data)
@@ -288,7 +302,7 @@
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn create-layout
-  []
+  [type]
   (ptk/reify ::create-layout
     ptk/WatchEvent
     (watch [_ state _]
@@ -303,11 +317,11 @@
         (if (and single? is-frame?)
           (rx/of
            (dwu/start-undo-transaction undo-id)
-           (create-layout-from-id [(first selected)] :flex true)
+           (create-layout-from-id [(first selected)] type true)
            (dwu/commit-undo-transaction undo-id))
           (rx/of
            (dwu/start-undo-transaction undo-id)
-           (create-layout-from-selection :flex)
+           (create-layout-from-selection type)
            (dwu/commit-undo-transaction undo-id)))))))
 
 (defn toggle-layout-flex
@@ -320,12 +334,12 @@
             selected         (wsh/lookup-selected state)
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
-            has-flex-layout? (and single? (ctl/layout? objects (:id (first selected-shapes))))]
+            has-flex-layout? (and single? (ctl/flex-layout? objects (:id (first selected-shapes))))]
 
         (when (not= 0 (count selected))
           (if has-flex-layout?
             (rx/of (remove-layout selected))
-            (rx/of (create-layout))))))))
+            (rx/of (create-layout :flex))))))))
 
 (defn update-layout
   [ids changes]

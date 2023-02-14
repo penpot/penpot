@@ -714,7 +714,7 @@
         ;; Fix the sizing when moving a shape
         (pcb/update-shapes parents
                            (fn [parent]
-                             (if (ctl/layout? parent)
+                             (if (ctl/flex-layout? parent)
                                (cond-> parent
                                  (ctl/change-h-sizing? (:id parent) objects (:shapes parent))
                                  (assoc :layout-item-h-sizing :fix)

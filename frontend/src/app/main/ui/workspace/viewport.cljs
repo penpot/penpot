@@ -338,7 +338,7 @@
               :zoom zoom
               :modifiers modifiers}]
 
-            (when (ctl/layout? outlined-frame)
+            (when (ctl/any-layout? outlined-frame)
               [:g.ghost-outline
                [:& outline/shape-outlines
                 {:objects base-objects

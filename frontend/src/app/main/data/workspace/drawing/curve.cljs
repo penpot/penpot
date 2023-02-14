@@ -47,12 +47,12 @@
     ptk/UpdateEvent
     (update [_ state]
 
-      (let [objects  (wsh/lookup-page-objects state)
-            content  (get-in state [:workspace-drawing :object :content] [])
-            position (gpt/point (get-in content [0 :params] nil))
-            frame-id (ctst/top-nested-frame objects position)
-            layout?    (ctl/layout? objects frame-id)
-            drop-index (when layout? (gsl/get-drop-index frame-id objects position))]
+      (let [objects      (wsh/lookup-page-objects state)
+            content      (get-in state [:workspace-drawing :object :content] [])
+            position     (gpt/point (get-in content [0 :params] nil))
+            frame-id     (ctst/top-nested-frame objects position)
+            flex-layout? (ctl/flex-layout? objects frame-id)
+            drop-index   (when flex-layout? (gsl/get-drop-index frame-id objects position))]
         (-> state
             (assoc-in [:workspace-drawing :object :frame-id] frame-id)
             (cond-> (some? drop-index)

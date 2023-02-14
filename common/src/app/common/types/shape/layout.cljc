@@ -14,12 +14,17 @@
 ;; :layout-flex-dir        ;; :row, :row-reverse, :column, :column-reverse
 ;; :layout-gap-type        ;; :simple, :multiple
 ;; :layout-gap             ;; {:row-gap number , :column-gap number}
+
 ;; :layout-align-items     ;; :start :end :center :stretch
 ;; :layout-justify-content ;; :start :center :end :space-between :space-around :space-evenly
 ;; :layout-align-content   ;; :start :center :end :space-between :space-around :space-evenly :stretch (by default)
 ;; :layout-wrap-type       ;; :wrap, :nowrap
 ;; :layout-padding-type    ;; :simple, :multiple
 ;; :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
+
+;; layout-grid-rows
+;; layout-grid-columns
+;; layout-justify-items
 
 ;; ITEMS
 ;; :layout-item-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
@@ -34,14 +39,24 @@
 ;; :layout-item-z-index
 
 (s/def ::layout  #{:flex :grid})
+
 (s/def ::layout-flex-dir #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse}) ;;TODO remove reverse-column and reverse-row after script
 (s/def ::layout-gap-type #{:simple :multiple})
 (s/def ::layout-gap ::us/safe-number)
+
 (s/def ::layout-align-items #{:start :end :center :stretch})
+(s/def ::layout-justify-items #{:start :end :center :stretch})
 (s/def ::layout-align-content #{:start :end :center :space-between :space-around :space-evenly :stretch})
 (s/def ::layout-justify-content #{:start :center :end :space-between :space-around :space-evenly})
 (s/def ::layout-wrap-type #{:wrap :nowrap :no-wrap}) ;;TODO remove no-wrap after script
 (s/def ::layout-padding-type #{:simple :multiple})
+
+(s/def :grid/type #{:fr :auto :fixed})
+(s/def :grid/value (s/nilable ::us/string))
+(s/def ::grid-definition (s/keys :opt-un [:grid/type
+                                          :grid/value]))
+(s/def ::layout-grid-rows (s/coll-of ::grid-definition :kind vector?))
+(s/def ::layout-grid-columns (s/coll-of ::grid-definition :kind vector?))
 
 (s/def ::p1 ::us/safe-number)
 (s/def ::p2 ::us/safe-number)
@@ -67,7 +82,13 @@
                    ::layout-padding
                    ::layout-justify-content
                    ::layout-align-items
-                   ::layout-align-content]))
+                   ::layout-align-content
+
+                   ;; grid
+                   ::layout-justify-items
+                   ::layout-grid-rows
+                   ::layout-grid-columns
+                   ]))
 
 (s/def ::m1 ::us/safe-number)
 (s/def ::m2 ::us/safe-number)
@@ -100,26 +121,61 @@
                    ::layout-item-absolute
                    ::layout-item-z-index]))
 
-(defn layout?
+(defn flex-layout?
   ([objects id]
-   (layout? (get objects id)))
+   (flex-layout? (get objects id)))
   ([shape]
-   (and (= :frame (:type shape)) (= :flex (:layout shape)))))
+   (and (= :frame (:type shape))
+        (= :flex (:layout shape)))))
 
-(defn layout-immediate-child? [objects shape]
+(defn grid-layout?
+  ([objects id]
+   (grid-layout? (get objects id)))
+  ([shape]
+   (and (= :frame (:type shape))
+        (= :grid (:layout shape)))))
+
+(defn any-layout?
+  ([objects id]
+   (any-layout? (get objects id)))
+
+  ([shape]
+   (or (flex-layout? shape) (grid-layout? shape))))
+
+(defn flex-layout-immediate-child? [objects shape]
   (let [parent-id (:parent-id shape)
         parent (get objects parent-id)]
-    (layout? parent)))
+    (flex-layout? parent)))
 
-(defn layout-immediate-child-id? [objects id]
+(defn any-layout-immediate-child? [objects shape]
+  (let [parent-id (:parent-id shape)
+        parent (get objects parent-id)]
+    (any-layout? parent)))
+
+(defn flex-layout-immediate-child-id? [objects id]
   (let [parent-id (dm/get-in objects [id :parent-id])
         parent (get objects parent-id)]
-    (layout? parent)))
+    (flex-layout? parent)))
 
-(defn layout-descent? [objects shape]
+(defn any-layout-immediate-child-id? [objects id]
+  (let [parent-id (dm/get-in objects [id :parent-id])
+        parent (get objects parent-id)]
+    (any-layout? parent)))
+
+(defn flex-layout-descent? [objects shape]
   (let [frame-id (:frame-id shape)
         frame (get objects frame-id)]
-    (layout? frame)))
+    (flex-layout? frame)))
+
+(defn grid-layout-descent? [objects shape]
+  (let [frame-id (:frame-id shape)
+        frame (get objects frame-id)]
+    (grid-layout? frame)))
+
+(defn any-layout-descent? [objects shape]
+  (let [frame-id (:frame-id shape)
+        frame (get objects frame-id)]
+    (any-layout? frame)))
 
 (defn inside-layout?
   "Check if the shape is inside a layout"
@@ -360,7 +416,7 @@
 
 (defn change-h-sizing?
   [frame-id objects children-ids]
-  (and (layout? objects frame-id)
+  (and (flex-layout? objects frame-id)
        (auto-width? objects frame-id)
        (or (and (col? objects frame-id)
                 (->> children-ids
@@ -373,7 +429,7 @@
 
 (defn change-v-sizing?
   [frame-id objects children-ids]
-  (and (layout? objects frame-id)
+  (and (flex-layout? objects frame-id)
        (auto-height? objects frame-id)
        (or (and (col? objects frame-id)
                 (some (partial fill-height? objects) children-ids))

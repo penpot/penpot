@@ -175,7 +175,7 @@
 
         shapes    (if drawing [drawing] shapes)
         frame-id (snap/snap-frame-id shapes)]
-    (when-not (ctl/layout? objects frame-id)
+    (when-not (ctl/any-layout? objects frame-id)
       [:& snap-feedback {:shapes shapes
                          :page-id page-id
                          :remove-snap? remove-snap?

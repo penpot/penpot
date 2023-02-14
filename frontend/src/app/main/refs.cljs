@@ -405,7 +405,7 @@
      (let [objects  (wsh/lookup-page-objects state)]
        (into []
              (comp (map (d/getf objects))
-                   (filter (partial ctl/layout-immediate-child? objects)))
+                   (filter (partial ctl/flex-layout-immediate-child? objects)))
              ids)))
    st/state =))
 
@@ -478,22 +478,22 @@
 (defn workspace-text-modifier-by-id [id]
   (l/derived #(get % id) workspace-text-modifier =))
 
-(defn is-layout-child?
+(defn is-flex-layout-child?
   [ids]
   (l/derived
    (fn [objects]
      (->> ids
           (map (d/getf objects))
-          (some (partial ctl/layout-immediate-child? objects))))
+          (some (partial ctl/flex-layout-immediate-child? objects))))
    workspace-page-objects))
 
-(defn all-layout-child?
+(defn all-flex-layout-child?
   [ids]
   (l/derived
    (fn [objects]
      (->> ids
           (map (d/getf objects))
-          (every? (partial ctl/layout-immediate-child? objects))))
+          (every? (partial ctl/flex-layout-immediate-child? objects))))
    workspace-page-objects))
 
 (defn get-flex-child-viewer
@@ -503,7 +503,7 @@
      (let [objects (wsh/lookup-viewer-objects state page-id)]
        (into []
              (comp (map (d/getf objects))
-                   (filter (partial ctl/layout-immediate-child? objects)))
+                   (filter (partial ctl/flex-layout-immediate-child? objects)))
              ids)))
    st/state =))
 

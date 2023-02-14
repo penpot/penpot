@@ -18,7 +18,6 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
-   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dc]
    [app.main.data.workspace.changes :as dch]
@@ -194,10 +193,6 @@
   [file page objects ids it components-v2]
   (let [lookup  (d/getf objects)
 
-        layout-ids (->> ids
-                        (mapcat (partial cph/get-parent-ids objects))
-                        (filter (partial ctl/layout? objects)))
-
         groups-to-unmask
         (reduce (fn [group-ids id]
                   ;; When the shape to delete is the mask of a masked group,
@@ -319,7 +314,6 @@
            (dc/detach-comment-thread ids)
            (ptk/data-event :layout/update all-parents)
            (dch/commit-changes changes)
-           (ptk/data-event :layout/update layout-ids)
            (dwu/commit-undo-transaction undo-id))))
 
 (defn create-and-add-shape

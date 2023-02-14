@@ -268,7 +268,7 @@
         frame           (mf/deref (refs/object-by-id frame-id))
         selrect         (gsh/selection-rect selected-shapes)]
 
-    (when-not (ctl/layout? frame)
+    (when-not (ctl/any-layout? frame)
       [:g.distance
        [:& shape-distance
         {:selrect selrect

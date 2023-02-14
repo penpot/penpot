@@ -68,7 +68,7 @@
 
         shape (or selected-frame (get objects hover-top-frame-id))]
 
-    (when (and shape (ctl/layout? shape))
+    (when (and shape (ctl/flex-layout? shape))
       (let [row? (ctl/row? shape)
             col? (ctl/col? shape)
 

@@ -308,8 +308,8 @@
         layout-type         (:layout values)
 
         on-add-layout
-        (fn [_]
-          (st/emit! (dwsl/create-layout))
+        (fn [type]
+          (st/emit! (dwsl/create-layout type))
           (reset! open? true))
 
 
@@ -319,13 +319,13 @@
           (reset! open? false))
 
         ;; Uncomment when activating the grid options
-        ;; set-flex            (fn []
-        ;;                       (st/emit! (dwsl/remove-layout ids))
-        ;;                       (on-add-layout :flex))
-        ;;
-        ;; set-grid            (fn []
-        ;;                       (st/emit! (dwsl/remove-layout ids))
-        ;;                       (on-add-layout :grid))
+        set-flex            (fn []
+                              (st/emit! (dwsl/remove-layout ids))
+                              (on-add-layout :flex))
+        
+        set-grid            (fn []
+                              (st/emit! (dwsl/remove-layout ids))
+                              (on-add-layout :grid))
 
         ;; Flex-direction
 
@@ -394,7 +394,7 @@
        [:span "Layout"]
        (if (and (not multiple) (:layout values))
          [:div.title-actions
-          #_[:div.layout-btns
+          [:div.layout-btns
              [:button {:on-click set-flex
                        :class (dom/classnames
                                :active (= :flex layout-type))} "Flex"]
