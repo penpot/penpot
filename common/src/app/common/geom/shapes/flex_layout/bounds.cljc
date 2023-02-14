@@ -126,16 +126,19 @@
         row?            (ctl/row? parent)
         col?            (ctl/col? parent)
         space-around?   (ctl/space-around? parent)
-        content-around? (ctl/content-around? parent)
+        space-evenly?   (ctl/space-evenly? parent)
+        content-evenly? (ctl/content-evenly? parent)
         [layout-gap-row layout-gap-col] (ctl/gaps parent)
 
-        row-pad (if (or (and col? space-around?)
-                        (and row? content-around?))
+        row-pad (if (or (and col? space-evenly?)
+                        (and col? space-around?)
+                        (and row? content-evenly?))
                   layout-gap-row
                   0)
 
-        col-pad (if (or(and row? space-around?)
-                       (and col? content-around?))
+        col-pad (if (or(and row? space-evenly?)
+                       (and row? space-around?)
+                       (and col? content-evenly?))
                   layout-gap-col
                   0)
 

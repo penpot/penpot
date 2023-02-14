@@ -27,6 +27,7 @@
         center?  (or (and wrap? (ctl/content-center? parent))
                      (and (not wrap?) (ctl/align-items-center? parent)))
         around?  (and wrap? (ctl/content-around? parent))
+        evenly?  (and wrap? (ctl/content-evenly? parent))
 
         ;; Adjust the totals so it takes into account the gaps
         [layout-gap-row layout-gap-col] (ctl/gaps parent)
@@ -47,6 +48,9 @@
         (gpt/add (vv free-height-gap))
 
         around?
+        (gpt/add (vv (max lines-gap-row (/ free-height num-lines 2))))
+
+        evenly?
         (gpt/add (vv (max lines-gap-row (/ free-height (inc num-lines))))))
 
       col?
@@ -57,6 +61,9 @@
         (gpt/add (hv free-width-gap))
 
         around?
+        (gpt/add (hv (max lines-gap-col (/ free-width num-lines) 2)))
+
+        evenly?
         (gpt/add (hv (max lines-gap-col (/ free-width (inc num-lines)))))))))
 
 (defn get-next-line
@@ -78,6 +85,7 @@
         stretch? (ctl/content-stretch? parent)
         between? (ctl/content-between? parent)
         around?  (ctl/content-around? parent)
+        evenly?  (ctl/content-evenly? parent)
 
         free-width  (- layout-width total-width)
         free-height (- layout-height total-height)
@@ -94,6 +102,9 @@
           (/ free-width (dec num-lines))
 
           around?
+          (/ free-width num-lines)
+
+          evenly?
           (/ free-width (inc num-lines))
 
           :else
@@ -111,6 +122,9 @@
           (/ free-height (dec num-lines))
 
           around?
+          (/ free-height num-lines)
+
+          evenly?
           (/ free-height (inc num-lines))
 
           :else
@@ -134,6 +148,7 @@
         col?                (ctl/col? parent)
         space-between?      (ctl/space-between? parent)
         space-around?       (ctl/space-around? parent)
+        space-evenly?       (ctl/space-evenly? parent)
         h-center?           (ctl/h-center? parent)
         h-end?              (ctl/h-end? parent)
         v-center?           (ctl/v-center? parent)
@@ -159,20 +174,20 @@
         start-p
         (cond-> base-p
           ;; X AXIS
-          (and row? h-center? (not space-around?) (not space-between?))
+          (and row? h-center? (not space-around?) (not space-evenly?) (not space-between?))
           (-> (gpt/add (hv (/ layout-width 2)))
               (gpt/subtract (hv (/ (+ line-width children-gap-width) 2))))
 
-          (and row? h-end? (not space-around?) (not space-between?))
+          (and row? h-end? (not space-around?) (not space-evenly?) (not space-between?))
           (-> (gpt/add (hv layout-width))
               (gpt/subtract (hv (+ line-width children-gap-width))))
 
           ;; Y AXIS
-          (and col? v-center? (not space-around?) (not space-between?))
+          (and col? v-center? (not space-around?) (not space-evenly?) (not space-between?))
           (-> (gpt/add (vv (/ layout-height 2)))
               (gpt/subtract (vv (/ (+ line-height children-gap-height) 2))))
 
-          (and col? v-end? (not space-around?) (not space-between?))
+          (and col? v-end? (not space-around?) (not space-evenly?) (not space-between?))
           (-> (gpt/add (vv layout-height))
               (gpt/subtract (vv (+ line-height children-gap-height)))))]
 

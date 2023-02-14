@@ -15,8 +15,8 @@
 ;; :layout-gap-type        ;; :simple, :multiple
 ;; :layout-gap             ;; {:row-gap number , :column-gap number}
 ;; :layout-align-items     ;; :start :end :center :stretch
-;; :layout-justify-content ;; :start :center :end :space-between :space-around
-;; :layout-align-content   ;; :start :center :end :space-between :space-around :stretch (by default)
+;; :layout-justify-content ;; :start :center :end :space-between :space-around :space-evenly
+;; :layout-align-content   ;; :start :center :end :space-between :space-around :space-evenly :stretch (by default)
 ;; :layout-wrap-type       ;; :wrap, :nowrap
 ;; :layout-padding-type    ;; :simple, :multiple
 ;; :layout-padding         ;; {:p1 num :p2 num :p3 num :p4 num} number could be negative
@@ -36,8 +36,8 @@
 (s/def ::layout-gap-type #{:simple :multiple})
 (s/def ::layout-gap ::us/safe-number)
 (s/def ::layout-align-items #{:start :end :center :stretch})
-(s/def ::layout-align-content #{:start :end :center :space-between :space-around :stretch})
-(s/def ::layout-justify-content #{:start :center :end :space-between :space-around})
+(s/def ::layout-align-content #{:start :end :center :space-between :space-around :space-evenly :stretch})
+(s/def ::layout-justify-content #{:start :center :end :space-between :space-around :space-evenly})
 (s/def ::layout-wrap-type #{:wrap :nowrap :no-wrap}) ;;TODO remove no-wrap after script
 (s/def ::layout-padding-type #{:simple :multiple})
 
@@ -286,6 +286,10 @@
   [{:keys [layout-align-content]}]
   (= :space-around layout-align-content))
 
+(defn content-evenly?
+  [{:keys [layout-align-content]}]
+  (= :space-evenly layout-align-content))
+
 (defn content-stretch?
   [{:keys [layout-align-content]}]
   (or (= :stretch layout-align-content)
@@ -320,6 +324,10 @@
   [{:keys [layout-justify-content]}]
   (= layout-justify-content :space-around))
 
+(defn space-evenly?
+  [{:keys [layout-justify-content]}]
+  (= layout-justify-content :space-evenly))
+
 (defn align-self-start? [{:keys [layout-item-align-self]}]
   (= :start layout-item-align-self))
 
@@ -349,4 +357,3 @@
                 (some (partial fill-height? objects) children-ids))
            (and (row? objects frame-id)
                 (every? (partial fill-height? objects) children-ids)))))
-
