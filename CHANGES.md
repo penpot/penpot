@@ -3,6 +3,7 @@
 
 ### :bug: Bugs fixed
 - Fix invite members button text [Taiga #4794](https://tree.taiga.io/project/penpot/issue/4794)
+- Fix problem with opacity in frames [Taiga #4795](https://tree.taiga.io/project/penpot/issue/4795)
 
 ## 1.17.2
 
