@@ -2,8 +2,10 @@
 ## 1.17.2
 
 ### :bug: Bugs fixed
+
 - Fix invite members button text [Taiga #4794](https://tree.taiga.io/project/penpot/issue/4794)
 - Fix problem with opacity in frames [Taiga #4795](https://tree.taiga.io/project/penpot/issue/4795)
+- Fix correct behaviour for space-around and added space-evenly option
 
 ## 1.17.2
 

@@ -1644,6 +1644,7 @@
       font-family: "worksans", sans-serif;
 
       &.justify-content,
+      &.align-content,
       &.sizing {
         align-items: start;
         margin-top: 4px;
@@ -1658,7 +1659,8 @@
         gap: 5px;
       }
 
-      &.justify-content {
+      &.justify-content,
+      &.align-content {
         display: flex;
         flex-direction: column;
         gap: 5px;
