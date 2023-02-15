@@ -34,6 +34,23 @@
 
 (declare commit-changes)
 
+
+(defn- add-group-id
+  [changes state]
+  (let [undo          (:workspace-undo state)
+        items         (:items undo)
+        index         (or (:index undo) (dec (count items)))
+        prev-item     (when-not (or (empty? items) (= index -1))
+                                (get items index))
+        group-id      (:group-id prev-item)
+        add-group-id? (and
+                       (not (nil? group-id))
+                       (= (get-in changes [:redo-changes 0 :type]) :mod-obj)
+                       (= (get-in prev-item [:redo-changes 0 :type]) :add-obj)) ;; This is a copy-and-move with mouse+alt
+        ]
+    (cond-> changes add-group-id? (assoc :group-id group-id))))
+
+
 (def commit-changes? (ptk/type? ::commit-changes))
 
 (defn update-shapes
@@ -64,7 +81,8 @@
                         (-> (pcb/empty-changes it page-id)
                             (pcb/set-save-undo? save-undo?)
                             (pcb/with-objects objects))
-                        ids)]
+                        ids)
+             changes (add-group-id changes state)]
          (rx/concat
           (if (seq (:redo-changes changes))
             (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))]
@@ -147,7 +165,7 @@
 
 (defn commit-changes
   [{:keys [redo-changes undo-changes
-           origin save-undo? file-id]
+           origin save-undo? file-id group-id]
     :or {save-undo? true}}]
   (log/debug :msg "commit-changes"
              :js/redo-changes redo-changes
@@ -164,7 +182,8 @@
          :changes redo-changes
          :page-id page-id
          :frames frames
-         :save-undo? save-undo?})
+         :save-undo? save-undo?
+         :group-id group-id})
 
       ptk/UpdateEvent
       (update [_ state]
@@ -212,5 +231,6 @@
 
              (when (and save-undo? (seq undo-changes))
                (let [entry {:undo-changes undo-changes
-                            :redo-changes redo-changes}]
+                            :redo-changes redo-changes
+                            :group-id group-id}]
                  (rx/of (dwu/append-undo entry)))))))))))

@@ -485,7 +485,10 @@
 
         (gpt/subtract new-pos pt-obj)))))
 
-(defn duplicate-selected [move-delta?]
+(defn duplicate-selected
+  ([move-delta?]
+   (duplicate-selected move-delta? false))
+  ([move-delta? add-group-id?]
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
     (watch [it state _]
@@ -501,6 +504,8 @@
 
                   changes         (->> (prepare-duplicate-changes objects page selected delta it)
                                        (duplicate-changes-update-indices objects selected))
+
+                  changes         (cond-> changes add-group-id? (assoc :group-id (uuid/random)))
 
                   id-original     (first selected)
 
@@ -525,7 +530,7 @@
                 (select-shapes new-selected)
                 (ptk/data-event :layout/update frames)
                 (memorize-duplicated id-original id-duplicated)
-                (dwu/commit-undo-transaction undo-id)))))))))
+                (dwu/commit-undo-transaction undo-id))))))))))
 
 (defn change-hover-state
   [id value]

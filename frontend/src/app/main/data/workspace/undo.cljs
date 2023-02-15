@@ -55,10 +55,11 @@
     state))
 
 (defn- accumulate-undo-entry
-  [state {:keys [undo-changes redo-changes]}]
+  [state {:keys [undo-changes redo-changes group-id]}]
   (-> state
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
-      (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))))
+      (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))
+      (assoc-in [:workspace-undo :transaction :group-id] group-id)))
 
 (defn append-undo
   [entry]
