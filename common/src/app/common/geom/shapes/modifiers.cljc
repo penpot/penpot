@@ -115,13 +115,15 @@
           (if (empty? children)
             modif-tree
             (let [child-id        (first children)
-                  child           (get objects child-id)
-                  child-bounds    @(get bounds child-id)
-                  child-modifiers (gct/calc-child-modifiers parent child modifiers ignore-constraints child-bounds parent-bounds transformed-parent-bounds)]
-              (recur (cond-> modif-tree
-                       (not (ctm/empty? child-modifiers))
-                       (update-in [child-id :modifiers] ctm/add-modifiers child-modifiers))
-                     (rest children)))))))))
+                  child           (get objects child-id)]
+              (if (some? child)
+                (let [child-bounds    @(get bounds child-id)
+                      child-modifiers (gct/calc-child-modifiers parent child modifiers ignore-constraints child-bounds parent-bounds transformed-parent-bounds)]
+                  (recur (cond-> modif-tree
+                           (not (ctm/empty? child-modifiers))
+                           (update-in [child-id :modifiers] ctm/add-modifiers child-modifiers))
+                         (rest children)))
+                (recur modif-tree (rest children))))))))))
 
 (defn get-group-bounds
   [objects bounds modif-tree shape]
