@@ -5,11 +5,9 @@
 
 - Fix invite members button text [Taiga #4794](https://tree.taiga.io/project/penpot/issue/4794)
 - Fix problem with opacity in frames [Taiga #4795](https://tree.taiga.io/project/penpot/issue/4795)
-<<<<<<< HEAD
 - Fix correct behaviour for space-around and added space-evenly option
-=======
 - Fix duplicate with alt and undo only undo one step [Taiga #4746](https://tree.taiga.io/project/penpot/issue/4746)
->>>>>>> d262fc2b7 (:bug: Fix duplicate with alt and undo only undo one step)
+- Fix problem creating frames inside layout [Taiga #4844](https://tree.taiga.io/project/penpot/issue/4844)
 
 ## 1.17.2
 

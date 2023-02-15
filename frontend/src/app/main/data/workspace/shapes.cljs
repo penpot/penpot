@@ -77,7 +77,7 @@
   ([attrs]
    (add-shape attrs {}))
 
-  ([attrs {:keys [no-select?]}]
+  ([attrs {:keys [no-select? no-update-layout?]}]
    (us/verify ::shape-attrs attrs)
    (ptk/reify ::add-shape
      ptk/WatchEvent
@@ -108,7 +108,8 @@
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dch/commit-changes changes)
-                 (ptk/data-event :layout/update [(:parent-id shape)])
+                 (when-not no-update-layout?
+                   (ptk/data-event :layout/update [(:parent-id shape)]))
                  (when-not no-select?
                    (dws/select-shapes (d/ordered-set id)))
                  (dwu/commit-undo-transaction undo-id))
@@ -387,8 +388,9 @@
                  undo-id (js/Symbol)]
              (rx/of
               (dwu/start-undo-transaction undo-id)
-              (add-shape shape)
+              (add-shape shape {:no-update-layout? true})
               (move-shapes-into-frame (:id shape) selected)
+              (ptk/data-event :layout/update [(:id shape)])
               (dwu/commit-undo-transaction undo-id)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -453,4 +455,3 @@
                (map (fn [[page-id frame-ids]]
                       (dch/update-shapes frame-ids #(dissoc % :use-for-thumbnail?) {:page-id page-id})))))
          (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail? not))))))))
-
