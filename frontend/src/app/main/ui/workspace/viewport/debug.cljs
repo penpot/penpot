@@ -11,6 +11,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gsl]
+   [app.common.geom.shapes.grid-layout :as gsg]
    [app.common.geom.shapes.points :as gpo]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
@@ -195,3 +196,51 @@
                           :cy (:y point)
                           :r (/ 2 zoom)
                           :style {:fill "red"}}]))])]))))
+
+(mf/defc debug-grid-layout
+  {::mf/wrap-props false}
+  [props]
+
+  (let [objects            (unchecked-get props "objects")
+        zoom               (unchecked-get props "zoom")
+        selected-shapes    (unchecked-get props "selected-shapes")
+        hover-top-frame-id (unchecked-get props "hover-top-frame-id")
+
+        selected-frame
+        (when (and (= (count selected-shapes) 1) (= :frame (-> selected-shapes first :type)))
+          (first selected-shapes))
+
+        parent (or selected-frame (get objects hover-top-frame-id))
+        parent-bounds (:points parent)]
+
+    (when (and (some? parent) (not= uuid/zero (:id parent)))
+      (let [children (->> (cph/get-immediate-children objects (:id parent))
+                          (remove :hidden))
+
+            hv   #(gpo/start-hv parent-bounds %)
+            vv   #(gpo/start-vv parent-bounds %)
+
+            width (gpo/width-points parent-bounds)
+            height (gpo/height-points parent-bounds)
+            origin (gpo/origin parent-bounds)
+            
+            grid-layout (gsg/calc-layout-data parent children parent-bounds)]
+
+        [:*
+         (for [row-data (:row-lines grid-layout)]
+           (let [start-p (gpt/add origin (vv (:distance row-data)))
+                 end-p (gpt/add start-p (hv width))]
+             [:line {:x1 (:x start-p)
+                     :y1 (:y start-p)
+                     :x2 (:x end-p)
+                     :y2 (:y end-p)
+                     :style {:stroke "red"}}]))
+
+         (for [column-data (:column-lines grid-layout)]
+           (let [start-p (gpt/add origin (hv (:distance column-data)))
+                 end-p (gpt/add start-p (vv height))]
+             [:line {:x1 (:x start-p)
+                     :y1 (:y start-p)
+                     :x2 (:x end-p)
+                     :y2 (:y end-p)
+                     :style {:stroke "red"}}]))]))))

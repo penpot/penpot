@@ -501,6 +501,12 @@
                                       :hover-top-frame-id @hover-top-frame-id
                                       :zoom zoom}])
 
+       (when (debug? :grid-layout)
+         [:& wvd/debug-grid-layout {:selected-shapes selected-shapes
+                                    :objects base-objects
+                                    :hover-top-frame-id @hover-top-frame-id
+                                    :zoom zoom}])
+
        (when show-selection-handlers?
          [:g.selection-handlers {:clipPath "url(#clip-handlers)"}
           [:defs
