@@ -5,6 +5,7 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :sparkles: New features
+- Adds paddings and gaps prediction on layout creation [Taiga #4838](https://tree.taiga.io/project/penpot/task/4838)
 
 ### :bug: Bugs fixed
 
