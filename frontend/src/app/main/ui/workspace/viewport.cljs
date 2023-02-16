@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.viewport
   (:require
+   [app.main.ui.workspace.viewport.grid-layout-editor :as grid-layout]
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -475,6 +476,11 @@
            :hover-frame frame-parent
            :disabled-guides? disabled-guides?
            :modifiers modifiers}])
+
+       [:& grid-layout/editor
+        {:zoom zoom
+         :objects base-objects
+         :shape (first selected-shapes)}]
 
        ;; DEBUG LAYOUT DROP-ZONES
        (when (debug? :layout-drop-zones)

@@ -12,5 +12,4 @@
 
 (dm/export glld/calc-layout-data)
 (dm/export glld/get-cell-data)
-(dm/export glld/get-child-coordinates)
 (dm/export glp/child-modifiers)

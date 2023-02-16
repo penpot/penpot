@@ -218,14 +218,14 @@
                             (map apply-modifiers))
           grid-data    (gcgl/calc-layout-data parent children @transformed-parent-bounds)]
       (loop [modif-tree modif-tree
-             child-idx 0
              child (first children)
              pending (rest children)]
         (if (some? child)
-          (let [[row col] (gcgl/get-child-coordinates grid-data child child-idx)
-                cell-data (gcgl/get-cell-data grid-data @transformed-parent-bounds row col)
-                modif-tree (set-child-modifiers modif-tree cell-data child)]
-            (recur modif-tree (inc child-idx) (first pending) (rest pending)))
+          (let [cell-data (gcgl/get-cell-data grid-data @transformed-parent-bounds child)
+                modif-tree (cond-> modif-tree
+                             (some? cell-data)
+                             (set-child-modifiers cell-data child))]
+            (recur modif-tree (first pending) (rest pending)))
           modif-tree)))))
 
 (defn- calc-auto-modifiers

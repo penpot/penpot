@@ -215,7 +215,8 @@
 
     (when (and (some? parent) (not= uuid/zero (:id parent)))
       (let [children (->> (cph/get-immediate-children objects (:id parent))
-                          (remove :hidden))
+                          (remove :hidden)
+                          (map #(vector (gpo/parent-coords-bounds (:points %) (:points parent)) %)))
 
             hv   #(gpo/start-hv parent-bounds %)
             vv   #(gpo/start-vv parent-bounds %)
@@ -224,10 +225,11 @@
             height (gpo/height-points parent-bounds)
             origin (gpo/origin parent-bounds)
             
-            grid-layout (gsg/calc-layout-data parent children parent-bounds)]
+            {:keys [row-tracks column-tracks shape-cells]}
+            (gsg/calc-layout-data parent children parent-bounds)]
 
         [:*
-         (for [row-data (:row-lines grid-layout)]
+         (for [row-data row-tracks]
            (let [start-p (gpt/add origin (vv (:distance row-data)))
                  end-p (gpt/add start-p (hv width))]
              [:line {:x1 (:x start-p)
@@ -236,7 +238,7 @@
                      :y2 (:y end-p)
                      :style {:stroke "red"}}]))
 
-         (for [column-data (:column-lines grid-layout)]
+         (for [column-data column-tracks]
            (let [start-p (gpt/add origin (hv (:distance column-data)))
                  end-p (gpt/add start-p (vv height))]
              [:line {:x1 (:x start-p)

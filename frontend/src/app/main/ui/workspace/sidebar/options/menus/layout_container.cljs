@@ -403,7 +403,7 @@
                                :active (= :grid layout-type))} "Grid"]]
           [:button.remove-layout {:on-click on-remove-layout} i/minus]]
 
-         [:button.add-page {:on-click on-add-layout} i/close])]]
+         [:button.add-page {:on-click #(on-add-layout :flex)} i/close])]]
 
      (when (:layout values)
        (when (not= :multiple layout-type)
