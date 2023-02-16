@@ -55,6 +55,7 @@
         left          (gobj/get props "left" 0)
         fixed?        (gobj/get props "fixed?" false)
         min-width?    (gobj/get props "min-width?" false)
+        origin        (gobj/get props "origin")
         route         (mf/deref refs/route)
         in-dashboard? (= :dashboard-projects (:name (:data route)))
         local         (mf/use-state {:offset-y 0
@@ -104,19 +105,54 @@
            (swap! local update :levels pop)))
 
         props (obj/merge props #js {:on-close on-local-close})
-        ids (->> options
+        ids (->> (:options (last (:levels @local)))
                  (map :id)
                  (filter some?))
+
+        ids (if (:parent-option (last (:levels @local)))
+              (cons "go-back-sub-option" ids)
+              ids)
+
         on-key-down
         (fn [event]
           (let [first-id (dom/get-element (first ids))
                 first-element (dom/get-element first-id)
-                len (count ids)]
-
+                len (count ids)
+                parent (dom/get-target event)
+                parent-id (dom/get-attribute parent "id")
+                options (:options (last (:levels @local)))
+                option (first (filter  #(= parent-id (:id %)) options))
+                sub-options (:sub-options option)
+                has-suboptions? (some? (:sub-options option))
+                option-handler (:option-handler option)
+                is-back-option (= "go-back-sub-option" parent-id)]
             (when (kbd/home? event)
               (when first-element
                 (dom/focus! first-element)))
 
+            (when (kbd/enter? event)
+              (if is-back-option
+                (exit-submenu event)
+
+                (if has-suboptions?
+                  (do
+                    (dom/stop-propagation event)
+                    (swap! local update :levels
+                           conj {:parent-option (:option-name option)
+                                 :options sub-options}))
+                  (do
+                    (dom/stop-propagation event)
+                    (option-handler event)))))
+
+            (when (and is-back-option
+                       (kbd/left-arrow? event))
+              (exit-submenu event))
+
+            (when (and has-suboptions? (kbd/right-arrow? event))
+              (dom/stop-propagation event)
+              (swap! local update :levels
+                     conj {:parent-option (:option-name option)
+                           :options sub-options}))
             (when (kbd/up-arrow? event)
               (let [actual-selected (dom/get-active)
                     actual-id (dom/get-attribute actual-selected "id")
@@ -135,8 +171,9 @@
                               (nth ids (+ 1 actual-index)))]
                 (dom/focus! (dom/get-element next-id))))
 
-            (when (kbd/tab? event)
-              (on-close))))]
+            (when (or (kbd/esc? event) (kbd/tab? event))
+              (on-close)
+              (dom/focus! (dom/get-element origin)))))]
 
     (mf/use-effect
      (mf/deps options)
@@ -154,8 +191,7 @@
                                                   :is-selectable is-selectable)
                            :style {:top (+ top (:offset-y @local))
                                    :left (+ left (:offset-x @local))}
-                           :on-key-down on-key-down
-                           }
+                           :on-key-down on-key-down}
         (let [level (-> @local :levels peek)]
           [:ul.context-menu-items {:class (dom/classnames :min-width min-width?)
                                    :role "menu"
@@ -163,7 +199,9 @@
            (when-let [parent-option (:parent-option level)]
              [:*
               [:li.context-menu-item
-               [:button.context-menu-action.submenu-back
+               {:id "go-back-sub-option"
+                :tab-index "0"}
+               [:div.context-menu-action.submenu-back
                 {:data-no-close true
                  :on-click exit-submenu}
                 [:span i/arrow-slide]
@@ -177,27 +215,27 @@
                    option-handler (:option-handler option)
                    data-test (:data-test option)]
                (when option-name
-               (if (= option-name :separator)
-                 [:li.separator {:key (dm/str "context-item-" index)}]
-                 [:li.context-menu-item
-                  {:id id
-                   :class (dom/classnames :is-selected (and selected (= option-name selected)))
-                   :key (dm/str "context-item-" index)
-                   :tab-index "0"}
-                  (if-not sub-options
-                    [:a.context-menu-action {:on-click #(do (dom/stop-propagation %)
-                                                            (on-close)
-                                                            (option-handler %))
-                                             :data-test data-test}
-                     (if (and in-dashboard? (= option-name "Default"))
-                       (tr "dashboard.default-team-name")
-                       option-name)]
-                    [:a.context-menu-action.submenu
-                     {:data-no-close true
-                      :on-click (enter-submenu option-name sub-options)
-                      :data-test data-test}
-                     option-name
-                     [:span i/arrow-slide]])]))))])]])))
+                 (if (= option-name :separator)
+                   [:li.separator {:key (dm/str "context-item-" index)}]
+                   [:li.context-menu-item
+                    {:id id
+                     :class (dom/classnames :is-selected (and selected (= option-name selected)))
+                     :key (dm/str "context-item-" index)
+                     :tab-index "0"}
+                    (if-not sub-options
+                      [:a.context-menu-action {:on-click #(do (dom/stop-propagation %)
+                                                              (on-close)
+                                                              (option-handler %))
+                                               :data-test data-test}
+                       (if (and in-dashboard? (= option-name "Default"))
+                         (tr "dashboard.default-team-name")
+                         option-name)]
+                      [:a.context-menu-action.submenu
+                       {:data-no-close true
+                        :on-click (enter-submenu option-name sub-options)
+                        :data-test data-test}
+                       option-name
+                       [:span i/arrow-slide]])]))))])]])))
 
 (mf/defc context-menu-a11y
   {::mf/wrap-props false}

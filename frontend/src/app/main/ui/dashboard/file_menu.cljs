@@ -17,7 +17,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.timers :as tm]
    [beicon.core :as rx]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
@@ -50,7 +49,7 @@
           projects))
 
 (mf/defc file-menu
-  [{:keys [files show? on-edit on-menu-close top left navigate? origin] :as props}]
+  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id] :as props}]
   (assert (seq files) "missing `files` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
@@ -67,13 +66,9 @@
         current-team-id  (mf/use-ctx ctx/current-team-id)
         teams            (mf/use-state nil)
         current-team     (get @teams current-team-id)
-        _ (prn "current-team" current-team)
         other-teams      (remove #(= (:id %) current-team-id) (vals @teams))
-
-        _ (prn "other-teams" other-teams)
         current-projects (remove #(= (:id %) (:project-id file))
                                  (:projects current-team))
-        _ (prn "current-projects" current-projects)
         on-new-tab
         (fn [_]
           (let [path-params  {:project-id (:project-id file)
@@ -214,129 +209,96 @@
               (rx/subs #(when (mf/ref-val mounted-ref)
                           (reset! teams %)))))))
     
-    (mf/with-effect [multi?]
-      (tm/schedule-on-idle 
-       #(when-let [id (if multi?
-                        "file-duplicate-multi"
-                        "file-open-new-tab")]
-          (prn id)
-          (.log js/console (clj->js (dom/get-element id)))
-          (dom/focus! (dom/get-element id)))))
-
     (when current-team
-      (let [sub-options (conj (vec (for [project current-projects]
-                                     [(get-project-name project)
-                                      (on-move (:id current-team)
-                                               (:id project))]))
-                              (when (seq other-teams)
-                                [(tr "dashboard.move-to-other-team") nil
-                                 (for [team other-teams]
-                                   [(get-team-name team) nil
-                                    (for [sub-project (:projects team)]
-                                      [(get-project-name sub-project)
-                                       (on-move (:id team)
-                                                (:id sub-project))])])
-                                 "move-to-other-team"]))
+      ;; TODO clean this flatten and conj, vec
+      (let [sub-options (flatten (conj (vec (for [project current-projects]
+                                              {:option-name (get-project-name project)
+                                               :id (get-project-name project) ;;TODO mejorar este id
+                                               :option-handler (on-move (:id current-team)
+                                                                        (:id project))}))
+                                       (when (seq other-teams)
+                                         [{:option-name (tr "dashboard.move-to-other-team")
+                                           :id "move-to-other-team"
+                                           :sub-options
 
+                                           (for [team other-teams]
+                                             {:option-name (get-team-name team)
+                                              :id (get-team-name team)
+                                              :sub-options
 
+                                              (for [sub-project (:projects team)]
+                                                {:option-name (get-project-name sub-project)
+                                                 :id (get-project-name sub-project)
+                                                 :option-handler (on-move (:id team)
+                                                                          (:id sub-project))})})}])))
             options (if multi?
-                       [{:option-name    (tr "dashboard.duplicate-multi" file-count) 
-                         :id             "file-duplicate-multi" 
-                         :option-handler on-duplicate 
-                         :sub-options    nil 
-                         :data-test      "duplicate-multi"}
-                        (when (or (seq current-projects) (seq other-teams))
-                          {:option-name    (tr "dashboard.move-to-multi" file-count) 
-                           :id             "file-move-multi" 
-                           :option-handler nil 
-                           :sub-options    sub-options 
-                           :data-test      "move-to-multi"})
-                        {:option-name    (tr "dashboard.export-binary-multi" file-count)
-                         :id             "file-binari-export-multi" 
-                         :option-handler on-export-binary-files 
-                         :sub-options    nil 
-                         :data-test      nil}
-                        {:option-name    (tr "dashboard.export-standard-multi" file-count) 
-                         :id             "file-standard-export-multi" 
-                         :option-handler on-export-standard-files 
-                         :sub-options    nil 
-                         :data-test      nil}
-                        (when (:is-shared file)
-                          {:option-name    (tr "labels.unpublish-multi-files" file-count)
-                           :id             "file-unpublish-multi"
-                           :option-handler on-del-shared
-                           :sub-options    nil
-                           :data-test      "file-del-shared"})
-                        (when (not is-lib-page?)
-                          {:option-name    :separator
-                           :id             nil
-                           :option-handler nil
-                           :sub-options    nil
-                           :data-test      nil}
-                          {:option-name    (tr "labels.delete-multi-files" file-count)
-                           :id             "file-delete-multi"
-                           :option-handler on-delete
-                           :sub-options    nil
-                           :data-test      "delete-multi-files"})]
+                      [{:option-name    (tr "dashboard.duplicate-multi" file-count)
+                        :id             "file-duplicate-multi"
+                        :option-handler on-duplicate
+                        :data-test      "duplicate-multi"}
+                       (when (or (seq current-projects) (seq other-teams))
+                         {:option-name    (tr "dashboard.move-to-multi" file-count)
+                          :id             "file-move-multi"
+                          :sub-options    sub-options
+                          :data-test      "move-to-multi"})
+                       {:option-name    (tr "dashboard.export-binary-multi" file-count)
+                        :id             "file-binari-export-multi"
+                        :option-handler on-export-binary-files}
+                       {:option-name    (tr "dashboard.export-standard-multi" file-count)
+                        :id             "file-standard-export-multi"
+                        :option-handler on-export-standard-files}
+                       (when (:is-shared file)
+                         {:option-name    (tr "labels.unpublish-multi-files" file-count)
+                          :id             "file-unpublish-multi"
+                          :option-handler on-del-shared
+                          :data-test      "file-del-shared"})
+                       (when (not is-lib-page?)
+                         {:option-name    :separator}
+                         {:option-name    (tr "labels.delete-multi-files" file-count)
+                          :id             "file-delete-multi"
+                          :option-handler on-delete
+                          :data-test      "delete-multi-files"})]
 
-                       [{:option-name    (tr "dashboard.open-in-new-tab")
-                         :id             "file-open-new-tab"
-                         :option-handler on-new-tab
-                         :sub-options    nil
-                         :data-test      nil}
-                        {:option-name    (tr "labels.rename")
-                         :id             "file-rename"
-                         :option-handler on-edit
-                         :sub-options    nil
-                         :data-test      "file-rename"}
-                        {:option-name    (tr "dashboard.duplicate")
-                         :id             "file-duplicate"
-                         :option-handler on-duplicate
-                         :sub-options    nil
-                         :data-test      "file-duplicate"}
-                        (when (and (not is-lib-page?) (or (seq current-projects) (seq other-teams)))
-                          {:option-name    (tr "dashboard.move-to")
-                           :id             "file-move-to"
-                           :option-handler nil
-                           :sub-options    sub-options
-                           :data-test      "file-move-to"})
-                        (if (:is-shared file)
-                          {:option-name    (tr "dashboard.unpublish-shared")
-                           :id             "file-del-shared"
-                           :option-handler on-del-shared
-                           :sub-options    nil
-                           :data-test      "file-del-shared"}
-                          {:option-name    (tr "dashboard.add-shared")
-                           :id             "file-add-shared"
-                           :option-handler on-add-shared
-                           :sub-options    nil
-                           :data-test      "file-add-shared"})
-                        {:option-name   :separator
-                         :id             nil
-                         :option-handler nil
-                         :sub-options    nil
-                         :data-test      nil}
-                        {:option-name    (tr "dashboard.download-binary-file")
-                         :id             "file-download-binary"
-                         :option-handler on-export-binary-files
-                         :sub-options    nil
-                         :data-test      "download-binary-file"}
-                        {:option-name    (tr "dashboard.download-standard-file")
-                         :id             "file-download-standard"
-                         :option-handler on-export-standard-files
-                         :sub-options    nil
-                         :data-test      "download-standard-file"}
-                        (when (not is-lib-page?)
-                          {:option-name   :separator
-                           :id             nil
-                           :option-handler nil
-                           :sub-options    nil
-                           :data-test      nil}
-                          {:option-name    (tr "labels.delete")
-                           :id             "file-delete"
-                           :option-handler on-delete
-                           :sub-options    nil
-                           :data-test      "file-delete"})])]
+                      [{:option-name    (tr "dashboard.open-in-new-tab")
+                        :id             "file-open-new-tab"
+                        :option-handler on-new-tab}
+                       {:option-name    (tr "labels.rename")
+                        :id             "file-rename"
+                        :option-handler on-edit
+                        :data-test      "file-rename"}
+                       {:option-name    (tr "dashboard.duplicate")
+                        :id             "file-duplicate"
+                        :option-handler on-duplicate
+                        :data-test      "file-duplicate"}
+                       (when (and (not is-lib-page?) (or (seq current-projects) (seq other-teams)))
+                         {:option-name    (tr "dashboard.move-to")
+                          :id             "file-move-to"
+                          :sub-options    sub-options
+                          :data-test      "file-move-to"})
+                       (if (:is-shared file)
+                         {:option-name    (tr "dashboard.unpublish-shared")
+                          :id             "file-del-shared"
+                          :option-handler on-del-shared
+                          :data-test      "file-del-shared"}
+                         {:option-name    (tr "dashboard.add-shared")
+                          :id             "file-add-shared"
+                          :option-handler on-add-shared
+                          :data-test      "file-add-shared"})
+                       {:option-name   :separator}
+                       {:option-name    (tr "dashboard.download-binary-file")
+                        :id             "file-download-binary"
+                        :option-handler on-export-binary-files
+                        :data-test      "download-binary-file"}
+                       {:option-name    (tr "dashboard.download-standard-file")
+                        :id             "file-download-standard"
+                        :option-handler on-export-standard-files
+                        :data-test      "download-standard-file"}
+                       (when (not is-lib-page?)
+                         {:option-name   :separator}
+                         {:option-name    (tr "labels.delete")
+                          :id             "file-delete"
+                          :option-handler on-delete
+                          :data-test      "file-delete"})])]
 
         [:& context-menu-a11y {:on-close on-menu-close
                                :show show?
@@ -344,4 +306,5 @@
                                :min-width? true
                                :top top
                                :left left
-                               :options options}]))))
+                               :options options
+                               :origin parent-id}]))))

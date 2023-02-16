@@ -285,7 +285,7 @@
         (swap! local assoc :menu-open false)))
 
     [:li.grid-item.project-th
-     [:a
+     [:button
       {:tab-index "0"
        :class (dom/classnames :selected selected?
                               :library library-view?)
@@ -322,6 +322,7 @@
         [:div.project-th-icon.menu
          {:tab-index "0"
           :ref menu-ref
+          :id (str file-id "-action-menu")
           :on-click on-menu-click
           :on-key-down (fn [event]
                          (when (kbd/enter? event)
@@ -336,7 +337,8 @@
                           :on-edit on-edit
                           :on-menu-close on-menu-close
                           :origin origin
-                          :dashboard-local dashboard-local}])]]]]]))
+                          :dashboard-local dashboard-local
+                          :parent-id (str file-id "-action-menu")}])]]]]]))
 
 
 (mf/defc grid

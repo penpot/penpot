@@ -27,9 +27,14 @@
     margin: $size-3 $size-4 $size-4 $size-2;
     position: relative;
     text-align: center;
-    a {
+    a,
+    button {
       width: 100%;
       font-weight: normal;
+    }
+    button {
+      background-color: transparent;
+      border: none;
     }
     @media #{$bp-max-1366} {
       height: 200px;
