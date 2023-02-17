@@ -69,11 +69,10 @@
         on-pointer-down
         (mf/use-callback
          (fn [event]
-           (when (= 0 (.-button event))
-             (dom/capture-pointer event)
-             (mf/set-ref-val! dragging-ref true)
-             (mf/set-ref-val! start-ref (dom/get-client-position event))
-             (mf/set-ref-val! start-pos-ref (get @ms/mouse-position axis)))))
+           (dom/capture-pointer event)
+           (mf/set-ref-val! dragging-ref true)
+           (mf/set-ref-val! start-ref (dom/get-client-position event))
+           (mf/set-ref-val! start-pos-ref (get @ms/mouse-position axis))))
 
         on-pointer-up
         (mf/use-callback

@@ -82,6 +82,8 @@
                       (swap! form assoc-in [:touched input-name] true)
                       (fm/on-input-change form input-name value trim)))
 
+
+
         on-blur
         (fn [_]
           (reset! focus? false)

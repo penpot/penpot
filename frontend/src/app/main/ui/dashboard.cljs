@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.math :as mth]
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
    [app.main.data.dashboard.shortcuts :as sc]
@@ -83,6 +84,10 @@
         container-size (* (+ 2 num-cards) card-width)
         ;; We need space for num-cards plus the libraries&templates link
         more-cards  (> (+ @card-offset (* (+ 1 num-cards) card-width)) content-width)
+        visible-card-count (mth/floor (/ content-width 275))
+        left-moves (/ @card-offset -275)
+        first-visible-card left-moves
+        last-visible-card (+ (- visible-card-count 1) left-moves)
         content-ref (mf/use-ref)
 
         toggle-collapse
@@ -143,41 +148,82 @@
                                            ::ev/origin "dashboard"
                                            :section section})))]
 
+
     [:div.dashboard-templates-section {:class (when collapsed "collapsed")}
      [:div.title
       [:button {:tab-index "0"
-                :on-click toggle-collapse}
+                :on-click toggle-collapse
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (dom/stop-propagation event)
+                                 (dom/prevent-default event)
+                                 (toggle-collapse)))}
        [:span (tr "dashboard.libraries-and-templates")]
        [:span.icon (if collapsed i/arrow-up i/arrow-down)]]]
      [:div.content {:ref content-ref
-                    :style {:left @card-offset :width (str container-size "px")}}
+                    :style {:left @card-offset :width (str container-size "px")}} 
+      
       (for [num-item (range (count templates)) :let [item (nth templates num-item)]]
-        [:a.card-container {:tab-index "0"
-                            :id (str/concat "card-container-" num-item)
-                            :key (:id item)
-                            :on-click #(import-template item)
-                            :on-key-down (fn [event]
-                                           (when (kbd/enter? event)
-                                             (import-template item)))}
+        (let [is-visible? (and (>= num-item first-visible-card) (<= num-item last-visible-card))]
+          [:a.card-container {:tab-index (if (or (not is-visible?) collapsed)
+                                           "-1"
+                                           "0")
+                              :id (str/concat "card-container-" num-item)
+                              :key (:id item)
+                              :on-click #(import-template item)
+                              :on-key-down (fn [event]
+                                             (when (kbd/enter? event)
+                                               (dom/stop-propagation event)
+                                               (import-template item)))}
+           [:div.template-card
+            [:div.img-container
+             [:img {:src (:thumbnail-uri item)
+                    :alt (:name item)}]]
+            [:div.card-name [:span (:name item)] [:span.icon i/download]]]]))
+
+      (let [is-visible? (and (>= num-cards first-visible-card) (<= num-cards last-visible-card))]
+        [:div.card-container
          [:div.template-card
           [:div.img-container
-           [:img {:src (:thumbnail-uri item)
-                  :alt (:name item)}]]
-          [:div.card-name [:span (:name item)] [:span.icon i/download]]]])
-
-      [:div.card-container
-       [:div.template-card
-        [:div.img-container
-         [:a {:tab-index "0"
-              :href "https://penpot.app/libraries-templates" :target "_blank" :on-click handle-template-link}
-          [:div.template-link
-           [:div.template-link-title (tr "dashboard.libraries-and-templates")]
-           [:div.template-link-text (tr "dashboard.libraries-and-templates.explore")]]]]]]]
-     (when (< @card-offset 0)
-       [:button.button.left {:on-click move-left} i/go-prev])
+           [:a {:id (str/concat "card-container-" num-cards)
+                :tab-index (if (or (not is-visible?) collapsed)
+                             "-1"
+                             "0")
+                :href "https://penpot.app/libraries-templates.html"
+                :target "_blank"
+                :on-click handle-template-link
+                :on-key-down (fn [event]
+                               (when (kbd/enter? event)
+                                 (dom/stop-propagation event)
+                                 (handle-template-link)))}
+            [:div.template-link
+             [:div.template-link-title (tr "dashboard.libraries-and-templates")]
+             [:div.template-link-text (tr "dashboard.libraries-and-templates.explore")]]]]]])]
+       (when (< @card-offset 0)
+         [:button.button.left {:tab-index (if collapsed
+                                            "-1"
+                                            "0")
+                               :on-click move-left
+                               :on-key-down (fn [event]
+                                              (when (kbd/enter? event)
+                                                (dom/stop-propagation event)
+                                                (move-left)
+                                                (let [first-element (dom/get-element (str/concat "card-container-" first-visible-card))]
+                                                  (when first-element
+                                                    (dom/focus! first-element)))))} i/go-prev])
      (when more-cards
-       [:button.button.right {:on-click move-right
-                              :aria-label (tr "labels.next")} i/go-next])]))
+       [:button.button.right {:tab-index (if collapsed
+                                           "-1"
+                                           "0")
+                              :on-click move-right
+                              :aria-label (tr "labels.next")
+                              :on-key-down  (fn [event]
+                                             (when (kbd/enter? event)
+                                               (dom/stop-propagation event)
+                                               (move-right)
+                                               (let [last-element (dom/get-element (str/concat "card-container-" last-visible-card))]
+                                                 (when last-element
+                                                   (dom/focus! last-element)))))} i/go-next])]))
 
 (mf/defc dashboard-content
   [{:keys [team projects project section search-term profile] :as props}]
@@ -277,6 +323,7 @@
        (let [events [(events/listen goog/global EventType.KEYDOWN
                                     (fn [event]
                                       (when (kbd/enter? event)
+                                        (dom/stop-propagation event)
                                         (st/emit! (dd/open-selected-file)))))]]
          (fn []
            (doseq [key events]

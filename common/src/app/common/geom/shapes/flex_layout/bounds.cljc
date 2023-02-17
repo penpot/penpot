@@ -68,18 +68,11 @@
              (gpt/add base-p (hv 0.01))
              (gpt/add base-p (vv 0.01))]
 
-      col?
-      (conj (gpt/add base-p (vv min-height)))
-
-      row?
-      (conj (gpt/add base-p (hv min-width)))
-
       (and col? h-start?)
       (conj (gpt/add base-p (hv min-width)))
 
       (and col? h-center?)
-      (conj (gpt/add base-p (hv (/ min-width 2)))
-            (gpt/subtract base-p (hv (/ min-width 2))))
+      (conj (gpt/add base-p (hv (/ min-width 2))))
 
       (and col? h-center?)
       (conj (gpt/subtract base-p (hv min-width)))
@@ -88,8 +81,7 @@
       (conj (gpt/add base-p (vv min-height)))
 
       (and row? v-center?)
-      (conj (gpt/add base-p (vv (/ min-height 2)))
-            (gpt/subtract base-p (vv (/ min-height 2))))
+      (conj (gpt/add base-p (vv (/ min-height 2))))
 
       (and row? v-end?)
       (conj (gpt/subtract base-p (vv min-height))))))

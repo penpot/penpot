@@ -5,29 +5,12 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :sparkles: New features
-- Adds paddings and gaps prediction on layout creation [Taiga #4838](https://tree.taiga.io/project/penpot/task/4838)
 
 ### :bug: Bugs fixed
 
 ### :arrow_up: Deps updates
 
 ### :heart: Community contributions by (Thank you!)
-
-
-## 1.17.2
-
-### :bug: Bugs fixed
-- Fix invite members button text [Taiga #4794](https://tree.taiga.io/project/penpot/issue/4794)
-
-## 1.17.2
-
-### :bug: Bugs fixed
-- Fix paste board inside itself [Taiga #4775](https://tree.taiga.io/project/penpot/issue/4775)
-- Fix middle button panning can drag guides [Taiga #4266](https://tree.taiga.io/project/penpot/issue/4266)
-
-### :heart: Community contributions by (Thank you!)
-
-- To @ondrejkonec: for some code contributions on this release.
 
 ## 1.17.1
 

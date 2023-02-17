@@ -245,16 +245,16 @@
                     :type "text"}]]
 
      (when (contains? @cf/flags :terms-and-privacy-checkbox)
-       [:div.fields-row
+       [:div.fields-row.input-visible.accept-terms-and-privacy-wrapper
         [:& fm/input {:name :accept-terms-and-privacy
                       :class "check-primary"
                       :type "checkbox"}
          [:span
-          (tr "auth.terms-privacy-agreement")
-          [:div
-           [:a {:href "https://penpot.app/terms" :target "_blank"} (tr "auth.terms-of-service")]
-           [:span ",\u00A0"]
-           [:a {:href "https://penpot.app/privacy" :target "_blank"} (tr "auth.privacy-policy")]]]]])
+          (tr "auth.terms-privacy-agreement")]]
+        [:div.auth-links
+         [:a {:href "https://penpot.app/terms" :target "_blank"} (tr "auth.terms-of-service")]
+         [:span ",\u00A0"]
+         [:a {:href "https://penpot.app/privacy" :target "_blank"} (tr "auth.privacy-policy")]]])
 
      [:& fm/submit-button
       {:label (tr "auth.register-submit")

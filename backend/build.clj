@@ -20,7 +20,7 @@
    {:class-dir class-dir
     :uber-file jar-file
     :main 'clojure.main
-    :exclude [#".*Log4j2Plugins\.dat$"]
+    :exclude [#"goog.*" #"^javasist.*"]
     :basis basis}))
 
 (defn compile [_]
