@@ -188,7 +188,9 @@
         toggle-pin
         (mf/use-fn
          (mf/deps project)
-         #(st/emit! (dd/toggle-project-pin project)))
+          (fn [event]
+            (dom/stop-propagation event)
+            (st/emit! (dd/toggle-project-pin project))))
 
         on-menu-click
         (mf/use-fn
@@ -303,9 +305,6 @@
             :on-click toggle-pin
             :alt (tr "dashboard.pin-unpin")
             :aria-label (tr "dashboard.pin-unpin")
-            :on-key-down (fn [event]
-                           (when (kbd/enter? event)
-                             (toggle-pin event)))
             :tab-index "0"}
            (if (:is-pinned project)
              i/pin-fill
