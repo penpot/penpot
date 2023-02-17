@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.projects
   (:require
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -192,19 +193,16 @@
         on-menu-click
         (mf/use-fn
          (fn [event]
-           (let [position (dom/get-client-position event)]
-             (dom/prevent-default event)
-             (swap! local assoc
-                    :menu-open true
-                    :menu-pos position))))
+           (dom/prevent-default event) 
 
-        on-menu-click-2
-        (mf/use-fn
-         (fn [event]
-           (let [active-element (dom/get-active)
-                 position-active (dom/get-element-offset-position active-element)
-                 position (dom/get-client-position event)]
-             (dom/prevent-default event)
+           (let [client-position (dom/get-client-position event)
+                 position (if (and (nil? (:y client-position)) (nil? (:x client-position)))
+                            (let [target-element (dom/get-target event)
+                                  points         (dom/get-bounding-rect target-element)
+                                  y              (:top points)
+                                  x              (:left points)]
+                              (gpt/point x y))
+                            client-position)]
              (swap! local assoc
                     :menu-open true
                     :menu-pos position))))
@@ -287,7 +285,7 @@
        [:& project-menu
         {:project project
          :show? (:menu-open @local)
-         :left (:x (:menu-pos @local))
+         :left (+ 24 (:x (:menu-pos @local)))
          :top (:y (:menu-pos @local))
          :on-edit on-edit-open
          :on-menu-close on-menu-close
@@ -332,7 +330,8 @@
           :tab-index "0"
           :on-key-down (fn [event]
                          (when (kbd/enter? event)
-                           (on-menu-click-2 event)))}
+                           (dom/stop-propagation event)
+                           (on-menu-click event)))}
          i/actions]]]
 
       (when (and (> limit 0)

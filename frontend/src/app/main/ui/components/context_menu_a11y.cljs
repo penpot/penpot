@@ -69,6 +69,15 @@
                                         :options options}])
            (on-close)))
 
+        props (obj/merge props #js {:on-close on-local-close})
+        ids (->> (:options (last (:levels @local)))
+                 (map :id)
+                 (filter some?))
+
+        ids (if (:parent-option (last (:levels @local)))
+              (cons "go-back-sub-option" ids)
+              ids)
+
         check-menu-offscreen
         (mf/use-callback
          (mf/deps top (:offset-y @local) left (:offset-x @local))
@@ -104,24 +113,22 @@
            (dom/stop-propagation event)
            (swap! local update :levels pop)))
 
-        props (obj/merge props #js {:on-close on-local-close})
-        ids (->> (:options (last (:levels @local)))
-                 (map :id)
-                 (filter some?))
-
-        ids (if (:parent-option (last (:levels @local)))
-              (cons "go-back-sub-option" ids)
-              ids)
-
         on-key-down
-        (fn [event]
-          (let [first-id (dom/get-element (first ids))
+        (fn [options-original parent-original]
+          (fn [event]
+          (let [ids (->> options-original
+                         (map :id)
+                         (filter some?))
+
+                ids (if parent-original
+                      (cons "go-back-sub-option" ids)
+                      ids)
+                first-id (dom/get-element (first ids))
                 first-element (dom/get-element first-id)
                 len (count ids)
                 parent (dom/get-target event)
                 parent-id (dom/get-attribute parent "id")
-                options (:options (last (:levels @local)))
-                option (first (filter  #(= parent-id (:id %)) options))
+                option (first (filter  #(= parent-id (:id %)) options-original))
                 sub-options (:sub-options option)
                 has-suboptions? (some? (:sub-options option))
                 option-handler (:option-handler option)
@@ -140,6 +147,7 @@
                     (swap! local update :levels
                            conj {:parent-option (:option-name option)
                                  :options sub-options}))
+
                   (do
                     (dom/stop-propagation event)
                     (option-handler event)))))
@@ -173,25 +181,28 @@
 
             (when (or (kbd/esc? event) (kbd/tab? event))
               (on-close)
-              (dom/focus! (dom/get-element origin)))))]
+              (dom/focus! (dom/get-element origin))))))]
 
-    (mf/use-effect
-     (mf/deps options)
-     #(swap! local assoc :levels [{:parent-option nil
+    (mf/with-effect [options]
+      (swap! local assoc :levels [{:parent-option nil
                                    :options options}]))
-    
+
     (mf/with-effect [ids]
       (tm/schedule-on-idle
        (dom/focus! (dom/get-element (first ids)))))
 
     (when (and open? (some? (:levels @local)))
       [:> dropdown' props
-       [:div.context-menu {:class (dom/classnames :is-open open?
+       
+       (let [level (-> @local :levels peek)
+             original-options (:options level)
+             parent-original (:parent-option level)]
+         [:div.context-menu {:class (dom/classnames :is-open open?
                                                   :fixed fixed?
                                                   :is-selectable is-selectable)
                            :style {:top (+ top (:offset-y @local))
                                    :left (+ left (:offset-x @local))}
-                           :on-key-down on-key-down}
+                           :on-key-down (on-key-down original-options parent-original)}
         (let [level (-> @local :levels peek)]
           [:ul.context-menu-items {:class (dom/classnames :min-width min-width?)
                                    :role "menu"
@@ -200,7 +211,9 @@
              [:*
               [:li.context-menu-item
                {:id "go-back-sub-option"
-                :tab-index "0"}
+                :tab-index "0"
+                :on-key-down (fn [event]
+                               (dom/prevent-default event))}
                [:div.context-menu-action.submenu-back
                 {:data-no-close true
                  :on-click exit-submenu}
@@ -208,7 +221,7 @@
                 parent-option]]
               [:li.separator]])
            (for [[index option] (d/enumerate (:options level))]
-             
+
              (let [option-name (:option-name option)
                    id (:id option)
                    sub-options (:sub-options option)
@@ -221,7 +234,9 @@
                     {:id id
                      :class (dom/classnames :is-selected (and selected (= option-name selected)))
                      :key (dm/str "context-item-" index)
-                     :tab-index "0"}
+                     :tab-index "0"
+                     :on-key-down (fn [event]
+                                    (dom/prevent-default event))}
                     (if-not sub-options
                       [:a.context-menu-action {:on-click #(do (dom/stop-propagation %)
                                                               (on-close)
@@ -235,7 +250,7 @@
                         :on-click (enter-submenu option-name sub-options)
                         :data-test data-test}
                        option-name
-                       [:span i/arrow-slide]])]))))])]])))
+                       [:span i/arrow-slide]])]))))])])])))
 
 (mf/defc context-menu-a11y
   {::mf/wrap-props false}

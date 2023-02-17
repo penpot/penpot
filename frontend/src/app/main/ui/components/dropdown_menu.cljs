@@ -45,7 +45,7 @@
         ref        (gobj/get props "container")
         ids        (gobj/get props "ids")
         list-class (gobj/get props "list-class")
-
+        ids (filter some? ids)
         on-click
         (fn [event]
           (let [target (dom/get-target event)

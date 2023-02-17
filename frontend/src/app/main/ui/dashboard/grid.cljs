@@ -326,6 +326,7 @@
           :on-click on-menu-click
           :on-key-down (fn [event]
                          (when (kbd/enter? event)
+                           (dom/stop-propagation event)
                            (on-menu-click event)))}
          i/actions
          (when selected?
@@ -339,7 +340,6 @@
                           :origin origin
                           :dashboard-local dashboard-local
                           :parent-id (str file-id "-action-menu")}])]]]]]))
-
 
 (mf/defc grid
   [{:keys [files project origin limit library-view? create-fn] :as props}]

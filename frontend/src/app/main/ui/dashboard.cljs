@@ -155,9 +155,9 @@
                 :on-click toggle-collapse
                 :on-key-down (fn [event]
                                (when (kbd/enter? event)
+                                 (dom/stop-propagation event)
                                  (dom/prevent-default event)
-                                 (toggle-collapse))
-                               )}
+                                 (toggle-collapse)))}
        [:span (tr "dashboard.libraries-and-templates")]
        [:span.icon (if collapsed i/arrow-up i/arrow-down)]]]
      [:div.content {:ref content-ref
@@ -173,6 +173,7 @@
                               :on-click #(import-template item)
                               :on-key-down (fn [event]
                                              (when (kbd/enter? event)
+                                               (dom/stop-propagation event)
                                                (import-template item)))}
            [:div.template-card
             [:div.img-container
@@ -193,6 +194,7 @@
                 :on-click handle-template-link
                 :on-key-down (fn [event]
                                (when (kbd/enter? event)
+                                 (dom/stop-propagation event)
                                  (handle-template-link)))}
             [:div.template-link
              [:div.template-link-title (tr "dashboard.libraries-and-templates")]
@@ -204,6 +206,7 @@
                                :on-click move-left
                                :on-key-down (fn [event]
                                               (when (kbd/enter? event)
+                                                (dom/stop-propagation event)
                                                 (move-left)
                                                 (let [first-element (dom/get-element (str/concat "card-container-" first-visible-card))]
                                                   (when first-element
@@ -216,6 +219,7 @@
                               :aria-label (tr "labels.next")
                               :on-key-down  (fn [event]
                                              (when (kbd/enter? event)
+                                               (dom/stop-propagation event)
                                                (move-right)
                                                (let [last-element (dom/get-element (str/concat "card-container-" last-visible-card))]
                                                  (when last-element
@@ -319,6 +323,7 @@
        (let [events [(events/listen goog/global EventType.KEYDOWN
                                     (fn [event]
                                       (when (kbd/enter? event)
+                                        (dom/stop-propagation event)
                                         (st/emit! (dd/open-selected-file)))))]]
          (fn []
            (doseq [key events]
