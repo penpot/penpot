@@ -104,6 +104,7 @@
 
         ;; STATE
         alt?              (mf/use-state false)
+        shift?            (mf/use-state false)
         mod?              (mf/use-state false)
         space?            (mf/use-state false)
         z?                (mf/use-state false)
@@ -209,12 +210,16 @@
         show-rules?              (and (contains? layout :rules) (not (contains? layout :hide-ui)))
 
 
-        disabled-guides?         (or drawing-tool transform)]
+        disabled-guides?         (or drawing-tool transform)
+
+        show-padding? (and (= (count selected-shapes) 1)
+                        (= (:type (first selected-shapes)) :frame)
+                        (= (:layout (first selected-shapes)) :flex))]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
-    (hooks/setup-keyboard alt? mod? space? z?)
+    (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing?)
@@ -367,6 +372,14 @@
            :frame selected-frame
            :hover-shape @hover
            :zoom zoom}])
+
+       (when show-padding?
+         [:& msr/padding
+          {:frame (first selected-shapes)
+          :hover @frame-hover
+          :zoom zoom
+          :alt? @alt?
+          :shift? @shift?}])
 
        [:& widgets/frame-titles
         {:objects base-objects

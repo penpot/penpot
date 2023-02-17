@@ -11,8 +11,15 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.ui.cursors :as cur]
    [app.main.ui.formats :as fmt]
+   [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 ;; ------------------------------------------------
@@ -43,6 +50,8 @@
 (def distance-pill-width 50)
 (def distance-pill-height 16)
 (def distance-line-stroke 1)
+(def padding-pill-width 40)
+(def padding-pill-height 20)
 
 ;; ------------------------------------------------
 ;; HELPERS
@@ -259,5 +268,232 @@
           [:& selection-rect {:type :hover :selrect hover-selrect :zoom zoom}]
           [:& size-display {:selrect hover-selrect :zoom zoom}]
           [:& distance-display {:from hover-selrect :to selected-selrect :zoom zoom :bounds bounds-selrect}]])])))
+
+
+
+(mf/defc padding-display-pill [{:keys [x y width height font-size value]}]
+  [:g.distance-pill
+   [:rect {:x x
+           :y y
+           :width width
+           :height height
+           :style {:fill distance-color}}]
+
+   [:text {:x (+ x (/ width 2))
+           :y (+ y (/ height 2))
+           :text-anchor "middle"
+           :text-align "center"
+           :dominant-baseline "central"
+           :style {:fill distance-text-color
+                   :font-size font-size}}
+    (fmt/format-number value)]])
+
+
+(mf/defc padding-display [{:keys [frame-id zoom hover-all? hover-v? hover-h? padding-num padding on-mouse-enter on-mouse-leave
+                                  rect-data pill-data hover? selected?]}]
+  (let [resizing?            (mf/use-var false)
+        start                (mf/use-var nil)
+        original-value       (mf/use-var 0)
+        negate?              (:resize-negate? rect-data)
+        axis                 (:resize-axis rect-data)
+
+        on-pointer-down
+        (mf/use-callback
+         (mf/deps frame-id padding-num padding)
+         (fn [event]
+           (dom/capture-pointer event)
+           (reset! resizing? true)
+           (reset! start (dom/get-client-position event))
+           (reset! original-value (:initial-value rect-data))))
+
+        on-lost-pointer-capture
+        (mf/use-callback
+         (mf/deps frame-id padding-num padding)
+         (fn [event]
+           (let [padding-type (if (and (= (:p1 padding) (:p3 padding)) (= (:p2 padding) (:p4 padding))) :simple :multiple)]
+             (dom/release-pointer event)
+             (reset! resizing? false)
+             (reset! start nil)
+             (reset! original-value 0)
+             (st/emit! (dwm/apply-modifiers)
+                       (dwsl/update-layout [frame-id] {:layout-padding-type padding-type})))))
+
+        on-mouse-move
+        (mf/use-callback
+         (mf/deps frame-id padding-num padding)
+         (fn [event]
+           (when @resizing?
+             (let [pos            (dom/get-client-position event)
+                   delta          (-> (gpt/to-vec @start pos)
+                                      (cond-> negate? gpt/negate)
+                                      (get axis))
+                   val            (int (max (+ @original-value (/ delta zoom)) 0))
+                   layout-padding (cond
+                                    hover-all? (assoc padding :p1 val :p2 val :p3 val :p4 val)
+                                    hover-v?   (assoc padding :p1 val :p3 val)
+                                    hover-h?   (assoc padding :p2 val :p4 val)
+                                    :else      (assoc padding padding-num val))
+                   modifiers      (dwm/create-modif-tree [frame-id] (ctm/change-property (ctm/empty) :layout-padding layout-padding))]
+               (st/emit! (dwm/set-modifiers modifiers))))))]
+
+
+    [:*
+     [:rect.padding-rect {:x (:x rect-data)
+                          :y (:y rect-data)
+                          :width (:width rect-data)
+                          :height (:height rect-data)
+                          :on-mouse-enter on-mouse-enter
+                          :on-mouse-leave on-mouse-leave
+                          :on-pointer-down on-pointer-down
+                          :on-lost-pointer-capture on-lost-pointer-capture
+                          :on-mouse-move on-mouse-move
+                          :style {:fill (if (or hover? selected?) distance-color "none")
+                                  :cursor (when (or hover? selected?)
+                                            (if (= (:resize-axis rect-data) :x) (cur/resize-ew 0) (cur/resize-ew 90)))
+                                  :opacity (if selected? 0.5 0.25)}}]
+     (when (or hover? selected?)
+       [:& padding-display-pill pill-data])]))
+
+(mf/defc padding-rects [{:keys [frame zoom alt? shift?]}]
+  (let [frame-id                   (:id frame)
+        paddings-selected          (mf/deref refs/workspace-paddings-selected)
+        hover                      (mf/use-var nil)
+        hover-all?                 (and (not (nil? @hover)) alt?)
+        hover-v?                   (and (or (= @hover :p1) (= @hover :p3)) shift?)
+        hover-h?                   (and (or (= @hover :p2) (= @hover :p4)) shift?)
+        padding                    (:layout-padding frame)
+        [width height x1 x2 y1 y2] ((juxt :width :height :x1 :x2 :y1 :y2) (:selrect frame))
+
+        pill-width                 (/ padding-pill-width zoom)
+        pill-height                (/ padding-pill-height zoom)
+        pill-separation            (/ pill-width 2)
+        pill-data                  {:height pill-height
+                                    :width pill-width
+                                    :font-size (/ font-size zoom)}
+        on-mouse-enter             #(reset! hover %)
+        on-mouse-leave             #(reset! hover nil)
+        negate                     {:p1 (if (:flip-y frame) true false)
+                                    :p2 (if (:flip-x frame) true false)
+                                    :p3 (if (:flip-y frame) true false)
+                                    :p4 (if (:flip-x frame) true false)}
+        negate                     (cond-> negate
+                                     (= :fix (:layout-item-h-sizing frame)) (assoc :p2 (not (:p2 negate)))
+                                     (= :fix (:layout-item-v-sizing frame)) (assoc :p3 (not (:p3 negate))))
+
+        padding-display-data       [{:frame-id frame-id
+                                     :zoom zoom
+                                     :hover-all? hover-all?
+                                     :hover-v? hover-v?
+                                     :hover-h? hover-h?
+                                     :padding-num :p1
+                                     :padding padding
+                                     :on-mouse-enter (partial on-mouse-enter :p1)
+                                     :on-mouse-leave on-mouse-leave
+                                     :rect-data {:x x1
+                                                 :y (if (:flip-y frame) (- y2 (:p1 padding)) y1)
+                                                 :width width
+                                                 :height (:p1 padding)
+                                                 :initial-value (:p1 padding)
+                                                 :resize-type (if (:flip-y frame) :bottom :top)
+                                                 :resize-axis :y
+                                                 :resize-negate? (:p1 negate)}
+                                     :pill-data (assoc pill-data
+                                                       :x (- x1 (* pill-width 1.5))
+                                                       :y (if (:flip-y frame)
+                                                            (+ (- y2 (:p1 padding)) (/ (- (:p1 padding) pill-height) 2))
+                                                            (+ y1 (/ (- (:p1 padding) pill-height) 2)))
+                                                       :value (:p1 padding))
+                                     :hover?  (or hover-all? hover-v? (= @hover :p1))
+                                     :selected? (:p1 paddings-selected)}
+
+                                    {:frame-id frame-id
+                                     :zoom zoom
+                                     :hover-all? hover-all?
+                                     :hover-v? hover-v?
+                                     :hover-h? hover-h?
+                                     :padding-num :p2
+                                     :padding padding
+                                     :on-mouse-enter (partial on-mouse-enter :p2)
+                                     :on-mouse-leave on-mouse-leave
+                                     :rect-data {:x (if (:flip-x frame) x1 (- x2 (:p2 padding)))
+                                                 :y y1
+                                                 :width (:p2 padding)
+                                                 :height height
+                                                 :initial-value (:p2 padding)
+                                                 :resize-type :left
+                                                 :resize-axis :x
+                                                 :resize-negate? (:p2 negate)}
+                                     :pill-data (assoc pill-data
+                                                       :x (if (:flip-x frame)
+                                                            (+ x1 (/ (- (:p2 padding) pill-width) 2))
+                                                            (+ (- x2 (:p2 padding)) (/ (- (:p2 padding) pill-width) 2)))
+                                                       :y (- y1 (+ pill-height pill-separation))
+                                                       :value (:p2 padding))
+                                     :hover?  (or hover-all? hover-h? (= @hover :p2))
+                                     :selected? (:p2 paddings-selected)}
+
+                                    {:frame-id frame-id
+                                     :zoom zoom
+                                     :hover-all? hover-all?
+                                     :hover-v? hover-v?
+                                     :hover-h? hover-h?
+                                     :padding-num :p3
+                                     :padding padding
+                                     :on-mouse-enter (partial on-mouse-enter :p3)
+                                     :on-mouse-leave on-mouse-leave
+                                     :rect-data {:x x1
+                                                 :y (if (:flip-y frame) y1 (- y2 (:p3 padding)))
+                                                 :width width
+                                                 :height (:p3 padding)
+                                                 :initial-value (:p3 padding)
+                                                 :resize-type :bottom
+                                                 :resize-axis :y
+                                                 :resize-negate? (:p3 negate)}
+                                     :pill-data (assoc pill-data
+                                                       :x (- x1 (+ pill-width pill-separation))
+                                                       :y (if (:flip-y frame)
+                                                            (+ y1 (/ (- (:p3 padding) pill-height) 2))
+                                                            (+ (- y2 (:p3 padding)) (/ (- (:p3 padding) pill-height) 2)))
+                                                       :value (:p3 padding))
+                                     :hover?  (or hover-all? hover-v? (= @hover :p3))
+                                     :selected? (:p3 paddings-selected)}
+
+                                    {:frame-id frame-id
+                                     :zoom zoom
+                                     :hover-all? hover-all?
+                                     :hover-v? hover-v?
+                                     :hover-h? hover-h?
+                                     :padding-num :p4
+                                     :padding padding
+                                     :on-mouse-enter (partial on-mouse-enter :p4)
+                                     :on-mouse-leave on-mouse-leave
+                                     :rect-data {:x (if (:flip-x frame) (- x2 (:p4 padding)) x1)
+                                                 :y y1
+                                                 :width (:p4 padding)
+                                                 :height height
+                                                 :initial-value (:p4 padding)
+                                                 :resize-type (if (:flip-x frame) :right :left)
+                                                 :resize-axis :x
+                                                 :resize-negate? (:p4 negate)}
+                                     :pill-data (assoc pill-data
+                                                       :x (if (:flip-x frame)
+                                                            (+ (- x2 (:p4 padding)) (/ (- (:p4 padding) pill-width) 2))
+                                                            (+ x1 (/ (- (:p4 padding) pill-width) 2)))
+                                                       :y (- y1 (+ pill-height pill-separation))
+                                                       :value (:p4 padding))
+                                     :hover?  (or hover-all? hover-h? (= @hover :p4))
+                                     :selected? (:p4 paddings-selected)}]]
+
+    [:g.paddings {:pointer-events "visible"}
+     (for [data padding-display-data]
+       [:& padding-display data])]))
+
+
+(mf/defc padding
+  [{:keys [frame zoom paddings-selected alt? shift?]}]
+  (when frame
+      [:g.measurement-gaps {:pointer-events "none"}
+       [:g.hover-shapes
+        [:& padding-rects {:frame frame :zoom zoom :alt? alt? :shift? shift? :paddings-selected paddings-selected}]]]))
 
 

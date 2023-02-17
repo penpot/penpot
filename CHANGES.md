@@ -8,6 +8,7 @@
 - Adds more accessibility improvements in dashboard [Taiga #4577](https://tree.taiga.io/project/penpot/us/4577)
 - Adds paddings and gaps prediction on layout creation [Taiga #4838](https://tree.taiga.io/project/penpot/task/4838)
 - Add visual feedback when proportionally scaling text elements with **K** [Taiga #3415](https://tree.taiga.io/project/penpot/us/3415)
+- Add visualization and mouse control to paddings in frames with layout [Taiga #4839](https://tree.taiga.io/project/penpot/task/4839)
 
 ### :bug: Bugs fixed
 
