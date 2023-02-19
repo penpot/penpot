@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-24 14:27+0000\n"
-"Last-Translator: GradelerM <marie.gradeler@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2023-02-20 21:39+0000\n"
+"Last-Translator: Locness <locness3@orange.fr>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -530,10 +530,6 @@ msgstr "+ Nouveau projet"
 msgid "dashboard.new-project-prefix"
 msgstr "Nouveau projet"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.newsletter-title"
-msgstr "Abonnement à la newsletter"
-
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
 msgstr "Aucune correspondance pour « %s »"
@@ -855,10 +851,6 @@ msgid "errors.wrong-old-password"
 msgstr "L’ancien mot de passe est incorrect"
 
 #: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.chat-subtitle"
-msgstr "Envie de parler? Discutez avec nous sur Gitter"
-
-#: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Description"
 
@@ -975,10 +967,6 @@ msgstr "Largeur"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Ombre"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.offset-x"
-msgstr "X"
 
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow.shorthand.spread"
@@ -1280,9 +1268,6 @@ msgstr "Centre d'aide"
 msgid "labels.hide-resolved-comments"
 msgstr "Masquer les commentaires résolus"
 
-msgid "labels.images"
-msgstr "Images"
-
 msgid "labels.installed-fonts"
 msgstr "Polices installées"
 
@@ -1482,9 +1467,6 @@ msgstr "Afficher la liste des commentaires"
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
 msgstr "Afficher uniquement vos commentaires"
-
-msgid "labels.skip"
-msgstr "Passer"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -2003,14 +1985,8 @@ msgstr "Créer une équipe et envoyer des invitations"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Inviter avec le rôle :"
 
-msgid "onboarding.contrib.alt"
-msgstr "Open Source"
-
 msgid "onboarding.contrib.desc2.1"
 msgstr "Vous pouvez accéder au"
-
-msgid "onboarding.contrib.link"
-msgstr "projet sur github"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Oui, s'abonner"
@@ -2024,33 +2000,14 @@ msgstr "Politique de confidentialité."
 msgid "onboarding.newsletter.title"
 msgstr "Vous souhaitez recevoir les actualités de Penpot ?"
 
-msgid "onboarding.slide.0.desc1"
-msgstr ""
-"Créez des interfaces utilisateur magnifiques en collaboration avec tous les "
-"membres de l'équipe."
-
 msgid "onboarding.slide.0.title"
 msgstr "Designer des libraires, styles and composants"
-
-msgid "onboarding.slide.1.desc1"
-msgstr "Créer des interactions complexes pour simuler le comportement final."
 
 msgid "onboarding.slide.1.title"
 msgstr "Donnez vie à vos conceptions avec des interactions"
 
-msgid "onboarding.slide.2.desc1"
-msgstr ""
-"Tous les membres de l'équipe peuvent travailler simultanément grâce à la "
-"conception collaborative en temps réel et aux commentaires, idées et "
-"réactions rassemblées et centralisées."
-
 msgid "onboarding.slide.3.alt"
 msgstr "Inspect et lowcode"
-
-msgid "onboarding.slide.3.desc2"
-msgstr ""
-"Obtenez et fournissez des spécifications de code comme le balisage (SVG, "
-"HTML) ou de style (CSS, Less, Stylus…)."
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Créer une équipe"
@@ -2617,10 +2574,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Copier le lien"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.placeholder"
-msgstr "Le lien de partage apparaîtra ici"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.share.subtitle"
 msgstr "Toute personne disposant du lien aura accès"
 
@@ -3067,18 +3020,12 @@ msgstr "Actualiser"
 msgid "workspace.libraries.updates"
 msgstr "MISES À JOUR"
 
-msgid "workspace.library.libraries"
-msgstr "Bibliothèques"
-
 msgid "workspace.library.store"
 msgstr "Prédéfinies"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
 msgstr "Cliquer sur le bouton + pour ajouter des interactions."
-
-msgid "workspace.options.blur-options.layer-blur"
-msgstr "Calque"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
@@ -3468,10 +3415,6 @@ msgstr "Largeur minimale"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "En bas"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.top"
-msgstr "Colonne inversée"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.left"
@@ -3875,7 +3818,7 @@ msgid "workspace.shape.menu.paste"
 msgstr "Coller"
 
 msgid "workspace.shape.menu.path"
-msgstr "Chemin d'accès"
+msgstr "Chemin"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
@@ -3893,7 +3836,7 @@ msgid "workspace.shape.menu.show-main"
 msgstr "Afficher le composant principal"
 
 msgid "workspace.shape.menu.transform-to-path"
-msgstr "Transformer en chemin d'accès"
+msgstr "Transformer en chemin"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.ungroup"
