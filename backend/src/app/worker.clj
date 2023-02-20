@@ -27,8 +27,7 @@
   (:import
    java.util.concurrent.ExecutorService
    java.util.concurrent.ForkJoinPool
-   java.util.concurrent.Future
-   java.util.concurrent.ScheduledExecutorService))
+   java.util.concurrent.Future))
 
 (set! *warn-on-reflection* true)
 
@@ -133,7 +132,7 @@
               steals))]
 
     (px/thread
-      {:name "penpot/executors-monitor"}
+      {:name "penpot/executors-monitor" :virtual true}
       (l/info :hint "monitor: started" :name name)
       (try
         (loop [steals 0]
@@ -206,53 +205,52 @@
                        :queued res)))
 
           (run-batch! [rconn]
-            (db/with-atomic [conn pool]
-              (when-let [tasks (get-tasks conn)]
-                (->> (group-by :queue tasks)
-                     (run! (partial push-tasks! conn rconn)))
-                true)))]
+            (try
+              (db/with-atomic [conn pool]
+                (if-let [tasks (get-tasks conn)]
+                  (->> (group-by :queue tasks)
+                       (run! (partial push-tasks! conn rconn)))
+                  (px/sleep (::wait-duration cfg))))
+              (catch InterruptedException cause
+                (throw cause))
+              (catch Exception cause
+                (cond
+                  (rds/exception? cause)
+                  (do
+                    (l/warn :hint "dispatcher: redis exception (will retry in an instant)" :cause cause)
+                    (px/sleep (::rds/timeout rconn)))
+
+                  (db/sql-exception? cause)
+                  (do
+                    (l/warn :hint "dispatcher: database exception (will retry in an instant)" :cause cause)
+                    (px/sleep (::rds/timeout rconn)))
+
+                  :else
+                  (do
+                    (l/error :hint "dispatcher: unhandled exception (will retry in an instant)" :cause cause)
+                    (px/sleep (::rds/timeout rconn)))))))
+
+          (dispatcher []
+            (l/info :hint "dispatcher: started")
+            (try
+              (dm/with-open [rconn (rds/connect redis)]
+                (loop []
+                  (run-batch! rconn)
+                  (recur)))
+              (catch InterruptedException _
+                (l/trace :hint "dispatcher: interrupted"))
+              (catch Throwable cause
+                (l/error :hint "dispatcher: unexpected exception" :cause cause))
+              (finally
+                (l/info :hint "dispatcher: terminated"))))]
 
     (if (db/read-only? pool)
       (l/warn :hint "dispatcher: not started (db is read-only)")
-      (px/thread
-        {:name "penpot/worker-dispatcher"}
-        (l/info :hint "dispatcher: started")
-        (try
-          (dm/with-open [rconn (rds/connect redis)]
-            (loop []
-              (when (px/interrupted?)
-                (throw (InterruptedException. "interrumpted")))
 
-              (try
-                (when-not (run-batch! rconn)
-                  (px/sleep (::wait-duration cfg)))
-                (catch InterruptedException cause
-                  (throw cause))
-                (catch Exception cause
-                  (cond
-                    (rds/exception? cause)
-                    (do
-                      (l/warn :hint "dispatcher: redis exception (will retry in an instant)" :cause cause)
-                      (px/sleep (::rds/timeout rconn)))
-
-                    (db/sql-exception? cause)
-                    (do
-                      (l/warn :hint "dispatcher: database exception (will retry in an instant)" :cause cause)
-                      (px/sleep (::rds/timeout rconn)))
-
-                    :else
-                    (do
-                      (l/error :hint "dispatcher: unhandled exception (will retry in an instant)" :cause cause)
-                      (px/sleep (::rds/timeout rconn))))))
-
-              (recur)))
-
-          (catch InterruptedException _
-            (l/debug :hint "dispatcher: interrupted"))
-          (catch Throwable cause
-            (l/error :hint "dispatcher: unexpected exception" :cause cause))
-          (finally
-            (l/info :hint "dispatcher: terminated")))))))
+      ;; FIXME: we don't use virtual threads here until JDBC is uptaded to >= 42.6.0
+      ;; bacause it has the necessary fixes fro make the JDBC driver properly compatible
+      ;; with Virtual Threads.
+      (px/fn->thread dispatcher :name "penpot/worker/dispatcher" :virtual false))))
 
 (defmethod ig/halt-key! ::dispatcher
   [_ thread]
@@ -297,7 +295,7 @@
 (defn- start-worker!
   [{:keys [::rds/redis ::worker-id ::queue] :as cfg}]
   (px/thread
-    {:name (format "penpot/worker/%s" worker-id)}
+    {:name (format "penpot/worker/runner:%s" worker-id)}
     (l/info :hint "worker: started" :worker-id worker-id :queue queue)
     (try
       (dm/with-open [rconn (rds/connect redis)]
@@ -584,22 +582,23 @@
 
 (defn- execute-cron-task
   [{:keys [::db/pool] :as cfg} {:keys [id] :as task}]
-  (try
-    (db/with-atomic [conn pool]
-      (when (db/exec-one! conn [sql:lock-cron-task (d/name id)])
-        (l/trace :hint "cron: execute task" :task-id id)
-        ((:fn task) task)))
-    (catch InterruptedException _
-      (px/interrupt! (px/current-thread))
-      (l/debug :hint "cron: task interrupted" :task-id id))
-    (catch Throwable cause
-      (l/error :hint "cron: unhandled exception on running task"
-               ::l/context (get-error-context cause task)
-               :task-id id
-               :cause cause))
-    (finally
-      (when-not (px/interrupted? :current)
-        (schedule-cron-task cfg task)))))
+  (px/thread
+    {:name (str "penpot/cront-task/" id)}
+    (try
+      (db/with-atomic [conn pool]
+        (when (db/exec-one! conn [sql:lock-cron-task (d/name id)])
+          (l/trace :hint "cron: execute task" :task-id id)
+          ((:fn task) task)))
+      (catch InterruptedException _
+        (l/debug :hint "cron: task interrupted" :task-id id))
+      (catch Throwable cause
+        (l/error :hint "cron: unhandled exception on running task"
+                 ::l/context (get-error-context cause task)
+                 :task-id id
+                 :cause cause))
+      (finally
+        (when-not (px/interrupted? :current)
+          (schedule-cron-task cfg task))))))
 
 (defn- ms-until-valid
   [cron]

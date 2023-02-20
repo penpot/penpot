@@ -297,10 +297,10 @@
     ::wrk/executor    (ig/ref ::wrk/executor)
     ::session/manager (ig/ref ::session/manager)}
 
-   :app.http.websocket/routes
+   ::http.ws/routes
    {::db/pool         (ig/ref ::db/pool)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
-    ::mbus/msgbus     (ig/ref :app.msgbus/msgbus)
+    ::mbus/msgbus     (ig/ref ::mbus/msgbus)
     ::session/manager (ig/ref ::session/manager)}
 
    :app.http.assets/routes
