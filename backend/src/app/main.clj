@@ -176,9 +176,6 @@
    ::wrk/executor
    {::wrk/parallelism (cf/get :default-executor-parallelism 100)}
 
-   ::wrk/scheduled-executor
-   {::wrk/parallelism (cf/get :scheduled-executor-parallelism 20)}
-
    ::wrk/monitor
    {::mtx/metrics  (ig/ref ::mtx/metrics)
     ::wrk/name     "default"
@@ -203,8 +200,7 @@
     :redis     (ig/ref ::rds/redis)}
 
    :app.storage.tmp/cleaner
-   {::wrk/executor (ig/ref ::wrk/executor)
-    ::wrk/scheduled-executor (ig/ref ::wrk/scheduled-executor)}
+   {::wrk/executor (ig/ref ::wrk/executor)}
 
    ::sto/gc-deleted-task
    {::db/pool      (ig/ref ::db/pool)
@@ -319,8 +315,7 @@
     ::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.rpc/rlimit
-   {::wrk/executor           (ig/ref ::wrk/executor)
-    ::wrk/scheduled-executor (ig/ref ::wrk/scheduled-executor)}
+   {::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.rpc/methods
    {::http.client/client (ig/ref ::http.client/client)
@@ -466,8 +461,7 @@
 
 (def worker-config
   {::wrk/cron
-   {::wrk/scheduled-executor  (ig/ref ::wrk/scheduled-executor)
-    ::wrk/registry            (ig/ref ::wrk/registry)
+   {::wrk/registry            (ig/ref ::wrk/registry)
     ::db/pool                 (ig/ref ::db/pool)
     ::wrk/entries
     [{:cron #app/cron "0 0 * * * ?" ;; hourly

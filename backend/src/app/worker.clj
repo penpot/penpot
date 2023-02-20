@@ -22,6 +22,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
+   [promesa.core :as p]
    [promesa.exec :as px])
   (:import
    java.util.concurrent.ExecutorService
@@ -32,7 +33,6 @@
 (set! *warn-on-reflection* true)
 
 (s/def ::executor #(instance? ExecutorService %))
-(s/def ::scheduled-executor #(instance? ScheduledExecutorService %))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Executor
@@ -48,25 +48,11 @@
   (let [prefix  (if (vector? skey) (-> skey first name) "default")
         tname   (str "penpot/" prefix "/%s")
         factory (px/forkjoin-thread-factory :name tname)]
-    (px/forkjoin-executor
-     :factory factory
-     :parallelism parallelism
-     :async? true)))
+    (px/forkjoin-executor {:factory factory
+                           :parallelism parallelism
+                           :async true})))
 
 (defmethod ig/halt-key! ::executor
-  [_ instance]
-  (px/shutdown! instance))
-
-(defmethod ig/pre-init-spec ::scheduled-executor [_]
-  (s/keys :req [::parallelism]))
-
-(defmethod ig/init-key ::scheduled-executor
-  [_ {:keys [::parallelism]}]
-  (px/scheduled-executor
-   :parallelism parallelism
-   :factory (px/thread-factory :name "penpot/scheduled-executor/%s")))
-
-(defmethod ig/halt-key! ::scheduled-executor
   [_ instance]
   (px/shutdown! instance))
 
@@ -531,7 +517,7 @@
 (s/def ::entries (s/coll-of (s/nilable ::cron-task)))
 
 (defmethod ig/pre-init-spec ::cron [_]
-  (s/keys :req [::scheduled-executor ::db/pool ::entries ::registry]))
+  (s/keys :req [::db/pool ::entries ::registry]))
 
 (defmethod ig/init-key ::cron
   [_ {:keys [::entries ::registry ::db/pool] :as cfg}]
@@ -622,16 +608,11 @@
         next (dt/next-valid-instant-from cron now)]
     (inst-ms (dt/diff now next))))
 
-(def ^:private
-  xf-without-done
-  (remove #(.isDone ^Future %)))
-
 (defn- schedule-cron-task
-  [{:keys [::scheduled-executor ::running] :as cfg} {:keys [cron] :as task}]
-  (let [ft (px/schedule! scheduled-executor
-                         (ms-until-valid cron)
+  [{:keys [::running] :as cfg} {:keys [cron] :as task}]
+  (let [ft (px/schedule! (ms-until-valid cron)
                          (partial execute-cron-task cfg task))]
-    (swap! running #(into #{ft} xf-without-done %))))
+    (swap! running #(into #{ft} (filter p/pending?) %))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

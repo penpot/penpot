@@ -352,7 +352,7 @@
          ::limits limits}))))
 
 (defn- refresh-config
-  [{:keys [::state ::path ::wrk/executor ::wrk/scheduled-executor] :as cfg}]
+  [{:keys [::state ::path ::wrk/executor] :as cfg}]
   (letfn [(update-config [{:keys [::updated-at] :as state}]
             (let [updated-at' (fs/last-modified-time path)]
               (merge state
@@ -367,8 +367,7 @@
                          state)))))
 
           (schedule-next [state]
-            (px/schedule! scheduled-executor
-                          (inst-ms (::refresh state))
+            (px/schedule! (inst-ms (::refresh state))
                           (partial refresh-config cfg))
             state)]
 
@@ -391,8 +390,7 @@
     (and (fs/exists? path) (fs/regular-file? path) path)))
 
 (defmethod ig/pre-init-spec :app.rpc/rlimit [_]
-  (s/keys :req [::wrk/executor
-                ::wrk/scheduled-executor]))
+  (s/keys :req [::wrk/executor]))
 
 (defmethod ig/init-key ::rpc/rlimit
   [_ {:keys [::wrk/executor] :as cfg}]
