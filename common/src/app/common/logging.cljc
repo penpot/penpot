@@ -243,12 +243,12 @@
                        (some? trace)
                        (str "\n" @trace))]
          (case level
-           :trace (.trace ^Logger logger ^String message ^Throwable cause)
-           :debug (.debug ^Logger logger ^String message ^Throwable cause)
-           :info  (.info  ^Logger logger ^String message ^Throwable cause)
-           :warn  (.warn  ^Logger logger ^String message ^Throwable cause)
-           :error (.error ^Logger logger ^String message ^Throwable cause)
-           :fatal (.error ^Logger logger ^String message ^Throwable cause)
+           :trace (.trace ^Logger logger ^String message)
+           :debug (.debug ^Logger logger ^String message)
+           :info  (.info  ^Logger logger ^String message)
+           :warn  (.warn  ^Logger logger ^String message)
+           :error (.error ^Logger logger ^String message)
+           :fatal (.error ^Logger logger ^String message)
            (throw (IllegalArgumentException. (str "invalid level:"  level))))))))
 
 #?(:cljs

@@ -178,6 +178,7 @@
                     (print-detail cause)
                     (recur cause))))))
           ]
+
     (with-out-str
       (print-all cause)))))
 
