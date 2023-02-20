@@ -147,7 +147,7 @@
   [^js node selector]
 
   (loop [current node]
-    (if (or (nil? current) (.matches current selector) )
+    (if (or (nil? current) (.matches current selector))
       current
       (recur (.-parentElement current)))))
 
@@ -175,10 +175,10 @@
 (defn get-scroll-position
   [^js event]
   (when (some? event)
-      {:scroll-height (.-scrollHeight event)
-       :scroll-left   (.-scrollLeft event)
-       :scroll-top    (.-scrollTop event)
-       :scroll-width  (.-scrollWidth event)}))
+    {:scroll-height (.-scrollHeight event)
+     :scroll-left   (.-scrollLeft event)
+     :scroll-top    (.-scrollTop event)
+     :scroll-width  (.-scrollWidth event)}))
 
 (def get-target-val (comp get-value get-target))
 
@@ -308,6 +308,13 @@
   ([^js el ^string selector]
    (when (some? el)
      (.querySelectorAll el selector))))
+
+(defn get-element-offset-position
+  [^js node]
+  (when (some? node)
+    (let [x (.-offsetTop node)
+          y (.-offsetLeft node)]
+      (gpt/point x y))))
 
 (defn get-client-position
   [^js event]
@@ -567,7 +574,7 @@
     (let [extension (cm/mtype->extension mtype)
           opts {:suggestedName (str filename "." extension)
                 :types [{:description description
-                         :accept { mtype [(str "." extension)]}}]}]
+                         :accept {mtype [(str "." extension)]}}]}]
 
       (-> (p/let [file-system (.showSaveFilePicker globals/window (clj->js opts))
                   writable    (.createWritable file-system)
@@ -576,9 +583,9 @@
                   _           (.write writable blob)]
             (.close writable))
           (p/catch
-              #(when-not (and (= (type %) js/DOMException)
-                              (= (.-name %) "AbortError"))
-                 (trigger-download-uri filename mtype uri)))))
+           #(when-not (and (= (type %) js/DOMException)
+                           (= (.-name %) "AbortError"))
+              (trigger-download-uri filename mtype uri)))))
 
     (trigger-download-uri filename mtype uri)))
 
@@ -609,9 +616,9 @@
 (defn animate!
   ([item keyframes duration] (animate! item keyframes duration nil))
   ([item keyframes duration onfinish]
-    (let [animation (.animate item keyframes duration)]
-      (when onfinish
-        (set! (.-onfinish animation) onfinish)))))
+   (let [animation (.animate item keyframes duration)]
+     (when onfinish
+       (set! (.-onfinish animation) onfinish)))))
 
 (defn is-child?
   [^js node ^js candidate]

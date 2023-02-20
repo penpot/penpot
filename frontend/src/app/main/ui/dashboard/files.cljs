@@ -39,7 +39,7 @@
         on-menu-click
         (mf/use-fn
          (fn [event]
-           (let [position (dom/get-client-position event)]
+           (let [position (dom/get-client-position event)] 
              (dom/prevent-default event)
              (swap! local assoc :menu-open true :menu-pos position))))
 
