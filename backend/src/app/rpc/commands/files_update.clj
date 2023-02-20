@@ -277,7 +277,6 @@
   (let [lchanges (filter library-change? changes)
         msgbus   (::mbus/msgbus cfg)]
 
-    ;; Asynchronously publish message to the msgbus
     (mbus/pub! msgbus
                :topic (:id file)
                :message {:type :file-change
@@ -290,7 +289,6 @@
     (when (and (:is-shared file) (seq lchanges))
       (let [team-id (or (:team-id file)
                         (files/get-team-id conn (:project-id file)))]
-        ;; Asynchronously publish message to the msgbus
         (mbus/pub! msgbus
                    :topic team-id
                    :message {:type :library-change

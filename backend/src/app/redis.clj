@@ -18,7 +18,8 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [promesa.core :as p])
+   [promesa.core :as p]
+   [promesa.exec :as px])
   (:import
    clojure.lang.IDeref
    clojure.lang.MapEntry
@@ -99,11 +100,11 @@
 
 (defmethod ig/prep-key ::redis
   [_ cfg]
-  (let [runtime (Runtime/getRuntime)
-        cpus    (.availableProcessors ^Runtime runtime)]
+  (let [cpus    (px/get-available-processors)
+        threads (max 1 (int (* cpus 0.2)))]
     (merge {::timeout (dt/duration "10s")
-            ::io-threads (max 3 cpus)
-            ::worker-threads (max 3 cpus)}
+            ::io-threads (max 3 threads)
+            ::worker-threads (max 3 threads)}
            (d/without-nils cfg))))
 
 (defmethod ig/pre-init-spec ::redis [_]

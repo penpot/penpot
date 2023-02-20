@@ -195,9 +195,8 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)}
 
    ::mbus/msgbus
-   {:backend   (cf/get :msgbus-backend :redis)
-    :executor  (ig/ref ::wrk/executor)
-    :redis     (ig/ref ::rds/redis)}
+   {::wrk/executor  (ig/ref ::wrk/executor)
+    ::rds/redis     (ig/ref ::rds/redis)}
 
    :app.storage.tmp/cleaner
    {::wrk/executor (ig/ref ::wrk/executor)}
