@@ -1,6 +1,11 @@
 FROM nginx:1.23
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
+RUN set -ex; \
+    useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
+    mkdir -p /opt/data/assets; \
+    chown -R penpot:penpot /opt/data;
+
 ADD ./bundle-frontend/ /var/www/app/
 ADD ./files/config.js /var/www/app/js/config.js
 ADD ./files/nginx.conf /etc/nginx/nginx.conf
