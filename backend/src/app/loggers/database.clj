@@ -62,6 +62,11 @@
                          (dissoc ::s/problems ::s/value ::s/spec :hint)
                          (pp/pprint-str :width 200))})))
 
+(defn error-record?
+  [{:keys [::l/level ::l/cause]}]
+  (and (= :error level)
+       (ex/exception? cause)))
+
 (defn- handle-event
   [{:keys [::db/pool]} {:keys [::l/id] :as record}]
   (try
@@ -74,20 +79,20 @@
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
 
-(defn error-record?
-  [{:keys [::l/level ::l/cause]}]
-  (and (= :error level)
-       (ex/exception? cause)))
-
 (defmethod ig/pre-init-spec ::reporter [_]
   (s/keys :req [::db/pool]))
 
 (defmethod ig/init-key ::reporter
   [_ cfg]
-  (let [input (sp/chan (sp/sliding-buffer 32) (filter error-record?))]
+  (let [input (sp/chan :buf (sp/sliding-buffer 32)
+                       :xf (filter error-record?))]
     (add-watch l/log-record ::reporter #(sp/put! input %4))
-    (px/thread
-      {:name "penpot/database-reporter" :virtual true}
+
+    ;; FIXME: we don't use virtual threads here until JDBC is uptaded
+    ;; to >= 42.6.0 bacause it has the necessary fixes fro make the
+    ;; JDBC driver properly compatible with Virtual Threads.
+
+    (px/thread {:name "penpot/database-reporter" :virtual false}
       (l/info :hint "initializing database error persistence")
       (try
         (loop []
