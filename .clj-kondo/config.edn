@@ -2,6 +2,7 @@
  {promesa.core/let clojure.core/let
   promesa.core/->> clojure.core/->>
   promesa.core/-> clojure.core/->
+  promesa.exec.csp/go-loop clojure.core/loop
   rumext.v2/defc clojure.core/defn
   rumext.v2/fnc clojure.core/fn
   app.common.data/export clojure.core/def
