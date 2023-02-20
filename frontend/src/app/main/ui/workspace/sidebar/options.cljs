@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options
   (:require
+   [app.main.ui.workspace.sidebar.options.shapes.grid-cell :as grid-cell]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
@@ -67,9 +68,18 @@
   (let [drawing              (mf/deref refs/workspace-drawing)
         objects              (mf/deref refs/workspace-page-objects)
         shared-libs          (mf/deref refs/workspace-libraries)
+        grid-edition         (mf/deref refs/workspace-grid-edition)
         selected-shapes      (into [] (keep (d/getf objects)) selected)
         first-selected-shape (first selected-shapes)
         shape-parent-frame   (cph/get-frame objects (:frame-id first-selected-shape))
+
+        [grid-id {[row-selected col-selected] :selected}]
+        (d/seek (fn [[grid-id {:keys [selected]}]]
+                  (some? selected))
+                grid-edition)
+
+        grid-cell-selected? (and (some? grid-id) (some? row-selected) (some? col-selected))
+
         on-change-tab
         (fn [options-mode]
           (st/emit! (udw/set-options-mode options-mode)
@@ -87,6 +97,10 @@
          [:& align-options]
          [:& bool-options]
          (cond
+           grid-cell-selected? [:& grid-cell/options {:shape (get objects grid-id)
+                                                      :row row-selected
+                                                      :column col-selected}]
+
            (d/not-empty? drawing) [:& shape-options {:shape (:object drawing)
                                                      :page-id page-id
                                                      :file-id file-id
@@ -138,4 +152,3 @@
                          :file-id file-id
                          :page-id page-id
                          :section section}]))
-

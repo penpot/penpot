@@ -68,7 +68,6 @@
 
 (defn get-layout-initializer
   [type from-frame?]
-  (prn "??type" type)
   (let [initial-layout-data
         (case type
           :flex initial-flex-layout
@@ -157,7 +156,6 @@
 
 (defn create-layout-from-id
   [ids type from-frame?]
-  (.trace js/console "create-layout-from-id" type)
   (ptk/reify ::create-layout-from-id
     ptk/WatchEvent
     (watch [_ state _]

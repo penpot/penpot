@@ -477,11 +477,6 @@
            :disabled-guides? disabled-guides?
            :modifiers modifiers}])
 
-       [:& grid-layout/editor
-        {:zoom zoom
-         :objects base-objects
-         :shape (first selected-shapes)}]
-
        ;; DEBUG LAYOUT DROP-ZONES
        (when (debug? :layout-drop-zones)
          [:& wvd/debug-drop-zones {:selected-shapes selected-shapes
@@ -543,4 +538,12 @@
        (when show-gradient-handlers?
          [:& gradients/gradient-handlers
           {:id (first selected)
-           :zoom zoom}])]]]))
+           :zoom zoom}])
+
+       (when-let [selected (first selected-shapes)]
+         (when (ctl/grid-layout? selected)
+           [:& grid-layout/editor
+            {:zoom zoom
+             :objects base-objects
+             :shape selected}]))
+       ]]]))

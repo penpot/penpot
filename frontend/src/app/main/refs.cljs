@@ -522,3 +522,12 @@
 
 (def colorpicker
   (l/derived :colorpicker st/state))
+
+
+(def workspace-grid-edition
+  (l/derived :workspace-grid-edition st/state))
+
+(defn workspace-grid-edition-id
+  [id]
+  (l/derived #(get % id) workspace-grid-edition))
+
