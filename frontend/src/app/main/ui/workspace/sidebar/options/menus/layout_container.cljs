@@ -249,7 +249,7 @@
      [:div.padding-icons
       [:div.padding-icon.tooltip.tooltip-bottom-left
        {:class (dom/classnames :selected (= padding-type :multiple))
-        :alt "Padding - multiple"
+        :alt "Individual padding"
         :on-click #(on-change-style (if (= padding-type :multiple) :simple :multiple))}
        i/auto-padding-side]]]))
 
