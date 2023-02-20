@@ -239,8 +239,7 @@
    {::http/port                    (cf/get :http-server-port)
     ::http/host                    (cf/get :http-server-host)
     ::http/router                  (ig/ref ::http/router)
-    ::http/metrics                 (ig/ref ::mtx/metrics)
-    ::http/executor                (ig/ref ::wrk/executor)
+    ::wrk/executor                 (ig/ref ::wrk/executor)
     ::http/io-threads              (cf/get :http-server-io-threads)
     ::http/max-body-size           (cf/get :http-server-max-body-size)
     ::http/max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}

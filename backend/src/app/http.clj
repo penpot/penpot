@@ -65,14 +65,14 @@
                 ::wrk/executor]))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [::handler ::router ::host ::port] :as cfg}]
+  [_ {:keys [::handler ::router ::host ::port ::wrk/executor] :as cfg}]
   (l/info :hint "starting http server" :port port :host host)
   (let [options {:http/port port
                  :http/host host
                  :http/max-body-size (::max-body-size cfg)
                  :http/max-multipart-body-size (::max-multipart-body-size cfg)
                  :xnio/io-threads (::io-threads cfg)
-                 :xnio/dispatch (::wrk/executor cfg)
+                 :xnio/dispatch executor
                  :ring/async true}
 
         handler (cond
