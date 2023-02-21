@@ -83,16 +83,18 @@
 
     :align-self  (if is-col?
                    (case val
-                     :start   i/align-self-row-left
-                     :end    i/align-self-row-right
+                     :auto     i/minus
+                     :start    i/align-self-row-left
+                     :end      i/align-self-row-right
                      :center   i/align-self-row-center
-                     :stretch   i/align-self-row-strech
+                     :stretch  i/align-self-row-strech
                      :baseline i/align-self-row-baseline)
                    (case val
-                     :start     i/align-self-column-top
-                     :end   i/align-self-column-bottom
+                     :auto     i/minus
+                     :start    i/align-self-column-top
+                     :end      i/align-self-column-bottom
                      :center   i/align-self-column-center
-                     :stretch   i/align-self-column-strech
+                     :stretch  i/align-self-column-strech
                      :baseline i/align-self-column-baseline))))
 
 (defn get-layout-grid-icon
@@ -327,7 +329,7 @@
      :alt    "Grid edit mode"
      :on-click #(toggle-edit-mode)
      :style {:padding 0}}
-    i/set-thumbnail]])
+    i/grid-layout-mode]])
 
 (mf/defc align-grid-row
   [{:keys [is-col? align-items set-align] :as props}]
