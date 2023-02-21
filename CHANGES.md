@@ -5,6 +5,7 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :sparkles: New features
+- Adds more accessibility improvements in dashboard [Taiga #4577](https://tree.taiga.io/project/penpot/us/4577)
 - Adds paddings and gaps prediction on layout creation [Taiga #4838](https://tree.taiga.io/project/penpot/task/4838)
 
 ### :bug: Bugs fixed
