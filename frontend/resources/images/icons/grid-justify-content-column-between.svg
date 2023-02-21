@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="500"
+   height="500"
+   viewBox="0 0 132.292 132.292"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="grid-justify-content-column-between.svg"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="2.054"
+     inkscape:cx="250"
+     inkscape:cy="249.75657"
+     inkscape:window-width="3840"
+     inkscape:window-height="2066"
+     inkscape:window-x="2869"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <path
+     id="path2"
+     d="M 0 0 L 0 11.207096 L 132.292 11.207096 L 132.292 0 L 0 0 z M 29.530055 21.913963 L 29.530055 51.639872 L 60.34944 51.639872 L 60.34944 21.913963 L 29.530055 21.913963 z M 71.94256 21.913963 L 71.94256 51.639872 L 102.76401 51.639872 L 102.76401 21.913963 L 71.94256 21.913963 z M 29.62824 80.652128 L 29.62824 110.37804 L 60.34944 110.37804 L 60.34944 80.652128 L 29.62824 80.652128 z M 71.94256 80.652128 L 71.94256 110.37804 L 102.76401 110.37804 L 102.76401 80.652128 L 71.94256 80.652128 z M 0 121.0849 L 0 132.292 L 132.292 132.292 L 132.292 121.0849 L 0 121.0849 z " />
+</svg>
