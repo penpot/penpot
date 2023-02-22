@@ -56,7 +56,8 @@
         drawing-obj (:object drawing)
         shape       (or drawing-obj (-> selected first))]
     (when (or (and (= (count selected) 1) (= (:id shape) edition) (not= :text (:type shape)))
-              (and (some? drawing-obj) (= :path (:type drawing-obj))))
+              (and (some? drawing-obj) (= :path (:type drawing-obj))
+                   (not= :curve (:tool drawing))))
       [:div.viewport-actions
        [:& path-actions {:shape shape}]])))
 

@@ -439,8 +439,6 @@
          [:& presence/active-cursors
           {:page-id page-id}])
 
-       [:& widgets/viewport-actions]
-
        [:& scroll-bars/viewport-scrollbars
         {:objects base-objects
          :zoom zoom
