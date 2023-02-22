@@ -41,6 +41,12 @@
 (def rotate (cursor-fn :rotate 90))
 (def text (cursor-fn :text 0))
 
+;; text
+(def scale-ew (cursor-fn :scale-h 0))
+(def scale-nesw (cursor-fn :scale-h 45))
+(def scale-ns (cursor-fn :scale-h 90))
+(def scale-nwse (cursor-fn :scale-h 135))
+
 ;;
 (def resize-ew-2 (cursor-fn :resize-h-2 0))
 (def resize-ns-2 (cursor-fn :resize-h-2 90))

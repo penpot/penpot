@@ -176,8 +176,11 @@
 
 (mf/defc resize-point-handler
   [{:keys [cx cy zoom position on-resize transform rotation color align]}]
-  (let [cursor (if (#{:top-left :bottom-right} position)
-                 (cur/resize-nesw rotation) (cur/resize-nwse rotation))
+  (let [layout (mf/deref refs/workspace-layout)
+        scale-text (:scale-text layout)
+        cursor (if (#{:top-left :bottom-right} position)
+                 (if scale-text (cur/scale-nesw rotation) (cur/resize-nesw rotation)) 
+                 (if scale-text (cur/scale-nwse rotation) (cur/resize-nwse rotation)))
         {cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)]
 
     [:g.resize-handler
@@ -221,7 +224,8 @@
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
                     {:x x})
-
+        layout (mf/deref refs/workspace-layout)
+        scale-text (:scale-text layout)
         height (/ resize-side-height zoom)
         offset-y (if (= align :outside) (- height) (- (/ height 2)))
         target-y (+ y offset-y)
@@ -246,8 +250,8 @@
              :style {:fill (if (debug? :handlers) "yellow" "none")
                      :stroke-width 0
                      :cursor (if (#{:left :right} position)
-                               (cur/resize-ew rotation)
-                               (cur/resize-ns rotation)) }}]]))
+                               (if scale-text (cur/scale-ew rotation) (cur/resize-ew rotation))
+                               (if scale-text (cur/scale-ns rotation) (cur/resize-ns rotation))) }}]]))
 
 (defn minimum-selrect [{:keys [x y width height] :as selrect}]
   (let [final-width (max width min-selrect-side)
