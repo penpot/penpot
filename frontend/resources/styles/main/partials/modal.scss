@@ -60,7 +60,7 @@
 // NEW GEN MODALS
 
 .modal-container {
-  border-radius: $br-medium;
+  border-radius: $br5;
   display: flex;
   flex-direction: column;
   width: 448px;
@@ -70,7 +70,7 @@
   .modal-header {
     align-items: center;
     background-color: $color-white;
-    border-radius: 8px 8px 0px 0px;
+    border-radius: $br8 $br8 0 0;
     color: $color-black;
     display: flex;
     height: 63px;
@@ -85,7 +85,7 @@
 
     h2 {
       font-size: $fs18;
-      font-weight: 400;
+      font-weight: $fw400;
       margin: 0;
     }
   }
@@ -138,7 +138,7 @@
     h3 {
       color: $color-gray-40;
       font-size: $fs16;
-      font-weight: 400;
+      font-weight: $fw400;
     }
     &.delete-shared {
       padding: 15px 32px;
@@ -211,7 +211,7 @@
   .cancel-button {
     border: 1px solid $color-gray-30;
     background: $color-canvas;
-    border-radius: 3px;
+    border-radius: $br3;
     padding: 0.5rem 1rem;
     cursor: pointer;
     margin-right: 8px;
@@ -222,7 +222,7 @@
   }
 
   .accept-button {
-    border-radius: 3px;
+    border-radius: $br3;
     cursor: pointer;
     padding: 0.5rem 1rem;
 
@@ -276,7 +276,7 @@
   .cancel-button {
     border: 1px solid $color-gray-20;
     background: $color-white;
-    border-radius: 3px;
+    border-radius: $br3;
     padding: 0.5rem 2.25rem;
     cursor: pointer;
     margin-right: 18px;
@@ -288,7 +288,7 @@
 
   .accept-button {
     background: $color-primary;
-    border-radius: 3px;
+    border-radius: $br3;
     border: 1px solid $color-primary;
     color: $color-black;
     cursor: pointer;
@@ -470,7 +470,7 @@
       font-size: $fs10;
       color: $color-black;
       background: #d8f7fe;
-      border-radius: 3px;
+      border-radius: $br3;
       padding: 2px 4px;
       display: flex;
       align-items: center;
@@ -509,12 +509,12 @@
 
 .export-dialog {
   .export-option {
-    border-radius: 4px;
+    border-radius: $br4;
     border: 1px solid $color-gray-10;
     margin-bottom: 0.5rem;
 
     h3 {
-      font-weight: 700;
+      font-weight: $fw700;
     }
 
     h3,
@@ -624,7 +624,7 @@
 }
 
 .libraries-dialog {
-  border-radius: $br-medium;
+  border-radius: $br5;
   height: 664px;
   width: 920px;
   max-height: 100%;
@@ -682,7 +682,7 @@
       color: $color-black;
       font-size: $fs14;
       padding: 0 $size-4;
-      font-weight: 500;
+      font-weight: $fw500;
     }
 
     .section-list {
@@ -713,7 +713,7 @@
           top: $size-4;
           right: 0;
           border: 1px solid $color-primary;
-          border-radius: 2px;
+          border-radius: $br2;
           min-width: 4.5rem;
           background: $color-primary;
           color: $color-black;
@@ -812,8 +812,8 @@
   .modal-left {
     align-items: center;
     background-color: $color-pink;
-    border-top-left-radius: 5px;
-    border-bottom-left-radius: 5px;
+    border-top-left-radius: $br5;
+    border-bottom-left-radius: $br5;
     display: flex;
     flex-shrink: 0;
     justify-content: center;
@@ -827,8 +827,8 @@
   }
 
   .modal-right {
-    border-top-right-radius: 5px;
-    border-bottom-right-radius: 5px;
+    border-top-right-radius: $br5;
+    border-bottom-right-radius: $br5;
     display: flex;
     flex-direction: column;
     padding: $size-6;
@@ -836,14 +836,14 @@
     .modal-title h2 {
       color: $color-black;
       font-size: $fs24;
-      font-weight: 900;
+      font-weight: $fw900;
     }
 
     .release {
       background-color: $color-primary;
       color: $color-black;
       font-size: $fs12;
-      font-weight: bold;
+      font-weight: $fw700;
       margin-top: $size-2;
       padding: 2px $size-1;
       width: max-content;
@@ -855,7 +855,7 @@
 
       p {
         color: $color-black;
-        font-size: 16px;
+        font-size: $fs16;
         margin-top: $size-2;
       }
     }
@@ -911,7 +911,7 @@
       height: 464px;
       position: absolute;
       bottom: 0;
-      border-radius: 5px;
+      border-radius: $br5;
     }
 
     .modal-right {
@@ -927,7 +927,7 @@
 
     .release {
       background-color: $color-primary;
-      border-radius: 4px;
+      border-radius: $br4;
       color: #1f1f1f;
       padding: 4px $size-1;
       display: inline-block;
@@ -952,7 +952,7 @@
         width: 90%;
 
         .title a {
-          font-weight: bold;
+          font-weight: $fw700;
           color: $color-black;
           text-decoration: none;
           &:hover {
@@ -961,7 +961,7 @@
         }
 
         .description {
-          font-size: 12px;
+          font-size: $fs12;
           text-decoration: none;
           text-transform: none;
         }
@@ -1000,8 +1000,8 @@
       padding: 0;
 
       img {
-        border-top-left-radius: 5px;
-        border-bottom-left-radius: 5px;
+        border-top-left-radius:$br5;
+        border-bottom-left-radius: $br5;
         height: 100%;
         width: 115%;
       }
@@ -1023,14 +1023,14 @@
 
       h1 {
         font-family: "worksans", sans-serif;
-        font-weight: 700;
-        font-size: 27px;
+        font-weight: $fw700;
+        font-size: $fs26;
         margin-bottom: $size-3;
         text-align: center;
       }
       p {
         font-family: "worksans", sans-serif;
-        font-weight: 500;
+        font-weight: $fw500;
         font-size: $fs18;
         text-align: center;
       }
@@ -1065,7 +1065,7 @@
       .modal-right,
       .modal-left {
         background-repeat: no-repeat;
-        border-radius: $br-medium;
+        border-radius: $br5;
         transition: all ease 0.3s;
         &:hover {
           background-color: $color-primary;
@@ -1090,13 +1090,13 @@
       text-align: center;
 
       border: 1px solid $color-gray-10;
-      border-radius: 2px;
+      border-radius: $br2;
       min-height: 180px;
       width: 233px;
       cursor: pointer;
 
       h2 {
-        font-weight: 700;
+        font-weight: $fw700;
         margin-bottom: $size-5;
         font-size: $fs24;
       }
@@ -1107,7 +1107,7 @@
 
       img {
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.25);
-        border-radius: $br-medium;
+        border-radius: $br5;
         margin-bottom: $size-6;
         margin-top: -90px;
         width: 150px;
@@ -1127,14 +1127,14 @@
 
       h1 {
         font-family: sourcesanspro;
-        font-weight: bold;
+        font-weight: $fw700;
         font-size: $fs36;
         margin-bottom: 0.75rem;
       }
 
       p {
         font-family: sourcesanspro;
-        font-weight: 500;
+        font-weight: $fw500;
         font-size: $fs16;
         margin-bottom: 1.5rem;
       }
@@ -1295,7 +1295,7 @@
 
     h3 {
       font-size: $fs18;
-      font-weight: bold;
+      font-weight: $fw700;
     }
 
     p {
@@ -1316,7 +1316,7 @@
       display: flex;
       flex-direction: column;
       text-align: left;
-      border-radius: $br-small;
+      border-radius: $br3;
 
       &:not(:last-child) {
         margin-bottom: 22px;
@@ -1328,7 +1328,7 @@
       flex-grow: 1;
 
       img {
-        border-radius: $br-small $br-small 0 0;
+        border-radius: $br3 $br3 0 0;
       }
     }
 
@@ -1348,7 +1348,7 @@
         color: $color-primary-dark;
         cursor: pointer;
         font-size: $fs14;
-        font-weight: 600;
+        font-weight: $fw600;
         display: flex;
         justify-content: flex-end;
         margin-top: $size-2;
@@ -1376,10 +1376,10 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    border-radius: 0 5px 5px 0;
+    border-radius: 0 $br5 $br5 0;
     .subtitle {
-      font-weight: bold;
-      font-size: 20px;
+      font-weight: $fw700;
+      font-size: $fs20;
       color: $color-gray-10;
       text-transform: uppercase;
       margin-bottom: 8px;
@@ -1433,8 +1433,8 @@
     flex-direction: column;
     justify-content: space-between;
     .title {
-      font-size: 27px;
-      font-weight: bold;
+      font-size: $fs26;
+      font-weight: $fw700;
       color: $color-gray-60;
       margin-bottom: 6px;
     }
@@ -1622,10 +1622,10 @@
       --dropdown-background-color: #ffffff;
       --primary-font-color: #000;
       --input-border-color: rgb(224, 230, 240);
-      --input-border-radius: 3px;
-      --button-border-radius: 3px;
-      --message-border-radius: 3px;
-      --checkbox-border-radius: 3px;
+      --input-border-radius: $br3;
+      --button-border-radius: $br3;
+      --message-border-radius: $br3;
+      --checkbox-border-radius: $br3;
       --dropdown-option-background-color: rgba(0, 195, 139, 1);
       --dropdown-option-active-background-color: rgba(0, 138, 98, 1);
       --invalid-field-background-color: rgba(238.51780000000002, 205.7178, 204.11780000000002, 1);
@@ -1726,7 +1726,7 @@
   padding: 16px 18px;
   background-color: $color-white;
   border: 1px solid $color-gray-20;
-  border-radius: 3px;
+  border-radius: $br3;
   z-index: 1000;
 
   &.transparent {
@@ -1811,7 +1811,7 @@
     &.image {
       align-items: center;
       border: 1px solid $color-gray-10;
-      border-radius: 3px;
+      border-radius: $br3;
       display: flex;
       justify-content: center;
       height: 32px;
@@ -1969,7 +1969,7 @@
   .close {
     border: 1px solid $color-gray-30;
     background: $color-canvas;
-    border-radius: 3px;
+    border-radius: $br3;
     padding: 0.5rem 1rem;
     cursor: pointer;
     margin-right: 8px;
@@ -1982,7 +1982,7 @@
   .button-primary {
     background: $color-primary;
     border: 1px solid $color-primary;
-    border-radius: 3px;
+    border-radius: $br3;
     color: $color-black;
     cursor: pointer;
     padding: 0.5rem 1rem;
@@ -1995,7 +1995,7 @@
   .button-secondary {
     border: 1px solid $color-gray-30;
     background: $color-white;
-    border-radius: 3px;
+    border-radius: $br3;
     padding: 0.5rem 1rem;
     cursor: pointer;
     margin-right: 8px;
@@ -2022,7 +2022,7 @@
   .title {
     margin-left: 32px;
     h2 {
-      font-size: 24px;
+      font-size: $fs24;
       color: $color-black;
       line-height: $fs36;
       letter-spacing: 0px;

@@ -126,9 +126,9 @@
 
   .btn-large {
     flex-grow: 1;
-    font-size: 14px;
+    font-size: $fs14;
     font-style: normal;
-    font-weight: normal;
+    font-weight: $fw400;
   }
 
   .btn-google-auth {
@@ -228,7 +228,7 @@
       margin-bottom: 10px;
       a {
         font-size: $fs14;
-        font-weight: 500;
+        font-weight: $fw500;
         color: $color-gray-50;
         &:hover,
         &:focus {

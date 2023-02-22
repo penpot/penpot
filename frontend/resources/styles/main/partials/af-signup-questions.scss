@@ -18,7 +18,7 @@
   h3 {
     font-family: "worksans", sans-serif !important;
     margin-bottom: 0.8rem;
-    font-weight: 500 !important;
+    font-weight: $fw500 !important;
   }
 
   h1 {
@@ -30,7 +30,7 @@
   }
 
   strong {
-    font-weight: 500;
+    font-weight: $fw500;
   }
 
   p,
@@ -109,7 +109,7 @@
   .step-number {
     background-color: $color-gray-10;
     border: none;
-    border-radius: 1rem;
+    border-radius: 1rem; // Need to be investigated, before we can use variable
     color: $color-gray-40;
     float: right;
     font-family: "worksans", sans-serif !important;
@@ -147,7 +147,7 @@
 
   .af-step-next span,
   .af-step-previous span {
-    font-weight: normal !important;
+    font-weight: $fw400 !important;
   }
 
   .af-step-button {
@@ -229,7 +229,7 @@
 
     &::before {
       background-color: transparent;
-      border-radius: 4px;
+      border-radius: $br4;
       min-width: 100%;
       min-height: 100%;
       position: absolute;
@@ -309,7 +309,7 @@
 
   .af-field-use_of_penpot .af-choice-option:nth-child(5) label {
     &::before {
-      border-radius: 3px;
+      border-radius: $br3;
     }
   }
 

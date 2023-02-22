@@ -14,7 +14,8 @@
 ### :arrow_up: Deps updates
 
 ### :heart: Community contributions by (Thank you!)
-
+- To @ondrejkonec: for contributing to the code with:
+- Refactor CSS variables [Github #2948](https://github.com/penpot/penpot/pull/2948)
 
 ## 1.17.2
 

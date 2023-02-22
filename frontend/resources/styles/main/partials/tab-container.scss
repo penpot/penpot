@@ -10,7 +10,7 @@
   cursor: pointer;
   display: flex;
   flex-direction: row;
-  font-size: 12px;
+  font-size: $fs12;
   height: 2.5rem;
   padding: 0 0.25rem;
 }
@@ -18,7 +18,7 @@
 .tab-container-tab-title {
   align-items: center;
   background: $color-gray-60;
-  border-radius: 2px 2px 0px 0px;
+  border-radius: $br2 $br2 0 0;
   color: $color-white;
   display: flex;
   justify-content: center;

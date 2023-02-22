@@ -52,7 +52,7 @@
       display: flex;
       width: 100%;
       border: 1px solid $color-gray-10;
-      border-radius: $br-medium;
+      border-radius: $br5;
       align-items: center;
     }
 
@@ -204,7 +204,7 @@
       flex-shrink: 0;
       padding: $size-2;
       a {
-        font-weight: 400;
+        font-weight: $fw400;
         width: 100%;
         &:hover {
           text-decoration: none;
@@ -228,7 +228,7 @@
 
       &::before {
         background-color: transparent;
-        border-radius: $br-small;
+        border-radius: $br3;
         content: "";
         height: 26px;
         margin-right: $size-2;
@@ -243,7 +243,7 @@
 
       & .edit-wrapper {
         border: 1px solid $color-gray-10;
-        border-radius: $br-small;
+        border-radius: $br3;
         display: flex;
         width: 100%;
       }
@@ -284,7 +284,7 @@
 
       &.current {
         a {
-          font-weight: bold;
+          font-weight: $fw700;
         }
 
         &::before {
@@ -302,7 +302,7 @@
     align-items: center;
     background-color: $color-white;
     border: 1px solid $color-gray-10;
-    border-radius: $br-medium;
+    border-radius: $br5;
     display: flex;
     margin: 5px 15px;
 
@@ -388,7 +388,7 @@
 
 .team-form-modal {
   h2 {
-    font-weight: 400;
+    font-weight: $fw400;
     color: $color-gray-40;
     font-size: 28px;
     margin-bottom: 30px;
@@ -468,9 +468,9 @@
 
 .primary-badge {
   border: 1px solid $color-primary;
-  border-radius: 2px;
+  border-radius: $br2;
   font-size: $fs9 !important;
-  font-weight: bold;
+  font-weight: $fw500;
   color: $color-primary !important;
   padding: 2px 4px;
 }

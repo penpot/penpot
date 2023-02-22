@@ -14,19 +14,20 @@ $size-5: 1.5rem;
 $size-6: 2rem;
 
 // Border radius
-$br-small: 3px;
-$br-medium: 5px;
-$br-big: 8px;
-$br-huge: 12px;
-
-// Alignments
-.text-left {
-  text-align: left;
-}
-
-.text-right {
-  text-align: right;
-}
+$br0: 0px;
+$br2: 2px;
+$br3: 3px;
+$br4: 4px;
+$br5: 5px;
+$br6: 6px;
+$br7: 7px;
+$br8: 8px;
+$br10: 10px;
+$br12: 12px;
+$br25: 25px;
+$br50: 50px;
+$br99: 99px;
+$br-circle: 50%; // Need to be investigated, before we can use variable
 
 .row-flex {
   align-items: center;

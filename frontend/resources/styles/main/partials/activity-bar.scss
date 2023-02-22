@@ -23,7 +23,7 @@
   h4 {
     color: $color-gray-40;
     font-size: $fs16;
-    font-weight: bold;
+    font-weight: $fw700;
     margin-bottom: $size-1;
   }
 
@@ -31,7 +31,7 @@
     background-color: lighten($color-gray-20, 12%);
     color: $color-white;
     font-size: $fs12;
-    font-weight: bold;
+    font-weight: $fw700;
     padding: 2px;
     text-align: center;
     width: 100%;
@@ -62,7 +62,7 @@
         flex-wrap: wrap;
 
         a {
-          font-weight: bold;
+          font-weight: $fw700;
           margin: 0 3px;
         }
       }

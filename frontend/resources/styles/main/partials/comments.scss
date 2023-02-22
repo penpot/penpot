@@ -42,7 +42,7 @@
     border: 1px solid $color-gray-20;
     box-sizing: border-box;
     box-shadow: 0px 2px 8px rgba($color-black, 0.25);
-    border-radius: 2px;
+    border-radius: $br2;
     min-width: 280px;
     max-width: 280px;
     user-select: text;
@@ -79,7 +79,7 @@
       padding: $size-2;
       resize: none;
       width: 100%;
-      border-radius: 2px;
+      border-radius: $br2;
       border: 1px solid $color-gray-20;
       max-height: 4rem;
     }
@@ -121,7 +121,7 @@
         flex-direction: column;
 
         .fullname {
-          font-weight: 700;
+          font-weight: $fw700;
           color: $color-gray-60;
           font-size: $fs12;
 
@@ -271,7 +271,7 @@
 
       .label {
         &.filename {
-          font-weight: 700;
+          font-weight: $fw700;
         }
       }
 
@@ -365,7 +365,7 @@
   align-items: center;
   justify-content: center;
   background-color: $color-dashboard;
-  border-radius: 3px;
+  border-radius: $br3;
   position: relative;
 
   .button {
@@ -375,7 +375,7 @@
     align-items: center;
     justify-content: center;
     background-color: $color-dashboard;
-    border-radius: 3px;
+    border-radius: $br3;
 
     svg {
       width: 15px;
@@ -398,7 +398,7 @@
     width: 280px;
     bottom: 35px;
     left: 0px;
-    border-radius: 3px;
+    border-radius: $br3;
   }
 
   .header {
@@ -408,7 +408,7 @@
     padding: 0px 11px;
 
     h3 {
-      font-weight: 400;
+      font-weight: $fw400;
       color: $color-black;
       font-size: $fs14;
       line-height: $fs18;

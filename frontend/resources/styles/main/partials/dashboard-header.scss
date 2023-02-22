@@ -58,7 +58,7 @@
         color: $color-gray-30;
         height: 40px;
         padding: $size-1 $size-5;
-        font-weight: 400;
+        font-weight: $fw400;
         &:hover {
           color: $color-black;
           text-decoration: none;
@@ -84,7 +84,7 @@
       display: flex;
       flex-shrink: 0;
       font-size: $fs22;
-      font-weight: 600;
+      font-weight: $fw600;
       z-index: 10;
       user-select: all;
     }
