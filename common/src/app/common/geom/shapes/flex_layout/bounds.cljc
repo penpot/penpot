@@ -81,7 +81,7 @@
       (conj (gpt/add base-p (hv (/ min-width 2)))
             (gpt/subtract base-p (hv (/ min-width 2))))
 
-      (and col? h-center?)
+      (and col? h-end?)
       (conj (gpt/subtract base-p (hv min-width)))
 
       (and row? v-start?)
