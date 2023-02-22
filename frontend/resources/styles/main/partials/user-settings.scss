@@ -70,7 +70,7 @@
       display: flex;
       flex-grow: 1;
       font-size: $fs24;
-      font-weight: normal;
+      font-weight: $fw400;
       justify-content: center;
     }
 
@@ -181,7 +181,7 @@
 
     h2 {
       font-size: $fs14;
-      font-weight: normal;
+      font-weight: $fw400;
       margin-bottom: $size-4;
     }
   }

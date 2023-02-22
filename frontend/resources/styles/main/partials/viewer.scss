@@ -57,7 +57,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 12px;
+      border-radius: $br12;
       background: $color-gray-50;
       width: 24px;
       height: 24px;
@@ -117,7 +117,7 @@
     .reset {
       display: flex;
       align-items: center;
-      border-radius: 12px;
+      border-radius: $br12;
       background: $color-gray-50;
       width: 24px;
       height: 24px;
@@ -141,7 +141,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 12px;
+      border-radius: $br12;
       background: $color-gray-50;
       width: 67px;
       height: 25px;

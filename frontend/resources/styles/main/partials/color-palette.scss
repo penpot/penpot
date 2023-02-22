@@ -168,11 +168,11 @@
   &.current {
     .color-text {
       color: $color-gray-50;
-      font-weight: bold;
+      font-weight: $fw700;
     }
     &::before {
       background-color: $color-gray-50;
-      border-radius: 3px;
+      border-radius: $br3;
       color: $color-white;
       content: "selected";
       font-size: $fs10;
@@ -194,7 +194,7 @@
     margin-left: 1.5rem;
 
     .color-text {
-      font-weight: bold;
+      font-weight: $fw700;
     }
     &:hover {
       .color-text {
@@ -224,7 +224,7 @@
 .color-tooltip {
   background-color: $color-gray-50;
   border: 1px solid $color-gray-10;
-  border-radius: 3px;
+  border-radius: $br3;
   left: -102px;
   padding: 1rem;
   position: absolute;

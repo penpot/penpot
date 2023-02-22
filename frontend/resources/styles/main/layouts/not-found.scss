@@ -46,23 +46,23 @@
 
   .main-message {
     color: $color-black;
-    font-size: 5rem;
+    font-size: $fs80;
     line-height: 150px;
     text-align: center;
   }
 
   .desc-message {
     color: $color-black;
-    font-size: 1.6rem;
-    font-weight: 300;
+    font-size: $fs26;
+    font-weight: $fw300;
     text-align: center;
   }
 
   .sign-info {
     margin-top: 20px;
     color: $color-black;
-    font-size: 1rem;
-    font-weight: 200;
+    font-size: $fs16;
+    font-weight: $fw200;
     text-align: center;
 
     display: flex;
@@ -70,7 +70,7 @@
     align-items: center;
 
     b {
-      font-weight: 400;
+      font-weight: $fw400;
     }
 
     .btn-primary {

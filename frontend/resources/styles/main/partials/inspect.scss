@@ -196,7 +196,7 @@
       overflow-y: auto;
       max-height: 5rem;
       background: $color-gray-60;
-      border-radius: 4px;
+      border-radius: $br4;
       padding: 1rem 0.5rem;
       color: $color-gray-10;
       white-space: pre-wrap;
@@ -216,7 +216,7 @@
     justify-content: center;
     margin: 0.5rem;
     background: $color-gray-60;
-    border-radius: 4px;
+    border-radius: $br4;
 
     width: calc(100% - 1rem);
     min-height: 5rem;
@@ -257,7 +257,7 @@
     position: relative;
     margin-top: 0.5rem;
     border: 1px solid $color-black;
-    border-radius: 4px;
+    border-radius: $br4;
     margin: 0.5rem;
     display: flex;
     flex-direction: row;
@@ -287,7 +287,7 @@
     padding: 0.5rem 1rem;
     color: $color-gray-10;
     width: calc(100% - 1rem);
-    border-radius: 4px;
+    border-radius: $br4;
     margin: 0.5rem;
     cursor: pointer;
 
@@ -360,7 +360,7 @@
     font-size: $fs14;
 
     .code-display {
-      border-radius: 4px;
+      border-radius: $br4;
       padding: 1rem;
       overflow: hidden;
       white-space: pre-wrap;

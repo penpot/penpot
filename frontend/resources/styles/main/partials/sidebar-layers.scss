@@ -303,7 +303,7 @@ span.element-name {
 .icon-layer {
   > svg {
     background-color: rgba(255, 255, 255, 0.6);
-    border-radius: $br-small;
+    border-radius: $br3;
     flex-shrink: 0;
     fill: $color-black !important;
     padding: 1px;
@@ -320,7 +320,7 @@ span.element-name {
     &.search {
       .search-box {
         border: 1px solid $color-gray-20;
-        border-radius: 4px;
+        border-radius: $br4;
         height: 32px;
         width: 100%;
         display: flex;
@@ -334,7 +334,7 @@ span.element-name {
           width: 100%;
           background-color: $color-gray-50;
           color: $color-white;
-          font-size: 12px;
+          font-size: $fs12;
           height: 16px;
           &:focus {
             outline: none;
@@ -367,14 +367,14 @@ span.element-name {
 .active-filters {
   margin-top: 5px;
   line-height: 26px;
-  font-size: 11px;
+  font-size: $fs11;
   margin: 0 0.5rem;
   span {
     background-color: $color-primary;
     color: $color-black;
     padding: 3px 5px;
     margin: 0 2px;
-    border-radius: 4px;
+    border-radius: $br4;
     cursor: pointer;
     svg {
       width: 7px;
@@ -393,10 +393,10 @@ span.element-name {
   left: 8px;
   background-color: $color-white;
   color: $color-gray-50;
-  border-radius: 4px;
+  border-radius: $br4;
   span {
     padding: 10px 20px 10px 10px;
-    border-radius: 4px;
+    border-radius: $br4;
     svg {
       width: 16px;
       height: 16px;

@@ -13,14 +13,14 @@
   .element-icons {
     background-color: $color-gray-60;
     border: 1px solid $color-gray-60;
-    border-radius: $br-small;
+    border-radius: $br3;
     display: flex;
     margin: $size-1;
 
     li {
       align-items: center;
       border-right: 1px solid $color-gray-60;
-      border-radius: $br-small;
+      border-radius: $br3;
       cursor: pointer;
       display: flex;
       flex: 1;
@@ -145,7 +145,7 @@
 
         span {
           color: $color-primary;
-          font-weight: bold;
+          font-weight: $fw700;
         }
       }
     }
@@ -234,7 +234,7 @@
     }
 
     input:checked + label::after {
-      font-size: 0.8rem;
+      font-size: $fs13;
     }
   }
 
@@ -288,7 +288,7 @@
 
   .custom-select {
     border: 1px solid $color-gray-40;
-    border-radius: $br-small;
+    border-radius: $br3;
     cursor: pointer;
     padding: $size-1 $size-5 $size-1 $size-1;
     position: relative;
@@ -324,7 +324,7 @@
 
   .custom-select-dropdown {
     background-color: $color-white;
-    border-radius: $br-small;
+    border-radius: $br3;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
     left: 0;
     max-height: 30rem;
@@ -662,7 +662,7 @@
 .margin-options {
   align-items: center;
   border: 1px solid $color-gray-60;
-  border-radius: 4px;
+  border-radius: $br4;
   display: flex;
   justify-content: space-between;
   padding: 8px;
@@ -808,7 +808,7 @@
   display: flex;
   padding: 0.3rem 0;
   border: 1px solid $color-black;
-  border-radius: 4px;
+  border-radius: $br4;
   height: 48px;
 
   &:hover {
@@ -881,7 +881,7 @@
 .advanced-options {
   border: 1px solid $color-gray-60;
   background-color: $color-gray-50;
-  border-radius: 4px;
+  border-radius: $br4;
   padding: 8px;
   position: relative;
   top: 2px;
@@ -892,9 +892,9 @@
   cursor: pointer;
   border: 1px solid $color-black;
   background: $color-gray-60;
-  border-radius: 2px;
+  border-radius: $br2;
   color: $color-gray-20;
-  font-size: 11px;
+  font-size: $fs11;
   line-height: 16px;
   flex-grow: 1;
   padding: 0.25rem 0;
@@ -919,7 +919,7 @@
   justify-content: space-between;
   padding: 3px;
   border: 1px solid $color-black;
-  border-radius: 4px;
+  border-radius: $br4;
 
   &:hover {
     background: #1f1f1f;
@@ -1078,18 +1078,18 @@
   }
 
   .typography-sample {
-    font-size: 17px;
+    font-size: $fs17;
     color: $color-white;
     margin: 0 0.5rem;
 
     font-family: sourcesanspro;
     font-style: normal;
-    font-weight: normal;
+    font-weight: $fw400;
   }
 
   .typography-name {
     flex-grow: 1;
-    font-size: 11px;
+    font-size: $fs11;
     margin-top: 4px;
     white-space: nowrap;
   }
@@ -1120,7 +1120,7 @@
 }
 
 .row-flex input.adv-typography-name {
-  font-size: 14px;
+  font-size: $fs14;
   color: $color-gray-10;
   width: 100%;
   max-width: none;
@@ -1140,11 +1140,11 @@
 }
 
 .typography-read-only-data {
-  font-size: 12px;
+  font-size: $fs12;
   color: $color-white;
 
   .typography-name {
-    font-size: 14px;
+    font-size: $fs14;
   }
 
   .row-flex {
@@ -1166,9 +1166,9 @@
     text-align: center;
     background: $color-gray-50;
     padding: 0.5rem;
-    border-radius: 2px;
+    border-radius: $br2;
     cursor: pointer;
-    font-size: 14px;
+    font-size: $fs14;
     margin-top: 1rem;
 
     &:hover {
@@ -1182,7 +1182,7 @@
   margin: 0.5rem;
   padding: 0.5rem;
   border: 1px dashed $color-gray-30;
-  border-radius: 4px;
+  border-radius: $br4;
   display: flex;
   justify-content: space-between;
 
@@ -1252,7 +1252,7 @@
         width: $size-4;
         height: $size-4;
         border: 1px solid $color-gray-30;
-        border-radius: $br-small;
+        border-radius: $br3;
 
         svg {
           width: 8px;
@@ -1282,7 +1282,7 @@
       padding: 4px;
       font-size: $fs12;
       background: $color-gray-50;
-      border-radius: $br-small;
+      border-radius: $br3;
       color: $color-gray-20;
       border: 1px solid $color-gray-30;
       width: 88%;
@@ -1364,7 +1364,7 @@
     }
 
     .label {
-      font-size: 12px;
+      font-size: $fs12;
     }
 
     svg {
@@ -1588,7 +1588,7 @@
 
   .text {
     color: $color-gray-30;
-    font-size: 0.75rem;
+    font-size: $fs12;
     padding-left: 10px;
   }
 
@@ -1672,7 +1672,7 @@
       .align-content-style,
       .layout-behavior {
         display: flex;
-        border-radius: 4px;
+        border-radius: $br4;
         border: 1px solid $color-gray-60;
         height: 26px;
         margin-right: 5px;
@@ -1783,7 +1783,7 @@
         }
       }
       input {
-        font-size: 0.75rem;
+        font-size: $fs12;
         min-width: 0;
         padding: 0.25rem;
         height: 20px;
@@ -1797,11 +1797,11 @@
       background: none;
       border: none;
       cursor: pointer;
-      border-radius: $br-small;
+      border-radius: $br3;
 
       &.lock {
         border: 1px solid $color-gray-60;
-        border-radius: $br-small;
+        border-radius: $br3;
         width: 30px;
         height: 30px;
       }
@@ -1854,7 +1854,7 @@
           }
         }
         input {
-          font-size: 0.75rem;
+          font-size: $fs12;
           min-width: 0;
           padding: 0.25rem;
           width: 70px;
@@ -1869,11 +1869,11 @@
         background: none;
         border: none;
         cursor: pointer;
-        border-radius: $br-small;
+        border-radius: $br3;
 
         &.lock {
           border: 1px solid $color-gray-60;
-          border-radius: $br-small;
+          border-radius: $br3;
           width: 30px;
           height: 30px;
         }
@@ -1894,9 +1894,9 @@
     .margin-item-icons {
       padding: 0;
       border: 1px solid $color-gray-60;
-      border-radius: 3px;
+      border-radius: $br3;
       margin-bottom: 8px;
-      margin-top: 3px;
+      margin-top: $br3;
       margin-right: 1px;
       height: 30px;
       width: 30px;
@@ -1943,7 +1943,7 @@
 
   .layout-container {
     border: 1px solid $color-gray-60;
-    border-radius: 3px;
+    border-radius: $br3;
     margin: 5px 0;
     .layout-entry {
       display: flex;

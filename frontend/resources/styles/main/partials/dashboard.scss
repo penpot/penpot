@@ -8,7 +8,7 @@
   display: flex;
   position: relative;
   border: 2px solid $color-gray-10;
-  border-radius: 8px;
+  border-radius: $br8;
   padding: 20px;
   margin: 0 1rem 0 21px;
   height: 154px;
@@ -18,7 +18,7 @@
     padding-left: 20px;
     .title {
       font-size: $fs24;
-      font-weight: bold;
+      font-weight: $fw700;
       color: $color-black;
     }
     .info {
@@ -69,12 +69,12 @@
     grid-template-columns: 1fr 1fr;
     position: relative;
     border: 2px solid $color-gray-10;
-    border-radius: 8px;
+    border-radius: $br8;
     min-height: 211px;
 
     .thumbnail {
-      border-top-left-radius: 6px;
-      border-bottom-left-radius: 6px;
+      border-top-left-radius:$br6;
+      border-bottom-left-radius: $br6;
       padding: 30px;
       display: block;
       background-color: #e0e4e9;
@@ -85,7 +85,7 @@
       .title {
         color: $color-black;
         font-size: $fs24;
-        font-weight: bold;
+        font-weight: $fw700;
         margin-bottom: 8px;
       }
       .info {
@@ -187,7 +187,7 @@
   .project {
     align-items: center;
     background: $color-white;
-    border-radius: $br-small;
+    border-radius: $br3;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -237,7 +237,7 @@
       cursor: pointer;
       font-size: $fs18;
       line-height: 1rem;
-      font-weight: 600;
+      font-weight: $fw600;
       color: $color-black;
       margin-right: $size-1;
     }
@@ -249,7 +249,7 @@
     .info {
       font-size: $fs14;
       line-height: 1rem;
-      font-weight: 400;
+      font-weight: $fw400;
       color: $color-gray-60;
       margin-left: 0.75rem;
       @media (max-width: 760px) {
@@ -303,7 +303,7 @@
   color: $color-gray-60;
   line-height: 1rem;
   font-size: $fs14;
-  font-weight: 400;
+  font-weight: $fw400;
   @media (max-width: 880px) {
     display: none;
   }
@@ -374,7 +374,7 @@
 
 .edit-wrapper {
   border: 1px solid $color-gray-10;
-  border-radius: $br-small;
+  border-radius: $br3;
   display: flex;
   padding-right: $size-5;
   position: relative;
@@ -417,7 +417,7 @@
 
   background: none;
   border: 1px solid $color-gray-20;
-  border-radius: 2px;
+  border-radius: $br2;
   cursor: pointer;
   transition: all 0.4s;
   margin-left: 1rem;
@@ -458,8 +458,8 @@
       border-top: 2px solid #e4e4e4;
       border-left: 2px solid #e4e4e4;
       border-right: 2px solid #e4e4e4;
-      border-top-left-radius: 10px;
-      border-top-right-radius: 10px;
+      border-top-left-radius: $br10;
+      border-top-right-radius: $br10;
       margin-right: 30px;
       background-color: $color-white;
       position: relative;
@@ -468,8 +468,8 @@
         display: inline-block;
         vertical-align: middle;
         line-height: normal;
-        font-size: 18px;
-        font-weight: 600;
+        font-size: $fs18;
+        font-weight: $fw600;
         color: $color-black;
         margin-left: 18px;
         margin-right: 10px;
@@ -540,14 +540,14 @@
     .template-card {
       display: inline-block;
       width: 255px;
-      font-size: 16px;
+      font-size: $fs16;
       color: #181a22;
       cursor: pointer;
       .img-container {
         width: 100%;
         height: 135px;
         margin-bottom: 15px;
-        border-radius: 5px;
+        border-radius: $br5;
         border: 2px solid #e0e4e9;
         display: flex;
         justify-content: center;
@@ -564,7 +564,7 @@
           height: 16px;
         }
         span {
-          font-weight: 500;
+          font-weight: $fw500;
           font-size: $fs14;
         }
       }
@@ -576,13 +576,13 @@
       }
 
       .template-link-title {
-        font-size: 14px;
-        font-weight: 600;
+        font-size: $fs14;
+        font-weight: $fw600;
         color: $color-gray-60;
       }
 
       .template-link-text {
-        font-size: 12px;
+        font-size: $fs12;
         margin-top: $size-2;
         color: $color-gray-50;
       }

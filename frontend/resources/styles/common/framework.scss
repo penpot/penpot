@@ -11,7 +11,7 @@
   appearance: none;
   align-items: center;
   border: none;
-  border-radius: 3px;
+  border-radius: $br3;
   cursor: pointer;
   display: flex;
   font-family: "worksans", sans-serif;
@@ -209,28 +209,28 @@ input[type="button"][disabled],
 
 .text-error {
   background-color: $color-danger;
-  border-radius: 3px;
+  border-radius: $br3;
   color: $color-danger-lighter;
   padding: 3px 6px;
 }
 
 .text-success {
   background-color: $color-success;
-  border-radius: 3px;
+  border-radius: $br3;
   color: $color-white;
   padding: 3px 6px;
 }
 
 .text-warning {
   background-color: $color-warning;
-  border-radius: 3px;
+  border-radius: $br3;
   color: $color-white;
   padding: 3px 6px;
 }
 
 .text-info {
   background-color: $color-complete;
-  border-radius: 3px;
+  border-radius: $br3;
   color: $color-white;
   padding: 3px 6px;
 }
@@ -305,11 +305,11 @@ ul.slider-dots {
 
   .tag {
     background-color: $color-gray-20;
-    border-radius: 3px;
+    border-radius: $br3;
     color: $color-white;
     cursor: pointer;
     font-size: $fs14;
-    font-weight: bold;
+    font-weight: $fw700;
     margin: 0 $size-2 $size-2 0;
     padding: 4px 8px;
     text-transform: uppercase;
@@ -553,7 +553,7 @@ input[type="checkbox"] {
 input.element-name {
   background-color: $color-white;
   border: 1px solid $color-gray-40;
-  border-radius: $br-small;
+  border-radius: $br3;
   color: $color-gray-60;
   font-size: $fs12;
   margin: 0px;
@@ -618,7 +618,7 @@ input.element-name {
     margin-bottom: 6px;
 
     &:before {
-      border-radius: 99px;
+      border-radius: $br99;
       transition: box-shadow 0.2s linear 0s, color 0.2s linear 0s;
     }
   }
@@ -684,7 +684,7 @@ input[type="radio"]:checked + label:before {
 
     &:before {
       top: 1.4px;
-      border-radius: 3px;
+      border-radius: $br3;
       transition: border 0.2s linear 0s, color 0.2s linear 0s;
     }
 
@@ -700,7 +700,7 @@ input[type="radio"]:checked + label:before {
     }
 
     &:after {
-      border-radius: 3px;
+      border-radius: $br3;
     }
   }
 
@@ -711,11 +711,11 @@ input[type="radio"]:checked + label:before {
   &.checkbox-circle {
     label {
       &:after {
-        border-radius: 99px;
+        border-radius: $br99;
       }
 
       &:before {
-        border-radius: 99px;
+        border-radius: $br99;
       }
     }
   }
@@ -833,7 +833,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
   background: $color-gray-60;
-  border-radius: 25px;
+  border-radius: $br25;
   border: 0px solid #000101;
 }
 input[type="range"]::-webkit-slider-thumb {
@@ -841,7 +841,7 @@ input[type="range"]::-webkit-slider-thumb {
   border: 0px solid #000000;
   height: 18px;
   width: 6px;
-  border-radius: 7px;
+  border-radius: $br7;
   background: $color-gray-20;
   cursor: pointer;
   -webkit-appearance: none;
@@ -857,7 +857,7 @@ input[type="range"]::-moz-range-track {
   animate: 0.2s;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
   background: $color-gray-60;
-  border-radius: 25px;
+  border-radius: $br25;
   border: 0px solid #000101;
 }
 input[type="range"]::-moz-range-thumb {
@@ -865,7 +865,7 @@ input[type="range"]::-moz-range-thumb {
   border: 0px solid #000000;
   height: 24px;
   width: 8px;
-  border-radius: 7px;
+  border-radius: $br7;
   background: $color-gray-20;
   cursor: pointer;
 }
@@ -882,13 +882,13 @@ input[type="range"]::-ms-track {
 input[type="range"]::-ms-fill-lower {
   background: $color-gray-60;
   border: 0px solid #000101;
-  border-radius: 50px;
+  border-radius: $br50;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
 }
 input[type="range"]::-ms-fill-upper {
   background: $color-gray-60;
   border: 0px solid #000101;
-  border-radius: 50px;
+  border-radius: $br50;
   box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
 }
 input[type="range"]::-ms-thumb {
@@ -896,7 +896,7 @@ input[type="range"]::-ms-thumb {
   border: 0px solid #000000;
   height: 24px;
   width: 8px;
-  border-radius: 7px;
+  border-radius: $br7;
   background: $color-gray-20;
   cursor: pointer;
 }
@@ -935,11 +935,11 @@ input[type="range"]:focus::-ms-fill-upper {
   &:hover {
     &::after {
       background-color: $color-white;
-      border-radius: $br-small;
+      border-radius: $br3;
       color: $color-gray-60;
       content: attr(alt);
       font-size: $fs12;
-      font-weight: bold;
+      font-weight: $fw700;
       padding: $size-1;
       position: absolute;
       left: 130%;
@@ -1013,7 +1013,7 @@ input[type="range"]:focus::-ms-fill-upper {
         align-items: center;
         background-color: $color-white;
         box-sizing: border-box;
-        border-radius: 0;
+        border-radius: $br0;
         color: $color-gray-60;
         display: flex;
         height: 100%;
@@ -1115,7 +1115,7 @@ input[type="range"]:focus::-ms-fill-upper {
   }
 
   &.fixed {
-    border-radius: $br-small;
+    border-radius: $br3;
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.2);
     height: 48px;
     max-width: 1000px;
