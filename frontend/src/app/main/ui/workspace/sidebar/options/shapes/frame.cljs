@@ -38,7 +38,7 @@
 
         is-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-flex-layout-child? ids))
         is-flex-layout-child? (mf/deref is-flex-layout-child-ref)
-        is-flex-layout-container? (ctl/flex-layout? shape)]
+        is-flex-layout-container? (ctl/flex-layout? shape)
         is-layout-child-absolute? (ctl/layout-absolute? shape)]
     [:*
      [:& measures-menu {:ids [(:id shape)]

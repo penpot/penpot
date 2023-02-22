@@ -51,8 +51,8 @@
 (s/def ::layout-wrap-type #{:wrap :nowrap :no-wrap}) ;;TODO remove no-wrap after script
 (s/def ::layout-padding-type #{:simple :multiple})
 
-(s/def :grid/type #{:fr :auto :fixed})
-(s/def :grid/value (s/nilable ::us/string))
+(s/def :grid/type #{:percent :flex :auto :fixed})
+(s/def :grid/value (s/nilable ::us/safe-number))
 (s/def ::grid-definition (s/keys :opt-un [:grid/type
                                           :grid/value]))
 (s/def ::layout-grid-rows (s/coll-of ::grid-definition :kind vector?))

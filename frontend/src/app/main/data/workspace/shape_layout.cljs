@@ -183,6 +183,7 @@
 
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
+(declare check-grid-cells-update)
 (defn- update-layout-positions
   [ids]
   (ptk/reify ::update-layout-positions
@@ -190,10 +191,16 @@
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
             ids (->> ids (filter #(contains? objects %)))]
-        (if (d/not-empty? ids)
-          (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-            (rx/of (dwm/apply-modifiers {:modifiers modif-tree})))
-          (rx/empty))))))
+
+        (rx/concat
+         ;; Update grids if necesary
+         (rx/of (check-grid-cells-update
+                 (->> (concat ids (map #(cph/get-parent-id objects %) ids))
+                      (filter #(ctl/grid-layout? objects %)))))
+         (if (d/not-empty? ids)
+           (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+             (rx/of (dwm/apply-modifiers {:modifiers modif-tree})))
+           (rx/empty)))))))
 
 (defn initialize
   []
@@ -349,6 +356,93 @@
       (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwc/update-shapes ids #(d/deep-merge % changes))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn update-grid-cells
+  [parent objects]
+
+  (let [children (cph/get-immediate-children objects (:id parent))
+        layout-grid-rows (:layout-grid-rows parent)
+        layout-grid-columns (:layout-grid-columns parent)
+        num-rows (count layout-grid-columns)
+        num-columns (count layout-grid-columns)
+
+        layout-grid-cells
+        (for [[row-idx row] (d/enumerate layout-grid-rows)
+              [col-idx col] (d/enumerate layout-grid-columns)]
+
+          (let [shape (nth children (+ (* row-idx num-columns) col-idx) nil)
+                cell-data {:id (uuid/next)
+                           :row (inc row-idx)
+                           :column (inc col-idx)
+                           :row-span 1
+                           :col-span 1
+                           :shapes (when shape [(:id shape)])}]
+            [(:id cell-data) cell-data]))]
+    (assoc parent :layout-grid-cells layout-grid-cells)))
+
+(defn check-grid-cells-update
+  [ids]
+  (ptk/reify ::check-grid-cells-update
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            undo-id (js/Symbol)]
+        (rx/of (dwc/update-shapes
+                ids
+                (fn [shape]
+                  (-> shape
+                      (update-grid-cells objects)))))))))
+
+(defn add-layout-column
+  [ids property value]
+  (ptk/reify ::add-layout-column
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes
+                ids
+                (fn [shape]
+                  (-> shape
+                      (update property (fnil conj []) value)
+                      (update-grid-cells objects))))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn remove-layout-column
+  [ids property index]
+  (ptk/reify ::remove-layout-column
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes
+                ids
+                (fn [shape]
+                  (-> shape
+                      (update property d/remove-at-index index)
+                      (update-grid-cells objects))))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn change-layout-column
+  [ids property index props]
+  (ptk/reify ::change-layout-column
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes
+                ids
+                (fn [shape]
+                  (-> shape
+                      (update-in [property index] merge props)
+                      (update-grid-cells objects))))
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 

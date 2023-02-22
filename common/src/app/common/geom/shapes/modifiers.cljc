@@ -303,7 +303,7 @@
           (:shapes parent))
 
         children-layout
-        (when layout?
+        (when flex-layout?
           (->> (:shapes parent)
                (remove #(ctl/layout-absolute? objects %))))]
 
@@ -312,7 +312,7 @@
        (set-children-modifiers children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints)
 
        flex-layout?
-       (set-flex-layout-modifiers children-layout objects bounds parent transformed-parent-bounds))
+       (set-flex-layout-modifiers children-layout objects bounds parent transformed-parent-bounds)
 
        grid-layout?
        (set-grid-layout-modifiers objects bounds parent transformed-parent-bounds))

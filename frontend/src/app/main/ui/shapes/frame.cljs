@@ -129,7 +129,7 @@
     (let [shape  (unchecked-get props "shape")
           childs (unchecked-get props "childs")
           childs (cond-> childs
-                   (ctl/layout? shape)
+                   (ctl/any-layout? shape)
                    (cph/sort-layout-children-z-index))]
       [:> frame-container props
        [:g.frame-children {:opacity (:opacity shape)}

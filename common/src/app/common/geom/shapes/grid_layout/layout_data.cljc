@@ -21,7 +21,7 @@
                        {:type :percent :value 25}
                        {:type :fixed :value 100}
                        ;;{:type :auto}
-                       ;;{:type :fr :value 1}
+                       ;;{:type :flex :value 1}
                        ]
 
                       :layout-grid-rows
@@ -29,7 +29,7 @@
                        {:type :percent :value 50}
                        ;;{:type :fixed :value 100}
                        ;;{:type :auto}
-                       ;;{:type :fr :value 1}
+                       ;;{:type :flex :value 1}
                        ])
 
         num-rows (count (:layout-grid-rows parent))
@@ -71,12 +71,7 @@
 (defn calc-layout-data
   [parent children transformed-parent-bounds]
 
-  (let [
-
-        ;; TODO: Delete when there is UI
-        [parent children] (set-sample-data parent children)
-
-        height (gpo/height-points transformed-parent-bounds)
+  (let [height (gpo/height-points transformed-parent-bounds)
         width  (gpo/width-points transformed-parent-bounds)
 
         ;; Initialize tracks

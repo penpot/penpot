@@ -51,28 +51,31 @@
                                #_(if (= align-self value)
                                    (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self nil}))
                                    (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self value}))))
-        column-start (mf/use-state 1)
-        column-end (mf/use-state 1)
-        row-start (mf/use-state 1)
-        row-end (mf/use-state 1)
-        on-change (fn [side orientation value]
-                    (if (= orientation :column)
-                      (case side
-                        :all ((reset! column-start value)
-                              (reset! column-end value))
-                        :start (reset! column-start value)
-                        :end (reset! column-end value))
-                      (case side
-                        :all ((reset! row-start value)
-                              (reset! row-end value))
-                        :start (reset! row-start value)
-                        :end (reset! row-end value))))
+        column-start column
+        column-end (inc column)
+        row-start row
+        row-end (inc row)
+
+        on-change
+        (fn [side orientation value]
+          (if (= orientation :column)
+            (case side
+              :all ((reset! column-start value)
+                    (reset! column-end value))
+              :start (reset! column-start value)
+              :end (reset! column-end value))
+            (case side
+              :all ((reset! row-start value)
+                    (reset! row-end value))
+              :start (reset! row-start value)
+              :end (reset! row-end value))))
 
         area-name (mf/use-state "header") ;; TODO this should come from shape
 
         on-area-name-change (fn [value]
                               (reset! area-name value))
         on-key-press (fn [event])]
+
     [:div.element-set
      [:div.element-set-title
       [:span "Grid Cell"]]
@@ -100,7 +103,7 @@
              {:placeholder "--"
               :on-click #(dom/select-target %)
               :on-change (partial on-change :all :column) ;; TODO cambiar este on-change y el value
-              :value @column-start}]]]
+              :value column-start}]]]
           [:div.grid-rows-auto
            [:spam.icon i/layout-columns]
            [:div.input-wrapper
@@ -108,7 +111,7 @@
              {:placeholder "--"
               :on-click #(dom/select-target %)
               :on-change (partial on-change :all :row) ;; TODO cambiar este on-change y el value
-              :value @row-start}]]]])
+              :value row-start}]]]])
        (when (= :area @position-mode)
          [:div.input-wrapper
           [:input.input-text
@@ -130,26 +133,26 @@
             [:> numeric-input
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-change :start :column) ;; TODO cambiar este on-change y el value
-              :value @column-start}]
+              :on-change (partial on-change :start :column)
+              :value column-start}]
             [:> numeric-input
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-change :end :column) ;; TODO cambiar este on-change y el value
-              :value @column-end}]]]
+              :on-change (partial on-change :end :column)
+              :value column-end}]]]
           [:div.grid-rows-auto
            [:spam.icon i/layout-columns]
            [:div.input-wrapper
             [:> numeric-input
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-change :start :row) ;; TODO cambiar este on-change y el value
-              :value @row-start}]
+              :on-change (partial on-change :start :row)
+              :value row-start}]
             [:> numeric-input
              {:placeholder "--"
               :on-click #(dom/select-target %)
-              :on-change (partial on-change :end :row) ;; TODO cambiar este on-change y el value
-              :value @row-end}]]]])]
+              :on-change (partial on-change :end :row)
+              :value row-end}]]]])]
 
       [:div.layout-row
        [:div.row-title "Align"]

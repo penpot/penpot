@@ -107,7 +107,7 @@
         layout-container-values (select-keys shape layout-container-flex-attrs)
 
         is-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-flex-layout-child? ids))
-        is-flex-layout-child? (mf/deref is-flex-layout-child-ref)]
+        is-flex-layout-child? (mf/deref is-flex-layout-child-ref)
         is-layout-child-absolute? (ctl/layout-absolute? shape)]
 
     (when (contains? svg-elements tag)

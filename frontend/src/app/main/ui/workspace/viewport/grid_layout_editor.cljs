@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.viewport.grid-layout-editor
   (:require
-   [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
@@ -15,9 +14,12 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.cursors :as cur]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -172,8 +174,74 @@
               :stroke-dasharray (when-not (or hover? selected?)
                                   (str/join " " (map #(/ % zoom) [0 8]) ))
               :stroke-linecap "round"
-              :stroke-width (/ 2 zoom)}}])
-  )
+              :stroke-width (/ 2 zoom)}}]))
+
+(mf/defc resize-handler
+  {::mf/wrap-props false}
+  [props]
+
+  (let [start-p (unchecked-get props "start-p")
+        type (unchecked-get props "type")
+        bounds (unchecked-get props "bounds")
+        zoom (unchecked-get props "zoom")
+
+        width  (gpo/width-points bounds)
+        height (gpo/height-points bounds)
+
+        dragging-ref (mf/use-ref false)
+        start-ref (mf/use-ref nil)
+
+        on-pointer-down
+        (mf/use-callback
+         (fn [event]
+           (dom/capture-pointer event)
+           (mf/set-ref-val! dragging-ref true)
+           (mf/set-ref-val! start-ref (dom/get-client-position event))))
+
+        on-lost-pointer-capture
+        (mf/use-callback
+         (fn [event]
+           (dom/release-pointer event)
+           (mf/set-ref-val! dragging-ref false)
+           (mf/set-ref-val! start-ref nil)))
+
+        on-mouse-move
+        (mf/use-callback
+         (fn [event]
+           (when (mf/ref-val dragging-ref)
+             (let [start (mf/ref-val start-ref)
+                   pos  (dom/get-client-position event)
+                   delta (-> (gpt/to-vec start pos)
+                             (get (if (= type :column) :x :y)))]
+
+               ;; TODO Implement resize
+               #_(prn ">Delta" delta)))))
+
+
+        [x y width height]
+        (if (= type :column)
+          [(- (:x start-p) (/ 8 zoom))
+           (- (:y start-p) (/ 40 zoom))
+           (/ 16 zoom)
+           (+ height (/ 40 zoom))]
+
+          [(- (:x start-p) (/ 40 zoom))
+           (- (:y start-p) (/ 8 zoom))
+           (+ width (/ 40 zoom))
+           (/ 16 zoom)])]
+
+    [:rect.resize-handler
+     {:x x
+      :y y
+      :height height
+      :width width
+      :on-pointer-down on-pointer-down
+      :on-lost-pointer-capture on-lost-pointer-capture
+      :on-mouse-move on-mouse-move
+      :style {:fill "transparent"
+              :cursor (if (= type :column)
+                        (cur/resize-ew 0)
+                        (cur/resize-ns 0))}}]))
 
 (mf/defc editor
   {::mf/wrap-props false}
@@ -201,9 +269,7 @@
         origin (gpo/origin bounds)
 
         {:keys [row-tracks column-tracks shape-cells] :as layout-data}
-        (gsg/calc-layout-data shape children bounds)
-
-        [shape children] (set-sample-data shape children)]
+        (gsg/calc-layout-data shape children bounds)]
 
     (mf/use-effect
        (fn []
@@ -241,12 +307,11 @@
           [:& track-marker {:center marker-p
                             :value (dm/str (inc idx))
                             :zoom zoom}]
-          [:rect.resize-handler
-           {:x (- (:x start-p) (/ 8 zoom))
-            :y (:y start-p)
-            :height height
-            :width (/ 16 zoom)
-            :style {:fill "transparent"}}]]))
+
+          [:& resize-handler {:type :column
+                              :start-p start-p
+                              :zoom zoom
+                              :bounds bounds}]]))
 
      (for [[idx row-data] (d/enumerate row-tracks)]
        (let [start-p (-> origin (gpt/add (vv (:distance row-data))))
@@ -257,9 +322,7 @@
                              :value (dm/str (inc idx))
                              :zoom zoom}]]
 
-          [:rect.resize-handler
-           {:x (:x start-p)
-            :y (- (:y start-p) (/ 8 zoom))
-            :height (/ 16 zoom)
-            :width width
-            :style {:fill "transparent"}}]]))]))
+          [:& resize-handler {:type :row
+                              :start-p start-p
+                              :zoom zoom
+                              :bounds bounds}]]))]))

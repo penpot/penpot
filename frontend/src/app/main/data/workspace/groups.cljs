@@ -144,7 +144,7 @@
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
-        (cond-> (ctl/layout? frame)
+        (cond-> (ctl/any-layout? frame)
           (pcb/update-shapes (:shapes frame) ctl/remove-layout-item-data))
         (pcb/change-parent parent-id children idx-in-parent)
         (pcb/remove-objects [(:id frame)]))))

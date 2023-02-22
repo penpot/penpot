@@ -18,6 +18,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dc]
    [app.main.data.workspace.changes :as dch]
@@ -130,7 +131,7 @@
             (when (d/not-empty? to-move-shapes)
               (-> (pcb/empty-changes it page-id)
                   (pcb/with-objects objects)
-                  (cond-> (not (ctl/layout? objects frame-id))
+                  (cond-> (not (ctl/any-layout? objects frame-id))
                     (pcb/update-shapes ordered-indexes  ctl/remove-layout-item-data))
                   (pcb/change-parent frame-id to-move-shapes 0)))]
 
