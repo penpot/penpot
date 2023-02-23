@@ -167,7 +167,11 @@
   (instance? javax.sql.DataSource v))
 
 (s/def ::pool pool?)
+(s/def ::conn some?)
+
+;; DEPRECATED: to be removed in 1.18
 (s/def ::conn-or-pool some?)
+(s/def ::pool-or-conn some?)
 
 (defn closed?
   [pool]

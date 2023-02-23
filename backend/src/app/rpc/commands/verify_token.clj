@@ -158,11 +158,10 @@
         (let [profile (accept-invitation cfg claims invitation profile)]
           (-> (assoc claims :state :created)
               (rph/with-meta {::audit/name "accept-team-invitation"
-                              ::audit/props (merge
-                                             (audit/profile->props profile)
-                                             {:team-id (:team-id claims)
-                                              :role (:role claims)})
-                              ::audit/profile-id profile-id})))
+                              ::audit/profile-id (:id profile)
+                              ::audit/props {:team-id (:team-id claims)
+                                             :role (:role claims)
+                                             :invitation-id (:id invitation)}})))
 
         (ex/raise :type :validation
                   :code :invalid-token
@@ -181,12 +180,10 @@
           (-> (assoc claims :state :created)
               (rph/with-transform (session/create-fn session (:id profile)))
               (rph/with-meta {::audit/name "accept-team-invitation"
-                              ::audit/props (merge
-                                             (audit/profile->props profile)
-                                             {:team-id (:team-id claims)
-                                              :role (:role claims)})
-                              ::audit/profile-id member-id})))
-
+                              ::audit/profile-id (:id profile)
+                              ::audit/props {:team-id (:team-id claims)
+                                             :role (:role claims)
+                                             :invitation-id (:id invitation)}})))
         {:invitation-token token
          :iss :team-invitation
          :redirect-to :auth-register

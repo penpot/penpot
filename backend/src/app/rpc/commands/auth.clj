@@ -348,7 +348,7 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [conn session] :as cfg} {:keys [token] :as params}]
+  [{:keys [::db/conn session] :as cfg} {:keys [token] :as params}]
   (let [claims     (tokens/verify (::main/props cfg) {:token token :iss :prepared-register})
         params     (merge params claims)
 
@@ -372,11 +372,10 @@
     ;; accordingly.
     (when-let [id (:profile-id claims)]
       (db/update! conn :profile {:modified-at (dt/now)} {:id id})
-      (when-let [collector (::audit/collector cfg)]
-        (audit/submit! collector
-                       {:type "fact"
-                        :name "register-profile-retry"
-                        :profile-id id})))
+      (audit/submit! cfg
+                     {:type "fact"
+                      :name "register-profile-retry"
+                      :profile-id id}))
 
     (cond
       ;; If invitation token comes in params, this is because the
@@ -428,7 +427,7 @@
    ::doc/added "1.15"}
   [{:keys [::db/pool] :as cfg} params]
   (db/with-atomic [conn pool]
-    (-> (assoc cfg :conn conn)
+    (-> (assoc cfg ::db/conn conn)
         (register-profile params))))
 
 ;; ---- COMMAND: Request Profile Recovery

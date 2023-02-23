@@ -14,7 +14,6 @@
    [app.db :as-alias db]
    [app.http.client :as-alias http.client]
    [app.http.session :as-alias http.session]
-   [app.loggers.audit :as-alias audit]
    [app.loggers.audit.tasks :as-alias audit.tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.loggers.zmq :as-alias lzmq]
@@ -268,9 +267,7 @@
                             :github (ig/ref ::oidc.providers/github)
                             :gitlab (ig/ref ::oidc.providers/gitlab)
                             :oidc   (ig/ref ::oidc.providers/generic)}
-    ::audit/collector      (ig/ref ::audit/collector)
     ::http.session/session (ig/ref :app.http.session/manager)}
-
 
    ;; TODO: revisit the dependencies of this service, looks they are too much unused of them
    :app.http/router
@@ -324,8 +321,7 @@
     :scheduled-executor (ig/ref ::wrk/scheduled-executor)}
 
    :app.rpc/methods
-   {::audit/collector    (ig/ref ::audit/collector)
-    ::http.client/client (ig/ref ::http.client/client)
+   {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::wrk/executor       (ig/ref ::wrk/executor)
     ::props              (ig/ref :app.setup/props)
@@ -422,11 +418,6 @@
 
    ::lzmq/receiver
    {}
-
-   ::audit/collector
-   {::db/pool           (ig/ref ::db/pool)
-    ::wrk/executor      (ig/ref ::wrk/executor)
-    ::mtx/metrics       (ig/ref ::mtx/metrics)}
 
    ::audit.tasks/archive
    {::props              (ig/ref :app.setup/props)

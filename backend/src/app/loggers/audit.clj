@@ -20,7 +20,6 @@
    [app.loggers.audit.tasks :as-alias tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.main :as-alias main]
-   [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.tokens :as tokens]
    [app.util.retry :as rtry]
@@ -30,7 +29,6 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
-   [promesa.core :as p]
    [promesa.exec :as px]
    [yetti.request :as yrq]))
 
@@ -124,7 +122,7 @@
   (s/keys :req [::wrk/executor ::db/pool]))
 
 (defmethod ig/pre-init-spec ::collector [_]
-  (s/keys :req [::db/pool ::wrk/executor ::mtx/metrics]))
+  (s/keys :req [::db/pool ::wrk/executor]))
 
 (defmethod ig/init-key ::collector
   [_ {:keys [::db/pool] :as cfg}]
@@ -135,8 +133,8 @@
     :else
     cfg))
 
-(defn- persist-event!
-  [pool event]
+(defn- handle-event!
+  [conn-or-pool event]
   (us/verify! ::event event)
   (let [params {:id (uuid/next)
                 :name (:name event)
@@ -153,7 +151,7 @@
                         ::rtry/max-retries 6
                         ::rtry/label "persist-audit-log-event"}
         (let [now (dt/now)]
-          (db/insert! pool :audit-log
+          (db/insert! conn-or-pool :audit-log
                       (-> params
                           (update :props db/tjson)
                           (update :ip-addr db/inet)
@@ -172,7 +170,7 @@
                             :else               label)
             dedupe?       (boolean (and batch-key batch-timeout))]
 
-        (wrk/submit! ::wrk/conn pool
+        (wrk/submit! ::wrk/conn conn-or-pool
                      ::wrk/task :process-webhook-event
                      ::wrk/queue :webhooks
                      ::wrk/max-retries 0
@@ -183,16 +181,19 @@
                      ::webhooks/event
                      (-> params
                          (dissoc :ip-addr)
-                         (dissoc :type)))))))
+                         (dissoc :type)))))
+    params))
 
 (defn submit!
   "Submit audit event to the collector."
-  [{:keys [::wrk/executor ::db/pool] :as collector} params]
-  (us/assert! ::collector collector)
-  (->> (px/submit! executor (partial persist-event! pool (d/without-nils params)))
-       (p/merr (fn [cause]
-                 (l/error :hint "audit: unexpected error processing event" :cause cause)
-                 (p/resolved nil)))))
+  [{:keys [::wrk/executor] :as cfg} params]
+  (let [conn (or (::db/conn cfg) (::db/pool cfg))]
+    (us/assert! ::wrk/executor executor)
+    (us/assert! ::db/pool-or-conn conn)
+    (try
+      (handle-event! conn (d/without-nils params))
+      (catch Throwable cause
+        (l/error :hint "audit: unexpected error processing event" :cause cause)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASK: ARCHIVE
