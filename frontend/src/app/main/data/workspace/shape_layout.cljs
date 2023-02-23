@@ -149,17 +149,19 @@
             children-ids    (into [] (mapcat #(get-in objects [% :shapes])) ids)
             children-shapes (map (d/getf objects) children-ids)
             parent          (get objects (first ids))
-            flex-params     (shapes->flex-params objects children-shapes parent)
+            flex-params     (when (d/not-empty? children-shapes)
+                              (shapes->flex-params objects children-shapes parent))
             undo-id         (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwc/update-shapes ids (get-layout-initializer type from-frame?))
                (dwc/update-shapes
                 ids
                 (fn [shape]
-                  (-> shape
-                      (assoc :layout-item-h-sizing :auto
-                             :layout-item-v-sizing :auto)
-                      (merge flex-params))))
+                  (cond-> shape
+                    (not from-frame?)
+                    (->  (assoc :layout-item-h-sizing :auto
+                                :layout-item-v-sizing :auto)
+                         (merge flex-params)))))
                (ptk/data-event :layout/update ids)
                (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v))
                (dwu/commit-undo-transaction undo-id))))))
