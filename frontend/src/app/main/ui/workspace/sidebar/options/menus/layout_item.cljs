@@ -29,7 +29,8 @@
    :layout-item-max-w       ;; num
    :layout-item-min-w       ;; num
    :layout-item-align-self  ;; :start :end :center :stretch :baseline
-   ])
+   :layout-item-absolute
+   :layout-item-z-index])
 
 (mf/defc margin-section
   [{:keys [values change-margin-style on-margin-change] :as props}]
@@ -193,13 +194,32 @@
 
         on-size-change
         (fn [measure value]
-          (st/emit! (dwsl/update-layout-child ids {measure value})))]
+          (st/emit! (dwsl/update-layout-child ids {measure value})))
+
+        on-change-position
+        (fn [value]
+          (st/emit! (dwsl/update-layout-child ids {:layout-item-absolute (= value :absolute)})))]
 
     [:div.element-set
      [:div.element-set-title
       [:span "Flex elements"]]
 
      [:div.element-set-content.layout-item-menu
+      [:div.layout-row
+       [:div.row-title.sizing "Position"]
+       [:div.btn-wrapper
+        [:div.absolute
+         [:button.behavior-btn.tooltip.tooltip-bottom
+          {:alt "Static"
+           :class  (dom/classnames :active (not (:layout-item-absolute values)))
+           :on-click #(on-change-position :static)}
+          "Static"]
+         [:button.behavior-btn.tooltip.tooltip-bottom
+          {:alt "Absolute"
+           :class  (dom/classnames :active (and (:layout-item-absolute values) (not= :multiple (:layout-item-absolute values))))
+           :on-click #(on-change-position :absolute)}
+          "Absolute"]]]]
+
       [:div.layout-row
        [:div.row-title.sizing "Sizing"]
        [:& element-behavior {:is-layout-child? is-layout-child?

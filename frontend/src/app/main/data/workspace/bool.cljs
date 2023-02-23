@@ -11,6 +11,7 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.path.shapes-to-path :as stp]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
@@ -98,6 +99,7 @@
                 changes (-> (pcb/empty-changes it page-id)
                             (pcb/with-objects objects)
                             (pcb/add-object boolean-data {:index index})
+                            (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
                             (pcb/change-parent shape-id shapes))]
             (rx/of (dch/commit-changes changes)
                    (dws/select-shapes (d/ordered-set shape-id)))))))))

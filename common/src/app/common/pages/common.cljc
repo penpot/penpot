@@ -198,7 +198,9 @@
             :layout-item-min-h
             :layout-item-max-w
             :layout-item-min-w
-            :layout-item-align-self}
+            :layout-item-align-self
+            :layout-item-absolute
+            :layout-item-z-index}
 
    :rect #{:proportion-lock
            :width :height

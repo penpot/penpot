@@ -13,12 +13,44 @@
   transition: none;
   width: 100%;
 
-  svg {
-    fill: $color-gray-20;
-    height: 13px;
-    flex-shrink: 0;
-    margin-right: 8px;
-    width: 13px;
+  .icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 4px;
+    margin-bottom: 3px;
+    width: 18px;
+    height: 18px;
+
+    svg {
+      fill: $color-gray-20;
+      height: 12px;
+      width: 12px;
+    }
+
+    & .absolute {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 18px;
+      height: 18px;
+
+      svg {
+        width: 18px;
+        height: 18px;
+        fill: $color-gray-20;
+        fill-opacity: 0.3;
+      }
+    }
+  }
+
+  &.selected .icon .absolute svg {
+    fill: $color-primary;
+  }
+
+  &:hover .icon .absolute svg {
+    fill: $color-gray-60;
   }
 
   &.group {

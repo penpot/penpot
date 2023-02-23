@@ -30,6 +30,8 @@
 ;; :layout-item-min-h       ;; num
 ;; :layout-item-max-w       ;; num
 ;; :layout-item-min-w       ;; num
+;; :layout-item-absolute
+;; :layout-item-z-index
 
 (s/def ::layout  #{:flex :grid})
 (s/def ::layout-flex-dir #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse}) ;;TODO remove reverse-column and reverse-row after script
@@ -82,6 +84,8 @@
 (s/def ::layout-item-min-h ::us/safe-number)
 (s/def ::layout-item-max-w ::us/safe-number)
 (s/def ::layout-item-min-w ::us/safe-number)
+(s/def ::layout-item-absolute boolean?)
+(s/def ::layout-item-z-index ::us/safe-integer)
 
 (s/def ::layout-child-props
   (s/keys :opt-un [::layout-item-margin
@@ -92,7 +96,9 @@
                    ::layout-item-min-h
                    ::layout-item-max-w
                    ::layout-item-min-w
-                   ::layout-item-align-self]))
+                   ::layout-item-align-self
+                   ::layout-item-absolute
+                   ::layout-item-z-index]))
 
 (defn layout?
   ([objects id]
@@ -357,3 +363,44 @@
                 (some (partial fill-height? objects) children-ids))
            (and (row? objects frame-id)
                 (every? (partial fill-height? objects) children-ids)))))
+
+(defn layout-absolute?
+  ([objects id]
+   (layout-absolute? (get objects id)))
+  ([shape]
+   (true? (:layout-item-absolute shape))))
+
+(defn layout-z-index
+  ([objects id]
+   (layout-z-index (get objects id)))
+  ([shape]
+   (or (:layout-item-z-index shape) 0)))
+
+(defn remove-layout-container-data
+  [shape]
+  (dissoc shape
+          :layout
+          :layout-flex-dir
+          :layout-gap
+          :layout-gap-type
+          :layout-wrap-type
+          :layout-padding-type
+          :layout-padding
+          :layout-justify-content
+          :layout-align-items
+          :layout-align-content))
+
+(defn remove-layout-item-data
+  [shape]
+  (dissoc shape
+          :layout-item-margin
+          :layout-item-margin-type
+          :layout-item-h-sizing
+          :layout-item-v-sizing
+          :layout-item-max-h
+          :layout-item-min-h
+          :layout-item-max-w
+          :layout-item-min-w
+          :layout-item-align-self
+          :layout-item-absolute
+          :layout-item-z-index))

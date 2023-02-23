@@ -12,6 +12,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -98,6 +99,7 @@
         changes   (-> (pcb/empty-changes it page-id)
                       (pcb/with-objects objects)
                       (pcb/add-object group {:index group-idx})
+                      (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
                       (pcb/change-parent (:id group) (reverse shapes))
                       (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape)
                       (pcb/remove-objects ids-to-delete))]
@@ -142,6 +144,8 @@
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
+        (cond-> (ctl/layout? frame)
+          (pcb/update-shapes (:shapes frame) ctl/remove-layout-item-data))
         (pcb/change-parent parent-id children idx-in-parent)
         (pcb/remove-objects [(:id frame)]))))
 

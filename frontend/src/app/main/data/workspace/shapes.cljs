@@ -131,6 +131,8 @@
             (when (d/not-empty? to-move-shapes)
               (-> (pcb/empty-changes it page-id)
                   (pcb/with-objects objects)
+                  (cond-> (not (ctl/layout? objects frame-id))
+                    (pcb/update-shapes ordered-indexes  ctl/remove-layout-item-data))
                   (pcb/change-parent frame-id to-move-shapes 0)))]
 
         (if (some? changes)

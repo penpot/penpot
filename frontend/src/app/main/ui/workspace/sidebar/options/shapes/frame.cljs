@@ -38,7 +38,8 @@
 
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
         is-layout-child? (mf/deref is-layout-child-ref)
-        is-layout-container? (ctl/layout? shape)]
+        is-layout-container? (ctl/layout? shape)
+        is-layout-child-absolute? (ctl/layout-absolute? shape)]
     [:*
      [:& measures-menu {:ids [(:id shape)]
                         :values measure-values
@@ -47,7 +48,7 @@
      [:& component-menu {:ids comp-ids
                          :values comp-values
                          :shape-name (:name shape)}]
-     (when (not is-layout-child?)
+     (when (or (not is-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu {:ids ids
                              :values constraint-values}])
      [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]

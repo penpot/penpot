@@ -185,6 +185,7 @@
 (def play (icon-xref :play))
 (def plus (icon-xref :plus))
 (def pointer-inner (icon-xref :pointer-inner))
+(def position-absolute (icon-xref :position-absolute))
 (def position-bottom-center (icon-xref :position-bottom-center))
 (def position-bottom-left (icon-xref :position-bottom-left))
 (def position-bottom-right (icon-xref :position-bottom-right))
