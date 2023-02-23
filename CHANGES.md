@@ -10,6 +10,7 @@
 - Add visual feedback when proportionally scaling text elements with **K** [Taiga #3415](https://tree.taiga.io/project/penpot/us/3415)
 - Add visualization and mouse control to paddings in frames with layout [Taiga #4839](https://tree.taiga.io/project/penpot/task/4839)
 - Allow for absolute positioned elements inside layout [Taiga #4834](https://tree.taiga.io/project/penpot/us/4834)
+- Add z-index option for flex layout items [Taiga #2980](https://tree.taiga.io/project/penpot/us/2980)
 
 ### :bug: Bugs fixed
 

@@ -198,7 +198,11 @@
 
         on-change-position
         (fn [value]
-          (st/emit! (dwsl/update-layout-child ids {:layout-item-absolute (= value :absolute)})))]
+          (st/emit! (dwsl/update-layout-child ids {:layout-item-absolute (= value :absolute)})))
+
+        on-change-z-index
+        (fn [value]
+          (st/emit! (dwsl/update-layout-child ids {:layout-item-z-index value})))]
 
     [:div.element-set
      [:div.element-set-title
@@ -218,7 +222,15 @@
           {:alt "Absolute"
            :class  (dom/classnames :active (and (:layout-item-absolute values) (not= :multiple (:layout-item-absolute values))))
            :on-click #(on-change-position :absolute)}
-          "Absolute"]]]]
+          "Absolute"]]
+
+        [:div.tooltip.tooltip-bottom-left.z-index {:alt "z-index"}
+         i/layers
+         [:> numeric-input
+          {:placeholder "--"
+           :on-click #(dom/select-target %)
+           :on-change #(on-change-z-index %)
+           :value (:layout-item-z-index values)}]]]]
 
       [:div.layout-row
        [:div.row-title.sizing "Sizing"]

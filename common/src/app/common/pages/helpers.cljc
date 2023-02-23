@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -527,3 +528,18 @@
        (d/seek root-frame?)
        :id))
 
+(defn comparator-layout-z-index
+  [[idx-a child-a] [idx-b child-b]]
+  (cond
+    (> (ctl/layout-z-index child-a) (ctl/layout-z-index child-b)) 1
+    (< (ctl/layout-z-index child-a) (ctl/layout-z-index child-b)) -1
+    (> idx-a idx-b) 1
+    (< idx-a idx-b) -1
+    :else 0))
+
+(defn sort-layout-children-z-index
+  [children]
+  (->> children
+       (d/enumerate)
+       (sort comparator-layout-z-index)
+       (mapv second)))
