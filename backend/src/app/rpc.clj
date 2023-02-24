@@ -11,6 +11,7 @@
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
    [app.http.client :as-alias http.client]
@@ -163,7 +164,8 @@
 
 (defn- wrap-audit
   [cfg f mdata]
-  (if-let [collector (::audit/collector cfg)]
+  (if (or (contains? cf/flags :webhooks)
+          (contains? cf/flags :audit-log))
     (letfn [(handle-audit [params result]
               (let [resultm    (meta result)
                     request    (::http/request params)
@@ -208,13 +210,14 @@
                                     (::webhooks/event? resultm)
                                     false)}]
 
-                (audit/submit! collector event)))
+                (audit/submit! cfg event)))
 
             (handle-request [cfg params]
               (->> (f cfg params)
-                   (p/mcat (fn [result]
-                             (->> (handle-audit params result)
-                                  (p/map (constantly result)))))))]
+                   (p/fnly (fn [result cause]
+                             (when-not cause
+                               (handle-audit params result))))))]
+
       (if-not (::audit/skip mdata)
         (with-meta handle-request mdata)
         f))
@@ -314,8 +317,7 @@
 (s/def ::sprops map?)
 
 (defmethod ig/pre-init-spec ::methods [_]
-  (s/keys :req [::audit/collector
-                ::http.client/client
+  (s/keys :req [::http.client/client
                 ::db/pool
                 ::ldap/provider
                 ::wrk/executor]
