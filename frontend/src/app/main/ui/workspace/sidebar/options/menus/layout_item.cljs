@@ -206,7 +206,9 @@
 
     [:div.element-set
      [:div.element-set-title
-      [:span "Flex elements"]]
+      [:span (if is-layout-container?
+               "Flex board"
+               "Flex element")]]
 
      [:div.element-set-content.layout-item-menu
       [:div.layout-row
