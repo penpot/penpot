@@ -133,7 +133,7 @@
         text-overflow: ellipsis;
         width: 100%;
         white-space: nowrap;
-        line-height: 27px;
+        line-height: $lh-192; // Original value was 27px; 27px/14px = 192.857142857% => $lh-192 (rounded)
         max-width: 260px;
         @media #{$bp-max-1366} {
           max-width: 230px;
