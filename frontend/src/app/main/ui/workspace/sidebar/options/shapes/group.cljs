@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.group
   (:require
    [app.common.data :as d]
+   [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -37,6 +38,7 @@
         ids                     [(:id shape)]
         is-layout-child-ref     (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
         is-layout-child?        (mf/deref is-layout-child-ref)
+        is-layout-child-absolute? (ctl/layout-absolute? shape)
 
         type :group
         [measure-ids    measure-values]      (get-attrs [shape] objects :measure)
@@ -64,8 +66,9 @@
          :is-layout-container? false
          :values layout-item-values}])
 
-     (when (not is-layout-child?)
+     (when (or (not is-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
+
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]
 
      (when-not (empty? fill-ids)

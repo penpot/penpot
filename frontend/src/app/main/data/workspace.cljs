@@ -651,6 +651,10 @@
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
 
+        ;; Remove layout-item properties when moving a shape outside a layout
+        (cond-> (not (ctl/layout? objects parent-id))
+          (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
+
         ;; Move the shapes
         (pcb/change-parent parent-id
                            shapes

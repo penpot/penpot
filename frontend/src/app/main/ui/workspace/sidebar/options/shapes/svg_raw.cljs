@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
@@ -106,7 +107,8 @@
         layout-container-values (select-keys shape layout-container-flex-attrs)
 
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child? (mf/deref is-layout-child-ref)]
+        is-layout-child? (mf/deref is-layout-child-ref)
+        is-layout-child-absolute? (ctl/layout-absolute? shape)]
 
     (when (contains? svg-elements tag)
       [:*
@@ -124,7 +126,7 @@
            :is-layout-child? true
            :shape shape}])
 
-       (when (not is-layout-child?)
+       (when (or (not is-layout-child?) is-layout-child-absolute?)
          [:& constraints-menu {:ids ids
                                :values constraint-values}])
 

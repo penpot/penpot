@@ -94,9 +94,8 @@
 
 (defn- set-children-modifiers
   "Propagates the modifiers from a parent too its children applying constraints if necesary"
-  [modif-tree objects bounds parent transformed-parent-bounds ignore-constraints]
-  (let [children  (:shapes parent)
-        modifiers (dm/get-in modif-tree [(:id parent) :modifiers])]
+  [modif-tree children objects bounds parent transformed-parent-bounds ignore-constraints]
+  (let [modifiers (dm/get-in modif-tree [(:id parent) :modifiers])]
 
     ;; Move modifiers don't need to calculate constraints
     (if (ctm/only-move? modifiers)
@@ -155,7 +154,7 @@
         (gtr/transform-bounds modifiers)))))
 
 (defn- set-layout-modifiers
-  [modif-tree objects bounds parent transformed-parent-bounds]
+  [modif-tree children objects bounds parent transformed-parent-bounds]
 
   (letfn [(apply-modifiers [child]
             [(-> (get-group-bounds objects bounds modif-tree child)
@@ -173,7 +172,8 @@
 
               [layout-line modif-tree]))]
 
-    (let [children     (->> (cph/get-immediate-children objects (:id parent))
+    (let [children     (->> children
+                            (map (d/getf objects))
                             (remove :hidden)
                             (map apply-modifiers))
           layout-data  (gcl/calc-layout-data parent children @transformed-parent-bounds)
@@ -235,6 +235,7 @@
   "Propagate modifiers to its children"
   [objects bounds ignore-constraints modif-tree parent]
   (let [parent-id      (:id parent)
+        children       (:shapes parent)
         root?          (= uuid/zero parent-id)
         modifiers      (-> (dm/get-in modif-tree [parent-id :modifiers])
                            (ctm/select-geometry))
@@ -244,7 +245,7 @@
 
     (cond-> modif-tree
       (and has-modifiers? parent? (not root?))
-      (set-children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints))))
+      (set-children-modifiers children objects bounds parent transformed-parent-bounds ignore-constraints))))
 
 (defn- propagate-modifiers-layout
   "Propagate modifiers to its children"
@@ -258,14 +259,25 @@
         auto?          (or (ctl/auto-height? parent) (ctl/auto-width? parent))
         parent?        (or (cph/group-like-shape? parent) (cph/frame-shape? parent))
 
-        transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))]
+        transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))
+
+        children-modifiers
+        (if layout?
+          (->> (:shapes parent)
+               (filter #(ctl/layout-absolute? objects %)))
+          (:shapes parent))
+
+        children-layout
+        (when layout?
+          (->> (:shapes parent)
+               (remove #(ctl/layout-absolute? objects %))))]
 
     [(cond-> modif-tree
-       (and (not layout?) has-modifiers? parent? (not root?))
-       (set-children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints)
+       (and has-modifiers? parent? (not root?))
+       (set-children-modifiers children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints)
 
        layout?
-       (set-layout-modifiers objects bounds parent transformed-parent-bounds))
+       (set-layout-modifiers children-layout objects bounds parent transformed-parent-bounds))
 
      ;; Auto-width/height can change the positions in the parent so we need to recalculate
      (cond-> autolayouts auto? (conj (:id parent)))]))

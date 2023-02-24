@@ -1672,7 +1672,8 @@
       .align-self-style,
       .justify-content-style,
       .align-content-style,
-      .layout-behavior {
+      .layout-behavior,
+      .absolute {
         display: flex;
         border-radius: $br4;
         border: 1px solid $color-gray-60;
@@ -1693,8 +1694,10 @@
           border: none;
           cursor: pointer;
           border-right: 1px solid $color-gray-60;
+          color: $color-gray-20;
           &.active,
           &:hover {
+            color: $color-primary;
             svg {
               fill: $color-primary;
             }
@@ -1734,6 +1737,15 @@
         }
         :last-child {
           border-right: none;
+        }
+      }
+      .z-index {
+        display: flex;
+        align-items: center;
+        margin-left: 2px;
+        margin-top: -4px;
+        svg {
+          width: 30px;
         }
       }
     }
