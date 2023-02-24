@@ -177,56 +177,64 @@
       (watch [_ _ stream]
         (let [team-id  (:team-id project)
               stoper   (rx/filter (ptk/type? ::bundle-fetched) stream)]
-          (->> (rx/merge
-                ;; Initialize notifications & load team fonts
+          (->> (rx/concat
+                ;; Initialize notifications
                 (rx/of (dwn/initialize team-id id)
-                       (dwsl/initialize)
-                       (df/load-team-fonts team-id))
+                       (dwsl/initialize))
 
-                ;; Load all pages, independently if they are pointers or already
-                ;; resolved values.
-                (->> (rx/from (seq (:pages-index data)))
-                     (rx/merge-map
-                      (fn [[_ page :as kp]]
-                        (if (t/pointer? page)
-                          (resolve-pointer id kp)
-                          (rx/of kp))))
-                     (rx/merge-map
-                      (fn [[id page]]
-                        (let [page (update page :objects ctst/start-page-index)]
-                          (->> (uw/ask! {:cmd :initialize-page-index :page page})
-                               (rx/map (constantly [id page]))))))
-                     (rx/reduce conj {})
-                     (rx/map (fn [pages-index]
-                               (-> data
-                                   (assoc :pages-index pages-index)
-                                   (workspace-data-loaded)))))
+                ;; Load team fonts. We must ensure custom fonts are fully loadad before starting the workspace load
+                (rx/merge
+                 (->> stream
+                      (rx/filter (ptk/type? :app.main.data.fonts/team-fonts-loaded))
+                      (rx/take 1)
+                      (rx/ignore))
+                 (rx/of (df/load-team-fonts team-id)))
 
-                ;; Once workspace data is loaded, proceed asynchronously load
-                ;; the local library and all referenced libraries, without
-                ;; blocking the main workspace load process.
-                (->> stream
-                     (rx/filter (ptk/type? ::workspace-data-loaded))
-                     (rx/take 1)
-                     (rx/merge-map
-                      (fn [_]
-                        (rx/merge
-                         (rx/of (workspace-initialized))
+                (rx/merge
+                 ;; Load all pages, independently if they are pointers or already
+                 ;; resolved values.
+                 (->> (rx/from (seq (:pages-index data)))
+                      (rx/merge-map
+                       (fn [[_ page :as kp]]
+                         (if (t/pointer? page)
+                           (resolve-pointer id kp)
+                           (rx/of kp))))
+                      (rx/merge-map
+                       (fn [[id page]]
+                         (let [page (update page :objects ctst/start-page-index)]
+                           (->> (uw/ask! {:cmd :initialize-page-index :page page})
+                                (rx/map (constantly [id page]))))))
+                      (rx/reduce conj {})
+                      (rx/map (fn [pages-index]
+                                (-> data
+                                    (assoc :pages-index pages-index)
+                                    (workspace-data-loaded)))))
 
-                         (->> data
-                              (filter (comp t/pointer? val))
-                              (resolve-pointers id)
-                              (rx/map workspace-data-pointers-loaded))
+                 ;; Once workspace data is loaded, proceed asynchronously load
+                 ;; the local library and all referenced libraries, without
+                 ;; blocking the main workspace load process.
+                 (->> stream
+                      (rx/filter (ptk/type? ::workspace-data-loaded))
+                      (rx/take 1)
+                      (rx/merge-map
+                       (fn [_]
+                         (rx/merge
+                          (rx/of (workspace-initialized))
 
-                         (->> (rp/cmd! :get-file-libraries {:file-id id :features features})
-                              (rx/mapcat identity)
-                              (rx/mapcat
-                               (fn [{:keys [id data] :as file}]
-                                 (->> (filter (comp t/pointer? val) data)
-                                      (resolve-pointers id)
-                                      (rx/map #(update file :data merge %)))))
-                              (rx/reduce conj [])
-                              (rx/map libraries-fetched)))))))
+                          (->> data
+                               (filter (comp t/pointer? val))
+                               (resolve-pointers id)
+                               (rx/map workspace-data-pointers-loaded))
+
+                          (->> (rp/cmd! :get-file-libraries {:file-id id :features features})
+                               (rx/mapcat identity)
+                               (rx/mapcat
+                                (fn [{:keys [id data] :as file}]
+                                  (->> (filter (comp t/pointer? val) data)
+                                       (resolve-pointers id)
+                                       (rx/map #(update file :data merge %)))))
+                               (rx/reduce conj [])
+                               (rx/map libraries-fetched))))))))
 
                (rx/take-until stoper)))))))
 

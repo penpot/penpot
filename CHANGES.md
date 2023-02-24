@@ -3,6 +3,7 @@
 
 ### :bug: Bugs fixed
 - Fix copy and paste very nested inside itself [Taiga #4848](https://tree.taiga.io/project/penpot/issue/4848)
+- Fix custom fonts not rendered correctly [Taiga #4874](https://tree.taiga.io/project/penpot/issue/4874)
 
 ## 1.17.2
 
