@@ -429,7 +429,7 @@
             name    (cp/generate-unique-name unames (:name page))
 
             no_thumbnails_objects (->> (:objects page)
-                                      (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
+                                       (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail?))))
 
             page (-> page (assoc :name name :id id :objects no_thumbnails_objects))
 
@@ -1099,13 +1099,13 @@
                 qparams         {:page-id page-id}]
                 ;; qparams         {:page-id page-id :layout :assets}]
             (rx/merge
-              (rx/of (rt/nav :workspace pparams qparams))
-              (->> stream
-                   (rx/filter (ptk/type? ::dwv/initialize-viewport))
-                   (rx/take 1)
-                   (rx/mapcat #(do
-                                 (on-page-selected)
-                                 (rx/of (dws/select-shapes (lks/set shape-id)))))))))))))
+             (rx/of (rt/nav :workspace pparams qparams))
+             (->> stream
+                  (rx/filter (ptk/type? ::dwv/initialize-viewport))
+                  (rx/take 1)
+                  (rx/mapcat #(do
+                                (on-page-selected)
+                                (rx/of (dws/select-shapes (lks/set shape-id)))))))))))))
 
 (defn go-to-component
   [component-id]
@@ -1440,9 +1440,17 @@
     (and (= 1 (count selected))
          (= :frame (get-in objects [(first selected) :type])))))
 
-(defn same-frame-from-selected? [state frame-id]
-  (let [selected (wsh/lookup-selected state)]
-     (contains? frame-id (first selected))))
+(defn get-tree-root-shapes [tree]
+  ;; This fn gets a map of shapes and finds what shapes are parent of the rest
+  (let [shapes-in-tree (vals tree)
+        shape-ids (keys tree)
+        parent-ids (set (map #(:parent-id %) shapes-in-tree))]
+    (->> shape-ids
+         (filter #(contains? parent-ids %)))))
+
+(defn any-same-frame-from-selected? [state frame-ids]
+  (let [selected (first (wsh/lookup-selected state))]
+    (< 0 (count (filter #(= % selected) frame-ids)))))
 
 (defn frame-same-size?
   [paste-obj frame-obj]
@@ -1491,22 +1499,27 @@
               item))
 
           (calculate-paste-position [state mouse-pos in-viewport?]
-            (let [page-objects       (wsh/lookup-page-objects state)
-                  selected-objs      (map #(get paste-objects %) selected)
-                  first-selected-obj (first selected-objs)
-                  page-selected      (wsh/lookup-selected state)
-                  wrapper            (gsh/selection-rect selected-objs)
-                  orig-pos           (gpt/point (:x1 wrapper) (:y1 wrapper))
-                  frame-id           (first page-selected)
-                  frame-object       (get page-objects frame-id)
-                  base               (cph/get-base-shape page-objects page-selected)
-                  index              (cph/get-position-on-parent page-objects (:id base))]
+            (let [page-objects         (wsh/lookup-page-objects state)
+                  selected-objs        (map #(get paste-objects %) selected)
+                  first-selected-obj   (first selected-objs)
+                  page-selected        (wsh/lookup-selected state)
+                  wrapper              (gsh/selection-rect selected-objs)
+                  orig-pos             (gpt/point (:x1 wrapper) (:y1 wrapper))
+                  frame-id             (first page-selected)
+                  frame-object         (get page-objects frame-id)
+                  base                 (cph/get-base-shape page-objects page-selected)
+                  index                (cph/get-position-on-parent page-objects (:id base))
+                  tree-root            (get-tree-root-shapes paste-objects)
+                  only-one-root-shape? (and
+                                        (< 1 (count paste-objects))
+                                        (= 1 (count tree-root)))]
 
               (cond
                 (selected-frame? state)
 
-                (if (or (same-frame-from-selected? state (first (vals paste-objects)))
-                        (frame-same-size? paste-objects frame-object))
+                (if (or (any-same-frame-from-selected? state (keys paste-objects))
+                        (and only-one-root-shape?
+                             (frame-same-size? paste-objects (first tree-root))))
                   ;; Paste next to selected frame, if selected is itself or of the same size as the copied
                   (let [selected-frame-obj (get page-objects (first page-selected))
                         parent-id          (:parent-id base)
@@ -1544,7 +1557,7 @@
                               ;;    - Respect the distance of the object to the right and bottom in the original frame
                                 (gpt/point paste-x paste-y))]
                     [frame-id frame-id delta]))
-                
+
                 (empty? page-selected)
                 (let [frame-id (ctst/top-nested-frame page-objects mouse-pos)
                       delta    (gpt/subtract mouse-pos orig-pos)]
@@ -1837,8 +1850,8 @@
                  (dwm/create-shapes-img pos media-obj))]
 
     (->> (rx/concat
-           (rx/of (update-remove-graphics index))
-           (rx/map process-shapes shapes))
+          (rx/of (update-remove-graphics index))
+          (rx/map process-shapes shapes))
          (rx/catch #(do
                       (log/error :msg (str "Error removing " (:name media-obj))
                                  :hint (ex-message %)
@@ -1872,15 +1885,15 @@
             (ctst/generate-shape-grid media-points start-pos grid-gap)]
 
         (rx/concat
-          (rx/of (modal/show {:type :remove-graphics-dialog :file-name file-name})
-                 (initialize-remove-graphics (count media)))
-          (when new-page?
-            (rx/of (dch/commit-changes (-> (pcb/empty-changes it)
-                                           (pcb/set-save-undo? false)
-                                           (pcb/add-page (:id page) page)))))
-          (rx/mapcat (partial remove-graphic it file-data' page)
-                     (rx/from (d/enumerate (d/zip media shape-grid))))
-          (rx/of (complete-remove-graphics)))))))
+         (rx/of (modal/show {:type :remove-graphics-dialog :file-name file-name})
+                (initialize-remove-graphics (count media)))
+         (when new-page?
+           (rx/of (dch/commit-changes (-> (pcb/empty-changes it)
+                                          (pcb/set-save-undo? false)
+                                          (pcb/add-page (:id page) page)))))
+         (rx/mapcat (partial remove-graphic it file-data' page)
+                    (rx/from (d/enumerate (d/zip media shape-grid))))
+         (rx/of (complete-remove-graphics)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Read only
