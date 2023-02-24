@@ -211,28 +211,29 @@
                "Flex element")]]
 
      [:div.element-set-content.layout-item-menu
-      [:div.layout-row
-       [:div.row-title.sizing "Position"]
-       [:div.btn-wrapper
-        [:div.absolute
-         [:button.behavior-btn.tooltip.tooltip-bottom
-          {:alt "Static"
-           :class  (dom/classnames :active (not (:layout-item-absolute values)))
-           :on-click #(on-change-position :static)}
-          "Static"]
-         [:button.behavior-btn.tooltip.tooltip-bottom
-          {:alt "Absolute"
-           :class  (dom/classnames :active (and (:layout-item-absolute values) (not= :multiple (:layout-item-absolute values))))
-           :on-click #(on-change-position :absolute)}
-          "Absolute"]]
+      (when is-layout-child?
+        [:div.layout-row
+         [:div.row-title.sizing "Position"]
+         [:div.btn-wrapper
+          [:div.absolute
+           [:button.behavior-btn.tooltip.tooltip-bottom
+            {:alt "Static"
+             :class  (dom/classnames :active (not (:layout-item-absolute values)))
+             :on-click #(on-change-position :static)}
+            "Static"]
+           [:button.behavior-btn.tooltip.tooltip-bottom
+            {:alt "Absolute"
+             :class  (dom/classnames :active (and (:layout-item-absolute values) (not= :multiple (:layout-item-absolute values))))
+             :on-click #(on-change-position :absolute)}
+            "Absolute"]]
 
-        [:div.tooltip.tooltip-bottom-left.z-index {:alt "z-index"}
-         i/layers
-         [:> numeric-input
-          {:placeholder "--"
-           :on-click #(dom/select-target %)
-           :on-change #(on-change-z-index %)
-           :value (:layout-item-z-index values)}]]]]
+          [:div.tooltip.tooltip-bottom-left.z-index {:alt "z-index"}
+           i/layers
+           [:> numeric-input
+            {:placeholder "--"
+             :on-click #(dom/select-target %)
+             :on-change #(on-change-z-index %)
+             :value (:layout-item-z-index values)}]]]])
 
       (when (not (:layout-item-absolute values))
         [:*
