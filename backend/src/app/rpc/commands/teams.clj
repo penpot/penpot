@@ -855,7 +855,7 @@
                           {:team-id team-id
                            :email-to (str/lower email)})
                   (update :role keyword))
-        member (profile/retrieve-profile-data-by-email pool (:email invit))
+        member (profile/retrieve-profile-data-by-email pool (:email-to invit))
         token  (create-invitation-token cfg {:team-id (:team-id invit)
                                              :profile-id profile-id
                                              :valid-until (:valid-until invit)
