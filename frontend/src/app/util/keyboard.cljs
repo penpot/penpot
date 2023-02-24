@@ -50,6 +50,7 @@
 (def left-arrow? (is-key? "ArrowLeft"))
 (def right-arrow? (is-key? "ArrowRight"))
 (def alt-key? (is-key? "Alt"))
+(def shift-key? (is-key? "Shift"))
 (def ctrl-key? (is-key? "Control"))
 (def meta-key? (is-key? "Meta"))
 (def comma? (is-key? ","))

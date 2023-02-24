@@ -279,6 +279,9 @@
 (def workspace-read-only?
   (l/derived :read-only? workspace-global))
 
+(def workspace-paddings-selected
+  (l/derived :paddings-selected workspace-global))
+
 (defn object-by-id
   [id]
   (l/derived #(get % id) workspace-page-objects))

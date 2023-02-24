@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.layout-container
   (:require [app.common.data :as d]
             [app.common.data.macros :as dm]
+            [app.main.data.workspace :as udw]
             [app.main.data.workspace.shape-layout :as dwsl]
             [app.main.store :as st]
             [app.main.ui.components.numeric-input :refer [numeric-input]]
@@ -204,7 +205,13 @@
                     (= (dm/get-in values [:layout-padding :p2])
                        (dm/get-in values [:layout-padding :p4])))
              (dm/get-in values [:layout-padding :p2])
-             "--")]
+             "--")
+
+        select-paddings
+        (fn [p1? p2? p3? p4?]
+          (st/emit! (udw/set-paddings-selected {:p1 p1? :p2 p2? :p3 p3? :p4 p4?})))
+
+        select-padding #(select-paddings (= % :p1) (= % :p2) (= % :p3) (= % :p4))]
 
     [:div.padding-row
      (cond
@@ -218,6 +225,8 @@
           {:placeholder "--"
            :on-click #(dom/select-target %)
            :on-change (partial on-change :simple :p1)
+           :on-focus #(select-paddings true false true false)
+           :on-blur #(select-paddings false false false false)
            :value p1}]]
 
         [:div.padding-item.tooltip.tooltip-bottom-left
@@ -227,6 +236,8 @@
           {:placeholder "--"
            :on-click #(dom/select-target %)
            :on-change (partial on-change :simple :p2)
+           :on-focus #(select-paddings false true false true)
+           :on-blur #(select-paddings false false false false)
            :value p2}]]]
 
        (= padding-type :multiple)
@@ -244,6 +255,8 @@
              {:placeholder "--"
               :on-click #(dom/select-target %)
               :on-change (partial on-change :multiple num)
+              :on-focus #(select-padding num)
+              :on-blur #(select-paddings false false false false)
               :value (num (:layout-padding values))}]]])])
 
      [:div.padding-icons

@@ -430,6 +430,7 @@
                            :grow-type
                            :layout-item-h-sizing
                            :layout-item-v-sizing
+                           :layout-padding
                            :position-data
                            ]})
                  ;; We've applied the text-modifier so we can dissoc the temporary data

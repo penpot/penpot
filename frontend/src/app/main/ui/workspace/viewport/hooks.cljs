@@ -107,12 +107,13 @@
        (when (not= @cursor new-cursor)
          (reset! cursor new-cursor))))))
 
-(defn setup-keyboard [alt? mod? space? z?]
+(defn setup-keyboard [alt? mod? space? z? shift?]
   (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
   (hooks/use-stream ms/keyboard-mod #((reset! mod? %)
                                       (when-not % (reset! z? false)))) ;; In mac after command+z there is no event for the release of the z key
   (hooks/use-stream ms/keyboard-space #(reset! space? %))
-  (hooks/use-stream ms/keyboard-z #(reset! z? %)))
+  (hooks/use-stream ms/keyboard-z #(reset! z? %))
+  (hooks/use-stream ms/keyboard-shift #(reset! shift? %)))
 
 (defn group-empty-space?
   "Given a group `group-id` check if `hover-ids` contains any of its children. If it doesn't means

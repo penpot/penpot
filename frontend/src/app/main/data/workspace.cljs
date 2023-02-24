@@ -1544,7 +1544,6 @@
                               ;;    - Respect the distance of the object to the right and bottom in the original frame
                                 (gpt/point paste-x paste-y))]
                     [frame-id frame-id delta]))
-                
                 (empty? page-selected)
                 (let [frame-id (ctst/top-nested-frame page-objects mouse-pos)
                       delta    (gpt/subtract mouse-pos orig-pos)]
@@ -1902,6 +1901,18 @@
                (remove-layout-flag :colorpalette)
                (remove-layout-flag :textpalette))
         (rx/empty)))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Measurements
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-paddings-selected
+  [paddings-selected]
+  (ptk/reify ::set-paddings-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :paddings-selected] paddings-selected))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

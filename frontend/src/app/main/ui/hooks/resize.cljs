@@ -54,7 +54,7 @@
 
         on-mouse-move
         (mf/use-callback
-         (mf/deps min-val max-val)
+         (mf/deps min-val max-val negate?)
          (fn [event]
            (when (mf/ref-val dragging-ref)
              (let [start (mf/ref-val start-ref)
