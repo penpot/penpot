@@ -206,7 +206,7 @@
 
     [:div.element-set
      [:div.element-set-title
-      [:span (if is-layout-container?
+      [:span (if (and is-layout-container? (not is-layout-child?))
                "Flex board"
                "Flex element")]]
 
