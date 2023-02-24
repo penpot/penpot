@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.components.select :refer [select]]
@@ -34,8 +35,7 @@
    :layout-grid-dir ;; :row :column
    :layout-justify-items
    :layout-grid-columns
-   :layout-grid-rows
-   ])
+   :layout-grid-rows])
 
 (defn get-layout-flex-icon
   [type val is-col?]
@@ -54,7 +54,7 @@
         :center   i/align-items-row-center
         :stretch  i/align-items-row-strech
         :baseline i/align-items-row-baseline))
-    
+
     :justify-content
     (if is-col?
       (case val
@@ -343,14 +343,24 @@
                         :disabled (and (= :nowrap wrap-type) (not is-col?))}]]]])
 
 (mf/defc grid-edit-mode
-  [{:keys [active toggle-edit-mode] :as props}]
-  [:*
-   [:button.tooltip.tooltip-bottom-left
-    {:class  (dom/classnames :active  (= active true))
-     :alt    "Grid edit mode"
-     :on-click #(toggle-edit-mode)
-     :style {:padding 0}}
-    i/grid-layout-mode]])
+  [{:keys [id] :as props}]
+  (let [edition (mf/deref refs/selected-edition)
+        active? (= id edition)
+
+        toggle-edit-mode
+        (mf/use-callback
+         (mf/deps id edition)
+         (fn []
+           (if-not active?
+             (st/emit! (udw/start-edition-mode id))
+             (st/emit! :interrupt))))]
+
+    [:button.tooltip.tooltip-bottom-left
+     {:class  (dom/classnames :active  active?)
+      :alt    "Grid edit mode"
+      :on-click #(toggle-edit-mode)
+      :style {:padding 0}}
+     i/grid-layout-mode]))
 
 (mf/defc align-grid-row
   [{:keys [is-col? align-items set-align] :as props}]
@@ -456,14 +466,15 @@
           (st/emit! (dwsl/remove-layout ids))
           (reset! open? false))
 
-        ;; Uncomment when activating the grid options
-        set-flex            (fn []
-                              (st/emit! (dwsl/remove-layout ids))
-                              (on-add-layout :flex))
+        _set-flex
+        (fn []
+          (st/emit! (dwsl/remove-layout ids))
+          (on-add-layout :flex))
 
-        set-grid            (fn []
-                              (st/emit! (dwsl/remove-layout ids))
-                              (on-add-layout :grid))
+        _set-grid
+        (fn []
+          (st/emit! (dwsl/remove-layout ids))
+          (on-add-layout :grid))
 
         ;; Flex-direction
 
@@ -575,33 +586,25 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [type value]
-           (if (= type :row)
-             (st/emit! (dwsl/add-layout-column ids :layout-grid-rows value))
-             (st/emit! (dwsl/add-layout-column ids :layout-grid-columns value)))))
+           (st/emit! (dwsl/add-layout-track ids type value))))
 
         remove-element
         (mf/use-callback
          (mf/deps ids)
          (fn [type index]
-           (if (= type :row)
-             (st/emit! (dwsl/remove-layout-column ids :layout-grid-rows index))
-             (st/emit! (dwsl/remove-layout-column ids :layout-grid-columns index)))))
+           (st/emit! (dwsl/remove-layout-track ids type index))))
 
         set-column-value
         (mf/use-callback
          (mf/deps ids)
          (fn [type index value]
-           (if (= type :row)
-             (st/emit! (dwsl/change-layout-column ids :layout-grid-rows index {:value value}))
-             (st/emit! (dwsl/change-layout-column ids :layout-grid-columns index {:value value})))))
+           (st/emit! (dwsl/change-layout-track ids type index {:value value}))))
 
         set-column-type
         (mf/use-callback
          (mf/deps ids)
-         (fn [type index col-type]
-           (if (= type :row)
-             (st/emit! (dwsl/change-layout-column ids :layout-grid-rows index {:type col-type}))
-             (st/emit! (dwsl/change-layout-column ids :layout-grid-columns index {:type col-type})))))]
+         (fn [type index track-type]
+           (st/emit! (dwsl/change-layout-track ids type index {:type track-type}))))]
 
     [:div.element-set
      [:div.element-set-title
@@ -609,7 +612,7 @@
        [:span "Layout"]
        (if (and (not multiple) (:layout values))
          [:div.title-actions
-          [:div.layout-btns
+          #_[:div.layout-btns
            [:button {:on-click set-flex
                      :class (dom/classnames
                              :active (= :flex layout-type))} "Flex"]
@@ -622,8 +625,9 @@
 
      (when (:layout values)
        (when (not= :multiple layout-type)
-         (if (= :flex layout-type)
-           ;; FLEX
+         (case layout-type
+           :flex
+
            [:div.element-set-content.layout-menu
             [:div.layout-row
              [:div.direction-wrap.row-title "Direction"]
@@ -673,7 +677,8 @@
                                  :on-change-style change-padding-type
                                  :on-change on-padding-change}]]
 
-           ;; GRID
+           :grid
+
            [:div.element-set-content.layout-menu
             [:div.layout-row
              [:div.direction-wrap.row-title "Direction"]
@@ -687,10 +692,9 @@
                                      :set-direction #(set-direction dir :grid)
                                      :icon? false}])]]
 
-              [:div.edit-mode
-               [:& grid-edit-mode
-                {:active false
-                 :toggle-edit-mode ()}]]]]
+              (when (= 1 (count ids))
+                [:div.edit-mode
+                 [:& grid-edit-mode {:id (first ids)}]])]]
 
             [:div.layout-row
              [:div.align-items-grid.row-title "Align"]
@@ -739,4 +743,8 @@
 
             [:& padding-section {:values values
                                  :on-change-style change-padding-type
-                                 :on-change on-padding-change}]])))]))
+                                 :on-change on-padding-change}]]
+
+
+           ;; Default if not grid or flex
+           nil)))]))

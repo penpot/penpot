@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace.viewport
   (:require
-   [app.main.ui.workspace.viewport.grid-layout-editor :as grid-layout]
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -30,6 +29,7 @@
    [app.main.ui.workspace.viewport.drawarea :as drawarea]
    [app.main.ui.workspace.viewport.frame-grid :as frame-grid]
    [app.main.ui.workspace.viewport.gradients :as gradients]
+   [app.main.ui.workspace.viewport.grid-layout-editor :as grid-layout]
    [app.main.ui.workspace.viewport.guides :as guides]
    [app.main.ui.workspace.viewport.hooks :as hooks]
    [app.main.ui.workspace.viewport.interactions :as interactions]
@@ -158,6 +158,7 @@
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
         node-editing?     (and edition (not= :text (get-in base-objects [edition :type])))
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
+        grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         mode-inspect?       (= options-mode :inspect)
@@ -168,7 +169,7 @@
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file)
-        on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing?
+        on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing? grid-editing?
                                                  drawing-path? create-comment? space? panning z? workspace-read-only?)
         on-mouse-up       (actions/on-mouse-up disable-paste)
         on-pointer-down   (actions/on-pointer-down)
@@ -199,6 +200,7 @@
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
         show-text-editor?        (and editing-shape (= :text (:type editing-shape)))
+        show-grid-editor?        (and editing-shape (ctl/grid-layout? editing-shape))
         show-presence?           page-id
         show-prototypes?         (= options-mode :prototype)
         show-selection-handlers? (and (seq selected) (not show-text-editor?))
@@ -540,10 +542,9 @@
           {:id (first selected)
            :zoom zoom}])
 
-       (when-let [selected (first selected-shapes)]
-         (when (ctl/grid-layout? selected)
-           [:& grid-layout/editor
-            {:zoom zoom
-             :objects base-objects
-             :shape selected}]))
+       (when show-grid-editor?
+         [:& grid-layout/editor
+          {:zoom zoom
+           :objects base-objects
+           :shape (get base-objects edition)}])
        ]]]))

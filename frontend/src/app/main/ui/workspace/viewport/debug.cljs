@@ -225,7 +225,7 @@
             height (gpo/height-points parent-bounds)
             origin (gpo/origin parent-bounds)
             
-            {:keys [row-tracks column-tracks shape-cells]}
+            {:keys [row-tracks column-tracks]}
             (gsg/calc-layout-data parent children parent-bounds)]
 
         [:*
@@ -236,7 +236,8 @@
                      :y1 (:y start-p)
                      :x2 (:x end-p)
                      :y2 (:y end-p)
-                     :style {:stroke "red"}}]))
+                     :style {:stroke "red"
+                             :stroke-width (/ 1 zoom)}}]))
 
          (for [column-data column-tracks]
            (let [start-p (gpt/add origin (hv (:distance column-data)))
@@ -245,4 +246,5 @@
                      :y1 (:y start-p)
                      :x2 (:x end-p)
                      :y2 (:y end-p)
-                     :style {:stroke "red"}}]))]))))
+                     :style {:stroke "red"
+                             :stroke-width (/ 1 zoom)}}]))]))))

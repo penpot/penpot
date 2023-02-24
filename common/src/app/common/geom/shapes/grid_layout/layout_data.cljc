@@ -6,13 +6,10 @@
 
 (ns app.common.geom.shapes.grid-layout.layout-data
   (:require
-   [app.common.data :as d]
-   [app.common.uuid :as uuid]
-   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.points :as gpo]))
 
-(defn set-sample-data
+#_(defn set-sample-data
   [parent children]
 
   (let [parent (assoc parent
@@ -38,8 +35,8 @@
         layout-grid-cells
         (into
          {}
-         (for [[row-idx row] (d/enumerate (:layout-grid-rows parent))
-               [col-idx col] (d/enumerate (:layout-grid-columns parent))]
+         (for [[row-idx _row] (d/enumerate (:layout-grid-rows parent))
+               [col-idx _col] (d/enumerate (:layout-grid-columns parent))]
            (let [[_bounds shape] (nth children (+ (* row-idx num-columns) col-idx) nil)
                  cell-data {:id (uuid/next)
                             :row (inc row-idx)
@@ -69,7 +66,7 @@
     ))
 
 (defn calc-layout-data
-  [parent children transformed-parent-bounds]
+  [parent _children transformed-parent-bounds]
 
   (let [height (gpo/height-points transformed-parent-bounds)
         width  (gpo/width-points transformed-parent-bounds)
@@ -124,7 +121,7 @@
      :shape-cells shape-cells}))
 
 (defn get-cell-data
-  [{:keys [row-tracks column-tracks shape-cells]} transformed-parent-bounds [child-bounds child]]
+  [{:keys [row-tracks column-tracks shape-cells]} transformed-parent-bounds [_child-bounds child]]
 
   (let [origin (gpo/origin transformed-parent-bounds)
         hv     #(gpo/start-hv transformed-parent-bounds %)
@@ -138,7 +135,6 @@
 
             start-p (-> origin
                         (gpt/add (hv (:distance column)))
-                        (gpt/add (vv (:distance row))))
-            ]
+                        (gpt/add (vv (:distance row))))]
 
         (assoc grid-cell :start-p  start-p)))))

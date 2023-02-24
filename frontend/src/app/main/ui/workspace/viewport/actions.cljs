@@ -34,10 +34,10 @@
 
 (defn on-mouse-down
   [{:keys [id blocked hidden type]} selected edition drawing-tool text-editing?
-   node-editing? drawing-path? create-comment? space? panning z? workspace-read-only?]
+   node-editing? grid-editing? drawing-path? create-comment? space? panning z? workspace-read-only?]
   (mf/use-callback
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
-            node-editing? drawing-path? create-comment? @z? @space?
+            node-editing? grid-editing? drawing-path? create-comment? @z? @space?
             panning workspace-read-only?)
    (fn [bevent]
      (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
@@ -70,7 +70,7 @@
              (do
                (st/emit! (ms/->MouseEvent :down ctrl? shift? alt? meta?))
 
-               (when (and (not= edition id) text-editing?)
+               (when (and (not= edition id) (or text-editing? grid-editing?))
                  (st/emit! dw/clear-edition-mode))
 
                (when (and (not text-editing?)

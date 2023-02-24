@@ -80,7 +80,7 @@
         (fn [modif-tree shape]
           (let [modifiers (dm/get-in modif-tree [(:id shape) :modifiers])]
             (cond-> modif-tree
-              (ctm/has-geometry? modifiers)
+              (and (some? modifiers) (ctm/has-geometry? modifiers))
               (update-in [(:id shape) :modifiers] set-pixel-precision shape precision ignore-axis))))]
 
     (->> (keys modif-tree)

@@ -10,15 +10,12 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.grid-layout :as gsg]
-   [app.common.geom.shapes.grid-layout.layout-data :refer [set-sample-data] ]
    [app.common.geom.shapes.points :as gpo]
    [app.common.pages.helpers :as cph]
-   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.cursors :as cur]
-   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -211,7 +208,7 @@
            (when (mf/ref-val dragging-ref)
              (let [start (mf/ref-val start-ref)
                    pos  (dom/get-client-position event)
-                   delta (-> (gpt/to-vec start pos)
+                   _delta (-> (gpt/to-vec start pos)
                              (get (if (= type :column) :x :y)))]
 
                ;; TODO Implement resize
@@ -268,7 +265,7 @@
         height (gpo/height-points bounds)
         origin (gpo/origin bounds)
 
-        {:keys [row-tracks column-tracks shape-cells] :as layout-data}
+        {:keys [row-tracks column-tracks] :as layout-data}
         (gsg/calc-layout-data shape children bounds)]
 
     (mf/use-effect
@@ -289,16 +286,15 @@
                      :type :row}])
 
      (for [[_ {:keys [column row]}] (:layout-grid-cells shape)]
-       (let []
-         [:& grid-cell {:shape shape
-                        :layout-data layout-data
-                        :row row
-                        :column column
-                        :bounds bounds
-                        :zoom zoom
-                        :hover? (contains? hover-cells [row column])
-                        :selected? (= selected-cells [row column])
-                        }]))
+       [:& grid-cell {:shape shape
+                      :layout-data layout-data
+                      :row row
+                      :column column
+                      :bounds bounds
+                      :zoom zoom
+                      :hover? (contains? hover-cells [row column])
+                      :selected? (= selected-cells [row column])
+                      }])
 
      (for [[idx column-data] (d/enumerate column-tracks)]
        (let [start-p (-> origin (gpt/add (hv (:distance column-data))))

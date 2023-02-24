@@ -12,7 +12,8 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.flex-layout :as gsl]
+   [app.common.geom.shapes.flex-layout :as gslf]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
@@ -474,7 +475,10 @@
                                exclude-frames (if mod? exclude-frames exclude-frames-siblings)
                                target-frame   (ctst/top-nested-frame objects position exclude-frames)
                                flex-layout?   (ctl/flex-layout? objects target-frame)
-                               drop-index     (when flex-layout? (gsl/get-drop-index target-frame objects position))]
+                               grid-layout?   (ctl/grid-layout? objects target-frame)
+                               drop-index     (cond
+                                                flex-layout? (gslf/get-drop-index target-frame objects position)
+                                                grid-layout? (gslg/get-drop-index target-frame objects position))]
                            [move-vector target-frame drop-index])))
 
                       (rx/take-until stopper))]

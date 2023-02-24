@@ -31,7 +31,7 @@
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
-  [{:keys [shape row column] :as props}]
+  [{:keys [_shape row column] :as props}]
 
   (let [position-mode (mf/use-state :auto) ;; TODO this should come from shape
 
@@ -57,8 +57,9 @@
         row-end (inc row)
 
         on-change
-        (fn [side orientation value]
-          (if (= orientation :column)
+        (fn [_side _orientation _value]
+          ;; TODO
+          #_(if (= orientation :column)
             (case side
               :all ((reset! column-start value)
                     (reset! column-end value))
@@ -74,7 +75,7 @@
 
         on-area-name-change (fn [value]
                               (reset! area-name value))
-        on-key-press (fn [event])]
+        on-key-press (fn [_event])]
 
     [:div.element-set
      [:div.element-set-title

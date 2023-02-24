@@ -82,6 +82,7 @@
    (ptk/reify ::add-shape
      ptk/WatchEvent
      (watch [it state _]
+       (.log js/console (clj->js attrs))
        (let [page-id  (:current-page-id state)
              objects  (wsh/lookup-page-objects state page-id)
              selected (wsh/lookup-selected state)
@@ -95,6 +96,7 @@
                     selected)
 
              index (:index (meta attrs))
+
              changes  (-> (pcb/empty-changes it page-id)
                           (pcb/with-objects objects)
                           (cond-> (some? index)
@@ -102,7 +104,10 @@
                           (cond-> (nil? index)
                             (pcb/add-object shape))
                           (cond-> (some? (:parent-id attrs))
-                            (pcb/change-parent (:parent-id attrs) [shape])))
+                            (pcb/change-parent (:parent-id attrs) [shape]))
+                          (cond-> (ctl/grid-layout? objects (:parent-id shape))
+                            (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells))
+                          )
              undo-id (js/Symbol)]
 
          (rx/concat
@@ -133,7 +138,9 @@
                   (pcb/with-objects objects)
                   (cond-> (not (ctl/any-layout? objects frame-id))
                     (pcb/update-shapes ordered-indexes  ctl/remove-layout-item-data))
-                  (pcb/change-parent frame-id to-move-shapes 0)))]
+                  (pcb/change-parent frame-id to-move-shapes 0)
+                  (cond-> (ctl/grid-layout? objects frame-id)
+                    (pcb/update-shapes [frame-id] ctl/assign-cells))))]
 
         (if (some? changes)
           (rx/of (dch/commit-changes changes))
