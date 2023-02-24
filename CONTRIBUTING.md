@@ -101,14 +101,14 @@ Each commit should have:
 
 Examples of good commit messages:
 
-- :bug: Fix unexpected error on launching modal
-- :bug: Set proper error message on generic error
-- :sparkles: Enable new modal for profile
-- :zap: Improve performance of dashboard navigation
-- :wrench: Update default backend configuration
-- :books: Add more documentation for authentication process
-- :ambulance: Fix critical bug on user registration process
-- :tada: Add new approach for user registration
+- `:bug: Fix unexpected error on launching modal`
+- `:bug: Set proper error message on generic error`
+- `:sparkles: Enable new modal for profile`
+- `:zap: Improve performance of dashboard navigation`
+- `:wrench: Update default backend configuration`
+- `:books: Add more documentation for authentication process`
+- `:ambulance: Fix critical bug on user registration process`
+- `:tada: Add new approach for user registration`
 
 
 ## Code of conduct ##
