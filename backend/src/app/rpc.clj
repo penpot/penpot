@@ -202,7 +202,8 @@
 
 (defn- wrap-audit
   [cfg f mdata]
-  (if-let [collector (::audit/collector cfg)]
+  (if (or (contains? cf/flags :webhooks)
+          (contains? cf/flags :audit-log))
     (letfn [(handle-audit [params result]
               (let [resultm    (meta result)
                     request    (::http/request params)
@@ -247,13 +248,14 @@
                                     (::webhooks/event? resultm)
                                     false)}]
 
-                (audit/submit! collector event)))
+                (audit/submit! cfg event)))
 
             (handle-request [cfg params]
               (->> (f cfg params)
-                   (p/mcat (fn [result]
-                             (->> (handle-audit params result)
-                                  (p/map (constantly result)))))))]
+                   (p/fnly (fn [result cause]
+                             (when-not cause
+                               (handle-audit params result))))))]
+
       (if-not (::audit/skip mdata)
         (with-meta handle-request mdata)
         f))
@@ -348,8 +350,7 @@
          (into {}))))
 
 (defmethod ig/pre-init-spec ::methods [_]
-  (s/keys :req [::audit/collector
-                ::session/manager
+  (s/keys :req [::session/manager
                 ::http.client/client
                 ::db/pool
                 ::mbus/msgbus

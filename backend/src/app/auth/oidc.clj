@@ -458,12 +458,11 @@
         (ex/raise :type :restriction
                   :code :profile-blocked))
 
-      (when-let [collector (::audit/collector cfg)]
-        (audit/submit! collector {:type "command"
-                                  :name "login-with-password"
-                                  :profile-id (:id profile)
-                                  :ip-addr (audit/parse-client-ip request)
-                                  :props (audit/profile->props profile)}))
+      (audit/submit! cfg {:type "command"
+                          :name "login-with-password"
+                          :profile-id (:id profile)
+                          :ip-addr (audit/parse-client-ip request)
+                          :props (audit/profile->props profile)})
 
       (->> (redirect-response uri)
            (sxf request)))

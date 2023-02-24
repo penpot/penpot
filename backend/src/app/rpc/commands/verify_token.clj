@@ -153,45 +153,30 @@
     (if (some? profile)
       (if (or (= member-id profile-id)
               (= member-email (:email profile)))
-        ;; if we have logged-in user and it matches the invitation we
-        ;; proceed with accepting the invitation and joining the
-        ;; current profile to the invited team.
+
+        ;; if we have logged-in user and it matches the invitation we proceed
+        ;; with accepting the invitation and joining the current profile to the
+        ;; invited team.
         (let [profile (accept-invitation cfg claims invitation profile)]
           (-> (assoc claims :state :created)
               (rph/with-meta {::audit/name "accept-team-invitation"
-                              ::audit/props (merge
-                                             (audit/profile->props profile)
-                                             {:team-id (:team-id claims)
-                                              :role (:role claims)})
-                              ::audit/profile-id profile-id})))
+                              ::audit/profile-id (:id profile)
+                              ::audit/props {:team-id (:team-id claims)
+                                             :role (:role claims)
+                                             :invitation-id (:id invitation)}})))
 
         (ex/raise :type :validation
                   :code :invalid-token
                   :hint "logged-in user does not matches the invitation"))
 
-      ;; If we have not logged-in user, we try find the invited
-      ;; profile by member-id or member-email props of the invitation
-      ;; token; If profile is found, we accept the invitation and
-      ;; leave the user logged-in.
-      (if-let [member (db/get* conn :profile
-                               (if member-id
-                                 {:id member-id}
-                                 {:email member-email})
-                               {:columns [:id :email]})]
-        (let [profile (accept-invitation cfg claims invitation member)]
-          (-> (assoc claims :state :created)
-              (rph/with-transform (session/create-fn cfg (:id profile)))
-              (rph/with-meta {::audit/name "accept-team-invitation"
-                              ::audit/props (merge
-                                             (audit/profile->props profile)
-                                             {:team-id (:team-id claims)
-                                              :role (:role claims)})
-                              ::audit/profile-id member-id})))
+      ;; If we have not logged-in user, and invitation comes with member-id we
+      ;; redirect user to login, if no memeber-id is present in the invitation
+      ;; token, we redirect user the the register page.
 
-        {:invitation-token token
-         :iss :team-invitation
-         :redirect-to :auth-register
-         :state :pending}))))
+      {:invitation-token token
+       :iss :team-invitation
+       :redirect-to (if member-id :auth-login :auth-register)
+       :state :pending})))
 
 ;; --- Default
 
