@@ -71,19 +71,19 @@ button {
 p {
   font-size: $fs12;
   margin-bottom: 1rem;
-  line-height: $base-lh-sm;
+  line-height: $lh-133;
 
   @include bp(baby-bear) {
     font-size: $fs16;
-    line-height: $base-lh;
+    line-height: $lh-143;
   }
 }
 
 li {
-  line-height: $base-lh-sm;
+  line-height: $lh-133;
 
   @include bp(baby-bear) {
-    line-height: $base-lh;
+    line-height: $lh-143;
   }
 }
 
@@ -102,32 +102,32 @@ strong {
 h1 {
   font-size: $fs34;
   font-weight: $fw500;
-  line-height: $title-lh-sm;
+  line-height: $lh-115;
 
   @include bp(baby-bear) {
     font-size: $fs38;
-    line-height: $title-lh;
+    line-height: $lh-125;
   }
 
   &.supertitle {
     font-size: $fs44;
     font-weight: $fw300;
-    line-height: $title-lh-sm;
+    line-height: $lh-115;
 
     @include bp(baby-bear) {
       font-size: $fs44;
-      line-height: $title-lh;
+      line-height: $lh-125;
     }
   }
 }
 h2 {
   font-size: $fs24;
   font-weight: $fw300;
-  line-height: $title-lh-sm;
+  line-height: $lh-115;
 
   @include bp(baby-bear) {
     font-size: $fs32;
-    line-height: $title-lh;
+    line-height: $lh-125;
   }
 }
 

@@ -277,7 +277,7 @@ textarea {
         max-width: 85%;
         overflow: hidden;
         text-overflow: ellipsis;
-        line-height: 16px;
+        line-height: $lh-115;  // Original value was 16px; 16px/14px = 114.285714286% => $lh-115 (rounded)
         font-size: $fs14;
         color: $color-black;
       }

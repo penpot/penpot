@@ -50,7 +50,7 @@
   .main-message {
     color: $color-black;
     font-size: $fs80;
-    line-height: 150px;
+    line-height: $lh-188; // Original value was 150px; 150px/80px = 187.5 % => $lh-188 (rounded)
     text-align: center;
   }
 

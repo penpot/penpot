@@ -398,7 +398,7 @@ span.element-name {
 }
 .active-filters {
   margin-top: 5px;
-  line-height: 26px;
+  line-height: 26px; // Original value was 26px; 26px/11px = 236.363636364% => $lh-236 (rounded)
   font-size: $fs11;
   margin: 0 0.5rem;
   span {

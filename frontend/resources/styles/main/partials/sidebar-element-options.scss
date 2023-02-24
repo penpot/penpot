@@ -895,7 +895,7 @@
   border-radius: $br2;
   color: $color-gray-20;
   font-size: $fs11;
-  line-height: 16px;
+  line-height: $lh-145; // Original value was 16px; 16px/11px = 145.454545455% => $lh-145
   flex-grow: 1;
   padding: 0.25rem 0;
 

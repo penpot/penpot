@@ -46,10 +46,22 @@ $fw800: 800; // Extra Bold
 $fw900: 900; // Black
 
 // Line height
-$base-lh: 1.43;
-$base-lh-sm: 1.33;
-$title-lh: 1.25;
-$title-lh-sm: 1.15;
+// Value are predefined as unitless (ratio to font size in %), because that is the best approach for browsers according to https://developer.mozilla.org/en-US/docs/Web/CSS/line-height#values
+$lh-normal: normal; // line-height depends of font-family, font-size, your browser, maybe your OS http://meyerweb.com/eric/thoughts/2008/05/06/line-height-abnormal/
+$lh-088: 0.88;
+$lh-100: 1;
+$lh-115: 1.15; // original $title-lh-sm
+$lh-125: 1.25; // original $title-lh
+$lh-128: 1.28;
+$lh-133: 1.33; // original $base-lh-sm
+$lh-143: 1.43; // original $base-lh
+$lh-145: 1.45;
+$lh-150: 1.5;
+$lh-188: 1.88;
+$lh-192: 1.92;
+$lh-200: 2;
+$lh-236: 2.36;
+$lh-500: 5;
 
 // Work Sans
 @include font-face("worksans", "WorkSans-Thin", "100");

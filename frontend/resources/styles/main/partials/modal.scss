@@ -520,7 +520,7 @@
     h3,
     p {
       font-size: $fs12;
-      line-height: 1.5;
+      line-height: $lh-150;
       margin: 0;
       color: $color-black;
       padding: 0;
@@ -2024,7 +2024,7 @@
     h2 {
       font-size: $fs24;
       color: $color-black;
-      line-height: $fs36;
+      line-height: $lh-150; // Original value was 2.25rem = 36px; 36px/24px = 150% => $lh-150
       letter-spacing: 0px;
       margin: 0 30px 20px 0;
     }
