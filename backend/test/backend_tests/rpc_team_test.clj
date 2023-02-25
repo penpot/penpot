@@ -166,6 +166,7 @@
 (t/deftest accept-invitation-tokens
   (let [profile1 (th/create-profile* 1 {:is-active true})
         profile2 (th/create-profile* 2 {:is-active true})
+        profile3 (th/create-profile* 3 {:is-active true})
 
         team     (th/create-team* 1 {:profile-id (:id profile1)})
 
@@ -181,25 +182,29 @@
                                   :member-email (:email profile2)
                                   :member-id (:id profile2)})]
 
-      ;; --- Verify token as anonymous user
+      (t/testing "Verify token as anonymous user"
+        (db/insert! pool :team-invitation
+                    {:team-id (:id team)
+                     :email-to (:email profile2)
+                     :role "editor"
+                     :valid-until (dt/in-future "48h")})
 
-      (db/insert! pool :team-invitation
-                  {:team-id (:id team)
-                   :email-to (:email profile2)
-                   :role "editor"
-                   :valid-until (dt/in-future "48h")})
+        (let [data {::th/type :verify-token :token token}
+              out  (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (th/success? out))
 
-      (let [data {::th/type :verify-token :token token}
-            out  (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (th/success? out))
-        (let [result (:result out)]
-          (t/is (= :created (:state result)))
-          (t/is (= (:email profile2) (:member-email result)))
-          (t/is (= (:id profile2) (:member-id result))))
+          (let [result (:result out)]
+            (t/is (contains? result :invitation-token))
+            (t/is (contains? result :iss))
+            (t/is (contains? result :redirect-to))
+            (t/is (contains? result :state))
 
-        (let [rows (db/query pool :team-profile-rel {:team-id (:id team)})]
-          (t/is (= 2 (count rows)))))
+            (t/is (= :pending (:state result)))
+            (t/is (= :auth-login (:redirect-to result))))
+
+          (let [rows (db/query pool :team-profile-rel {:team-id (:id team)})]
+            (t/is (= 1 (count rows))))))
 
       ;; Clean members
       (db/delete! pool :team-profile-rel
@@ -207,46 +212,37 @@
                    :profile-id (:id profile2)})
 
 
-      ;; --- Verify token as logged-in user
+      (t/testing "Verify token as logged-in user"
+        (let [data {::th/type :verify-token
+                    ::rpc/profile-id (:id profile2)
+                    :token token}
+              out  (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (th/success? out))
+          (let [result (:result out)]
+            (t/is (= :created (:state result)))
+            (t/is (= (:email profile2) (:member-email result)))
+            (t/is (= (:id profile2) (:member-id result))))
 
-      (db/insert! pool :team-invitation
-                  {:team-id (:id team)
-                   :email-to (:email profile2)
-                   :role "editor"
-                   :valid-until (dt/in-future "48h")})
+          (let [rows (db/query pool :team-profile-rel {:team-id (:id team)})]
+            (t/is (= 2 (count rows))))))
 
-      (let [data {::th/type :verify-token
-                  ::rpc/profile-id (:id profile2)
-                  :token token}
-            out  (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (th/success? out))
-        (let [result (:result out)]
-          (t/is (= :created (:state result)))
-          (t/is (= (:email profile2) (:member-email result)))
-          (t/is (= (:id profile2) (:member-id result))))
+      (t/testing "Verify token as logged-in wrong user"
+        (db/insert! pool :team-invitation
+                    {:team-id (:id team)
+                     :email-to (:email profile3)
+                     :role "editor"
+                     :valid-until (dt/in-future "48h")})
 
-        (let [rows (db/query pool :team-profile-rel {:team-id (:id team)})]
-          (t/is (= 2 (count rows)))))
-
-
-      ;; --- Verify token as logged-in wrong user
-
-      (db/insert! pool :team-invitation
-                  {:team-id (:id team)
-                   :email-to (:email profile2)
-                   :role "editor"
-                   :valid-until (dt/in-future "48h")})
-
-      (let [data {::th/type :verify-token
-                  ::rpc/profile-id (:id profile1)
-                  :token token}
-            out  (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (not (th/success? out)))
-        (let [edata (-> out :error ex-data)]
-          (t/is (= :validation (:type edata)))
-          (t/is (= :invalid-token (:code edata)))))
+        (let [data {::th/type :verify-token
+                    ::rpc/profile-id (:id profile1)
+                    :token token}
+              out  (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (not (th/success? out)))
+          (let [edata (-> out :error ex-data)]
+            (t/is (= :validation (:type edata)))
+            (t/is (= :invalid-token (:code edata))))))
 
       )))
 
