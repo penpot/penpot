@@ -22,7 +22,6 @@
    [app.http.session :as-alias session]
    [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
-   [app.loggers.audit :as-alias audit]
    [app.loggers.audit.tasks :as-alias audit.tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
