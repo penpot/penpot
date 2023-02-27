@@ -4,6 +4,8 @@
 
 ### :boom: Breaking changes & Deprecations
 
+- Adds environment variables for specifying the export and backend url for the frontend docker image. [Github #2983](https://github.com/penpot/penpot/pull/2983)
+
 ### :sparkles: New features
 - Adds more accessibility improvements in dashboard [Taiga #4577](https://tree.taiga.io/project/penpot/us/4577)
 - Adds paddings and gaps prediction on layout creation [Taiga #4838](https://tree.taiga.io/project/penpot/task/4838)
