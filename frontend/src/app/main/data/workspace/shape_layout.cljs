@@ -349,7 +349,10 @@
         col? (ctl/col? parent)
         row? (ctl/row? parent)
 
-        all-children (->> parent :shapes (map (d/getf objects)))]
+        all-children (->> parent
+                          :shapes
+                          (map (d/getf objects))
+                          (remove ctl/layout-absolute?))]
 
     (cond-> shape
       ;; If the parent is hug width and the direction column
