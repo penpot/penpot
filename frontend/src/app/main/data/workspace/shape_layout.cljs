@@ -183,6 +183,13 @@
                 (-> shape
                     (assoc :layout-item-h-sizing :auto
                            :layout-item-v-sizing :auto))))
+             ;; Set the children to fixed to remove strange interactions
+             (dwc/update-shapes
+              selected
+              (fn [shape]
+                (-> shape
+                    (assoc :layout-item-h-sizing :fix
+                           :layout-item-v-sizing :fix))))
 
              (ptk/data-event :layout/update [new-shape-id])
              (dws/delete-shapes page-id selected)
@@ -204,6 +211,13 @@
                     (merge flex-params)
                     (assoc :layout-item-h-sizing :auto
                            :layout-item-v-sizing :auto))))
+             ;; Set the children to fixed to remove strange interactions
+             (dwc/update-shapes
+              selected
+              (fn [shape]
+                (-> shape
+                    (assoc :layout-item-h-sizing :fix
+                           :layout-item-v-sizing :fix))))
 
              (ptk/data-event :layout/update [new-shape-id])
              (dwu/commit-undo-transaction undo-id))))))))
