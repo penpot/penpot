@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
@@ -362,6 +363,7 @@
 
 (defn calc-overlay-position
   [interaction                        ;; interaction data
+   objects                            ;; the objects tree
    relative-to-shape                  ;; the interaction position is realtive to this sape
    base-frame                         ;; the base frame of the current interaction
    dest-frame                         ;; the frame to display with this interaction
@@ -371,7 +373,7 @@
   (assert (has-overlay-opts interaction))
   (if (nil? dest-frame)
     (gpt/point 0 0)
-    (let [overlay-size           (:selrect dest-frame)
+    (let [overlay-size           (gsb/get-object-bounds objects dest-frame)
           base-frame-size        (:selrect base-frame)
           relative-to-shape-size (:selrect relative-to-shape)
           relative-to-adjusted-to-base-frame {:x (- (:x relative-to-shape-size) (:x base-frame-size))
