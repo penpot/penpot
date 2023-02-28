@@ -84,12 +84,21 @@
         selection-parents     (mf/deref selection-parents-ref)
 
         flex-child? (->> selection-parents (some ctl/layout?))
-
+        absolute? (ctl/layout-absolute? shape)
         flex-container? (ctl/layout? shape)
         flex-auto-width? (ctl/auto-width? shape)
         flex-fill-width? (ctl/fill-width? shape)
         flex-auto-height? (ctl/auto-height? shape)
         flex-fill-height? (ctl/fill-height? shape)
+
+        disabled-position-x? (and flex-child? (not absolute?))
+        disabled-position-y? (and flex-child? (not absolute?))
+        disabled-width-sizing? (and (or flex-child? flex-container?)
+                                    (or flex-auto-width? flex-fill-width?)
+                                    (not absolute?))
+        disabled-height-sizing? (and (or flex-child? flex-container?)
+                                     (or flex-auto-height? flex-fill-height?)
+                                     (not absolute?))
 
         ;; To show interactively the measures while the user is manipulating
         ;; the shape with the mouse, generate a copy of the shapes applying
@@ -309,7 +318,7 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-width-change
-                              :disabled (and (or flex-child? flex-container?) (or flex-auto-width? flex-fill-width?))
+                              :disabled disabled-width-sizing?
                               :value (:width values)}]]
 
           [:div.input-element.height {:title (tr "workspace.options.height")}
@@ -318,7 +327,7 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-height-change
-                              :disabled (and (or flex-child? flex-container?) (or flex-auto-height? flex-fill-height?))
+                              :disabled disabled-height-sizing?
                               :value (:height values)}]]
 
           [:div.lock-size {:class (dom/classnames
@@ -338,13 +347,13 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-pos-x-change
-                              :disabled flex-child?
+                              :disabled disabled-position-x?
                               :value (:x values)}]]
           [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
                               :on-click select-all
-                              :disabled flex-child?
+                              :disabled disabled-position-y?
                               :on-change on-pos-y-change
                               :value (:y values)}]]])
 
