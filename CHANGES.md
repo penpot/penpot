@@ -1,4 +1,9 @@
 # CHANGELOG
+## 1.17.3
+
+### :bug: Bugs fixed
+- Fix copy and paste very nested inside itself [Taiga #4848](https://tree.taiga.io/project/penpot/issue/4848)
+
 ## 1.17.2
 
 ### :bug: Bugs fixed
@@ -8,10 +13,6 @@
 - Fix correct behaviour for space-around and added space-evenly option
 - Fix duplicate with alt and undo only undo one step [Taiga #4746](https://tree.taiga.io/project/penpot/issue/4746)
 - Fix problem creating frames inside layout [Taiga #4844](https://tree.taiga.io/project/penpot/issue/4844)
-
-## 1.17.2
-
-### :bug: Bugs fixed
 - Fix paste board inside itself [Taiga #4775](https://tree.taiga.io/project/penpot/issue/4775)
 - Fix middle button panning can drag guides [Taiga #4266](https://tree.taiga.io/project/penpot/issue/4266)
 
