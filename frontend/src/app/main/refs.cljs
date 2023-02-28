@@ -282,6 +282,12 @@
 (def workspace-paddings-selected
   (l/derived :paddings-selected workspace-global))
 
+(def workspace-gap-selected
+  (l/derived :gap-selected workspace-global))
+
+(def workspace-margins-selected
+  (l/derived :margins-selected workspace-global))
+
 (defn object-by-id
   [id]
   (l/derived #(get % id) workspace-page-objects))

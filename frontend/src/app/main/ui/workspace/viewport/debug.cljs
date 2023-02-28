@@ -224,7 +224,7 @@
             width (gpo/width-points parent-bounds)
             height (gpo/height-points parent-bounds)
             origin (gpo/origin parent-bounds)
-            
+
             {:keys [row-tracks column-tracks]}
             (gsg/calc-layout-data parent children parent-bounds)]
 

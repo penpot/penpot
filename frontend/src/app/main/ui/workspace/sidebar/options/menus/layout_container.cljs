@@ -312,36 +312,45 @@
 
 (mf/defc gap-section
   [{:keys [is-col? wrap-type gap-selected? set-gap gap-value]}]
-  [:div.layout-row
-   [:div.gap.row-title "Gap"]
-   [:div.gap-group
-    [:div.gap-row.tooltip.tooltip-bottom-left
-     {:alt "Column gap"}
-     [:span.icon
-      i/auto-gap]
-     [:> numeric-input {:no-validate true
-                        :placeholder "--"
+  (let [select-gap
+        (fn [gap]
+          (st/emit! (udw/set-gap-selected gap)))]
+    [:div.layout-row
+     [:div.gap.row-title "Gap"]
+     [:div.gap-group
+      [:div.gap-row.tooltip.tooltip-bottom-left
+       {:alt "Column gap"}
+       [:span.icon
+        i/auto-gap]
+       [:> numeric-input {:no-validate true
+                          :placeholder "--"
                         :on-focus (fn [event]
-                                    (reset! gap-selected? :column-gap)
-                                    (dom/select-target event))
-                        :on-change (partial set-gap (= :nowrap wrap-type) :column-gap)
-                        :on-blur #(reset! gap-selected? :none)
-                        :value (:column-gap gap-value)
-                        :disabled (and (= :nowrap wrap-type) is-col?)}]]
+                                      (select-gap :column-gap)
+                                      (reset! gap-selected? :column-gap)
+                                      (dom/select-target event))
+                          :on-change (partial set-gap (= :nowrap wrap-type) :column-gap)
+                          :on-blur (fn [_]
+                                     (select-gap nil)
+                                     (reset! gap-selected? :none))
+                          :value (:column-gap gap-value)
+                          :disabled (and (= :nowrap wrap-type) is-col?)}]]
 
-    [:div.gap-row.tooltip.tooltip-bottom-left
-     {:alt "Row gap"}
-     [:span.icon.rotated
-      i/auto-gap]
-     [:> numeric-input {:no-validate true
-                        :placeholder "--"
+      [:div.gap-row.tooltip.tooltip-bottom-left
+       {:alt "Row gap"}
+       [:span.icon.rotated
+        i/auto-gap]
+       [:> numeric-input {:no-validate true
+                          :placeholder "--"
                         :on-focus (fn [event]
-                                    (reset! gap-selected? :row-gap)
-                                    (dom/select-target event))
-                        :on-change (partial set-gap (= :nowrap wrap-type) :row-gap)
-                        :on-blur #(reset! gap-selected? :none)
-                        :value (:row-gap gap-value)
-                        :disabled (and (= :nowrap wrap-type) (not is-col?))}]]]])
+                                      (select-gap :row-gap)
+                                      (reset! gap-selected? :row-gap)
+                                      (dom/select-target event))
+                          :on-change (partial set-gap (= :nowrap wrap-type) :row-gap)
+                          :on-blur (fn [_]
+                                     (select-gap nil)
+                                     (reset! gap-selected? :none))
+                          :value (:row-gap gap-value)
+                          :disabled (and (= :nowrap wrap-type) (not is-col?))}]]]]))
 
 (mf/defc grid-edit-mode
   [{:keys [id] :as props}]
