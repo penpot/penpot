@@ -1940,6 +1940,20 @@
     (update [_ state]
       (assoc-in state [:workspace-global :paddings-selected] paddings-selected))))
 
+(defn set-gap-selected
+  [gap-selected]
+  (ptk/reify ::set-gap-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :gap-selected] gap-selected))))
+
+(defn set-margins-selected
+  [margins-selected]
+  (ptk/reify ::set-margins-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :margins-selected] margins-selected))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Orphan Shapes

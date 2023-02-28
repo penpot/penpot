@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.workspace :as udw]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -46,7 +47,12 @@
                     (= (dm/get-in values [:layout-item-margin :m2])
                        (dm/get-in values [:layout-item-margin :m4])))
              (dm/get-in values [:layout-item-margin :m2])
-             "--")]
+             "--")
+        select-margins
+        (fn [m1? m2? m3? m4?]
+          (st/emit! (udw/set-margins-selected {:m1 m1? :m2 m2? :m3 m3? :m4 m4?})))
+
+        select-margin #(select-margins (= % :m1) (= % :m2) (= % :m3) (= % :m4))]
 
     [:div.margin-row
      (cond
@@ -58,8 +64,11 @@
          [:span.icon i/auto-margin-both-sides]
          [:> numeric-input
           {:placeholder "--"
-           :on-focus #(dom/select-target %)
+           :on-focus (fn [event]
+                       (select-margins true false true false)
+                       (dom/select-target event))
            :on-change (partial on-margin-change :simple :m1)
+           :on-blur #(select-margins false false false false)
            :value m1}]]
 
         [:div.margin-item.tooltip.tooltip-bottom-left
@@ -67,8 +76,11 @@
          [:span.icon.rotated i/auto-margin-both-sides]
          [:> numeric-input
           {:placeholder "--"
-           :on-focus #(dom/select-target %)
+           :on-focus (fn [event]
+                       (select-margins false true false true)
+                       (dom/select-target event))
            :on-change (partial on-margin-change :simple :m2)
+           :on-blur #(select-margins false false false false)
            :value m2}]]]
 
        (= margin-type :multiple)
@@ -84,8 +96,11 @@
            [:div.input-element.auto
             [:> numeric-input
              {:placeholder "--"
-              :on-focus #(dom/select-target %)
+              :on-focus (fn [event]
+                          (select-margin num)
+                          (dom/select-target event))
               :on-change (partial on-margin-change :multiple num)
+              :on-blur #(select-margins false false false false)
               :value (num (:layout-item-margin values))}]]])])
 
      [:div.margin-item-icons
