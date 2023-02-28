@@ -12,6 +12,13 @@
   padding: $size-1 $size-2;
   transition: none;
   width: 100%;
+  .toggle-content {
+    svg {
+      display: flex;
+      height: 13px;
+      width: 13px;
+    }
+  }
 
   .icon {
     position: relative;
