@@ -118,13 +118,13 @@
   [:*
    [:button.tooltip.tooltip-bottom
     {:class  (dom/classnames :active  (= wrap-type :nowrap))
-     :alt    "Nowrap"
+     :alt    "No wrap"
      :on-click #(set-wrap :nowrap)
      :style {:padding 0}}
     [:span.no-wrap i/minus]]
    [:button.wrap.tooltip.tooltip-bottom
     {:class  (dom/classnames :active  (= wrap-type :wrap))
-     :alt    "wrap"
+     :alt    "Wrap"
      :on-click #(set-wrap :wrap)}
     i/auto-wrap]])
 
