@@ -6,7 +6,6 @@
 
 (ns app.main.ui.dashboard
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.math :as mth]
    [app.common.spec :as us]
@@ -318,7 +317,6 @@
 
     (mf/use-effect
      (fn []
-       (dom/set-html-theme-color clr/white "light")
        (let [events [(events/listen goog/global EventType.KEYDOWN
                                     (fn [event]
                                       (when (kbd/enter? event)

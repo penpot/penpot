@@ -58,10 +58,10 @@
   (.setAttribute (.querySelector js/document "html") "lang" lang))
 
 (defn set-html-theme-color
-  [^string color scheme]
-  (let [meta-node (.querySelector js/document "meta[name='theme-color']")]
-    (.setAttribute meta-node "content" color)
-    (.setAttribute meta-node "media" (str/format "(prefers-color-scheme: %s)" scheme))))
+  [^string color]
+  (let [node (.querySelector js/document "body")]
+    (.removeAttribute node "class")
+    (.add ^js (.-classList ^js node) color)))
 
 (defn set-page-style!
   [styles]

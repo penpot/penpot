@@ -1,0 +1,18 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+.light {
+  --color-background-primary: var(--light-gray-1);
+  --color-background-secondary: var(--light-gray-2);
+  --color-background-tertiary: var(--light-gray-3);
+  --color-background-quaternary: var(--light-gray-4);
+  --color-foreground-primary: var(--black);
+  --color-foreground-secondary: var(--off-black);
+  --accent-primary: var(--purple);
+  --accent-primary-muted: var(--purple-30);
+  --accent-secondary: var(--blue);
+  --accent-tertiary: var(--strong-purple);
+}

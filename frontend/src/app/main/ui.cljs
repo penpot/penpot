@@ -23,6 +23,7 @@
    [app.main.ui.static :as static]
    [app.main.ui.viewer :as viewer]
    [app.main.ui.workspace :as workspace]
+   [app.util.dom :as dom]
    [app.util.router :as rt]
    [rumext.v2 :as mf]))
 
@@ -128,7 +129,11 @@
   []
   (let [route   (mf/deref refs/route)
         edata   (mf/deref refs/exception)
-        profile (mf/deref refs/profile)]
+        profile (mf/deref refs/profile)
+        theme   (or (:theme profile) "default")]
+
+    (mf/with-effect [theme]
+      (dom/set-html-theme-color theme))
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/current-profile) {:value profile}
       (if edata

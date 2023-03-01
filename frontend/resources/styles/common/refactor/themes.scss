@@ -4,7 +4,5 @@
 //
 // Copyright (c) KALEIDOS INC
 
-$autocomplete: 30000;
-$index-lightbox-shadow: 60000;
-$index-lightbox: 60001;
-$index-lightbox-close-x: 200;
+@import "./themes/default-theme.scss";
+@import "./themes/light-theme.scss";

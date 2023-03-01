@@ -90,3 +90,19 @@
 @import "main/partials/exception-page";
 @import "main/partials/share-link";
 @import "main/partials/af-signup-questions";
+
+//#################################################
+// Refactor
+//#################################################
+
+//#################################################
+// MAIN STYLES
+//#################################################
+
+@import "common/refactor/color-defs.scss";
+@import "common/refactor/themes.scss";
+@import "common/refactor/design-tokens.scss";
+@import "common/refactor/fonts.scss";
+@import "common/refactor/spacing.scss";
+@import "common/refactor/borders.scss";
+@import "common/refactor/shadows.scss";
