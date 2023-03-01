@@ -96,7 +96,6 @@
   "Propagates the modifiers from a parent too its children applying constraints if necesary"
   [modif-tree children objects bounds parent transformed-parent-bounds ignore-constraints]
   (let [modifiers (dm/get-in modif-tree [(:id parent) :modifiers])]
-
     ;; Move modifiers don't need to calculate constraints
     (if (ctm/only-move? modifiers)
       (loop [modif-tree modif-tree
@@ -205,14 +204,14 @@
           (let [origin        (gpo/origin @parent-bounds)
                 scale-width   (/ auto-width (gpo/width-points @parent-bounds))]
             (-> modifiers
-                (ctm/resize-parent (gpt/point scale-width 1) origin (:transform parent) (:transform-inverse parent)))))
+                (ctm/resize (gpt/point scale-width 1) origin (:transform parent) (:transform-inverse parent)))))
 
         set-parent-auto-height
         (fn [modifiers auto-height]
           (let [origin        (gpo/origin @parent-bounds)
                 scale-height (/ auto-height (gpo/height-points @parent-bounds))]
             (-> modifiers
-                (ctm/resize-parent (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))
+                (ctm/resize (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))
 
         children (->> (cph/get-immediate-children objects parent-id)
                       (remove :hidden))

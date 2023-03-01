@@ -133,7 +133,9 @@
           (-> (get-shape-filter-bounds shape)
               (add-padding (calculate-padding shape true))))
 
-        bounds (if (or (:masked-group? shape) (cph/frame-shape? shape))
+        bounds (if (or (:masked-group? shape)
+                       (and (cph/frame-shape? shape)
+                            (not (:show-content shape))))
                  [(calculate-base-bounds shape)]
                  (cph/reduce-objects
                   objects

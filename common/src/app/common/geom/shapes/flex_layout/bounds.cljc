@@ -117,7 +117,9 @@
 
             child-bounds))]
 
-    (->> children (map get-child-bounds))))
+    (->> children
+         (remove ctl/layout-absolute?)
+         (map get-child-bounds))))
 
 (defn layout-content-bounds
   [bounds {:keys [layout-padding] :as parent} children]

@@ -69,6 +69,7 @@
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
           position                   (ctsi/calc-overlay-position interaction
+                                                                 viewer-objects
                                                                  relative-to-shape
                                                                  relative-to-base-frame
                                                                  dest-frame
@@ -90,6 +91,7 @@
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
           position                   (ctsi/calc-overlay-position interaction
+                                                                 objects
                                                                  relative-to-shape
                                                                  relative-to-base-frame
                                                                  dest-frame
@@ -154,6 +156,7 @@
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
           position                   (ctsi/calc-overlay-position interaction
+                                                                 objects
                                                                  relative-to-shape
                                                                  relative-to-base-frame
                                                                  dest-frame

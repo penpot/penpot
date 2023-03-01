@@ -346,24 +346,6 @@
 (defn align-self-stretch? [{:keys [layout-item-align-self]}]
   (= :stretch layout-item-align-self))
 
-(defn change-h-sizing?
-  [frame-id objects children-ids]
-  (and (layout? objects frame-id)
-       (auto-width? objects frame-id)
-       (or (and (col? objects frame-id)
-                (every? (partial fill-width? objects) children-ids))
-           (and (row? objects frame-id)
-                (some (partial fill-width? objects) children-ids)))))
-
-(defn change-v-sizing?
-  [frame-id objects children-ids]
-  (and (layout? objects frame-id)
-       (auto-height? objects frame-id)
-       (or (and (col? objects frame-id)
-                (some (partial fill-height? objects) children-ids))
-           (and (row? objects frame-id)
-                (every? (partial fill-height? objects) children-ids)))))
-
 (defn layout-absolute?
   ([objects id]
    (layout-absolute? (get objects id)))
@@ -375,6 +357,28 @@
    (layout-z-index (get objects id)))
   ([shape]
    (or (:layout-item-z-index shape) 0)))
+
+(defn change-h-sizing?
+  [frame-id objects children-ids]
+  (and (layout? objects frame-id)
+       (auto-width? objects frame-id)
+       (or (and (col? objects frame-id)
+                (->> children-ids
+                     (remove (partial layout-absolute? objects))
+                     (every? (partial fill-width? objects))))
+           (and (row? objects frame-id)
+                (->> children-ids
+                     (remove (partial layout-absolute? objects))
+                     (some (partial fill-width? objects)))))))
+
+(defn change-v-sizing?
+  [frame-id objects children-ids]
+  (and (layout? objects frame-id)
+       (auto-height? objects frame-id)
+       (or (and (col? objects frame-id)
+                (some (partial fill-height? objects) children-ids))
+           (and (row? objects frame-id)
+                (every? (partial fill-height? objects) children-ids)))))
 
 (defn remove-layout-container-data
   [shape]
