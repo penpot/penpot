@@ -419,6 +419,15 @@
                            :points
                            :x
                            :y
+                           :rx
+                           :ry
+                           :r1
+                           :r2
+                           :r3
+                           :r4
+                           :shadow
+                           :blur
+                           :strokes
                            :width
                            :height
                            :content

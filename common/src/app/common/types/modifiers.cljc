@@ -12,6 +12,9 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
+   [app.common.geom.shapes.corners :as gsc]
+   [app.common.geom.shapes.effects :as gse]
+   [app.common.geom.shapes.strokes :as gss]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
@@ -252,7 +255,7 @@
 
 (defn resize
   ([modifiers vector origin]
-   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
+   (assert (valid-vector? vector) (dm/str "Invalid resize vector: " (:x vector) "," (:y vector)))
    (let [modifiers (or modifiers (empty))
          order     (inc (dm/get-prop modifiers :last-order))
          modifiers (assoc modifiers :last-order order)]
@@ -260,12 +263,12 @@
        (resize-vec? vector)
        (update :geometry-child maybe-add-resize (resize-op order vector origin)))))
 
-  ([modifiers vector origin transform transform-inverse]
+  ([modifiers vector origin transform transform-inverse] 
    (resize modifiers vector origin transform transform-inverse nil))
 
   ;; `precise?` works so we don't remove almost empty resizes. This will be used in the pixel-precision
   ([modifiers vector origin transform transform-inverse {:keys [precise?]}]
-   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
+   (assert (valid-vector? vector) (dm/str "Invalid resize vector: " (:x vector) "," (:y vector)))
    (let [modifiers (or modifiers (empty))
          order     (inc (dm/get-prop modifiers :last-order))
          modifiers (assoc modifiers :last-order order)]
@@ -653,7 +656,19 @@
 
             (cond-> shape
               (cph/text-shape? shape)
-              (update :content scale-text-content value)))]
+              (update :content scale-text-content value) 
+              
+              (cph/rect-shape? shape)
+              (gsc/update-corners-scale value)
+              
+              (d/not-empty? (:strokes shape))
+              (gss/update-strokes-width value)
+                    
+              (d/not-empty? (:shadow shape))
+              (gse/update-shadows-scale value)
+                    
+              (some? (:blur shape))
+              (gse/update-blur-scale value)))]
 
     (let [remove-children
           (fn [shapes children-to-remove]

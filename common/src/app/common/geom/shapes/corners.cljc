@@ -54,3 +54,27 @@
   (if (and (some? r1) (some? r2) (some? r3) (some? r4))
     (fix-radius width height r1 r2 r3 r4)
     [r1 r2 r3 r4]))
+
+(defn update-corners-scale-1
+  "Scales round corners (using a single value)"
+  [shape scale]
+  (update shape :rx * scale))
+
+(defn update-corners-scale-4
+  "Scales round corners (using four values)"
+  [shape scale]
+  (-> shape
+      (update :r1 * scale)
+      (update :r2 * scale)
+      (update :r3 * scale)
+      (update :r4 * scale)))
+
+(defn update-corners-scale
+  "Scales round corners"
+  [shape scale]
+  (cond-> shape
+    (and (some? (:rx shape)) (> (:rx shape) 0))
+    (update-corners-scale-1 scale)
+
+    (and (some? (:r1 shape)) (> (:r1 shape) 0))
+    (update-corners-scale-4 scale)))
