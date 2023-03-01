@@ -113,7 +113,7 @@
          {:alt "Width 100%"
           :class  (dom/classnames :active (= layout-item-h-sizing :fill))
           :on-click #(on-change-behavior :h :fill)}
-          i/auto-fill])
+         i/auto-fill])
       (when auto?
         [:button.behavior-btn.tooltip.tooltip-bottom
          {:alt "Fit content"
@@ -126,9 +126,9 @@
        {:alt "Fix height"
         :class  (dom/classnames :active (= layout-item-v-sizing :fix))
         :on-click #(on-change-behavior :v :fix)}
-        i/auto-fix-layout]
+       i/auto-fix-layout]
       (when fill?
-        [:button.behavior-btn.tooltip.tooltip-bottom
+        [:button.behavior-btn.tooltip.tooltip-bottom-left
          {:alt "Height 100%"
           :class  (dom/classnames :active (= layout-item-v-sizing :fill))
           :on-click #(on-change-behavior :v :fill)}

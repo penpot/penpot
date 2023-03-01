@@ -119,13 +119,13 @@
   [:*
    [:button.tooltip.tooltip-bottom
     {:class  (dom/classnames :active  (= wrap-type :nowrap))
-     :alt    "Nowrap"
+     :alt    "No wrap"
      :on-click #(set-wrap :nowrap)
      :style {:padding 0}}
     [:span.no-wrap i/minus]]
    [:button.wrap.tooltip.tooltip-bottom
     {:class  (dom/classnames :active  (= wrap-type :wrap))
-     :alt    "wrap"
+     :alt    "Wrap"
      :on-click #(set-wrap :wrap)}
     i/auto-wrap]])
 
@@ -160,8 +160,8 @@
     (for [align [:space-between :space-around :space-evenly]]
       [:button.align-content.tooltip
        {:class    (dom/classnames :active  (= align-content align)
-                                  :tooltip-bottom-left (not= align :start)
-                                  :tooltip-bottom (= align :start))
+                                  :tooltip-bottom-left (not= align :space-between)
+                                  :tooltip-bottom (= align :space-between))
         :alt      (dm/str "Align content " (d/name align))
         :on-click #(set-align-content align)
         :key      (dm/str  "align-content" (d/name align))}
@@ -184,8 +184,8 @@
     (for [justify [:space-between :space-around :space-evenly]]
       [:button.justify.tooltip
        {:class    (dom/classnames :active  (= justify-content justify)
-                                  :tooltip-bottom-left (not= justify :space-around)
-                                  :tooltip-bottom (= justify :space-around))
+                                  :tooltip-bottom-left (not= justify :space-between)
+                                  :tooltip-bottom (= justify :space-between))
         :alt      (dm/str "Justify content " (d/name justify))
         :on-click #(set-justify justify)
         :key (dm/str "justify-content" (d/name justify))}
