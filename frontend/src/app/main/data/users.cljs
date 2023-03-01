@@ -18,7 +18,6 @@
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
-   [app.util.theme :as theme]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -115,9 +114,7 @@
     (effect [_ state _]
       (when-let [profile (:profile state)]
         (swap! storage assoc :profile profile)
-        (i18n/set-locale! (:lang profile))
-        (some-> (:theme profile)
-                (theme/set-current-theme!))))))
+        (i18n/set-locale! (:lang profile))))))
 
 (defn fetch-profile
   []

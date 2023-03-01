@@ -4,7 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-$autocomplete: 30000;
-$index-lightbox-shadow: 60000;
-$index-lightbox: 60001;
-$index-lightbox-close-x: 200;
+.light,
+.default {
+  --button-bg-active: var(--color-background-primary);
+  --button-foreground-active: var(--color-foreground-primary);
+}

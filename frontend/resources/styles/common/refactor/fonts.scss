@@ -1,0 +1,36 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "sass:math";
+
+// Font sizes
+$fs10: 0.625rem;
+$fs12: 0.75rem;
+$fs14: 0.875rem;
+
+// Typography scale
+$fs-base: 16;
+
+$fs-9: math.div(9, $fs-base) + rem;
+$fs-12: math.div(12, $fs-base) + rem;
+$fs-14: math.div(14, $fs-base) + rem;
+$fs-19: math.div(19, $fs-base) + rem;
+$fs-25: math.div(25, $fs-base) + rem;
+$fs-33: math.div(33, $fs-base) + rem;
+$fs-44: math.div(44, $fs-base) + rem;
+
+// Font weight
+$fw400: 400; // Regular (CSS value: 'normal')
+$fw500: 500; // Medium
+$fw700: 700; // Bold (CSS value: 'bold')
+
+// Work Sans
+@include font-face("worksans", "WorkSans-Regular", normal);
+@include font-face("worksans", "WorkSans-Medium", "500");
+@include font-face("worksans", "WorkSans-Bold", bold);
+
+// Space mono
+@include font-face("spacemono", "SpaceMono-Regular", normal);

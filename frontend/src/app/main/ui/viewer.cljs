@@ -6,7 +6,6 @@
 
 (ns app.main.ui.viewer
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -347,7 +346,6 @@
          (dom/set-html-title (str "\u25b6 " (tr "title.viewer" name))))))
 
     (mf/with-effect []
-      (dom/set-html-theme-color clr/gray-50 "dark")
       (let [key1 (events/listen js/window "click" on-click)
             key2 (events/listen (mf/ref-val viewer-section-ref) "wheel" on-wheel #js {"passive" false})]
         (fn []

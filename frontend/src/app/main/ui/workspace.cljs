@@ -6,7 +6,6 @@
 
 (ns app.main.ui.workspace
   (:require
-   [app.common.colors :as clr]
    [app.common.data.macros :as dm]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
@@ -150,7 +149,6 @@
 
     ;; Set html theme color and close any non-modal dialog that may be still open
     (mf/with-effect
-      (dom/set-html-theme-color clr/gray-50 "dark")
       (st/emit! msg/hide))
 
     ;; Set properly the page title

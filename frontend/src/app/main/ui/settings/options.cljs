@@ -55,14 +55,14 @@
                      :name :lang
                      :data-test "setting-lang"}]]
 
-     ;; TODO: Do not show as long as we only have one theme
      #_[:h2 (tr "dashboard.theme-change")]
      #_[:div.fields-row
       [:& fm/select {:label (tr "dashboard.select-ui-theme")
                      :name :theme
                      :default "default"
-                     :options [{:label "Default" :value "default"}]
-                     :data-test "theme-lang"}]]
+                     :options [{:label "Penpot Dark (default)" :value "default"}
+                               {:label "Penpot Light" :value "light"}]
+                     :data-test "setting-theme"}]]
      [:& fm/submit-button
       {:label (tr "dashboard.update-settings")
        :data-test "submit-lang-change"}]]))
