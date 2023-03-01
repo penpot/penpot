@@ -54,6 +54,10 @@
   [{:keys [type]}]
   (= type :text))
 
+(defn rect-shape?
+  [{:keys [type]}]
+  (= type :rect))
+
 (defn image-shape?
   [{:keys [type]}]
   (= type :image))
