@@ -28,7 +28,7 @@ $width-settings-bar: 256px;
     top: 0;
     transition: top 400ms ease 300ms;
     margin-bottom: 0;
-    z-index: 2;
+    z-index: 10;
   }
 
   & .viewer-bottom {
@@ -46,7 +46,7 @@ $width-settings-bar: 256px;
     top: -48px;
     left: 0;
     transition: top 400ms ease 300ms;
-    z-index: 2;
+    z-index: 10;
     margin-bottom: 48px;
 
     &::after {
