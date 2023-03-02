@@ -16,6 +16,7 @@
 ### :bug: Bugs fixed
 
 - Fix problem with rules position on changing pages [Taiga #4847](https://tree.taiga.io/project/penpot/issue/4847)
+- Fix error streen when uploading wrong SVG [#2995](https://github.com/penpot/penpot/issues/2995)
 
 ### :arrow_up: Deps updates
 
