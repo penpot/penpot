@@ -17,8 +17,8 @@
 
 - Fix problem with rules position on changing pages [Taiga #4847](https://tree.taiga.io/project/penpot/issue/4847)
 - Fix error streen when uploading wrong SVG [#2995](https://github.com/penpot/penpot/issues/2995)
-- Fix error streen when uploading wrong SVG [#2995](https://github.com/penpot/penpot/issues/2995)
 - Fix selecting children from hidden parent layers [Taiga #4934](https://tree.taiga.io/project/penpot/issue/4934)
+- Fix problem when undoing multiple selected colors [Taiga #4920](https://tree.taiga.io/project/penpot/issue/4920)
 
 ### :arrow_up: Deps updates
 
