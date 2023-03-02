@@ -40,8 +40,8 @@
     :layer            :shape
     :constraint       :shape
     :fill             :shape
-    :shadow           :children
-    :blur             :children
+    :shadow           :shape
+    :blur             :shape
     :stroke           :shape
     :text             :children
     :exports          :shape
