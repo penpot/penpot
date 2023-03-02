@@ -123,6 +123,10 @@
             :blocked
             :hidden
 
+            :shadow
+
+            :blur
+
             :fills
             :fill-color
             :fill-opacity
