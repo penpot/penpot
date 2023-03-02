@@ -47,14 +47,30 @@ export OPTIONS="
        -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
        -J-Djdk.attach.allowAttachSelf \
        -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
-       -J-Xms50m \
-       -J-Xmx1024m \
-       -J-XX:+UseZGC \
        -J-XX:-OmitStackTraceInFastThrow \
        -J-XX:+UnlockDiagnosticVMOptions \
        -J-XX:+DebugNonSafepoints";
 
-# Uncomment for use the ImageMagick v7.x
+# Setup HEAP
+export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
+# export OPTIONS="$OPTIONS -J-Xms1100m -J-Xmx1100m -J-XX:+AlwaysPreTouch"
+
+# Increase virtual thread pool size
+# export OPTIONS="$OPTIONS -J-Djdk.virtualThreadScheduler.parallelism=16"
+
+# Disable C2 Compiler
+# export OPTIONS="$OPTIONS -J-XX:TieredStopAtLevel=1"
+
+# Disable all compilers
+# export OPTIONS="$OPTIONS -J-Xint"
+
+# Setup GC
+export OPTIONS="$OPTIONS -J-XX:+UseG1GC"
+
+# Setup GC
+# export OPTIONS="$OPTIONS -J-XX:+UseZGC"
+
+# Enable ImageMagick v7.x support
 # export OPTIONS="-J-Dim4java.useV7=true $OPTIONS";
 
 export OPTIONS_EVAL="nil"
