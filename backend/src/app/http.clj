@@ -19,19 +19,21 @@
    [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.http.websocket :as-alias ws]
+   [app.main :as-alias main]
    [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias rpc.doc]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
+   [promesa.exec :as px]
    [reitit.core :as r]
    [reitit.middleware :as rr]
    [yetti.adapter :as yt]
    [yetti.request :as yrq]
-   [yetti.response :as yrs]))
+   [yetti.response :as-alias yrs]))
 
-(declare wrap-router)
+(declare router-handler)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP SERVER
@@ -65,19 +67,22 @@
                 ::wrk/executor]))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [::handler ::router ::host ::port ::wrk/executor] :as cfg}]
+  [_ {:keys [::handler ::router ::host ::port] :as cfg}]
   (l/info :hint "starting http server" :port port :host host)
   (let [options {:http/port port
                  :http/host host
                  :http/max-body-size (::max-body-size cfg)
                  :http/max-multipart-body-size (::max-multipart-body-size cfg)
-                 :xnio/io-threads (::io-threads cfg)
-                 :xnio/dispatch executor
+                 :xnio/io-threads (or (::io-threads cfg)
+                                      (max 3 (px/get-available-processors)))
+                 :xnio/worker-threads (or (::worker-threads cfg)
+                                          (max 6 (px/get-available-processors)))
+                 :xnio/dispatch true
                  :ring/async true}
 
         handler (cond
                   (some? router)
-                  (wrap-router router)
+                  (router-handler router)
 
                   (some? handler)
                   handler
@@ -97,32 +102,35 @@
 
 (defn- not-found-handler
   [_ respond _]
-  (respond (yrs/response 404)))
+  (respond {::yrs/status 404}))
 
-(defn- wrap-router
+(defn- router-handler
   [router]
-  (letfn [(handler [request respond raise]
+  (letfn [(resolve-handler [request]
             (if-let [match (r/match-by-path router (yrq/path request))]
               (let [params  (:path-params match)
                     result  (:result match)
                     handler (or (:handler result) not-found-handler)
                     request (assoc request :path-params params)]
-                (handler request respond raise))
-              (not-found-handler request respond raise)))
+                (partial handler request))
+              (partial not-found-handler request)))
 
-          (on-error [cause request respond]
+          (on-error [cause request]
             (let [{:keys [body] :as response} (errors/handle cause request)]
-              (respond
-               (cond-> response
-                 (map? body)
-                 (-> (update :headers assoc "content-type" "application/transit+json")
-                     (assoc :body (t/encode-str body {:type :json-verbose})))))))]
+              (cond-> response
+                (map? body)
+                (-> (update ::yrs/headers assoc "content-type" "application/transit+json")
+                    (assoc ::yrs/body (t/encode-str body {:type :json-verbose}))))))]
 
     (fn [request respond _]
-      (try
-        (handler request respond #(on-error % request respond))
-        (catch Throwable cause
-          (on-error cause request respond))))))
+      (let [handler  (resolve-handler request)
+            exchange (yrq/exchange request)]
+        (handler
+         (fn [response]
+           (yt/dispatch! exchange (partial respond response)))
+         (fn [cause]
+           (let [response (on-error cause request)]
+             (yt/dispatch! exchange (partial respond response)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP ROUTER
@@ -130,11 +138,11 @@
 
 (defmethod ig/pre-init-spec ::router [_]
   (s/keys :req [::session/manager
-                ::actoken/manager
                 ::ws/routes
                 ::rpc/routes
                 ::rpc.doc/routes
                 ::oidc/routes
+                ::main/props
                 ::assets/routes
                 ::debug/routes
                 ::db/pool
@@ -151,7 +159,8 @@
                       [session/soft-auth cfg]
                       [actoken/soft-auth cfg]
                       [mw/errors errors/handle]
-                      [mw/restrict-methods]]}
+                      [mw/restrict-methods]
+                      [mw/with-dispatch :vthread]]}
 
      (::mtx/routes cfg)
      (::assets/routes cfg)

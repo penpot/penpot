@@ -16,6 +16,7 @@
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
    [app.util.svg :as svg]
+   [app.util.time :as dt]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
    [clojure.java.shell :as sh]
@@ -168,7 +169,7 @@
           (ex/raise :type :validation
                     :code :invalid-svg-file
                     :hint "uploaded svg does not provides dimensions"))
-        (merge input info))
+        (merge input info {:ts (dt/now)}))
 
       (let [instance (Info. (str path))
             mtype'   (.getProperty instance "Mime type")]
@@ -183,7 +184,8 @@
         ;; any frame.
         (assoc input
                :width  (.getPageWidth instance)
-               :height (.getPageHeight instance))))))
+               :height (.getPageHeight instance)
+               :ts (dt/now))))))
 
 (defmethod process-error org.im4java.core.InfoException
   [error]

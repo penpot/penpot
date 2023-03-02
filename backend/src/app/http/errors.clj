@@ -46,20 +46,30 @@
 
 (defmethod handle-exception :authentication
   [err _]
-  (yrs/response 401 (ex-data err)))
+  {::yrs/status 401
+   ::yrs/body (ex-data err)})
 
 (defmethod handle-exception :authorization
   [err _]
-  (yrs/response 403 (ex-data err)))
+  {::yrs/status 403
+   ::yrs/body (ex-data err)})
 
 (defmethod handle-exception :restriction
   [err _]
-  (yrs/response 400 (ex-data err)))
+  {::yrs/status 400
+   ::yrs/body (ex-data err)})
 
 (defmethod handle-exception :rate-limit
   [err _]
   (let [headers (-> err ex-data ::http/headers)]
-    (yrs/response :status 429 :body "" :headers headers)))
+    {::yrs/status 429
+     ::yrs/headers headers}))
+
+(defmethod handle-exception :concurrency-limit
+  [err _]
+  (let [headers (-> err ex-data ::http/headers)]
+    {::yrs/status 429
+     ::yrs/headers headers}))
 
 (defmethod handle-exception :validation
   [err _]
@@ -67,16 +77,16 @@
     (cond
       (= code :spec-validation)
       (let [explain (ex/explain data)]
-        (yrs/response :status 400
-                      :body   (-> data
-                                  (dissoc ::s/problems ::s/value)
-                                  (cond-> explain (assoc :explain explain)))))
+        {::yrs/status 400
+         ::yrs/body   (-> data
+                          (dissoc ::s/problems ::s/value)
+                          (cond-> explain (assoc :explain explain)))})
 
       (= code :request-body-too-large)
-      (yrs/response :status 413 :body data)
+      {::yrs/status 413 ::yrs/body data}
 
       :else
-      (yrs/response :status 400 :body data))))
+      {::yrs/status 400 ::yrs/body data})))
 
 (defmethod handle-exception :assertion
   [error request]
@@ -84,31 +94,27 @@
         explain (ex/explain edata)]
     (binding [l/*context* (request->context request)]
       (l/error :hint "Assertion error" :message (ex-message error) :cause error)
-      (yrs/response :status 500
-                    :body   {:type :server-error
-                             :code :assertion
-                             :data (-> edata
-                                       (dissoc ::s/problems ::s/value ::s/spec)
-                                       (cond-> explain (assoc :explain explain)))}))))
+      {::yrs/status 500
+       ::yrs/body   {:type :server-error
+                     :code :assertion
+                     :data (-> edata
+                               (dissoc ::s/problems ::s/value ::s/spec)
+                               (cond-> explain (assoc :explain explain)))}})))
 
 (defmethod handle-exception :not-found
   [err _]
-  (yrs/response 404 (ex-data err)))
+  {::yrs/status 404
+   ::yrs/body (ex-data err)})
 
 (defmethod handle-exception :internal
   [error request]
-  (let [{:keys [code] :as edata} (ex-data error)]
-    (cond
-      (= :concurrency-limit-reached code)
-      (yrs/response 429)
-
-      :else
-      (binding [l/*context* (request->context request)]
-        (l/error :hint "Internal error" :message (ex-message error) :cause error)
-        (yrs/response 500 {:type :server-error
-                           :code :unhandled
-                           :hint (ex-message error)
-                           :data edata})))))
+  (binding [l/*context* (request->context request)]
+    (l/error :hint "Internal error" :message (ex-message error) :cause error)
+    {::yrs/status 500
+     ::yrs/body {:type :server-error
+                 :code :unhandloed
+                 :hint (ex-message error)
+                 :data (ex-data error)}}))
 
 (defmethod handle-exception org.postgresql.util.PSQLException
   [error request]
@@ -117,20 +123,23 @@
       (l/error :hint "PSQL error" :message (ex-message error) :cause error)
       (cond
         (= state "57014")
-        (yrs/response 504 {:type :server-error
-                           :code :statement-timeout
-                           :hint (ex-message error)})
+        {::yrs/status 504
+         ::yrs/body {:type :server-error
+                     :code :statement-timeout
+                     :hint (ex-message error)}}
 
         (= state "25P03")
-        (yrs/response 504 {:type :server-error
-                           :code :idle-in-transaction-timeout
-                           :hint (ex-message error)})
+        {::yrs/status 504
+         ::yrs/body {:type :server-error
+                     :code :idle-in-transaction-timeout
+                     :hint (ex-message error)}}
 
         :else
-        (yrs/response 500 {:type :server-error
-                           :code :unexpected
-                           :hint (ex-message error)
-                           :state state})))))
+        {::yrs/status 500
+         ::yrs/body {:type :server-error
+                     :code :unexpected
+                     :hint (ex-message error)
+                     :state state}}))))
 
 (defmethod handle-exception :default
   [error request]
@@ -140,9 +149,10 @@
       (nil? edata)
       (binding [l/*context* (request->context request)]
         (l/error :hint "Unexpected error" :message (ex-message error) :cause error)
-        (yrs/response 500 {:type :server-error
-                           :code :unexpected
-                           :hint (ex-message error)}))
+        {::yrs/status 500
+         ::yrs/body {:type :server-error
+                     :code :unexpected
+                     :hint (ex-message error)}})
 
       ;; This is a special case for the idle-in-transaction error;
       ;; when it happens, the connection is automatically closed and
@@ -156,10 +166,11 @@
       :else
       (binding [l/*context* (request->context request)]
         (l/error :hint "Unhandled error" :message (ex-message error) :cause error)
-        (yrs/response 500 {:type :server-error
-                           :code :unhandled
-                           :hint (ex-message error)
-                           :data edata})))))
+        {::yrs/status 500
+         ::yrs/body {:type :server-error
+                     :code :unhandled
+                     :hint (ex-message error)
+                     :data edata}}))))
 
 (defn handle
   [cause request]

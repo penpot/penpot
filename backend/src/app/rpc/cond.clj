@@ -27,8 +27,6 @@
    [app.common.logging :as l]
    [app.rpc.helpers :as rph]
    [app.util.services :as-alias sv]
-   [promesa.core :as p]
-   [promesa.exec :as px]
    [yetti.response :as yrs]))
 
 (def
@@ -38,30 +36,24 @@
 
 (defn- fmt-key
   [s]
-  (when s
-    (str "W/\"" s "\"")))
+  (str "W/\"" s "\""))
 
 (defn wrap
-  [{:keys [executor]} f {:keys [::get-object ::key-fn ::reuse-key?] :as mdata}]
+  [_ f {:keys [::get-object ::key-fn ::reuse-key?] :as mdata}]
   (if (and (ifn? get-object) (ifn? key-fn))
     (do
       (l/debug :hint "instrumenting method" :service (::sv/name mdata))
       (fn [cfg {:keys [::key] :as params}]
         (if *enabled*
-          (->> (if (or key reuse-key?)
-                 (->> (px/submit! executor (partial get-object cfg params))
-                      (p/map key-fn)
-                      (p/map fmt-key))
-                 (p/resolved nil))
-               (p/mapcat (fn [key']
-                           (if (and (some? key)
-                                    (= key key'))
-                             (p/resolved (fn [_] (yrs/response 304)))
-                             (->> (f cfg params)
-                                  (p/map (fn [result]
-                                           (->> (or (and reuse-key? key')
-                                                    (-> result meta ::key fmt-key)
-                                                    (-> result key-fn fmt-key))
-                                                (rph/with-header result "etag")))))))))
+          (let [key' (when (or key reuse-key?)
+                       (some-> (get-object cfg params) key-fn fmt-key))]
+            (if (and (some? key)
+                     (= key key'))
+              (fn [_] {::yrs/status 304})
+              (let [result (f cfg params)
+                    etag   (or (and reuse-key? key')
+                               (some-> result meta ::key fmt-key)
+                               (some-> result key-fn fmt-key))]
+                (rph/with-header result "etag" etag))))
           (f cfg params))))
     f))

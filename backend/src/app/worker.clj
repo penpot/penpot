@@ -46,10 +46,18 @@
   [skey {:keys [::parallelism]}]
   (let [prefix  (if (vector? skey) (-> skey first name) "default")
         tname   (str "penpot/" prefix "/%s")
-        factory (px/forkjoin-thread-factory :name tname)]
-    (px/forkjoin-executor {:factory factory
-                           :parallelism parallelism
-                           :async true})))
+        ttype   (cf/get :worker-executor-type :fjoin)]
+    (case ttype
+      :fjoin
+      (let [factory (px/forkjoin-thread-factory :name tname)]
+        (px/forkjoin-executor {:factory factory
+                               :core-size (px/get-available-processors)
+                               :parallelism parallelism
+                               :async true}))
+
+      :cached
+      (let [factory (px/thread-factory :name tname)]
+        (px/cached-executor :factory factory)))))
 
 (defmethod ig/halt-key! ::executor
   [_ instance]
@@ -246,11 +254,7 @@
 
     (if (db/read-only? pool)
       (l/warn :hint "dispatcher: not started (db is read-only)")
-
-      ;; FIXME: we don't use virtual threads here until JDBC is uptaded to >= 42.6.0
-      ;; bacause it has the necessary fixes fro make the JDBC driver properly compatible
-      ;; with Virtual Threads.
-      (px/fn->thread dispatcher :name "penpot/worker/dispatcher" :virtual false))))
+      (px/fn->thread dispatcher :name "penpot/worker/dispatcher" :virtual true))))
 
 (defmethod ig/halt-key! ::dispatcher
   [_ thread]
@@ -446,7 +450,8 @@
              (case status
                :retry (handle-task-retry result)
                :failed (handle-task-failure result)
-               :completed (handle-task-completion result))))
+               :completed (handle-task-completion result)
+               nil)))
 
           (run-task-loop [task-id]
             (loop [result (run-task task-id)]

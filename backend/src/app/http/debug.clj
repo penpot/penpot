@@ -13,7 +13,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.rpc.commands.binfile :as binf]
    [app.rpc.commands.files-create :refer [create-file]]
@@ -21,7 +20,6 @@
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.io :as io]
@@ -48,13 +46,17 @@
 (defn prepare-response
   [body]
   (let [headers {"content-type" "application/transit+json"}]
-    (yrs/response :status 200 :body body :headers headers)))
+    {::yrs/status 200
+     ::yrs/body body
+     ::yrs/headers headers}))
 
 (defn prepare-download-response
   [body filename]
   (let [headers {"content-disposition" (str "attachment; filename=" filename)
                  "content-type" "application/octet-stream"}]
-    (yrs/response :status 200 :body body :headers headers)))
+    {::yrs/status 200
+     ::yrs/body body
+     ::yrs/headers headers}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INDEX
@@ -65,10 +67,10 @@
   (when-not (authorized? pool request)
     (ex/raise :type :authentication
               :code :only-admins-allowed))
-  (yrs/response :status  200
-                :headers {"content-type" "text/html"}
-                :body    (-> (io/resource "app/templates/debug.tmpl")
-                             (tmpl/render {}))))
+  {::yrs/status  200
+   ::yrs/headers {"content-type" "text/html"}
+   ::yrs/body    (-> (io/resource "app/templates/debug.tmpl")
+                     (tmpl/render {}))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE CHANGES
@@ -115,7 +117,8 @@
                              :project-id project-id
                              :profile-id profile-id
                              :data data})
-          (yrs/response 201 "OK CREATED"))
+          {::yrs/status 201
+           ::yrs/body "OK CREATED"})
 
         :else
         (prepare-response (blob/decode data))))))
@@ -143,7 +146,8 @@
             (db/update! pool :file
                         {:data (blob/encode data)}
                         {:id file-id})
-            (yrs/response 200 "OK UPDATED"))
+            {::yrs/status 200
+             ::yrs/body "OK UPDATED"})
 
           (do
             (create-file pool {:id file-id
@@ -151,9 +155,11 @@
                                :project-id project-id
                                :profile-id profile-id
                                :data data})
-            (yrs/response 201 "OK CREATED"))))
+            {::yrs/status 201
+             ::yrs/body "OK CREATED"})))
 
-      (yrs/response 500 "ERROR"))))
+      {::yrs/status 500
+       ::yrs/body "ERROR"})))
 
 (defn file-data-handler
   [cfg request]
@@ -241,11 +247,12 @@
       (let [result (if (= 1 (:version report))
                      (render-template-v1 report)
                      (render-template-v2 report))]
-        (yrs/response :status 200
-                      :body result
-                      :headers {"content-type" "text/html; charset=utf-8"
-                                "x-robots-tag" "noindex"}))
-      (yrs/response 404 "not found"))))
+        {::yrs/status 200
+         ::yrs/body result
+         ::yrs/headers {"content-type" "text/html; charset=utf-8"
+                        "x-robots-tag" "noindex"}})
+      {::yrs/status 404
+       ::yrs/body "not found"})))
 
 (def sql:error-reports
   "SELECT id, created_at,
@@ -261,11 +268,11 @@
               :code :only-admins-allowed))
   (let [items (->> (db/exec! pool [sql:error-reports])
                    (map #(update % :created-at dt/format-instant :rfc1123)))]
-    (yrs/response :status 200
-                  :body (-> (io/resource "app/templates/error-list.tmpl")
-                            (tmpl/render {:items items}))
-                  :headers {"content-type" "text/html; charset=utf-8"
-                            "x-robots-tag" "noindex"})))
+    {::yrs/status 200
+     ::yrs/body (-> (io/resource "app/templates/error-list.tmpl")
+                    (tmpl/render {:items items}))
+     ::yrs/headers {"content-type" "text/html; charset=utf-8"
+                    "x-robots-tag" "noindex"}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXPORT/IMPORT
@@ -301,16 +308,15 @@
                   ::binf/profile-id profile-id
                   ::binf/project-id project-id))
 
-          (yrs/response
-           :status  200
-           :headers {"content-type" "text/plain"}
-           :body    "OK CLONED"))
+          {::yrs/status  200
+           ::yrs/headers {"content-type" "text/plain"}
+           ::yrs/body    "OK CLONED"})
 
-        (yrs/response
-         :status  200
-         :headers {"content-type" "application/octet-stream"
-                   "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}
-         :body    (io/input-stream path))))))
+        {::yrs/status  200
+         ::yrs/body    (io/input-stream path)
+         ::yrs/headers {"content-type" "application/octet-stream"
+                        "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
+
 
 
 (defn import-handler
@@ -340,10 +346,9 @@
             ::binf/profile-id profile-id
             ::binf/project-id project-id))
 
-    (yrs/response
-     :status  200
-     :headers {"content-type" "text/plain"}
-     :body    "OK")))
+    {::yrs/status  200
+     ::yrs/headers {"content-type" "text/plain"}
+     ::yrs/body    "OK"}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OTHER SMALL VIEWS/HANDLERS
@@ -354,11 +359,13 @@
   [{:keys [::db/pool]} _]
   (try
     (db/exec-one! pool ["select count(*) as count from server_prop;"])
-    (yrs/response 200 "OK")
+    {::yrs/status 200
+     ::yrs/body "OK"}
     (catch Throwable cause
       (l/warn :hint "unable to execute query on health handler"
               :cause cause)
-      (yrs/response 503 "KO"))))
+      {::yrs/status 503
+       ::yrs/body "KO"})))
 
 (defn changelog-handler
   [_ _]
@@ -367,10 +374,11 @@
           (md->html [text]
             (md/md-to-html-string text :replacement-transformers (into [transform-emoji] mdt/transformer-vector)))]
     (if-let [clog (io/resource "changelog.md")]
-      (yrs/response :status 200
-                    :headers {"content-type" "text/html; charset=utf-8"}
-                    :body (-> clog slurp md->html))
-      (yrs/response :status 404 :body "NOT FOUND"))))
+      {::yrs/status 200
+       ::yrs/headers {"content-type" "text/html; charset=utf-8"}
+       ::yrs/body (-> clog slurp md->html)}
+      {::yrs/status 404
+       ::yrs/body "NOT FOUND"})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INIT
@@ -380,33 +388,26 @@
   {:compile
    (fn [& _]
      (fn [handler pool]
-       (fn [request respond raise]
+       (fn [request]
          (if (authorized? pool request)
-           (handler request respond raise)
-           (raise (ex/error :type :authentication
-                            :code :only-admins-allowed))))))})
+           (handler request)
+           (ex/raise :type :authentication
+                     :code :only-admins-allowed)))))})
 
 (defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::db/pool
-                ::wrk/executor
-                ::session/manager]))
+  (s/keys :req [::db/pool ::session/manager]))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::db/pool ::wrk/executor] :as cfg}]
-  [["/readyz" {:middleware [[mw/with-dispatch executor]
-                            [mw/with-config cfg]]
-               :handler health-handler}]
+  [_ {:keys [::db/pool] :as cfg}]
+  [["/readyz" {:handler (partial health-handler cfg)}]
    ["/dbg" {:middleware [[session/authz cfg]
-                         [with-authorization pool]
-                         [mw/with-dispatch executor]
-                         [mw/with-config cfg]]}
-    ["" {:handler index-handler}]
-    ["/health" {:handler health-handler}]
-    ["/changelog" {:handler changelog-handler}]
-    ;; ["/error-by-id/:id" {:handler error-handler}]
-    ["/error/:id" {:handler error-handler}]
-    ["/error" {:handler error-list-handler}]
-    ["/file/export" {:handler export-handler}]
-    ["/file/import" {:handler import-handler}]
-    ["/file/data" {:handler file-data-handler}]
-    ["/file/changes" {:handler file-changes-handler}]]])
+                         [with-authorization pool]]}
+    ["" {:handler (partial index-handler cfg)}]
+    ["/health" {:handler (partial health-handler cfg)}]
+    ["/changelog" {:handler (partial changelog-handler cfg)}]
+    ["/error/:id" {:handler (partial error-handler cfg)}]
+    ["/error" {:handler (partial error-list-handler cfg)}]
+    ["/file/export" {:handler (partial export-handler cfg)}]
+    ["/file/import" {:handler (partial import-handler cfg)}]
+    ["/file/data" {:handler (partial file-data-handler cfg)}]
+    ["/file/changes" {:handler (partial file-changes-handler cfg)}]]])

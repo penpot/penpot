@@ -40,12 +40,25 @@
        (catch Throwable cause
          (p/rejected cause))))))
 
+(defn- resolve-client
+  [params]
+  (cond
+    (instance? HttpClient params)
+    params
+
+    (map? params)
+    (resolve-client (::client params))
+
+    :else
+    (throw (UnsupportedOperationException. "invalid arguments"))))
+
 (defn req!
   "A convencience toplevel function for gradual migration to a new API
   convention."
-  ([{:keys [::client]} request]
-   (us/assert! ::client client)
-   (send! client request {}))
-  ([{:keys [::client]} request options]
-   (us/assert! ::client client)
-   (send! client request options)))
+  ([cfg-or-client request]
+   (let [client (resolve-client cfg-or-client)]
+     (send! client request {})))
+  ([cfg-or-client request options]
+   (let [client (resolve-client cfg-or-client)]
+     (send! client request options))))
+

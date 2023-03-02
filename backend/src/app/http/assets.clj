@@ -18,7 +18,7 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [yetti.response :as yrs]))
+   [yetti.response :as-alias yrs]))
 
 (def ^:private cache-max-age
   (dt/duration {:hours 24}))
@@ -28,10 +28,9 @@
 
 (defn get-id
   [{:keys [path-params]}]
-  (if-let [id (some-> path-params :id d/parse-uuid)]
-    (p/resolved id)
-    (p/rejected (ex/error :type :not-found
-                          :hunt "object not found"))))
+  (or (some-> path-params :id d/parse-uuid)
+      (ex/raise :type :not-found
+                :hunt "object not found")))
 
 (defn- get-file-media-object
   [pool id]
@@ -46,9 +45,8 @@
                                   "x-host"   (cond-> host port (str ":" port))
                                   "x-mtype"  (:content-type mdata)
                                   "cache-control" (str "max-age=" (inst-ms cache-max-age))}]
-                     (yrs/response
-                      :status  307
-                      :headers headers)))))))
+                     {::yrs/status  307
+                      ::yrs/headers headers}))))))
 
 (defn- serve-object-from-fs
   [{:keys [::path]} obj]
@@ -59,7 +57,8 @@
                  "content-type" (:content-type mdata)
                  "cache-control" (str "max-age=" (inst-ms cache-max-age))}]
     (p/resolved
-     (yrs/response :status 204 :headers headers))))
+     {::yrs/status 204
+      ::yrs/headers headers})))
 
 (defn- serve-object
   "Helper function that returns the appropriate response depending on
@@ -72,15 +71,14 @@
 
 (defn objects-handler
   "Handler that servers storage objects by id."
-  [{:keys [::sto/storage ::wrk/executor] :as cfg} request respond raise]
+  [{:keys [::sto/storage ::wrk/executor] :as cfg} request]
   (->> (get-id request)
        (p/mcat executor (fn [id] (sto/get-object storage id)))
        (p/mcat executor (fn [obj]
                           (if (some? obj)
                             (serve-object cfg obj)
-                            (p/resolved (yrs/response 404)))))
-       (p/fnly executor (fn [result cause]
-                          (if cause (raise cause) (respond result))))))
+                            (p/resolved {::yrs/status 404}))))
+       (p/await!)))
 
 (defn- generic-handler
   "A generic handler helper/common code for file-media based handlers."
@@ -92,22 +90,18 @@
          (p/mcat executor (fn [sobj]
                             (if sobj
                               (serve-object cfg sobj)
-                              (p/resolved (yrs/response 404))))))))
+                              (p/resolved {::yrs/status 404})))))))
 
 (defn file-objects-handler
   "Handler that serves storage objects by file media id."
-  [cfg request respond raise]
-  (->> (generic-handler cfg request :media-id)
-       (p/fnly (fn [result cause]
-                 (if cause (raise cause) (respond result))))))
+  [cfg request]
+  (p/await! (generic-handler cfg request :media-id)))
 
 (defn file-thumbnails-handler
   "Handler that serves storage objects by thumbnail-id and quick
   fallback to file-media-id if no thumbnail is available."
-  [cfg request respond raise]
-  (->> (generic-handler cfg request #(or (:thumbnail-id %) (:media-id %)))
-       (p/fnly (fn [result cause]
-                 (if cause (raise cause) (respond result))))))
+  [cfg request]
+  (p/await! (generic-handler cfg request #(or (:thumbnail-id %) (:media-id %)))))
 
 ;; --- Initialization
 

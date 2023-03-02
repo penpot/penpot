@@ -48,30 +48,26 @@
 
 (defn- validate-webhook!
   [cfg whook params]
-  (letfn [(handle-exception [exception]
-            (if-let [hint (webhooks/interpret-exception exception)]
-              (ex/raise :type :validation
-                        :code :webhook-validation
-                        :hint hint)
-              (ex/raise :type :internal
-                        :code :webhook-validation
-                        :cause exception)))
+  (when (not= (:uri whook) (:uri params))
+    (try
+      (let [response (http/req! cfg
+                                {:method :head
+                                 :uri (str (:uri params))
+                                 :timeout (dt/duration "3s")}
+                                {:sync? true})]
+        (when-let [hint (webhooks/interpret-response response)]
+          (ex/raise :type :validation
+                    :code :webhook-validation
+                    :hint hint)))
 
-          (handle-response [response]
-            (when-let [hint (webhooks/interpret-response response)]
-              (ex/raise :type :validation
-                        :code :webhook-validation
-                        :hint hint)))]
-
-    (if (not= (:uri whook) (:uri params))
-      (->> (http/req! cfg {:method :head
-                           :uri (str (:uri params))
-                           :timeout (dt/duration "3s")})
-           (p/hmap (fn [response exception]
-                     (if exception
-                       (handle-exception exception)
-                       (handle-response response)))))
-      (p/resolved nil))))
+      (catch Throwable cause
+        (if-let [hint (webhooks/interpret-exception cause)]
+          (ex/raise :type :validation
+                    :code :webhook-validation
+                    :hint hint)
+          (ex/raise :type :internal
+                    :code :webhook-validation
+                    :cause cause))))))
 
 (defn- validate-quotes!
   [{:keys [::db/pool]} {:keys [team-id]}]
@@ -109,8 +105,8 @@
   [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
   (check-edition-permissions! pool profile-id team-id)
   (validate-quotes! cfg params)
-  (->> (validate-webhook! cfg nil params)
-       (p/fmap executor (fn [_] (insert-webhook! cfg params)))))
+  (validate-webhook! cfg nil params)
+  (insert-webhook! cfg params))
 
 (s/def ::update-webhook
   (s/keys :req-un [::id ::uri ::mtype ::is-active]))
@@ -120,8 +116,8 @@
   [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (let [whook (-> (db/get pool :webhook {:id id}) (decode-row))]
     (check-edition-permissions! pool profile-id (:team-id whook))
-    (->> (validate-webhook! cfg whook params)
-         (p/fmap executor (fn [_] (update-webhook! cfg whook params))))))
+    (validate-webhook! cfg whook params)
+    (update-webhook! cfg whook params)))
 
 (s/def ::delete-webhook
   (s/keys :req [::rpc/profile-id]

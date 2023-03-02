@@ -21,7 +21,7 @@
    [jsonista.core :as j]
    [promesa.exec :as px]
    [yetti.request :as yrq]
-   [yetti.response :as yrs]))
+   [yetti.response :as-alias yrs]))
 
 (declare parse-json)
 (declare handle-request)
@@ -39,7 +39,7 @@
   (letfn [(handler [request respond _]
             (let [data (-> request yrq/body slurp)]
               (px/run! executor #(handle-request cfg data)))
-            (respond (yrs/response 200)))]
+            (respond {::yrs/status 200}))]
     ["/sns" {:handler handler
              :allowed-methods #{:post}}]))
 

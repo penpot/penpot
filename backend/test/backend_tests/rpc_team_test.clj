@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-team-test
   (:require
+   [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]

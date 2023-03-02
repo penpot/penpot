@@ -13,6 +13,7 @@
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as auth]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -48,7 +49,7 @@
                   :fullname fullname
                   :is-active true
                   :deleted-at (dt/in-future cf/deletion-delay)
-                  :password password
+                  :password (profile/derive-password cfg password)
                   :props {}}]
 
     (db/with-atomic [conn pool]

@@ -279,22 +279,21 @@
   (s/keys :req-un [::session-id]))
 
 (defn- http-handler
-  [cfg {:keys [params ::session/profile-id] :as request} respond raise]
+  [cfg {:keys [params ::session/profile-id] :as request}]
   (let [{:keys [session-id]} (us/conform ::handler-params params)]
     (cond
       (not profile-id)
-      (raise (ex/error :type :authentication
-                       :hint "Authentication required."))
+      (ex/raise :type :authentication
+                :hint "Authentication required.")
 
       (not (yws/upgrade-request? request))
-      (raise (ex/error :type :validation
-                       :code :websocket-request-expected
-                       :hint "this endpoint only accepts websocket connections"))
+      (ex/raise :type :validation
+                :code :websocket-request-expected
+                :hint "this endpoint only accepts websocket connections")
 
       :else
       (do
         (l/trace :hint "websocket request" :profile-id profile-id :session-id session-id)
-
         (->> (ws/handler
               ::ws/on-rcv-message (partial on-rcv-message cfg)
               ::ws/on-snd-message (partial on-snd-message cfg)
@@ -302,8 +301,7 @@
               ::ws/handler (partial handle-message cfg)
               ::profile-id profile-id
               ::session-id session-id)
-             (yws/upgrade request)
-             (respond))))))
+             (yws/upgrade request))))))
 
 (defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req [::mbus/msgbus

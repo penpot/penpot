@@ -85,14 +85,10 @@
 (defmethod ig/init-key ::reporter
   [_ cfg]
   (let [input (sp/chan :buf (sp/sliding-buffer 32)
-                       :xf (filter error-record?))]
+                       :xf  (filter error-record?))]
     (add-watch l/log-record ::reporter #(sp/put! input %4))
 
-    ;; FIXME: we don't use virtual threads here until JDBC is uptaded
-    ;; to >= 42.6.0 bacause it has the necessary fixes fro make the
-    ;; JDBC driver properly compatible with Virtual Threads.
-
-    (px/thread {:name "penpot/database-reporter" :virtual false}
+    (px/thread {:name "penpot/database-reporter" :virtual true}
       (l/info :hint "initializing database error persistence")
       (try
         (loop []

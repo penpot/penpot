@@ -14,7 +14,6 @@
    [app.db :as-alias db]
    [app.email :as-alias email]
    [app.http :as-alias http]
-   [app.http.access-token :as-alias actoken]
    [app.http.assets :as-alias http.assets]
    [app.http.awsns :as http.awsns]
    [app.http.client :as-alias http.client]
@@ -37,7 +36,8 @@
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [cuerdas.core :as str]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:gen-class))
 
 (def default-metrics
@@ -102,15 +102,15 @@
     ::mdef/labels ["name"]
     ::mdef/type :summary}
 
-   :rpc-climit-queue-size
-   {::mdef/name "penpot_rpc_climit_queue_size"
-    ::mdef/help "Current number of queued submissions on the CLIMIT."
+   :rpc-climit-queue
+   {::mdef/name "penpot_rpc_climit_queue"
+    ::mdef/help "Current number of queued submissions."
     ::mdef/labels ["name"]
     ::mdef/type :gauge}
 
-   :rpc-climit-concurrency
-   {::mdef/name "penpot_rpc_climit_concurrency"
-    ::mdef/help "Current number of used concurrency capacity on the CLIMIT"
+   :rpc-climit-permits
+   {::mdef/name "penpot_rpc_climit_permits"
+    ::mdef/help "Current number of available permits"
     ::mdef/labels ["name"]
     ::mdef/type :gauge}
 
@@ -174,7 +174,8 @@
 
    ;; Default thread pool for IO operations
    ::wrk/executor
-   {::wrk/parallelism (cf/get :default-executor-parallelism 100)}
+   {::wrk/parallelism (cf/get :default-executor-parallelism
+                              (+ 3 (* (px/get-available-processors) 3)))}
 
    ::wrk/monitor
    {::mtx/metrics  (ig/ref ::mtx/metrics)
@@ -191,8 +192,9 @@
    {::mtx/metrics (ig/ref ::mtx/metrics)}
 
    ::rds/redis
-   {::rds/uri     (cf/get :redis-uri)
-    ::mtx/metrics (ig/ref ::mtx/metrics)}
+   {::rds/uri      (cf/get :redis-uri)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)
+    ::wrk/executor (ig/ref ::wrk/executor)}
 
    ::mbus/msgbus
    {::wrk/executor  (ig/ref ::wrk/executor)
@@ -212,14 +214,7 @@
    {::wrk/executor (ig/ref ::wrk/executor)}
 
    ::session/manager
-   {::db/pool      (ig/ref ::db/pool)
-    ::wrk/executor (ig/ref ::wrk/executor)
-    ::props        (ig/ref :app.setup/props)}
-
-   ::actoken/manager
-   {::db/pool      (ig/ref ::db/pool)
-    ::wrk/executor (ig/ref ::wrk/executor)
-    ::props        (ig/ref :app.setup/props)}
+   {::db/pool (ig/ref ::db/pool)}
 
    ::session.tasks/gc
    {::db/pool (ig/ref ::db/pool)}
@@ -269,7 +264,6 @@
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
     ::props              (ig/ref :app.setup/props)
-    ::wrk/executor       (ig/ref ::wrk/executor)
     ::oidc/providers     {:google (ig/ref ::oidc.providers/google)
                           :github (ig/ref ::oidc.providers/github)
                           :gitlab (ig/ref ::oidc.providers/gitlab)
@@ -278,8 +272,6 @@
 
    :app.http/router
    {::session/manager    (ig/ref ::session/manager)
-    ::actoken/manager    (ig/ref ::actoken/manager)
-    ::wrk/executor       (ig/ref ::wrk/executor)
     ::db/pool            (ig/ref ::db/pool)
     ::rpc/routes         (ig/ref ::rpc/routes)
     ::rpc.doc/routes     (ig/ref ::rpc.doc/routes)
@@ -344,7 +336,6 @@
     ::db/pool         (ig/ref ::db/pool)
     ::wrk/executor    (ig/ref ::wrk/executor)
     ::session/manager (ig/ref ::session/manager)
-    ::actoken/manager (ig/ref ::actoken/manager)
     ::props           (ig/ref :app.setup/props)}
 
    ::wrk/registry

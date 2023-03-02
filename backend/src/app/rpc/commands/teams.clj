@@ -27,11 +27,9 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [promesa.core :as p]
-   [promesa.exec :as px]))
+   [promesa.core :as p]))
 
 ;; --- Helpers & Specs
 
@@ -77,6 +75,8 @@
 ;; --- Query: Teams
 
 (declare retrieve-teams)
+
+(def counter (volatile! 0))
 
 (s/def ::get-teams
   (s/keys :req [::rpc/profile-id]))
@@ -588,15 +588,14 @@
     (update-team-photo cfg (assoc params :profile-id profile-id))))
 
 (defn update-team-photo
-  [{:keys [::db/pool ::sto/storage ::wrk/executor] :as cfg} {:keys [profile-id team-id] :as params}]
-  (p/let [team  (px/with-dispatch executor
-                  (retrieve-team pool profile-id team-id))
-          photo (profile/upload-photo cfg params)]
+  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id] :as params}]
+  (let [team  (retrieve-team pool profile-id team-id)
+        photo (profile/upload-photo cfg params)]
 
     ;; Mark object as touched for make it ellegible for tentative
     ;; garbage collection.
     (when-let [id (:photo-id team)]
-      (sto/touch-object! storage id))
+      (p/await! (sto/touch-object! storage id)))
 
     ;; Save new photo
     (db/update! pool :team
@@ -694,13 +693,13 @@
           (l/info :hint "invitation token" :token itoken))
 
         (audit/submit! cfg
-                       {:type "action"
-                        :name (if updated?
-                                "update-team-invitation"
-                                "create-team-invitation")
-                        :profile-id (:id profile)
-                        :props (-> (dissoc tprops :profile-id)
-                                   (d/without-nils))})
+                       {::audit/type "action"
+                        ::audit/name (if updated?
+                                       "update-team-invitation"
+                                       "create-team-invitation")
+                        ::audit/profile-id (:id profile)
+                        ::audit/props (-> (dissoc tprops :profile-id)
+                                          (d/without-nils))})
 
         (eml/send! {::eml/conn conn
                     ::eml/factory eml/invite-to-team
@@ -802,13 +801,13 @@
                    ::quotes/incr (count emails)}))
 
       (audit/submit! cfg
-                     {:type "command"
-                      :name "create-team-invitations"
-                      :profile-id profile-id
-                      :props {:emails emails
-                              :role role
-                              :profile-id profile-id
-                              :invitations (count emails)}})
+                     {::audit/type "command"
+                      ::audit/name "create-team-invitations"
+                      ::audit/profile-id profile-id
+                      ::audit/props {:emails emails
+                                     :role role
+                                     :profile-id profile-id
+                                     :invitations (count emails)}})
 
       (vary-meta team assoc ::audit/props {:invitations (count emails)}))))
 

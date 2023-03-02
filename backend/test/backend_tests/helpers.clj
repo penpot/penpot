@@ -138,9 +138,7 @@
                              :app.http.oauth/handler
                              :app.notifications/handler
                              :app.loggers.mattermost/reporter
-                             :app.loggers.loki/reporter
                              :app.loggers.database/reporter
-                             :app.loggers.zmq/receiver
                              :app.worker/cron
                              :app.worker/worker))
           _      (ig/load-namespaces system)
@@ -164,11 +162,15 @@
                  "   AND table_name != 'migrations';")]
     (db/with-atomic [conn *pool*]
       (let [result (->> (db/exec! conn [sql])
-                        (map :table-name))]
-        (db/exec! conn [(str "TRUNCATE "
-                             (apply str (interpose ", " result))
-                             " CASCADE;")]))))
-  (next))
+                        (map :table-name)
+                        (remove #(= "task" %)))
+            sql    (str "TRUNCATE "
+                        (apply str (interpose ", " result))
+                        " CASCADE;")]
+        (doseq [table result]
+          (db/exec! conn [(str "delete from " table ";")]))))
+
+    (next)))
 
 (defn clean-storage
   [next]
@@ -321,7 +323,7 @@
    (with-open [conn (db/open pool)]
      (let [features #{"components/v2"}
            cfg      (-> (select-keys *system* [::mbus/msgbus ::mtx/metrics])
-                        (assoc :conn conn))]
+                        (assoc ::db/conn conn))]
        (files.update/update-file cfg
                                  {:id file-id
                                   :revn revn
@@ -354,7 +356,7 @@
 (defmacro try-on!
   [expr]
   `(try
-     (let [result# (deref ~expr)
+     (let [result# ~expr
            result# (cond-> result# (rph/wrapped? result#) deref)]
        {:error nil
         :result result#})
@@ -364,7 +366,7 @@
 
 (defn command!
   [{:keys [::type] :as data}]
-  (let [method-fn (get-in *system* [:app.rpc/methods :commands type])]
+  (let [[mdata method-fn] (get-in *system* [:app.rpc/methods :commands type])]
     (when-not method-fn
       (ex/raise :type :assertion
                 :code :rpc-method-not-found
@@ -377,7 +379,7 @@
 
 (defn mutation!
   [{:keys [::type profile-id] :as data}]
-  (let [method-fn (get-in *system* [:app.rpc/methods :mutations type])]
+  (let [[mdata method-fn] (get-in *system* [:app.rpc/methods :mutations type])]
     (try-on! (method-fn (-> data
                             (dissoc ::type)
                             (assoc ::rpc/profile-id profile-id)
@@ -385,7 +387,7 @@
 
 (defn query!
   [{:keys [::type profile-id] :as data}]
-  (let [method-fn (get-in *system* [:app.rpc/methods :queries type])]
+  (let [[mdata method-fn] (get-in *system* [:app.rpc/methods :queries type])]
     (try-on! (method-fn (-> data
                             (dissoc ::type)
                             (assoc ::rpc/profile-id profile-id)

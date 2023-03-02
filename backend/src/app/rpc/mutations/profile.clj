@@ -14,7 +14,6 @@
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.media :as media]
-   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
@@ -78,20 +77,20 @@
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
 (sv/defmethod ::update-profile-password
-  {::climit/queue :auth
-   ::doc/added "1.0"
+  {::doc/added "1.0"
    ::doc/deprecated "1.18"}
   [{:keys [::db/pool] :as cfg} {:keys [password] :as params}]
   (db/with-atomic [conn pool]
-    (let [profile    (#'profile/validate-password! conn params)
+    (let [cfg        (assoc cfg ::db/conn conn)
+          profile    (#'profile/validate-password! cfg params)
           session-id (::session/id params)]
       (when (= (str/lower (:email profile))
                (str/lower (:password params)))
         (ex/raise :type :validation
                   :code :email-as-password
                   :hint "you can't use your email as password"))
-      (profile/update-profile-password! conn (assoc profile :password password))
-      (#'profile/invalidate-profile-session! conn (:id profile) session-id)
+      (profile/update-profile-password! cfg (assoc profile :password password))
+      (#'profile/invalidate-profile-session! cfg (:id profile) session-id)
       nil)))
 
 
