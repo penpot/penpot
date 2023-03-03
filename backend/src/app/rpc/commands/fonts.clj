@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.fonts
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -24,8 +25,7 @@
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
-   [promesa.core :as p]))
+   [clojure.spec.alpha :as s]))
 
 (def valid-weight #{100 200 300 400 500 600 700 800 900 950})
 (def valid-style #{"normal" "italic"})
@@ -56,7 +56,7 @@
 (sv/defmethod ::get-font-variants
   {::doc/added "1.18"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id file-id project-id] :as params}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (cond
       (uuid? team-id)
       (do
@@ -134,13 +134,13 @@
                   wf2-params (prepare-font data "font/woff2")]
               (cond-> {}
                 (some? otf-params)
-                (assoc :otf (p/await! (sto/put-object! storage otf-params)))
+                (assoc :otf (sto/put-object! storage otf-params))
                 (some? ttf-params)
-                (assoc :ttf (p/await! (sto/put-object! storage ttf-params)))
+                (assoc :ttf (sto/put-object! storage ttf-params))
                 (some? wf1-params)
-                (assoc :woff1 (p/await! (sto/put-object! storage wf1-params)))
+                (assoc :woff1 (sto/put-object! storage wf1-params))
                 (some? wf2-params)
-                (assoc :woff2 (p/await! (sto/put-object! storage wf2-params))))))
+                (assoc :woff2 (sto/put-object! storage wf2-params)))))
 
           (insert-font-variant! [{:keys [woff1 woff2 otf ttf]}]
             (db/insert! pool :team-font-variant

@@ -37,7 +37,6 @@
    [clojure.walk :as walk]
    [cuerdas.core :as str]
    [datoteka.io :as io]
-   [promesa.core :as p]
    [yetti.adapter :as yt]
    [yetti.response :as yrs])
   (:import
@@ -527,13 +526,13 @@
     (write-obj! output sids)
 
     (doseq [id sids]
-      (let [{:keys [size] :as obj} (p/await! (sto/get-object storage id))]
+      (let [{:keys [size] :as obj} (sto/get-object storage id)]
         (l/debug :hint "write sobject" :id id ::l/sync? true)
         (doto output
           (write-uuid! id)
           (write-obj! (meta obj)))
 
-        (with-open [^InputStream stream (p/await! (sto/get-object-data storage obj))]
+        (with-open [^InputStream stream (sto/get-object-data storage obj)]
           (let [written (write-stream! output stream size)]
             (when (not= written size)
               (ex/raise :type :validation
@@ -719,7 +718,7 @@
                                   (assoc ::sto/touched-at (dt/now))
                                   (assoc :bucket "file-media-object"))
 
-              sobject         (p/await! (sto/put-object! storage params))]
+              sobject         (sto/put-object! storage params)]
 
           (l/debug :hint "persisted storage object" :id id :new-id (:id sobject) ::l/sync? true)
           (vswap! *state* update :index assoc id (:id sobject)))))

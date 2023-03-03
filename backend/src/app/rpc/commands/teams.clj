@@ -7,6 +7,7 @@
 (ns app.rpc.commands.teams
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
@@ -28,8 +29,7 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [promesa.core :as p]))
+   [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
 
@@ -84,7 +84,7 @@
 (sv/defmethod ::get-teams
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (retrieve-teams conn profile-id)))
 
 (def sql:teams
@@ -129,7 +129,7 @@
 (sv/defmethod ::get-team
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (retrieve-team conn profile-id id)))
 
 (defn retrieve-team
@@ -170,7 +170,7 @@
 (sv/defmethod ::get-team-members
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (retrieve-team-members conn team-id)))
 
@@ -188,7 +188,7 @@
 (sv/defmethod ::get-team-users
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id file-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (if team-id
       (do
         (check-read-permissions! conn profile-id team-id)
@@ -246,7 +246,7 @@
 (sv/defmethod ::get-team-stats
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (retrieve-team-stats conn team-id)))
 
@@ -277,7 +277,7 @@
 (sv/defmethod ::get-team-invitations
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (get-team-invitations conn team-id)))
 
@@ -595,7 +595,7 @@
     ;; Mark object as touched for make it ellegible for tentative
     ;; garbage collection.
     (when-let [id (:photo-id team)]
-      (p/await! (sto/touch-object! storage id)))
+      (sto/touch-object! storage id))
 
     ;; Save new photo
     (db/update! pool :team

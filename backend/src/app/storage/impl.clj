@@ -153,8 +153,8 @@
      (content (.toPath ^java.io.File data) size)
 
      (instance? String data)
-     (let [data (.getBytes data "UTF-8")]
-       (bytes->content data (alength data)))
+     (let [data (.getBytes ^String data "UTF-8")]
+       (bytes->content data (alength ^bytes data)))
 
      (bytes? data)
      (bytes->content data (or size (alength ^bytes data)))
@@ -195,7 +195,7 @@
 
 (defn calculate-hash
   [resource]
-  (let [result (with-open [input (io/input-stream resource)]
+  (let [result (dm/with-open [input (io/input-stream resource)]
                  (-> (bh/blake2b-256 input)
                      (bc/bytes->hex)))]
     (str "blake2b:" result)))

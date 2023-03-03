@@ -24,8 +24,7 @@
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.io :as io]
-   [promesa.core :as p]))
+   [datoteka.io :as io]))
 
 (def default-max-file-size
   (* 1024 1024 10)) ; 10 MiB
@@ -151,9 +150,9 @@
   (let [result (-> (climit/configure cfg :process-image)
                    (climit/submit! (partial process-image content)))
 
-        image  (p/await! (sto/put-object! storage (::image result)))
+        image  (sto/put-object! storage (::image result))
         thumb  (when-let [params (::thumb result)]
-                 (p/await! (sto/put-object! storage params)))]
+                 (sto/put-object! storage params))]
 
     (db/exec-one! pool [sql:create-file-media-object
                         (or id (uuid/next))

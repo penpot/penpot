@@ -8,6 +8,7 @@
   (:require
    [app.auth]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
    [app.common.pages :as cp]
@@ -208,7 +209,7 @@
                         :password "123123"
                         :is-demo false}
                        params)]
-     (with-open [conn (db/open pool)]
+     (dm/with-open [conn (db/open pool)]
        (->> params
             (cmd.auth/create-profile! conn)
             (cmd.auth/create-profile-rels! conn))))))
@@ -218,7 +219,7 @@
   ([pool i {:keys [profile-id team-id] :as params}]
    (us/assert uuid? profile-id)
    (us/assert uuid? team-id)
-   (with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open pool)]
      (->> (merge {:id (mk-uuid "project" i)
                   :name (str "project" i)}
                  params)
@@ -230,7 +231,7 @@
   ([pool i {:keys [profile-id project-id] :as params}]
    (us/assert uuid? profile-id)
    (us/assert uuid? project-id)
-   (with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open pool)]
      (files.create/create-file conn
                                (merge {:id (mk-uuid "file" i)
                                        :name (str "file" i)
@@ -246,7 +247,7 @@
   ([i params] (create-team* *pool* i params))
   ([pool i {:keys [profile-id] :as params}]
    (us/assert uuid? profile-id)
-   (with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open pool)]
      (let [id   (mk-uuid "team" i)]
        (teams/create-team conn {:id id
                                 :profile-id profile-id
@@ -257,7 +258,7 @@
   ([pool {:keys [name width height mtype file-id is-local media-id]
           :or {name "sample" width 100 height 100 mtype "image/svg+xml" is-local true}}]
 
-   (with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open pool)]
      (db/insert! conn :file-media-object
                  {:id (uuid/next)
                   :file-id file-id
@@ -271,12 +272,12 @@
 (defn link-file-to-library*
   ([params] (link-file-to-library* *pool* params))
   ([pool {:keys [file-id library-id] :as params}]
-   (with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open pool)]
      (#'files/link-file-to-library conn {:file-id file-id :library-id library-id}))))
 
 (defn create-complaint-for
   [pool {:keys [id created-at type]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (db/insert! conn :profile-complaint-report
                 {:profile-id id
                  :created-at (or created-at (dt/now))
@@ -285,7 +286,7 @@
 
 (defn create-global-complaint-for
   [pool {:keys [email type created-at]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (db/insert! conn :global-complaint-report
                 {:email email
                  :type (name type)
@@ -295,7 +296,7 @@
 (defn create-team-role*
   ([params] (create-team-role* *pool* params))
   ([pool {:keys [team-id profile-id role] :or {role :owner}}]
-   (with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open pool)]
      (#'teams/create-team-role conn {:team-id team-id
                                      :profile-id profile-id
                                      :role role}))))
@@ -303,7 +304,7 @@
 (defn create-project-role*
   ([params] (create-project-role* *pool* params))
   ([pool {:keys [project-id profile-id role] :or {role :owner}}]
-   (with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open pool)]
      (#'teams/create-project-role conn {:project-id project-id
                                            :profile-id profile-id
                                            :role role}))))
@@ -311,7 +312,7 @@
 (defn create-file-role*
   ([params] (create-file-role* *pool* params))
   ([pool {:keys [file-id profile-id role] :or {role :owner}}]
-   (with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open pool)]
      (files.create/create-file-role! conn {:file-id file-id
                                            :profile-id profile-id
                                            :role role}))))
@@ -320,7 +321,7 @@
   ([params] (update-file* *pool* params))
   ([pool {:keys [file-id changes session-id profile-id revn]
           :or {session-id (uuid/next) revn 0}}]
-   (with-open [conn (db/open pool)]
+   (dm/with-open [conn (db/open pool)]
      (let [features #{"components/v2"}
            cfg      (-> (select-keys *system* [::mbus/msgbus ::mtx/metrics])
                         (assoc ::db/conn conn))]

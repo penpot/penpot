@@ -27,8 +27,7 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [promesa.core :as p]))
+   [cuerdas.core :as str]))
 
 (declare check-profile-existence!)
 (declare decode-row)
@@ -182,7 +181,7 @@
 
     ;; Schedule deletion of old photo
     (when-let [id (:photo-id profile)]
-      (p/await! (sto/touch-object! storage id)))
+      (sto/touch-object! storage id))
 
     ;; Save new photo
     (db/update! pool :profile
@@ -217,7 +216,7 @@
   [{:keys [::sto/storage] :as cfg} {:keys [file]}]
   (let [params (-> (climit/configure cfg :process-image)
                    (climit/submit! (partial generate-thumbnail! file)))]
-    (p/await! (sto/put-object! storage params))))
+    (sto/put-object! storage params)))
 
 
 ;; --- MUTATION: Request Email Change
