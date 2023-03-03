@@ -287,7 +287,6 @@
             :fill "none"}
       [:& shape-wrapper {:shape frame}]]]))
 
-
 ;; Component for rendering a thumbnail of a single componenent. Mainly
 ;; used to render thumbnails on assets panel.
 (mf/defc component-svg
@@ -334,7 +333,8 @@
            :fill "none"}
 
      [:> shape-container {:shape root-shape}
-      [:& root-shape-wrapper {:shape root-shape :view-box vbox}]]]))
+      [:& (mf/provider muc/is-component?) {:value true}
+       [:& root-shape-wrapper {:shape root-shape :view-box vbox}]]]]))
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
@@ -468,7 +468,7 @@
   (let [texts (->> objects
                    (vals)
                    (filterv #(= (:type %) :text))
-                   (mapv :content)) ]
+                   (mapv :content))]
 
     (->> (rx/from texts)
          (rx/map fonts/get-content-fonts)
