@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.webhooks
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uri :as u]
@@ -18,10 +19,8 @@
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [promesa.core :as p]))
+   [cuerdas.core :as str]))
 
 (defn decode-row
   [{:keys [uri] :as row}]
@@ -102,7 +101,7 @@
 
 (sv/defmethod ::create-webhook
   {::doc/added "1.17"}
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
   (check-edition-permissions! pool profile-id team-id)
   (validate-quotes! cfg params)
   (validate-webhook! cfg nil params)
@@ -113,7 +112,7 @@
 
 (sv/defmethod ::update-webhook
   {::doc/added "1.17"}
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (let [whook (-> (db/get pool :webhook {:id id}) (decode-row))]
     (check-edition-permissions! pool profile-id (:team-id whook))
     (validate-webhook! cfg whook params)
@@ -145,7 +144,7 @@
 
 (sv/defmethod ::get-webhooks
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (->> (db/exec! conn [sql:get-webhooks team-id])
          (mapv decode-row))))

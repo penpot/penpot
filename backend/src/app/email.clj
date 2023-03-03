@@ -37,6 +37,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- parse-address
+  ^"[Ljakarta.mail.internet.InternetAddress;"
   [v]
   (InternetAddress/parse ^String v))
 
@@ -149,6 +150,7 @@
     "mail.smtp.connectiontimeout" timeout}))
 
 (defn- create-smtp-session
+  ^Session
   [cfg]
   (let [props (opts->props cfg)]
     (Session/getInstance props)))

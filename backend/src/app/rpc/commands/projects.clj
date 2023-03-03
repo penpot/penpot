@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.projects
   (:require
+   [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
@@ -79,7 +80,7 @@
 (sv/defmethod ::get-projects
   {::doc/added "1.18"}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id team-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (get-projects conn profile-id team-id)))
 
@@ -114,7 +115,7 @@
 (sv/defmethod ::get-all-projects
   {::doc/added "1.18"}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (get-all-projects conn profile-id)))
 
 (def sql:all-projects
@@ -157,7 +158,7 @@
 (sv/defmethod ::get-project
   {::doc/added "1.18"}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (let [project (db/get-by-id conn :project id)]
       (check-read-permissions! conn profile-id id)
       project)))

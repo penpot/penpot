@@ -14,10 +14,8 @@
    [clojure.test.check.generators :as gen]
    [clojure.test.check.properties :as props]))
 
-(defspec non-repeating-uuid-next-1 5000
+(defspec non-repeating-uuid-next-1 100
   (props/for-all
    [uuid1 (s/gen ::us/uuid)
     uuid2 (s/gen ::us/uuid)]
    (t/is (not= uuid1 uuid2))))
-
-

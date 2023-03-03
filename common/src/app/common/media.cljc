@@ -103,7 +103,7 @@
 
 (defn font-weight->name
   [weight]
-  (case weight
+  (case (long weight)
     100 "Hairline"
     200 "Extra Light"
     300 "Light"

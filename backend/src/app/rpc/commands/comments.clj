@@ -101,7 +101,7 @@
 (sv/defmethod ::get-comment-threads
   {::doc/added "1.15"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id share-id] :as params}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (get-comment-threads conn profile-id file-id)))
 
@@ -144,7 +144,7 @@
 (sv/defmethod ::get-unread-comment-threads
   {::doc/added "1.15"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (get-unread-comment-threads conn profile-id team-id)))
 
@@ -191,7 +191,7 @@
 (sv/defmethod ::get-comment-thread
   {::doc/added "1.15"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id id share-id] :as params}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (let [sql (str "with threads as (" sql:comment-threads ")"
                    "select * from threads where id = ?")]
@@ -211,7 +211,7 @@
 (sv/defmethod ::get-comments
   {::doc/added "1.15"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id thread-id share-id] :as params}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (let [{:keys [file-id] :as thread} (get-comment-thread conn thread-id)]
       (files/check-comment-permissions! conn profile-id file-id share-id)
       (get-comments conn thread-id))))
@@ -263,7 +263,7 @@
   {::doc/added "1.15"
    ::doc/changes ["1.15" "Imported from queries and renamed."]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id share-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (get-file-comments-users conn file-id profile-id)))
 

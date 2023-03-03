@@ -8,6 +8,7 @@
   "A version parsing helper."
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -27,11 +28,6 @@
 (def root-frame uuid/zero)
 (def conjv (fnil conj []))
 (def conjs (fnil conj #{}))
-
-(defn- raise
-  [err-str]
-  #?(:clj (throw (Exception. err-str))
-     :cljs (throw (js/Error. err-str))))
 
 (defn- commit-change
   ([file change]
@@ -104,7 +100,9 @@
 
 (defn setup-rect-selrect [{:keys [x y width height transform] :as obj}]
   (when-not (d/num? x y width height)
-    (raise "Coords not valid for object"))
+    (ex/raise :type :assertion
+              :code :invalid-condition
+              :hint "Coords not valid for object"))
 
   (let [rect      (gsh/make-rect x y width height)
         center    (gsh/center-rect rect)
@@ -121,7 +119,9 @@
   [{:keys [content center transform transform-inverse] :as obj}]
 
   (when (or (empty? content) (nil? center))
-    (raise "Path not valid"))
+    (ex/raise :type :assertion
+              :code :invalid-condition
+              :hint "Path not valid"))
 
   (let [transform (gmt/transform-in center transform)
         transform-inverse (gmt/transform-in center transform-inverse)
