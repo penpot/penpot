@@ -54,6 +54,7 @@
     display: flex;
     justify-content: flex-end;
     position: relative;
+    z-index: 10;
 
     > * {
       margin-left: $size-5;
