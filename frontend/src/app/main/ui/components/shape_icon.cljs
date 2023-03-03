@@ -20,11 +20,13 @@
       i/component-copy)
     (case (:type shape)
       :frame (cond
-               (and (ctl/layout? shape) (ctl/col? shape))
+               (and (ctl/flex-layout? shape) (ctl/col? shape))
                i/layout-columns
 
-               (and (ctl/layout? shape) (ctl/row? shape))
+               (and (ctl/flex-layout? shape) (ctl/row? shape))
                i/layout-rows
+
+               ;; TODO: GRID ICON
 
                :else
                i/artboard)

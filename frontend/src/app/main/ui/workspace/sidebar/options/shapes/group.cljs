@@ -29,15 +29,15 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [shape                   (unchecked-get props "shape")
-        shape-with-children     (unchecked-get props "shape-with-children")
-        shared-libs             (unchecked-get props "shared-libs")
-        objects                 (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
-        file-id                 (unchecked-get props "file-id")
-        layout-container-values (select-keys shape layout-container-flex-attrs)
-        ids                     [(:id shape)]
-        is-layout-child-ref     (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child?        (mf/deref is-layout-child-ref)
+  (let [shape                    (unchecked-get props "shape")
+        shape-with-children      (unchecked-get props "shape-with-children")
+        shared-libs              (unchecked-get props "shared-libs")
+        objects                  (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
+        file-id                  (unchecked-get props "file-id")
+        layout-container-values  (select-keys shape layout-container-flex-attrs)
+        ids                      [(:id shape)]
+        is-flex-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-flex-layout-child? ids))
+        is-flex-layout-child?    (mf/deref is-flex-layout-child-ref)
         is-layout-child-absolute? (ctl/layout-absolute? shape)
 
         type :group
@@ -58,7 +58,7 @@
      [:& component-menu {:ids comp-ids :values comp-values :shape-name (:name shape)}]
      [:& layout-container-menu {:type type :ids [(:id shape)] :values layout-container-values :multiple false}]
 
-     (when is-layout-child?
+     (when is-flex-layout-child?
        [:& layout-item-menu
         {:type type
          :ids layout-item-ids
@@ -66,7 +66,7 @@
          :is-layout-container? false
          :values layout-item-values}])
 
-     (when (or (not is-layout-child?) is-layout-child-absolute?)
+     (when (or (not is-flex-layout-child?) is-layout-child-absolute?)
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]

@@ -23,6 +23,7 @@
    [app.main.ui.workspace.sidebar.options.shapes.bool :as bool]
    [app.main.ui.workspace.sidebar.options.shapes.circle :as circle]
    [app.main.ui.workspace.sidebar.options.shapes.frame :as frame]
+   [app.main.ui.workspace.sidebar.options.shapes.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.shapes.group :as group]
    [app.main.ui.workspace.sidebar.options.shapes.image :as image]
    [app.main.ui.workspace.sidebar.options.shapes.multiple :as multiple]
@@ -67,9 +68,16 @@
   (let [drawing              (mf/deref refs/workspace-drawing)
         objects              (mf/deref refs/workspace-page-objects)
         shared-libs          (mf/deref refs/workspace-libraries)
+        grid-edition         (mf/deref refs/workspace-grid-edition)
         selected-shapes      (into [] (keep (d/getf objects)) selected)
         first-selected-shape (first selected-shapes)
         shape-parent-frame   (cph/get-frame objects (:frame-id first-selected-shape))
+
+        [grid-id {[row-selected col-selected] :selected}]
+        (d/seek (fn [[_ {:keys [selected]}]] (some? selected)) grid-edition)
+
+        grid-cell-selected? (and (some? grid-id) (some? row-selected) (some? col-selected))
+
         on-change-tab
         (fn [options-mode]
           (st/emit! (udw/set-options-mode options-mode)
@@ -87,6 +95,10 @@
          [:& align-options]
          [:& bool-options]
          (cond
+           grid-cell-selected? [:& grid-cell/options {:shape (get objects grid-id)
+                                                      :row row-selected
+                                                      :column col-selected}]
+
            (d/not-empty? drawing) [:& shape-options {:shape (:object drawing)
                                                      :page-id page-id
                                                      :file-id file-id
@@ -138,4 +150,3 @@
                          :file-id file-id
                          :page-id page-id
                          :section section}]))
-

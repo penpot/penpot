@@ -1,4 +1,4 @@
-;; This Source Code Form is subject to the terms of the Mozilla Public
+; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
@@ -53,14 +53,29 @@
    :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
 
 (def initial-grid-layout ;; TODO
-  {:layout :grid})
+  {:layout :grid
+   :layout-grid-dir        :row
+   :layout-gap-type        :multiple
+   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-align-items     :start
+   :layout-align-content   :stretch
+   :layout-justify-items   :start
+   :layout-justify-content :start
+   :layout-padding-type    :simple
+   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}
+   :layout-grid-rows       []
+   :layout-grid-columns    []})
 
 (defn get-layout-initializer
   [type from-frame?]
-  (let [initial-layout-data (if (= type :flex) initial-flex-layout initial-grid-layout)]
+  (let [initial-layout-data
+        (case type
+          :flex initial-flex-layout
+          :grid initial-grid-layout)]
     (fn [shape]
       (-> shape
           (merge initial-layout-data)
+          (cond-> (= type :grid) ctl/assign-cells)
           ;; If the original shape is not a frame we set clip content and show-viewer to false
           (cond-> (not from-frame?)
             (assoc :show-content true :hide-in-viewer true))))))
@@ -140,6 +155,13 @@
                                    :layout-align-items :center
                                    :layout-gap layout-gap)))))
 
+(defn shapes->grid-params
+  "Given the shapes calculate its flex parameters (horizontal vs vertical, gaps, etc)"
+  ([objects shapes]
+   (shapes->flex-params objects shapes nil))
+  ([_objects _shapes _parent]
+   {}))
+
 (defn create-layout-from-id
   [ids type from-frame?]
   (ptk/reify ::create-layout-from-id
@@ -149,8 +171,10 @@
             children-ids    (into [] (mapcat #(get-in objects [% :shapes])) ids)
             children-shapes (map (d/getf objects) children-ids)
             parent          (get objects (first ids))
-            flex-params     (when (d/not-empty? children-shapes)
-                              (shapes->flex-params objects children-shapes parent))
+            layout-params   (when (d/not-empty? children-shapes)
+                              (case type
+                                :flex (shapes->flex-params objects children-shapes parent)
+                                :grid (shapes->grid-params objects children-shapes parent)))
             undo-id         (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwc/update-shapes ids (get-layout-initializer type from-frame?))
@@ -161,7 +185,7 @@
                     (not from-frame?)
                     (->  (assoc :layout-item-h-sizing :auto
                                 :layout-item-v-sizing :auto)
-                         (merge flex-params)))))
+                         (merge layout-params)))))
                (ptk/data-event :layout/update ids)
                (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v))
                (dwu/commit-undo-transaction undo-id))))))
@@ -288,7 +312,7 @@
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn create-layout
-  []
+  [type]
   (ptk/reify ::create-layout
     ptk/WatchEvent
     (watch [_ state _]
@@ -300,15 +324,12 @@
             is-frame?        (= :frame (:type (first selected-shapes)))
             undo-id          (js/Symbol)]
 
-        (if (and single? is-frame?)
-          (rx/of
-           (dwu/start-undo-transaction undo-id)
-           (create-layout-from-id [(first selected)] :flex true)
-           (dwu/commit-undo-transaction undo-id))
-          (rx/of
-           (dwu/start-undo-transaction undo-id)
-           (create-layout-from-selection :flex)
-           (dwu/commit-undo-transaction undo-id)))))))
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (if (and single? is-frame?)
+           (create-layout-from-id [(first selected)] type true)
+           (create-layout-from-selection type))
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn toggle-layout-flex
   []
@@ -320,12 +341,12 @@
             selected         (wsh/lookup-selected state)
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
-            has-flex-layout? (and single? (ctl/layout? objects (:id (first selected-shapes))))]
+            has-flex-layout? (and single? (ctl/flex-layout? objects (:id (first selected-shapes))))]
 
         (when (not= 0 (count selected))
           (if has-flex-layout?
             (rx/of (remove-layout selected))
-            (rx/of (create-layout))))))))
+            (rx/of (create-layout :flex))))))))
 
 (defn update-layout
   [ids changes]
@@ -335,6 +356,101 @@
       (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dwc/update-shapes ids #(d/deep-merge % changes))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
+
+#_(defn update-grid-cells
+  [parent objects]
+  (let [children (cph/get-immediate-children objects (:id parent))
+        layout-grid-rows (:layout-grid-rows parent)
+        layout-grid-columns (:layout-grid-columns parent)
+        num-rows (count layout-grid-columns)
+        num-columns (count layout-grid-columns)
+        layout-grid-cells (:layout-grid-cells parent)
+
+        allocated-shapes
+        (into #{} (mapcat :shapes) (:layout-grid-cells parent))
+
+        no-cell-shapes
+        (->> children (:shapes parent) (remove allocated-shapes))
+
+        layout-grid-cells
+        (for [[row-idx row] (d/enumerate layout-grid-rows)
+              [col-idx col] (d/enumerate layout-grid-columns)]
+
+          (let [shape (nth children (+ (* row-idx num-columns) col-idx) nil)
+                cell-data {:id (uuid/next)
+                           :row (inc row-idx)
+                           :column (inc col-idx)
+                           :row-span 1
+                           :col-span 1
+                           :shapes (when shape [(:id shape)])}]
+            [(:id cell-data) cell-data]))]
+    (assoc parent :layout-grid-cells (into {} layout-grid-cells))))
+
+#_(defn check-grid-cells-update
+  [ids]
+  (ptk/reify ::check-grid-cells-update
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            undo-id (js/Symbol)]
+        (rx/of (dwc/update-shapes
+                ids
+                (fn [shape]
+                  (-> shape
+                      (update-grid-cells objects)))))))))
+
+(defn add-layout-track
+  [ids type value]
+  (assert (#{:row :column} type))
+  (ptk/reify ::add-layout-column
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes
+                ids
+                (fn [shape]
+                  (case type
+                    :row    (ctl/add-grid-row shape value)
+                    :column (ctl/add-grid-column shape value))))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn remove-layout-track
+  [ids type index]
+  (assert (#{:row :column} type))
+  
+  (ptk/reify ::remove-layout-column
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes
+                ids
+                (fn [shape]
+                  (case type
+                    :row    (ctl/remove-grid-row shape index)
+                    :column (ctl/remove-grid-column shape index))))
+               (ptk/data-event :layout/update ids)
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn change-layout-track
+  [ids type index props]
+  (assert (#{:row :column} type))
+  (ptk/reify ::change-layout-column
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)
+            property (case :row :layout-grid-rows
+                           :column :layout-grid-columns)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwc/update-shapes
+                ids
+                (fn [shape]
+                  (-> shape
+                      (update-in [property index] merge props))))
                (ptk/data-event :layout/update ids)
                (dwu/commit-undo-transaction undo-id))))))
 

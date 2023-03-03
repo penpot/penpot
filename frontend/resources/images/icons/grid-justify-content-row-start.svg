@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="500"
+   height="500"
+   viewBox="0 0 132.292 132.292"
+   version="1.1"
+   id="svg4"
+   sodipodi:docname="grid-justify-content-row-start.svg"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs8" />
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="2.054"
+     inkscape:cx="250"
+     inkscape:cy="249.75657"
+     inkscape:window-width="3840"
+     inkscape:window-height="2066"
+     inkscape:window-x="2869"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg4" />
+  <path
+     id="path2"
+     d="M 0,1.5e-6 H 11.2071 V 132.292 H 0 Z M 22.70823,29.530058 H 52.434141 V 60.542712 H 22.70823 Z m 0,42.219234 H 52.434141 V 102.76401 H 22.70823 Z m 44.449597,-42.12105 h 29.72643 v 30.91447 h -29.72643 z m 0,42.12105 h 29.72643 v 31.014718 h -29.72643 z" />
+</svg>

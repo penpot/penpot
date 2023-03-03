@@ -288,7 +288,7 @@
 
         constraints-h
         (cond
-          (and (ctl/layout? parent) (not (ctl/layout-absolute? child)))
+          (and (ctl/any-layout? parent) (not (ctl/layout-absolute? child)))
           :left
 
           (not ignore-constraints)
@@ -299,7 +299,7 @@
 
         constraints-v
         (cond
-          (and (ctl/layout? parent) (not (ctl/layout-absolute? child)))
+          (and (ctl/any-layout? parent) (not (ctl/layout-absolute? child)))
           :top
 
           (not ignore-constraints)

@@ -164,7 +164,7 @@
       :else
       ;; If the base is a layout we should check if the z-index property is set
       (let [[z-index-a z-index-b]
-            (if (ctl/layout? objects base)
+            (if (ctl/any-layout? objects base)
               [(ctl/layout-z-index objects (dm/get-in objects [base :shapes index-a]))
                (ctl/layout-z-index objects (dm/get-in objects [base :shapes index-b]))]
               [0 0])]

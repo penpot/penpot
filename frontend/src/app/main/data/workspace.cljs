@@ -660,7 +660,7 @@
         (pcb/with-objects objects)
 
         ;; Remove layout-item properties when moving a shape outside a layout
-        (cond-> (not (ctl/layout? objects parent-id))
+        (cond-> (not (ctl/any-layout? objects parent-id))
           (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
 
         ;; Move the shapes
@@ -714,7 +714,7 @@
         ;; Fix the sizing when moving a shape
         (pcb/update-shapes parents
                            (fn [parent]
-                             (if (ctl/layout? parent)
+                             (if (ctl/flex-layout? parent)
                                (cond-> parent
                                  (ctl/change-h-sizing? (:id parent) objects (:shapes parent))
                                  (assoc :layout-item-h-sizing :fix)

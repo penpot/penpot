@@ -179,8 +179,8 @@
   (let [origin-frame-ids (->> selected (group-by #(get-in objects [% :frame-id])))
         child-set (set (get-in objects [target-frame-id :shapes]))
 
-        target-frame (get objects target-frame-id)
-        target-layout? (ctl/layout? target-frame)
+        target-frame        (get objects target-frame-id)
+        target-flex-layout? (ctl/flex-layout? target-frame)
 
         children-ids (concat (:shapes target-frame) selected)
 
@@ -201,7 +201,7 @@
         (fn [modif-tree [original-frame shapes]]
           (let [shapes (->> shapes (d/removev #(= target-frame-id %)))
                 shapes (cond->> shapes
-                         (and target-layout? (= original-frame target-frame-id))
+                         (and target-flex-layout? (= original-frame target-frame-id))
                          ;; When movining inside a layout frame remove the shapes that are not immediate children
                          (filterv #(contains? child-set %)))
                 children-ids (->> (dm/get-in objects [original-frame :shapes])
@@ -219,7 +219,7 @@
                   (cond-> v-sizing?
                     (update-in [original-frame :modifiers] ctm/change-property :layout-item-v-sizing :fix)))
 
-              (and target-layout? (= original-frame target-frame-id))
+              (and target-flex-layout? (= original-frame target-frame-id))
               (update-in [target-frame-id :modifiers] ctm/add-children shapes drop-index))))]
 
     (as-> modif-tree $

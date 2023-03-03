@@ -12,7 +12,8 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.flex-layout :as gsl]
+   [app.common.geom.shapes.flex-layout :as gslf]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
@@ -440,7 +441,7 @@
              exclude-frames-siblings
              (into exclude-frames
                    (comp (mapcat (partial cph/get-siblings-ids objects))
-                         (filter (partial ctl/layout-immediate-child-id? objects)))
+                         (filter (partial ctl/any-layout-immediate-child-id? objects)))
                    selected)
 
              position (->> ms/mouse-position
@@ -469,11 +470,14 @@
 
                       (rx/map
                        (fn [[move-vector mod?]]
-                         (let [position     (gpt/add from-position move-vector)
+                         (let [position       (gpt/add from-position move-vector)
                                exclude-frames (if mod? exclude-frames exclude-frames-siblings)
-                               target-frame (ctst/top-nested-frame objects position exclude-frames)
-                               layout?      (ctl/layout? objects target-frame)
-                               drop-index   (when layout? (gsl/get-drop-index target-frame objects position))]
+                               target-frame   (ctst/top-nested-frame objects position exclude-frames)
+                               flex-layout?   (ctl/flex-layout? objects target-frame)
+                               grid-layout?   (ctl/grid-layout? objects target-frame)
+                               drop-index     (cond
+                                                flex-layout? (gslf/get-drop-index target-frame objects position)
+                                                grid-layout? (gslg/get-drop-index target-frame objects position))]
                            [move-vector target-frame drop-index])))
 
                       (rx/take-until stopper))]
@@ -529,7 +533,8 @@
             get-new-position
             (fn [parent-id position]
               (let [parent (get objects parent-id)]
-                (when (ctl/layout? parent)
+                (cond
+                  (ctl/flex-layout? parent)
                   (if (or
                        (and (ctl/reverse? parent)
                             (or (= direction :left)
@@ -538,7 +543,12 @@
                             (or (= direction :right)
                                 (= direction :down))))
                     (dec position)
-                    (+ position 2)))))
+                    (+ position 2))
+
+                  ;; TODO: GRID
+                  (ctl/grid-layout? parent)
+                  nil
+                  )))
 
             add-children-position
             (fn [[parent-id children]]
@@ -643,7 +653,7 @@
       (let [objects (wsh/lookup-page-objects state)
             selected (wsh/lookup-selected state {:omit-blocked? true})
             selected-shapes (->> selected (map (d/getf objects)))]
-        (if (every? #(and (ctl/layout-immediate-child? objects %)
+        (if (every? #(and (ctl/any-layout-immediate-child? objects %)
                           (not (ctl/layout-absolute? %)))
                     selected-shapes)
           (rx/of (reorder-selected-layout-child direction))
@@ -732,7 +742,7 @@
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
                 ;; Remove layout-item properties when moving a shape outside a layout
-                (cond-> (not (ctl/layout? objects frame-id))
+                (cond-> (not (ctl/any-layout? objects frame-id))
                   (pcb/update-shapes (map :id moving-shapes) ctl/remove-layout-item-data))
                 (pcb/change-parent frame-id moving-shapes drop-index)
                 (pcb/remove-objects empty-parents))]
