@@ -8,6 +8,8 @@
   (:require
    [app.common.text :as txt]
    [app.main.fonts :as fonts]
+   [app.main.ui.context :as ctx]
+   [app.main.ui.shapes.text.fo-text :as fo]
    [app.main.ui.shapes.text.svg-text :as svg]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -22,10 +24,13 @@
 (mf/defc text-shape
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [position-data content] :as shape} (obj/get props "shape")]
+  (let [{:keys [position-data content] :as shape} (obj/get props "shape")
+        is-component? (mf/use-ctx ctx/is-component?)]
 
     (mf/with-memo [content]
       (load-fonts! content))
 
-    (when (some? position-data)
-      [:> svg/text-shape props])))
+    ;; Old components can have texts without position data that must be rendered via foreign key
+    (cond
+      (some? position-data) [:> svg/text-shape props]
+      is-component?             [:> fo/text-shape props])))

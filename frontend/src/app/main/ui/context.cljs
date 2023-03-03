@@ -27,3 +27,4 @@
 (def current-zoom         (mf/create-context nil))
 
 (def workspace-read-only? (mf/create-context nil))
+(def is-component?        (mf/create-context false))
