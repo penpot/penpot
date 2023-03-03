@@ -15,6 +15,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix problem with rules position on changing pages [Taiga #4847](https://tree.taiga.io/project/penpot/issue/4847)
+
 ### :arrow_up: Deps updates
 
 ### :heart: Community contributions by (Thank you!)

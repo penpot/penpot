@@ -63,14 +63,16 @@
            (doseq [key keys]
              (events/unlistenByKey key))))))))
 
-(defn setup-viewport-size [viewport-ref]
+(defn setup-viewport-size [vport viewport-ref]
   (mf/use-layout-effect
+   (mf/deps vport)
    (fn []
-     (let [node (mf/ref-val viewport-ref)
-           prnt (dom/get-parent node)
-           size (dom/get-client-size prnt)]
-       ;; We schedule the event so it fires after `initialize-page` event
-       (timers/schedule #(st/emit! (dw/initialize-viewport size)))))))
+     (when-not vport
+       (let [node (mf/ref-val viewport-ref)
+             prnt (dom/get-parent node)
+             size (dom/get-client-size prnt)]
+         ;; We schedule the event so it fires after `initialize-page` event
+         (timers/schedule #(st/emit! (dw/initialize-viewport size))))))))
 
 (defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?]
   (mf/use-effect

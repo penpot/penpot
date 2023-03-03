@@ -16,6 +16,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-observer]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
@@ -45,6 +46,7 @@
   (let [selected (mf/deref refs/selected-shapes)
         file     (obj/get props "file")
         layout   (obj/get props "layout")
+        page-id  (obj/get props "page-id")
 
         {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
         {:keys [options-mode] :as wglobal} (obj/get props "wglobal")
@@ -77,7 +79,8 @@
          [:div.history-debug-overlay
           [:button {:on-click #(st/emit! dw/reinitialize-undo)} "CLEAR"]
           [:& history-toolbox]])
-       [:& viewport {:file file
+       [:& viewport {:key (dm/str "workspace-" page-id)
+                     :file file
                      :wlocal wlocal
                      :wglobal wglobal
                      :selected selected
@@ -100,19 +103,21 @@
 (mf/defc workspace-page
   [{:keys [file layout page-id wglobal] :as props}]
 
- (mf/with-effect [page-id]
-   (if (nil? page-id)
-     (st/emit! (dw/go-to-page))
-     (st/emit! (dw/initialize-page page-id)))
-   (fn []
-     (when page-id
-       (st/emit! (dw/finalize-page page-id)))))
+  (let [prev-page-id (hooks/use-previous page-id)]
+    (mf/with-effect
+      [page-id]
+      (when (and page-id (not= prev-page-id page-id))
+        (st/emit! (dw/finalize-page prev-page-id)))
 
-  (when (mf/deref trimmed-page-ref)
-    [:& workspace-content {:key (dm/str page-id)
-                           :file file
-                           :wglobal wglobal
-                           :layout layout}]))
+      (if (nil? page-id)
+        (st/emit! (dw/go-to-page))
+        (st/emit! (dw/initialize-page page-id))))
+
+    (when (mf/deref trimmed-page-ref)
+      [:& workspace-content {:page-id page-id
+                             :file file
+                             :wglobal wglobal
+                             :layout layout}])))
 
 (mf/defc workspace-loader
   []
@@ -169,11 +174,10 @@
            [:& context-menu]
 
           (if ready?
-             [:& workspace-page {:key (dm/str "page-" page-id)
-                                 :page-id page-id
-                                 :file file
-                                 :wglobal wglobal
-                                 :layout layout}]
+            [:& workspace-page {:page-id page-id
+                                :file file
+                                :wglobal wglobal
+                                :layout layout}]
              [:& workspace-loader])]]]]]]]))
 
 (mf/defc remove-graphics-dialog
