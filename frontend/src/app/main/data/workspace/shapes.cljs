@@ -82,7 +82,6 @@
    (ptk/reify ::add-shape
      ptk/WatchEvent
      (watch [it state _]
-       (.log js/console (clj->js attrs))
        (let [page-id  (:current-page-id state)
              objects  (wsh/lookup-page-objects state page-id)
              selected (wsh/lookup-selected state)

@@ -439,8 +439,7 @@
                    (cph/selected-with-children objects selected))
 
              exclude-frames-siblings
-             exclude-frames
-             #_(into exclude-frames
+             (into exclude-frames
                    (comp (mapcat (partial cph/get-siblings-ids objects))
                          (filter (partial ctl/any-layout-immediate-child-id? objects)))
                    selected)

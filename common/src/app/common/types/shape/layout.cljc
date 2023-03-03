@@ -569,7 +569,7 @@
 
 
 ;; TODO
-;; Assign cells takes the children and move them into the aloted cells. If there are not enough cells it creates
+;; Assign cells takes the children and move them into the allotted cells. If there are not enough cells it creates
 ;; not-tracked rows/columns and put the shapes there
 ;; Should be caled each time a child can be added like:
 ;;  - On shape creation
