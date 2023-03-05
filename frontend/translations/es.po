@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-06 15:38+0000\n"
-"Last-Translator: Alvaro Araoz <alvaroaraoz_92@hotmail.com>\n"
+"PO-Revision-Date: 2023-03-07 11:37+0000\n"
+"Last-Translator: Pablo Hinojosa <pablohn6@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 4.16.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -467,7 +467,7 @@ msgstr "Enviando fichero: %s"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "Invitar al equipo"
+msgstr "Invitar a la gente"
 
 #: src/app/main/ui/dashboard/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -1036,10 +1036,6 @@ msgstr "Ancho"
 msgid "inspect.attributes.shadow"
 msgstr "Sombra"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
-
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.size"
 msgstr "Tamaño y posición"
@@ -1409,7 +1405,7 @@ msgstr "Nueva contraseña"
 #: src/app/main/ui/workspace/comments.cljs,
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "No tienes notificaciones de comentarios pendientes"
+msgstr "¡Ya estás al día! Nuevas notificaciones de comentarios aparecerán aquí."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
@@ -2171,9 +2167,6 @@ msgstr "Crear equipo y enviar invitaciones"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Invitar con el rol:"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Puedes acceder al"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Si, suscribirme"
 
@@ -2188,14 +2181,8 @@ msgstr "Política de Privacidad."
 msgid "onboarding.newsletter.title"
 msgstr "¿Quieres recibir noticias sobre Penpot?"
 
-msgid "onboarding.slide.0.title"
-msgstr "Bibliotecas de diseño, estilos y componentes"
-
 msgid "onboarding.slide.1.title"
 msgstr "Lleva tus diseños a la vida con interacciones"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Especificaciones de código"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Crea un equipo"
@@ -2219,9 +2206,6 @@ msgstr "Sin límite de integrantes"
 
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "¡100% gratis!"
-
-msgid "onboarding.team.start.title"
-msgstr "Comienza a diseñar"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Aquí tienes algunas plantillas."
@@ -2777,10 +2761,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Copiar enlace"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Cualquiera con el enlace podrá acceder"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Mostrar interacciones"
 
@@ -3236,9 +3216,6 @@ msgstr "Actualizar"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "ACTUALIZACIONES"
-
-msgid "workspace.library.store"
-msgstr "Predefinidas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
