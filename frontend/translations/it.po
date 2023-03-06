@@ -398,6 +398,7 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 font aggiunto"
 msgstr[1] "%s font aggiunti"
 
+#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Qualsiasi font web caricato qui verrà aggiunto alla lista dei font family "
@@ -406,6 +407,7 @@ msgstr ""
 "**singolo font family**. È possibile caricare font con i seguenti "
 "formati:**TTF, OTF e WOFF**(uno solo di questi è necessario)."
 
+#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "È consigliabile caricare unicamente font di cui si è proprietari o dei "
