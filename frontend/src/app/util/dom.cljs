@@ -448,7 +448,7 @@
   (assert (even? (count params)))
   (str/join " " (reduce (fn [acc [k v]]
                           (if (true? (boolean v))
-                            (conj acc (name k))
+                            (conj acc (d/name k))
                             acc))
                         []
                         (partition 2 params))))
