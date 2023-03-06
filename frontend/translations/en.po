@@ -831,7 +831,7 @@ msgstr "The email «%s» has been reported as spam or permanently bounce."
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
 msgstr ""
-"Looks like you are opening a file that has the feature '%s' enabled bug "
+"Looks like you are opening a file that has the feature '%s' enabled but "
 "your penpot frontend does not supports it or has it disabled."
 
 #: src/app/main/errors.cljs
