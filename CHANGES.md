@@ -20,6 +20,7 @@
 - Fix selecting children from hidden parent layers [Taiga #4934](https://tree.taiga.io/project/penpot/issue/4934)
 - Fix problem when undoing multiple selected colors [Taiga #4920](https://tree.taiga.io/project/penpot/issue/4920)
 - Allow selection of empty board by partial rect [Taiga #4806](https://tree.taiga.io/project/penpot/issue/4806)
+- Improve behavior for undo on text edition [Taiga #4693](https://tree.taiga.io/project/penpot/issue/4693)
 
 ### :arrow_up: Deps updates
 

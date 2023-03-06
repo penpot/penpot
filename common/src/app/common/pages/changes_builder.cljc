@@ -35,6 +35,10 @@
   [changes save-undo?]
   (assoc changes :save-undo? save-undo?))
 
+(defn set-stack-undo?
+  [changes stack-undo?]
+  (assoc changes :stack-undo? stack-undo?))
+
 (defn with-page
   [changes page]
   (vary-meta changes assoc
