@@ -87,7 +87,7 @@
     (watch [it state _]
       (let [edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
-        (when (and (nil? edition) (or (empty drawing) (= :curve (:tool drawing))))
+        (when (and (nil? edition) (or (empty? drawing) (= :curve (:tool drawing))))
           (let [undo  (:workspace-undo state)
                 items (:items undo)
                 index (or (:index undo) (dec (count items)))]
