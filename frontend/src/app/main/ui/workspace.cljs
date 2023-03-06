@@ -106,7 +106,7 @@
   (let [prev-page-id (hooks/use-previous page-id)]
     (mf/with-effect
       [page-id]
-      (when (and page-id (not= prev-page-id page-id))
+      (when (and prev-page-id (not= prev-page-id page-id))
         (st/emit! (dw/finalize-page prev-page-id)))
 
       (if (nil? page-id)
