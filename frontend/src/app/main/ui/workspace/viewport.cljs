@@ -225,7 +225,7 @@
                         (= (:layout (first selected-shapes)) :flex))]
 
     (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport? workspace-read-only?)
-    (hooks/setup-viewport-size viewport-ref)
+    (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
