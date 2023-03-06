@@ -401,6 +401,7 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "Engadiuse 1 fonte"
 msgstr[1] "Engadíronse % fontes"
 
+#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Calquera fonte que cargues aquí engadirase na listaxe de familias de fontes "
@@ -409,6 +410,7 @@ msgstr ""
 "Podes cargar fontes cos seguintes formatos: **TTF, OFT e WOFF** (só se "
 "precisa un)."
 
+#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Só debes cargar fontes da túa propiedade ou das que teñas licenza para usar "

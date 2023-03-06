@@ -409,6 +409,7 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 Schriftart hinzugefügt"
 msgstr[1] "%s Schriftarten hinzugefügt"
 
+#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Jede Webschriftart, die Sie hier hochladen, wird der Liste der Schriftarten "
@@ -418,6 +419,7 @@ msgstr ""
 "den folgenden Formaten hochladen: **TTF, OTF und WOFF** (nur eine wird "
 "benötigt)."
 
+#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Sie sollten nur Schriftarten hochladen, die Sie besitzen oder für die Sie "
