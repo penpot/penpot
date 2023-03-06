@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-03-07 11:37+0000\n"
-"Last-Translator: Pablo Hinojosa <pablohn6@gmail.com>\n"
+"Last-Translator: Alvaro Araoz <alvaroaraoz_92@hotmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -54,7 +54,7 @@ msgstr "Nombre completo"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
-msgstr "Entra aquí"
+msgstr "Inicia sesión aquí"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -2180,9 +2180,6 @@ msgstr "Política de Privacidad."
 
 msgid "onboarding.newsletter.title"
 msgstr "¿Quieres recibir noticias sobre Penpot?"
-
-msgid "onboarding.slide.1.title"
-msgstr "Lleva tus diseños a la vida con interacciones"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Crea un equipo"
