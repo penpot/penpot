@@ -46,7 +46,9 @@
 (defonce state
   (ptk/store {:resolve ptk/resolve
               :on-event on-event
-              :on-error (fn [e] (@on-error e))}))
+              :on-error (fn [e]
+                          (.log js/console "ERROR!!" e)
+                          (@on-error e))}))
 
 (defonce stream
   (ptk/input-stream state))

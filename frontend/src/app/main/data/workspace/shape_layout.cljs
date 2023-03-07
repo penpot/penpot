@@ -202,7 +202,8 @@
             ids (->> ids (filter #(contains? objects %)))]
         (if (d/not-empty? ids)
           (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-            (rx/of (dwm/apply-modifiers {:modifiers modif-tree})))
+            (rx/of (dwm/apply-modifiers {:modifiers modif-tree
+                                         :stack-undo? true})))
           (rx/empty))))))
 
 (defn initialize

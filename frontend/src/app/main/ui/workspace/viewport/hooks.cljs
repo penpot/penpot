@@ -244,6 +244,7 @@
              hover-shape
              (->> ids
                   (remove remove-id?)
+                  (remove (partial cph/hidden-parent? objects))
                   (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
                   (first)
                   (get objects))]

@@ -62,7 +62,9 @@
         height (get-in data [:attrs :height] 100)
         viewbox (get-in data [:attrs :viewBox] (str "0 0 " width " " height))
         [x y width height] (->> (str/split viewbox #"\s+")
-                                (map d/parse-double))]
+                                (map d/parse-double))
+        width (if (= width 0) 1 width)
+        height (if (= height 0) 1 height)]
     [(assert-valid-num :x x)
      (assert-valid-num :y y)
      (assert-valid-pos-num :width width)
@@ -483,117 +485,118 @@
 
 (defn create-svg-shapes
   [svg-data {:keys [x y]} objects frame-id parent-id selected center?]
-  (try
-    (let [[vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
-          x (mth/round
-             (if center?
-               (- x vb-x (/ vb-width 2))
-               x))
-          y (mth/round
-             (if center?
-               (- y vb-y (/ vb-height 2))
-               y))
+  (let [[vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
+        x (mth/round
+           (if center?
+             (- x vb-x (/ vb-width 2))
+             x))
+        y (mth/round
+           (if center?
+             (- y vb-y (/ vb-height 2))
+             y))
 
-          unames (cp/retrieve-used-names objects)
+        unames (cp/retrieve-used-names objects)
 
-          svg-name (str/replace (:name svg-data) ".svg" "")
+        svg-name (str/replace (:name svg-data) ".svg" "")
 
-          svg-data (-> svg-data
-                       (assoc :x x
-                              :y y
-                              :offset-x vb-x
-                              :offset-y vb-y
-                              :width vb-width
-                              :height vb-height
-                              :name svg-name))
+        svg-data (-> svg-data
+                     (assoc :x x
+                            :y y
+                            :offset-x vb-x
+                            :offset-y vb-y
+                            :width vb-width
+                            :height vb-height
+                            :name svg-name))
 
-          [def-nodes svg-data] (-> svg-data
-                                   (usvg/fix-default-values)
-                                   (usvg/fix-percents)
-                                   (usvg/extract-defs))
+        [def-nodes svg-data] (-> svg-data
+                                 (usvg/fix-default-values)
+                                 (usvg/fix-percents)
+                                 (usvg/extract-defs))
 
-          svg-data (assoc svg-data :defs def-nodes)
+        svg-data (assoc svg-data :defs def-nodes)
 
-          root-shape (create-svg-root frame-id parent-id svg-data)
-          root-id (:id root-shape)
+        root-shape (create-svg-root frame-id parent-id svg-data)
+        root-id (:id root-shape)
 
-          ;; In penpot groups have the size of their children. To respect the imported svg size and empty space let's create a transparent shape as background to respect the imported size
-          base-background-shape {:tag :rect
-                                 :attrs {:x      (str vb-x)
-                                         :y      (str vb-y)
-                                         :width  (str vb-width)
-                                         :height (str vb-height)
-                                         :fill   "none"
-                                         :id     "base-background"}
-                                 :hidden true
-                                 :content []}
+        ;; In penpot groups have the size of their children. To respect the imported svg size and empty space let's create a transparent shape as background to respect the imported size
+        base-background-shape {:tag :rect
+                               :attrs {:x      (str vb-x)
+                                       :y      (str vb-y)
+                                       :width  (str vb-width)
+                                       :height (str vb-height)
+                                       :fill   "none"
+                                       :id     "base-background"}
+                               :hidden true
+                               :content []}
 
-          svg-data (-> svg-data
-                       (assoc :defs def-nodes)
-                       (assoc :content (into [base-background-shape] (:content svg-data))))
+        svg-data (-> svg-data
+                     (assoc :defs def-nodes)
+                     (assoc :content (into [base-background-shape] (:content svg-data))))
 
-          ;; Create the root shape
-          new-shape (dwsh/make-new-shape root-shape objects selected)
+        ;; Create the root shape
+        new-shape (dwsh/make-new-shape root-shape objects selected)
 
-          root-attrs (-> (:attrs svg-data)
-                         (usvg/format-styles))
+        root-attrs (-> (:attrs svg-data)
+                       (usvg/format-styles))
 
-          [_ new-children]
-          (reduce (partial create-svg-children objects selected frame-id root-id svg-data)
-                  [unames []]
-                  (d/enumerate (->> (:content svg-data)
-                                    (mapv #(usvg/inherit-attributes root-attrs %)))))]
+        [_ new-children]
+        (reduce (partial create-svg-children objects selected frame-id root-id svg-data)
+                [unames []]
+                (d/enumerate (->> (:content svg-data)
+                                  (mapv #(usvg/inherit-attributes root-attrs %)))))]
 
-      [new-shape new-children])
-
-    (catch :default e
-      (.error js/console "Error SVG" e)
-      (rx/throw {:type :svg-parser
-                 :data e}))))
+    [new-shape new-children]))
 
 (defn add-svg-shapes
   [svg-data position]
   (ptk/reify ::add-svg-shapes
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            frame-id (ctst/top-nested-frame objects position)
-            selected (wsh/lookup-selected state)
-            page-objects  (wsh/lookup-page-objects state)
-            base      (cph/get-base-shape page-objects selected)
-            selected-frame? (and (= 1 (count selected))
-                                 (= :frame (get-in objects [(first selected) :type])))
+      (try
+        (let [page-id  (:current-page-id state)
+              objects  (wsh/lookup-page-objects state page-id)
+              frame-id (ctst/top-nested-frame objects position)
+              selected (wsh/lookup-selected state)
+              page-objects  (wsh/lookup-page-objects state)
+              base      (cph/get-base-shape page-objects selected)
+              selected-frame? (and (= 1 (count selected))
+                                   (= :frame (get-in objects [(first selected) :type])))
 
-            parent-id (if
-                       (or selected-frame? (empty? selected)) frame-id
-                       (:parent-id base))
+              parent-id
+              (if (or selected-frame? (empty? selected))
+                frame-id
+                (:parent-id base))
 
-            [new-shape new-children]
-            (create-svg-shapes svg-data position objects frame-id parent-id selected true)
-            changes   (-> (pcb/empty-changes it page-id)
-                          (pcb/with-objects objects)
-                          (pcb/add-object new-shape))
+              [new-shape new-children]
+              (create-svg-shapes svg-data position objects frame-id parent-id selected true)
+              changes   (-> (pcb/empty-changes it page-id)
+                            (pcb/with-objects objects)
+                            (pcb/add-object new-shape))
 
-            changes
-            (reduce (fn [changes [index new-child]]
-                      (-> changes
-                          (pcb/add-object new-child)
-                          (pcb/change-parent (:parent-id new-child) [new-child] index)))
-                    changes
-                    (d/enumerate new-children))
+              changes
+              (reduce (fn [changes [index new-child]]
+                        (-> changes
+                            (pcb/add-object new-child)
+                            (pcb/change-parent (:parent-id new-child) [new-child] index)))
+                      changes
+                      (d/enumerate new-children))
 
-            changes (pcb/resize-parents changes
-                                        (->> changes
-                                             :redo-changes
-                                             (filter #(= :add-obj (:type %)))
-                                             (map :id)
-                                             reverse
-                                             vec))
-            undo-id (js/Symbol)]
+              changes (pcb/resize-parents changes
+                                          (->> changes
+                                               :redo-changes
+                                               (filter #(= :add-obj (:type %)))
+                                               (map :id)
+                                               reverse
+                                               vec))
+              undo-id (js/Symbol)]
 
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (dws/select-shapes (d/ordered-set (:id new-shape)))
-               (ptk/data-event :layout/update [(:id new-shape)])
-               (dwu/commit-undo-transaction undo-id))))))
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (dch/commit-changes changes)
+                 (dws/select-shapes (d/ordered-set (:id new-shape)))
+                 (ptk/data-event :layout/update [(:id new-shape)])
+                 (dwu/commit-undo-transaction undo-id)))
+
+        (catch :default e
+          (.error js/console "Error SVG" e)
+          (rx/throw {:type :svg-parser
+                     :data e}))))))

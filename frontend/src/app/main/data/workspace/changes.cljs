@@ -55,9 +55,8 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? attrs ignore-tree page-id]
-                   :or {reg-objects? false save-undo? true}}]
-
+  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id]
+                   :or {reg-objects? false save-undo? true stack-undo? false}}]
    (us/assert ::coll-of-uuid ids)
    (us/assert fn? update-fn)
 
@@ -80,6 +79,7 @@
                             (pcb/update-shapes changes [id] update-fn opts)))
                         (-> (pcb/empty-changes it page-id)
                             (pcb/set-save-undo? save-undo?)
+                            (pcb/set-stack-undo? stack-undo?)
                             (pcb/with-objects objects))
                         ids)
              changes (add-group-id changes state)]
@@ -165,8 +165,8 @@
 
 (defn commit-changes
   [{:keys [redo-changes undo-changes
-           origin save-undo? file-id group-id]
-    :or {save-undo? true}}]
+           origin save-undo? file-id group-id stack-undo?]
+    :or {save-undo? true stack-undo? false}}]
   (log/debug :msg "commit-changes"
              :js/redo-changes redo-changes
              :js/undo-changes undo-changes)
@@ -183,6 +183,7 @@
          :page-id page-id
          :frames frames
          :save-undo? save-undo?
+         :stack-undo? stack-undo?
          :group-id group-id})
 
       ptk/UpdateEvent
@@ -233,4 +234,4 @@
                (let [entry {:undo-changes undo-changes
                             :redo-changes redo-changes
                             :group-id group-id}]
-                 (rx/of (dwu/append-undo entry)))))))))))
+                 (rx/of (dwu/append-undo entry stack-undo?)))))))))))

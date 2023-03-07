@@ -16,6 +16,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.util.color :as uc]
    [beicon.core :as rx]
    [potok.core :as ptk]))
@@ -350,14 +351,18 @@
   (ptk/reify ::change-color-in-selected
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rx/from shapes-by-color)
-           (rx/map (fn [shape] (case (:prop shape)
-                                 :fill (change-fill [(:shape-id shape)] new-color (:index shape))
-                                 :stroke (change-stroke [(:shape-id shape)] new-color (:index shape))
-                                 :shadow (change-shadow [(:shape-id shape)] new-color (:index shape))
-                                 :content (dwt/update-text-with-function
-                                           (:shape-id shape)
-                                           (partial change-text-color old-color new-color (:index shape))))))))))
+      (let [undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (->> (rx/from shapes-by-color)
+              (rx/map (fn [shape] (case (:prop shape)
+                                    :fill (change-fill [(:shape-id shape)] new-color (:index shape))
+                                    :stroke (change-stroke [(:shape-id shape)] new-color (:index shape))
+                                    :shadow (change-shadow [(:shape-id shape)] new-color (:index shape))
+                                    :content (dwt/update-text-with-function
+                                              (:shape-id shape)
+                                              (partial change-text-color old-color new-color (:index shape)))))))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn apply-color-from-palette
   [color is-alt?]

@@ -374,7 +374,7 @@
   ([]
    (apply-modifiers nil))
 
-  ([{:keys [undo-transation? modifiers] :or {undo-transation? true}}]
+  ([{:keys [modifiers undo-transation? stack-undo?] :or {undo-transation? true stack-undo? false}}]
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
      (watch [_ state _]
@@ -412,6 +412,7 @@
                           (cond-> text-shape?
                             (update-grow-type shape)))))
                   {:reg-objects? true
+                   :stack-undo? stack-undo?
                    :ignore-tree ignore-tree
                    ;; Attributes that can change in the transform. This way we don't have to check
                    ;; all the attributes
