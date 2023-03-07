@@ -134,7 +134,7 @@
                    (and (d/not-empty? (:shapes shape))
                         (gsh/rect-contains-shape? rect shape))
                    (and (empty? (:shapes shape))
-                        (gsh/overlaps? shape rect))1)))
+                        (gsh/overlaps? shape rect)))))
 
         overlaps?
         (fn [shape]
