@@ -233,6 +233,19 @@
                                   (->> (filter (comp t/pointer? val) data)
                                        (resolve-pointers id)
                                        (rx/map #(update file :data merge %)))))
+                               (rx/mapcat
+                                (fn [{:keys [id data] :as file}]
+                                  ;; Resolve all pages of each library, if needed
+                                  (->> (rx/from (seq (:pages-index data)))
+                                       (rx/merge-map
+                                        (fn [[_ page :as kp]]
+                                          (if (t/pointer? page)
+                                            (resolve-pointer id kp)
+                                            (rx/of kp))))
+                                       (rx/reduce conj {})
+                                       (rx/map
+                                        (fn [pages-index]
+                                          (assoc-in file [:data :pages-index] pages-index))))))
                                (rx/reduce conj [])
                                (rx/map libraries-fetched))))))))
 
@@ -808,8 +821,8 @@
                                                 (not (:component-root? shape)))
 
                             parent                 (get objects parent-id)
-                            component-shape        (cph/get-component-shape objects shape)
-                            component-shape-parent (cph/get-component-shape objects parent)
+                            component-shape        (ctn/get-component-shape objects shape)
+                            component-shape-parent (ctn/get-component-shape objects parent)
 
                             detach? (and instance-part? (not= (:id component-shape)
                                                               (:id component-shape-parent)))

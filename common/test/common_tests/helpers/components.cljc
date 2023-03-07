@@ -9,7 +9,8 @@
    [clojure.test :as t]
    [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
-   [app.common.types.container :as ctn]))
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]))
 
 ;; ---- Helpers to manage libraries and synchronization
 
@@ -81,7 +82,7 @@
   [page root-inst-id libraries]
   (let [root-inst     (ctn/get-shape page root-inst-id)
 
-        component     (cph/get-component libraries (:component-id root-inst))
+        component     (ctf/get-component libraries (:component-id root-inst))
 
         shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
         shapes-main   (cph/get-children-with-self (:objects component) (:shape-ref root-inst))
@@ -90,10 +91,10 @@
 
         main-exists?  (fn [shape]
                         (let [component-shape
-                              (cph/get-component-shape (:objects page) shape)
+                              (ctn/get-component-shape (:objects page) shape)
 
                               component
-                              (cph/get-component libraries (:component-id component-shape))
+                              (ctf/get-component libraries (:component-id component-shape))
 
                               main-shape
                               (ctn/get-shape component (:shape-ref shape))]
@@ -117,7 +118,7 @@
   [page root-inst-id libraries]
   (let [root-inst     (ctn/get-shape page root-inst-id)
 
-        component     (cph/get-component libraries (:component-id root-inst))
+        component     (ctf/get-component libraries (:component-id root-inst))
 
         shapes-inst   (cph/get-children-with-self (:objects page) root-inst-id)
         shapes-main   (cph/get-children-with-self (:objects component) (:shape-ref root-inst))
@@ -126,10 +127,10 @@
 
         main-exists?  (fn [shape]
                         (let [component-shape
-                              (cph/get-component-shape (:objects page) shape)
+                              (ctn/get-component-shape (:objects page) shape)
 
                               component
-                              (cph/get-component libraries (:component-id component-shape))
+                              (ctf/get-component libraries (:component-id component-shape))
 
                               main-shape
                               (ctn/get-shape component (:shape-ref shape))]
@@ -144,7 +145,7 @@
 (defn resolve-component
   "Get the component with the given id and all its shapes."
   [page component-id libraries]
-  (let [component   (cph/get-component libraries component-id)
+  (let [component   (ctf/get-component libraries component-id)
         root-main   (ctk/get-component-root component)
         shapes-main (cph/get-children-with-self (:objects component) (:id root-main))]
 

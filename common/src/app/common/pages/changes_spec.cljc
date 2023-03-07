@@ -153,8 +153,8 @@
   (s/coll-of ::cts/shape))
 
 (defmethod change-spec :add-component [_]
-  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]
-          :opt-un [::path]))
+  (s/keys :req-un [::id ::name]
+          :opt-un [::path :internal.changes.add-component/shapes]))
 
 (defmethod change-spec :mod-component [_]
   (s/keys :req-un [::id]

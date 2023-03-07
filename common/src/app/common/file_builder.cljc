@@ -8,6 +8,7 @@
   "A version parsing helper."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -664,9 +665,10 @@
         [_ shapes]
         (ctn/make-component-instance page
                                      component
-                                     (:id file)
+                                     (:data file)
                                      (gpt/point main-instance-x
                                                 main-instance-y)
+                                     true
                                      {:main-instance? true
                                       :force-id main-instance-id})]
     (as-> file $
@@ -701,12 +703,15 @@
         component        (ctkl/get-component (:data file) component-id)
         ;; main-instance-id (:main-instance-id component)
 
+        components-v2    (dm/get-in file [:options :components-v2])
+
         [shape shapes]
         (ctn/make-component-instance page
                                      component
                                      (:id file)
                                      (gpt/point x
                                                 y)
+                                     components-v2
                                      #_{:main-instance? true
                                         :force-id main-instance-id})]
 

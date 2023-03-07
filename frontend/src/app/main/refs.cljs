@@ -208,7 +208,10 @@
                      data (:workspace-data state)]
                  (-> file
                      (dissoc :data)
-                     (assoc :pages (:pages data)))))
+                     (assoc :options (:options data)
+                            :components (:components data)
+                            :pages (:pages data)
+                            :pages-index (:pages-index data)))))
              st/state =))
 
 (def workspace-data
