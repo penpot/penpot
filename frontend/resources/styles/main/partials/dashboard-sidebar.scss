@@ -337,15 +337,15 @@
         fill: $color-gray-30;
         height: 15px;
         width: 15px;
-
-        &:hover {
-          fill: $color-danger;
-        }
       }
     }
 
     .clear-search svg {
       transform: rotate(45deg);
+
+      &:hover {
+        fill: $color-danger;
+      }
     }
   }
 

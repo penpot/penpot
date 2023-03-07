@@ -6,6 +6,7 @@
 - Fix custom fonts not rendered correctly [Taiga #4874](https://tree.taiga.io/project/penpot/issue/4874)
 - Fix problem with shadows and blur on multiple selection
 - Fix problem with redo shortcut
+- Fix search field has implemented shared styles for "close icon" and "search icon" [Taiga #4927](https://tree.taiga.io/project/penpot/issue/4927)
 
 ## 1.17.2
 
