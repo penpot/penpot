@@ -7,7 +7,7 @@
 - Fix problem with shadows and blur on multiple selection
 - Fix problem with redo shortcut
 - Fix search field has implemented shared styles for "close icon" and "search icon" [Taiga #4927](https://tree.taiga.io/project/penpot/issue/4927)
-
+- Fix Change text color from selected colors [Taiga #4933](https://tree.taiga.io/project/penpot/issue/4933)
 ## 1.17.2
 
 ### :bug: Bugs fixed
