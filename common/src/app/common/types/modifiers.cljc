@@ -635,28 +635,32 @@
                    matrix)))]
           (recur matrix (next modifiers)))))))
 
+(defn transform-text-node [value attrs]
+  (let [font-size (-> (get attrs :font-size 14)
+                      (d/parse-double)
+                      (* value)
+                      (str))]
+    (d/txt-merge attrs {:font-size font-size})))
+
+(defn update-text-content
+  [shape scale-text-content value]
+  (update shape :content scale-text-content value))
+
 (defn apply-structure-modifiers
   "Apply structure changes to a shape"
   [shape modifiers]
   (letfn [(scale-text-content
             [content value]
-
             (->> content
                  (txt/transform-nodes
                   txt/is-text-node?
-                  (fn [attrs]
-                    (let [font-size (-> (get attrs :font-size 14)
-                                        (d/parse-double)
-                                        (* value)
-                                        (str)) ]
-                      (d/txt-merge attrs {:font-size font-size}))))))
+                  (partial transform-text-node value))))
 
           (apply-scale-content
             [shape value]
-
             (cond-> shape
               (cph/text-shape? shape)
-              (update :content scale-text-content value) 
+              (update-text-content scale-text-content value) 
               
               (cph/rect-shape? shape)
               (gsc/update-corners-scale value)
@@ -666,7 +670,7 @@
                     
               (d/not-empty? (:shadow shape))
               (gse/update-shadows-scale value)
-                    
+              
               (some? (:blur shape))
               (gse/update-blur-scale value)))]
 
@@ -697,7 +701,6 @@
                 :remove-children
                 (let [value (dm/get-prop operation :value)]
                   (update shape :shapes remove-children value))
-
 
                 :scale-content
                 (let [value (dm/get-prop operation :value)]
