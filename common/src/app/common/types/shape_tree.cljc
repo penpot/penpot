@@ -179,17 +179,21 @@
 
   ([objects ids {:keys [bottom-frames?] :as options}]
    (letfn [(comp [id-a id-b]
-             (let [type-a (dm/get-in objects [id-a :type])
-                   type-b (dm/get-in objects [id-b :type])]
+             (let [frame-a? (= :frame (dm/get-in objects [id-a :type]))
+                   frame-b? (= :frame (dm/get-in objects [id-b :type]))]
                (cond
-                 (and (not= :frame type-a) (= :frame type-b))
-                 (if bottom-frames? -1 1)
-
-                 (and (= :frame type-a) (not= :frame type-b))
-                 (if bottom-frames? 1 -1)
-
                  (= id-a id-b)
                  0
+
+                 (and (not frame-a?) frame-b?)
+                 (if bottom-frames? -1 1)
+
+                 (and frame-a? (not frame-b?))
+                 (if bottom-frames? 1 -1)
+
+                 ;; When comparing frames we invert the order if the flag `bottom-frames?` is on
+                 (and frame-a? frame-b? bottom-frames?)
+                 (if (is-shape-over-shape? objects id-b id-a) 1 -1)
 
                  (is-shape-over-shape? objects id-b id-a)
                  -1
