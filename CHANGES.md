@@ -1,4 +1,5 @@
 # CHANGELOG
+
 ## 1.17.3
 
 ### :bug: Bugs fixed
@@ -9,6 +10,11 @@
 - Fix search field has implemented shared styles for "close icon" and "search icon" [Taiga #4927](https://tree.taiga.io/project/penpot/issue/4927)
 - Fix Handling correctly slashes "/" in emails [Taiga #4906](https://tree.taiga.io/project/penpot/issue/4906)
 - Fix Change text color from selected colors [Taiga #4933](https://tree.taiga.io/project/penpot/issue/4933)
+
+### :sparkles: Enhancements
+
+- Adds environment variables for specifying the export and backend URI for the frontend docker image, thanks to @Supernova3339 for the initial PR and suggestion [Github #2984](https://github.com/penpot/penpot/issues/2984)
+
 ## 1.17.2
 
 ### :bug: Bugs fixed

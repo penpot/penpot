@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-log() {
-  echo "[$(date +%Y-%m-%dT%H:%M:%S%:z)] $*"
-}
-
 #########################################
 ## App Frontend config
 #########################################
@@ -17,4 +13,15 @@ update_flags() {
 }
 
 update_flags /var/www/app/js/config.js
+
+
+#########################################
+## Nginx Config
+#########################################
+
+export PENPOT_BACKEND_URI=${PENPOT_BACKEND_URI:-http://penpot-backend:6060};
+export PENPOT_EXPORTER_URI=${PENPOT_EXPORTER_URI:-http://penpot-exporter};
+
+envsubst "\$PENPOT_BACKEND_URI,\$PENPOT_EXPORTER_URI" < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+
 exec "$@";
