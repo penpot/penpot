@@ -113,7 +113,7 @@
        [:div.input-element {:title (tr "workspace.options.opacity") :class "percentail"}
         [:> numeric-input {:value (-> values :opacity opacity->string)
                            :placeholder (tr "settings.multiple")
-                           :on-click select-all
+                           :on-focus select-all
                            :on-change handle-opacity-change
                            :min 0
                            :max 100}]]

@@ -196,7 +196,7 @@
                                    ""
                                    (-> color :color uc/remove-hash))
                           :placeholder (tr "settings.multiple")
-                          :on-click select-all
+                          :on-focus select-all
                           :on-blur on-blur
                           :on-change handle-value-change}]]
 
@@ -206,7 +206,7 @@
            {:class (dom/classnames :percentail (not= (:opacity color) :multiple))}
            [:> numeric-input {:value (-> color :opacity opacity->string)
                               :placeholder (tr "settings.multiple")
-                              :on-click select-all
+                              :on-focus select-all
                               :on-blur on-blur
                               :on-change handle-opacity-change
                               :min 0

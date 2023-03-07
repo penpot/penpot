@@ -266,10 +266,11 @@
          [:span.icon.rotated i/auto-padding-both-sides]
          [:> numeric-input
           {:placeholder "--"
-           :on-click #(dom/select-target %)
            :on-change (partial on-change :simple :p1)
            :on-focus #(select-paddings true false true false)
-           :on-blur #(select-paddings false false false false)
+           :on-blur #(do
+                       (dom/select-target %)
+                       (select-paddings false false false false))
            :value p1}]]
 
         [:div.padding-item.tooltip.tooltip-bottom-left
@@ -277,9 +278,9 @@
          [:span.icon i/auto-padding-both-sides]
          [:> numeric-input
           {:placeholder "--"
-           :on-click #(dom/select-target %)
            :on-change (partial on-change :simple :p2)
-           :on-focus #(select-paddings false true false true)
+           :on-focus #(do (dom/select-target %)
+                          (select-paddings false true false true))
            :on-blur #(select-paddings false false false false)
            :value p2}]]]
 
@@ -296,9 +297,9 @@
            [:div.input-element.auto
             [:> numeric-input
              {:placeholder "--"
-              :on-click #(dom/select-target %)
               :on-change (partial on-change :multiple num)
-              :on-focus #(select-padding num)
+              :on-focus #(do (dom/select-target %)
+                             (select-padding num))
               :on-blur #(select-paddings false false false false)
               :value (num (:layout-padding values))}]]])])
 
@@ -320,7 +321,7 @@
       i/auto-gap]
      [:> numeric-input {:no-validate true
                         :placeholder "--"
-                        :on-click (fn [event]
+                        :on-focus (fn [event]
                                     (reset! gap-selected? :column-gap)
                                     (dom/select-target event))
                         :on-change (partial set-gap (= :nowrap wrap-type) :column-gap)
@@ -334,7 +335,7 @@
       i/auto-gap]
      [:> numeric-input {:no-validate true
                         :placeholder "--"
-                        :on-click (fn [event]
+                        :on-focus (fn [event]
                                     (reset! gap-selected? :row-gap)
                                     (dom/select-target event))
                         :on-change (partial set-gap (= :nowrap wrap-type) :row-gap)

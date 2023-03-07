@@ -316,7 +316,7 @@
            [:> numeric-input {:min 0.01
                               :no-validate true
                               :placeholder "--"
-                              :on-click select-all
+                              :on-focus select-all
                               :on-change on-width-change
                               :disabled disabled-width-sizing?
                               :value (:width values)}]]
@@ -325,7 +325,7 @@
            [:> numeric-input {:min 0.01
                               :no-validate true
                               :placeholder "--"
-                              :on-click select-all
+                              :on-focus select-all
                               :on-change on-height-change
                               :disabled disabled-height-sizing?
                               :value (:height values)}]]
@@ -345,14 +345,14 @@
           [:div.input-element.Xaxis {:title (tr "workspace.options.x")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
-                              :on-click select-all
+                              :on-focus select-all
                               :on-change on-pos-x-change
                               :disabled disabled-position-x?
                               :value (:x values)}]]
           [:div.input-element.Yaxis {:title (tr "workspace.options.y")}
            [:> numeric-input {:no-validate true
                               :placeholder "--"
-                              :on-click select-all
+                              :on-focus select-all
                               :disabled disabled-position-y?
                               :on-change on-pos-y-change
                               :value (:y values)}]]])
@@ -368,7 +368,7 @@
              :max 359
              :data-wrap true
              :placeholder "--"
-             :on-click select-all
+             :on-focus select-all
              :on-change on-rotation-change
              :value (:rotation values)}]]])
 
@@ -396,7 +396,7 @@
               {:placeholder "--"
                :ref radius-input-ref
                :min 0
-               :on-click select-all
+               :on-focus select-all
                :on-change on-radius-1-change
                :value (:rx values)}]]
 
@@ -406,7 +406,7 @@
               {:type "number"
                :placeholder "--"
                :min 0
-               :on-click select-all
+               :on-focus select-all
                :on-change on-radius-multi-change
                :value ""}]]
 
@@ -416,7 +416,7 @@
               [:> numeric-input
                {:placeholder "--"
                 :min 0
-                :on-click select-all
+                :on-focus select-all
                 :on-change on-radius-r1-change
                 :value (:r1 values)}]]
 
@@ -424,7 +424,7 @@
               [:> numeric-input
                {:placeholder "--"
                 :min 0
-                :on-click select-all
+                :on-focus select-all
                 :on-change on-radius-r2-change
                 :value (:r2 values)}]]
 
@@ -432,7 +432,7 @@
               [:> numeric-input
                {:placeholder "--"
                 :min 0
-                :on-click select-all
+                :on-focus select-all
                 :on-change on-radius-r3-change
                 :value (:r3 values)}]]
 
@@ -440,7 +440,7 @@
               [:> numeric-input
                {:placeholder "--"
                 :min 0
-                :on-click select-all
+                :on-focus select-all
                 :on-change on-radius-r4-change
                 :value (:r4 values)}]]])])
 
