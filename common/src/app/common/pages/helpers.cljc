@@ -249,25 +249,6 @@
   [shape group]
   ((or (:touched shape) #{}) group))
 
-(defn get-component
-  "Retrieve a component from libraries, if no library-id is provided, we
-  iterate over all libraries and find the component on it."
-  ([libraries component-id]
-   (some #(-> % :data :components (get component-id)) (vals libraries)))
-  ([libraries library-id component-id]
-   (get-in libraries [library-id :data :components component-id])))
-
-(defn get-component-shape
-  "Get the parent shape linked to a component for this shape, if any"
-  [objects shape]
-  (if-not (:shape-ref shape)
-    nil
-    (if (:component-id shape)
-      shape
-      (if-let [parent-id (:parent-id shape)]
-        (get-component-shape objects (get objects parent-id))
-        nil))))
-
 (defn get-root-shape
   "Get the root shape linked to a component for this shape, if any."
   [objects shape]

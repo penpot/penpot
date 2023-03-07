@@ -808,8 +808,8 @@
                                                 (not (:component-root? shape)))
 
                             parent                 (get objects parent-id)
-                            component-shape        (cph/get-component-shape objects shape)
-                            component-shape-parent (cph/get-component-shape objects parent)
+                            component-shape        (ctn/get-component-shape objects shape)
+                            component-shape-parent (ctn/get-component-shape objects parent)
 
                             detach? (and instance-part? (not= (:id component-shape)
                                                               (:id component-shape-parent)))

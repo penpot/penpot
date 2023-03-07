@@ -23,11 +23,13 @@
       (assoc-in [:components id]
                 {:id id
                  :name name
-                 :path path
-                 :objects (->> shapes
-                               (d/index-by :id)
-                               (wrap-object-fn))})
+                 :path path})
 
+      (not components-v2)
+      (assoc-in [:components id :objects]
+                (->> shapes
+                     (d/index-by :id)
+                     (wrap-object-fn)))
       components-v2
       (update-in [:components id] assoc
                  :main-instance-id main-instance-id
@@ -60,4 +62,3 @@
 (defn delete-component
   [file-data component-id]
   (update file-data :components dissoc component-id))
-

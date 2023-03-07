@@ -34,6 +34,7 @@
   (and (= shape-id (:main-instance-id component))
        (= page-id (:main-instance-page component))))
 
+;; Obsolete in components-v2
 (defn get-component-root
   [component]
   (get-in component [:objects (:id component)]))
@@ -45,12 +46,12 @@
        (= (:component-file shape) library-id)))
 
 (defn in-component-instance?
-  "Check if the shape is inside a component instance."
+  "Check if the shape is inside a component non-main instance."
   [shape]
   (some? (:shape-ref shape)))
 
 (defn in-component-instance-not-root?
-  "Check if the shape is inside a component instance and
+  "Check if the shape is inside a component non-main instance and
   is not the root shape."
   [shape]
   (and (some? (:shape-ref shape))

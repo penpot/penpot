@@ -492,10 +492,13 @@
 
           (library-summary [{:keys [id data] :as file}]
             (binding [pmap/*load-fn* (partial load-pointer conn id)]
-              {:components (assets-sample (:components data) 4)
-               :media (assets-sample (:media data) 3)
-               :colors (assets-sample (:colors data) 3)
-               :typographies (assets-sample (:typographies data) 3)}))]
+              (let [components-sample (-> (assets-sample (:components data) 4)
+                                          (update :sample
+                                                  #(map (partial ctf/load-component-objects data) %)))]
+                {:components components-sample
+                 :media (assets-sample (:media data) 3)
+                 :colors (assets-sample (:colors data) 3)
+                 :typographies (assets-sample (:typographies data) 3)})))]
 
     (->> (db/exec! conn [sql:team-shared-files team-id])
          (into #{} (comp
@@ -552,7 +555,10 @@
        (map (fn [{:keys [id] :as row}]
               (binding [pmap/*load-fn* (partial load-pointer conn id)]
                 (-> row
-                    (update :data dissoc :pages-index)
+                    ;; TODO: re-enable this dissoc and replace call
+                    ;;       with other that gets files individually
+                    ;;       See task https://tree.taiga.io/project/penpot/task/4904
+                    ;; (update :data dissoc :pages-index)
                     (handle-file-features client-features)))))
        (vec)))
 
