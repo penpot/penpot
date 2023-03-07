@@ -1705,6 +1705,7 @@
           color: $color-gray-20;
           &.active,
           &:hover {
+            color: $color-primary;
             &.dir {
               color: $color-primary;
             }
