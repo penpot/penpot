@@ -359,4 +359,3 @@
     (iterate next-pos
              (with-meta start-pos
                         {:counter 0}))))
-

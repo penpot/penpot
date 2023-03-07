@@ -17,6 +17,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.color :as ctc]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -346,8 +347,9 @@
     ptk/WatchEvent
     (watch [it state _]
       (when (and (some? new-name) (not= "" new-name))
-        (let [data        (get state :workspace-data)
-              [path name] (cph/parse-path-name new-name)
+        (let [data          (get state :workspace-data)
+              [path name]   (cph/parse-path-name new-name)
+              components-v2 (features/active-feature? state :components-v2)
 
               update-fn
               (fn [component]
@@ -355,12 +357,15 @@
                 ;; because there are small possibilities of race
                 ;; conditions with component deletion.
                 (when component
-                  (-> component
-                      (assoc :path path)
-                      (assoc :name name)
-                      (update :objects
+                  (cond-> component
+                    :always
+                    (assoc :path path
+                           :name name)
+
+                    (not components-v2)
+                    (update :objects
                               ;; Give the same name to the root shape
-                              #(assoc-in % [id :name] name)))))
+                            #(assoc-in % [id :name] name)))))
 
               changes (-> (pcb/empty-changes it)
                           (pcb/with-library-data data)
@@ -370,30 +375,33 @@
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
-  [{:keys [id] :as params}]
+  [library-id component-id]
   (ptk/reify ::duplicate-component
     ptk/WatchEvent
     (watch [it state _]
       (let [libraries      (wsh/get-libraries state)
-            component      (cph/get-component libraries id)
+            library        (get libraries library-id)
+            component      (ctkl/get-component (:data library) component-id)
             new-name       (:name component)
 
             components-v2  (features/active-feature? state :components-v2)
 
             main-instance-page  (when components-v2
-                                  (wsh/lookup-page state (:main-instance-page component)))
-            main-instance-shape (when components-v2
-                                  (ctn/get-shape main-instance-page (:main-instance-id component)))
+                                  (ctf/get-component-page (:data library) component))
 
-            [new-component-shape new-component-shapes
+            new-component  (assoc component :id (uuid/next))
+
+            [new-component-shape new-component-shapes  ; <- null in components-v2
              new-main-instance-shape new-main-instance-shapes]
-            (dwlh/duplicate-component component main-instance-page main-instance-shape)
+            (dwlh/duplicate-component new-component (:data library))
 
             changes (-> (pcb/empty-changes it nil)
                         (pcb/with-page main-instance-page)
                         (pcb/with-objects (:objects main-instance-page))
                         (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
-                        (pcb/add-component (:id new-component-shape)
+                        (pcb/add-component (if components-v2
+                                             (:id new-component)
+                                             (:id new-component-shape))
                                            (:path component)
                                            new-name
                                            new-component-shapes
@@ -429,17 +437,22 @@
   (ptk/reify ::restore-component
     ptk/WatchEvent
     (watch [it state _]
+      (assert "Restore component not implemented") ; until we allow a :deleted flag in shapes
       (let [file-data (wsh/get-file state library-id)
             component (ctf/get-deleted-component file-data component-id)
             page      (ctpl/get-page file-data (:main-instance-page component))
 
-                                        ; Make a new main instance, with the same id of the original
+            components-v2
+            (features/active-feature? state :components-v2)
+
+            ; Make a new main instance, with the same id of the original
             [_main-instance shapes]
             (ctn/make-component-instance page
                                          component
-                                         (:id file-data)
+                                         file-data
                                          (gpt/point (:main-instance-x component)
                                                     (:main-instance-y component))
+                                         components-v2
                                          {:main-instance? true
                                           :force-id (:main-instance-id component)})
 
@@ -600,53 +613,53 @@
     ptk/WatchEvent
     (watch [it state _]
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
-      (let [page-id       (get state :current-page-id)
+      (let [page-id     (get state :current-page-id)
+            local-file  (wsh/get-local-file state)
+            container   (cph/get-container local-file :page page-id)
+            shape       (ctn/get-shape container id)]
 
-            local-file    (wsh/get-local-file state)
-            libraries     (wsh/get-libraries state)
+        (when (ctk/in-component-instance? shape)
+          (let [libraries (wsh/get-libraries state)
 
-            container     (cph/get-container local-file :page page-id)
-            shape         (ctn/get-shape container id)
+                changes
+                (-> (pcb/empty-changes it)
+                    (pcb/with-container container)
+                    (dwlh/generate-sync-shape-inverse libraries container id))
 
-            changes
-            (-> (pcb/empty-changes it)
-                (pcb/with-container container)
-                (dwlh/generate-sync-shape-inverse libraries container id))
+                file-id   (:component-file shape)
+                file      (wsh/get-file state file-id)
 
-            file-id   (:component-file shape)
-            file      (wsh/get-file state file-id)
+                xf-filter (comp
+                           (filter :local-change?)
+                           (map #(dissoc % :local-change?)))
 
-            xf-filter (comp
-                       (filter :local-change?)
-                       (map #(dissoc % :local-change?)))
+                local-changes (-> changes
+                                  (update :redo-changes #(into [] xf-filter %))
+                                  (update :undo-changes #(into [] xf-filter %)))
 
-            local-changes (-> changes
-                              (update :redo-changes #(into [] xf-filter %))
-                              (update :undo-changes #(into [] xf-filter %)))
+                xf-remove (comp
+                           (remove :local-change?)
+                           (map #(dissoc % :local-change?)))
 
-            xf-remove (comp
-                       (remove :local-change?)
-                       (map #(dissoc % :local-change?)))
+                nonlocal-changes (-> changes
+                                     (update :redo-changes #(into [] xf-remove %))
+                                     (update :undo-changes #(into [] xf-remove %)))]
 
-            nonlocal-changes (-> changes
-                                 (update :redo-changes #(into [] xf-remove %))
-                                 (update :undo-changes #(into [] xf-remove %)))]
+            (log/debug :msg "UPDATE-COMPONENT finished"
+                       :js/local-changes (log-changes
+                                          (:redo-changes local-changes)
+                                          file)
+                       :js/nonlocal-changes (log-changes
+                                             (:redo-changes nonlocal-changes)
+                                             file))
 
-        (log/debug :msg "UPDATE-COMPONENT finished"
-                   :js/local-changes (log-changes
-                                      (:redo-changes local-changes)
-                                      file)
-                   :js/nonlocal-changes (log-changes
-                                         (:redo-changes nonlocal-changes)
-                                         file))
-
-        (rx/of
-         (when (seq (:redo-changes local-changes))
-           (dch/commit-changes (assoc local-changes
-                                      :file-id (:id local-file))))
-         (when (seq (:redo-changes nonlocal-changes))
-           (dch/commit-changes (assoc nonlocal-changes
-                                      :file-id file-id))))))))
+            (rx/of
+             (when (seq (:redo-changes local-changes))
+               (dch/commit-changes (assoc local-changes
+                                          :file-id (:id local-file))))
+             (when (seq (:redo-changes nonlocal-changes))
+               (dch/commit-changes (assoc nonlocal-changes
+                                          :file-id file-id))))))))))
 
 (defn update-component-sync
   [shape-id file-id]

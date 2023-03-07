@@ -12,7 +12,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
-   [app.common.types.component :as ctk]
+   [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
@@ -365,12 +365,16 @@
 ;;---- Components box ----
 
 (mf/defc components-item
-  [{:keys [component renaming listing-thumbs? selected-components
+  [{:keys [component renaming listing-thumbs? selected-components file
            on-asset-click on-context-menu on-drag-start do-rename cancel-rename
            selected-components-full selected-components-paths]}]
   (let [item-ref             (mf/use-ref)
         dragging?            (mf/use-state false)
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+
+        components-v2        (mf/use-ctx ctx/components-v2)
+
+        file (or (:data file) file)
 
         unselect-all
         (mf/use-fn
@@ -440,15 +444,17 @@
            :on-drag-over on-drag-over
            :on-drop on-drop}
 
-     [:& component-svg {:root-shape (ctk/get-component-root component)
-                        :objects (:objects component)}]
+     [:& component-svg {:root-shape (ctf/get-component-root file component)
+                        :objects (:objects (if components-v2
+                                             (ctf/get-component-page file component)
+                                             component))}]
      (let [renaming? (= renaming (:id component))]
        [:*
         [:& editable-label
          {:class-name (dom/classnames
-                        :cell-name listing-thumbs?
-                        :item-name (not listing-thumbs?)
-                        :editing renaming?)
+                       :cell-name listing-thumbs?
+                       :item-name (not listing-thumbs?)
+                       :editing renaming?)
           :value (cph/merge-path-item (:path component) (:name component))
           :tooltip (cph/merge-path-item (:path component) (:name component))
           :display-value (:name component)
@@ -460,7 +466,7 @@
           [:div.dragging])])]))
 
 (mf/defc components-group
-  [{:keys [file-id prefix groups open-groups renaming listing-thumbs? selected-components on-asset-click
+  [{:keys [file prefix groups open-groups renaming listing-thumbs? selected-components on-asset-click
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
            selected-components-full]}]
   (let [group-open? (get open-groups prefix true)
@@ -495,7 +501,7 @@
            :on-drag-leave on-drag-leave
            :on-drag-over on-drag-over
            :on-drop on-drop}
-     [:& asset-group-title {:file-id file-id
+     [:& asset-group-title {:file-id (:id file)
                             :box :components
                             :path prefix
                             :group-open? group-open?
@@ -528,6 +534,7 @@
                                   :key (:id component)
                                   :renaming renaming
                                   :listing-thumbs? listing-thumbs?
+                                  :file file
                                   :selected-components selected-components
                                   :on-asset-click on-asset-click
                                   :on-context-menu on-context-menu
@@ -539,7 +546,7 @@
                                   :selected-components-paths selected-components-paths}])])
         (for [[path-item content] groups]
           (when-not (empty? path-item)
-            [:& components-group {:file-id file-id
+            [:& components-group {:file file
                                   :prefix (cph/merge-path-item prefix path-item)
                                   :groups content
                                   :open-groups open-groups
@@ -556,7 +563,7 @@
                                   :selected-components-full selected-components-full}]))])]))
 
 (mf/defc components-box
-  [{:keys [file-id local? components listing-thumbs? open? reverse-sort? open-groups selected-assets
+  [{:keys [file local? components listing-thumbs? open? reverse-sort? open-groups selected-assets
            on-asset-click on-assets-delete on-clear-selection] :as props}]
   (let [input-ref                (mf/use-ref nil)
         state                    (mf/use-state {:renaming nil
@@ -579,14 +586,14 @@
         add-component
         (mf/use-fn
          (fn []
-           #(st/emit! (dwl/set-assets-box-open file-id :components true))
+           #(st/emit! (dwl/set-assets-box-open (:id file) :components true))
            (dom/click (mf/ref-val input-ref))))
 
         on-file-selected
         (mf/use-fn
-         (mf/deps file-id)
+         (mf/deps file)
          (fn [blobs]
-           (let [params {:file-id file-id
+           (let [params {:file-id (:id file)
                          :blobs (seq blobs)}]
              (st/emit! (dwm/upload-media-components params)
                        (ptk/event ::ev/event {::ev/name "add-asset-to-library"
@@ -598,22 +605,22 @@
          (fn []
            (let [undo-id (js/Symbol)]
              (if (empty? selected-components)
-             (st/emit! (dwl/duplicate-component {:id (:component-id @state)}))
-             (do
-               (st/emit! (dwu/start-undo-transaction undo-id))
-               (apply st/emit! (map #(dwl/duplicate-component {:id %}) selected-components))
-               (st/emit! (dwu/commit-undo-transaction undo-id)))))))
+               (st/emit! (dwl/duplicate-component (:id file) (:component-id @state)))
+               (do
+                 (st/emit! (dwu/start-undo-transaction undo-id))
+                 (apply st/emit! (map (partial dwl/duplicate-component (:id file)) selected-components))
+                 (st/emit! (dwu/commit-undo-transaction undo-id)))))))
 
         on-delete
         (mf/use-fn
-         (mf/deps @state file-id multi-components? multi-assets?)
+         (mf/deps @state file multi-components? multi-assets?)
          (fn []
            (let [undo-id (js/Symbol)]
              (if (or multi-components? multi-assets?)
              (on-assets-delete)
              (st/emit! (dwu/start-undo-transaction undo-id)
                        (dwl/delete-component {:id (:component-id @state)})
-                       (dwl/sync-file file-id file-id :components (:component-id @state))
+                       (dwl/sync-file (:id file) (:id file) :components (:component-id @state))
                        (dwu/commit-undo-transaction undo-id))))))
 
         on-rename
@@ -716,7 +723,7 @@
         on-drag-start
         (mf/use-fn
          (fn [component event]
-           (dnd/set-data! event "penpot/component" {:file-id file-id
+           (dnd/set-data! event "penpot/component" {:file-id (:id file)
                                                     :component component})
            (dnd/set-allowed-effect! event "move")))
 
@@ -734,7 +741,7 @@
              (when (and main-instance-id main-instance-page) ;; Only when :components-v2 is enabled
                (st/emit! (dw/go-to-main-instance main-instance-page main-instance-id))))))]
 
-    [:& asset-section {:file-id file-id
+    [:& asset-section {:file-id (:id file)
                        :title (tr "workspace.assets.components")
                        :box :components
                        :assets-count (count components)
@@ -750,7 +757,7 @@
                               :on-selected on-file-selected}]])])
 
      [:& asset-section-block {:role :content}
-      [:& components-group {:file-id file-id
+      [:& components-group {:file file
                             :prefix ""
                             :groups groups
                             :open-groups open-groups
@@ -2158,7 +2165,7 @@
               i/listing-thumbs)]]
 
           (when show-components?
-            [:& components-box {:file-id (:id file)
+            [:& components-box {:file file
                                 :local? local?
                                 :components components
                                 :listing-thumbs? listing-thumbs?

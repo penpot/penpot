@@ -243,7 +243,9 @@
           (events/unlistenByKey key1))))
 
     (mf/use-effect on-resize)
-    [:div.dashboard-content {:on-click #(st/emit! (dd/clear-selected-files)) :ref container}
+
+    [:div.dashboard-content {:on-click #(st/emit! (dd/clear-selected-files))
+                             :ref container}
      (case section
        :dashboard-projects
        [:*

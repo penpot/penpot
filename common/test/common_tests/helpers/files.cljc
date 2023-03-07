@@ -102,8 +102,9 @@
       (let [[instance-shape instance-shapes]
             (ctn/make-component-instance (ctpl/get-page file-data page-id)
                                          (ctkl/get-component (:data library) component-id)
-                                         (:id library)
-                                         (gpt/point 0 0))]
+                                         (:data library)
+                                         (gpt/point 0 0)
+                                         true)]
 
         (swap! idmap assoc label (:id instance-shape))
         (-> file-data
