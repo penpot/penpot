@@ -193,7 +193,7 @@
                         (ctm/scale-content (:x scalev))))
 
                   modif-tree (dwm/create-modif-tree ids modifiers)]
-              (rx/of (dwm/set-modifiers modif-tree (and (= :frame (:type shape)) scale-text)))))
+              (rx/of (dwm/set-modifiers modif-tree scale-text))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion

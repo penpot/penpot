@@ -19,6 +19,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
+   [app.common.types.shape.layout :as ctl]
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])))
 
@@ -672,7 +673,13 @@
               (gse/update-shadows-scale value)
               
               (some? (:blur shape))
-              (gse/update-blur-scale value)))]
+              (gse/update-blur-scale value)
+
+              (ctl/flex-layout? shape)
+              (ctl/update-flex-scale value)
+
+              :always
+              (ctl/update-flex-child value)))]
 
     (let [remove-children
           (fn [shapes children-to-remove]
