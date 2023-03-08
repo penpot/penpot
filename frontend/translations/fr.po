@@ -411,6 +411,7 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 police ajoutée"
 msgstr[1] "%s polices ajoutées"
 
+#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Toute police Web que vous téléchargez sera ajoutée à la liste de polices de "
@@ -419,6 +420,7 @@ msgstr ""
 "**une seule famille de polices**. Vous pouvez télécharger les polices au "
 "formats suivants : **TTF, OTF et WOFF** (un seul format est nécessaire)."
 
+#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Ne téléchargez que des polices que vous possédez ou dont la license vous "
