@@ -81,25 +81,27 @@
         callback     (hooks/use-ref-callback callback)
 
         ;; We use the ref as a callback when the dom node is ready (or change)
-        node-ref     (mf/use-fn
-                      (fn [^js node]
-                        (when (some? node)
-                          (let [^js observer (mf/ref-val observer-ref)
-                                ^js prev-val (mf/ref-val prev-val-ref)]
+        node-ref
+        (mf/use-fn
+         (fn [^js node]
+           (when (some? node)
+             (let [^js observer (mf/ref-val observer-ref)
+                   ^js prev-val (mf/ref-val prev-val-ref)]
 
-                            (when (and (not= prev-val node) (some? observer))
-                              (log/debug :action "disconnect" :js/prev-val prev-val :js/node node)
-                              (.disconnect observer)
-                              (mf/set-ref-val! observer-ref nil))
+               (when (and (not= prev-val node) (some? observer))
+                 (log/debug :action "disconnect" :js/prev-val prev-val :js/node node)
+                 (.disconnect observer)
+                 (mf/set-ref-val! observer-ref nil))
 
-                            (when (and (not= prev-val node) (some? node))
-                              (let [^js observer (js/ResizeObserver.
-                                                  #(callback last-resize-type (dom/get-client-size node)))]
-                                (mf/set-ref-val! observer-ref observer)
-                                (log/debug :action "observe"  :js/node node :js/observer observer)
-                                (.observe observer node))))
+               (when (and (not= prev-val node) (some? node))
+                 (let [^js observer (js/ResizeObserver.
+                                     #(callback last-resize-type (dom/get-client-size node)))]
+                   (mf/set-ref-val! observer-ref observer)
+                   (log/debug :action "observe"  :js/node node :js/observer observer)
+                   (.observe observer node)
+                   (callback last-resize-type (dom/get-client-size node)))))
 
-                          (mf/set-ref-val! prev-val-ref node))))]
+             (mf/set-ref-val! prev-val-ref node))))]
 
     (mf/with-effect []
       ;; On dismount we need to disconnect the current observer
