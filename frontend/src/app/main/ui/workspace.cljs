@@ -70,7 +70,8 @@
      (when (and textpalette? (not hide-ui?))
        [:& textpalette])
 
-     [:section.workspace-content {:ref node-ref}
+     [:section.workspace-content {:key (dm/str "workspace-" page-id)
+                                  :ref node-ref}
       [:section.workspace-viewport
        (when (debug? :coordinates)
          [:& coordinates/coordinates {:colorpalette? colorpalette?}])
@@ -79,8 +80,7 @@
          [:div.history-debug-overlay
           [:button {:on-click #(st/emit! dw/reinitialize-undo)} "CLEAR"]
           [:& history-toolbox]])
-       [:& viewport {:key (dm/str "workspace-" page-id)
-                     :file file
+       [:& viewport {:file file
                      :wlocal wlocal
                      :wglobal wglobal
                      :selected selected
@@ -131,7 +131,7 @@
         project              (mf/deref refs/workspace-project)
         layout               (mf/deref refs/workspace-layout)
         wglobal              (mf/deref refs/workspace-global)
-        ready?  (mf/deref refs/workspace-ready?)
+        ready?               (mf/deref refs/workspace-ready?)
         workspace-read-only? (mf/deref refs/workspace-read-only?)
 
         components-v2 (features/use-feature :components-v2)

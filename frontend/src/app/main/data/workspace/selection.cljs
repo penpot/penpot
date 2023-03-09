@@ -255,7 +255,9 @@
                  :ignore-groups? ignore-groups?
                  :full-frame? true})
                (rx/map #(cph/clean-loops objects %))
-               (rx/map #(into initial-set (filter (comp not blocked?)) %))
+               (rx/map #(into initial-set (comp
+                                           (filter (complement blocked?))
+                                           (remove (partial cph/hidden-parent? objects))) %))
                (rx/map select-shapes)))))))
 
 (defn select-inside-group
