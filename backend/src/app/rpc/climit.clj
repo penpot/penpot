@@ -15,6 +15,7 @@
    [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.rpc.climit.config :as-alias config]
+   [app.util.cache :as cache]
    [app.util.services :as-alias sv]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
@@ -26,33 +27,28 @@
    [promesa.exec :as px]
    [promesa.exec.bulkhead :as pbh])
   (:import
-   clojure.lang.ExceptionInfo
-   com.github.benmanes.caffeine.cache.LoadingCache
-   com.github.benmanes.caffeine.cache.CacheLoader
-   com.github.benmanes.caffeine.cache.Caffeine
-   com.github.benmanes.caffeine.cache.RemovalListener))
+   clojure.lang.ExceptionInfo))
 
 (set! *warn-on-reflection* true)
 
-(defn- create-cache
-  [{:keys [::wrk/executor] :as params} config]
-  (let [listener (reify RemovalListener
-                   (onRemoval [_ key _val cause]
-                     (l/trace :hint "cache: remove" :key key :reason (str cause))))
+(defn- create-bulkhead-cache
+  [{:keys [::wrk/executor]} config]
+  (letfn [(load-fn [key]
+            (let [config (get config (nth key 0))]
+              (l/trace :hint "insert into cache" :key key)
+              (pbh/create :permits (or (:permits config) (:concurrency config))
+                          :queue (or (:queue config) (:queue-size config))
+                          :timeout (:timeout config)
+                          :executor executor
+                          :type (:type config :semaphore))))
 
-        loader   (reify CacheLoader
-                   (load [_ key]
-                     (let [config (get config (nth key 0))]
-                       (pbh/create :permits (or (:permits config) (:concurrency config))
-                                   :queue (or (:queue config) (:queue-size config))
-                                   :timeout (:timeout config)
-                                   :executor executor
-                                   :type (:type config :semaphore)))))]
-    (.. (Caffeine/newBuilder)
-        (weakValues)
-        (executor executor)
-        (removalListener listener)
-        (build loader))))
+          (on-remove [_ _ cause]
+            (l/trace :hint "evict from cache" :key key :reason (str cause)))]
+
+    (cache/create :executor :same-thread
+                  :on-remove on-remove
+                  :keepalive "5m"
+                  :load-fn load-fn)))
 
 (s/def ::config/permits ::us/integer)
 (s/def ::config/queue ::us/integer)
@@ -77,12 +73,12 @@
     (when-let [params (some->> path slurp edn/read-string)]
       (l/info :hint "initializing concurrency limit" :config (str path))
       (us/verify! ::config params)
-      {::cache (create-cache cfg params)
+      {::cache (create-bulkhead-cache cfg params)
        ::config params
        ::wrk/executor executor
        ::mtx/metrics metrics})))
 
-(s/def ::cache #(instance? LoadingCache %))
+(s/def ::cache cache/cache?)
 (s/def ::instance
   (s/keys :req [::cache ::config ::wrk/executor]))
 
@@ -95,7 +91,7 @@
 
 (defn invoke!
   [cache metrics id key f]
-  (let [limiter (.get ^LoadingCache cache [id key])
+  (let [limiter (cache/get cache [id key])
         tpoint  (dt/tpoint)
         labels  (into-array String [(name id)])
 

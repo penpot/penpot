@@ -13,6 +13,7 @@
    [app.common.spec :as us]
    [app.metrics :as mtx]
    [app.redis.script :as-alias rscript]
+   [app.util.cache :as cache]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.core :as c]
@@ -47,10 +48,6 @@
    io.lettuce.core.resource.DefaultClientResources
    io.netty.util.HashedWheelTimer
    io.netty.util.Timer
-   java.util.function.Function
-   com.github.benmanes.caffeine.cache.Cache
-   com.github.benmanes.caffeine.cache.Caffeine
-   com.github.benmanes.caffeine.cache.RemovalListener
    java.lang.AutoCloseable
    java.time.Duration))
 
@@ -138,17 +135,12 @@
 
 (defn- create-cache
   [{:keys [::wrk/executor] :as cfg}]
-  (let [listener (reify RemovalListener
-                   (onRemoval [_ key cache cause]
-                     (l/trace :hint "cache: remove" :key key :reason (str cause) :repr (pr-str cache))
-                     (some-> cache d/close!)))
-        ]
-
-    (.. (Caffeine/newBuilder)
-        (weakValues)
-        (executor executor)
-        (removalListener listener)
-        (build))))
+  (letfn [(on-remove [key val cause]
+            (l/trace :hint "evict connection (cache)" :key key :reason cause)
+            (some-> val d/close!))]
+    (cache/create :executor executor
+                  :on-remove on-remove
+                  :keepalive "5m")))
 
 (defn- initialize-resources
   "Initialize redis connection resources"
@@ -176,10 +168,11 @@
 
 (defn- shutdown-resources
   [{:keys [::resources ::cache ::timer]}]
-  (.invalidateAll ^Cache cache)
+  (cache/invalidate-all! cache)
 
   (when resources
     (.shutdown ^ClientResources resources))
+
   (when timer
     (.stop ^Timer timer)))
 
@@ -218,13 +211,7 @@
 (defn get-or-connect
   [{:keys [::cache] :as state} key options]
   (us/assert! ::redis state)
-  ;; FIXME: the cache causes vthread pinning
-  (let [connection (.get ^Cache cache
-                         ^Object key
-                         ^Function (reify
-                                     Function
-                                     (apply [_ _key]
-                                       (connect* state options))))]
+  (let [connection (cache/get cache key (fn [_] (connect* state options)))]
     (-> state
         (dissoc ::cache)
         (assoc ::connection connection))))

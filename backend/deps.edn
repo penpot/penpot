@@ -39,7 +39,7 @@
   buddy/buddy-hashers {:mvn/version "1.8.158"}
   buddy/buddy-sign {:mvn/version "3.4.333"}
 
-  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.2"}
+  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.5"}
 
   org.jsoup/jsoup {:mvn/version "1.15.3"}
   org.im4java/im4java
