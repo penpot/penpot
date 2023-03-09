@@ -199,6 +199,7 @@
           (normalize-proportion-lock [[point shift? alt?]]
             (let [proportion-lock? (:proportion-lock shape)]
               [point (or proportion-lock? shift?) alt?]))]
+    
     (reify
       ptk/UpdateEvent
       (update [_ state]
