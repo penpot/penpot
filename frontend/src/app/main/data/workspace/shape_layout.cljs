@@ -181,11 +181,11 @@
                (dwc/update-shapes
                 ids
                 (fn [shape]
-                  (cond-> shape
-                    (not from-frame?)
-                    (->  (assoc :layout-item-h-sizing :auto
-                                :layout-item-v-sizing :auto)
-                         (merge layout-params)))))
+                  (-> shape
+                      (cond-> (not from-frame?)
+                        (assoc :layout-item-h-sizing :auto
+                               :layout-item-v-sizing :auto))
+                      (merge layout-params))))
                (ptk/data-event :layout/update ids)
                (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v))
                (dwu/commit-undo-transaction undo-id))))))
@@ -422,7 +422,7 @@
 (defn remove-layout-track
   [ids type index]
   (assert (#{:row :column} type))
-  
+
   (ptk/reify ::remove-layout-column
     ptk/WatchEvent
     (watch [_ _ _]
