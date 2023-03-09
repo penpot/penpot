@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -61,14 +62,20 @@
               :code :login-disabled
               :hint "login is disabled in this instance"))
 
-  (letfn [(check-password [profile password]
+  (letfn [(check-password [conn profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation
                         :code :account-without-password
                         :hint "the current account does not have password"))
-            (:valid (profile/verify-password cfg password (:password profile))))
+            (let [result (profile/verify-password cfg password (:password profile))]
+              (when (:update result)
+                (l/trace :hint "updating profile password" :id (:id profile) :email (:email profile))
+                (profile/update-profile-password! (assoc cfg ::db/conn conn)
+                                                  (assoc profile :password password)))
+              (:valid result)))
 
-          (validate-profile [profile]
+
+          (validate-profile [conn profile]
             (when-not profile
               (ex/raise :type :validation
                         :code :wrong-credentials))
@@ -78,7 +85,7 @@
             (when (:is-blocked profile)
               (ex/raise :type :restriction
                         :code :profile-blocked))
-            (when-not (check-password profile password)
+            (when-not (check-password conn profile password)
               (ex/raise :type :validation
                         :code :wrong-credentials))
             (when-let [deleted-at (:deleted-at profile)]
@@ -90,8 +97,7 @@
 
     (db/with-atomic [conn pool]
       (let [profile    (->> (profile/get-profile-by-email conn email)
-                            (validate-profile)
-                            (profile/decode-row)
+                            (validate-profile conn)
                             (profile/strip-private-attrs))
 
             invitation (when-let [token (:invitation-token params)]

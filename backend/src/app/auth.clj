@@ -6,15 +6,18 @@
 
 (ns app.auth
   (:require
-   [buddy.hashers :as hashers]))
+   [buddy.hashers :as hashers]
+   [promesa.exec :as px]))
+
+(def default-params
+  {:alg :argon2id
+   :memory (* 32768 2)
+   :iterations 5
+   :parallelism (px/get-available-processors)})
 
 (defn derive-password
   [password]
-  (hashers/derive password
-                  {:alg :argon2id
-                   :memory 16384
-                   :iterations 20
-                   :parallelism 2}))
+  (hashers/derive password default-params))
 
 (defn verify-password
   [attempt password]
