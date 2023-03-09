@@ -81,7 +81,8 @@
     (update [_ state]
       (cond
         (and (get-in state [:workspace-undo :transaction])
-             (or (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
+             (or (not stack?)
+                 (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
                  (d/not-empty? (get-in state [:workspace-undo :transaction :redo-changes]))))
         (accumulate-undo-entry state entry)
 
