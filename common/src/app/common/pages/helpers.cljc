@@ -24,9 +24,11 @@
   (and (= type :frame) (= id uuid/zero)))
 
 (defn root-frame?
-  [{:keys [frame-id type]}]
-  (and (= type :frame)
-       (= frame-id uuid/zero)))
+  ([objects id]
+   (root-frame? (get objects id)))
+  ([{:keys [frame-id type]}]
+   (and (= type :frame)
+        (= frame-id uuid/zero))))
 
 (defn frame-shape?
   ([objects id]

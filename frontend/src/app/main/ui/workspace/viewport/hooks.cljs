@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.hooks
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
@@ -169,7 +170,8 @@
              ;; but the mouse has not been moved from its position.
              (->> mod-str
                   (rx/observe-on :async)
-                  (rx/map #(deref last-point-ref)))
+                  (rx/map #(deref last-point-ref))
+                  (rx/merge-map query-point))
 
              (->> move-stream
                   (rx/tap #(reset! last-point-ref %))
@@ -241,10 +243,17 @@
              remove-id?
              (into selected-with-parents remove-id-xf ids)
 
+             no-fill-nested-frames?
+             (fn [id]
+               (and (cph/frame-shape? objects id)
+                    (not (cph/root-frame? objects id))
+                    (empty? (dm/get-in objects [id :fills]))))
+
              hover-shape
              (->> ids
                   (remove remove-id?)
                   (remove (partial cph/hidden-parent? objects))
+                  (remove no-fill-nested-frames?)
                   (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
                   (first)
                   (get objects))]

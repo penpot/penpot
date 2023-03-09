@@ -662,3 +662,12 @@
 (defn has-children?
   [^js node]
   (> (-> node .-children .-length) 0))
+
+;; WARNING: Use only for debugging. It's to costly to use for real
+(defn measure-text
+  "Given a canvas' context 2d and the text info returns tis ascent/descent info"
+  [context-2d font-size font-family text]
+  (let [_ (set! (.-font context-2d) (str font-size " " font-family))
+        measures (.measureText context-2d text)]
+    {:descent (.-actualBoundingBoxDescent measures)
+     :ascent (.-actualBoundingBoxAscent measures)}))

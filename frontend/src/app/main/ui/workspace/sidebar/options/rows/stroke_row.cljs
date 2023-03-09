@@ -100,7 +100,7 @@
          :value (-> (:stroke-width stroke) width->string)
          :placeholder (tr "settings.multiple")
          :on-change (on-stroke-width-change index)
-         :on-click select-all
+         :on-focus select-all
          :on-blur on-blur}]]
 
       [:select#style.input-select {:value (enum->string (:stroke-alignment stroke))

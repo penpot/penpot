@@ -1,6 +1,5 @@
 # CHANGELOG
 
-<<<<<<< HEAD
 ## :rocket: Next
 
 ### :boom: Breaking changes & Deprecations
@@ -22,6 +21,9 @@
 - Fix problem when undoing multiple selected colors [Taiga #4920](https://tree.taiga.io/project/penpot/issue/4920)
 - Allow selection of empty board by partial rect [Taiga #4806](https://tree.taiga.io/project/penpot/issue/4806)
 - Improve behavior for undo on text edition [Taiga #4693](https://tree.taiga.io/project/penpot/issue/4693)
+- Improve deeps selection of nested arboards [Taiga #4913](https://tree.taiga.io/project/penpot/issue/4913)
+- Fix problem on selection numeric inputs on Firefox [#2991](https://github.com/penpot/penpot/issues/2991)
+- Changed the text dominant-baseline to use ideographic [Taiga #4791](https://tree.taiga.io/project/penpot/issue/4791)
 
 ### :arrow_up: Deps updates
 
@@ -29,8 +31,6 @@
 - To @ondrejkonec: for contributing to the code with:
 - Refactor CSS variables [Github #2948](https://github.com/penpot/penpot/pull/2948)
 
-=======
->>>>>>> origin/staging
 ## 1.17.3
 
 ### :bug: Bugs fixed

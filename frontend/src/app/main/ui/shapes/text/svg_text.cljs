@@ -69,16 +69,21 @@
 
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
-        (let [alignment-bl (when (cf/check-browser? :safari) "text-before-edge")
-              dominant-bl  (when-not (cf/check-browser? :safari) "text-before-edge")
-              rtl? (= "rtl" (:direction data))
+        (let [rtl? (= "rtl" (:direction data))
+
+              browser-props
+              (cond
+                (cf/check-browser? :safari)
+                #js {:dominantBaseline "hanging"
+                     :dy "0.2em"
+                     :y (- (:y data) (:height data))})
+
               props (-> #js {:key (dm/str "text-" (:id shape) "-" index)
                              :x (if rtl? (+ (:x data) (:width data)) (:x data))
-                             :y (- (:y data) (:height data))
+                             :y (:y data)
+                             :dominantBaseline "ideographic"
                              :textLength (:width data)
                              :lengthAdjust "spacingAndGlyphs"
-                             :alignmentBaseline alignment-bl
-                             :dominantBaseline dominant-bl
                              :style (-> #js {:fontFamily (:font-family data)
                                              :fontSize (:font-size data)
                                              :fontWeight (:font-weight data)
@@ -88,7 +93,9 @@
                                              :fontStyle (:font-style data)
                                              :direction (:direction data)
                                              :whiteSpace "pre"}
-                                        (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))})
+                                        (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))}
+                        (cond-> browser-props
+                          (obj/merge! browser-props)))
               shape (assoc shape :fills (:fills data))]
 
           [:& (mf/provider muc/render-id) {:key index :value (str render-id "_" (:id shape) "_" index)}

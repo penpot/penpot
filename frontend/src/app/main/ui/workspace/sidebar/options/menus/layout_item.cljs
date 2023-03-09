@@ -58,7 +58,7 @@
          [:span.icon i/auto-margin-both-sides]
          [:> numeric-input
           {:placeholder "--"
-           :on-click #(dom/select-target %)
+           :on-focus #(dom/select-target %)
            :on-change (partial on-margin-change :simple :m1)
            :value m1}]]
 
@@ -67,7 +67,7 @@
          [:span.icon.rotated i/auto-margin-both-sides]
          [:> numeric-input
           {:placeholder "--"
-           :on-click #(dom/select-target %)
+           :on-focus #(dom/select-target %)
            :on-change (partial on-margin-change :simple :m2)
            :value m2}]]]
 
@@ -84,7 +84,7 @@
            [:div.input-element.auto
             [:> numeric-input
              {:placeholder "--"
-              :on-click #(dom/select-target %)
+              :on-focus #(dom/select-target %)
               :on-change (partial on-margin-change :multiple num)
               :value (num (:layout-item-margin values))}]]])])
 
@@ -231,7 +231,7 @@
            i/layers
            [:> numeric-input
             {:placeholder "--"
-             :on-click #(dom/select-target %)
+             :on-focus #(dom/select-target %)
              :on-change #(on-change-z-index %)
              :value (:layout-item-z-index values)}]]]])
 
@@ -281,7 +281,7 @@
                  :min 0
                  :data-wrap true
                  :placeholder "--"
-                 :on-click #(dom/select-target %)
+                 :on-focus #(dom/select-target %)
                  :on-change (partial on-size-change item)
                  :value (get values item)
                  :nillable true}]]])]]])]]))
