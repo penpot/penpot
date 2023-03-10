@@ -7,11 +7,9 @@
 (ns frontend-tests.helpers.libraries
   (:require
    [app.common.pages.helpers :as cph]
-   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.main.data.workspace.state-helpers :as wsh]
-   [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]))
 

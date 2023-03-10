@@ -255,6 +255,11 @@
               (subvec v 0 index)
               (subvec v (inc index))))
 
+(defn without-obj
+  "Clear collection from specified obj and without nil values."
+  [coll o]
+  (into [] (filter #(not= % o)) coll))
+
 (defn zip [col1 col2]
   (map vector col1 col2))
 
@@ -476,6 +481,17 @@
   [& args]
   (->> (apply c/iteration args)
        (concat-all)))
+
+(defn insert-at-index
+  "Insert a list of elements at the given index of a previous list.
+  Replace all existing elems."
+  [elems index new-elems]
+  (let [[before after] (split-at index elems)
+        p? (set new-elems)]
+    (concat-vec []
+                (remove p? before)
+                new-elems
+                (remove p? after))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.media :as cm]
    [app.common.text :as ct]
+   [app.common.types.components-list :as ctkl]
    [app.config :as cfg]
    [app.main.render :as r]
    [app.main.repo :as rp]
@@ -51,7 +52,7 @@
                           :version              current-version
                           :libraries            (->> (:libraries file) (into #{}) (mapv str))
                           :exportType           (d/name export-type)
-                          :hasComponents        (d/not-empty? (get-in file [:data :components]))
+                          :hasComponents        (d/not-empty? (ctkl/components-seq (:data file)))
                           :hasDeletedComponents (d/not-empty? (get-in file [:data :deleted-components]))
                           :hasMedia             (d/not-empty? (get-in file [:data :media]))
                           :hasColors            (d/not-empty? (get-in file [:data :colors]))
@@ -329,7 +330,7 @@
                                  (select-keys (get external-refs (:id file))))
                 media        (-> (get-in file [:data :media])
                                  (select-keys (get external-refs (:id file))))
-                components   (-> (get-in file [:data :components])
+                components   (-> (ctkl/components (:data file))
                                  (select-keys (get external-refs (:id file))))]
             (cond-> target
               (d/not-empty? colors)
@@ -434,7 +435,7 @@
         components-stream
         (->> files-stream
              (rx/flat-map vals)
-             (rx/filter #(d/not-empty? (get-in % [:data :components])))
+             (rx/filter #(d/not-empty? (ctkl/components-seq (:data %))))
              (rx/flat-map parse-library-components))
 
         deleted-components-stream

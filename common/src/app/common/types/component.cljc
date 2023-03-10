@@ -34,10 +34,11 @@
   (and (= shape-id (:main-instance-id component))
        (= page-id (:main-instance-page component))))
 
-;; Obsolete in components-v2
 (defn get-component-root
   [component]
-  (get-in component [:objects (:id component)]))
+  (if (some? (:main-instance-id component))
+    (get-in component [:objects (:main-instance-id component)])
+    (get-in component [:objects (:id component)])))
 
 (defn uses-library-components?
   "Check if the shape uses any component in the given library."
@@ -67,5 +68,3 @@
           :remote-synced?
           :shape-ref
           :touched))
-
-
