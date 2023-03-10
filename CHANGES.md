@@ -28,6 +28,7 @@
 - Fix problem with text editor in Safari
 - Fix unlink library color when blur color picker input [#3026](https://github.com/penpot/penpot/issues/3026)
 - Fix snap pixel when moving path points on high zoom [#2930](https://github.com/penpot/penpot/issues/2930)
+- Fix shortcuts for zoom now take into account the mouse position [#2924](https://github.com/penpot/penpot/issues/2924)
 
 ### :arrow_up: Deps updates
 
