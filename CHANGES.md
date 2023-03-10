@@ -26,6 +26,7 @@
 - Changed the text dominant-baseline to use ideographic [Taiga #4791](https://tree.taiga.io/project/penpot/issue/4791)
 - Viewer wrong translations [Github #3035](https://github.com/penpot/penpot/issues/3035)
 - Fix problem with text editor in Safari
+- Fix unlink library color when blur color picker input [#3026](https://github.com/penpot/penpot/issues/3026)
 
 ### :arrow_up: Deps updates
 
