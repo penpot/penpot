@@ -27,6 +27,7 @@
 - Viewer wrong translations [Github #3035](https://github.com/penpot/penpot/issues/3035)
 - Fix problem with text editor in Safari
 - Fix unlink library color when blur color picker input [#3026](https://github.com/penpot/penpot/issues/3026)
+- Fix snap pixel when moving path points on high zoom [#2930](https://github.com/penpot/penpot/issues/2930)
 
 ### :arrow_up: Deps updates
 
