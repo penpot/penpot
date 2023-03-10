@@ -6,8 +6,8 @@
 
 (ns app.common.types.pages-list
   (:require
-   [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]))
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]))
 
 (defn get-page
   [file-data id]
@@ -23,7 +23,7 @@
                          (cond
                            exists?      pages
                            (nil? index) (conj pages id)
-                           :else        (cph/insert-at-index pages index [id])))))
+                           :else        (d/insert-at-index pages index [id])))))
       (update :pages-index assoc id (dissoc page :index))))
 
 (defn pages-seq

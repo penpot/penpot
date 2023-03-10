@@ -27,15 +27,6 @@
    [app.common.types.typographies-list :as ctyl]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Specific helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- without-obj
-  "Clear collection from specified obj and without nil values."
-  [coll o]
-  (into [] (filter #(not= % o)) coll))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Transformation Changes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -111,27 +102,9 @@
 
 (defmethod process-change :del-obj
   [data {:keys [page-id component-id id ignore-touched]}]
-  (letfn [(delete-from-parent [parent]
-            (let [parent (update parent :shapes without-obj id)]
-              (cond-> parent
-                (and (:shape-ref parent)
-                     (not ignore-touched))
-                (-> (update :touched cph/set-touched-group :shapes-group)
-                    (dissoc :remote-synced?)))))
-
-          (delete-from-objects [objects]
-            (if-let [target (get objects id)]
-              (let [parent-id (or (:parent-id target)
-                                  (:frame-id target))
-                    children  (cph/get-children id objects)]
-                (-> (reduce dissoc objects children)
-                    (dissoc id)
-                    (d/update-when parent-id delete-from-parent)))
-              objects))]
-
-    (if page-id
-      (d/update-in-when data [:pages-index page-id :objects] delete-from-objects)
-      (d/update-in-when data [:components component-id :objects] delete-from-objects))))
+  (if page-id
+    (d/update-in-when data [:pages-index page-id] ctst/delete-shape id ignore-touched)
+    (d/update-in-when data [:components component-id] ctst/delete-shape id ignore-touched)))
 
 ;; reg-objects operation "regenerates" the geometry and selrect of the parent groups
 (defmethod process-change :reg-objects
@@ -197,7 +170,7 @@
           (insert-items [prev-shapes index shapes]
             (let [prev-shapes (or prev-shapes [])]
               (if index
-                (cph/insert-at-index prev-shapes index shapes)
+                (d/insert-at-index prev-shapes index shapes)
                 (cph/append-at-the-end prev-shapes shapes))))
 
           (add-to-parent [parent index shapes]
@@ -226,7 +199,7 @@
                                       (not ignore-touched))]
 
                   (-> objects
-                      (d/update-in-when [pid :shapes] without-obj sid)
+                      (d/update-in-when [pid :shapes] d/without-obj sid)
                       (d/update-in-when [pid :shapes] d/vec-without-nils)
                       (cond-> component? (d/update-when pid #(-> %
                                                                  (update :touched cph/set-touched-group :shapes-group)
@@ -301,7 +274,7 @@
 
 (defmethod process-change :mov-page
   [data {:keys [id index]}]
-  (update data :pages cph/insert-at-index index [id]))
+  (update data :pages d/insert-at-index index [id]))
 
 (defmethod process-change :add-color
   [data {:keys [color]}]

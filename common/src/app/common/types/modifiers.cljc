@@ -690,7 +690,7 @@
                     (update shape :shapes
                             (fn [shapes]
                               (if (vector? shapes)
-                                (cph/insert-at-index shapes index value)
+                                (d/insert-at-index shapes index value)
                                 (d/concat-vec shapes value))))
                     (update shape :shapes d/concat-vec value)))
 

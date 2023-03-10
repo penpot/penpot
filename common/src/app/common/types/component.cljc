@@ -67,5 +67,3 @@
           :remote-synced?
           :shape-ref
           :touched))
-
-

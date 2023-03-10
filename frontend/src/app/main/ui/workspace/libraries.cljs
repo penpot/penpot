@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.libraries
   (:require
    [app.common.data :as d]
+   [app.common.types.components-list :as ctkl]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.libraries :as dwl]
@@ -44,7 +45,7 @@
 
 (defn local-library-str
   [library]
-  (let [components-count (count (get-in library [:data :components] []))
+  (let [components-count (count (or (ctkl/components-seq (:data library)) []))
         graphics-count (count (get-in library [:data :media] []))
         colors-count (count (get-in library [:data :colors] []))
         typography-count (count (get-in library [:data :typographies] []))]

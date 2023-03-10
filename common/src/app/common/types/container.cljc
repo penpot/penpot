@@ -6,11 +6,11 @@
 
 (ns app.common.types.container
   (:require
-   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.common :as common]
    [app.common.spec :as us]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
    [clojure.spec.alpha :as s]))
@@ -43,8 +43,8 @@
   (us/assert uuid? id)
 
   (-> (if (= type :page)
-        (dm/get-in file [:pages-index id])
-        (dm/get-in file [:components id]))
+        (ctpl/get-page file id)
+        (ctkl/get-component file id))
       (assoc :type type)))
 
 (defn get-shape

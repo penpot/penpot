@@ -40,10 +40,6 @@
   ([state page-id]
    (dm/get-in state [:workspace-data :pages-index page-id :options])))
 
-(defn lookup-component-objects
-  ([state component-id]
-   (dm/get-in state [:workspace-data :components component-id :objects])))
-
 (defn lookup-local-components
   ([state]
    (dm/get-in state [:workspace-data :components])))

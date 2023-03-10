@@ -15,7 +15,6 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
-   [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]))
 
@@ -612,7 +611,8 @@
                 (fn [undo-changes]
                   (-> undo-changes
                       (d/preconj {:type :del-component
-                                  :id id})
+                                  :id id
+                                  :skip-undelete? true})
                       (into (comp (map :id)
                                   (map lookupf)
                                   (map mk-change))
@@ -631,7 +631,7 @@
                                       :id id
                                       :name (:name new-component)
                                       :path (:path new-component)
-                                      :objects (:objects new-component)})
+                                      :objects (:objects new-component)}) ;; this won't exist in components-v2
           (update :undo-changes d/preconj {:type :mod-component
                                            :id id
                                            :name (:name prev-component)
@@ -640,29 +640,13 @@
       changes)))
 
 (defn delete-component
-  [changes id components-v2]
+  [changes id]
   (assert-library changes)
-  (let [library-data (::library-data (meta changes))
-        component    (ctkl/get-component library-data id)
-        shapes       (ctf/get-component-shapes library-data component)]
-    (-> changes
-        (update :redo-changes conj {:type :del-component
-                                    :id id})
-        (update :undo-changes
-                (fn [undo-changes]
-                  (cond-> undo-changes
-                    components-v2
-                    (d/preconj {:type :purge-component
-                                :id id})
-
-                    :always
-                    (d/preconj {:type :add-component
-                                :id id
-                                :name (:name component)
-                                :path (:path component)
-                                :main-instance-id (:main-instance-id component)
-                                :main-instance-page (:main-instance-page component)
-                                :shapes shapes})))))))
+  (-> changes
+      (update :redo-changes conj {:type :del-component
+                                  :id id})
+      (update :undo-changes d/preconj {:type :restore-component
+                                        :id id})))
 
 (defn restore-component
   [changes id]

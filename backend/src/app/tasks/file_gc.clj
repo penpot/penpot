@@ -13,6 +13,7 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.pages.migrations :as pmg]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
@@ -204,36 +205,31 @@
                 (filter #(ctf/used-in? file-data library-id % :component))
                 components))
 
-        find-used-components
+        find-unused-components
         (fn [components files-data]
-          ; Find what components are used in any of the files.
+          ; Find what components are NOT used in any of the files.
           (loop [files-data      files-data
-                 components      components
-                 used-components #{}]
+                 components      components]
             (let [file-data (first files-data)]
               (if (or (nil? file-data) (empty? components))
-                used-components
+                components
                 (let [used-components-file (find-used-components-file components file-data)]
                   (recur (rest files-data)
-                         (into #{} (remove used-components-file) components)
-                         (into used-components used-components-file)))))))
+                         (into #{} (remove used-components-file) components)))))))
 
-        deleted-components     (set (vals (:deleted-components library-data)))
-        saved-components       (find-used-components deleted-components
-                                                     (cons library-data
-                                                           (retrieve-client-files conn library-id)))
-        new-deleted-components (d/index-by :id (vec saved-components))
-
-        total (- (count deleted-components)
-                 (count saved-components))]
+        deleted-components     (set (ctkl/deleted-components-seq library-data))
+        unused-components      (find-unused-components deleted-components
+                                                       (cons library-data
+                                                             (retrieve-client-files conn library-id)))
+        total                  (count unused-components)]
 
     (when-not (zero? total)
       (l/debug :hint "clean deleted components" :total total)
-      (let [new-data (-> library-data
-                         (assoc :deleted-components new-deleted-components)
-                         (blob/encode))]
+      (let [new-data (reduce #(ctkl/delete-component %1 (:id %2))
+                             library-data
+                             unused-components)]
         (db/update! conn :file
-                    {:data new-data}
+                    {:data (blob/encode new-data)}
                     {:id library-id})))))
 
 (def ^:private sql:get-unused-fragments

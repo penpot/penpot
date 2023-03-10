@@ -10,9 +10,18 @@
    [app.common.data.macros :as dm]
    [app.common.files.features :as feat]))
 
+(defn components
+  [file-data]
+  (d/removem (fn [[_ component]] (:deleted component))
+             (:components file-data)))
+
 (defn components-seq
   [file-data]
-  (vals (:components file-data)))
+  (remove :deleted (vals (:components file-data))))
+
+(defn deleted-components-seq
+  [file-data]
+  (filter :deleted (vals (:components file-data))))
 
 (defn add-component
   [file-data {:keys [id name path main-instance-id main-instance-page shapes]}]
@@ -53,7 +62,15 @@
 
 (defn get-component
   [file-data component-id]
-  (get-in file-data [:components component-id]))
+  (let [component (get-in file-data [:components component-id])]
+    (when-not (:deleted component)
+      component)))
+
+(defn get-deleted-component
+  [file-data component-id]
+  (let [component (get-in file-data [:components component-id])]
+    (when (:deleted component)
+      component)))
 
 (defn update-component
   [file-data component-id f]
@@ -62,3 +79,11 @@
 (defn delete-component
   [file-data component-id]
   (update file-data :components dissoc component-id))
+
+(defn mark-component-deleted
+  [file-data component-id]
+  (assoc-in file-data [:components component-id :deleted] true))
+
+(defn mark-component-undeleted
+  [file-data component-id]
+  (d/dissoc-in file-data [:components component-id :deleted]))

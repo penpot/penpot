@@ -36,7 +36,7 @@
               (conj shapes id)
 
               :else
-              (cph/insert-at-index shapes index [id]))))
+              (d/insert-at-index shapes index [id]))))
 
         update-parent
         (fn [parent]
@@ -49,27 +49,62 @@
                 (-> (update :touched cph/set-touched-group :shapes-group)
                     (dissoc :remote-synced?)))))
 
-        ;; TODO: this looks wrong, why we allow nil values?
         update-objects
         (fn [objects parent-id]
-          (if (and (or (nil? parent-id) (contains? objects parent-id))
-                   (or (nil? frame-id) (contains? objects frame-id)))
+          (let [parent-id (if (contains? objects parent-id)
+                            parent-id
+                            uuid/zero)
+                frame-id (if (contains? objects frame-id)
+                           frame-id
+                           uuid/zero)]
             (-> objects
                 (assoc id (-> shape
                               (assoc :frame-id frame-id)
                               (assoc :parent-id parent-id)
                               (assoc :id id)))
-                (update parent-id update-parent))
-            objects))
+                (update parent-id update-parent))))
 
         parent-id (or parent-id frame-id)]
 
     (update container :objects update-objects parent-id)))
 
+(defn get-shape
+  "Get a shape identified by id"
+  [container id]
+  (-> container :objects (get id)))
+
 (defn set-shape
   "Replace a shape in the tree with a new one"
   [container shape]
   (assoc-in container [:objects (:id shape)] shape))
+
+(defn delete-shape
+  "Remove a shape and all its children from the tree.
+
+   Remove it also from its parent, and marks it as touched
+   if needed, unless ignore-touched is true."
+  ([container shape-id]
+   (delete-shape container shape-id false))
+
+  ([container shape-id ignore-touched]
+   (letfn [(delete-from-parent [parent]
+             (let [parent (update parent :shapes d/without-obj shape-id)]
+               (cond-> parent
+                 (and (:shape-ref parent) (not ignore-touched))
+                 (-> (update :touched cph/set-touched-group :shapes-group)
+                     (dissoc :remote-synced?)))))
+
+           (delete-from-objects [objects]
+             (if-let [target (get objects shape-id)]
+               (let [parent-id     (or (:parent-id target)
+                                       (:frame-id target))
+                     children-ids  (cph/get-children-ids objects shape-id)]
+                 (-> (reduce dissoc objects children-ids)
+                     (dissoc shape-id)
+                     (d/update-when parent-id delete-from-parent)))
+               objects))]
+
+     (update container :objects delete-from-objects))))
 
 (defn get-frames
   "Retrieves all frame objects as vector"

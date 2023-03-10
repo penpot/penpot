@@ -13,6 +13,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
@@ -485,14 +486,14 @@
 (defn get-team-shared-files
   [conn team-id]
   (letfn [(assets-sample [assets limit]
-            (let [sorted-assets (->> (vals assets)
-                                     (sort-by #(str/lower (:name %))))]
-              {:count (count sorted-assets)
-               :sample (into [] (take limit sorted-assets))}))
+           (let [sorted-assets (->> (vals assets)
+                                    (sort-by #(str/lower (:name %))))]
+             {:count (count sorted-assets)
+              :sample (into [] (take limit sorted-assets))}))
 
           (library-summary [{:keys [id data] :as file}]
             (binding [pmap/*load-fn* (partial load-pointer conn id)]
-              (let [components-sample (-> (assets-sample (:components data) 4)
+              (let [components-sample (-> (assets-sample (ctkl/components data) 4)
                                           (update :sample
                                                   #(map (partial ctf/load-component-objects data) %)))]
                 {:components components-sample

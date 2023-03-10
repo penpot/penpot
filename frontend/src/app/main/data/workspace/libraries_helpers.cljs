@@ -241,7 +241,7 @@
 
   (let [file          (wsh/get-file state file-id)
         components-v2 (get-in file [:options :components-v2])]
-    (loop [local-components (vals (get file :components))
+    (loop [local-components (ctkl/components-seq file)
            changes (pcb/empty-changes it)]
       (if-let [local-component (first local-components)]
         (recur (next local-components)
@@ -480,7 +480,7 @@
       (let [library        (dm/get-in libraries [(:component-file shape-inst) :data])
             component      (or (ctkl/get-component library (:component-id shape-inst))
                                (and reset?
-                                    (ctf/get-deleted-component library (:component-id shape-inst))))
+                                    (ctkl/get-deleted-component library (:component-id shape-inst))))
 
             shape-main     (when component
                              (ctf/get-ref-shape library component shape-inst))

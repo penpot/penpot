@@ -12,6 +12,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.text :as txt]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.main.data.events :as ev]
@@ -374,8 +375,11 @@
 
         components-v2        (mf/use-ctx ctx/components-v2)
 
-        file (or (:data file) file)
-
+        file                 (or (:data file) file)
+        root-shape           (ctf/get-component-root file component)
+        component-container  (if components-v2
+                               (ctf/get-component-page file component)
+                               component)
         unselect-all
         (mf/use-fn
          (fn []
@@ -439,26 +443,26 @@
            :on-drag-over on-drag-over
            :on-drop on-drop}
 
-     [:& component-svg {:root-shape (ctf/get-component-root file component)
-                        :objects (:objects (if components-v2
-                                             (ctf/get-component-page file component)
-                                             component))}]
-     (let [renaming? (= renaming (:id component))]
+     (when (and (some? root-shape) (some? component-container))
        [:*
-        [:& editable-label
-         {:class-name (dom/classnames
-                       :cell-name listing-thumbs?
-                       :item-name (not listing-thumbs?)
-                       :editing renaming?)
-          :value (cph/merge-path-item (:path component) (:name component))
-          :tooltip (cph/merge-path-item (:path component) (:name component))
-          :display-value (:name component)
-          :editing? renaming?
-          :disable-dbl-click? true
-          :on-change do-rename
-          :on-cancel cancel-rename}]
-        (when @dragging?
-          [:div.dragging])])]))
+        [:& component-svg {:root-shape root-shape
+                           :objects (:objects component-container)}]
+        (let [renaming? (= renaming (:id component))]
+          [:*
+           [:& editable-label
+            {:class-name (dom/classnames
+                          :cell-name listing-thumbs?
+                          :item-name (not listing-thumbs?)
+                          :editing renaming?)
+             :value (cph/merge-path-item (:path component) (:name component))
+             :tooltip (cph/merge-path-item (:path component) (:name component))
+             :display-value (:name component)
+             :editing? renaming?
+             :disable-dbl-click? true
+             :on-change do-rename
+             :on-cancel cancel-rename}]
+           (when @dragging?
+             [:div.dragging])])])]))
 
 (mf/defc components-group
   [{:keys [file prefix groups open-groups renaming listing-thumbs? selected-components on-asset-click
@@ -1932,8 +1936,8 @@
   (l/derived (fn [state]
                (let [wfile (:workspace-data state)]
                  (if (= (:id wfile) id)
-                   (vals (get wfile :components))
-                   (vals (get-in state [:workspace-libraries id :data :components])))))
+                   (ctkl/components-seq wfile)
+                   (ctkl/components-seq (get-in state [:workspace-libraries id :data])))))
              st/state =))
 
 (defn file-typography-ref
