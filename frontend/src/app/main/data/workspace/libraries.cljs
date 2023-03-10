@@ -22,7 +22,6 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.file.media-object :as ctfm]
-   [app.common.types.pages-list :as ctpl]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
@@ -421,12 +420,12 @@
       (let [data (get state :workspace-data)]
         (if (features/active-feature? state :components-v2)
           (let [component (ctkl/get-component data id)
-                page      (ctpl/get-page data (:main-instance-page component))
-                shape     (ctn/get-shape page (:main-instance-id component))]
-            (rx/of (dwsh/delete-shapes (:id page) #{(:id shape)})))
+                page      (ctf/get-component-page data component)
+                shape     (ctf/get-component-root data component)]
+            (rx/of (dwsh/delete-shapes (:id page) #{(:id shape)}))) ;; Deleting main root triggers component delete
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/delete-component id false))]
+                            (pcb/delete-component id))]
             (rx/of (dch/commit-changes changes))))))))
 
 (defn restore-component
@@ -437,39 +436,18 @@
   (ptk/reify ::restore-component
     ptk/WatchEvent
     (watch [it state _]
-      (assert "Restore component not implemented") ; until we allow a :deleted flag in shapes
-      (let [file-data (wsh/get-file state library-id)
-            component (ctf/get-deleted-component file-data component-id)
-            page      (ctpl/get-page file-data (:main-instance-page component))
-
-            components-v2
-            (features/active-feature? state :components-v2)
-
-            ; Make a new main instance, with the same id of the original
-            [_main-instance shapes]
-            (ctn/make-component-instance page
-                                         component
-                                         file-data
-                                         (gpt/point (:main-instance-x component)
-                                                    (:main-instance-y component))
-                                         components-v2
-                                         {:main-instance? true
-                                          :force-id (:main-instance-id component)})
-
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data file-data)
-                        (pcb/with-page page))
-
-            changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                            changes
-                            shapes)
-
-                                        ; restore-component change needs to be done after add main instance
-                                        ; because when undo changes, the orden is inverse
-            changes (pcb/restore-component changes component-id)]
-
-        (rx/of (dch/commit-changes (assoc changes :file-id library-id)))))))
-
+     (let [library-data (wsh/get-file state library-id)
+           component    (ctkl/get-deleted-component library-data component-id)
+           page         (ctf/get-component-page library-data component)
+           shapes       (cph/get-children-with-self (:objects component) (:main-instance-id component))
+           changes      (-> (pcb/empty-changes it)
+                            (pcb/with-library-data library-data)
+                            (pcb/with-page page))
+           changes      (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                                changes
+                                shapes)
+           changes      (pcb/restore-component changes component-id)]
+     (rx/of (dch/commit-changes changes))))))
 
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id

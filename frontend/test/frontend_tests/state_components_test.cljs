@@ -1,6 +1,7 @@
 (ns frontend-tests.state-components-test
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.main.data.workspace :as dw]
@@ -303,14 +304,14 @@
                                                (filter #(not= % component-id))
                                                (first))
 
-                         [[instance1 shape1]
-                          [c-instance1 c-shape1]
-                          component1]
+                         [[_instance1 _shape1]
+                          [_c-instance1 _c-shape1]
+                          _component1]
                          (thl/resolve-instance-and-main
                           new-state
                           (:id main1))
 
-                         [[c-component2 c-shape2]
+                         [[_c-component2 _c-shape2]
                           component2]
                          (thl/resolve-component
                           new-state
@@ -331,39 +332,114 @@
                    (thp/sample-shape :shape1 :rect
                                      {:name "Rect 1"})
                    (thp/make-component :main1 :component1
-                                       [(thp/id :shape1)]))
-
-         file (wsh/get-local-file state)
-
-         main1        (thp/get-shape state :main1)
-         component-id (:component-id main1)
+                                       [(thp/id :shape1)])
+                   (thp/instantiate-component :instance1
+                                              (thp/id :component1)))
 
          store (the/prepare-store state done
-                 (fn [new-state]
-                   ; Expected shape tree:
-                   ;
-                   ; [Page]
-                   ; Root Frame
-                   ;
-                   (let [[main1 shape1]
-                         (thl/resolve-noninstance
-                           new-state
-                           (:id main1))
+                                  (fn [new-state]
+                                    ; Expected shape tree:
+                                    ;
+                                    ; [Page]                                                                                                                                                                                        
+                                    ; Root Frame                                                                                     
+                                    ;   Rect 1              #--> ?                                                                   
+                                    ;     Rect 1            ---> ?                                                                   
+                                    ;
+                                    (let [[main1 shape1]
+                                          (thl/resolve-noninstance
+                                           new-state
+                                           (thp/id :main1))
 
-                         libs      (wsh/get-libraries new-state)
-                         component (ctf/get-component libs
-                                                      (:component-file main1)
-                                                      (:component-id main1))]
+                                          [[instance1 shape2] [c-instance1 c-shape2] component1]
+                                          (thl/resolve-instance-and-main-allow-dangling
+                                           new-state
+                                           (thp/id :instance1))
 
-                     (t/is (nil? main1))
-                     (t/is (nil? shape1))
-                     (t/is (nil? component)))))]
+                                          file          (wsh/get-local-file new-state)
+                                          component2    (ctkl/get-component file (thp/id :component1))
+                                          component3    (ctkl/get-deleted-component file (thp/id :component1))
+                                          
+                                          saved-objects (:objects component3)
+                                          saved-main1   (get saved-objects (:shape-ref instance1))
+                                          saved-shape2  (get saved-objects (:shape-ref shape2))]
+
+                                      (t/is (nil? main1))
+                                      (t/is (nil? shape1))
+
+                                      (t/is (= (:name instance1) "Rect 1"))
+                                      (t/is (= (:touched instance1) nil))
+                                      (t/is (not= (:shape-ref instance1) nil))
+                                      (t/is (= (:name shape2) "Rect 1"))
+                                      (t/is (= (:touched shape2) nil))
+                                      (t/is (not= (:shape-ref shape2) nil))
+                                      (t/is (nil? c-instance1))
+                                      (t/is (nil? c-shape2))
+                                      (t/is (nil? component1))
+
+                                      (t/is (nil? component2))
+
+                                      (t/is (= (:name component3) "Rect 1"))
+                                      (t/is (= (:deleted component3) true))
+                                      (t/is (some? (:objects component3)))
+                                      
+                                      (t/is (= (:name saved-main1) "Rect 1"))
+                                      (t/is (= (:name saved-shape2) "Rect 1")))))]
 
      (ptk/emit!
-       store
-       (dwl/delete-component {:id component-id})
-       (dwl/sync-file (:id file) (:id file) :components component-id)
-       :the/end))))
+      store
+      (dwl/delete-component {:id (thp/id :component1)})
+      :the/end))))
+
+(t/deftest test-restore-component
+  (t/async
+   done
+   (let [state (-> thp/initial-state
+                   (thp/sample-page)
+                   (thp/sample-shape :shape1 :rect
+                                     {:name "Rect 1"})
+                   (thp/make-component :main1 :component1
+                                       [(thp/id :shape1)])
+                   (thp/instantiate-component :instance1
+                                              (thp/id :component1)))
+
+         store (the/prepare-store state done
+                                  (fn [new-state]
+                                    ; Expected shape tree:
+                                    ;
+                                    ; [Page]                                                                                         
+                                    ; Root Frame                                                                                     
+                                    ;   Rect 1              #--> Rect 1                                                              
+                                    ;     Rect 1            ---> Rect 1                                                              
+                                    ;   Rect 1             
+                                    ;     Rect 1                                                                                     
+                                    ;                                                                                                
+                                    ; [Rect 1]                                                                                       
+                                    ;   page1 / Rect 1                                                                                                                                                                              
+                                    ;
+                                    (let [[[instance1 shape2] [c-instance1 c-shape2] component1]
+                                          (thl/resolve-instance-and-main
+                                           new-state
+                                           (thp/id :instance1))
+
+                                          file          (wsh/get-local-file new-state)
+                                          component2    (ctkl/get-component file (thp/id :component1))
+
+                                          saved-objects (:objects component2)]
+
+                                      (t/is (= (:name instance1) "Rect 1"))
+                                      (t/is (= (:name shape2) "Rect 1"))
+                                      (t/is (= (:name c-instance1) "Rect 1"))
+                                      (t/is (= (:name c-shape2) "Rect 1"))
+
+                                      (t/is (some? component1))
+                                      (t/is (some? component2))
+                                      (t/is (nil? saved-objects)))))]
+
+     (ptk/emit!
+      store
+      (dwl/delete-component {:id (thp/id :component1)})
+      (dwl/restore-component thp/current-file-id (thp/id :component1))
+      :the/end))))
 
 (t/deftest test-instantiate-component
   (t/async

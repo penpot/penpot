@@ -9,6 +9,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
+   [app.common.types.components-list :as ctkl]
+   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -300,8 +302,8 @@
   (us/assert uuid? id)
 
   (-> (if (= type :page)
-        (get-in file [:pages-index id])
-        (get-in file [:components id]))
+        (ctpl/get-page file id)
+        (ctkl/get-component file id))
       (assoc :type type)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -320,15 +322,6 @@
   [page objects-list]
   (update page :objects
           #(into % (d/index-by :id objects-list))))
-
-(defn insert-at-index
-  [objects index ids]
-  (let [[before after] (split-at index objects)
-        p? (set ids)]
-    (d/concat-vec []
-                  (remove p? before)
-                  ids
-                  (remove p? after))))
 
 (defn append-at-the-end
   [prev-ids ids]

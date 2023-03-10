@@ -292,7 +292,7 @@
         changes (reduce (fn [changes component-id]
                           ;; It's important to delete the component before the main instance, because we
                           ;; need to store the instance position if we want to restore it later.
-                          (pcb/delete-component changes component-id components-v2))
+                          (pcb/delete-component changes component-id))
                         changes
                         components-to-delete)
 

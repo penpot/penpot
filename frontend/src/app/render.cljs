@@ -11,6 +11,7 @@
    [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.spec :as us]
+   [app.common.types.components-list :as ctkl]
    [app.common.uri :as u]
    [app.main.data.fonts :as df]
    [app.main.features :as features]
@@ -247,7 +248,7 @@
                      :border "0px solid black"}]]])]
 
        [:ul.nav
-        (for [[id data] (get-in file [:data :components])]
+        (for [[id data] (ctkl/components (:data file))]
           (let [on-click (fn [event]
                            (dom/prevent-default event)
                            (swap! state assoc :component-id id))]

@@ -34,7 +34,6 @@
 
 (declare commit-changes)
 
-
 (defn- add-group-id
   [changes state]
   (let [undo          (:workspace-undo state)
@@ -215,7 +214,7 @@
                 add-page-id
                 (fn [{:keys [id type page] :as change}]
                   (cond-> change
-                    (page-change? type)
+                    (and (page-change? type) (nil? (:page-id change)))
                     (assoc :page-id (or id (:id page)))))
 
                 changes-by-pages
