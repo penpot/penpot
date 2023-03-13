@@ -27,6 +27,7 @@
 - Fix unlink library color when blur color picker input [#3026](https://github.com/penpot/penpot/issues/3026)
 - Fix snap pixel when moving path points on high zoom [#2930](https://github.com/penpot/penpot/issues/2930)
 - Fix shortcuts for zoom now take into account the mouse position [#2924](https://github.com/penpot/penpot/issues/2924)
+- Fix close colorpicker on Firefox when mouse-up is outside the picker [#2911](https://github.com/penpot/penpot/issues/2911)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
