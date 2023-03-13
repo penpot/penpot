@@ -7,6 +7,7 @@
 (ns app.main.ui.viewer.inspect.left-sidebar
   (:require
    [app.common.data :as d]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
@@ -34,7 +35,7 @@
                         (make-collapsed-iref id))
 
         expanded? (not (mf/deref collapsed-iref))
-
+        absolute? (ctl/layout-absolute? item)
         toggle-collapse
         (fn [event]
           (dom/stop-propagation event)
@@ -71,7 +72,10 @@
      [:div.element-list-body {:class (dom/classnames :selected selected?
                                                      :icon-layer (= (:type item) :icon))
                               :on-click select-shape}
-      [:& si/element-icon {:shape item}]
+      [:div.icon
+       (when absolute?
+         [:div.absolute i/position-absolute])
+       [:& si/element-icon {:shape item}]]
       [:& layer-name {:shape item :disabled-double-click true}]
 
       (when (and (not disable-collapse?) (:shapes item))
