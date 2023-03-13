@@ -65,7 +65,7 @@
     [:header.dashboard-header
      (if (:is-default project)
        [:div.dashboard-title#dashboard-drafts-title 
-        [:h1 "Barco:🛳"]]
+        [:h1 (tr "labels.drafts")]]
 
        (if (:edition @local)
          [:& inline-edition {:content (:name project)
