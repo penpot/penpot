@@ -93,3 +93,6 @@ $title-lh-sm: 1.15;
 @include font-face("vazirmatn", "Vazirmatn-Bold", bold);
 @include font-face("vazirmatn", "Vazirmatn-ExtraBold", "800");
 @include font-face("vazirmatn", "Vazirmatn-Black", "900");
+
+// Noto Color Emoji
+@include font-face("notocoloremoji", "NotoColorEmoji-Regular", normal);

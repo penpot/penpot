@@ -125,7 +125,7 @@
        (obj/set! "fontSize" (str font-size "px"))
 
        (some? font)
-       (-> (obj/set! "fontFamily" font-family)
+       (-> (obj/set! "fontFamily" (str font-family ", notocoloremoji"))
            (obj/set! "fontStyle" font-style)
            (obj/set! "fontWeight" font-weight))
 
