@@ -440,12 +440,12 @@
    :increase-zoom        {:tooltip "+"
                           :command ["+" "="]
                           :subsections [:zoom-workspace]
-                          :fn #(st/emit! (dw/increase-zoom nil))}
+                          :fn #(st/emit! (dw/increase-zoom))}
 
    :decrease-zoom        {:tooltip "-"
                           :command ["-" "_"]
                           :subsections [:zoom-workspace]
-                          :fn #(st/emit! (dw/decrease-zoom nil))}
+                          :fn #(st/emit! (dw/decrease-zoom))}
 
    :reset-zoom           {:tooltip (ds/shift "0")
                           :command "shift+0"

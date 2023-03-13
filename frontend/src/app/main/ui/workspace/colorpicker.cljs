@@ -65,11 +65,12 @@
 
         handle-change-color
         (mf/use-fn
-         (mf/deps @drag?)
+         (mf/deps current-color @drag?)
          (fn [color]
-           (let [recent-color (merge current-color color)
-                 recent-color (dc/materialize-color-components recent-color)]
-             (st/emit! (dc/update-colorpicker-color recent-color (not @drag?))))))
+           (when (not= (str/lower (:hex color)) (str/lower (:hex current-color)))
+             (let [recent-color (merge current-color color)
+                   recent-color (dc/materialize-color-components recent-color)]
+               (st/emit! (dc/update-colorpicker-color recent-color (not @drag?)))))))
 
         handle-click-picker
         (mf/use-fn
