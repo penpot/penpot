@@ -692,7 +692,7 @@
                                     :row-gap (if flip-y true false)}
 
         objects                    (wsh/lookup-page-objects @st/state)
-        children              (->> (cph/get-children objects frame-id)
+        children              (->> (cph/get-immediate-children objects frame-id)
                                    (remove :layout-item-absolute)
                                    (remove :hidden))
 
