@@ -24,6 +24,7 @@
 - Improve deeps selection of nested arboards [Taiga #4913](https://tree.taiga.io/project/penpot/issue/4913)
 - Fix problem on selection numeric inputs on Firefox [#2991](https://github.com/penpot/penpot/issues/2991)
 - Changed the text dominant-baseline to use ideographic [Taiga #4791](https://tree.taiga.io/project/penpot/issue/4791)
+- Viewer wrong translations [Github #3035](https://github.com/penpot/penpot/issues/3035)
 
 ### :arrow_up: Deps updates
 
