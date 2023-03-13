@@ -253,7 +253,7 @@
              (->> ids
                   (remove remove-id?)
                   (remove (partial cph/hidden-parent? objects))
-                  (remove no-fill-nested-frames?)
+                  (remove #(and mod? (no-fill-nested-frames? %)))
                   (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
                   (first)
                   (get objects))]
