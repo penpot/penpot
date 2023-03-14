@@ -497,6 +497,30 @@
           :layout-item-align-self
           :layout-item-absolute
           :layout-item-z-index))
+
+(defn update-flex-scale
+  [shape scale]
+  (-> shape
+      (d/update-in-when [:layout-gap :row-gap] * scale)
+      (d/update-in-when [:layout-gap :column-gap] * scale)
+      (d/update-in-when [:layout-padding :p1] * scale)
+      (d/update-in-when [:layout-padding :p2] * scale)
+      (d/update-in-when [:layout-padding :p3] * scale)
+      (d/update-in-when [:layout-padding :p4] * scale)))
+
+(defn update-flex-child
+  [shape scale]
+  (-> shape
+      (d/update-when :layout-item-max-h * scale)
+      (d/update-when :layout-item-min-h * scale)
+      (d/update-when :layout-item-max-w * scale)
+      (d/update-when :layout-item-min-w * scale)
+      (d/update-in-when [:layout-item-margin :m1] * scale)
+      (d/update-in-when [:layout-item-margin :m2] * scale)
+      (d/update-in-when [:layout-item-margin :m3] * scale)
+      (d/update-in-when [:layout-item-margin :m4] * scale)))
+
+
 (declare assign-cells)
 
 (def grid-cell-defaults
