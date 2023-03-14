@@ -187,10 +187,11 @@
 
 (defn scale-matrix
   ([pt center]
-   (-> (matrix)
-       (multiply! (translate-matrix center))
-       (multiply! (scale-matrix pt))
-       (multiply! (translate-matrix (gpt/negate center)))))
+   (let [sx (dm/get-prop pt :x)
+         sy (dm/get-prop pt :y)
+         cx (dm/get-prop center :x)
+         cy (dm/get-prop center :y)]
+     (Matrix. sx 0 0 sy (- cx (* cx sx)) (- cy (* cy sy)))))
   ([pt]
    (assert (gpt/point? pt))
    (Matrix. (dm/get-prop pt :x) 0 0 (dm/get-prop pt :y) 0 0)))
