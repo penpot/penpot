@@ -198,10 +198,17 @@
 
 (defn rotate-matrix
   ([angle point]
-   (-> (matrix)
-       (multiply! (translate-matrix point))
-       (multiply! (rotate-matrix angle))
-       (multiply! (translate-matrix (gpt/negate point)))))
+   (let [cx (dm/get-prop point :x)
+         cy (dm/get-prop point :y)
+         nx (- cx)
+         ny (- cy)
+         a (mth/radians angle)
+         c (mth/cos a)
+         s (mth/sin a)
+         ns (- s)
+         tx (+ (* c nx) (* ns ny) cx)
+         ty (+ (* s nx) (*  c ny) cy)]
+     (Matrix. c s ns c tx ty)))
   ([angle]
    (let [a (mth/radians angle)]
      (Matrix. (mth/cos a)
