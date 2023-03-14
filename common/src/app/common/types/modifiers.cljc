@@ -543,6 +543,10 @@
   (or (d/not-empty? structure-parent)
       (d/not-empty? structure-child)))
 
+(defn has-structure-child?
+  [modifiers]
+  (d/not-empty? (dm/get-prop modifiers :structure-child)))
+
 ;; Extract subsets of modifiers
 
 (defn select-child
@@ -564,6 +568,10 @@
 (defn select-child-geometry-modifiers
   [modifiers]
   (-> modifiers select-child select-geometry))
+
+(defn select-child-structre-modifiers
+  [modifiers]
+  (-> modifiers select-child select-structure))
 
 (defn added-children-frames
   "Returns the frames that have an 'add-children' operation"

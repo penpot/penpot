@@ -322,10 +322,20 @@
 
 (defn- apply-structure-modifiers
   [objects modif-tree]
-  (letfn [(apply-shape [objects [id {:keys [modifiers]}]]
+  (letfn [(update-children-structure-modifiers
+            [objects ids modifiers]
+            (reduce #(update %1 %2 ctm/apply-structure-modifiers modifiers) objects ids))
+
+          (apply-shape [objects [id {:keys [modifiers]}]]
             (cond-> objects
               (ctm/has-structure? modifiers)
-              (update id ctm/apply-structure-modifiers modifiers)))]
+              (update id ctm/apply-structure-modifiers modifiers)
+
+              (and (ctm/has-structure? modifiers)
+                   (ctm/has-structure-child? modifiers))
+              (update-children-structure-modifiers
+               (cph/get-children-ids objects id)
+               (ctm/select-child-structre-modifiers modifiers))))]
     (reduce apply-shape objects modif-tree)))
 
 (defn merge-modif-tree
