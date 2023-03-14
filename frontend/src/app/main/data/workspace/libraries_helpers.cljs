@@ -122,14 +122,17 @@
             position (gpt/add (gpt/point (:x main-instance-shape) (:y main-instance-shape))
                               (gpt/point (+ (:width main-instance-shape) 50) 0))
 
+            component-instance-extra-data (if components-v2 {:main-instance? true} {})
+
             [new-instance-shape new-instance-shapes]
             (when (and (some? main-instance-page) (some? main-instance-shape))
               (ctn/make-component-instance main-instance-page
                                            component
                                            library-data
                                            position
-                                           true))]
-        
+                                           true
+                                           component-instance-extra-data))]
+
         [nil nil new-instance-shape new-instance-shapes])
 
       (let [component-root (d/seek #(nil? (:parent-id %)) (vals (:objects component)))
@@ -898,7 +901,7 @@
                                            :index index
                                            :ignore-touched true
                                            :obj shape'})
-                                         
+
                                          (ctn/page? component-container)
                                          (assoc :frame-id (:frame-id shape')))))
 
