@@ -75,6 +75,14 @@
          ;; We schedule the event so it fires after `initialize-page` event
          (timers/schedule #(st/emit! (dw/initialize-viewport size))))))))
 
+
+(defn setup-page-loaded [page-id]
+  (mf/use-effect
+   (mf/deps page-id)
+   (fn []
+     ;; We schedule the event so it fires after `initialize-page` event
+     (timers/schedule #(st/emit! (dw/page-loaded page-id))))))
+
 (defn setup-cursor [cursor alt? mod? space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?]
   (mf/use-effect
    (mf/deps @cursor @alt? @mod? @space? panning drawing-tool drawing-path? path-editing? z? workspace-read-only?)

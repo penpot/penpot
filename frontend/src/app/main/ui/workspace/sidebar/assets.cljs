@@ -379,16 +379,20 @@
 
         on-component-click
         (mf/use-fn
+         (mf/deps component selected-components)
+         (fn [event]
+           (dom/stop-propagation event)
+           (on-asset-click event (:id component) unselect-all)))
+
+        on-component-double-click
+        (mf/use-fn
           (mf/deps component selected-components)
           (fn [event]
             (dom/stop-propagation event)
             (let [main-instance-id (:main-instance-id component)
                   main-instance-page (:main-instance-page component)]
-              (if (and main-instance-id main-instance-page)
-                (st/emit! (dw/go-to-main-instance main-instance-page main-instance-id
-                                                  #(on-asset-click event (:id component) unselect-all)))
-                ;; This may occur when :components-v2 is disabled
-                (on-asset-click event (:id component) unselect-all)))))
+              (when (and main-instance-id main-instance-page) ;; Only when :components-v2 is enabled
+                (st/emit! (dw/go-to-main-instance main-instance-page main-instance-id))))))
 
         on-drop
         (mf/use-fn
@@ -428,6 +432,7 @@
            :id (str "component-shape-id-" (:id component))
            :draggable (not workspace-read-only?)
            :on-click on-component-click
+           :on-double-click on-component-double-click
            :on-context-menu (on-context-menu (:id component))
            :on-drag-start on-component-drag-start
            :on-drag-enter on-drag-enter

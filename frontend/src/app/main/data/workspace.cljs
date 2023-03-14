@@ -1094,7 +1094,7 @@
                                                             :colors #{}
                                                             :typographies #{}}))))
 (defn go-to-main-instance
-  [page-id shape-id on-page-selected]
+  [page-id shape-id]
   (us/verify ::us/uuid page-id)
   (us/verify ::us/uuid shape-id)
   (ptk/reify ::go-to-main-instance
@@ -1102,22 +1102,19 @@
     (watch [_ state stream]
       (let [current-page-id (:current-page-id state)]
         (if (= page-id current-page-id)
-          (do
-            (on-page-selected)
-            (rx/of (dws/select-shapes (lks/set shape-id))))
+          (rx/of (dws/select-shapes (lks/set shape-id))
+                 dwz/zoom-to-selected-shape)
           (let [project-id      (:current-project-id state)
                 file-id         (:current-file-id state)
                 pparams         {:file-id file-id :project-id project-id}
                 qparams         {:page-id page-id}]
-                ;; qparams         {:page-id page-id :layout :assets}]
             (rx/merge
              (rx/of (rt/nav :workspace pparams qparams))
              (->> stream
-                  (rx/filter (ptk/type? ::dwv/initialize-viewport))
+                  (rx/filter (ptk/type? ::dwv/page-loaded))
                   (rx/take 1)
-                  (rx/mapcat #(do
-                                (on-page-selected)
-                                (rx/of (dws/select-shapes (lks/set shape-id)))))))))))))
+                  (rx/mapcat #(rx/of (dws/select-shapes (lks/set shape-id))
+                                     dwz/zoom-to-selected-shape))))))))))
 
 (defn go-to-component
   [component-id]
@@ -1133,7 +1130,7 @@
                 component          (ctkl/get-component file-data component-id)
                 main-instance-id   (:main-instance-id component)
                 main-instance-page (:main-instance-page component)]
-            (rx/of (go-to-main-instance main-instance-page main-instance-id identity)))
+            (rx/of (go-to-main-instance main-instance-page main-instance-id)))
           (let [project-id    (get-in state [:workspace-project :id])
                 file-id       (get-in state [:workspace-file :id])
                 page-id       (get state :current-page-id)
@@ -2090,6 +2087,7 @@
 (dm/export dwv/update-viewport-size)
 (dm/export dwv/start-panning)
 (dm/export dwv/finish-panning)
+(dm/export dwv/page-loaded)
 
 ;; Undo
 (dm/export dwu/reinitialize-undo)
