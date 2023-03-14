@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us] 
+   [app.common.spec :as us]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [beicon.core :as rx]
@@ -146,3 +146,11 @@
     (update [_ state]
       (-> state
           (update :workspace-local dissoc :panning)))))
+
+
+;; This event does nothing. Is only for subscibe and know when the page has been loaded
+(defn page-loaded [_page-id]
+  (ptk/reify ::page-loaded
+    ptk/UpdateEvent
+    (update [_ state]
+      state)))
