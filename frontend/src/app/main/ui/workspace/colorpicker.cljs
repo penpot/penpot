@@ -191,7 +191,8 @@
                                 :h h :s s :v v
                                 :alpha (/ alpha 255)}))))
 
-    [:div.colorpicker {:ref node-ref}
+    [:div.colorpicker {:ref node-ref
+                       :style {:touch-action "none"}}
      [:div.colorpicker-content
       [:div.top-actions
        [:button.picker-btn

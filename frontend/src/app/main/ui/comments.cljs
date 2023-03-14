@@ -377,7 +377,7 @@
            (swap! state assoc :new-position-x nil)
            (swap! state assoc :new-position-y nil)))
 
-        on-mouse-move
+        on-pointer-move
         (mf/use-callback
          (mf/deps position zoom)
          (fn [event]
@@ -392,7 +392,7 @@
 
     {:on-pointer-down on-pointer-down
      :on-pointer-up on-pointer-up
-     :on-mouse-move on-mouse-move
+     :on-pointer-move on-pointer-move
      :on-lost-pointer-capture on-lost-pointer-capture
      :state state}))
 
@@ -408,7 +408,7 @@
 
         {:keys [on-pointer-down
                 on-pointer-up
-                on-mouse-move
+                on-pointer-move
                 state
                 on-lost-pointer-capture]} (use-buble zoom thread)
 
@@ -438,14 +438,14 @@
                        (and (not (mf/ref-val was-open?)) (not (mf/ref-val drag?))))
                (st/emit! (dcm/open-thread thread))))))
 
-        on-mouse-move*
+        on-pointer-move*
         (mf/use-callback
-         (mf/deps origin drag? on-mouse-move)
+         (mf/deps origin drag? on-pointer-move)
          (fn [event]
            (when (not= origin :viewer)
              (mf/set-ref-val! drag? true)
              (dom/stop-propagation event)
-             (on-mouse-move event))))
+             (on-pointer-move event))))
 
         on-click*
         (mf/use-callback
@@ -460,7 +460,7 @@
               :left (str pos-x "px")}
       :on-pointer-down on-pointer-down*
       :on-pointer-up on-pointer-up*
-      :on-mouse-move on-mouse-move*
+      :on-pointer-move on-pointer-move*
       :on-click on-click*
       :on-lost-pointer-capture on-lost-pointer-capture
       :class (dom/classnames

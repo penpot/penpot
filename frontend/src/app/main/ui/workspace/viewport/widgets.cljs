@@ -97,7 +97,7 @@
               #(mf/deferred % ts/raf)]}
   [{:keys [frame selected? zoom show-artboard-names? show-id? on-frame-enter on-frame-leave on-frame-select]}]
   (let [workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
-        on-mouse-down
+        on-pointer-down
         (mf/use-callback
          (mf/deps (:id frame) on-frame-select workspace-read-only?)
          (fn [bevent]
@@ -155,7 +155,7 @@
                :class "workspace-frame-label"
                :style {:fill (when selected? "var(--color-primary-dark)")}
                :visibility (if show-artboard-names? "visible" "hidden")
-               :on-mouse-down on-mouse-down
+               :on-pointer-down on-pointer-down
                :on-double-click on-double-click
                :on-context-menu on-context-menu
                :on-pointer-enter on-pointer-enter
@@ -204,7 +204,7 @@
   (let [{:keys [x y]} frame
         flow-pos (gpt/point x (- y (/ 35 zoom)))
 
-        on-mouse-down
+        on-pointer-down
         (mf/use-callback
          (mf/deps (:id frame) on-frame-select)
          (fn [bevent]
@@ -237,7 +237,7 @@
                      :height 24
                      :transform (vwu/text-transform flow-pos zoom)}
      [:div.flow-badge {:class (dom/classnames :selected selected?)}
-      [:div.content {:on-mouse-down on-mouse-down
+      [:div.content {:on-pointer-down on-pointer-down
                      :on-double-click on-double-click
                      :on-pointer-enter on-pointer-enter
                      :on-pointer-leave on-pointer-leave}

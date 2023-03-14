@@ -45,7 +45,7 @@
         :width width
         :height height
         :transform (str transform)
-        :on-mouse-down on-move-selected
+        :on-pointer-down on-move-selected
         :on-context-menu on-context-menu
         :style {:stroke color
                 :stroke-width (/ selection-rect-width zoom)
@@ -172,7 +172,7 @@
             :fill (if (debug? :handlers) "blue" "none")
             :stroke-width 0
             :transform (dm/str transform)
-            :on-mouse-down on-rotate}]))
+            :on-pointer-down on-rotate}]))
 
 (mf/defc resize-point-handler
   [{:keys [cx cy zoom position on-resize transform rotation color align]}]
@@ -208,9 +208,9 @@
                  :style {:fill (if (debug? :handlers) "red" "none")
                          :stroke-width 0
                          :cursor cursor}
-                 :on-mouse-down #(on-resize {:x cx' :y cy'} %)}])
+                 :on-pointer-down #(on-resize {:x cx' :y cy'} %)}])
 
-       [:circle {:on-mouse-down #(on-resize {:x cx' :y cy'} %)
+       [:circle {:on-pointer-down #(on-resize {:x cx' :y cy'} %)
                  :r (/ resize-point-circle-radius zoom)
                  :cx cx'
                  :cy cy'
@@ -246,7 +246,7 @@
              :width length
              :height height
              :transform transform-str
-             :on-mouse-down #(on-resize res-point %)
+             :on-pointer-down #(on-resize res-point %)
              :style {:fill (if (debug? :handlers) "yellow" "none")
                      :stroke-width 0
                      :cursor (if (#{:left :right} position)

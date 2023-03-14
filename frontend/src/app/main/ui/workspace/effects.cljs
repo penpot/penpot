@@ -28,7 +28,7 @@
    (fn []
      (st/emit! (dws/change-hover-state id false)))))
 
-(defn use-mouse-down
+(defn use-pointer-down
   [{:keys [id type blocked]}]
   (mf/use-callback
    (mf/deps id type blocked)

@@ -64,8 +64,8 @@
 
       (if render-wrapper?
         [:> shape-container {:shape shape
-                             :on-mouse-enter (handle-hover-shape shape true)
-                             :on-mouse-leave (handle-hover-shape shape false)
+                             :on-pointer-enter (handle-hover-shape shape true)
+                             :on-pointer-leave (handle-hover-shape shape false)
                              :on-click (select-shape shape)}
          [:& component {:shape shape
                         :frame frame

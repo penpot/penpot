@@ -55,7 +55,7 @@
       :on-pointer-up handle-stop-drag
       :on-lost-pointer-capture handle-stop-drag
       :on-click calculate-pos
-      :on-mouse-move #(when @dragging? (calculate-pos %))}
+      :on-pointer-move #(when @dragging? (calculate-pos %))}
 
      (let [value-percent (* (/ (- value min-value)
                                (- max-value min-value)) 100)

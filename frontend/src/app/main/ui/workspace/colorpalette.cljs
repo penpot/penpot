@@ -49,7 +49,7 @@
 
         container      (mf/use-ref nil)
 
-        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+        {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
         (use-resize-hook :palette 72 54 80 :y true :bottom)
 
         on-left-arrow-click
@@ -113,7 +113,7 @@
                                      "--bullet-size" (dm/str (if (< size 72) (- size 15) (- size 30)) "px")}}
      [:div.resize-area {:on-pointer-down on-pointer-down
                         :on-lost-pointer-capture on-lost-pointer-capture
-                        :on-mouse-move on-mouse-move}]
+                        :on-pointer-move on-pointer-move}]
      [:& dropdown {:show (:show-menu @state)
                    :on-close #(swap! state assoc :show-menu false)}
       [:ul.workspace-context-menu.palette-menu

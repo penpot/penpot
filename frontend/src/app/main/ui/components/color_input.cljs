@@ -138,7 +138,6 @@
     (mf/use-layout-effect
      (fn []
        (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
-                   (events/listen globals/window EventType.MOUSEDOWN on-click)
                    (events/listen globals/window EventType.CLICK on-click)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
