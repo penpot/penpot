@@ -112,20 +112,25 @@
   (update command :params assoc :x x :y y))
 
 (defn format-path [content]
-  (let [result (make-array (count content))]
-    (reduce (fn [last-move current]
-              (let [point         (upc/command->point current)
-                    current-move? (= :move-to (:command current))
-                    last-move     (if current-move? point last-move)]
+  (try
+    (let [result (make-array (count content))]
+      (reduce (fn [last-move current]
+                (let [point         (upc/command->point current)
+                      current-move? (= :move-to (:command current))
+                      last-move     (if current-move? point last-move)]
 
-                (if (and (not current-move?) (pt= last-move point))
-                  (arr/conj! result (command->string (set-point current last-move)))
-                  (arr/conj! result (command->string current)))
+                  (if (and (not current-move?) (pt= last-move point))
+                    (arr/conj! result (command->string (set-point current last-move)))
+                    (arr/conj! result (command->string current)))
 
-                (when (and (not current-move?) (pt= last-move point))
-                  (arr/conj! result "Z"))
+                  (when (and (not current-move?) (pt= last-move point))
+                    (arr/conj! result "Z"))
 
-                last-move))
-            nil
-            content)
-    (.join ^js result "")))
+                  last-move))
+              nil
+              content)
+      (.join ^js result ""))
+
+    (catch :default err
+      (.error js/console err)
+      nil)))
