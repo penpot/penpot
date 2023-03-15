@@ -14,7 +14,7 @@
   "scripts": {
     "compile-test": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
     "lint": "clj-kondo --parallel --lint src/",
-    "lint-scss": "yarn run prettier -c resources/styles",
+    "lint-scss": "yarn run prettier -c resources/styles -c src/**/*.scss",
     "run-test": "node target/tests.js",
     "test": "yarn run compile-test && yarn run run-test",
     "watch-gulp": "gulp watch",

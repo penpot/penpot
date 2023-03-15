@@ -4,8 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.context-menu
+(ns app.main.ui.workspace.context-menu.context-menu
   "A workspace specific context menu (mouse right click)."
+  (:require-macros [app.main.style :refer [css]])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -16,6 +17,7 @@
    [app.common.types.page :as ctp]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
@@ -27,7 +29,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.shape-icon :as si]
+   [app.main.ui.components.shape-icon-refactor :as sic]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -48,7 +50,7 @@
   [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave on-unmount children selected? icon] :as props}]
   (let [submenu-ref (mf/use-ref nil)
         hovering? (mf/use-ref false)
-
+        new-css-system (mf/use-ctx ctx/new-css-system)
         on-pointer-enter
         (mf/use-callback
          (fn []
@@ -77,41 +79,74 @@
              (when (and (some? dom) (some? submenu-node))
                (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
 
-
     (mf/use-effect
      (mf/deps on-unmount)
      (constantly on-unmount))
 
     (if icon
-      [:li.icon-menu-item {:ref set-dom-node
-                           :on-click on-click
-                           :on-pointer-enter on-pointer-enter
-                           :on-pointer-leave on-pointer-leave}
-       [:span.icon-wrapper
-        (if selected? [:span.selected-icon i/tick]
-            [:span.selected-icon])
-        [:span.shape-icon icon]]
-       [:span.title title]]
-      [:li {:ref set-dom-node
+      [:li {:class (if new-css-system
+                     (dom/classnames (css :icon-menu-item) true)
+                     (dom/classnames :icon-menu-item true))
+            :ref set-dom-node
             :on-click on-click
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
-       [:span.title title]
-       [:span.shortcut (or shortcut "")]
+       [:span
+        {:class (if new-css-system
+                  (dom/classnames (css :icon-wrapper) true)
+                  (dom/classnames :icon-wrapper true))}
+        (if selected? [:span {:class (if new-css-system
+                                       (dom/classnames (css :selected-icon) true)
+                                       (dom/classnames :selected-icon true))}
+                       (if new-css-system
+                         i/tick-refactor
+                         i/tick)]
+            [:span {:class (if new-css-system
+                             (dom/classnames (css :selected-icon) true)
+                             (dom/classnames :selected-icon true))}])
+        [:span {:class (if new-css-system
+                         (dom/classnames (css :shape-icon) true)
+                         (dom/classnames :shape-icon true))} icon]]
+       [:span {:class (if new-css-system
+                        (dom/classnames (css :title) true)
+                        (dom/classnames :title true))} title]]
+      [:li {:class (dom/classnames (css :context-menu-item) new-css-system)
+            :ref set-dom-node
+            :on-click on-click
+            :on-pointer-enter on-pointer-enter
+            :on-pointer-leave on-pointer-leave}
+       [:span {:class (if new-css-system
+                        (dom/classnames (css :title) true)
+                        (dom/classnames :title true))} title]
+       (when shortcut
+         [:span   {:class (if new-css-system
+                            (dom/classnames (css :shortcut) true)
+                            (dom/classnames :shortcut true))}
+          (if new-css-system
+            (for [sc (scd/split-sc shortcut)]
+              [:span {:class (dom/classnames (css :shortcut-key) true)} sc])
+            (or shortcut ""))])
 
        (when (> (count children) 1)
-         [:span.submenu-icon i/arrow-slide])
+         (if new-css-system
+           [:span {:class (dom/classnames (css :submenu-icon) true)} i/arrow-refactor]
+           [:span.submenu-icon i/arrow-slide]))
 
        (when (> (count children) 1)
-         [:ul.workspace-context-menu
-          {:ref submenu-ref
+         [:ul
+          {:class (if new-css-system
+                    (dom/classnames (css :workspace-context-submenu) true)
+                    (dom/classnames :workspace-context-menu true))
+           :ref submenu-ref
            :style {:display "none" :left 250}
            :on-context-menu prevent-default}
           children])])))
-
 (mf/defc menu-separator
   []
-  [:li.separator])
+  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
+    [:li {:class (if new-css-system
+                 (dom/classnames (css :separator) true)
+                 (dom/classnames :separator true))}]))
 
 (mf/defc context-menu-edit
   []
@@ -165,7 +200,7 @@
                           :on-pointer-enter (on-pointer-enter (:id object))
                           :on-pointer-leave (on-pointer-leave (:id object))
                           :on-unmount (on-unmount (:id object))
-                          :icon (si/element-icon {:shape object})}])])
+                          :icon (sic/element-icon-refactor {:shape object})}])])
      [:& menu-entry {:title (tr "workspace.shape.menu.forward")
                      :shortcut (sc/get-tooltip :bring-forward)
                      :on-click do-bring-forward}]
@@ -336,14 +371,18 @@
     [:*
      (if (every? :hidden shapes)
        [:& menu-entry {:title (tr "workspace.shape.menu.show")
+                       :shortcut (sc/get-tooltip :toggle-visibility)
                        :on-click do-show-shape}]
        [:& menu-entry {:title (tr "workspace.shape.menu.hide")
+                       :shortcut (sc/get-tooltip :toggle-visibility)
                        :on-click do-hide-shape}])
 
      (if (every? :blocked shapes)
        [:& menu-entry {:title (tr "workspace.shape.menu.unlock")
+                       :shortcut (sc/get-tooltip :toggle-lock)
                        :on-click do-unlock-shape}]
        [:& menu-entry {:title (tr "workspace.shape.menu.lock")
+                       :shortcut (sc/get-tooltip :toggle-lock)
                        :on-click do-lock-shape}])]))
 
 (mf/defc context-menu-prototype
@@ -555,6 +594,30 @@
        [:> context-menu-component props]
        [:> context-menu-delete props]])))
 
+(mf/defc page-item-context-menu
+  [{:keys [mdata] :as props}]
+  (let [page (:page mdata)
+        deletable? (:deletable? mdata)
+        id (:id page)
+        delete-fn #(st/emit! (dw/delete-page id))
+        do-delete #(st/emit! (modal/show
+                              {:type :confirm
+                               :title (tr "modals.delete-page.title")
+                               :message (tr "modals.delete-page.body")
+                               :on-accept delete-fn}))
+        do-duplicate #(st/emit! (dw/duplicate-page id))
+        do-rename #(st/emit! (dw/start-rename-page-item id))]
+
+    [:*
+     (when deletable?
+       [:& menu-entry {:title (tr "workspace.assets.delete")
+                       :on-click do-delete}])
+
+     [:& menu-entry {:title (tr "workspace.assets.rename")
+                     :on-click do-rename}]
+     [:& menu-entry {:title (tr "workspace.assets.duplicate")
+                     :on-click do-duplicate}]]))
+
 (mf/defc viewport-context-menu
   []
   (let [focus      (mf/deref refs/workspace-focus-selected)
@@ -575,36 +638,13 @@
                        :shortcut (sc/get-tooltip :toggle-focus-mode)
                        :on-click do-toggle-focus-mode}])]))
 
-(mf/defc page-item-context-menu
-  [{:keys [mdata] :as props}]
-  (let [page (:page mdata)
-        deletable? (:deletable? mdata)
-        id (:id page)
-        delete-fn #(st/emit! (dw/delete-page id))
-        do-delete #(st/emit! (modal/show 
-                     {:type :confirm
-                      :title (tr "modals.delete-page.title")
-                      :message (tr "modals.delete-page.body")
-                      :on-accept delete-fn}))
-        do-duplicate #(st/emit! (dw/duplicate-page id))
-        do-rename #(st/emit! (dw/start-rename-page-item id))]
-  
-  [:*
-   (when deletable?
-     [:& menu-entry {:title (tr "workspace.assets.delete")
-                     :on-click do-delete}])
-
-   [:& menu-entry {:title (tr "workspace.assets.rename")
-                   :on-click do-rename}]
-   [:& menu-entry {:title (tr "workspace.assets.duplicate")
-                   :on-click do-duplicate}]]))
-
 (mf/defc context-menu
   []
-  (let [mdata (mf/deref menu-ref)
-        top (- (get-in mdata [:position :y]) 20)
-        left (get-in mdata [:position :x])
-        dropdown-ref (mf/use-ref)]
+  (let [mdata          (mf/deref menu-ref)
+        top            (- (get-in mdata [:position :y]) 20)
+        left           (get-in mdata [:position :x])
+        dropdown-ref   (mf/use-ref)
+        new-css-system (mf/use-ctx ctx/new-css-system)]
 
     (mf/use-effect
      (mf/deps mdata)
@@ -621,8 +661,11 @@
 
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
-     [:ul.workspace-context-menu
-      {:ref dropdown-ref
+     [:ul
+      {:class (if new-css-system
+                (dom/classnames (css :workspace-context-menu) true)
+                (dom/classnames :workspace-context-menu true))
+       :ref dropdown-ref
        :style {:top top :left left}
        :on-context-menu prevent-default}
 
@@ -630,6 +673,5 @@
         :shape [:& shape-context-menu {:mdata mdata}]
         :page [:& page-item-context-menu {:mdata mdata}]
         [:& viewport-context-menu {:mdata mdata}])]]))
-
 
 

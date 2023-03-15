@@ -23,6 +23,10 @@
 @import "common/dependencies/z-index";
 @import "common/dependencies/highlightjs-theme";
 
+@import "common/refactor/color-defs.scss";
+@import "common/refactor/themes.scss";
+@import "common/refactor/design-tokens.scss";
+
 //#################################################
 // Layouts
 //#################################################
@@ -70,13 +74,13 @@
 @import "main/partials/loader";
 @import "main/partials/project-bar";
 @import "main/partials/sidebar";
+@import "main/partials/sidebar-layers";
 @import "main/partials/sidebar-align-options";
 @import "main/partials/sidebar-assets";
 @import "main/partials/sidebar-document-history";
 @import "main/partials/sidebar-element-options";
 @import "main/partials/sidebar-icons";
 @import "main/partials/sidebar-interactions";
-@import "main/partials/sidebar-layers";
 @import "main/partials/sidebar-sitemap";
 @import "main/partials/sidebar-tools";
 @import "main/partials/tab-container";
@@ -90,19 +94,3 @@
 @import "main/partials/exception-page";
 @import "main/partials/share-link";
 @import "main/partials/af-signup-questions";
-
-//#################################################
-// Refactor
-//#################################################
-
-//#################################################
-// MAIN STYLES
-//#################################################
-
-@import "common/refactor/color-defs.scss";
-@import "common/refactor/themes.scss";
-@import "common/refactor/design-tokens.scss";
-@import "common/refactor/fonts.scss";
-@import "common/refactor/spacing.scss";
-@import "common/refactor/borders.scss";
-@import "common/refactor/shadows.scss";

@@ -9,7 +9,7 @@
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
-   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.components.tabs-container :refer [tabs-container tabs-element]]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.inspect.attributes :refer [attributes]]
    [app.main.ui.viewer.inspect.code :refer [code]]
@@ -56,20 +56,20 @@
              ;;   inspect.tabs.code.selected.text
              [:span.tool-window-bar-title (:name first-shape)]])]
          [:div.tool-window-content.inspect
-          [:& tab-container {:on-change-tab #(do
+          [:& tabs-container {:on-change-tab #(do
                                                (reset! expanded false)
                                                (reset! section %)
                                                (when (= from :workspace)
                                                  (st/emit! (dw/set-inspect-expanded false))))
                              :selected @section}
-           [:& tab-element {:id :info :title (tr "inspect.tabs.info")}
+           [:& tabs-element {:id :info :title (tr "inspect.tabs.info")}
             [:& attributes {:page-id page-id
                             :file-id file-id
                             :frame frame
                             :shapes shapes
                             :from from}]]
 
-           [:& tab-element {:id :code :title (tr "inspect.tabs.code")}
+           [:& tabs-element {:id :code :title (tr "inspect.tabs.code")}
             [:& code {:frame frame
                       :shapes shapes
                       :on-expand (fn []

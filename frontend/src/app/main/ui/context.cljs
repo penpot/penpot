@@ -22,6 +22,7 @@
 
 (def libraries            (mf/create-context nil))
 (def components-v2        (mf/create-context nil))
+(def new-css-system       (mf/create-context nil))
 
 (def current-scroll       (mf/create-context nil))
 (def current-zoom         (mf/create-context nil))

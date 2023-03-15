@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as si]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.layers :refer [layer-name]]
+   [app.main.ui.workspace.sidebar.layers.layer-name.layer-name :refer [layer-name]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [okulary.core :as l]
@@ -53,9 +53,7 @@
               (st/emit! (dv/shift-select-to id))
 
               :else
-              (st/emit! (dv/select-shape id)))
-            ))
-        ]
+              (st/emit! (dv/select-shape id)))))]
 
     (mf/use-effect
      (mf/deps selected)
@@ -65,9 +63,9 @@
 
     [:li {:ref item-ref
           :class (dom/classnames
-                   :component (not (nil? (:component-id item)))
-                   :masked (:masked-group? item)
-                   :selected selected?)}
+                  :component (not (nil? (:component-id item)))
+                  :masked (:masked-group? item)
+                  :selected selected?)}
 
      [:div.element-list-body {:class (dom/classnames :selected selected?
                                                      :icon-layer (= (:type item) :icon))

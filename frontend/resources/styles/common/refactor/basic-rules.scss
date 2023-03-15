@@ -1,0 +1,64 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+.button-primary {
+  @include buttonStyle;
+  @include flexCenter;
+  &:hover {
+    background-color: var(--button-background-hover);
+    svg {
+      stroke: var(--button-foreground-hover);
+    }
+  }
+  &:focus {
+    outline: none;
+    border: 1px solid var(--button-border-focus);
+    background-color: var(--button-background-focus);
+    svg {
+      stroke: var(--button-foreground-focus);
+    }
+  }
+  &:active {
+    border: none;
+  }
+}
+
+.button-secondary {
+  @include buttonStyle;
+  @include flexCenter;
+  &:hover {
+    svg {
+      stroke: var(--title-foreground-color-hover);
+    }
+  }
+  &:focus {
+    outline: none;
+    border: 1px solid var(--button-border-focus);
+    background-color: var(--button-background-focus);
+    svg {
+      stroke: var(--button-foreground-focus);
+    }
+  }
+  &:active {
+    border: none;
+    background-color: transparent;
+  }
+}
+
+.button-icon {
+  @include flexCenter;
+  height: $s-16;
+  width: $s-16;
+  color: transparent;
+  fill: none;
+  stroke: var(--icon-foreground);
+}
+
+.button-icon-small {
+  @extend .button-icon;
+  height: $s-12;
+  width: $s-12;
+}

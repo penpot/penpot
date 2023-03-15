@@ -213,14 +213,8 @@
   [{:keys [content command] :as props}]
   (let [managed-list    (if (coll? content)
                           content
-                          (conj () content))
-        split-sc        (fn [sc]
-                          (let [sc (cond-> sc (str/includes? sc "++")
-                                           (str/replace "++" "+plus"))]
-                            (if (= (count sc) 1)
-                              [sc]
-                              (str/split sc #"\+| "))))
-        chars-list      (map split-sc managed-list)
+                          (conj () content)) 
+        chars-list      (map ds/split-sc managed-list)
         last-element    (last chars-list)
         short-char-list (if (= 1 (count chars-list))
                           chars-list

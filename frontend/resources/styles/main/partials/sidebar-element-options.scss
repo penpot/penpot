@@ -353,13 +353,13 @@
       font-size: $fs14;
       display: flex;
       gap: 0 10px;
-      justify-content: start;
+      justify-content: flex-start;
       padding: $size-2;
 
       span {
         color: $color-gray-20;
         display: flex;
-        justify-content: start;
+        justify-content: flex-start;
         align-items: center;
       }
 
@@ -1643,7 +1643,7 @@
     .row-title {
       font-size: $fs12;
       display: flex;
-      justify-content: start;
+      justify-content: flex-start;
       align-items: center;
       margin-right: 5px;
       font-family: "worksans", sans-serif;
@@ -1651,13 +1651,13 @@
       &.justify-content,
       &.align-content,
       &.sizing {
-        align-items: start;
+        align-items: flex-start;
         margin-top: 4px;
       }
 
       &.align-items-grid,
       &.jusfiy-content-grid {
-        align-items: start;
+        align-items: flex-start;
         margin-top: 11px;
       }
     }
@@ -2300,7 +2300,7 @@
   padding: 0;
   .icon {
     display: flex;
-    justify-content: start;
+    justify-content: flex-start;
     align-items: center;
     margin-right: 10px;
     svg {

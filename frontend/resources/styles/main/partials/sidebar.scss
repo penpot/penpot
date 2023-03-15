@@ -24,7 +24,8 @@
     grid-template-rows: 100%;
     height: calc(100% - 2px);
 
-    .tool-window {
+    .tool-window,
+    .sitemap {
       position: relative;
       border-bottom: 1px solid $color-gray-60;
       display: flex;
@@ -46,7 +47,10 @@
           width: 12px;
         }
 
-        span {
+        button,
+        div {
+          border: none;
+          background-color: transparent;
           color: $color-gray-10;
           font-size: $fs14;
           max-width: 100%;
@@ -246,7 +250,6 @@
   width: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-
   &.inspect {
     .tab-container-tabs {
       padding-bottom: 0.5rem;

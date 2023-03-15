@@ -4,23 +4,38 @@
 //
 // Copyright (c) KALEIDOS INC
 
-$spacing-4: 0.25rem;
-$spacing-8: calc(var(--spacing-4) * 2);
-$spacing-12: calc(var(--spacing-4) * 3);
-$spacing-16: calc(var(--spacing-4) * 4);
-$spacing-20: calc(var(--spacing-4) * 5);
-$spacing-24: calc(var(--spacing-4) * 6);
-$spacing-28: calc(var(--spacing-4) * 7);
-$spacing-32: calc(var(--spacing-4) * 8);
-$spacing-36: calc(var(--spacing-4) * 9);
-$spacing-40: calc(var(--spacing-4) * 10);
-$spacing-44: calc(var(--spacing-4) * 11);
-$spacing-48: calc(var(--spacing-4) * 12);
-$spacing-52: calc(var(--spacing-4) * 13);
-$spacing-56: calc(var(--spacing-4) * 14);
-$spacing-60: calc(var(--spacing-4) * 15);
-$spacing-64: calc(var(--spacing-4) * 16);
-$spacing-68: calc(var(--spacing-4) * 17);
-$spacing-72: calc(var(--spacing-4) * 18);
-$spacing-76: calc(var(--spacing-4) * 19);
-$spacing-80: calc(var(--spacing-4) * 20);
+@use "sass:math";
+
+:root {
+  --s-4: 0.25rem;
+  --layer-indentation-size: calc(var(--s-4) * 5);
+}
+
+$s-2: math.div(0.25rem, 2);
+$s-4: var(--s-4);
+$s-6: calc($s-2 + $s-4);
+$s-8: calc(var(--s-4) * 2);
+$s-12: calc(var(--s-4) * 3);
+$s-16: calc(var(--s-4) * 4);
+$s-20: calc(var(--s-4) * 5);
+$s-24: calc(var(--s-4) * 6);
+$s-28: calc(var(--s-4) * 7);
+$s-32: calc(var(--s-4) * 8);
+$s-36: calc(var(--s-4) * 9);
+$s-40: calc(var(--s-4) * 10);
+$s-44: calc(var(--s-4) * 11);
+$s-48: calc(var(--s-4) * 12);
+$s-52: calc(var(--s-4) * 13);
+$s-56: calc(var(--s-4) * 14);
+$s-60: calc(var(--s-4) * 15);
+$s-64: calc(var(--s-4) * 16);
+$s-68: calc(var(--s-4) * 17);
+$s-72: calc(var(--s-4) * 18);
+$s-76: calc(var(--s-4) * 19);
+$s-80: calc(var(--s-4) * 20);
+$s-96: calc(var(--s-4) * 24);
+$s-152: calc(var(--s-4) * 38);
+$s-192: calc(var(--s-4) * 48);
+$s-240: calc(var(--s-4) * 60);
+$s-480: calc(var(--s-4) * 120);
+$s-736: calc(var(--s-4) * 184);

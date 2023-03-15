@@ -1551,7 +1551,7 @@ msgid "labels.uploading"
 msgstr "Uploading…"
 
 msgid "labels.view-only"
-msgstr "VIEW ONLY"
+msgstr "View only"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"

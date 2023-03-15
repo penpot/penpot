@@ -20,7 +20,7 @@
 (log/set-level! :warn)
 
 (def available-features
-  #{:auto-layout :components-v2})
+  #{:auto-layout :components-v2 :new-css-system})
 
 (defn- toggle-feature
   [feature]
@@ -103,4 +103,5 @@
         ;; environment, that are enabled except components-v2
         (->> (rx/from available-features)
              (rx/filter #(not= % :components-v2))
+             (rx/filter #(not= % :new-css-system))
              (rx/map enable-feature)))))))

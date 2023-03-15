@@ -4,10 +4,12 @@
 //
 // Copyright (c) KALEIDOS INC
 
-#sitemap {
+#sitemap,
+.sitemap {
   height: var(--height, 200px);
 
-  .element-list {
+  .element-list,
+  .pages-list {
     li {
       align-items: center;
       display: flex;
@@ -37,7 +39,9 @@
         display: none;
         margin-left: auto;
 
-        a {
+        button {
+          border: none;
+          background-color: transparent;
           svg {
             fill: $color-gray-60;
             height: 15px;
@@ -163,7 +167,7 @@
   .layout-btns {
     display: flex;
     align-items: center;
-    justify-content: end;
+    justify-content: flex-end;
   }
   .remove-layout {
     display: flex;

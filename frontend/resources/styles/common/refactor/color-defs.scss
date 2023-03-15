@@ -6,9 +6,10 @@
 
 :root {
   // DARK
-  --dark-gray-1: #171a1c;
-  --dark-gray-2: #000;
-  --dark-gray-3: #252a2d;
+  --dark-gray-1: #1d1f20;
+  --dark-gray-2: #000000;
+  --dark-gray-2-30: rgba(0, 0, 0, 0.3);
+  --dark-gray-3: #292c2d;
   --dark-gray-4: #34393b;
   --white: #fff;
   --off-white: #aab5ba;
@@ -20,6 +21,7 @@
   // LIGHT
   --light-gray-1: #fff;
   --light-gray-2: #e8eaee;
+  --light-gray-2-30: rgba(232, 234, 238, 0.3);
   --light-gray-3: #f3f4f6;
   --light-gray-4: #eef0f2;
   --black: #000;

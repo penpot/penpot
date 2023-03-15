@@ -1,0 +1,37 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+//#################################################
+// MAIN STYLES
+//#################################################
+
+@import "common/refactor/fonts.scss";
+@import "common/refactor/spacing.scss";
+@import "common/refactor/borders.scss";
+@import "common/refactor/shadows.scss";
+@import "common/refactor/z-index.scss";
+@import "common/refactor/mixins.scss";
+@import "common/refactor/basic-rules.scss";
+
+::-webkit-scrollbar {
+  background-color: transparent;
+  cursor: pointer;
+  height: $s-8;
+  width: $s-12;
+}
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(170, 181, 186, 0.3);
+  background-clip: content-box;
+  border: $s-2 solid transparent;
+  border-radius: $br8;
+  &:hover {
+    background-color: rgba(170, 181, 186, 0.7);
+    outline: none;
+  }
+}

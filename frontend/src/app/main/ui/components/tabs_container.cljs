@@ -4,20 +4,20 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.components.tab-container
+(ns app.main.ui.components.tabs-container
   (:require
    [app.common.data :as d]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc tab-element
+(mf/defc tabs-element
   {::mf/wrap-props false}
   [props]
   (let [children (unchecked-get props "children")]
     [:div.tab-element
      [:div.tab-element-content children]]))
 
-(mf/defc tab-container
+(mf/defc tabs-container
   {::mf/wrap-props false}
   [props]
   (let [children  (->>
