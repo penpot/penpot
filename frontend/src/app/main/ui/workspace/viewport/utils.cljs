@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.main.ui.cursors :as cur]
    [app.main.ui.formats :refer [format-number]]))
 
@@ -42,7 +42,58 @@
   (let [inv-zoom (/ 1 zoom)]
     (dm/fmt "scale(%, %) translate(%, %)" inv-zoom inv-zoom (* zoom x) (* zoom y))))
 
-(defn title-transform [{:keys [selrect] :as shape} zoom]
-  (let [transform (gsh/transform-str shape {:no-flip true})
-        label-pos (gpt/point (:x selrect) (- (:y selrect) (/ 10 zoom)))]
-    (dm/str transform " " (text-transform label-pos zoom))))
+(defn left?
+  [cur cand]
+  (let [closex? (mth/close? (:x cand) (:x cur))]
+    (cond
+      (and closex? (< (:y cand) (:y cur))) cand
+      closex?                              cur
+      (< (:x cand) (:x cur))               cand
+      :else                                cur)))
+
+(defn top?
+  [cur cand]
+  (let [closey? (mth/close? (:y cand) (:y cur))]
+    (cond
+      (and closey? (< (:x cand) (:x cur))) cand
+      closey?                              cur
+      (< (:y cand) (:y cur))               cand
+      :else                                cur)))
+
+(defn right?
+  [cur cand]
+  (let [closex? (mth/close? (:x cand) (:x cur))]
+    (cond
+      (and closex? (< (:y cand) (:y cur))) cand
+      closex?                              cur
+      (> (:x cand) (:x cur))               cand
+      :else                                cur)))
+
+(defn title-transform [{:keys [points] :as shape} zoom]
+  (let [leftmost  (->> points (reduce left?))
+        topmost   (->> points (remove #{leftmost}) (reduce top?))
+        rightmost (->> points (remove #{leftmost topmost}) (reduce right?))
+
+        left-top (gpt/to-vec leftmost topmost)
+        left-top-angle (gpt/angle left-top)
+
+        top-right (gpt/to-vec topmost rightmost)
+        top-right-angle (gpt/angle top-right)
+
+        ;; Choose the position that creates the less angle between left-side and top-side
+        [label-pos angle v-pos]
+        (if (< (mth/abs left-top-angle) (mth/abs top-right-angle))
+          [leftmost left-top-angle (gpt/perpendicular left-top)]
+          [topmost top-right-angle (gpt/perpendicular top-right)])
+
+
+        label-pos
+        (gpt/subtract label-pos (gpt/scale (gpt/unit v-pos) (/ 10 zoom)))]
+
+    (dm/fmt "rotate(% %,%) scale(%, %) translate(%, %)"
+            ;; rotate
+            angle (:x label-pos) (:y label-pos)
+            ;; scale
+            (/ 1 zoom) (/ 1 zoom)
+            ;; translate
+            (* zoom (:x label-pos)) (* zoom (:y label-pos)))))

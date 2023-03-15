@@ -29,6 +29,7 @@
 - Fix shortcuts for zoom now take into account the mouse position [#2924](https://github.com/penpot/penpot/issues/2924)
 - Fix close colorpicker on Firefox when mouse-up is outside the picker [#2911](https://github.com/penpot/penpot/issues/2911)
 - Fix problems with touch devices and Wacom tablets [#2216](https://github.com/penpot/penpot/issues/2216)
+- Fix problem with board titles misplaced [Taiga #4738](https://tree.taiga.io/project/penpot/issue/4738)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
