@@ -6,9 +6,9 @@
 
 (ns app.rpc.commands.auth
   (:require
-   [app.auth :as auth]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -18,7 +18,6 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
-   [app.rpc.climit :as climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -63,14 +62,20 @@
               :code :login-disabled
               :hint "login is disabled in this instance"))
 
-  (letfn [(check-password [profile password]
+  (letfn [(check-password [conn profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation
                         :code :account-without-password
                         :hint "the current account does not have password"))
-            (:valid (auth/verify-password password (:password profile))))
+            (let [result (profile/verify-password cfg password (:password profile))]
+              (when (:update result)
+                (l/trace :hint "updating profile password" :id (:id profile) :email (:email profile))
+                (profile/update-profile-password! (assoc cfg ::db/conn conn)
+                                                  (assoc profile :password password)))
+              (:valid result)))
 
-          (validate-profile [profile]
+
+          (validate-profile [conn profile]
             (when-not profile
               (ex/raise :type :validation
                         :code :wrong-credentials))
@@ -80,7 +85,7 @@
             (when (:is-blocked profile)
               (ex/raise :type :restriction
                         :code :profile-blocked))
-            (when-not (check-password profile password)
+            (when-not (check-password conn profile password)
               (ex/raise :type :validation
                         :code :wrong-credentials))
             (when-let [deleted-at (:deleted-at profile)]
@@ -92,8 +97,7 @@
 
     (db/with-atomic [conn pool]
       (let [profile    (->> (profile/get-profile-by-email conn email)
-                            (validate-profile)
-                            (profile/decode-row)
+                            (validate-profile conn)
                             (profile/strip-private-attrs))
 
             invitation (when-let [token (:invitation-token params)]
@@ -118,7 +122,6 @@
 (sv/defmethod ::login-with-password
   "Performs authentication using penpot password."
   {::rpc/auth false
-   ::climit/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (login-with-password cfg params))
@@ -144,7 +147,7 @@
               (:profile-id tdata)))
 
           (update-password [conn profile-id]
-            (let [pwd (auth/derive-password password)]
+            (let [pwd (profile/derive-password cfg password)]
               (db/update! conn :profile {:password pwd} {:id profile-id})))]
 
     (db/with-atomic [conn pool]
@@ -158,7 +161,6 @@
 
 (sv/defmethod ::recover-profile
   {::rpc/auth false
-   ::climit/queue :auth
    ::doc/added "1.15"}
   [cfg params]
   (recover-profile cfg params))
@@ -264,9 +266,7 @@
                               :nudge {:big 10 :small 1}})
                       (db/tjson))
 
-        password  (if-let [password (:password params)]
-                    (auth/derive-password password)
-                    "!")
+        password  (or (:password params) "!")
 
         locale    (:locale params)
         locale    (when (and (string? locale) (not (str/blank? locale)))
@@ -344,8 +344,11 @@
 
         profile    (if-let [profile-id (:profile-id claims)]
                      (profile/get-profile conn profile-id)
-                     (->> (create-profile! conn (assoc params :is-active is-active))
-                          (create-profile-rels! conn)))
+                     (let [params (-> params
+                                      (assoc :is-active is-active)
+                                      (update :password #(profile/derive-password cfg %)))]
+                       (->> (create-profile! conn params)
+                            (create-profile-rels! conn))))
 
         invitation (when-let [token (:invitation-token params)]
                      (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))]
@@ -356,9 +359,9 @@
     (when-let [id (:profile-id claims)]
       (db/update! conn :profile {:modified-at (dt/now)} {:id id})
       (audit/submit! cfg
-                     {:type "fact"
-                      :name "register-profile-retry"
-                      :profile-id id}))
+                     {::audit/type "fact"
+                      ::audit/name "register-profile-retry"
+                      ::audit/profile-id id}))
 
     (cond
       ;; If invitation token comes in params, this is because the
@@ -406,7 +409,6 @@
 
 (sv/defmethod ::register-profile
   {::rpc/auth false
-   ::climit/queue :auth
    ::doc/added "1.15"}
   [{:keys [::db/pool] :as cfg} params]
   (db/with-atomic [conn pool]

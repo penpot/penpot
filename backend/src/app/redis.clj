@@ -8,17 +8,21 @@
   "The msgbus abstraction implemented using redis as underlying backend."
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.metrics :as mtx]
    [app.redis.script :as-alias rscript]
+   [app.util.cache :as cache]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.core :as c]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [promesa.core :as p])
+   [promesa.core :as p]
+   [promesa.exec :as px])
   (:import
    clojure.lang.IDeref
    clojure.lang.MapEntry
@@ -87,7 +91,7 @@
 (s/def ::connect? ::us/boolean)
 (s/def ::io-threads ::us/integer)
 (s/def ::worker-threads ::us/integer)
-(s/def ::cache #(instance? clojure.lang.Atom %))
+(s/def ::cache some?)
 
 (s/def ::redis
   (s/keys :req [::resources
@@ -99,11 +103,11 @@
 
 (defmethod ig/prep-key ::redis
   [_ cfg]
-  (let [runtime (Runtime/getRuntime)
-        cpus    (.availableProcessors ^Runtime runtime)]
+  (let [cpus    (px/get-available-processors)
+        threads (max 1 (int (* cpus 0.2)))]
     (merge {::timeout (dt/duration "10s")
-            ::io-threads (max 3 cpus)
-            ::worker-threads (max 3 cpus)}
+            ::io-threads (max 3 threads)
+            ::worker-threads (max 3 threads)}
            (d/without-nils cfg))))
 
 (defmethod ig/pre-init-spec ::redis [_]
@@ -129,6 +133,15 @@
 (def string-codec
   (RedisCodec/of StringCodec/UTF8 StringCodec/UTF8))
 
+(defn- create-cache
+  [{:keys [::wrk/executor] :as cfg}]
+  (letfn [(on-remove [key val cause]
+            (l/trace :hint "evict connection (cache)" :key key :reason cause)
+            (some-> val d/close!))]
+    (cache/create :executor executor
+                  :on-remove on-remove
+                  :keepalive "5m")))
+
 (defn- initialize-resources
   "Initialize redis connection resources"
   [{:keys [::uri ::io-threads ::worker-threads ::connect?] :as cfg}]
@@ -145,19 +158,21 @@
                       (timer ^Timer timer)
                       (build))
 
-        redis-uri (RedisURI/create ^String uri)]
+        redis-uri (RedisURI/create ^String uri)
+        cfg       (-> cfg
+                      (assoc ::resources resources)
+                      (assoc ::timer timer)
+                      (assoc ::redis-uri redis-uri))]
 
-    (-> cfg
-        (assoc ::resources resources)
-        (assoc ::timer timer)
-        (assoc ::cache (atom {}))
-        (assoc ::redis-uri redis-uri))))
+    (assoc cfg ::cache (create-cache cfg))))
 
 (defn- shutdown-resources
   [{:keys [::resources ::cache ::timer]}]
-  (run! d/close! (vals @cache))
+  (cache/invalidate-all! cache)
+
   (when resources
     (.shutdown ^ClientResources resources))
+
   (when timer
     (.stop ^Timer timer)))
 
@@ -173,6 +188,7 @@
                   :default (.connect ^RedisClient client ^RedisCodec codec)
                   :pubsub  (.connectPubSub ^RedisClient client ^RedisCodec codec))]
 
+    (l/trc :hint "connect" :hid (hash client))
     (.setTimeout ^StatefulConnection conn ^Duration timeout)
     (reify
       IDeref
@@ -180,8 +196,9 @@
 
       AutoCloseable
       (close [_]
-        (.close ^StatefulConnection conn)
-        (.shutdown ^RedisClient client)))))
+        (ex/ignoring (.close ^StatefulConnection conn))
+        (ex/ignoring (.shutdown ^RedisClient client))
+        (l/trc :hint "disconnect" :hid (hash client))))))
 
 (defn connect
   [state & {:as opts}]
@@ -194,15 +211,10 @@
 (defn get-or-connect
   [{:keys [::cache] :as state} key options]
   (us/assert! ::redis state)
-  (-> state
-      (assoc ::connection
-             (or (get @cache key)
-                 (-> (swap! cache (fn [cache]
-                                    (when-let [prev (get cache key)]
-                                      (d/close! prev))
-                                    (assoc cache key (connect* state options))))
-                     (get key))))
-      (dissoc ::cache)))
+  (let [connection (cache/get cache key (fn [_] (connect* state options)))]
+    (-> state
+        (dissoc ::cache)
+        (assoc ::connection connection))))
 
 (defn add-listener!
   [{:keys [::connection] :as conn} listener]
@@ -344,7 +356,7 @@
                 (do
                   (l/error :hint "no script found" :name sname :cause cause)
                   (->> (load-script)
-                       (p/mapcat eval-script)))
+                       (p/mcat eval-script)))
                 (if-let [on-error (::rscript/on-error script)]
                   (on-error cause)
                   (p/rejected cause))))
@@ -375,15 +387,16 @@
             (load-script []
               (l/trace :hint "load script" :name sname)
               (->> (.scriptLoad ^RedisScriptingAsyncCommands cmd
-                               ^String (read-script))
-                   (p/map (fn [sha]
-                            (swap! scripts-cache assoc sname sha)
-                            sha))))]
+                                ^String (read-script))
+                   (p/fmap (fn [sha]
+                             (swap! scripts-cache assoc sname sha)
+                             sha))))]
 
-      (if-let [sha (get @scripts-cache sname)]
-        (eval-script sha)
-        (->> (load-script)
-             (p/mapcat eval-script))))))
+      (p/await!
+       (if-let [sha (get @scripts-cache sname)]
+         (eval-script sha)
+         (->> (load-script)
+              (p/mapcat eval-script)))))))
 
 (defn timeout-exception?
   [cause]

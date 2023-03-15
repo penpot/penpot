@@ -1,9 +1,14 @@
 ;; Example climit.edn file
-;; Required: concurrency
-;; Optional: queue-size, ommited means Integer/MAX_VALUE
-{:update-file   {:concurrency 1 :queue-size 3}
- :auth          {:concurrency 128}
- :process-font  {:concurrency 4 :queue-size 32}
- :process-image {:concurrency 8 :queue-size 32}
- :push-audit-events
- {:concurrency 1 :queue-size 3}}
+;; Required: permits
+;; Optional: queue, ommited means Integer/MAX_VALUE
+;; Optional: timeout, ommited means no timeout
+;; Note: queue and timeout are excluding
+{:update-file-by-id {:permits 1 :queue 3}
+ :update-file {:permits 20}
+
+ :derive-password {:permits 8}
+ :process-font  {:permits 4 :queue 32}
+ :process-image {:permits 8 :queue 32}
+
+ :submit-audit-events-by-profile
+ {:permits 1 :queue 3}}

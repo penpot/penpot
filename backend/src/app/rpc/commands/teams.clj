@@ -7,6 +7,7 @@
 (ns app.rpc.commands.teams
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
@@ -27,11 +28,8 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [promesa.core :as p]
-   [promesa.exec :as px]))
+   [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
 
@@ -78,13 +76,15 @@
 
 (declare retrieve-teams)
 
+(def counter (volatile! 0))
+
 (s/def ::get-teams
   (s/keys :req [::rpc/profile-id]))
 
 (sv/defmethod ::get-teams
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (retrieve-teams conn profile-id)))
 
 (def sql:teams
@@ -129,7 +129,7 @@
 (sv/defmethod ::get-team
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (retrieve-team conn profile-id id)))
 
 (defn retrieve-team
@@ -170,7 +170,7 @@
 (sv/defmethod ::get-team-members
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (retrieve-team-members conn team-id)))
 
@@ -188,7 +188,7 @@
 (sv/defmethod ::get-team-users
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id file-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (if team-id
       (do
         (check-read-permissions! conn profile-id team-id)
@@ -246,7 +246,7 @@
 (sv/defmethod ::get-team-stats
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (retrieve-team-stats conn team-id)))
 
@@ -277,7 +277,7 @@
 (sv/defmethod ::get-team-invitations
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (get-team-invitations conn team-id)))
 
@@ -588,10 +588,9 @@
     (update-team-photo cfg (assoc params :profile-id profile-id))))
 
 (defn update-team-photo
-  [{:keys [::db/pool ::sto/storage ::wrk/executor] :as cfg} {:keys [profile-id team-id] :as params}]
-  (p/let [team  (px/with-dispatch executor
-                  (retrieve-team pool profile-id team-id))
-          photo (profile/upload-photo cfg params)]
+  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id] :as params}]
+  (let [team  (retrieve-team pool profile-id team-id)
+        photo (profile/upload-photo cfg params)]
 
     ;; Mark object as touched for make it ellegible for tentative
     ;; garbage collection.
@@ -694,13 +693,13 @@
           (l/info :hint "invitation token" :token itoken))
 
         (audit/submit! cfg
-                       {:type "action"
-                        :name (if updated?
-                                "update-team-invitation"
-                                "create-team-invitation")
-                        :profile-id (:id profile)
-                        :props (-> (dissoc tprops :profile-id)
-                                   (d/without-nils))})
+                       {::audit/type "action"
+                        ::audit/name (if updated?
+                                       "update-team-invitation"
+                                       "create-team-invitation")
+                        ::audit/profile-id (:id profile)
+                        ::audit/props (-> (dissoc tprops :profile-id)
+                                          (d/without-nils))})
 
         (eml/send! {::eml/conn conn
                     ::eml/factory eml/invite-to-team
@@ -802,13 +801,13 @@
                    ::quotes/incr (count emails)}))
 
       (audit/submit! cfg
-                     {:type "command"
-                      :name "create-team-invitations"
-                      :profile-id profile-id
-                      :props {:emails emails
-                              :role role
-                              :profile-id profile-id
-                              :invitations (count emails)}})
+                     {::audit/type "command"
+                      ::audit/name "create-team-invitations"
+                      ::audit/profile-id profile-id
+                      ::audit/props {:emails emails
+                                     :role role
+                                     :profile-id profile-id
+                                     :invitations (count emails)}})
 
       (vary-meta team assoc ::audit/props {:invitations (count emails)}))))
 

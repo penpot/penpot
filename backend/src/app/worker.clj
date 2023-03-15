@@ -22,17 +22,16 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
+   [promesa.core :as p]
    [promesa.exec :as px])
   (:import
    java.util.concurrent.ExecutorService
    java.util.concurrent.ForkJoinPool
-   java.util.concurrent.Future
-   java.util.concurrent.ScheduledExecutorService))
+   java.util.concurrent.Future))
 
 (set! *warn-on-reflection* true)
 
 (s/def ::executor #(instance? ExecutorService %))
-(s/def ::scheduled-executor #(instance? ScheduledExecutorService %))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Executor
@@ -47,26 +46,20 @@
   [skey {:keys [::parallelism]}]
   (let [prefix  (if (vector? skey) (-> skey first name) "default")
         tname   (str "penpot/" prefix "/%s")
-        factory (px/forkjoin-thread-factory :name tname)]
-    (px/forkjoin-executor
-     :factory factory
-     :parallelism parallelism
-     :async? true)))
+        ttype   (cf/get :worker-executor-type :fjoin)]
+    (case ttype
+      :fjoin
+      (let [factory (px/forkjoin-thread-factory :name tname)]
+        (px/forkjoin-executor {:factory factory
+                               :core-size (px/get-available-processors)
+                               :parallelism parallelism
+                               :async true}))
+
+      :cached
+      (let [factory (px/thread-factory :name tname)]
+        (px/cached-executor :factory factory)))))
 
 (defmethod ig/halt-key! ::executor
-  [_ instance]
-  (px/shutdown! instance))
-
-(defmethod ig/pre-init-spec ::scheduled-executor [_]
-  (s/keys :req [::parallelism]))
-
-(defmethod ig/init-key ::scheduled-executor
-  [_ {:keys [::parallelism]}]
-  (px/scheduled-executor
-   :parallelism parallelism
-   :factory (px/thread-factory :name "penpot/scheduled-executor/%s")))
-
-(defmethod ig/halt-key! ::scheduled-executor
   [_ instance]
   (px/shutdown! instance))
 
@@ -147,7 +140,7 @@
               steals))]
 
     (px/thread
-      {:name "penpot/executors-monitor"}
+      {:name "penpot/executors-monitor" :virtual true}
       (l/info :hint "monitor: started" :name name)
       (try
         (loop [steals 0]
@@ -220,53 +213,48 @@
                        :queued res)))
 
           (run-batch! [rconn]
-            (db/with-atomic [conn pool]
-              (when-let [tasks (get-tasks conn)]
-                (->> (group-by :queue tasks)
-                     (run! (partial push-tasks! conn rconn)))
-                true)))]
+            (try
+              (db/with-atomic [conn pool]
+                (if-let [tasks (get-tasks conn)]
+                  (->> (group-by :queue tasks)
+                       (run! (partial push-tasks! conn rconn)))
+                  (px/sleep (::wait-duration cfg))))
+              (catch InterruptedException cause
+                (throw cause))
+              (catch Exception cause
+                (cond
+                  (rds/exception? cause)
+                  (do
+                    (l/warn :hint "dispatcher: redis exception (will retry in an instant)" :cause cause)
+                    (px/sleep (::rds/timeout rconn)))
+
+                  (db/sql-exception? cause)
+                  (do
+                    (l/warn :hint "dispatcher: database exception (will retry in an instant)" :cause cause)
+                    (px/sleep (::rds/timeout rconn)))
+
+                  :else
+                  (do
+                    (l/error :hint "dispatcher: unhandled exception (will retry in an instant)" :cause cause)
+                    (px/sleep (::rds/timeout rconn)))))))
+
+          (dispatcher []
+            (l/info :hint "dispatcher: started")
+            (try
+              (dm/with-open [rconn (rds/connect redis)]
+                (loop []
+                  (run-batch! rconn)
+                  (recur)))
+              (catch InterruptedException _
+                (l/trace :hint "dispatcher: interrupted"))
+              (catch Throwable cause
+                (l/error :hint "dispatcher: unexpected exception" :cause cause))
+              (finally
+                (l/info :hint "dispatcher: terminated"))))]
 
     (if (db/read-only? pool)
       (l/warn :hint "dispatcher: not started (db is read-only)")
-      (px/thread
-        {:name "penpot/worker-dispatcher"}
-        (l/info :hint "dispatcher: started")
-        (try
-          (dm/with-open [rconn (rds/connect redis)]
-            (loop []
-              (when (px/interrupted?)
-                (throw (InterruptedException. "interrumpted")))
-
-              (try
-                (when-not (run-batch! rconn)
-                  (px/sleep (::wait-duration cfg)))
-                (catch InterruptedException cause
-                  (throw cause))
-                (catch Exception cause
-                  (cond
-                    (rds/exception? cause)
-                    (do
-                      (l/warn :hint "dispatcher: redis exception (will retry in an instant)" :cause cause)
-                      (px/sleep (::rds/timeout rconn)))
-
-                    (db/sql-exception? cause)
-                    (do
-                      (l/warn :hint "dispatcher: database exception (will retry in an instant)" :cause cause)
-                      (px/sleep (::rds/timeout rconn)))
-
-                    :else
-                    (do
-                      (l/error :hint "dispatcher: unhandled exception (will retry in an instant)" :cause cause)
-                      (px/sleep (::rds/timeout rconn))))))
-
-              (recur)))
-
-          (catch InterruptedException _
-            (l/debug :hint "dispatcher: interrupted"))
-          (catch Throwable cause
-            (l/error :hint "dispatcher: unexpected exception" :cause cause))
-          (finally
-            (l/info :hint "dispatcher: terminated")))))))
+      (px/fn->thread dispatcher :name "penpot/worker/dispatcher" :virtual true))))
 
 (defmethod ig/halt-key! ::dispatcher
   [_ thread]
@@ -311,7 +299,7 @@
 (defn- start-worker!
   [{:keys [::rds/redis ::worker-id ::queue] :as cfg}]
   (px/thread
-    {:name (format "penpot/worker/%s" worker-id)}
+    {:name (format "penpot/worker/runner:%s" worker-id)}
     (l/info :hint "worker: started" :worker-id worker-id :queue queue)
     (try
       (dm/with-open [rconn (rds/connect redis)]
@@ -462,7 +450,8 @@
              (case status
                :retry (handle-task-retry result)
                :failed (handle-task-failure result)
-               :completed (handle-task-completion result))))
+               :completed (handle-task-completion result)
+               nil)))
 
           (run-task-loop [task-id]
             (loop [result (run-task task-id)]
@@ -531,7 +520,7 @@
 (s/def ::entries (s/coll-of (s/nilable ::cron-task)))
 
 (defmethod ig/pre-init-spec ::cron [_]
-  (s/keys :req [::scheduled-executor ::db/pool ::entries ::registry]))
+  (s/keys :req [::db/pool ::entries ::registry]))
 
 (defmethod ig/init-key ::cron
   [_ {:keys [::entries ::registry ::db/pool] :as cfg}]
@@ -598,22 +587,23 @@
 
 (defn- execute-cron-task
   [{:keys [::db/pool] :as cfg} {:keys [id] :as task}]
-  (try
-    (db/with-atomic [conn pool]
-      (when (db/exec-one! conn [sql:lock-cron-task (d/name id)])
-        (l/trace :hint "cron: execute task" :task-id id)
-        ((:fn task) task)))
-    (catch InterruptedException _
-      (px/interrupt! (px/current-thread))
-      (l/debug :hint "cron: task interrupted" :task-id id))
-    (catch Throwable cause
-      (l/error :hint "cron: unhandled exception on running task"
-               ::l/context (get-error-context cause task)
-               :task-id id
-               :cause cause))
-    (finally
-      (when-not (px/interrupted? :current)
-        (schedule-cron-task cfg task)))))
+  (px/thread
+    {:name (str "penpot/cront-task/" id)}
+    (try
+      (db/with-atomic [conn pool]
+        (when (db/exec-one! conn [sql:lock-cron-task (d/name id)])
+          (l/trace :hint "cron: execute task" :task-id id)
+          ((:fn task) task)))
+      (catch InterruptedException _
+        (l/debug :hint "cron: task interrupted" :task-id id))
+      (catch Throwable cause
+        (l/error :hint "cron: unhandled exception on running task"
+                 ::l/context (get-error-context cause task)
+                 :task-id id
+                 :cause cause))
+      (finally
+        (when-not (px/interrupted? :current)
+          (schedule-cron-task cfg task))))))
 
 (defn- ms-until-valid
   [cron]
@@ -622,16 +612,11 @@
         next (dt/next-valid-instant-from cron now)]
     (inst-ms (dt/diff now next))))
 
-(def ^:private
-  xf-without-done
-  (remove #(.isDone ^Future %)))
-
 (defn- schedule-cron-task
-  [{:keys [::scheduled-executor ::running] :as cfg} {:keys [cron] :as task}]
-  (let [ft (px/schedule! scheduled-executor
-                         (ms-until-valid cron)
+  [{:keys [::running] :as cfg} {:keys [cron] :as task}]
+  (let [ft (px/schedule! (ms-until-valid cron)
                          (partial execute-cron-task cfg task))]
-    (swap! running #(into #{ft} xf-without-done %))))
+    (swap! running #(into #{ft} (filter p/pending?) %))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

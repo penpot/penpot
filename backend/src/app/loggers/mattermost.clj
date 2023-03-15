@@ -77,7 +77,8 @@
       {:name "penpot/mattermost-reporter"
        :virtual true}
       (l/info :hint "initializing error reporter" :uri uri)
-      (let [input (sp/chan (sp/sliding-buffer 128) (filter ldb/error-record?))]
+      (let [input (sp/chan :buf (sp/sliding-buffer 128)
+                           :xf (filter ldb/error-record?))]
         (add-watch l/log-record ::reporter #(sp/put! input %4))
         (try
           (loop []

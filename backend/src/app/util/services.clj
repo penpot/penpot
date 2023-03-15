@@ -45,9 +45,9 @@
                   (map second)
                   (filter #(::spec (meta %)))
                   (map (fn [fvar]
-                         (with-meta (deref fvar)
-                           (-> (meta fvar)
-                               (assoc :ns (-> ns ns-name str)))))))))))
+                         [(deref fvar)
+                          (-> (meta fvar)
+                              (assoc :ns (-> ns ns-name str)))])))))))
 
 (defn scan-ns
   [& nsyms]

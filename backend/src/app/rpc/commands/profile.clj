@@ -26,17 +26,16 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [promesa.core :as p]
-   [promesa.exec :as px]))
+   [cuerdas.core :as str]))
 
+(declare check-profile-existence!)
 (declare decode-row)
+(declare derive-password)
+(declare filter-props)
 (declare get-profile)
 (declare strip-private-attrs)
-(declare filter-props)
-(declare check-profile-existence!)
+(declare verify-password)
 
 ;; --- QUERY: Get profile (own)
 
@@ -50,6 +49,7 @@
   ;; We need to return the anonymous profile object in two cases, when
   ;; no profile-id is in session, and when db call raises not found. In all other
   ;; cases we need to reraise the exception.
+
   (try
     (-> (get-profile pool profile-id)
         (strip-private-attrs)
@@ -120,10 +120,10 @@
           :req-un [::password ::old-password]))
 
 (sv/defmethod ::update-profile-password
-  {::climit/queue :auth}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id password] :as params}]
   (db/with-atomic [conn pool]
-    (let [profile    (validate-password! conn (assoc params :profile-id profile-id))
+    (let [cfg        (assoc cfg ::db/conn conn)
+          profile    (validate-password! cfg (assoc params :profile-id profile-id))
           session-id (::session/id params)]
 
       (when (= (str/lower (:email profile))
@@ -132,29 +132,30 @@
                   :code :email-as-password
                   :hint "you can't use your email as password"))
 
-      (update-profile-password! conn (assoc profile :password password))
-      (invalidate-profile-session! conn profile-id session-id)
+      (update-profile-password! cfg (assoc profile :password password))
+      (invalidate-profile-session! cfg profile-id session-id)
       nil)))
 
 (defn- invalidate-profile-session!
   "Removes all sessions except the current one."
-  [conn profile-id session-id]
+  [{:keys [::db/conn]} profile-id session-id]
   (let [sql "delete from http_session where profile_id = ? and id != ?"]
     (:next.jdbc/update-count (db/exec-one! conn [sql profile-id session-id]))))
 
 (defn- validate-password!
-  [conn {:keys [profile-id old-password] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id old-password] :as params}]
   (let [profile (db/get-by-id conn :profile profile-id ::db/for-update? true)]
-    (when-not (:valid (auth/verify-password old-password (:password profile)))
+    (when-not (:valid (verify-password cfg old-password (:password profile)))
       (ex/raise :type :validation
                 :code :old-password-not-match))
     profile))
 
 (defn update-profile-password!
-  [conn {:keys [id password] :as profile}]
-  (db/update! conn :profile
-              {:password (auth/derive-password password)}
-              {:id id}))
+  [{:keys [::db/conn] :as cfg} {:keys [id password] :as profile}]
+  (let [password (derive-password cfg password)]
+    (db/update! conn :profile
+                {:password password}
+                {:id id})))
 
 ;; --- MUTATION: Update Photo
 
@@ -173,61 +174,49 @@
   (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (update-profile-photo cfg (assoc params :profile-id profile-id))))
 
-;; TODO: reimplement it without p/let
-
 (defn update-profile-photo
-  [{:keys [::db/pool ::sto/storage ::wrk/executor] :as cfg} {:keys [profile-id file] :as params}]
-  (letfn [(on-uploaded [photo]
-            (let [profile (db/get-by-id pool :profile profile-id ::db/for-update? true)]
+  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id file] :as params}]
+  (let [photo   (upload-photo cfg params)
+        profile (db/get-by-id pool :profile profile-id ::db/for-update? true)]
 
-              ;; Schedule deletion of old photo
-              (when-let [id (:photo-id profile)]
-                (sto/touch-object! storage id))
+    ;; Schedule deletion of old photo
+    (when-let [id (:photo-id profile)]
+      (sto/touch-object! storage id))
 
-              ;; Save new photo
-              (db/update! pool :profile
-                          {:photo-id (:id photo)}
-                          {:id profile-id})
+    ;; Save new photo
+    (db/update! pool :profile
+                {:photo-id (:id photo)}
+                {:id profile-id})
 
-              (-> (rph/wrap)
-                  (rph/with-meta {::audit/replace-props
-                                  {:file-name (:filename file)
-                                   :file-size (:size file)
-                                   :file-path (str (:path file))
-                                   :file-mtype (:mtype file)}}))))]
-    (->> (upload-photo cfg params)
-         (p/fmap executor on-uploaded))))
+    (-> (rph/wrap)
+        (rph/with-meta {::audit/replace-props
+                        {:file-name (:filename file)
+                         :file-size (:size file)
+                         :file-path (str (:path file))
+                         :file-mtype (:mtype file)}}))))
+
+(defn- generate-thumbnail!
+  [file]
+  (let [input   (media/run {:cmd :info :input file})
+        thumb   (media/run {:cmd :profile-thumbnail
+                            :format :jpeg
+                            :quality 85
+                            :width 256
+                            :height 256
+                            :input input})
+        hash    (sto/calculate-hash (:data thumb))
+        content (-> (sto/content (:data thumb) (:size thumb))
+                    (sto/wrap-with-hash hash))]
+    {::sto/content content
+     ::sto/deduplicate? true
+     :bucket "profile"
+     :content-type (:mtype thumb)}))
 
 (defn upload-photo
-  [{:keys [::sto/storage ::wrk/executor climit] :as cfg} {:keys [file]}]
-  (letfn [(get-info [content]
-            (climit/with-dispatch (:process-image climit)
-              (media/run {:cmd :info :input content})))
-
-          (generate-thumbnail [info]
-            (climit/with-dispatch (:process-image climit)
-              (media/run {:cmd :profile-thumbnail
-                          :format :jpeg
-                          :quality 85
-                          :width 256
-                          :height 256
-                          :input info})))
-
-          ;; Function responsible of calculating cryptographyc hash of
-          ;; the provided data.
-          (calculate-hash [data]
-            (px/with-dispatch executor
-              (sto/calculate-hash data)))]
-
-    (p/let [info    (get-info file)
-            thumb   (generate-thumbnail info)
-            hash    (calculate-hash (:data thumb))
-            content (-> (sto/content (:data thumb) (:size thumb))
-                        (sto/wrap-with-hash hash))]
-      (sto/put-object! storage {::sto/content content
-                                ::sto/deduplicate? true
-                                :bucket "profile"
-                                :content-type (:mtype thumb)}))))
+  [{:keys [::sto/storage] :as cfg} {:keys [file]}]
+  (let [params (-> (climit/configure cfg :process-image)
+                   (climit/submit! (partial generate-thumbnail! file)))]
+    (sto/put-object! storage params)))
 
 
 ;; --- MUTATION: Request Email Change
@@ -416,6 +405,17 @@
   "Removes all namespace qualified props from `props` attr."
   [props]
   (into {} (filter (fn [[k _]] (simple-ident? k))) props))
+
+(defn derive-password
+  [cfg password]
+  (when password
+    (-> (climit/configure cfg :derive-password)
+        (climit/submit! (partial auth/derive-password password)))))
+
+(defn verify-password
+  [cfg password password-data]
+  (-> (climit/configure cfg :derive-password)
+      (climit/submit! (partial auth/verify-password password password-data))))
 
 (defn decode-row
   [{:keys [props] :as row}]

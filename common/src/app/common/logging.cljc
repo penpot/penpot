@@ -213,26 +213,28 @@
     `(when (enabled? ~logger ~level)
        (let [props#   (cond-> (delay ~props) ~sync? deref)
              ts#      (current-timestamp)
-             context# *context*]
-         (px/run! *default-executor*
-                  (fn []
-                    (let [props#   (if ~sync? props# (deref props#))
-                          props#   (into (d/ordered-map) props#)
-                          cause#   ~cause
-                          context# (d/without-nils
-                                    (merge context# ~context))
-                          lrecord# {::id (uuid/next)
-                                    ::timestamp ts#
-                                    ::message (delay (build-message props#))
-                                    ::props props#
-                                    ::context context#
-                                    ::level ~level
-                                    ::logger ~logger}
-                          lrecord# (cond-> lrecord#
-                                     (some? cause#)
-                                     (assoc ::cause cause#
-                                            ::trace (delay (build-stack-trace cause#))))]
-                      (swap! log-record (constantly lrecord#)))))))))
+             context# *context*
+             logfn#   (fn []
+                        (let [props#   (if ~sync? props# (deref props#))
+                              props#   (into (d/ordered-map) props#)
+                              cause#   ~cause
+                              context# (d/without-nils
+                                        (merge context# ~context))
+                              lrecord# {::id (uuid/next)
+                                        ::timestamp ts#
+                                        ::message (delay (build-message props#))
+                                        ::props props#
+                                        ::context context#
+                                        ::level ~level
+                                        ::logger ~logger}
+                              lrecord# (cond-> lrecord#
+                                         (some? cause#)
+                                         (assoc ::cause cause#
+                                                ::trace (delay (build-stack-trace cause#))))]
+                          (swap! log-record (constantly lrecord#))))]
+         (if ~sync?
+           (logfn#)
+           (px/exec! *default-executor* logfn#))))))
 
 #?(:clj
    (defn slf4j-log-handler
@@ -243,12 +245,12 @@
                        (some? trace)
                        (str "\n" @trace))]
          (case level
-           :trace (.trace ^Logger logger ^String message ^Throwable cause)
-           :debug (.debug ^Logger logger ^String message ^Throwable cause)
-           :info  (.info  ^Logger logger ^String message ^Throwable cause)
-           :warn  (.warn  ^Logger logger ^String message ^Throwable cause)
-           :error (.error ^Logger logger ^String message ^Throwable cause)
-           :fatal (.error ^Logger logger ^String message ^Throwable cause)
+           :trace (.trace ^Logger logger ^String message)
+           :debug (.debug ^Logger logger ^String message)
+           :info  (.info  ^Logger logger ^String message)
+           :warn  (.warn  ^Logger logger ^String message)
+           :error (.error ^Logger logger ^String message)
+           :fatal (.error ^Logger logger ^String message)
            (throw (IllegalArgumentException. (str "invalid level:"  level))))))))
 
 #?(:cljs

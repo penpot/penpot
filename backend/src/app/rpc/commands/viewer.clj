@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.viewer
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.db :as db]
    [app.rpc :as-alias rpc]
@@ -85,5 +86,5 @@
    ::cond/reuse-key? true
    ::doc/added "1.17"}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (get-view-only-bundle conn (assoc params :profile-id profile-id))))

@@ -45,6 +45,7 @@
    software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup
    software.amazon.awssdk.regions.Region
    software.amazon.awssdk.services.s3.S3AsyncClient
+   software.amazon.awssdk.services.s3.S3AsyncClientBuilder
    software.amazon.awssdk.services.s3.S3Configuration
    software.amazon.awssdk.services.s3.model.Delete
    software.amazon.awssdk.services.s3.model.DeleteObjectRequest
@@ -121,7 +122,7 @@
 (defmethod impl/put-object :s3
   [backend object content]
   (us/assert! ::backend backend)
-  (put-object backend object content))
+  (p/await! (put-object backend object content)))
 
 (defmethod impl/get-object-data :s3
   [backend object]
@@ -135,12 +136,13 @@
                       :cause cause))]
 
     (-> (get-object-data backend object)
-        (p/catch no-such-key? handle-not-found))))
+        (p/catch no-such-key? handle-not-found)
+        (p/await!))))
 
 (defmethod impl/get-object-bytes :s3
   [backend object]
   (us/assert! ::backend backend)
-  (get-object-bytes backend object))
+  (p/await! (get-object-bytes backend object)))
 
 (defmethod impl/get-object-url :s3
   [backend object options]
@@ -150,12 +152,12 @@
 (defmethod impl/del-object :s3
   [backend object]
   (us/assert! ::backend backend)
-  (del-object backend object))
+  (p/await! (del-object backend object)))
 
 (defmethod impl/del-objects-in-bulk :s3
   [backend ids]
   (us/assert! ::backend backend)
-  (del-object-in-bulk backend ids))
+  (p/await! (del-object-in-bulk backend ids)))
 
 ;; --- HELPERS
 
@@ -187,13 +189,17 @@
                     (.writeTimeout default-timeout)
                     (.build))
 
-        client  (-> (S3AsyncClient/builder)
-                    (.serviceConfiguration ^S3Configuration sconfig)
-                    (.asyncConfiguration  ^ClientAsyncConfiguration aconfig)
-                    (.httpClient  ^NettyNioAsyncHttpClient hclient)
-                    (.region (lookup-region region))
-                    (cond-> (some? endpoint) (.endpointOverride (URI. endpoint)))
-                    (.build))]
+        client  (let [builder (S3AsyncClient/builder)
+                      builder (.serviceConfiguration ^S3AsyncClientBuilder builder ^S3Configuration sconfig)
+                      builder (.asyncConfiguration ^S3AsyncClientBuilder builder ^ClientAsyncConfiguration aconfig)
+                      builder (.httpClient ^S3AsyncClientBuilder builder ^NettyNioAsyncHttpClient hclient)
+                      builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
+                      builder (cond-> ^S3AsyncClientBuilder builder
+                                (some? endpoint)
+                                (.endpointOverride (URI. endpoint)))]
+                  (.build ^S3AsyncClientBuilder builder))
+
+        ]
 
     (reify
       clojure.lang.IDeref
@@ -288,6 +294,7 @@
                      ^AsyncRequestBody rbody)
          (p/fmap (constantly object)))))
 
+;; FIXME: research how to avoid reflection on close method
 (defn- path->stream
   [path]
   (proxy [FilterInputStream] [(io/input-stream path)]
@@ -347,8 +354,7 @@
                  (getObjectRequest ^GetObjectRequest gor)
                  (build))
         pgor (.presignGetObject ^S3Presigner presigner ^GetObjectPresignRequest gopr)]
-    (p/resolved
-     (u/uri (str (.url ^PresignedGetObjectRequest pgor))))))
+    (u/uri (str (.url ^PresignedGetObjectRequest pgor)))))
 
 (defn- del-object
   [{:keys [::bucket ::client ::prefix]} {:keys [id] :as obj}]

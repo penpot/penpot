@@ -17,9 +17,9 @@
    [app.msgbus :as mbus]
    [app.util.time :as dt]
    [app.util.websocket :as ws]
-   [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
+   [promesa.exec.csp :as sp]
    [yetti.websocket :as yws]))
 
 (def recv-labels
@@ -34,70 +34,38 @@
 
 (def state (atom {}))
 
-(defn- on-connect
-  [{:keys [::mtx/metrics]} wsp]
-  (let [created-at (dt/now)]
-    (swap! state assoc (::ws/id @wsp) wsp)
-    (mtx/run! metrics
-              :id :websocket-active-connections
-              :inc 1)
-    (fn []
-      (swap! state dissoc (::ws/id @wsp))
-      (mtx/run! metrics :id :websocket-active-connections :dec 1)
-      (mtx/run! metrics
-                :id :websocket-session-timing
-                :val (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0)))))
-
-(defn- on-rcv-message
-  [{:keys [::mtx/metrics]} _ message]
-  (mtx/run! metrics
-            :id :websocket-messages-total
-            :labels recv-labels
-            :inc 1)
-  message)
-
-(defn- on-snd-message
-  [{:keys [::mtx/metrics]} _ message]
-  (mtx/run! metrics
-            :id :websocket-messages-total
-            :labels send-labels
-            :inc 1)
-  message)
-
 ;; REPL HELPERS
 
 (defn repl-get-connections-for-file
   [file-id]
   (->> (vals @state)
        (filter #(= file-id (-> % deref ::file-subscription :file-id)))
-       (map deref)
        (map ::ws/id)))
 
 (defn repl-get-connections-for-team
   [team-id]
   (->> (vals @state)
        (filter #(= team-id (-> % deref ::team-subscription :team-id)))
-       (map deref)
        (map ::ws/id)))
 
 (defn repl-close-connection
   [id]
-  (when-let [wsp (get @state id)]
-    (a/>!! (::ws/close-ch @wsp) [8899 "closed from server"])
-    (a/close! (::ws/close-ch @wsp))))
+  (when-let [{:keys [::ws/close-ch] :as wsp} (get @state id)]
+    (sp/put! close-ch [8899 "closed from server"])
+    (sp/close! close-ch)))
 
 (defn repl-get-connection-info
   [id]
   (when-let [wsp (get @state id)]
     {:id               id
-     :created-at       (::created-at @wsp)
-     :profile-id       (::profile-id @wsp)
-     :session-id       (::session-id @wsp)
-     :user-agent       (::ws/user-agent @wsp)
-     :ip-addr          (::ws/remote-addr @wsp)
-     :last-activity-at (::ws/last-activity-at @wsp)
-     :subscribed-file  (-> wsp deref ::file-subscription :file-id)
-     :subscribed-team  (-> wsp deref ::team-subscription :team-id)}))
+     :created-at       (::created-at wsp)
+     :profile-id       (::profile-id wsp)
+     :session-id       (::session-id wsp)
+     :user-agent       (::ws/user-agent wsp)
+     :ip-addr          (::ws/remote-addr wsp)
+     :last-activity-at (::ws/last-activity-at wsp)
+     :subscribed-file  (-> wsp ::file-subscription :file-id)
+     :subscribed-team  (-> wsp ::team-subscription :team-id)}))
 
 (defn repl-print-connection-info
   [id]
@@ -117,223 +85,215 @@
   (fn [_ _ message]
     (:type message)))
 
-(defmethod handle-message :connect
-  [cfg wsp _]
+(defmethod handle-message :open
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/output-ch ::ws/state ::profile-id ::session-id] :as wsp} _]
+  (l/trace :fn "handle-message" :event "open" :conn-id id)
+  (let [ch (sp/chan :buf (sp/dropping-buffer 16)
+                    :xf  (remove #(= (:session-id %) session-id)))]
 
-  (let [msgbus     (::mbus/msgbus cfg)
-        conn-id    (::ws/id @wsp)
-        profile-id (::profile-id @wsp)
-        session-id (::session-id @wsp)
-        output-ch  (::ws/output-ch @wsp)
+    ;; Subscribe to the profile channel and forward all messages to websocket output
+    ;; channel (send them to the client).
+    (swap! state assoc ::profile-subscription {:channel ch})
 
-        xform      (remove #(= (:session-id %) session-id))
-        channel    (a/chan (a/dropping-buffer 16) xform)]
+    ;; Forward the subscription messages directly to the websocket output channel
+    (sp/pipe ch output-ch false)
 
-    (l/trace :fn "handle-message" :event "connect" :conn-id conn-id)
+    ;; Subscribe to the profile topic on msgbus/redis
+    (mbus/sub! msgbus :topic profile-id :chan ch)))
 
-    ;; Subscribe to the profile channel and forward all messages to
-    ;; websocket output channel (send them to the client).
-    (swap! wsp assoc ::profile-subscription channel)
-    (a/pipe channel output-ch false)
-    (mbus/sub! msgbus :topic profile-id :chan channel)))
+(defmethod handle-message :close
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::profile-id ::session-id]} _]
+  (l/trace :fn "handle-message" :event "close" :conn-id id)
+  (let [psub (::profile-subscription @state)
+        fsub (::file-subscription @state)
+        tsub (::team-subscription @state)
+        msg  {:type :disconnect
+              :subs-id profile-id
+              :profile-id profile-id
+              :session-id session-id}]
 
-(defmethod handle-message :disconnect
-  [cfg wsp _]
-  (let [msgbus     (::mbus/msgbus cfg)
-        conn-id    (::ws/id @wsp)
-        profile-id (::profile-id @wsp)
-        session-id (::session-id @wsp)
-        profile-ch (::profile-subscription @wsp)
-        fsub       (::file-subscription @wsp)
-        tsub       (::team-subscription @wsp)
+      ;; Close profile subscription if exists
+      (when-let [ch (:channel psub)]
+        (sp/close! ch)
+        (mbus/purge! msgbus [ch]))
 
-        message    {:type :disconnect
-                    :subs-id profile-id
-                    :profile-id profile-id
-                    :session-id session-id}]
+      ;; Close team subscription if exists
+      (when-let [ch (:channel tsub)]
+        (sp/close! ch)
+        (mbus/purge! msgbus [ch]))
 
-    (l/trace :fn "handle-message"
-             :event :disconnect
-             :conn-id conn-id)
-
-    (a/go
-      ;; Close the main profile subscription
-      (a/close! profile-ch)
-      (a/<! (mbus/purge! msgbus [profile-ch]))
-
-      ;; Close tram subscription if exists
-      (when-let [channel (:channel tsub)]
-        (a/close! channel)
-        (a/<! (mbus/purge! msgbus channel)))
-
+      ;; Close file subscription if exists
       (when-let [{:keys [topic channel]} fsub]
-        (a/close! channel)
-        (a/<! (mbus/purge! msgbus channel))
-        (a/<! (mbus/pub! msgbus :topic topic :message message))))))
+        (sp/close! channel)
+        (mbus/purge! msgbus [channel])
+        (mbus/pub! msgbus :topic topic :message msg))))
 
 (defmethod handle-message :subscribe-team
-  [cfg wsp {:keys [team-id] :as params}]
-  (let [msgbus     (::mbus/msgbus cfg)
-        conn-id    (::ws/id @wsp)
-        session-id (::session-id @wsp)
-        output-ch  (::ws/output-ch @wsp)
-        prev-subs  (get @wsp ::team-subscription)
-        xform      (comp
-                    (remove #(= (:session-id %) session-id))
-                    (map #(assoc % :subs-id team-id)))
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id]} {:keys [team-id] :as params}]
+  (l/trace :fn "handle-message" :event "subscribe-team" :team-id team-id :conn-id id)
+  (let [prev-subs (get @state ::team-subscription)
+        channel   (sp/chan :buf (sp/dropping-buffer 64)
+                           :xf  (comp
+                                 (remove #(= (:session-id %) session-id))
+                                 (map #(assoc % :subs-id team-id))))]
 
-        channel    (a/chan (a/dropping-buffer 64) xform)]
+    (sp/pipe channel output-ch false)
+    (mbus/sub! msgbus :topic team-id :chan channel)
 
-    (l/trace :fn "handle-message"
-             :event :subscribe-team
-             :team-id team-id
-             :conn-id conn-id)
+    (let [subs {:team-id team-id :channel channel :topic team-id}]
+      (swap! state assoc ::team-subscription subs))
 
-    (a/pipe channel output-ch false)
+    ;; Close previous subscription if exists
+    (when-let [ch (:channel prev-subs)]
+      (sp/close! ch)
+      (mbus/purge! msgbus [ch]))))
 
-    (let [state {:team-id team-id :channel channel :topic team-id}]
-      (swap! wsp assoc ::team-subscription state))
-
-    (a/go
-      ;; Close previous subscription if exists
-      (when-let [channel (:channel prev-subs)]
-        (a/close! channel)
-        (a/<! (mbus/purge! msgbus channel))))
-
-    (a/go
-      (a/<! (mbus/sub! msgbus :topic team-id :chan channel)))))
 
 (defmethod handle-message :subscribe-file
-  [cfg wsp {:keys [file-id] :as params}]
-  (let [msgbus     (::mbus/msgbus cfg)
-        conn-id    (::ws/id @wsp)
-        profile-id (::profile-id @wsp)
-        session-id (::session-id @wsp)
-        output-ch  (::ws/output-ch @wsp)
-        prev-subs  (::file-subscription @wsp)
-        xform      (comp (remove #(= (:session-id %) session-id))
-                         (map #(assoc % :subs-id file-id)))
-        channel    (a/chan (a/dropping-buffer 64) xform)]
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
+  (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
+  (let [psub (::file-subscription @state)
+        fch  (sp/chan :buf (sp/dropping-buffer 64)
+                      :xf  (comp (remove #(= (:session-id %) session-id))
+                                 (map #(assoc % :subs-id file-id))))]
 
-    (l/trace :fn "handle-message"
-             :event :subscribe-file
-             :file-id file-id
-             :conn-id conn-id)
+    (let [subs {:file-id file-id :channel fch :topic file-id}]
+      (swap! state assoc ::file-subscription subs))
 
-    (let [state {:file-id file-id :channel channel :topic file-id}]
-      (swap! wsp assoc ::file-subscription state))
+    ;; Close previous subscription if exists
+    (when-let [ch (:channel psub)]
+      (sp/close! ch)
+      (mbus/purge! msgbus [ch]))
 
-    (a/go
-      ;; Close previous subscription if exists
-      (when-let [channel (:channel prev-subs)]
-        (a/close! channel)
-        (a/<! (mbus/purge! msgbus channel))))
-
-    ;; Message forwarding
-    (a/go
-      (loop []
-        (when-let [{:keys [type] :as message} (a/<! channel)]
-          (when (or (= :join-file type)
-                    (= :leave-file type)
-                    (= :disconnect type))
-            (let [message {:type :presence
-                           :file-id file-id
-                           :session-id session-id
+    (sp/go-loop []
+      (when-let [{:keys [type] :as message} (sp/take! fch)]
+        (sp/put! output-ch message)
+        (when (or (= :join-file type)
+                  (= :leave-file type)
+                  (= :disconnect type))
+          (let [message {:type :presence
+                         :file-id file-id
+                         :session-id session-id
                            :profile-id profile-id}]
-              (a/<! (mbus/pub! msgbus :topic file-id :message message))))
-          (a/>! output-ch message)
-          (recur))))
+            (mbus/pub! msgbus
+                       :topic file-id
+                       :message message)))
+        (recur)))
 
-    (a/go
-      ;; Subscribe to file topic
-      (a/<! (mbus/sub! msgbus :topic file-id :chan channel))
+    ;; Subscribe to file topic
+    (mbus/sub! msgbus :topic file-id :chan fch)
 
-      ;; Notifify the rest of participants of the new connection.
-      (let [message {:type :join-file
-                     :file-id file-id
-                     :subs-id file-id
-                     :session-id session-id
-                     :profile-id profile-id}]
-        (a/<! (mbus/pub! msgbus :topic file-id :message message))))))
+    ;; Notifify the rest of participants of the new connection.
+    (let [message {:type :join-file
+                   :file-id file-id
+                   :subs-id file-id
+                   :session-id session-id
+                   :profile-id profile-id}]
+      (mbus/pub! msgbus :topic file-id :message message))))
 
 (defmethod handle-message :unsubscribe-file
-  [cfg wsp {:keys [file-id] :as params}]
-  (let [msgbus     (::mbus/msgbus cfg)
-        conn-id    (::ws/id @wsp)
-        session-id (::session-id @wsp)
-        profile-id (::profile-id @wsp)
-        subs       (::file-subscription @wsp)
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::session-id ::profile-id]} {:keys [file-id] :as params}]
+  (l/trace :fn "handle-message" :event "unsubscribe-file" :file-id file-id :conn-id id)
 
-        message    {:type :leave-file
-                    :file-id file-id
-                    :session-id session-id
-                    :profile-id profile-id}]
+  (let [subs    (::file-subscription @state)
+        message {:type :leave-file
+                 :file-id file-id
+                 :session-id session-id
+                 :profile-id profile-id}]
 
-    (l/trace :fn "handle-message"
-             :event :unsubscribe-file
-             :file-id file-id
-             :conn-id conn-id)
-
-    (a/go
-      (when (= (:file-id subs) file-id)
-        (let [channel (:channel subs)]
-          (a/close! channel)
-          (a/<! (mbus/purge! msgbus channel))
-          (a/<! (mbus/pub! msgbus :topic file-id :message message)))))))
+    (when (= (:file-id subs) file-id)
+      (mbus/pub! msgbus :topic file-id :message message)
+      (let [ch (:channel subs)]
+        (sp/close! ch)
+        (mbus/purge! msgbus [ch])))))
 
 (defmethod handle-message :keepalive
   [_ _ _]
-  (l/trace :fn "handle-message" :event :keepalive)
-  (a/go :nothing))
+  (l/trace :fn "handle-message" :event :keepalive))
+
+(defmethod handle-message :broadcast
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::session-id ::profile-id]} message]
+  (l/trace :fn "handle-message" :event "broadcast" :conn-id id)
+  (let [message (-> message
+                    (assoc :subs-id profile-id)
+                    (assoc :profile-id profile-id)
+                    (assoc :session-id session-id))]
+    (mbus/pub! msgbus :topic profile-id :message message)))
 
 (defmethod handle-message :pointer-update
-  [cfg wsp {:keys [file-id] :as message}]
-  (let [msgbus     (::mbus/msgbus cfg)
-        profile-id (::profile-id @wsp)
-        session-id (::session-id @wsp)
-        subs       (::file-subscription @wsp)
-        message    (-> message
-                       (assoc :subs-id file-id)
-                       (assoc :profile-id profile-id)
-                       (assoc :session-id session-id))]
-    (a/go
-      ;; Only allow receive pointer updates when active subscription
-      (when subs
-        (a/<! (mbus/pub! msgbus :topic file-id :message message))))))
+  [{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} {:keys [file-id] :as message}]
+  (when (::file-subscription @state)
+    (let [message (-> message
+                      (assoc :subs-id file-id)
+                      (assoc :profile-id profile-id)
+                      (assoc :session-id session-id))]
+      (mbus/pub! msgbus :topic file-id :message message))))
 
 (defmethod handle-message :default
-  [_ wsp message]
-  (let [conn-id (::ws/id @wsp)]
-    (l/warn :hint "received unexpected message"
-            :message message
-            :conn-id conn-id)
-    (a/go :none)))
+  [_ {:keys [::ws/id]} message]
+  (l/warn :hint "received unexpected message"
+          :message message
+          :conn-id id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- on-connect
+  [{:keys [::mtx/metrics]} {:keys [::ws/id] :as wsp}]
+  (let [created-at (dt/now)]
+    (l/trace :fn "on-connect" :conn-id id)
+    (swap! state assoc id wsp)
+    (mtx/run! metrics
+              :id :websocket-active-connections
+              :inc 1)
+
+    (assoc wsp ::ws/on-disconnect
+           (fn []
+             (l/trace :fn "on-disconnect" :conn-id id)
+             (swap! state dissoc id)
+             (mtx/run! metrics :id :websocket-active-connections :dec 1)
+             (mtx/run! metrics
+                       :id :websocket-session-timing
+                       :val (/ (inst-ms (dt/diff created-at (dt/now))) 1000.0))))))
+
+(defn- on-rcv-message
+  [{:keys [::mtx/metrics ::profile-id ::session-id]} message]
+  (mtx/run! metrics
+            :id :websocket-messages-total
+            :labels recv-labels
+            :inc 1)
+  (assoc message :profile-id profile-id :session-id session-id))
+
+(defn- on-snd-message
+  [{:keys [::mtx/metrics]} message]
+  (mtx/run! metrics
+            :id :websocket-messages-total
+            :labels send-labels
+            :inc 1)
+  message)
+
 
 (s/def ::session-id ::us/uuid)
 (s/def ::handler-params
   (s/keys :req-un [::session-id]))
 
 (defn- http-handler
-  [cfg {:keys [params ::session/profile-id] :as request} respond raise]
+  [cfg {:keys [params ::session/profile-id] :as request}]
   (let [{:keys [session-id]} (us/conform ::handler-params params)]
     (cond
       (not profile-id)
-      (raise (ex/error :type :authentication
-                       :hint "Authentication required."))
+      (ex/raise :type :authentication
+                :hint "Authentication required.")
 
       (not (yws/upgrade-request? request))
-      (raise (ex/error :type :validation
-                       :code :websocket-request-expected
-                       :hint "this endpoint only accepts websocket connections"))
+      (ex/raise :type :validation
+                :code :websocket-request-expected
+                :hint "this endpoint only accepts websocket connections")
 
       :else
       (do
         (l/trace :hint "websocket request" :profile-id profile-id :session-id session-id)
-
         (->> (ws/handler
               ::ws/on-rcv-message (partial on-rcv-message cfg)
               ::ws/on-snd-message (partial on-snd-message cfg)
@@ -341,8 +301,7 @@
               ::ws/handler (partial handle-message cfg)
               ::profile-id profile-id
               ::session-id session-id)
-             (yws/upgrade request)
-             (respond))))))
+             (yws/upgrade request))))))
 
 (defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req [::mbus/msgbus

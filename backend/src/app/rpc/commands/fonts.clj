@@ -6,7 +6,7 @@
 
 (ns app.rpc.commands.fonts
   (:require
-   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -15,7 +15,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
    [app.rpc :as-alias rpc]
-   [app.rpc.climit :as-alias climit]
+   [app.rpc.climit :as climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
@@ -25,10 +25,7 @@
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
-   [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [promesa.exec :as px]))
+   [clojure.spec.alpha :as s]))
 
 (def valid-weight #{100 200 300 400 500 600 700 800 900 950})
 (def valid-style #{"normal" "italic"})
@@ -59,7 +56,7 @@
 (sv/defmethod ::get-font-variants
   {::doc/added "1.18"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id file-id project-id] :as params}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (cond
       (uuid? team-id)
       (do
@@ -107,50 +104,45 @@
     (create-font-variant cfg (assoc params :profile-id profile-id))))
 
 (defn create-font-variant
-  [{:keys [::sto/storage ::db/pool ::wrk/executor ::rpc/climit]} {:keys [data] :as params}]
-  (letfn [(generate-fonts [data]
-            (climit/with-dispatch (:process-font climit)
-              (media/run {:cmd :generate-fonts :input data})))
+  [{:keys [::sto/storage ::db/pool] :as cfg} {:keys [data] :as params}]
+  (letfn [(generate-missing! [data]
+            (let [data (media/run {:cmd :generate-fonts :input data})]
+              (when (and (not (contains? data "font/otf"))
+                         (not (contains? data "font/ttf"))
+                         (not (contains? data "font/woff"))
+                         (not (contains? data "font/woff2")))
+                (ex/raise :type :validation
+                          :code :invalid-font-upload
+                          :hint "invalid font upload, unable to generate missing font assets"))
+              data))
 
-          ;; Function responsible of calculating cryptographyc hash of
-          ;; the provided data.
-          (calculate-hash [data]
-            (px/with-dispatch executor
-              (sto/calculate-hash data)))
-
-          (validate-data [data]
-            (when (and (not (contains? data "font/otf"))
-                       (not (contains? data "font/ttf"))
-                       (not (contains? data "font/woff"))
-                       (not (contains? data "font/woff2")))
-              (ex/raise :type :validation
-                        :code :invalid-font-upload))
-            data)
-
-          (persist-font-object [data mtype]
+          (prepare-font [data mtype]
             (when-let [resource (get data mtype)]
-              (p/let [hash    (calculate-hash resource)
-                      content (-> (sto/content resource)
-                                  (sto/wrap-with-hash hash))]
-                (sto/put-object! storage {::sto/content content
-                                          ::sto/touched-at (dt/now)
-                                          ::sto/deduplicate? true
-                                          :content-type mtype
-                                          :bucket "team-font-variant"}))))
+              (let [hash    (sto/calculate-hash resource)
+                    content (-> (sto/content resource)
+                                (sto/wrap-with-hash hash))]
+                {::sto/content content
+                 ::sto/touched-at (dt/now)
+                 ::sto/deduplicate? true
+                 :content-type mtype
+                 :bucket "team-font-variant"})))
 
-          (persist-fonts [data]
-            (p/let [otf   (persist-font-object data "font/otf")
-                    ttf   (persist-font-object data "font/ttf")
-                    woff1 (persist-font-object data "font/woff")
-                    woff2 (persist-font-object data "font/woff2")]
+          (persist-fonts-files! [data]
+            (let [otf-params (prepare-font data "font/otf")
+                  ttf-params (prepare-font data "font/ttf")
+                  wf1-params (prepare-font data "font/woff")
+                  wf2-params (prepare-font data "font/woff2")]
+              (cond-> {}
+                (some? otf-params)
+                (assoc :otf (sto/put-object! storage otf-params))
+                (some? ttf-params)
+                (assoc :ttf (sto/put-object! storage ttf-params))
+                (some? wf1-params)
+                (assoc :woff1 (sto/put-object! storage wf1-params))
+                (some? wf2-params)
+                (assoc :woff2 (sto/put-object! storage wf2-params)))))
 
-              (d/without-nils
-               {:otf otf
-                :ttf ttf
-                :woff1 woff1
-                :woff2 woff2})))
-
-          (insert-into-db [{:keys [woff1 woff2 otf ttf]}]
+          (insert-font-variant! [{:keys [woff1 woff2 otf ttf]}]
             (db/insert! pool :team-font-variant
                         {:id (uuid/next)
                          :team-id (:team-id params)
@@ -164,13 +156,11 @@
                          :ttf-file-id (:id ttf)}))
           ]
 
-    (->> (generate-fonts data)
-         (p/fmap validate-data)
-         (p/mcat executor persist-fonts)
-         (p/fmap executor insert-into-db)
-         (p/fmap (fn [result]
-                   (let [params (update params :data (comp vec keys))]
-                     (rph/with-meta result {::audit/replace-props params})))))))
+    (let [data   (-> (climit/configure cfg :process-font)
+                     (climit/submit! (partial generate-missing! data)))
+          assets (persist-fonts-files! data)
+          result (insert-font-variant! assets)]
+      (vary-meta result assoc ::audit/replace-props (update params :data (comp vec keys))))))
 
 ;; --- UPDATE FONT FAMILY
 

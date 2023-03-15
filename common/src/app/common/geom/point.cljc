@@ -380,7 +380,6 @@
 (defn rotate
   "Rotates the point around center with an angle"
   [p c angle]
-  (prn "ROTATE" p c angle)
   (assert (point? p) "point instance expected")
   (assert (point? c) "point instance expected")
   (let [angle (mth/radians angle)

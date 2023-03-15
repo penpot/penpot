@@ -22,13 +22,9 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
-   [app.util.time :as dt]
-   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.io :as io]
-   [promesa.core :as p]
-   [promesa.exec :as px]))
+   [datoteka.io :as io]))
 
 (def default-max-file-size
   (* 1024 1024 10)) ; 10 MiB
@@ -110,71 +106,62 @@
 ;; witch holds the reference to storage object (it some kind of
 ;; inverse, soft referential integrity).
 
+(defn- process-main-image
+  [info]
+  (let [hash (sto/calculate-hash (:path info))
+        data (-> (sto/content (:path info))
+                 (sto/wrap-with-hash hash))]
+    {::sto/content data
+     ::sto/deduplicate? true
+     ::sto/touched-at (:ts info)
+     :content-type (:mtype info)
+     :bucket "file-media-object"}))
+
+(defn- process-thumb-image
+  [info]
+  (let [thumb (-> thumbnail-options
+                  (assoc :cmd :generic-thumbnail)
+                  (assoc :input info)
+                  (media/run))
+        hash  (sto/calculate-hash (:data thumb))
+        data  (-> (sto/content (:data thumb) (:size thumb))
+                  (sto/wrap-with-hash hash))]
+    {::sto/content data
+     ::sto/deduplicate? true
+     ::sto/touched-at (:ts info)
+     :content-type (:mtype thumb)
+     :bucket "file-media-object"}))
+
+(defn- process-image
+  [content]
+  (let [info (media/run {:cmd :info :input content})]
+    (cond-> info
+      (and (not (svg-image? info))
+           (big-enough-for-thumbnail? info))
+      (assoc ::thumb (process-thumb-image info))
+
+      :always
+      (assoc ::image (process-main-image info)))))
+
 (defn create-file-media-object
-  [{:keys [::sto/storage ::db/pool climit ::wrk/executor]}
+  [{:keys [::sto/storage ::db/pool] :as cfg}
    {:keys [id file-id is-local name content]}]
-  (letfn [;; Function responsible to retrieve the file information, as
-          ;; it is synchronous operation it should be wrapped into
-          ;; with-dispatch macro.
-          (get-info [content]
-            (climit/with-dispatch (:process-image climit)
-              (media/run {:cmd :info :input content})))
 
-          ;; Function responsible of calculating cryptographyc hash of
-          ;; the provided data.
-          (calculate-hash [data]
-            (px/with-dispatch executor
-              (sto/calculate-hash data)))
+  (let [result (-> (climit/configure cfg :process-image)
+                   (climit/submit! (partial process-image content)))
 
-          ;; Function responsible of generating thumnail. As it is synchronous
-          ;; opetation, it should be wrapped into with-dispatch macro
-          (generate-thumbnail [info]
-            (climit/with-dispatch (:process-image climit)
-              (media/run (assoc thumbnail-options
-                                :cmd :generic-thumbnail
-                                :input info))))
+        image  (sto/put-object! storage (::image result))
+        thumb  (when-let [params (::thumb result)]
+                 (sto/put-object! storage params))]
 
-          (create-thumbnail [info]
-            (when (and (not (svg-image? info))
-                       (big-enough-for-thumbnail? info))
-              (p/let [thumb   (generate-thumbnail info)
-                      hash    (calculate-hash (:data thumb))
-                      content (-> (sto/content (:data thumb) (:size thumb))
-                                  (sto/wrap-with-hash hash))]
-                (sto/put-object! storage
-                                 {::sto/content content
-                                  ::sto/deduplicate? true
-                                  ::sto/touched-at (dt/now)
-                                  :content-type (:mtype thumb)
-                                  :bucket "file-media-object"}))))
-
-          (create-image [info]
-            (p/let [data    (:path info)
-                    hash    (calculate-hash data)
-                    content (-> (sto/content data)
-                                (sto/wrap-with-hash hash))]
-              (sto/put-object! storage
-                               {::sto/content content
-                                ::sto/deduplicate? true
-                                ::sto/touched-at (dt/now)
-                                :content-type (:mtype info)
-                                :bucket "file-media-object"})))
-
-          (insert-into-database [info image thumb]
-            (px/with-dispatch executor
-              (db/exec-one! pool [sql:create-file-media-object
-                                  (or id (uuid/next))
-                                  file-id is-local name
-                                  (:id image)
-                                  (:id thumb)
-                                  (:width info)
-                                  (:height info)
-                                  (:mtype info)])))]
-
-    (p/let [info  (get-info content)
-            thumb (create-thumbnail info)
-            image (create-image info)]
-      (insert-into-database info image thumb))))
+    (db/exec-one! pool [sql:create-file-media-object
+                        (or id (uuid/next))
+                        file-id is-local name
+                        (:id image)
+                        (:id thumb)
+                        (:width result)
+                        (:height result)
+                        (:mtype result)])))
 
 ;; --- Create File Media Object (from URL)
 
@@ -192,9 +179,9 @@
     (files/check-edition-permissions! pool profile-id file-id)
     (create-file-media-object-from-url cfg params)))
 
-(defn- create-file-media-object-from-url
-  [cfg {:keys [url name] :as params}]
-  (letfn [(parse-and-validate-size [headers]
+(defn- download-image
+  [{:keys [::http/client]} uri]
+  (letfn [(parse-and-validate [{:keys [headers] :as response}]
             (let [size     (some-> (get headers "content-length") d/parse-integer)
                   mtype    (get headers "content-type")
                   format   (cm/mtype->format mtype)
@@ -217,32 +204,34 @@
                           :code :media-type-not-allowed
                           :hint "seems like the url points to an invalid media object"))
 
-              {:size size
-               :mtype mtype
-               :format format}))
+              {:size size :mtype mtype :format format}))]
 
-          (download-media [uri]
-            (-> (http/req! cfg {:method :get :uri uri} {:response-type :input-stream})
-                (p/then process-response)))
+    (let [{:keys [body] :as response} (http/req! client
+                                                 {:method :get :uri uri}
+                                                 {:response-type :input-stream :sync? true})
+          {:keys [size mtype]} (parse-and-validate response)
 
-          (process-response [{:keys [body headers] :as response}]
-            (let [{:keys [size mtype]} (parse-and-validate-size headers)
-                  path                 (tmp/tempfile :prefix "penpot.media.download.")
-                  written              (io/write-to-file! body path :size size)]
+          path    (tmp/tempfile :prefix "penpot.media.download.")
+          written (io/write-to-file! body path :size size)]
 
-              (when (not= written size)
-                (ex/raise :type :internal
-                          :code :mismatch-write-size
-                          :hint "unexpected state: unable to write to file"))
+      (when (not= written size)
+        (ex/raise :type :internal
+                  :code :mismatch-write-size
+                  :hint "unexpected state: unable to write to file"))
 
-              {:filename "tempfile"
-               :size size
-               :path path
-               :mtype mtype}))]
+      {:filename "tempfile"
+       :size size
+       :path path
+       :mtype mtype})))
 
-    (p/let [content (download-media url)]
-      (->> (merge params {:content content :name (or name (:filename content))})
-           (create-file-media-object cfg)))))
+
+(defn- create-file-media-object-from-url
+  [cfg {:keys [url name] :as params}]
+  (let [content (download-image cfg url)
+        params  (-> params
+                    (assoc :content content)
+                    (assoc :name (or name (:filename content))))]
+    (create-file-media-object cfg params)))
 
 ;; --- Clone File Media object (Upload and create from url)
 

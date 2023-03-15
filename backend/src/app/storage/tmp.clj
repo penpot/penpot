@@ -10,57 +10,59 @@
   the operating system cleaning task should be responsible of
   permanently delete these files (look at systemd-tempfiles)."
   (:require
-   [app.common.data :as d]
    [app.common.logging :as l]
-   [app.storage :as-alias sto]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
-   [promesa.exec :as px]))
+   [promesa.exec :as px]
+   [promesa.exec.csp :as sp]))
 
-(declare remove-temp-file)
-(defonce queue (a/chan 128))
+(declare ^:private remove-temp-file)
+(declare ^:private io-loop)
+
+(defonce queue (sp/chan :buf 128))
 
 (defmethod ig/pre-init-spec ::cleaner [_]
-  (s/keys :req [::sto/min-age ::wrk/scheduled-executor]))
+  (s/keys :req [::wrk/executor]))
 
 (defmethod ig/prep-key ::cleaner
   [_ cfg]
-  (merge {::sto/min-age (dt/duration "30m")}
-         (d/without-nils cfg)))
+  (assoc cfg ::min-age (dt/duration "30m")))
 
 (defmethod ig/init-key ::cleaner
-  [_ {:keys [::sto/min-age ::wrk/scheduled-executor] :as cfg}]
-  (px/thread
-    {:name "penpot/storage-tmp-cleaner"}
-    (try
-      (l/info :hint "started tmp file cleaner")
-      (loop []
-        (when-let [path (a/<!! queue)]
-          (l/trace :hint "schedule tempfile deletion" :path path
-                   :expires-at (dt/plus (dt/now) min-age))
-          (px/schedule! scheduled-executor
-                        (inst-ms min-age)
-                        (partial remove-temp-file path))
-          (recur)))
-      (catch InterruptedException _
-        (l/debug :hint "interrupted"))
-      (finally
-        (l/info :hint "terminated tmp file cleaner")))))
+  [_ cfg]
+  (px/fn->thread (partial io-loop cfg)
+                 {:name "penpot/storage/tmp-cleaner" :virtual true}))
 
 (defmethod ig/halt-key! ::cleaner
   [_ thread]
   (px/interrupt! thread))
 
+(defn- io-loop
+  [{:keys [::min-age] :as cfg}]
+  (l/info :hint "started tmp file cleaner")
+  (try
+    (loop []
+      (when-let [path (sp/take! queue)]
+        (l/debug :hint "schedule tempfile deletion" :path path
+                 :expires-at (dt/plus (dt/now) min-age))
+        (px/schedule! (inst-ms min-age) (partial remove-temp-file cfg path))
+        (recur)))
+    (catch InterruptedException _
+      (l/trace :hint "cleaner interrupted"))
+    (finally
+      (l/info :hint "cleaner terminated"))))
+
 (defn- remove-temp-file
   "Permanently delete tempfile"
-  [path]
-  (l/trace :hint "permanently delete tempfile" :path path)
+  [{:keys [::wrk/executor path]}]
   (when (fs/exists? path)
-    (fs/delete path)))
+    (px/run! executor
+             (fn []
+               (l/debug :hint "permanently delete tempfile" :path path)
+               (fs/delete path)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API
@@ -72,7 +74,7 @@
       :or {prefix "penpot."
            suffix ".tmp"}}]
   (let [candidate (fs/tempfile :suffix suffix :prefix prefix)]
-    (a/offer! queue candidate)
+    (sp/offer! queue candidate)
     candidate))
 
 (defn create-tempfile
@@ -80,5 +82,5 @@
       :or {prefix "penpot."
            suffix ".tmp"}}]
   (let [path (fs/create-tempfile :suffix suffix :prefix prefix)]
-    (a/offer! queue path)
+    (sp/offer! queue path)
     path))

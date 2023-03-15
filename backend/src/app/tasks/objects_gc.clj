@@ -85,7 +85,7 @@
 
        ;; Mark as deleted the storage object related with the
        ;; photo-id field.
-       (some->> photo-id (sto/touch-object! storage) deref)
+       (some->> photo-id (sto/touch-object! storage))
 
        ;; And finally, permanently delete the profile.
        (db/delete! conn :profile {:id id})
@@ -117,7 +117,7 @@
 
        ;; Mark as deleted the storage object related with the
        ;; photo-id field.
-       (some->> photo-id (sto/touch-object! storage) deref)
+       (some->> photo-id (sto/touch-object! storage))
 
        ;; And finally, permanently delete the team.
        (db/delete! conn :team {:id id})
@@ -184,10 +184,10 @@
        (l/debug :hint "permanently delete font variant" :id (str id))
 
        ;; Mark as deleted the all related storage objects
-       (some->> (:woff1-file-id font) (sto/touch-object! storage) deref)
-       (some->> (:woff2-file-id font) (sto/touch-object! storage) deref)
-       (some->> (:otf-file-id font)   (sto/touch-object! storage) deref)
-       (some->> (:ttf-file-id font)   (sto/touch-object! storage) deref)
+       (some->> (:woff1-file-id font) (sto/touch-object! storage))
+       (some->> (:woff2-file-id font) (sto/touch-object! storage))
+       (some->> (:otf-file-id font)   (sto/touch-object! storage))
+       (some->> (:ttf-file-id font)   (sto/touch-object! storage))
 
        ;; And finally, permanently delete the team font variant
        (db/delete! conn :team-font-variant {:id id})

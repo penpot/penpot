@@ -30,32 +30,34 @@
 
 (defn- prepare-context
   [methods]
-  (letfn [(gen-doc [type [name f]]
-            (let [mdata (meta f)]
-              {:type (d/name type)
-               :name (d/name name)
-               :module (-> (:ns mdata) (str/split ".") last)
-               :auth (:auth mdata true)
-               :webhook (::webhooks/event? mdata false)
-               :docs (::sv/docstring mdata)
-               :deprecated (::deprecated mdata)
-               :added (::added mdata)
-               :changes (some->> (::changes mdata) (partition-all 2) (map vec))
-               :spec (get-spec-str (::sv/spec mdata))}))]
+  (letfn [(gen-doc [type [{:keys [::sv/name] :as mdata} _f]]
+            {:type (d/name type)
+             :name (d/name name)
+             :module (-> (:ns mdata) (str/split ".") last)
+             :auth (:auth mdata true)
+             :webhook (::webhooks/event? mdata false)
+             :docs (::sv/docstring mdata)
+             :deprecated (::deprecated mdata)
+             :added (::added mdata)
+             :changes (some->> (::changes mdata) (partition-all 2) (map vec))
+             :spec (get-spec-str (::sv/spec mdata))})]
 
     {:version (:main cf/version)
      :command-methods
      (->> (:commands methods)
+          (map val)
           (map (partial gen-doc :command))
           (sort-by (juxt :module :name)))
 
      :query-methods
      (->> (:queries methods)
+          (map val)
           (map (partial gen-doc :query))
           (sort-by (juxt :module :name)))
 
      :mutation-methods
      (->> (:mutations methods)
+          (map val)
           (map (partial gen-doc :query))
           (sort-by (juxt :module :name)))}))
 
@@ -64,11 +66,11 @@
   (if (contains? cf/flags :backend-api-doc)
     (let [context (prepare-context methods)]
       (fn [_ respond _]
-        (respond (yrs/response 200 (-> (io/resource "app/templates/api-doc.tmpl")
-                                       (tmpl/render context))))))
+        (respond {::yrs/status 200
+                  ::yrs/body (-> (io/resource "app/templates/api-doc.tmpl")
+                                 (tmpl/render context))})))
     (fn [_ respond _]
-      (respond (yrs/response 404)))))
-
+      (respond {::yrs/status 404}))))
 
 (s/def ::routes vector?)
 

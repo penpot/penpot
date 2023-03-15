@@ -7,6 +7,7 @@
 (ns app.main.ui.auth.login
   (:require
    [app.common.data :as d]
+   [app.common.logging :as log]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.messages :as dm]
@@ -38,7 +39,10 @@
   (dom/prevent-default event)
   (->> (rp/command! :login-with-oidc (assoc params :provider provider))
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
-                  (.replace js/location redirect-uri))
+                  (if redirect-uri
+                    (.replace js/location redirect-uri)
+                    (log/error :hint "unexpected response from OIDC method"
+                               :resp (pr-str rsp))))
                 (fn [{:keys [type code] :as error}]
                   (cond
                     (and (= type :restriction)

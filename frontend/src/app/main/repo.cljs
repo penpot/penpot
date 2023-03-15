@@ -21,6 +21,7 @@
 (derive :get-font-variants ::query)
 (derive :get-profile ::query)
 (derive :get-project ::query)
+(derive :get-projects ::query)
 (derive :get-team-invitations ::query)
 (derive :get-team-members ::query)
 (derive :get-team-shared-files ::query)
@@ -29,6 +30,9 @@
 (derive :get-teams ::query)
 (derive :get-view-only-bundle ::query)
 (derive :search-files ::query)
+(derive :retrieve-list-of-builtin-templates ::query)
+(derive :get-unread-comment-threads ::query)
+(derive :get-team-recent-files ::query)
 
 (defn handle-response
   [{:keys [status body] :as response}]

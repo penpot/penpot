@@ -252,6 +252,9 @@
 #?(:clj
    (s/def ::agent #(instance? clojure.lang.Agent %)))
 
+#?(:clj
+   (s/def ::atom #(instance? clojure.lang.Atom %)))
+
 (defn bytes?
   "Test if a first parameter is a byte
   array or not."

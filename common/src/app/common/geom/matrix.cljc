@@ -72,7 +72,7 @@
     (apply matrix params)))
 
 (defn close?
-  [m1 m2]
+  [^Matrix m1 ^Matrix m2]
   (and (mth/close? (.-a m1) (.-a m2))
        (mth/close? (.-b m1) (.-b m2))
        (mth/close? (.-c m1) (.-c m2))
@@ -80,7 +80,7 @@
        (mth/close? (.-e m1) (.-e m2))
        (mth/close? (.-f m1) (.-f m2))))
 
-(defn unit? [m1]
+(defn unit? [^Matrix m1]
   (and (some? m1)
        (mth/close? (.-a m1) 1)
        (mth/close? (.-b m1) 0)

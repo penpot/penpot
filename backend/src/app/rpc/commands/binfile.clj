@@ -354,7 +354,6 @@
   (with-open [^AutoCloseable conn (db/open pool)]
     (db/exec! conn [sql:file-library-rels (db/create-array conn "uuid" ids)])))
 
-
 (defn- create-or-update-file
   [conn params]
   (let [sql (str "INSERT INTO file (id, project_id, name, revn, is_shared, data, created_at, modified_at) "
@@ -527,13 +526,13 @@
     (write-obj! output sids)
 
     (doseq [id sids]
-      (let [{:keys [size] :as obj} @(sto/get-object storage id)]
+      (let [{:keys [size] :as obj} (sto/get-object storage id)]
         (l/debug :hint "write sobject" :id id ::l/sync? true)
         (doto output
           (write-uuid! id)
           (write-obj! (meta obj)))
 
-        (with-open [^InputStream stream @(sto/get-object-data storage obj)]
+        (with-open [^InputStream stream (sto/get-object-data storage obj)]
           (let [written (write-stream! output stream size)]
             (when (not= written size)
               (ex/raise :type :validation
@@ -719,7 +718,7 @@
                                   (assoc ::sto/touched-at (dt/now))
                                   (assoc :bucket "file-media-object"))
 
-              sobject         @(sto/put-object! storage params)]
+              sobject         (sto/put-object! storage params)]
 
           (l/debug :hint "persisted storage object" :id id :new-id (:id sobject) ::l/sync? true)
           (vswap! *state* update :index assoc id (:id sobject)))))
@@ -910,7 +909,9 @@
                      (export! output-stream))))]
 
     (fn [_]
-      (yrs/response 200 body {"content-type" "application/octet-stream"}))))
+      {::yrs/status 200
+       ::yrs/body body
+       ::yrs/headers {"content-type" "application/octet-stream"}})))
 
 (s/def ::file ::media/upload)
 (s/def ::import-binfile

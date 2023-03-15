@@ -6,27 +6,30 @@
 
 (ns app.util.svg
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [clojure.xml :as xml]
    [cuerdas.core :as str])
   (:import
    javax.xml.XMLConstants
+   java.io.InputStream
    javax.xml.parsers.SAXParserFactory
+   clojure.lang.XMLHandler
    org.apache.commons.io.IOUtils))
 
 (defn- secure-parser-factory
-  [s ch]
+  [^InputStream input ^XMLHandler handler]
   (.. (doto (SAXParserFactory/newInstance)
         (.setFeature XMLConstants/FEATURE_SECURE_PROCESSING true)
         (.setFeature "http://apache.org/xml/features/disallow-doctype-decl" true))
       (newSAXParser)
-      (parse s ch)))
+      (parse input handler)))
 
 (defn parse
-  [data]
+  [^String data]
   (try
-    (with-open [istream (IOUtils/toInputStream data "UTF-8")]
+    (dm/with-open [istream (IOUtils/toInputStream data "UTF-8")]
       (xml/parse istream secure-parser-factory))
     (catch Exception e
       (l/warn :hint "error on processing svg"

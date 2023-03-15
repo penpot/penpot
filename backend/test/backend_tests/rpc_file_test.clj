@@ -215,10 +215,10 @@
         (t/is (= 1 (count rows))))
 
       ;; The underlying storage objects are still available.
-      (t/is (some? @(sto/get-object storage (:media-id fmo2))))
-      (t/is (some? @(sto/get-object storage (:thumbnail-id fmo2))))
-      (t/is (some? @(sto/get-object storage (:media-id fmo1))))
-      (t/is (some? @(sto/get-object storage (:thumbnail-id fmo1))))
+      (t/is (some? (sto/get-object storage (:media-id fmo2))))
+      (t/is (some? (sto/get-object storage (:thumbnail-id fmo2))))
+      (t/is (some? (sto/get-object storage (:media-id fmo1))))
+      (t/is (some? (sto/get-object storage (:thumbnail-id fmo1))))
 
       ;; proceed to remove usage of the file
       (update-file {:file-id (:id file)
@@ -246,10 +246,10 @@
       ;; Finally, check that some of the objects that are marked as
       ;; deleted we are unable to retrieve them using standard storage
       ;; public api.
-      (t/is (nil? @(sto/get-object storage (:media-id fmo2))))
-      (t/is (nil? @(sto/get-object storage (:thumbnail-id fmo2))))
-      (t/is (nil? @(sto/get-object storage (:media-id fmo1))))
-      (t/is (nil? @(sto/get-object storage (:thumbnail-id fmo1))))
+      (t/is (nil? (sto/get-object storage (:media-id fmo2))))
+      (t/is (nil? (sto/get-object storage (:thumbnail-id fmo2))))
+      (t/is (nil? (sto/get-object storage (:media-id fmo1))))
+      (t/is (nil? (sto/get-object storage (:thumbnail-id fmo1))))
       )))
 
 (t/deftest permissions-checks-creating-file

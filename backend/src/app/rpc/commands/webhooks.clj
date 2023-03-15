@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.webhooks
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uri :as u]
@@ -18,10 +19,8 @@
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [promesa.core :as p]))
+   [cuerdas.core :as str]))
 
 (defn decode-row
   [{:keys [uri] :as row}]
@@ -48,30 +47,26 @@
 
 (defn- validate-webhook!
   [cfg whook params]
-  (letfn [(handle-exception [exception]
-            (if-let [hint (webhooks/interpret-exception exception)]
-              (ex/raise :type :validation
-                        :code :webhook-validation
-                        :hint hint)
-              (ex/raise :type :internal
-                        :code :webhook-validation
-                        :cause exception)))
+  (when (not= (:uri whook) (:uri params))
+    (try
+      (let [response (http/req! cfg
+                                {:method :head
+                                 :uri (str (:uri params))
+                                 :timeout (dt/duration "3s")}
+                                {:sync? true})]
+        (when-let [hint (webhooks/interpret-response response)]
+          (ex/raise :type :validation
+                    :code :webhook-validation
+                    :hint hint)))
 
-          (handle-response [response]
-            (when-let [hint (webhooks/interpret-response response)]
-              (ex/raise :type :validation
-                        :code :webhook-validation
-                        :hint hint)))]
-
-    (if (not= (:uri whook) (:uri params))
-      (->> (http/req! cfg {:method :head
-                           :uri (str (:uri params))
-                           :timeout (dt/duration "3s")})
-           (p/hmap (fn [response exception]
-                     (if exception
-                       (handle-exception exception)
-                       (handle-response response)))))
-      (p/resolved nil))))
+      (catch Throwable cause
+        (if-let [hint (webhooks/interpret-exception cause)]
+          (ex/raise :type :validation
+                    :code :webhook-validation
+                    :hint hint)
+          (ex/raise :type :internal
+                    :code :webhook-validation
+                    :cause cause))))))
 
 (defn- validate-quotes!
   [{:keys [::db/pool]} {:keys [team-id]}]
@@ -106,22 +101,22 @@
 
 (sv/defmethod ::create-webhook
   {::doc/added "1.17"}
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
   (check-edition-permissions! pool profile-id team-id)
   (validate-quotes! cfg params)
-  (->> (validate-webhook! cfg nil params)
-       (p/fmap executor (fn [_] (insert-webhook! cfg params)))))
+  (validate-webhook! cfg nil params)
+  (insert-webhook! cfg params))
 
 (s/def ::update-webhook
   (s/keys :req-un [::id ::uri ::mtype ::is-active]))
 
 (sv/defmethod ::update-webhook
   {::doc/added "1.17"}
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (let [whook (-> (db/get pool :webhook {:id id}) (decode-row))]
     (check-edition-permissions! pool profile-id (:team-id whook))
-    (->> (validate-webhook! cfg whook params)
-         (p/fmap executor (fn [_] (update-webhook! cfg whook params))))))
+    (validate-webhook! cfg whook params)
+    (update-webhook! cfg whook params)))
 
 (s/def ::delete-webhook
   (s/keys :req [::rpc/profile-id]
@@ -149,7 +144,7 @@
 
 (sv/defmethod ::get-webhooks
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
-  (with-open [conn (db/open pool)]
+  (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (->> (db/exec! conn [sql:get-webhooks team-id])
          (mapv decode-row))))
