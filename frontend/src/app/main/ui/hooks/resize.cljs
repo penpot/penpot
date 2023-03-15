@@ -52,7 +52,7 @@
            (mf/set-ref-val! start-ref nil)
            (set! last-resize-type nil)))
 
-        on-mouse-move
+        on-pointer-move
         (mf/use-callback
          (mf/deps min-val max-val negate?)
          (fn [event]
@@ -68,7 +68,7 @@
                (swap! storage assoc-in [::saved-resize current-file-id key] new-size)))))]
     {:on-pointer-down on-pointer-down
      :on-lost-pointer-capture on-lost-pointer-capture
-     :on-mouse-move on-mouse-move
+     :on-pointer-move on-pointer-move
      :parent-ref parent-ref
      :size @size-state}))
 

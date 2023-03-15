@@ -164,7 +164,8 @@
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:& (mf/provider ctx/components-v2) {:value components-v2}
          [:& (mf/provider ctx/workspace-read-only?) {:value workspace-read-only?}
-          [:section#workspace {:style {:background-color background-color}}
+          [:section#workspace {:style {:background-color background-color
+                                       :touch-action "none"}}
            (when (not (:hide-ui layout))
              [:& header {:file file
                          :page-id page-id

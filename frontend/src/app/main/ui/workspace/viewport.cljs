@@ -169,14 +169,14 @@
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file)
-        on-mouse-down     (actions/on-mouse-down @hover selected edition drawing-tool text-editing? node-editing? grid-editing?
-                                                 drawing-path? create-comment? space? panning z? workspace-read-only?)
-        on-mouse-up       (actions/on-mouse-up disable-paste)
-        on-pointer-down   (actions/on-pointer-down)
+        on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? node-editing? grid-editing?
+                                                   drawing-path? create-comment? space? panning z? workspace-read-only?)
+
+        on-pointer-up     (actions/on-pointer-up disable-paste)
+
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
         on-pointer-move   (actions/on-pointer-move move-stream)
-        on-pointer-up     (actions/on-pointer-up)
         on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? workspace-read-only?)
         on-menu-selected  (actions/on-menu-selected hover hover-ids selected workspace-read-only?)
 
@@ -221,14 +221,14 @@
         disabled-guides?         (or drawing-tool transform)
 
         show-padding? (and (= (count selected-shapes) 1)
-                        (= (:type (first selected-shapes)) :frame)
-                        (= (:layout (first selected-shapes)) :flex))
+                           (= (:type (first selected-shapes)) :frame)
+                           (= (:layout (first selected-shapes)) :flex))
 
 
         show-margin? (and (= (count selected-shapes) 1)
                           (= (:layout selected-frame) :flex))]
 
-    (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport? workspace-read-only?)
+    (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
@@ -309,7 +309,7 @@
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
        :class (when drawing-tool "drawing")
-       :style {:cursor @cursor}
+       :style {:cursor @cursor :touch-action "none"}
        :fill "none"
 
        :on-click         on-click
@@ -318,8 +318,6 @@
        :on-drag-enter    on-drag-enter
        :on-drag-over     on-drag-over
        :on-drop          on-drop
-       :on-mouse-down    on-mouse-down
-       :on-mouse-up      on-mouse-up
        :on-pointer-down  on-pointer-down
        :on-pointer-enter on-pointer-enter
        :on-pointer-leave on-pointer-leave

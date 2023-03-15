@@ -167,8 +167,8 @@
          [:div.color-name (str color-name)]]
         (when on-detach
           [:div.element-set-actions-button
-           {:on-mouse-enter #(reset! hover-detach true)
-            :on-mouse-leave #(reset! hover-detach false)
+           {:on-pointer-enter #(reset! hover-detach true)
+            :on-pointer-leave #(reset! hover-detach false)
             :on-click detach-value}
            (if @hover-detach i/unchain i/chain)])
 

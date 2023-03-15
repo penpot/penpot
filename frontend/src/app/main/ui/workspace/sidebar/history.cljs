@@ -288,8 +288,8 @@
                                  :current current?
                                  :hover @hover?
                                  :show-detail @show-detail?)
-                         :on-mouse-enter #(reset! hover? true)
-                         :on-mouse-leave #(reset! hover? false)
+                         :on-pointer-enter #(reset! hover? true)
+                         :on-pointer-leave #(reset! hover? false)
                          :on-click #(st/emit! (dwc/undo-to-index idx-entry))}
      [:div.history-entry-summary
       [:div.history-entry-summary-icon (entry->icon entry)]

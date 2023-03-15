@@ -134,7 +134,7 @@
         :on-pointer-up handle-stop-drag
         :on-lost-pointer-capture handle-stop-drag
         :on-click calculate-pos
-        :on-mouse-move #(when @dragging? (calculate-pos %))}]
+        :on-pointer-move #(when @dragging? (calculate-pos %))}]
       [:div.handler {:style {:pointer-events "none"
                              :left (:x pos-current)
                              :top (:y pos-current)}}]

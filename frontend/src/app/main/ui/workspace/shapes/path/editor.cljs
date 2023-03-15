@@ -51,7 +51,7 @@
          (fn [_]
            (st/emit! (drp/path-pointer-leave position))))
 
-        on-mouse-down
+        on-pointer-down
         (fn [event]
           (dom/stop-propagation event)
           (dom/prevent-default event)
@@ -95,9 +95,9 @@
      [:circle {:cx x
                :cy y
                :r (/ point-radius-active-area zoom)
-               :on-mouse-down on-mouse-down
-               :on-mouse-enter on-enter
-               :on-mouse-leave on-leave
+               :on-pointer-down on-pointer-down
+               :on-pointer-enter on-enter
+               :on-pointer-leave on-leave
                :pointer-events (when-not preview? "visible")
                :style {:cursor (cond
                                  (= edit-mode :draw) cur/pen-node
@@ -116,7 +116,7 @@
           (fn [_]
             (st/emit! (drp/path-handler-leave index prefix)))
 
-          on-mouse-down
+          on-pointer-down
           (fn [event]
             (dom/stop-propagation event)
             (dom/prevent-default event)
@@ -157,9 +157,9 @@
        [:circle {:cx x
                  :cy y
                  :r (/ point-radius-active-area zoom)
-                 :on-mouse-down on-mouse-down
-                 :on-mouse-enter on-enter
-                 :on-mouse-leave on-leave
+                 :on-pointer-down on-pointer-down
+                 :on-pointer-enter on-enter
+                 :on-pointer-leave on-leave
                  :style {:cursor (when (= edit-mode :move) cur/pointer-move)
                          :fill "none"
                          :stroke-width 0}}]])))

@@ -669,3 +669,13 @@
                                   :id id})
       (update :undo-changes d/preconj {:type :del-component
                                        :id id})))
+
+(defn ignore-remote
+  [changes]
+  (letfn [(add-ignore-remote
+            [change-list]
+            (->> change-list
+                 (mapv #(assoc % :ignore-remote? true))))]
+    (-> changes
+        (update :redo-changes add-ignore-remote)
+        (update :undo-changes add-ignore-remote))))
