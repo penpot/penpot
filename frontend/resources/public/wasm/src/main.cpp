@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "Interpolation.h"
-#include "Matrix23.h"
+#include "Matrix2D.h"
 #include "Vector2.h"
 #include "Box2.h"
 
@@ -16,7 +16,7 @@ int main(int argc, char** argv)
   Vector2<float> a(1, 0);
   Vector2<float> b(0, 1);
 
-  Matrix23<float> m;
+  Matrix2D<float> m;
 
   std::cout << m << std::endl;
 

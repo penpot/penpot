@@ -4,20 +4,20 @@
 #include <iostream>
 
 template <typename T>
-struct Matrix23 {
+struct Matrix2D {
   // a c tx
   // b d ty
   T a, b, c, d, tx, ty;
 
-  Matrix23() : a(1), b(0), c(0), d(1), tx(0), ty(0) {}
-  Matrix23(T a, T b, T c, T d, T tx, T ty) : a(a), b(b), c(c), d(d), tx(tx), ty(ty) {}
-  Matrix23(const Matrix23<T>& other) : a(other.a), b(other.b), c(other.c), d(other.d), tx(other.tx), ty(other.ty) {}
+  Matrix2D() : a(1), b(0), c(0), d(1), tx(0), ty(0) {}
+  Matrix2D(T a, T b, T c, T d, T tx, T ty) : a(a), b(b), c(c), d(d), tx(tx), ty(ty) {}
+  Matrix2D(const Matrix2D<T>& other) : a(other.a), b(other.b), c(other.c), d(other.d), tx(other.tx), ty(other.ty) {}
 
   auto determinant() const {
     return a * d - b * c;
   }
 
-  Matrix23<T>& identity()
+  Matrix2D<T>& identity()
   {
     a = 1;
     b = 0;
@@ -28,14 +28,14 @@ struct Matrix23 {
     return *this;
   }
 
-  Matrix23<T>& translate(T x, T y)
+  Matrix2D<T>& translate(T x, T y)
   {
     tx += x;
     ty += y;
     return *this;
   }
 
-  Matrix23<T>& scale(T x, T y)
+  Matrix2D<T>& scale(T x, T y)
   {
     a *= x;
     b *= y;
@@ -44,7 +44,7 @@ struct Matrix23 {
     return *this;
   }
 
-  Matrix23<T>& rotate(auto angle)
+  Matrix2D<T>& rotate(auto angle)
   {
     auto cos = std::cos(angle);
     auto sin = std::sin(angle);
@@ -62,7 +62,7 @@ struct Matrix23 {
     return *this;
   }
 
-  Matrix23<T> invert()
+  Matrix2D<T> invert()
   {
     auto det = determinant();
     if (det == 0)
@@ -80,7 +80,7 @@ struct Matrix23 {
     };
   }
 
-  Matrix23<T> operator*(const Matrix23<T>& other)
+  Matrix2D<T> operator*(const Matrix2D<T>& other)
   {
     //   M       N
     // a c x   a c x
@@ -95,11 +95,28 @@ struct Matrix23 {
       tx * other.b + ty * other.d + other.ty
     };
   }
+
+  static Matrix2D<T> create_translation(const T x, const T y)
+  {
+    return { 1, 0, 0, 1, x, y };
+  }
+
+  static Matrix2D<T> create_scale(const T x, const T y)
+  {
+    return { x, 0, 0, y, 0, 0 };
+  }
+
+  static Matrix2D<T> create_rotation(auto angle)
+  {
+    auto c = std::cos(angle);
+    auto s = std::sin(angle);
+    return { c, s, -s, c, 0, 0 };
+  }
 };
 
 template <typename T>
-std::ostream &operator<<(std::ostream &os, const Matrix23<T> &matrix)
+std::ostream &operator<<(std::ostream &os, const Matrix2D<T> &matrix)
 {
-  os << "Matrix23(" << matrix.a << ", " << matrix.b << ", " << matrix.c << ", " << matrix.d << ", " << matrix.tx << ", " << matrix.ty << ")";
+  os << "Matrix2D(" << matrix.a << ", " << matrix.b << ", " << matrix.c << ", " << matrix.d << ", " << matrix.tx << ", " << matrix.ty << ")";
   return os;
 }

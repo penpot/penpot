@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "Interpolation.h"
+#include "Matrix2D.h"
 
 template <typename T>
 struct Vector2 {
@@ -108,7 +109,7 @@ struct Vector2 {
     );
   }
 
-  Vector2<T> operator*(const Matrix23<T> m)
+  Vector2<T> operator*(const Matrix2D<T> m)
   {
     return {
       x * m.a + y * m.c + m.tx,

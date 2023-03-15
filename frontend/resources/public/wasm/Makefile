@@ -1,2 +1,3 @@
 all:
-	clang -target wasm32 -Wl,--no-entry -Wl,--export-all -nostdlib -O3 add.c -o add.wasm
+	mkdir -p build
+	em++ -std=c++20 -O3 -sINCOMING_MODULE_JS_API=['print'] -sENVIRONMENT=web,node,worker -sFILESYSTEM=0 src/main.cpp -o build/main.js
