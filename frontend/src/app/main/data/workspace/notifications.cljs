@@ -221,7 +221,9 @@
               (dch/update-indices page-id changes))
 
             ;; We update `position-data` from the incoming message
-            changes (->> changes (mapv update-position-data))
+            changes (->> changes
+                         (mapv update-position-data)
+                         (d/removev :ignore-remote?))
             changes-by-pages (group-by :page-id changes)]
 
         (rx/merge
