@@ -202,24 +202,28 @@
             (fn [{:keys [type attr]}]
               (and (= :set type) (= attr :position-data)))
 
-            add-origin-session-id
-            (fn [{:keys [] :as op}]
-              (cond-> op
-                (position-data-operation? op)
-                (update :val with-meta {:session-id (:session-id msg)})))
+            ;;add-origin-session-id
+            ;;(fn [{:keys [] :as op}]
+            ;;  (cond-> op
+            ;;    (position-data-operation? op)
+            ;;    (update :val with-meta {:session-id (:session-id msg)})))
 
             update-position-data
             (fn [change]
+              ;; Remove the position data from remote operations. Will be changed localy, otherwise
+              ;; creates a strange "out-of-sync" behaviour.
               (cond-> change
                 (= :mod-obj (:type change))
-                (update :operations #(mapv add-origin-session-id %))))
+                (update :operations #(d/removev position-data-operation? %))))
 
             process-page-changes
             (fn [[page-id changes]]
               (dch/update-indices page-id changes))
 
             ;; We update `position-data` from the incoming message
-            changes (->> changes (mapv update-position-data))
+            changes (->> changes
+                         (mapv update-position-data)
+                         (d/removev :ignore-remote?))
             changes-by-pages (group-by :page-id changes)]
 
         (rx/merge

@@ -81,7 +81,7 @@
              (st/emit! (dwc/stop-picker))
              (modal/disallow-click-outside!))))
 
-        handle-mouse-move-picker
+        handle-pointer-move-picker
         (mf/use-callback
          (mf/deps viewport-node)
          (fn [event]
@@ -109,7 +109,7 @@
                       (.drawImage zoom-context image 0 0 200 160))))
                (st/emit! (dwc/pick-color [r g b a]))))))
 
-        handle-mouse-down-picker
+        handle-pointer-down-picker
         (mf/use-callback
          (fn [event]
            (dom/prevent-default event)
@@ -117,7 +117,7 @@
            (st/emit! (dwu/start-undo-transaction :mouse-down-picker)
                      (dwc/pick-color-select true (kbd/shift? event)))))
 
-        handle-mouse-up-picker
+        handle-pointer-up-picker
         (mf/use-callback
          (fn [event]
            (dom/prevent-default event)
@@ -185,9 +185,9 @@
      [:div.pixel-overlay
       {:tab-index 0
        :style {:cursor cur/picker}
-       :on-mouse-down handle-mouse-down-picker
-       :on-mouse-up handle-mouse-up-picker
-       :on-mouse-move handle-mouse-move-picker}
+       :on-pointer-down handle-pointer-down-picker
+       :on-pointer-up handle-pointer-up-picker
+       :on-pointer-move handle-pointer-move-picker}
       [:div {:style {:display "none"}}
        [:img {:ref img-ref
               :on-load handle-image-load

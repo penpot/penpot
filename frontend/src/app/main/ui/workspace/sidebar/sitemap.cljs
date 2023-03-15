@@ -204,7 +204,7 @@
 
 (mf/defc sitemap
   []
-  (let [{:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+  (let [{:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
         (use-resize-hook :sitemap 200 38 400 :y false nil)
 
         file                 (mf/deref refs/workspace-file)
@@ -234,4 +234,4 @@
      (when @show-pages?
        [:div.resize-area {:on-pointer-down on-pointer-down
                           :on-lost-pointer-capture on-lost-pointer-capture
-                          :on-mouse-move on-mouse-move}])]))
+                          :on-pointer-move on-pointer-move}])]))

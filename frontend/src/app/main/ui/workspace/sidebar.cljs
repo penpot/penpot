@@ -37,7 +37,7 @@
         shortcuts? (contains? layout :shortcuts)
         show-debug? (contains? layout :debug-panel)
 
-        {:keys [on-pointer-down on-lost-pointer-capture on-mouse-move parent-ref size]}
+        {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
         (use-resize-hook :left-sidebar 255 255 500 :x false :left)
 
         handle-collapse
@@ -52,7 +52,7 @@
                                             :style #js {"--width" (str size "px")}}
      [:div.resize-area {:on-pointer-down on-pointer-down
                         :on-lost-pointer-capture on-lost-pointer-capture
-                        :on-mouse-move on-mouse-move}]
+                        :on-pointer-move on-pointer-move}]
 
      [:div.settings-bar-inside
       (cond

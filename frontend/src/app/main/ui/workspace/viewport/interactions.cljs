@@ -33,7 +33,7 @@
                                  :move-overlay-index])
              refs/workspace-local =))
 
-(defn- on-mouse-down
+(defn- on-pointer-down
   [event index {:keys [id] :as shape}]
   (dom/stop-propagation event)
   (st/emit! (dw/select-shape id))
@@ -163,7 +163,7 @@
         arrow-dir (if (= dest-pos :left) :right :left)]
 
     (if-not selected?
-      [:g {:on-mouse-down #(on-mouse-down % index orig-shape)}
+      [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
        [:path {:stroke "var(--color-gray-20)"
                :fill "none"
                :pointer-events "visible"
@@ -178,7 +178,7 @@
                                  :arrow-dir arrow-dir
                                  :zoom zoom}])]
 
-      [:g {:on-mouse-down #(on-mouse-down % index orig-shape)}
+      [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
        [:path {:stroke "var(--color-primary)"
                :fill "none"
                :pointer-events "visible"
@@ -209,7 +209,7 @@
   (let [shape-rect (:selrect shape)
         handle-x (+ (:x shape-rect) (:width shape-rect))
         handle-y (+ (:y shape-rect) (/ (:height shape-rect) 2))]
-    [:g {:on-mouse-down #(on-mouse-down % index shape)}
+    [:g {:on-pointer-down #(on-pointer-down % index shape)}
      [:& interaction-marker {:x handle-x
                              :y handle-y
                              :stroke "var(--color-primary)"
@@ -246,9 +246,9 @@
             dest-shape (cond-> dest-shape
                          (some? thumbnail-data)
                          (assoc :thumbnail thumbnail-data))]
-        [:g {:on-mouse-down start-move-position
-             :on-mouse-enter #(reset! hover-disabled? true)
-             :on-mouse-leave #(reset! hover-disabled? false)}
+        [:g {:on-pointer-down start-move-position
+             :on-pointer-enter #(reset! hover-disabled? true)
+             :on-pointer-leave #(reset! hover-disabled? false)}
          [:g {:transform (gmt/translate-matrix (gpt/point (- marker-x dest-x) (- marker-y dest-y))) }
           [:& (mf/provider muc/render-thumbnails) {:value true}
            [:& (mf/provider embed/context) {:value false}

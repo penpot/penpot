@@ -297,7 +297,7 @@
     (fmt/format-number (or value 0))]])
 
 
-(mf/defc padding-display [{:keys [frame-id zoom hover-all? hover-v? hover-h? padding-num padding on-mouse-enter on-mouse-leave
+(mf/defc padding-display [{:keys [frame-id zoom hover-all? hover-v? hover-h? padding-num padding on-pointer-enter on-pointer-leave
                                   rect-data hover? selected? mouse-pos hover-value]}]
   (let [resizing?            (mf/use-var false)
         start                (mf/use-var nil)
@@ -324,7 +324,7 @@
            (reset! original-value 0)
            (st/emit! (dwm/apply-modifiers))))
 
-        on-mouse-move
+        on-pointer-move
         (mf/use-callback
          (mf/deps frame-id padding-num padding)
          (fn [event]
@@ -354,11 +354,11 @@
                          :y (:y rect-data)
                          :width (:width rect-data)
                          :height (:height rect-data)
-                         :on-mouse-enter on-mouse-enter
-                         :on-mouse-leave on-mouse-leave
+                         :on-pointer-enter on-pointer-enter
+                         :on-pointer-leave on-pointer-leave
                          :on-pointer-down on-pointer-down
                          :on-lost-pointer-capture on-lost-pointer-capture
-                         :on-mouse-move on-mouse-move
+                         :on-pointer-move on-pointer-move
                          :style {:fill (if (or hover? selected?) distance-color "none")
                                  :cursor (when (or hover? selected?)
                                            (if (= (:resize-axis rect-data) :x) (cur/resize-ew 0) (cur/resize-ew 90)))
@@ -375,10 +375,10 @@
         hover-h?                           (and (or (= @hover :p2) (= @hover :p4)) shift?)
         padding                            (:layout-padding frame)
         {:keys [width height x1 x2 y1 y2]} (:selrect frame)
-        on-mouse-enter                     (fn [hover-type val]
+        on-pointer-enter                   (fn [hover-type val]
                                              (reset! hover hover-type)
                                              (reset! hover-value val))
-        on-mouse-leave                     #(reset! hover nil)
+        on-pointer-leave                   #(reset! hover nil)
         pill-width                         (/ flex-display-pill-width zoom)
         pill-height                        (/ flex-display-pill-height zoom)
         hover?                             #(or hover-all?
@@ -442,8 +442,8 @@
                             :mouse-pos mouse-pos
                             :hover-value hover-value
                             :padding-num padding-num
-                            :on-mouse-enter (partial on-mouse-enter padding-num (get padding padding-num))
-                            :on-mouse-leave on-mouse-leave
+                            :on-pointer-enter (partial on-pointer-enter padding-num (get padding padding-num))
+                            :on-pointer-leave on-pointer-leave
                             :hover?  (hover? padding-num)
                             :selected? (get paddings-selected padding-num)
                             :rect-data rect-data}])
@@ -457,7 +457,7 @@
                               :y (- (:y @mouse-pos) pill-width)
                               :value @hover-value}])]))
 
-(mf/defc margin-display [{:keys [shape-id zoom hover-all? hover-v? hover-h? margin-num margin on-mouse-enter on-mouse-leave
+(mf/defc margin-display [{:keys [shape-id zoom hover-all? hover-v? hover-h? margin-num margin on-pointer-enter on-pointer-leave
                                   rect-data hover? selected? mouse-pos hover-value]}]
   (let [resizing?            (mf/use-var false)
         start                (mf/use-var nil)
@@ -484,7 +484,7 @@
            (reset! original-value 0)
            (st/emit! (dwm/apply-modifiers))))
 
-        on-mouse-move
+        on-pointer-move
         (mf/use-callback
          (mf/deps shape-id margin-num margin)
          (fn [event]
@@ -512,11 +512,11 @@
                         :y (:y rect-data)
                         :width (:width rect-data)
                         :height (:height rect-data)
-                        :on-mouse-enter on-mouse-enter
-                        :on-mouse-leave on-mouse-leave
+                        :on-pointer-enter on-pointer-enter
+                        :on-pointer-leave on-pointer-leave
                         :on-pointer-down on-pointer-down
                         :on-lost-pointer-capture on-lost-pointer-capture
-                        :on-mouse-move on-mouse-move
+                        :on-pointer-move on-pointer-move
                         :style {:fill (if (or hover? selected?) warning-color "none")
                                 :cursor (when (or hover? selected?)
                                           (if (= (:resize-axis rect-data) :x) (cur/resize-ew 0) (cur/resize-ew 90)))
@@ -535,10 +535,10 @@
         hover-h?                   (and (or (= @hover :m2) (= @hover :m4)) shift?)
         margin                    (:layout-item-margin shape)
         {:keys [width height x1 x2 y1 y2]} (:selrect shape)
-        on-mouse-enter            (fn [hover-type val]
+        on-pointer-enter          (fn [hover-type val]
                                     (reset! hover hover-type)
                                     (reset! hover-value val))
-        on-mouse-leave             #(reset! hover nil)
+        on-pointer-leave           #(reset! hover nil)
         hover? #(or hover-all?
                     (and (or (= % :m1) (= % :m3)) hover-v?)
                     (and (or (= % :m2) (= % :m4)) hover-h?)
@@ -591,8 +591,8 @@
          :hover-h? hover-h?
          :margin-num margin-num
          :margin margin
-         :on-mouse-enter (partial on-mouse-enter margin-num (get margin margin-num))
-         :on-mouse-leave on-mouse-leave
+         :on-pointer-enter (partial on-pointer-enter margin-num (get margin margin-num))
+         :on-pointer-leave on-pointer-leave
          :rect-data rect-data
          :hover?  (hover? margin-num)
          :selected? (get margins-selected margin-num)
@@ -609,7 +609,7 @@
                               :y (- (:y @mouse-pos) pill-width)
                               :value @hover-value}])]))
 
-(mf/defc gap-display [{:keys [frame-id zoom gap-type gap on-mouse-enter on-mouse-leave
+(mf/defc gap-display [{:keys [frame-id zoom gap-type gap on-pointer-enter on-pointer-leave
                                   rect-data hover? selected? mouse-pos hover-value]}]
   (let [resizing             (mf/use-var nil)
         start                (mf/use-var nil)
@@ -636,7 +636,7 @@
            (reset! original-value 0)
            (st/emit! (dwm/apply-modifiers))))
 
-        on-mouse-move
+        on-pointer-move
         (mf/use-callback
          (mf/deps frame-id gap-type gap)
          (fn [event]
@@ -657,11 +657,11 @@
                       :y (:y rect-data)
                       :width (:width rect-data)
                       :height (:height rect-data)
-                      :on-mouse-enter on-mouse-enter
-                      :on-mouse-leave on-mouse-leave
+                      :on-pointer-enter on-pointer-enter
+                      :on-pointer-leave on-pointer-leave
                       :on-pointer-down on-pointer-down
                       :on-lost-pointer-capture on-lost-pointer-capture
-                      :on-mouse-move on-mouse-move
+                      :on-pointer-move on-pointer-move
                       :style {:fill (if (or hover? selected?) distance-color "none")
                               :cursor (when (or hover? selected?)
                                         (if (= (:resize-axis rect-data) :x) (cur/resize-ew 0) (cur/resize-ew 90)))
@@ -683,16 +683,16 @@
         padding                    (:layout-padding frame)
         gap                        (:layout-gap frame)
         {:keys [width height x1 y1]} (:selrect frame)
-        on-mouse-enter             (fn [hover-type val]
+        on-pointer-enter           (fn [hover-type val]
                                      (reset! hover hover-type)
                                      (reset! hover-value val))
 
-        on-mouse-leave             #(reset! hover nil)
+        on-pointer-leave           #(reset! hover nil)
         negate                     {:column-gap (if flip-x true false)
                                     :row-gap (if flip-y true false)}
 
         objects                    (wsh/lookup-page-objects @st/state)
-        children              (->> (cph/get-children objects frame-id)
+        children              (->> (cph/get-immediate-children objects frame-id)
                                    (remove :layout-item-absolute)
                                    (remove :hidden))
 
@@ -833,8 +833,8 @@
                            :zoom zoom
                            :gap-type gap-type
                            :gap gap
-                           :on-mouse-enter (partial on-mouse-enter gap-type (get gap gap-type))
-                           :on-mouse-leave on-mouse-leave
+                           :on-pointer-enter (partial on-pointer-enter gap-type (get gap gap-type))
+                           :on-pointer-leave on-pointer-leave
                            :rect-data display-item
                            :hover?    (= @hover gap-type)
                            :selected? (= gap-selected gap-type)

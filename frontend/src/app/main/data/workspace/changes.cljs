@@ -55,8 +55,8 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id]
-                   :or {reg-objects? false save-undo? true stack-undo? false}}]
+  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote?]
+                   :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false}}]
    (us/assert ::coll-of-uuid ids)
    (us/assert fn? update-fn)
 
@@ -85,7 +85,8 @@
              changes (add-group-id changes state)]
          (rx/concat
           (if (seq (:redo-changes changes))
-            (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))]
+            (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))
+                  changes (cond-> changes ignore-remote? (pcb/ignore-remote))]
               (rx/of (commit-changes changes)))
             (rx/empty))
 

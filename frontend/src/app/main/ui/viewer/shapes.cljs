@@ -169,7 +169,7 @@
                                    (:animation interaction)))))
     nil))
 
-(defn- on-mouse-down
+(defn- on-pointer-down
   [event shape base-frame frame-offset objects overlays]
   (let [interactions (->> (:interactions shape)
                           (filter #(or (= (:event-type %) :click)
@@ -179,7 +179,7 @@
       (doseq [interaction interactions]
         (activate-interaction interaction shape base-frame frame-offset objects overlays)))))
 
-(defn- on-mouse-up
+(defn- on-pointer-up
   [event shape base-frame frame-offset objects overlays]
   (let [interactions (->> (:interactions shape)
                           (filter #(= (:event-type %) :mouse-press)))]
@@ -188,7 +188,7 @@
       (doseq [interaction interactions]
         (deactivate-interaction interaction shape base-frame frame-offset objects overlays)))))
 
-(defn- on-mouse-enter
+(defn- on-pointer-enter
   [event shape base-frame frame-offset objects overlays]
   (let [interactions (->> (:interactions shape)
                           (filter #(or (= (:event-type %) :mouse-enter)
@@ -198,7 +198,7 @@
       (doseq [interaction interactions]
         (activate-interaction interaction shape base-frame frame-offset objects overlays)))))
 
-(defn- on-mouse-leave
+(defn- on-pointer-leave
   [event shape base-frame frame-offset objects overlays]
   (let [interactions     (->> (:interactions shape)
                               (filter #(= (:event-type %) :mouse-leave)))
@@ -262,21 +262,21 @@
                 svg-element?       (and (= :svg-raw (:type shape))
                                         (not= :svg (get-in shape [:content :tag])))
 
-                on-mouse-down
+                on-pointer-down
                 (mf/use-fn (mf/deps shape base-frame frame-offset objects)
-                           #(on-mouse-down % shape base-frame frame-offset objects overlays))
+                           #(on-pointer-down % shape base-frame frame-offset objects overlays))
 
-                on-mouse-up
+                on-pointer-up
                 (mf/use-fn (mf/deps shape base-frame frame-offset objects)
-                           #(on-mouse-up % shape base-frame frame-offset objects overlays))
+                           #(on-pointer-up % shape base-frame frame-offset objects overlays))
 
-                on-mouse-enter
+                on-pointer-enter
                 (mf/use-fn (mf/deps shape base-frame frame-offset objects)
-                           #(on-mouse-enter % shape base-frame frame-offset objects overlays))
+                           #(on-pointer-enter % shape base-frame frame-offset objects overlays))
 
-                on-mouse-leave
+                on-pointer-leave
                 (mf/use-fn (mf/deps shape base-frame frame-offset objects)
-                           #(on-mouse-leave % shape base-frame frame-offset objects overlays))]
+                           #(on-pointer-leave % shape base-frame frame-offset objects overlays))]
 
 
             (mf/with-effect []
@@ -286,10 +286,10 @@
             (if-not svg-element?
               [:> shape-container {:shape shape
                                    :cursor (when (ctsi/actionable? interactions) "pointer")
-                                   :on-mouse-down on-mouse-down
-                                   :on-mouse-up on-mouse-up
-                                   :on-mouse-enter on-mouse-enter
-                                   :on-mouse-leave on-mouse-leave}
+                                   :on-pointer-down on-pointer-down
+                                   :on-pointer-up on-pointer-up
+                                   :on-pointer-enter on-pointer-enter
+                                   :on-pointer-leave on-pointer-leave}
 
                [:& component {:shape shape
                               :frame frame

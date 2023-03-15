@@ -202,7 +202,7 @@
            (mf/set-ref-val! dragging-ref false)
            (mf/set-ref-val! start-ref nil)))
 
-        on-mouse-move
+        on-pointer-move
         (mf/use-callback
          (fn [event]
            (when (mf/ref-val dragging-ref)
@@ -234,7 +234,7 @@
       :width width
       :on-pointer-down on-pointer-down
       :on-lost-pointer-capture on-lost-pointer-capture
-      :on-mouse-move on-mouse-move
+      :on-pointer-move on-pointer-move
       :style {:fill "transparent"
               :cursor (if (= type :column)
                         (cur/resize-ew 0)

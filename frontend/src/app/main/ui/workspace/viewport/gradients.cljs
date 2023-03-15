@@ -83,7 +83,7 @@
 
 (mf/defc gradient-color-handler
   [{:keys [filter-id zoom point color angle selected
-           on-click on-mouse-down on-mouse-up]}]
+           on-click on-pointer-down on-pointer-up]}]
   [:g {:filter (str/fmt "url(#%s)" filter-id)
        :transform (gmt/rotate-matrix angle point)}
 
@@ -100,8 +100,8 @@
            :height (/ gradient-square-width zoom)
            :fill (:value color)
            :on-click (partial on-click :to-p)
-           :on-mouse-down (partial on-mouse-down :to-p)
-           :on-mouse-up (partial on-mouse-up :to-p)}]
+           :on-pointer-down (partial on-pointer-down :to-p)
+           :on-pointer-up (partial on-pointer-up :to-p)}]
 
    [:rect {:data-allow-click-modal "colorpicker"
            :x (- (:x point) (/ gradient-square-width 2 zoom))
@@ -114,8 +114,8 @@
            :fill (:value color)
            :fill-opacity (:opacity color)
            :on-click on-click
-           :on-mouse-down on-mouse-down
-           :on-mouse-up on-mouse-up}]])
+           :on-pointer-down on-pointer-down
+           :on-pointer-up on-pointer-up}]])
 
 (mf/defc gradient-handler-transformed
   [{:keys [from-p to-p width-p from-color to-color zoom editing
@@ -133,7 +133,7 @@
                          :from-p 0
                          :to-p 1)))))
 
-        on-mouse-down
+        on-pointer-down
         (fn [position event]
           (dom/stop-propagation event)
           (dom/prevent-default event)
@@ -144,7 +144,7 @@
                          :from-p 0
                          :to-p 1)))))
 
-        on-mouse-up
+        on-pointer-up
         (fn [_position event]
           (dom/stop-propagation event)
           (dom/prevent-default event)
@@ -203,8 +203,8 @@
                   :cy (:y width-p)
                   :r (/ gradient-width-handler-radius zoom)
                   :fill gradient-width-handler-color
-                  :on-mouse-down (partial on-mouse-down :width-p)
-                  :on-mouse-up (partial on-mouse-up :width-p)}]])
+                  :on-pointer-down (partial on-pointer-down :width-p)
+                  :on-pointer-up (partial on-pointer-up :width-p)}]])
 
      [:& gradient-color-handler
       {:selected (or (not editing) (= editing 0))
@@ -214,8 +214,8 @@
        :color from-color
        :angle angle
        :on-click (partial on-click :from-p)
-       :on-mouse-down (partial on-mouse-down :from-p)
-       :on-mouse-up (partial on-mouse-up :from-p)}]
+       :on-pointer-down (partial on-pointer-down :from-p)
+       :on-pointer-up (partial on-pointer-up :from-p)}]
 
      [:& gradient-color-handler
       {:selected (= editing 1)
@@ -225,8 +225,8 @@
        :color to-color
        :angle angle
        :on-click (partial on-click :to-p)
-       :on-mouse-down (partial on-mouse-down :to-p)
-       :on-mouse-up (partial on-mouse-up :to-p)}]]))
+       :on-pointer-down (partial on-pointer-down :to-p)
+       :on-pointer-up (partial on-pointer-up :to-p)}]]))
 
 (mf/defc gradient-handlers*
   [{:keys [zoom stops gradient editing-stop shape]}]

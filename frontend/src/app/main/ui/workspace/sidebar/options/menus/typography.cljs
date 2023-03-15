@@ -503,8 +503,8 @@
       [:div.element-set-actions
        (when on-detach
          [:div.element-set-actions-button
-          {:on-mouse-enter #(reset! hover-detach true)
-           :on-mouse-leave #(reset! hover-detach false)
+          {:on-pointer-enter #(reset! hover-detach true)
+           :on-pointer-leave #(reset! hover-detach false)
            :on-click on-detach}
           (if @hover-detach i/unchain i/chain)])
 

@@ -34,25 +34,14 @@
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
-(defn setup-dom-events [viewport-ref zoom disable-paste in-viewport? workspace-read-only?]
+(defn setup-dom-events [zoom disable-paste in-viewport? workspace-read-only?]
   (let [on-key-down       (actions/on-key-down)
         on-key-up         (actions/on-key-up)
-        on-mouse-move     (actions/on-mouse-move)
         on-mouse-wheel    (actions/on-mouse-wheel zoom)
         on-paste          (actions/on-paste disable-paste in-viewport? workspace-read-only?)]
 
-    ;; We use the DOM listener because the goog.closure one forces reflow to generate its internal
-    ;; structure. As we don't need currently nothing from BrowserEvent we optimize by using the basic event
     (mf/use-layout-effect
-     (mf/deps on-mouse-move)
-     (fn []
-       (let [node (mf/ref-val viewport-ref)]
-         (.addEventListener node "mousemove" on-mouse-move)
-         (fn []
-           (.removeEventListener node "mousemove" on-mouse-move)))))
-
-    (mf/use-layout-effect
-     (mf/deps on-key-down on-key-up on-mouse-move on-mouse-wheel on-paste workspace-read-only?)
+     (mf/deps on-key-down on-key-up on-mouse-wheel on-paste workspace-read-only?)
      (fn []
        (let [keys [(events/listen js/document EventType.KEYDOWN on-key-down)
                    (events/listen js/document EventType.KEYUP on-key-up)
@@ -261,7 +250,7 @@
              (->> ids
                   (remove remove-id?)
                   (remove (partial cph/hidden-parent? objects))
-                  (remove no-fill-nested-frames?)
+                  (remove #(and mod? (no-fill-nested-frames? %)))
                   (filter #(or (empty? focus) (cp/is-in-focus? objects focus %)))
                   (first)
                   (get objects))]

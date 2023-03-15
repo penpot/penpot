@@ -201,7 +201,7 @@
              (st/emit! (dwt/update-editor-state shape state)))
            "handled"))
 
-        on-mouse-down
+        on-pointer-down
         (mf/use-callback
          (fn [event]
            (when (dom/class? (dom/get-target event) "DraftEditor-root")
@@ -229,7 +229,7 @@
               ;; the underlying text. Use opacity because display or visibility won't allow to recover
               ;; focus afterwards.
               :opacity (when @blurred 0)}
-      :on-mouse-down on-mouse-down
+      :on-pointer-down on-pointer-down
       :class (dom/classnames
               :align-top    (= (:vertical-align content "top") "top")
               :align-center (= (:vertical-align content) "center")

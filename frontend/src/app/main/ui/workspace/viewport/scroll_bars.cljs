@@ -123,7 +123,7 @@
                                        (- scrollbar-width))
                                    h-scrollbar-x)
 
-        on-mouse-move
+        on-pointer-move
         (fn [event axis]
           (when-let [_ (or @v-scrolling? @h-scrolling?)]
             (let [start-pt            (mf/ref-val start-ref)
@@ -147,7 +147,7 @@
               (mf/set-ref-val! h-scrollbar-x-ref new-h-scrollbar-x)
               (mf/set-ref-val! start-ref current-pt))))
 
-        on-mouse-down
+        on-pointer-down
         (fn [event axis]
           (let [start-pt              (dom/get-client-position event)
                 viewport-point        (point->viewport start-pt)
@@ -180,7 +180,7 @@
             (reset! v-scrolling? (= axis :y))
             (reset! h-scrolling? (= axis :x))))
 
-        on-mouse-up
+        on-pointer-up
         (fn []
           (reset! v-scrolling? false)
           (reset! h-scrolling? false))]
@@ -188,9 +188,9 @@
     [:*
      (when show-v-scroll?
        [:g.v-scroll {:fill clr/black}
-        [:rect {:on-mouse-move #(on-mouse-move % :y)
-                :on-mouse-down #(on-mouse-down % :y)
-                :on-mouse-up   on-mouse-up
+        [:rect {:on-pointer-move #(on-pointer-move % :y)
+                :on-pointer-down #(on-pointer-down % :y)
+                :on-pointer-up   on-pointer-up
                 :width (* inv-zoom 7)
                 :rx (* inv-zoom 3)
                 :ry (* inv-zoom 3)
@@ -202,9 +202,9 @@
                         :stroke-width (/ 0.15 zoom)}}]])
      (when show-h-scroll?
        [:g.h-scroll {:fill clr/black}
-        [:rect {:on-mouse-move #(on-mouse-move % :x)
-                :on-mouse-down #(on-mouse-down % :x)
-                :on-mouse-up  on-mouse-up
+        [:rect {:on-pointer-move #(on-pointer-move % :x)
+                :on-pointer-down #(on-pointer-down % :x)
+                :on-pointer-up  on-pointer-up
                 :width scrollbar-width
                 :rx (* inv-zoom 3)
                 :ry (* inv-zoom 3)

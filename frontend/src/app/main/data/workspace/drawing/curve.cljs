@@ -49,7 +49,8 @@
 
       (let [objects      (wsh/lookup-page-objects state)
             content      (get-in state [:workspace-drawing :object :content] [])
-            position     (gpt/point (get-in content [0 :params] nil))
+            start        (get-in content [0 :params] nil)
+            position     (when start (gpt/point start))
             frame-id     (ctst/top-nested-frame objects position)
             flex-layout? (ctl/flex-layout? objects frame-id)
             drop-index   (when flex-layout? (gsl/get-drop-index frame-id objects position))]

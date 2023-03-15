@@ -438,14 +438,20 @@
                            :flip-x
                            :flip-y
                            :grow-type
-                           :layout-item-h-sizing
-                           :layout-item-v-sizing
+                           :position-data
+                           :layout-gap
                            :layout-padding
+                           :layout-item-h-sizing
+                           :layout-item-margin
+                           :layout-item-max-h
+                           :layout-item-max-w
+                           :layout-item-min-h
+                           :layout-item-min-w
+                           :layout-item-v-sizing
                            :layout-padding-type
                            :layout-gap
                            :layout-item-margin
                            :layout-item-margin-type
-                           :position-data
                            ]})
                  ;; We've applied the text-modifier so we can dissoc the temporary data
                  (fn [state]
