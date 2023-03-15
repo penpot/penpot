@@ -16,3 +16,6 @@
 (defn ^:export is-components-v2 []
   (let [active? (features/active-feature :components-v2)]
     @active?))
+
+(defn ^:export new-css-system []
+  (features/toggle-feature! :new-css-system))

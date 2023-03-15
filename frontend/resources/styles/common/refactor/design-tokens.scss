@@ -3,9 +3,78 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 // Copyright (c) KALEIDOS INC
+@use "sass:color";
 
 .light,
 .default {
-  --button-bg-active: var(--color-background-primary);
+  --scrollbar-background-color: var(--color-foreground-secondary);
+  --button-background-active: var(--color-background-primary);
+  --button-background-hover: var(--color-background-quaternary);
+  --button-foreground-hover: var(--color-accent-primary);
   --button-foreground-active: var(--color-foreground-primary);
+  --button-background-focus: var(--color-background-secondary);
+  --button-foreground-focus: var(--color-foreground-primary);
+  --button-border-focus: var(--color-accent-primary);
+
+  --icon-foreground: var(--color-foreground-secondary);
+  --icon-foreground-hover: var(--color-foreground-primary);
+
+  --tab-background-color-hover: var(--color-background-primary);
+  --tab-background-color-selected: var(--color-background-quaternary);
+  --tab-foreground-color: var(--color-foreground-secondary);
+  --tab-foreground-color-hover: var(--color-foreground-primary);
+  --tab-foreground-color-selected: var(--color-accent-primary);
+
+  --title-foreground-color: var(--color-foreground-secondary);
+  --title-foreground-color-hover: var(--color-foreground-primary);
+
+  --layer-row-background-color: var(--color-background-primary);
+  --layer-row-background-color-hover: var(--color-background-secondary);
+  --layer-row-background-color-selected: var(--color-background-quaternary);
+  --layer-row-background-color-drag: var(--color-background-quaternary);
+  --layer-row-foreground-color: var(--color-foreground-secondary);
+  --layer-row-foreground-color-hover: var(--color-accent-primary);
+  --layer-row-foreground-color-selected: var(--color-accent-primary);
+  --layer-row-foreground-color-drag: var(--color-accent-primary);
+  --layer-row-foreground-color-hidden: rgba(var(--color-foreground-secondary-rgb), 0.7);
+  --layer-row-foreground-color-focus: var(--color-foreground-primary);
+  --layer-row-border-color-focus: var(--color-accent-primary);
+  --layer-child-row-background-color: var(--color-background-tertiary);
+  --layer-child-row-foreground-color: var(--color-foreground-secondary);
+  --layer-row-component-foreground-color: var(--color-accent-secondary);
+
+  --input-background-color: var(--color-background-tertiary);
+  --input-background-color-active: var(--color-background-primary);
+  --input-background-color-hover: var(--color-background-quaternary);
+  --input-background-color-focus: var(--color-background-tertiary);
+  --input-background-color-disabled: var(--color-background-primary);
+  --input-placeholder-color: var(--color-foreground-secondary);
+  --input-foreground-color: var(--color-foreground-primary);
+  --input-foreground-color-active: var(--color-foreground-primary);
+  --input-foreground-color-hover: var();
+  --input-foreground-color-focus: var();
+  --input-border-color-active: var(--color-accent-primary);
+  --input-border-outline-color-active: var(--color-accent-primary-muted);
+  --input-border-color-focus: var(--color-accent-primary);
+  --input-border-color-disabled: var();
+
+  --pill-background-color: var(--color-background-tertiary);
+  --pill-foreground-color: var(--color-foreground-primary);
+
+  --menu-background-color: var(--color-background-tertiary);
+  --menu-foreground-color: var(--color-foreground-secondary);
+  --menu-background-color-selected: var(--color-background-tertiary);
+  --menu-foreground-color-selected: var(--color-foreground-primary);
+  --menu-background-color-hover: var(--color-background-quaternary);
+  --menu-foreground-color-hover: var(--color-foreground-primary);
+  --menu-background-color-focus: var(--color-background-tertiary);
+  --menu-foreground-color-focus: var(--color-foreground-primary);
+  --menu-border-color-focus: var(--color-accent-primary);
+  --menu-shortcut-background-color: var(--color-background-primary);
+  --menu-shortcut-foreground-color: var(--color-foreground-secondary);
+  --menu-shortcut-foreground-color-selected: var(--color-foreground-primary);
+  --menu-shortcut-foreground-color-hover: var(--color-foreground-primary);
+  --menu-shadow-color: var(--color-background-subtle);
+
+  --tag-background-color: var(--color-accent-primary);
 }

@@ -14,6 +14,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.cursors :as c]
    [app.main.ui.dashboard :refer [dashboard]]
+   [app.main.ui.debug.components-preview :as cm]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.main.ui.onboarding]
@@ -64,6 +65,11 @@
           [:& c/debug-preview]
           [:h1 "Icons"]
           [:& i/debug-icons-preview]])
+
+       :debug-components-preview
+       [:div.debug-preview
+        [:h1 "Components preview"]
+        [:& cm/components-preview]]
 
        (:dashboard-search
         :dashboard-projects

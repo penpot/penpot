@@ -19,3 +19,13 @@
                         (json/read-str))
         result (get data (d/name selector))]
     `~result))
+
+(defmacro styles
+  []
+  (let [;; Get the associated styles will be module.cljs => module.css.json
+        filename    (:file (meta *ns*))
+        styles-file (str "./src/" (subs filename 0 (- (count filename) 4)) "css.json")
+        data        (-> (slurp styles-file)
+                        (json/read-str))
+        data        (into {} (map (fn [[k v]] [(keyword k) v])) data)]
+    `~data))

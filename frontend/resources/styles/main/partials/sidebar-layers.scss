@@ -293,6 +293,8 @@ span.element-name {
 
   .toggle-element,
   .block-element {
+    border: none;
+    background-color: transparent;
     left: 0;
     position: absolute;
     top: 0;
@@ -349,7 +351,8 @@ span.element-name {
 }
 
 #layers {
-  .tool-window-bar {
+  .tool-window-bar,
+  .pages-tool-bar {
     display: flex;
     justify-content: space-between;
     height: 32px;
@@ -378,7 +381,7 @@ span.element-name {
             outline: none;
           }
         }
-        span {
+        div {
           height: 16px;
           overflow: hidden;
         }
@@ -412,6 +415,7 @@ span.element-name {
     color: $color-black;
     padding: 3px 5px;
     margin: 0 2px;
+    border: none;
     border-radius: $br4;
     cursor: pointer;
     svg {

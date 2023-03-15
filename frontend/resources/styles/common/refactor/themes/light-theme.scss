@@ -9,10 +9,11 @@
   --color-background-secondary: var(--light-gray-2);
   --color-background-tertiary: var(--light-gray-3);
   --color-background-quaternary: var(--light-gray-4);
+  --color-background-subtle: var(--light-gray-2-30); //Whatch this¡¡
   --color-foreground-primary: var(--black);
   --color-foreground-secondary: var(--off-black);
-  --accent-primary: var(--purple);
-  --accent-primary-muted: var(--purple-30);
-  --accent-secondary: var(--blue);
-  --accent-tertiary: var(--strong-purple);
+  --color-accent-primary: var(--purple);
+  --color-accent-primary-muted: var(--purple-30);
+  --color-accent-secondary: var(--blue);
+  --color-accent-tertiary: var(--strong-purple);
 }

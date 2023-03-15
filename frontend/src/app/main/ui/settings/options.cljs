@@ -55,8 +55,8 @@
                      :name :lang
                      :data-test "setting-lang"}]]
 
-     #_[:h2 (tr "dashboard.theme-change")]
-     #_[:div.fields-row
+     [:h2 (tr "dashboard.theme-change")]
+     [:div.fields-row
       [:& fm/select {:label (tr "dashboard.select-ui-theme")
                      :name :theme
                      :default "default"

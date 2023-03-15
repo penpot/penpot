@@ -12,6 +12,7 @@
    [app.common.spec :as us]
    [app.config :as cf]
    [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
 (log/set-level! :warn)
@@ -112,6 +113,14 @@
     mac-enter
     "Enter"))
 
+(defn split-sc
+  [sc]
+  (let [sc (cond-> sc (str/includes? sc "++")
+                   (str/replace "++" "+plus"))]
+    (if (= (count sc) 1)
+      [sc]
+      (str/split sc #"\+| "))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -148,13 +157,13 @@
                  (if type
                    (mousetrap/bind command callback type)
                    (mousetrap/bind command callback)))]
-  (->> shortcuts
-       (remove #(:disabled (second %)))
-       (run! (fn [[key {:keys [command fn type]}]]
-               (let [callback (wrap-cb key fn)]
-                 (if (vector? command)
-                   (run! #(msbind % callback type) command)
-                   (msbind command callback type))))))))
+    (->> shortcuts
+         (remove #(:disabled (second %)))
+         (run! (fn [[key {:keys [command fn type]}]]
+                 (let [callback (wrap-cb key fn)]
+                   (if (vector? command)
+                     (run! #(msbind % callback type) command)
+                     (msbind command callback type))))))))
 
 (defn- reset!
   ([]

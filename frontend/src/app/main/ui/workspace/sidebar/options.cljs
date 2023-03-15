@@ -12,7 +12,7 @@
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.components.tabs-container :refer [tabs-container tabs-element]]
    [app.main.ui.context :as ctx]
    [app.main.ui.viewer.inspect.right-sidebar :as hrs]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options]]
@@ -87,9 +87,9 @@
             (st/emit! :interrupt (udw/set-workspace-read-only false))))]
     [:div.tool-window
      [:div.tool-window-content
-      [:& tab-container {:on-change-tab on-change-tab
+      [:& tabs-container {:on-change-tab on-change-tab
                          :selected section}
-       [:& tab-element {:id :design
+       [:& tabs-element {:id :design
                         :title (tr "workspace.options.design")}
         [:div.element-options
          [:& align-options]
@@ -115,12 +115,12 @@
                                        :file-id file-id
                                        :shared-libs shared-libs}])]]
 
-       [:& tab-element {:id :prototype
+       [:& tabs-element {:id :prototype
                         :title (tr "workspace.options.prototype")}
         [:div.element-options
          [:& interactions-menu {:shape (first shapes)}]]]
 
-       [:& tab-element {:id :inspect
+       [:& tabs-element {:id :inspect
                         :title (tr "workspace.options.inspect")}
         [:div.element-options
          [:& hrs/right-sidebar {:page-id  page-id

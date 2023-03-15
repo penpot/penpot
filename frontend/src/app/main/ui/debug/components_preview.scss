@@ -1,0 +1,85 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.themes-row {
+  width: 100%;
+  padding: $s-20;
+  color: var(--color-foreground-primary);
+  background: var(--color-background-secondary);
+  .wrapper {
+    background-color: var(--color-background-primary);
+    width: 100%;
+    padding: $s-20;
+    display: flex;
+    justify-content: center;
+    gap: $s-20;
+    flex-wrap: wrap;
+    .rect {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid var(--color-foreground-primary);
+      padding: $s-20;
+      height: $s-96;
+      min-width: $s-152;
+    }
+    .bg-primary {
+      background: var(--color-background-primary);
+      color: var(--color-foreground-primary);
+    }
+    .bg-secondary {
+      background: var(--color-background-secondary);
+      color: var(--color-foreground-primary);
+    }
+    .bg-tertiary {
+      background: var(--color-background-tertiary);
+      color: var(--color-foreground-primary);
+    }
+    .bg-cuaternary {
+      background: var(--color-background-quaternary);
+      color: var(--color-foreground-primary);
+    }
+    .fg-primary {
+      background: var(--color-foreground-primary);
+      color: var(--color-background-primary);
+    }
+    .fg-secondary {
+      background: var(--color-foreground-secondary);
+      color: var(--color-background-primary);
+    }
+    .acc {
+      background: var(--color-accent-primary);
+      color: var(--color-background-primary);
+    }
+    .acc-muted {
+      background: var(--color-accent-primary-muted);
+      color: var(--color-foreground-primary);
+    }
+    .acc-secondary {
+      background: var(--color-accent-secondary);
+      color: var(--color-background-primary);
+    }
+    .acc-tertiary {
+      background: var(--color-accent-tertiary);
+      color: var(--color-background-primary);
+    }
+  }
+}
+
+.components-row {
+  color: var(--color-foreground-primary);
+  background: var(--color-background-secondary);
+  height: 100%;
+  padding: 0 $s-20;
+  .title {
+    padding: $s-20;
+  }
+  .component-wrapper {
+    padding: $s-20;
+  }
+}

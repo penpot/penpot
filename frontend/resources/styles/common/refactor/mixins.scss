@@ -1,0 +1,46 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@mixin flexCenter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@mixin buttonStyle {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+@mixin tabTitleTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-11;
+  font-weight: $fw500;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+@mixin titleTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-12;
+  font-weight: $fw400;
+  line-height: 1.2;
+}
+
+@mixin buttonSmallTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-10;
+  font-weight: $fw400;
+  line-height: 1.2;
+}
+
+@mixin textEllipsis {
+  max-width: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

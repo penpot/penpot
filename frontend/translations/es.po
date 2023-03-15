@@ -1606,7 +1606,7 @@ msgid "labels.uploading"
 msgstr "Subiendo…"
 
 msgid "labels.view-only"
-msgstr "SOLO LECTURA"
+msgstr "Solo lectura"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"

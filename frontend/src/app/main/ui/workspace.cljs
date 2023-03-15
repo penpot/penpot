@@ -21,13 +21,14 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
-   [app.main.ui.workspace.context-menu :refer [context-menu]]
+   [app.main.ui.workspace.context-menu.context-menu :refer [context-menu]]
    [app.main.ui.workspace.coordinates :as coordinates]
    [app.main.ui.workspace.header :refer [header]]
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.nudge]
-   [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
+   [app.main.ui.workspace.sidebar.collapsable-button.collapsable-button :refer [collapsed-button]]
+   [app.main.ui.workspace.sidebar.component.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.textpalette :refer [textpalette]]
    [app.main.ui.workspace.viewport :refer [viewport]]
@@ -93,9 +94,7 @@
        [:*
         [:& left-toolbar {:layout layout}]
         (if (:collapse-left-sidebar layout)
-          [:button.collapse-sidebar.collapsed {:on-click #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar))
-                                               :aria-label (tr "workspace.sidebar.expand")}
-           i/arrow-slide]
+          [:& collapsed-button]
           [:& left-sidebar {:layout layout}])
         [:& right-sidebar {:section options-mode
                            :selected selected
@@ -137,9 +136,10 @@
         ready?               (mf/deref refs/workspace-ready?)
         workspace-read-only? (mf/deref refs/workspace-read-only?)
 
-        components-v2 (features/use-feature :components-v2)
+        components-v2        (features/use-feature :components-v2)
+        new-css-system       (features/use-feature :new-css-system)
 
-        background-color (:background-color wglobal)
+        background-color     (:background-color wglobal)
 
         focus-out
         (mf/use-callback
@@ -177,7 +177,8 @@
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:& (mf/provider ctx/components-v2) {:value components-v2}
-         [:& (mf/provider ctx/workspace-read-only?) {:value workspace-read-only?}
+         [:& (mf/provider ctx/new-css-system) {:value new-css-system}
+          [:& (mf/provider ctx/workspace-read-only?) {:value workspace-read-only?}
           [:section#workspace {:style {:background-color background-color
                                        :touch-action "none"}}
            (when (not (:hide-ui layout))
@@ -193,7 +194,7 @@
                                 :file file
                                 :wglobal wglobal
                                 :layout layout}]
-             [:& workspace-loader])]]]]]]]))
+             [:& workspace-loader])]]]]]]]]))
 
 (mf/defc remove-graphics-dialog
   {::mf/register modal/components

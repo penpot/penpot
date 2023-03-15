@@ -186,7 +186,8 @@ gulpSass.compiler = sass;
 
 gulp.task("scss:modules", function() {
   return gulp.src(["src/**/**.scss"])
-    .pipe(gulpSass.sync().on('error', gulpSass.logError))
+    .pipe(gulpSass.sync({includePaths: ["./resources/styles/common/",
+    "./resources/styles/"]}).on('error', gulpSass.logError))
     .pipe(gulpPostcss([
       modules({
         generateScopedName: "[folder]_[name]_[local]_[hash:base64:5]",
@@ -198,7 +199,8 @@ gulp.task("scss:modules", function() {
 
 gulp.task("scss:main", function() {
   return gulp.src(paths.resources + "styles/main-default.scss")
-    .pipe(gulpSass.sync().on('error', gulpSass.logError))
+    .pipe(gulpSass.sync(
+    ).on('error', gulpSass.logError))
     .pipe(gulpPostcss([
       autoprefixer,
     ]))
@@ -208,7 +210,7 @@ gulp.task("scss:main", function() {
 gulp.task("scss:concat", function() {
   return gulp.src([paths.output + "css/main-default.css",
                   paths.output + "css/app/**/*.css"])
-    .pipe(gulpConcat("main.css"))
+    .pipe(gulpConcat("main.css"), {rebaseUrls: false})
     .pipe(gulp.dest(paths.output + "css/"));
 });
 

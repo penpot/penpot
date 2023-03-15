@@ -5,9 +5,11 @@
 // Copyright (c) KALEIDOS INC
 
 @use "sass:math";
+@import "common/dependencies/mixin";
 
 // Font sizes
 $fs10: 0.625rem;
+$fs-11: 0.688rem;
 $fs12: 0.75rem;
 $fs14: 0.875rem;
 
@@ -15,6 +17,7 @@ $fs14: 0.875rem;
 $fs-base: 16;
 
 $fs-9: math.div(9, $fs-base) + rem;
+$fs-10: math.div(10, $fs-base) + rem;
 $fs-12: math.div(12, $fs-base) + rem;
 $fs-14: math.div(14, $fs-base) + rem;
 $fs-19: math.div(19, $fs-base) + rem;
