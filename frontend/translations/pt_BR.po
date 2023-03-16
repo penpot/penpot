@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-03-18 21:41+0000\n"
-"Last-Translator: Renan Mayrinck <renan.mtk@gmail.com>\n"
+"Last-Translator: Ally Tiago <allytiagomail@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
