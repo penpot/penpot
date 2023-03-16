@@ -148,17 +148,17 @@
     [base idx-a idx-b]))
 
 (defn is-shape-over-shape?
-  [objects base-shape-id over-shape-id]
+  [objects base-shape-id over-shape-id bottom-frames?]
 
   (let [[base index-a index-b] (get-base objects base-shape-id over-shape-id)]
     (cond
-      ;; The base the base shape, so the other item is bellow
+      ;; The base the base shape, so the other item is bellow (if not bottom-frames)
       (= base base-shape-id)
-      false
+      (and bottom-frames? (cph/frame-shape? objects base))
 
-      ;; The base is the testing over, so it's over
+      ;; The base is the testing over, so it's over (if not bottom-frames)
       (= base over-shape-id)
-      true
+      (or (not bottom-frames?) (not (cph/frame-shape? objects base)))
 
       ;; Check which index is lower
       :else
@@ -177,29 +177,19 @@
   ([objects ids]
    (sort-z-index objects ids nil))
 
-  ([objects ids {:keys [bottom-frames?] :as options}]
-   (letfn [(comp [id-a id-b]
-             (let [frame-a? (= :frame (dm/get-in objects [id-a :type]))
-                   frame-b? (= :frame (dm/get-in objects [id-b :type]))]
-               (cond
-                 (= id-a id-b)
-                 0
+  ([objects ids {:keys [bottom-frames?] :as options
+                 :or   {bottom-frames? false}}]
+   (letfn [
+           (comp [id-a id-b]
+             (cond
+               (= id-a id-b)
+               0
 
-                 (and (not frame-a?) frame-b?)
-                 (if bottom-frames? -1 1)
+               (is-shape-over-shape? objects id-a id-b bottom-frames?)
+               1
 
-                 (and frame-a? (not frame-b?))
-                 (if bottom-frames? 1 -1)
-
-                 ;; When comparing frames we invert the order if the flag `bottom-frames?` is on
-                 (and frame-a? frame-b? bottom-frames?)
-                 (if (is-shape-over-shape? objects id-b id-a) 1 -1)
-
-                 (is-shape-over-shape? objects id-b id-a)
-                 -1
-
-                 :else
-                 1)))]
+               :else
+               -1))]
      (sort comp ids))))
 
 (defn frame-id-by-position
