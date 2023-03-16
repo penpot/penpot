@@ -158,8 +158,13 @@
                       (assoc ::yrs/body (transit-streamable-body body opts))))
                 response)))
 
+          (format-from-params [{:keys [query-params] :as request}]
+            (and (= "json" (get query-params :_fmt))
+                 "application/json"))
+
           (format-response [response request]
-            (let [accept (yrq/get-header request "accept")]
+            (let [accept (or (format-from-params request)
+                             (yrq/get-header request "accept"))]
               (cond
                 (or (= accept "application/transit+json")
                     (str/includes? accept "application/transit+json"))
