@@ -1008,6 +1008,13 @@
 ;; Navigation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn workspace-focus-lost
+  []
+  (ptk/reify ::workspace-focus-lost
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :show-distances?] false))))
+
 (defn navigate-to-project
   [project-id]
   (ptk/reify ::navigate-to-project
