@@ -168,7 +168,7 @@
 
 (defn submit!
   [{:keys [::id ::cache ::wrk/executor ::mtx/metrics]} f]
-  (let [f (partial px/submit! executor f)]
+  (let [f (partial px/submit! executor (px/wrap-bindings f))]
     (if (and cache id)
       (p/await! (invoke! cache metrics id nil f))
       (p/await! (f)))))
