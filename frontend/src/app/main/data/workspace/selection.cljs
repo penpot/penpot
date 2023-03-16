@@ -131,6 +131,55 @@
              objects (wsh/lookup-page-objects state page-id)]
          (rx/of (dwc/expand-all-parents [id] objects)))))))
 
+(defn select-prev-shape
+  ([]
+   (ptk/reify ::select-prev-shape
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [selected       (wsh/lookup-selected state)
+             count-selected (count selected)
+             first-selected (first selected)
+             page-id        (:current-page-id state)
+             objects        (wsh/lookup-page-objects state page-id)
+             current        (get objects first-selected)
+             parent         (get objects (:parent-id current))
+             sibling-ids    (:shapes parent)
+             current-index  (d/index-of sibling-ids first-selected)
+             sibling        (if (= (dec (count sibling-ids)) current-index)
+                              (first sibling-ids)
+                              (nth sibling-ids (inc current-index)))]
+
+         (cond
+           (= 1 count-selected)
+           (rx/of (select-shape sibling))
+
+           (> count-selected 1)
+           (rx/of (select-shape first-selected))))))))
+
+(defn select-next-shape
+  ([]
+   (ptk/reify ::select-next-shape
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [selected       (wsh/lookup-selected state)
+             count-selected (count selected)
+             first-selected (first selected)
+             page-id        (:current-page-id state)
+             objects        (wsh/lookup-page-objects state page-id)
+             current        (get objects first-selected)
+             parent         (get objects (:parent-id current))
+             sibling-ids    (:shapes parent)
+             current-index  (d/index-of sibling-ids first-selected)
+             sibling        (if (= 0 current-index)
+                              (last sibling-ids)
+                              (nth sibling-ids (dec current-index)))]
+         (cond
+           (= 1 count-selected)
+           (rx/of (select-shape sibling))
+
+           (> count-selected 1)
+           (rx/of (select-shape first-selected))))))))
+
 (defn deselect-shape
   [id]
   (us/verify ::us/uuid id)

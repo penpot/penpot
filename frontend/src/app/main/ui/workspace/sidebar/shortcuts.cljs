@@ -143,6 +143,8 @@
   ;;   shortcuts.open-color-picker
   ;;   shortcuts.open-comments
   ;;   shortcuts.open-dashboard
+  ;;   shortcuts.select-prev
+  ;;   shortcuts.select-next
   ;;   shortcuts.open-inspect
   ;;   shortcuts.open-interactions
   ;;   shortcuts.open-viewer
