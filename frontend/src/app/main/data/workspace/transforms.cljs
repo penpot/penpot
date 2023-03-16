@@ -739,6 +739,13 @@
               #{}
               (into (d/ordered-set) (find-all-empty-parents #{})))
 
+            ;; Not move absolute shapes that won't change parent
+            moving-shapes
+            (->> moving-shapes
+                 (remove (fn [shape]
+                           (and (ctl/layout-absolute? shape)
+                                (= frame-id (:parent-id shape))))))
+
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
