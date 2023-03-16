@@ -184,10 +184,10 @@
                       (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
                       (cond-> set-fix-width?
-                        (ctm/change-parent-property :layout-item-h-sizing :fix))
+                        (ctm/change-property :layout-item-h-sizing :fix))
 
                       (cond-> set-fix-height?
-                        (ctm/change-parent-property :layout-item-v-sizing :fix))
+                        (ctm/change-property :layout-item-v-sizing :fix))
 
                       (cond-> scale-text
                         (ctm/scale-content (:x scalev))))
