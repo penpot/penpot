@@ -2458,6 +2458,12 @@ msgstr "Go to viewer comment section"
 msgid "shortcuts.open-dashboard"
 msgstr "Go to dashboard"
 
+msgid "shortcuts.select-next"
+msgstr "Select next layer"
+
+msgid "shortcuts.select-prev"
+msgstr "Select previous layer"
+
 msgid "shortcuts.open-inspect"
 msgstr "Go to viewer inspect section"
 

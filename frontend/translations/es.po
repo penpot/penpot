@@ -2603,6 +2603,12 @@ msgstr "Comentarios"
 msgid "shortcuts.open-dashboard"
 msgstr "Ir al dashboard"
 
+msgid "shortcuts.select-next"
+msgstr "Seleccionar capa siguiente"
+
+msgid "shortcuts.select-prev"
+msgstr "Seleccionar capa anterior"
+
 msgid "shortcuts.open-inspect"
 msgstr "Ir al inspector"
 
