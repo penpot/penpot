@@ -170,7 +170,7 @@
                (-> (gsh/move delta)
                    (dissoc :touched :main-instance?))
 
-               (nil? (:shape-ref original-shape))
+               (and (not main-instance?) (nil? (:shape-ref original-shape)))
                (assoc :shape-ref (:id original-shape))
 
                (nil? (:parent-id original-shape))
