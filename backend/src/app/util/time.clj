@@ -128,7 +128,8 @@
 
 (extend-protocol fez/IEdn
   Duration
-  (-edn [o] (pr-str o)))
+  (-edn [o]
+    (tagged-literal 'app/duration (str o))))
 
 (defn format-duration
   [o]
@@ -218,7 +219,7 @@
 
 (extend-protocol fez/IEdn
   Instant
-  (-edn [o] (pr-str o)))
+  (-edn [o] (tagged-literal 'app/instant (format-instant o))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Cron Expression
