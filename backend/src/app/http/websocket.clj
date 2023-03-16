@@ -204,7 +204,7 @@
       (a/<! (mbus/sub! msgbus :topic team-id :chan channel)))))
 
 (defmethod handle-message :subscribe-file
-  [cfg wsp {:keys [file-id] :as params}]
+  [cfg wsp {:keys [file-id version] :as params}]
   (let [msgbus     (::mbus/msgbus cfg)
         conn-id    (::ws/id @wsp)
         profile-id (::profile-id @wsp)
@@ -239,7 +239,8 @@
             (let [message {:type :presence
                            :file-id file-id
                            :session-id session-id
-                           :profile-id profile-id}]
+                           :profile-id profile-id
+                           :version version}]
               (a/<! (mbus/pub! msgbus :topic file-id :message message))))
           (a/>! output-ch message)
           (recur))))
