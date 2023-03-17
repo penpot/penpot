@@ -29,6 +29,7 @@
    [app.main.snap :as snap]
    [app.main.streams :as ms]
    [app.util.dom :as dom]
+   [app.wasm :as wasm]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -175,6 +176,9 @@
                   set-fix-height?
                   (not (mth/close? (:y scalev) 1))
 
+                  ;; Creates the initial structure of modifiers 
+                  ;; that will be later filled in the create-modif-tree
+                  ;; call
                   modifiers
                   (-> (ctm/empty)
                       (cond-> displacement
@@ -190,7 +194,10 @@
                       (cond-> scale-text
                         (ctm/scale-content (:x scalev))))
 
-                  modif-tree (dwm/create-modif-tree ids modifiers)]
+                  ;; Fills modifiers using identifiers
+                  modif-tree (dwm/create-modif-tree ids modifiers)] 
+              (js/console.log (clj->js modif-tree))
+              (wasm/resize handler ids shape)
               (rx/of (dwm/set-modifiers modif-tree))))
 
           ;; Unifies the instantaneous proportion lock modifier
@@ -209,7 +216,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [initial-position @ms/mouse-position
-              stoper  (rx/filter ms/mouse-up? stream)
+              stopper  (rx/filter ms/mouse-up? stream)
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
               focus   (:workspace-focus-selected state)
@@ -226,7 +233,7 @@
                                  (->> (snap/closest-snap-point page-id resizing-shapes objects layout zoom focus point)
                                       (rx/map #(conj current %)))))
                 (rx/mapcat (partial resize shape initial-position layout))
-                (rx/take-until stoper))
+                (rx/take-until stopper))
            (rx/of (dwm/apply-modifiers)
                   (finish-transform))))))))
 

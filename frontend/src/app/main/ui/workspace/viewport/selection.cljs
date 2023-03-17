@@ -370,6 +370,7 @@
           (when (dom/left-mouse? event)
             (dom/stop-propagation event)
             (st/emit! (dw/start-resize current-position selected shape))))
+            ;;(js/console.log event (dw/start-resize current-position selected shape))))
 
         on-rotate
         (fn [event]
@@ -410,6 +411,7 @@
           (when (dom/left-mouse? event)
             (dom/stop-propagation event)
             (st/emit! (dw/start-resize current-position #{shape-id} shape))))
+            ;;(js/console.log event (clj->js (dw/start-resize current-position #{shape-id} shape)))))
 
         on-rotate
         (fn [event]

@@ -389,6 +389,7 @@
   ([vector]
    (move (empty) vector)))
 
+;; This function is never used
 (defn move-parent-modifiers
   ([x y]
    (move-parent (empty) (gpt/point x y)))
@@ -403,6 +404,7 @@
   ([vector origin transform transform-inverse]
    (resize (empty) vector origin transform transform-inverse)))
 
+;; This function is never used
 (defn resize-parent-modifiers
   ([vector origin]
    (resize-parent (empty) vector origin))

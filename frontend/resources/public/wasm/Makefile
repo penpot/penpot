@@ -1,3 +1,10 @@
 all:
 	mkdir -p build
-	em++ -std=c++20 -O3 -sINCOMING_MODULE_JS_API=['print'] -sENVIRONMENT=web,node,worker -sFILESYSTEM=0 src/main.cpp -o build/main.js
+	clang \
+		-target wasm32 \
+		-nostdlib \
+		-Wl,--no-entry \
+		-Wl,--export-all \
+		-o build/resize.wasm \
+		src/resize.c
+

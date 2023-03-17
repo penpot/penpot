@@ -392,6 +392,7 @@
                                     (reduce merge {}))
              undo-id (js/Symbol)]
 
+         (js/console.log (clj->js object-modifiers) (clj->js text-modifiers) (clj->js objects))
          (rx/concat
           (if undo-transation?
             (rx/of (dwu/start-undo-transaction undo-id))
