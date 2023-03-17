@@ -670,12 +670,30 @@
 
 ;; --- COMMAND QUERY: get-file-data-for-thumbnail
 
+;; FIXME: performance issue
+;;
+;; We need to improve how we set frame for thumbnail in order to avoid
+;; loading all pages into memory for find the frame set for thumbnail.
+
 (defn get-file-data-for-thumbnail
   [conn {:keys [data id] :as file}]
   (letfn [;; function responsible on finding the frame marked to be
           ;; used as thumbnail; the returned frame always have
           ;; the :page-id set to the page that it belongs.
+
           (get-thumbnail-frame [data]
+            ;; NOTE: this is a hack for avoid perform blocking
+            ;; operation inside the for loop, clojure lazy-seq uses
+            ;; synchronized blocks that does not plays well with
+            ;; virtual threads, so we need to perform the load
+            ;; operation first. This operation forces all pointer maps
+            ;; load into the memory.
+            (->> (-> data :pages-index vals)
+                 (filter pmap/pointer-map?)
+                 (run! pmap/load!))
+
+            ;; Then proceed to find the frame set for thumbnail
+
             (d/seek :use-for-thumbnail?
                     (for [page  (-> data :pages-index vals)
                           frame (-> page :objects ctt/get-frames)]

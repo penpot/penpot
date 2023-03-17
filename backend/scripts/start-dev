@@ -2,7 +2,20 @@
 
 export PENPOT_HOST=devenv
 export PENPOT_TENANT=dev
-export PENPOT_FLAGS="$PENPOT_FLAGS enable-backend-asserts enable-audit-log enable-transit-readable-response enable-demo-users disable-secure-session-cookies enable-smtp enable-webhooks"
+export PENPOT_FLAGS="\
+       $PENPOT_FLAGS \
+       enable-prepl-server \
+       enable-urepl-server \
+       enable-webhooks \
+       enable-backend-asserts \
+       enable-audit-log \
+       enable-transit-readable-response \
+       enable-demo-users \
+       enable-fdata-storage-pointer-map \
+       enable-fdata-storage-objets-map \
+       disable-secure-session-cookies \
+       enable-smtp \
+       enable-webhooks";
 
 set -ex
 

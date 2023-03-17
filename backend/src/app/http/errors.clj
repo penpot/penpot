@@ -112,7 +112,7 @@
     (l/error :hint "Internal error" :message (ex-message error) :cause error)
     {::yrs/status 500
      ::yrs/body {:type :server-error
-                 :code :unhandloed
+                 :code :unhandled
                  :hint (ex-message error)
                  :data (ex-data error)}}))
 

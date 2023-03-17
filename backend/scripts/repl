@@ -5,6 +5,8 @@ export PENPOT_TENANT=dev
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
        enable-backend-asserts \
+       enable-fdata-storage-pointer-map \
+       enable-fdata-storage-objets-map \
        enable-audit-log \
        enable-transit-readable-response \
        enable-demo-users \

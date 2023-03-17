@@ -33,22 +33,26 @@
          (db/insert! conn :file-profile-rel))))
 
 (defn create-file
-  [conn {:keys [id name project-id is-shared data revn
+  [conn {:keys [id name project-id is-shared revn
                 modified-at deleted-at create-page
                 ignore-sync-until features]
          :or {is-shared false revn 0 create-page true}
          :as params}]
-  (let [id       (or id (:id data) (uuid/next))
+
+  (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED;"])
+  (let [id       (or id (uuid/next))
         features (-> (into files/default-features features)
                      (files/check-features-compatibility!))
 
-        data     (or data
-                     (binding [ffeat/*current* features
-                               ffeat/*wrap-with-objects-map-fn* (if (features "storate/objects-map") omap/wrap identity)
-                               ffeat/*wrap-with-pointer-map-fn* (if (features "storage/pointer-map") pmap/wrap identity)]
-                       (if create-page
-                         (ctf/make-file-data id)
-                         (ctf/make-file-data id nil))))
+        data     (binding [pmap/*tracked* (atom {})
+                           ffeat/*current* features
+                           ffeat/*wrap-with-objects-map-fn* (if (features "storate/objects-map") omap/wrap identity)
+                           ffeat/*wrap-with-pointer-map-fn* (if (features "storage/pointer-map") pmap/wrap identity)]
+                   (let [data (if create-page
+                                (ctf/make-file-data id)
+                                (ctf/make-file-data id nil))]
+                     (files/persist-pointers! conn id)
+                     data))
 
         features (db/create-array conn "text" features)
         file     (db/insert! conn :file

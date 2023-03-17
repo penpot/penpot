@@ -48,25 +48,24 @@
 (defn- validate-webhook!
   [cfg whook params]
   (when (not= (:uri whook) (:uri params))
-    (try
-      (let [response (http/req! cfg
-                                {:method :head
-                                 :uri (str (:uri params))
-                                 :timeout (dt/duration "3s")}
-                                {:sync? true})]
-        (when-let [hint (webhooks/interpret-response response)]
-          (ex/raise :type :validation
-                    :code :webhook-validation
-                    :hint hint)))
-
-      (catch Throwable cause
-        (if-let [hint (webhooks/interpret-exception cause)]
+    (let [response (ex/try!
+                    (http/req! cfg
+                               {:method :head
+                                :uri (str (:uri params))
+                                :timeout (dt/duration "3s")}
+                               {:sync? true}))]
+      (if (ex/exception? response)
+        (if-let [hint (webhooks/interpret-exception response)]
           (ex/raise :type :validation
                     :code :webhook-validation
                     :hint hint)
           (ex/raise :type :internal
                     :code :webhook-validation
-                    :cause cause))))))
+                    :cause response))
+        (when-let [hint (webhooks/interpret-response response)]
+          (ex/raise :type :validation
+                    :code :webhook-validation
+                    :hint hint))))))
 
 (defn- validate-quotes!
   [{:keys [::db/pool]} {:keys [team-id]}]
