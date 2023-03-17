@@ -587,76 +587,79 @@
   NOTE: It's possible that the component to update is defined in an
   external library file, so this function may cause to modify a file
   different of that the one we are currently editing."
-  [id]
-  (us/assert ::us/uuid id)
-  (ptk/reify ::update-component
-    ptk/WatchEvent
-    (watch [it state _]
-      (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
-      (let [page-id     (get state :current-page-id)
-            local-file  (wsh/get-local-file state)
-            container   (cph/get-container local-file :page page-id)
-            shape       (ctn/get-shape container id)]
+  ([id] (update-component id nil))
+  ([id undo-group]
+   (us/assert ::us/uuid id)
+   (ptk/reify ::update-component
+     ptk/WatchEvent
+     (watch [it state _]
+       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id) :undo-group undo-group)
+       (let [page-id     (get state :current-page-id)
+             local-file  (wsh/get-local-file state)
+             container   (cph/get-container local-file :page page-id)
+             shape       (ctn/get-shape container id)]
 
-        (when (ctk/in-component-instance? shape)
-          (let [libraries (wsh/get-libraries state)
+         (when (ctk/in-component-instance? shape)
+           (let [libraries (wsh/get-libraries state)
 
-                changes
-                (-> (pcb/empty-changes it)
-                    (pcb/with-container container)
-                    (dwlh/generate-sync-shape-inverse libraries container id))
+                 changes
+                 (-> (pcb/empty-changes it)
+                     (pcb/set-undo-group undo-group)
+                     (pcb/with-container container)
+                     (dwlh/generate-sync-shape-inverse libraries container id))
 
-                file-id   (:component-file shape)
-                file      (wsh/get-file state file-id)
+                 file-id   (:component-file shape)
+                 file      (wsh/get-file state file-id)
 
-                xf-filter (comp
-                           (filter :local-change?)
-                           (map #(dissoc % :local-change?)))
+                 xf-filter (comp
+                            (filter :local-change?)
+                            (map #(dissoc % :local-change?)))
 
-                local-changes (-> changes
-                                  (update :redo-changes #(into [] xf-filter %))
-                                  (update :undo-changes #(into [] xf-filter %)))
+                 local-changes (-> changes
+                                   (update :redo-changes #(into [] xf-filter %))
+                                   (update :undo-changes #(into [] xf-filter %)))
 
-                xf-remove (comp
-                           (remove :local-change?)
-                           (map #(dissoc % :local-change?)))
+                 xf-remove (comp
+                            (remove :local-change?)
+                            (map #(dissoc % :local-change?)))
 
-                nonlocal-changes (-> changes
-                                     (update :redo-changes #(into [] xf-remove %))
-                                     (update :undo-changes #(into [] xf-remove %)))]
+                 nonlocal-changes (-> changes
+                                      (update :redo-changes #(into [] xf-remove %))
+                                      (update :undo-changes #(into [] xf-remove %)))]
 
-            (log/debug :msg "UPDATE-COMPONENT finished"
-                       :js/local-changes (log-changes
-                                          (:redo-changes local-changes)
-                                          file)
-                       :js/nonlocal-changes (log-changes
-                                             (:redo-changes nonlocal-changes)
-                                             file))
+             (log/debug :msg "UPDATE-COMPONENT finished"
+                        :js/local-changes (log-changes
+                                           (:redo-changes local-changes)
+                                           file)
+                        :js/nonlocal-changes (log-changes
+                                              (:redo-changes nonlocal-changes)
+                                              file))
 
-            (rx/of
-             (when (seq (:redo-changes local-changes))
-               (dch/commit-changes (assoc local-changes
-                                          :file-id (:id local-file))))
-             (when (seq (:redo-changes nonlocal-changes))
-               (dch/commit-changes (assoc nonlocal-changes
-                                          :file-id file-id))))))))))
+             (rx/of
+              (when (seq (:redo-changes local-changes))
+                (dch/commit-changes (assoc local-changes
+                                           :file-id (:id local-file))))
+              (when (seq (:redo-changes nonlocal-changes))
+                (dch/commit-changes (assoc nonlocal-changes
+                                           :file-id file-id)))))))))))
 
 (defn update-component-sync
-  [shape-id file-id]
-  (ptk/reify ::update-component-sync
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [current-file-id (:current-file-id state)
-            page            (wsh/lookup-page state)
-            shape           (ctn/get-shape page shape-id)
-            undo-id (js/Symbol)]
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (update-component shape-id)
-         (sync-file current-file-id file-id :components (:component-id shape))
-         (when (not= current-file-id file-id)
-           (sync-file file-id file-id :components (:component-id shape)))
-         (dwu/commit-undo-transaction undo-id))))))
+  ([shape-id file-id] (update-component-sync shape-id file-id nil))
+  ([shape-id file-id undo-group]
+   (ptk/reify ::update-component-sync
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [current-file-id (:current-file-id state)
+             page            (wsh/lookup-page state)
+             shape           (ctn/get-shape page shape-id)
+             undo-id         (js/Symbol)]
+         (rx/of
+          (dwu/start-undo-transaction undo-id)
+          (update-component shape-id undo-group)
+          (sync-file current-file-id file-id :components (:component-id shape) undo-group)
+          (when (not= current-file-id file-id)
+            (sync-file file-id file-id :components (:component-id shape) undo-group))
+          (dwu/commit-undo-transaction undo-id)))))))
 
 (defn update-component-in-bulk
   [shapes file-id]
@@ -666,7 +669,7 @@
       (let [undo-id (js/Symbol)]
        (rx/concat
        (rx/of (dwu/start-undo-transaction undo-id))
-       (rx/map #(update-component-sync (:id %) file-id) (rx/from shapes))
+       (rx/map #(update-component-sync (:id %) file-id (uuid/next)) (rx/from shapes))
        (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (declare sync-file-2nd-stage)
@@ -683,6 +686,8 @@
   ([file-id library-id]
    (sync-file file-id library-id nil nil))
   ([file-id library-id asset-type asset-id]
+   (sync-file file-id library-id asset-type asset-id nil))
+  ([file-id library-id asset-type asset-id undo-group]
    (us/assert ::us/uuid file-id)
    (us/assert ::us/uuid library-id)
    (us/assert (s/nilable #{:colors :components :typographies}) asset-type)
@@ -702,7 +707,8 @@
                    :file (dwlh/pretty-file file-id state)
                    :library (dwlh/pretty-file library-id state)
                    :asset-type asset-type
-                   :asset-id asset-id)
+                   :asset-id asset-id
+                   :undo-group undo-group)
          (let [file            (wsh/get-file state file-id)
 
                sync-components?   (or (nil? asset-type) (= asset-type :components))
@@ -711,7 +717,8 @@
 
                library-changes (reduce
                                 pcb/concat-changes
-                                (pcb/empty-changes it)
+                                (-> (pcb/empty-changes it)
+                                    (pcb/set-undo-group undo-group))
                                 [(when sync-components?
                                    (dwlh/generate-sync-library it file-id :components asset-id library-id state))
                                  (when sync-colors?
@@ -720,7 +727,8 @@
                                    (dwlh/generate-sync-library it file-id :typographies asset-id library-id state))])
                file-changes    (reduce
                                 pcb/concat-changes
-                                (pcb/empty-changes it)
+                                (-> (pcb/empty-changes it)
+                                    (pcb/set-undo-group undo-group))
                                 [(when sync-components?
                                    (dwlh/generate-sync-file it file-id :components asset-id library-id state))
                                  (when sync-colors?
@@ -751,7 +759,7 @@
                                    :library-id library-id})))
             (when (and (seq (:redo-changes library-changes))
                        sync-components?)
-              (rx/of (sync-file-2nd-stage file-id library-id asset-id))))))))))
+              (rx/of (sync-file-2nd-stage file-id library-id asset-id undo-group))))))))))
 
 (defn- sync-file-2nd-stage
   "If some components have been modified, we need to launch another synchronization
@@ -762,7 +770,7 @@
   ;;       recursively. But for this not to cause an infinite loop, we need to
   ;;       implement updated-at at component level, to detect what components have
   ;;       not changed, and then not to apply sync and terminate the loop.
-  [file-id library-id asset-id]
+  [file-id library-id asset-id undo-group]
   (us/assert ::us/uuid file-id)
   (us/assert ::us/uuid library-id)
   (us/assert (s/nilable ::us/uuid) asset-id)
@@ -775,7 +783,8 @@
       (let [file    (wsh/get-file state file-id)
             changes (reduce
                      pcb/concat-changes
-                     (pcb/empty-changes it)
+                     (-> (pcb/empty-changes it)
+                         (pcb/set-undo-group undo-group))
                      [(dwlh/generate-sync-file it file-id :components asset-id library-id state)
                       (dwlh/generate-sync-library it file-id :components asset-id library-id state)])]
 
@@ -849,7 +858,7 @@
 
             check-changes
             (fn [[event data]]
-              (let [{:keys [changes save-undo?]} (deref event)
+              (let [{:keys [changes save-undo? undo-group]} (deref event)
                     components-changed (reduce #(into %1 (ch/components-changed data %2))
                                                #{}
                                                changes)]
@@ -857,7 +866,7 @@
                   (log/info :msg "DETECTED COMPONENTS CHANGED"
                             :ids (map str components-changed))
                   (run! st/emit!
-                        (map #(update-component-sync % (:id data))
+                        (map #(update-component-sync % (:id data) undo-group)
                              components-changed)))))]
 
         (when components-v2
