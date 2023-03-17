@@ -63,16 +63,16 @@
             (when-not (or (empty? items) (= index -1))
               (let [item (get items index)
                     changes (:undo-changes item)
-                    group-id (:group-id item)
+                    undo-group (:undo-group item)
                     find-first-group-idx (fn ffgidx[index]
                                            (let [item (get items index)]
-                                             (if (= (:group-id item) group-id)
+                                             (if (= (:undo-group item) undo-group)
                                                (ffgidx (dec index))
                                                (inc index))))
 
-                    undo-group-index (when group-id
+                    undo-group-index (when undo-group
                                        (find-first-group-idx index))]
-                (if group-id
+                (if undo-group
                   (rx/of (undo-to-index (dec undo-group-index)))
                   (rx/of (dwu/materialize-undo changes (dec index))
                          (dch/commit-changes {:redo-changes changes
@@ -94,16 +94,16 @@
             (when-not (or (empty? items) (= index (dec (count items))))
               (let [item (get items (inc index))
                     changes (:redo-changes item)
-                    group-id (:group-id item)
+                    undo-group (:undo-group item)
                     find-last-group-idx (fn flgidx [index]
                                           (let [item (get items index)]
-                                            (if (= (:group-id item) group-id)
+                                            (if (= (:undo-group item) undo-group)
                                               (flgidx (inc index))
                                               (dec index))))
 
-                    redo-group-index (when group-id
+                    redo-group-index (when undo-group
                                        (find-last-group-idx (inc index)))]
-                (if group-id
+                (if undo-group
                   (rx/of (undo-to-index redo-group-index))
                   (rx/of (dwu/materialize-undo changes (inc index))
                          (dch/commit-changes {:redo-changes changes
