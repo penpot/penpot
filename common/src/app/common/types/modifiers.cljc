@@ -309,12 +309,12 @@
   (-> (or modifiers (empty))
       (update :structure-child conj (scale-content-op value))))
 
-(defn change-property
+(defn change-recursive-property
   [modifiers property value]
   (-> (or modifiers (empty))
       (update :structure-child conj (change-property-op property value))))
 
-(defn change-parent-property
+(defn change-property
   [modifiers property value]
   (-> (or modifiers (empty))
       (update :structure-parent conj (change-property-op property value))))

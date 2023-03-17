@@ -432,6 +432,7 @@ span.element-name {
   background-color: $color-white;
   color: $color-gray-50;
   border-radius: $br4;
+  z-index: 1;
   span {
     padding: 10px 20px 10px 10px;
     border-radius: $br4;

@@ -184,10 +184,10 @@
                       (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
                       (cond-> set-fix-width?
-                        (ctm/change-parent-property :layout-item-h-sizing :fix))
+                        (ctm/change-property :layout-item-h-sizing :fix))
 
                       (cond-> set-fix-height?
-                        (ctm/change-parent-property :layout-item-v-sizing :fix))
+                        (ctm/change-property :layout-item-v-sizing :fix))
 
                       (cond-> scale-text
                         (ctm/scale-content (:x scalev))))
@@ -738,6 +738,13 @@
             (if (empty? moving-shapes)
               #{}
               (into (d/ordered-set) (find-all-empty-parents #{})))
+
+            ;; Not move absolute shapes that won't change parent
+            moving-shapes
+            (->> moving-shapes
+                 (remove (fn [shape]
+                           (and (ctl/layout-absolute? shape)
+                                (= frame-id (:parent-id shape))))))
 
             changes
             (-> (pcb/empty-changes it page-id)
