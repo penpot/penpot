@@ -19,8 +19,8 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
+   [app.rpc.retry :as rtry]
    [app.util.pointer-map :as pmap]
-   [app.util.retry :as rtry]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
@@ -309,7 +309,8 @@
 
       (rtry/with-retry {::rtry/when rtry/conflict-exception?
                         ::rtry/max-retries 3
-                        ::rtry/label "create-comment-thread"}
+                        ::rtry/label "create-comment-thread"
+                        ::db/conn conn}
         (create-comment-thread conn
                                {:created-at request-at
                                 :profile-id profile-id

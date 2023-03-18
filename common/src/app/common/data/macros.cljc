@@ -108,6 +108,14 @@
           `(do ~@body)
           (reverse (partition 2 bindings))))
 
+(defmacro check
+  "Applies a predicate to the value, if result is true, return the
+  value if not, returns nil."
+  [pred-fn value]
+  `(if (~pred-fn ~value)
+     ~value
+     nil))
+
 (defmacro get-prop
   "A macro based, optimized variant of `get` that access the property
   directly on CLJS, on CLJ works as get."

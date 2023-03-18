@@ -23,8 +23,8 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
+   [app.rpc.retry :as rtry]
    [app.tokens :as tokens]
-   [app.util.retry :as rtry]
    [app.util.services :as-alias sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
@@ -203,7 +203,8 @@
       ;; this case we just retry the operation.
       (rtry/with-retry {::rtry/when rtry/conflict-exception?
                         ::rtry/max-retries 6
-                        ::rtry/label "persist-audit-log"}
+                        ::rtry/label "persist-audit-log"
+                        ::db/conn (dm/check db/connection? conn-or-pool)}
         (let [now (dt/now)]
           (db/insert! conn-or-pool :audit-log
                       (-> params
