@@ -6,16 +6,13 @@
 
 (ns common-tests.uuid-test
   (:require
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [clojure.spec.alpha :as s]
-   [clojure.test :as t]
-   [clojure.test.check.clojure-test :refer [defspec]]
-   [clojure.test.check.generators :as gen]
-   [clojure.test.check.properties :as props]))
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
+   [clojure.test :as t]))
 
-(defspec non-repeating-uuid-next-1 100
-  (props/for-all
-   [uuid1 (s/gen ::us/uuid)
-    uuid2 (s/gen ::us/uuid)]
-   (t/is (not= uuid1 uuid2))))
+(t/deftest non-repeating-uuid-next-1-schema
+  (sg/check!
+   (sg/for [uuid1 (sg/generator ::sm/uuid)
+            uuid2 (sg/generator ::sm/uuid)]
+     (t/is (not= uuid1 uuid2)))
+   {:num 100}))

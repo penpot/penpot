@@ -17,7 +17,6 @@
    [app.common.geom.shapes.strokes :as gss]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
    #?(:cljs [cljs.core :as c]
@@ -264,7 +263,7 @@
        (resize-vec? vector)
        (update :geometry-child maybe-add-resize (resize-op order vector origin)))))
 
-  ([modifiers vector origin transform transform-inverse] 
+  ([modifiers vector origin transform transform-inverse]
    (resize modifiers vector origin transform transform-inverse nil))
 
   ;; `precise?` works so we don't remove almost empty resizes. This will be used in the pixel-precision
@@ -462,9 +461,9 @@
    (change-dimensions-modifiers shape attr value nil))
 
   ([{:keys [transform transform-inverse] :as shape} attr value {:keys [ignore-lock?] :or {ignore-lock? false}}]
-   (us/assert map? shape)
-   (us/assert #{:width :height} attr)
-   (us/assert number? value)
+   (dm/assert! (map? shape))
+   (dm/assert! (#{:width :height} attr))
+   (dm/assert! (number? value))
 
    (let [{:keys [proportion proportion-lock]} shape
          size (select-keys (:selrect shape) [:width :height])
@@ -491,8 +490,11 @@
 
 (defn change-orientation-modifiers
   [shape orientation]
-  (us/assert map? shape)
-  (us/verify #{:horiz :vert} orientation)
+  (dm/assert! (map? shape))
+  (dm/assert!
+   "expected a valid orientation"
+   (#{:horiz :vert} orientation))
+
   (let [width (:width shape)
         height (:height shape)
         new-width (if (= orientation :horiz) (max width height) (min width height))
@@ -672,17 +674,17 @@
             [shape value]
             (cond-> shape
               (cph/text-shape? shape)
-              (update-text-content scale-text-content value) 
-              
+              (update-text-content scale-text-content value)
+
               :always
               (gsc/update-corners-scale value)
-              
+
               (d/not-empty? (:strokes shape))
               (gss/update-strokes-width value)
-                    
+
               (d/not-empty? (:shadow shape))
               (gse/update-shadows-scale value)
-              
+
               (some? (:blur shape))
               (gse/update-blur-scale value)
 

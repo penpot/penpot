@@ -48,7 +48,7 @@
               :on-event on-event
               :on-error (fn [cause]
                           (when cause
-                            (log/error :hint "unexpected exception on store" :cause cause)
+                            #_(log/error :hint "unexpected exception on store" :cause cause)
                             (@on-error cause)))}))
 
 (defonce stream

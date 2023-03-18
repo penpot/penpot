@@ -6,18 +6,19 @@
 
 (ns app.main.data.workspace.media
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.pages.changes-builder :as pcb]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.media :as dmm]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -28,7 +29,6 @@
    [app.util.http :as http]
    [app.util.i18n :refer [tr]]
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [promesa.core :as p]
@@ -136,47 +136,46 @@
           (rx/merge-map svg->clj)
           (rx/do on-svg)))))
 
-(s/def ::local? ::us/boolean)
-(s/def ::blobs ::dmm/blobs)
-(s/def ::name ::us/string)
-(s/def ::uris (s/coll-of ::us/string))
-(s/def ::mtype ::us/string)
-
-(s/def ::process-media-objects
-  (s/and
-   (s/keys :req-un [::file-id ::local?]
-           :opt-un [::name ::data ::uris ::mtype])
-   (fn [props]
-     (or (contains? props :blobs)
-         (contains? props :uris)))))
+(def schema:process-media-objects
+  [:map
+   [:file-id ::sm/uuid]
+   [:local? :boolean]
+   [:name {:optional true} :string]
+   [:data {:optional true} :any] ; FIXME
+   [:uris {:optional true} [:vector :string]]
+   [:mtype {:optional true} :string]])
 
 (defn- process-media-objects
   [{:keys [uris on-error] :as params}]
-  (us/assert ::process-media-objects params)
+  (dm/assert!
+   (and (sm/valid? schema:process-media-objects params)
+        (or (contains? params :blobs)
+            (contains? params :uris))))
+
   (letfn [(handle-error [error]
             (if (ex/ex-info? error)
               (handle-error (ex-data error))
               (cond
                 (= (:code error) :invalid-svg-file)
-                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+                (rx/of (msg/error (tr "errors.media-type-not-allowed")))
 
                 (= (:code error) :media-type-not-allowed)
-                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+                (rx/of (msg/error (tr "errors.media-type-not-allowed")))
 
                 (= (:code error) :unable-to-access-to-url)
-                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+                (rx/of (msg/error (tr "errors.media-type-not-allowed")))
 
                 (= (:code error) :invalid-image)
-                (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+                (rx/of (msg/error (tr "errors.media-type-not-allowed")))
 
                 (= (:code error) :media-max-file-size-reached)
-                (rx/of (dm/error (tr "errors.media-too-large")))
+                (rx/of (msg/error (tr "errors.media-too-large")))
 
                 (= (:code error) :media-type-mismatch)
-                (rx/of (dm/error (tr "errors.media-type-mismatch")))
+                (rx/of (msg/error (tr "errors.media-type-mismatch")))
 
                 (= (:code error) :unable-to-optimize)
-                (rx/of (dm/error (:hint error)))
+                (rx/of (msg/error (:hint error)))
 
                 (fn? on-error)
                 (on-error error)
@@ -188,10 +187,10 @@
       ptk/WatchEvent
       (watch [_ _ _]
         (rx/concat
-         (rx/of (dm/show {:content (tr "media.loading")
-                          :type :info
-                          :timeout nil
-                          :tag :media-loading}))
+         (rx/of (msg/show {:content (tr "media.loading")
+                           :type :info
+                           :timeout nil
+                           :tag :media-loading}))
          (->> (if (seq uris)
                 ;; Media objects is a list of URL's pointing to the path
                 (process-uris params)
@@ -201,7 +200,7 @@
               ;; Every stream has its own sideeffect. We need to ignore the result
               (rx/ignore)
               (rx/catch handle-error)
-              (rx/finalize #(st/emit! (dm/hide-tag :media-loading)))))))))
+              (rx/finalize #(st/emit! (msg/hide-tag :media-loading)))))))))
 
 ;; Deprecated in components-v2
 (defn upload-media-asset
@@ -235,9 +234,9 @@
          (rx/map #(vector (:name media-obj) %))
          (rx/merge-map svg->clj)
          (rx/catch  ; When error downloading media-obj, skip it and continue with next one
-           #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
-                       :hint (ex-message %)
-                       :error %)))))
+             #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
+                         :hint (ex-message %)
+                         :error %)))))
 
 (defn create-shapes-svg
   "Convert svg elements into penpot shapes."
@@ -339,14 +338,14 @@
                       :on-svg #(st/emit! (process-svg-component %)))]
     (process-media-objects params)))
 
-(s/def ::object-id ::us/uuid)
-
-(s/def ::clone-media-objects-params
-  (s/keys :req-un [::file-id ::object-id]))
+(def schema:clone-media-object
+  [:map
+   [:file-id ::sm/uuid]
+   [:object-id ::sm/uuid]])
 
 (defn clone-media-object
   [{:keys [file-id object-id] :as params}]
-  (us/assert ::clone-media-objects-params params)
+  (dm/assert! (sm/valid? schema:clone-media-object params))
   (ptk/reify ::clone-media-objects
     ptk/WatchEvent
     (watch [_ _ _]
@@ -358,12 +357,12 @@
                     :id object-id}]
 
         (rx/concat
-         (rx/of (dm/show {:content (tr "media.loading")
-                          :type :info
-                          :timeout nil
-                          :tag :media-loading}))
+         (rx/of (msg/show {:content (tr "media.loading")
+                           :type :info
+                           :timeout nil
+                           :tag :media-loading}))
          (->> (rp/cmd! :clone-file-media-object params)
               (rx/do on-success)
               (rx/catch on-error)
-              (rx/finalize #(st/emit! (dm/hide-tag :media-loading)))))))))
+              (rx/finalize #(st/emit! (msg/hide-tag :media-loading)))))))))
 

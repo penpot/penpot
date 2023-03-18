@@ -8,9 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [clojure.spec.alpha :as s]))
+   [app.common.schema :as sm]
+   [app.common.uuid :as uuid]))
+
+;; FIXME: need proper schemas
 
 ;; :layout                 ;; :flex, :grid in the future
 ;; :layout-flex-dir        ;; :row, :row-reverse, :column, :column-reverse
@@ -40,114 +41,144 @@
 ;; :layout-item-absolute
 ;; :layout-item-z-index
 
-(s/def ::layout  #{:flex :grid})
+(def layout-types
+  #{:flex :grid})
 
-(s/def ::layout-flex-dir #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse}) ;;TODO remove reverse-column and reverse-row after script
-(s/def ::layout-grid-dir #{:row :column})
-(s/def ::layout-gap-type #{:simple :multiple})
-(s/def ::layout-gap ::us/safe-number)
+(def flex-direction-types
+  #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse}) ;;TODO remove reverse-column and reverse-row after script
 
-(s/def ::layout-align-items #{:start :end :center :stretch})
-(s/def ::layout-justify-items #{:start :end :center :stretch})
-(s/def ::layout-align-content #{:start :end :center :space-between :space-around :space-evenly :stretch})
-(s/def ::layout-justify-content #{:start :center :end :space-between :space-around :space-evenly})
-(s/def ::layout-wrap-type #{:wrap :nowrap :no-wrap}) ;;TODO remove no-wrap after script
-(s/def ::layout-padding-type #{:simple :multiple})
+(def gap-types
+  #{:simple :multiple})
 
-(s/def :grid/type #{:percent :flex :auto :fixed})
-(s/def :grid/value (s/nilable ::us/safe-number))
-(s/def ::grid-definition (s/keys :req-un [:grid/type]
-                                 :opt-un [:grid/value]))
-(s/def ::layout-grid-rows (s/coll-of ::grid-definition :kind vector?))
-(s/def ::layout-grid-columns (s/coll-of ::grid-definition :kind vector?))
+(def wrap-types
+  #{:wrap :nowrap :no-wrap}) ;;TODO remove no-wrap after script
 
-(s/def :grid-cell/id uuid?)
-(s/def :grid-cell/area-name ::us/string)
-(s/def :grid-cell/row-start ::us/safe-integer)
-(s/def :grid-cell/row-span ::us/safe-integer)
-(s/def :grid-cell/column-start ::us/safe-integer)
-(s/def :grid-cell/column-span ::us/safe-integer)
-(s/def :grid-cell/position #{:auto :manual :area})
-(s/def :grid-cell/align-self #{:auto :start :end :center :stretch})
-(s/def :grid-cell/justify-self #{:auto :start :end :center :stretch})
-(s/def :grid-cell/shapes (s/coll-of uuid?))
+(def padding-type
+  #{:simple :multiple})
 
-(s/def ::grid-cell (s/keys :opt-un [:grid-cell/id
-                                    :grid-cell/area-name
-                                    :grid-cell/row-start
-                                    :grid-cell/row-span
-                                    :grid-cell/column-start
-                                    :grid-cell/column-span
-                                    :grid-cell/position ;; auto, manual, area
-                                    :grid-cell/align-self
-                                    :grid-cell/justify-self
-                                    :grid-cell/shapes]))
-(s/def ::layout-grid-cells (s/map-of uuid? ::grid-cell))
+(def justify-content-types
+  #{:start :center :end :space-between :space-around :space-evenly})
 
-(s/def ::p1 ::us/safe-number)
-(s/def ::p2 ::us/safe-number)
-(s/def ::p3 ::us/safe-number)
-(s/def ::p4 ::us/safe-number)
+(def align-content-types
+  #{:start :end :center :space-between :space-around :space-evenly :stretch})
 
-(s/def ::layout-padding
-  (s/keys :opt-un [::p1 ::p2 ::p3 ::p4]))
+(def align-items-types
+  #{:start :end :center :stretch})
 
-(s/def ::row-gap ::us/safe-number)
-(s/def ::column-gap ::us/safe-number)
+(def justify-items-types
+  #{:start :end :center :stretch})
 
-(s/def ::layout-gap
-  (s/keys :opt-un [::row-gap ::column-gap]))
+(sm/def! ::layout-attrs
+  [:map {:title "LayoutAttrs"}
+   [:layout {:optional true} [::sm/one-of layout-types]]
+   [:layout-flex-dir {:optional true} [::sm/one-of flex-direction-types]]
+   [:layout-gap {:optional true}
+    [:map
+     [:row-gap {:optional true} ::sm/safe-number]
+     [:column-gap {:optional true} ::sm/safe-number]]]
+   [:layout-gap-type {:optional true} [::sm/one-of gap-types]]
+   [:layout-wrap-type {:optional true} [::sm/one-of wrap-types]]
+   [:layout-padding-type {:optional true} [::sm/one-of padding-type]]
+   [:layout-padding {:optional true}
+    [:map
+     [:p1 ::sm/safe-number]
+     [:p2 ::sm/safe-number]
+     [:p3 ::sm/safe-number]
+     [:p4 ::sm/safe-number]]]
+   [:layout-justify-content {:optional true} [::sm/one-of justify-content-types]]
+   [:layout-justify-items {:optional true} [::sm/one-of justify-items-types]]
+   [:layout-align-content {:optional true} [::sm/one-of align-content-types]]
+   [:layout-align-items {:optional true} [::sm/one-of align-items-types]]])
 
-(s/def ::layout-container-props
-  (s/keys :opt-un [::layout
-                   ::layout-flex-dir
-                   ::layout-gap
-                   ::layout-gap-type
-                   ::layout-wrap-type
-                   ::layout-padding-type
-                   ::layout-padding
-                   ::layout-justify-content
-                   ::layout-align-items
-                   ::layout-align-content
+;; (s/def :grid/type #{:percent :flex :auto :fixed})
+;; (s/def :grid/value (s/nilable ::us/safe-number))
+;; (s/def ::grid-definition (s/keys :req-un [:grid/type]
+;;                                  :opt-un [:grid/value]))
+;; (s/def ::layout-grid-rows (s/coll-of ::grid-definition :kind vector?))
+;; (s/def ::layout-grid-columns (s/coll-of ::grid-definition :kind vector?))
 
-                   ;; grid
-                   ::layout-grid-dir
-                   ::layout-justify-items
-                   ::layout-grid-rows
-                   ::layout-grid-columns
-                   ::layout-grid-cells
-                   ]))
+;; (s/def :grid-cell/id uuid?)
+;; (s/def :grid-cell/area-name ::us/string)
+;; (s/def :grid-cell/row-start ::us/safe-integer)
+;; (s/def :grid-cell/row-span ::us/safe-integer)
+;; (s/def :grid-cell/column-start ::us/safe-integer)
+;; (s/def :grid-cell/column-span ::us/safe-integer)
+;; (s/def :grid-cell/position #{:auto :manual :area})
+;; (s/def :grid-cell/align-self #{:auto :start :end :center :stretch})
+;; (s/def :grid-cell/justify-self #{:auto :start :end :center :stretch})
+;; (s/def :grid-cell/shapes (s/coll-of uuid?))
 
-(s/def ::m1 ::us/safe-number)
-(s/def ::m2 ::us/safe-number)
-(s/def ::m3 ::us/safe-number)
-(s/def ::m4 ::us/safe-number)
+;; (s/def ::grid-cell (s/keys :opt-un [:grid-cell/id
+;;                                     :grid-cell/area-name
+;;                                     :grid-cell/row-start
+;;                                     :grid-cell/row-span
+;;                                     :grid-cell/column-start
+;;                                     :grid-cell/column-span
+;;                                     :grid-cell/position ;; auto, manual, area
+;;                                     :grid-cell/align-self
+;;                                     :grid-cell/justify-self
+;;                                     :grid-cell/shapes]))
+;; (s/def ::layout-grid-cells (s/map-of uuid? ::grid-cell))
 
-(s/def ::layout-item-margin (s/keys :opt-un [::m1 ::m2 ::m3 ::m4]))
+;; (s/def ::layout-container-props
+;;   (s/keys :opt-un [
+;;                    ;; grid
+;;                    ::layout-grid-dir
+;;                    ::layout-justify-items
+;;                    ::layout-grid-rows
+;;                    ::layout-grid-columns
+;;                    ::layout-grid-cells
+;;                    ]))
 
-(s/def ::layout-item-margin-type #{:simple :multiple})
-(s/def ::layout-item-h-sizing #{:fill :fix :auto})
-(s/def ::layout-item-v-sizing #{:fill :fix :auto})
-(s/def ::layout-item-align-self #{:start :end :center :stretch})
-(s/def ::layout-item-max-h ::us/safe-number)
-(s/def ::layout-item-min-h ::us/safe-number)
-(s/def ::layout-item-max-w ::us/safe-number)
-(s/def ::layout-item-min-w ::us/safe-number)
-(s/def ::layout-item-absolute boolean?)
-(s/def ::layout-item-z-index ::us/safe-integer)
 
-(s/def ::layout-child-props
-  (s/keys :opt-un [::layout-item-margin
-                   ::layout-item-margin-type
-                   ::layout-item-h-sizing
-                   ::layout-item-v-sizing
-                   ::layout-item-max-h
-                   ::layout-item-min-h
-                   ::layout-item-max-w
-                   ::layout-item-min-w
-                   ::layout-item-align-self
-                   ::layout-item-absolute
-                   ::layout-item-z-index]))
+(def item-margin-types
+  #{:simple :multiple})
+
+(def item-h-sizing-types
+  #{:fill :fix :auto})
+
+(def item-v-sizing-types
+  #{:fill :fix :auto})
+
+(def item-align-self-types
+  #{:start :end :center :stretch})
+
+(sm/def! ::layout-child-attrs
+  [:map {:title "LayoutChildAttrs"}
+   [:layout-item-margin-type {:optional true} [::sm/one-of item-margin-types]]
+   [:layout-item-margin {:optional true}
+    [:map
+     [:m1 {:optional true} ::sm/safe-number]
+     [:m2 {:optional true} ::sm/safe-number]
+     [:m3 {:optional true} ::sm/safe-number]
+     [:m4 {:optional true} ::sm/safe-number]]]
+   [:layout-item-max-h {:optional true} ::sm/safe-number]
+   [:layout-item-min-h {:optional true} ::sm/safe-number]
+   [:layout-item-max-w {:optional true} ::sm/safe-number]
+   [:layout-item-min-w {:optional true} ::sm/safe-number]
+   [:layout-item-h-sizing {:optional true} [::sm/one-of item-h-sizing-types]]
+   [:layout-item-v-sizing {:optional true} [::sm/one-of item-v-sizing-types]]
+   [:layout-item-align-self {:optional true} [::sm/one-of item-align-self-types]]
+   [:layout-item-absolute {:optional true} :boolean]
+   [:layout-item-z-index {:optional true} ::sm/safe-number]])
+
+(def schema:grid-definition
+  [:map {:title "LayoutGridDefinition"}
+   [:type [::sm/one-of #{:percent :flex :auto :fixed}]]
+   [:value {:optional true} [:maybe ::sm/safe-int]]])
+
+(def grid-definition?
+  (sm/pred-fn schema:grid-definition))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SCHEMAS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def valid-layouts
+  #{:flex :grid})
+
+(sm/def! ::layout
+  [::sm/one-of valid-layouts])
 
 (defn flex-layout?
   ([objects id]
@@ -536,7 +567,10 @@
 ;; Adding a track creates the cells. We should check the shapes that are not tracked (with default values) and assign to the correct tracked values
 (defn add-grid-column
   [parent value]
-  (us/assert ::grid-definition value)
+  (dm/assert!
+   "expected a valid grid definition for `value`"
+   (grid-definition? value))
+
   (let [rows (:layout-grid-rows parent)
         new-col-num (count (:layout-grid-columns parent))
 
@@ -557,7 +591,10 @@
 
 (defn add-grid-row
   [parent value]
-  (us/assert ::grid-definition value)
+  (dm/assert!
+   "expected a valid grid definition for `value`"
+   (grid-definition? value))
+
   (let [cols (:layout-grid-columns parent)
         new-row-num (inc (count (:layout-grid-rows parent)))
 

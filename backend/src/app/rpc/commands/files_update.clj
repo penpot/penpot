@@ -10,7 +10,10 @@
    [app.common.files.features :as ffeat]
    [app.common.logging :as l]
    [app.common.pages :as cp]
+   [app.common.pages.changes :as cpc]
    [app.common.pages.migrations :as pmg]
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as smg]
    [app.common.spec :as us]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
@@ -59,6 +62,40 @@
    (fn [o]
      (or (contains? o :changes)
          (contains? o :changes-with-metadata)))))
+
+
+;; --- SCHEMA
+
+(sm/def! ::changes
+  [:vector ::cpc/change])
+
+(sm/def! ::change-with-metadata
+  [:map {:title "ChangeWithMetadata"}
+   [:changes ::changes]
+   [:hint-origin {:optional true} :keyword]
+   [:hint-events {:optional true} [:vector :string]]])
+
+(sm/def! ::update-file-params
+  [:map {:title "UpdateFileParams"}
+   [:id ::sm/uuid]
+   [:session-id ::sm/uuid]
+   [:revn {:min 0} :int]
+   [:features {:optional true
+               :gen/max 3
+               :gen/gen (smg/subseq files/supported-features)}
+    ::sm/set-of-strings]
+   [:changes {:optional true} ::changes]
+   [:changes-with-metadata {:optional true}
+    [:vector ::change-with-metadata]]])
+
+(sm/def! ::update-file-result
+  [:vector {:title "UpdateFileResults"}
+   [:map {:title "UpdateFileResult"}
+    [:changes ::changes]
+    [:file-id ::sm/uuid]
+    [:id ::sm/uuid]
+    [:revn {:min 0} :int]
+    [:session-id ::sm/uuid]]])
 
 ;; --- HELPERS
 
@@ -130,6 +167,11 @@
    ::webhooks/event? true
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
+
+   ::sm/params ::update-file-params
+   ::sm/result ::update-file-result
+
+   ::doc/module :files
    ::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]

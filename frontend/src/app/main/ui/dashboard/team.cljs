@@ -517,7 +517,7 @@
         (mf/use-fn
          (mf/deps email team-id)
          (fn []
-           (let [params (with-meta {:emails [email]
+           (let [params (with-meta {:emails #{email}
                                     :team-id team-id
                                     :resend? true
                                     :role role}

@@ -7,12 +7,12 @@
 (ns app.main.data.workspace.viewport
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages.helpers :as cph]
-   [app.common.spec :as us]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [beicon.core :as rx]
@@ -69,8 +69,14 @@
 
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]
-  (us/assert fn? x)
-  (us/assert fn? y)
+
+  (dm/assert!
+   "expected function for `x`"
+   (fn? x))
+  (dm/assert!
+   "expected function for `y`"
+   (fn? y))
+
   (ptk/reify ::update-viewport-position
     ptk/UpdateEvent
     (update [_ state]

@@ -18,7 +18,6 @@
       :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
-   [app.common.exceptions :as ex]
    [app.common.math :as mth]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -539,7 +538,10 @@
 
 (defn parse-uuid
   [v]
-  (ex/ignoring (c/parse-uuid v)))
+  (try
+    (c/parse-uuid v)
+    (catch #?(:clj Throwable :cljs :default) _
+      nil)))
 
 (defn num-string? [v]
   ;; https://stackoverflow.com/questions/175739/built-in-way-in-javascript-to-check-if-a-string-is-a-valid-number
@@ -747,6 +749,51 @@
         (map (fn [key]
                [key (delay (generator-fn key))]))
         keys))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; String Functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def stylize-re1 (re-pattern "(?u)(\\p{Lu}+[\\p{Ll}\\u0027\\p{Ps}\\p{Pe}]*)"))
+(def stylize-re2 (re-pattern "(?u)[^\\p{L}\\p{N}\\u0027\\p{Ps}\\p{Pe}\\?!]+"))
+
+(defn- stylize-split
+  [s]
+  (some-> s
+          (name)
+          (str/replace stylize-re1 "-$1")
+          (str/split stylize-re2)
+          (seq)))
+
+(defn- stylize-join
+  ([coll every-fn join-with]
+   (when (seq coll)
+     (str/join join-with (map every-fn coll))))
+  ([[fst & rst] first-fn rest-fn join-with]
+   (when (string? fst)
+     (str/join join-with (cons (first-fn fst) (map rest-fn rst))))))
+
+(defn stylize
+  ([s every-fn join-with]
+   (stylize s every-fn every-fn join-with))
+  ([s first-fn rest-fn join-with]
+    (let [remove-empty #(seq (remove empty? %))]
+      (some-> (stylize-split s)
+              (remove-empty)
+              (stylize-join first-fn rest-fn join-with)))))
+
+(defn camel
+  "Output will be: lowerUpperUpperNoSpaces
+  accepts strings and keywords"
+  [s]
+  (stylize s str/lower str/capital ""))
+
+(defn kebab
+  "Output will be: lower-cased-and-separated-with-dashes
+  accepts strings and keywords"
+  [s]
+  (stylize s str/lower "-"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols

@@ -323,6 +323,7 @@
 
 (def default-flags
   [:enable-backend-api-doc
+   :enable-backend-openapi-doc
    :enable-backend-worker
    :enable-secure-session-cookies
    :enable-email-verification])

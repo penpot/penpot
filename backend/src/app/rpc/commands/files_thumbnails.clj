@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.helpers :as cph]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
@@ -65,13 +66,12 @@
                                    (or (some-> row :media-id get-public-uri)
                                        (:data row))))))))
 
-(s/def ::file-id ::us/uuid)
-(s/def ::get-file-object-thumbnails
-  (s/keys :req [::rpc/profile-id] :req-un [::file-id]))
-
 (sv/defmethod ::get-file-object-thumbnails
   "Retrieve a file object thumbnails."
   {::doc/added "1.17"
+   ::sm/params [:map {:title "get-file-object-thumbnails"}
+                [:file-id ::sm/uuid]]
+   ::sm/result [:map-of :string :string]
    ::cond/get-object #(files/get-minimal-file %1 (:file-id %2))
    ::cond/reuse-key? true
    ::cond/key-fn files/get-file-etag}
@@ -102,6 +102,7 @@
      :file-id (:file-id row)}))
 
 (s/def ::revn ::us/integer)
+(s/def ::file-id ::us/uuid)
 
 (s/def ::get-file-thumbnail
   (s/keys :req [::rpc/profile-id]
@@ -217,15 +218,18 @@
           :always
           (update :objects assoc-thumbnails page-id thumbs))))))
 
-(s/def ::get-file-data-for-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id]
-          :opt-un [::features]))
-
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
   mainly for render thumbnails on dashboard."
-  {::doc/added "1.17"}
+
+  {::doc/added "1.17"
+   ::sm/params [:map {:title "get-file-data-for-thumbnail"}
+                [:file-id ::sm/uuid]
+                [:features {:optional true} ::files/features]]
+   ::sm/result [:map {:title "PartialFile"}
+                [:id ::sm/uuid]
+                [:revn {:min 0} :int]
+                [:page :any]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id features] :as props}]
   (dm/with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)

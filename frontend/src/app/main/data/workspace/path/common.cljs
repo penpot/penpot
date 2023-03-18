@@ -6,8 +6,39 @@
 
 (ns app.main.data.workspace.path.common
   (:require
+   [app.common.schema :as sm]
    [app.main.data.workspace.path.state :as st]
    [potok.core :as ptk]))
+
+(def valid-commands
+  #{:move-to
+    :line-to
+    :line-to-horizontal
+    :line-to-vertical
+    :curve-to
+    :smooth-curve-to
+    :quadratic-bezier-curve-to
+    :smooth-quadratic-bezier-curve-to
+    :elliptical-arc
+    :close-path})
+
+(def schema:content
+  [:vector {:title "PathContent"}
+   [:map {:title "PathContentEntry"}
+    [:command [::sm/one-of valid-commands]]
+    ;; FIXME: remove the `?` from prop name
+    [:relative? {:optional true} :boolean]
+    [:params {:optional true}
+     [:map {:title "PathContentEntryParams"}
+      [:x :double]
+      [:y :double]
+      [:c1x {:optional true} :double]
+      [:c1y {:optional true} :double]
+      [:c2x {:optional true} :double]
+      [:c2y {:optional true} :double]]]]])
+
+(def content?
+  (sm/pred-fn schema:content))
 
 (defn init-path []
   (ptk/reify ::init-path))

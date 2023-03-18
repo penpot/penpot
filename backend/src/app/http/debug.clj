@@ -238,6 +238,9 @@
             (-> (io/resource "app/templates/error-report.v2.tmpl")
                 (tmpl/render report)))
 
+          (render-template-v3 [{report :content}]
+            (-> (io/resource "app/templates/error-report.v3.tmpl")
+                (tmpl/render report)))
           ]
 
     (when-not (authorized? pool request)
@@ -245,9 +248,10 @@
                 :code :only-admins-allowed))
 
     (if-let [report (get-report request)]
-      (let [result (if (= 1 (:version report))
-                     (render-template-v1 report)
-                     (render-template-v2 report))]
+      (let [result (case (:version report)
+                     1 (render-template-v1 report)
+                     2 (render-template-v2 report)
+                     3 (render-template-v3 report))]
         {::yrs/status 200
          ::yrs/body result
          ::yrs/headers {"content-type" "text/html; charset=utf-8"

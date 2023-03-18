@@ -190,7 +190,7 @@
 
     (mf/with-effect [ids]
       (tm/schedule-on-idle
-       (dom/focus! (dom/get-element (first ids)))))
+       #(dom/focus! (dom/get-element (first ids)))))
 
     (when (and open? (some? (:levels @local)))
       [:> dropdown' props

@@ -10,6 +10,9 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
+   [app.common.schema.openapi :as-alias oapi]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as-alias db]
@@ -46,6 +49,27 @@
 (s/def ::input
   (s/keys :req-un [::path]
           :opt-un [::mtype]))
+
+(sm/def! ::fs/path
+  {:type ::fs/path
+   :pred fs/path?
+   :type-properties
+   {:title "path"
+    :description "filesystem path"
+    :error/message "expected a valid fs path instance"
+    :gen/gen (sg/generator :string)
+    ::oapi/type "string"
+    ::oapi/format "unix-path"
+    ::oapi/decode fs/path}})
+
+(sm/def! ::upload
+  [:map {:title "Upload"}
+   [:filename :string]
+   [:size :int]
+   [:path ::fs/path]
+   [:mtype {:optional true} :string]
+   [:headers {:optional true}
+    [:map-of :string :string]]])
 
 (defn validate-media-type!
   ([upload] (validate-media-type! upload cm/valid-image-types))

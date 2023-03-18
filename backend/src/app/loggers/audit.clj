@@ -141,7 +141,7 @@
 (defn prepare-event
   [cfg mdata params result]
   (let [resultm    (meta result)
-        request    (::http/request params)
+        request    (-> params meta ::http/request)
         profile-id (or (::profile-id resultm)
                        (:profile-id result)
                        (::rpc/profile-id params)
@@ -171,7 +171,7 @@
      ;; NOTE: for batch-key lookup we need the params as-is
      ;; because the rpc api does not need to know the
      ;; audit/webhook specific object layout.
-     ::rpc/params (dissoc params ::http/request)
+     ::rpc/params params
 
      ::webhooks/batch-key
      (or (::webhooks/batch-key mdata)

@@ -427,4 +427,5 @@
       (t/is (= (count result-zero-x-2) 1))
       (t/is (= (count result-zero-y-2) 0))
       (t/is (= (count result-frame-x-2) 1))
-      (t/is (= (count result-frame-y-2) 0)))))
+      (t/is (= (count result-frame-y-2) 0))))
+  )
