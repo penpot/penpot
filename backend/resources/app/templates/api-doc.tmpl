@@ -21,23 +21,64 @@
       <header>
         <h1>Penpot API Documentation (v{{version}})</h1>
       </header>
-      <section class="rpc-doc-content">
+      <section class="doc-content">
+        <h2>AUTHENTICATION</h2>
+        <p>The penpot backend right now offerts two way for authenticate the request:
+        cookies (the same mechanism that we use ourselves on accessing the API from the web
+        application) and Access Tokens.</p>
 
-        <h2>RPC COMMAND METHODS:</h2>
+        <p>The cookie can be obtained using the <b>`login-with-password`</b> rpc method,
+        on successful login it sets the <b>`auto-token`</b> cookie with the session
+        token.</p>
+
+        <p>The access token can be obtained on the appropriate section on profile settings
+        and it should be provided using <b>`Authorization`</b> header with <b>`Token
+        &lt;token-string&gt;`</b> value.</p>
+
+
+        <h2>GENERAL NOTES</h2>
+
+        <h3>Content Negotiation</h3>
+        <p>The penpot API by default operates indistinctly with: <b>`application/json`</b>
+        and <b>`application/transit+json`</b> content types. You should specify the desired content-type
+        on the <b>`Accept`</b> header, the transit encoding is used by default.</p>
+
+
+        <h3>OpenAPI</h3>
+        <p>The penpot API conforms the OpenAPI(3.0) standard. Here you have
+        the <a href="/api/openapi" target="_blank"><b>SwaggerUI</b></a> and
+        the <a href="/api/openapi.json" target="_blank">openapi.json</a> file.</p>
+
+
+        <h3>Limits</h3>
+        <p>The rate limit work per user basis (this means that different api keys share
+        the same rate limit). For now the limits are not documented because we are
+        studying and analyzing the data. As a general rule, it should not be abused, if an
+        abusive use is detected, we will proceed to block the user's access to the
+        API.</p>
+
+
+
+      </section>
+      <section class="rpc-doc-content">
+        <h2>RPC METHODS REFERENCE:</h2>
+
+
+        <h3>COMMAND METHODS</h3>
         <ul class="rpc-items">
           {% for item in command-methods %}
             {% include "app/templates/api-doc-entry.tmpl" with item=item %}
           {% endfor %}
         </ul>
 
-        <h2>RPC QUERY METHODS:</h2>
+        <h3>QUERY METHODS [DEPRECATED]</h3>
         <ul class="rpc-items">
           {% for item in query-methods %}
             {% include "app/templates/api-doc-entry.tmpl" with item=item %}
           {% endfor %}
         </ul>
 
-        <h2>RPC MUTATION METHODS:</h2>
+        <h3>RPC MUTATION METHODS [DEPRECATED]</h3>
         <ul class="rpc-items">
           {% for item in mutation-methods %}
             {% include "app/templates/api-doc-entry.tmpl" with item=item %}

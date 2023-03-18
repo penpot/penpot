@@ -32,7 +32,8 @@
          (contains? o :project-id)))))
 
 (sv/defmethod ::font-variants
-  {::doc/added "1.7"}
+  {::doc/added "1.7"
+   ::doc/deprecated "1.18"}
   [{:keys [pool] :as cfg} {:keys [profile-id team-id file-id project-id] :as params}]
   (with-open [conn (db/open pool)]
     (cond

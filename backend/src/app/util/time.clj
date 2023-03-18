@@ -7,7 +7,10 @@
 (ns app.util.time
   (:require
    [app.common.exceptions :as ex]
+   [app.common.schema :as sm]
+   [app.common.schema.openapi :as-alias oapi]
    [clojure.spec.alpha :as s]
+   [clojure.test.check.generators :as tgen]
    [cuerdas.core :as str]
    [fipp.ednize :as fez])
   (:import
@@ -358,3 +361,27 @@
   []
   (let [p1 (System/nanoTime)]
     #(duration {:nanos (- (System/nanoTime) p1)})))
+
+(sm/def! ::instant
+  {:type ::instant
+   :pred instant?
+   :type-properties
+   {:error/message "should be an instant"
+    :title "instant"
+    ::sm/decode instant
+    :gen/gen (tgen/fmap (fn [i] (in-past i))  tgen/pos-int)
+    ::oapi/type "string"
+    ::oapi/format "iso"
+    }})
+
+(sm/def! ::duration
+  {:type :durations
+   :pred duration?
+   :type-properties
+   {:error/message "should be a duration"
+    :gen/gen (tgen/fmap duration tgen/pos-int)
+    :title "duration"
+    ::sm/decode duration
+    ::oapi/type "string"
+    ::oapi/format "duration"
+    }})

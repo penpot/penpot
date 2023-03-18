@@ -31,6 +31,44 @@ header {
   width: 100%;
 }
 
+b {
+  font-weight: 500;
+}
+
+h2 {
+  margin-top: 30px;
+}
+
+h3 {
+  font-weight: 400;
+  font-size: 11px;
+  margin-top: 20px;
+  text-decoration: underline;
+}
+
+h4 {
+  font-weight: 300;
+  font-size: 11px;
+}
+
+.doc-content {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* border: 1px solid red; */
+  padding: 5px;
+}
+
+.doc-content p {
+  line-height: 22px;
+  margin-bottom: 0px;
+}
+
+.doc-content h3 {
+  margin-bottom: 0px;
+}
+
 .rpc-doc-content {
   margin-top: 20px;
   width: 100%;
@@ -141,5 +179,9 @@ header {
 }
 
 p.small strong {
+  font-size: 10px;
+}
+
+p.small a {
   font-size: 10px;
 }

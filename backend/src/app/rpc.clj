@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
@@ -73,10 +74,7 @@
   (let [type       (keyword (:type path-params))
         profile-id (or (::session/profile-id request)
                        (::actoken/profile-id request))
-
-        data       (-> params
-                       (assoc ::request-at (dt/now))
-                       (assoc ::http/request request))
+        data       (assoc params ::request-at (dt/now))
         data       (if profile-id
                      (-> data
                          (assoc :profile-id profile-id)
@@ -93,15 +91,14 @@
   (let [type       (keyword (:type path-params))
         profile-id (or (::session/profile-id request)
                        (::actoken/profile-id request))
-        data       (-> params
-                       (assoc ::request-at (dt/now))
-                       (assoc ::http/request request))
+        data       (assoc params ::request-at (dt/now))
         data       (if profile-id
                      (-> data
                          (assoc :profile-id profile-id)
                          (assoc ::profile-id profile-id))
                      (dissoc data :profile-id))
         method     (get methods type default-handler)
+        data       (vary-meta data assoc ::http/request request)
         response   (method data)]
     (handle-response request response)))
 
@@ -113,15 +110,16 @@
         etag       (yrq/get-header request "if-none-match")
         profile-id (or (::session/profile-id request)
                        (::actoken/profile-id request))
+
         data       (-> params
                        (assoc ::request-at (dt/now))
                        (assoc ::session/id (::session/id request))
-                       (assoc ::http/request request)
                        (assoc ::cond/key etag)
                        (cond-> (uuid? profile-id)
                          (assoc ::profile-id profile-id)))
 
-        method    (get methods type default-handler)]
+        data       (vary-meta data assoc ::http/request request)
+        method     (get methods type default-handler)]
 
     (binding [cond/*enabled* true]
       (let [response (method data)]
@@ -182,9 +180,49 @@
 
 (defn- wrap-spec-conform
   [_ f mdata]
-  (let [spec (or (::sv/spec mdata) (s/spec any?))]
-    (fn [cfg params]
-      (f cfg (us/conform spec params)))))
+  ;; NOTE: skip spec conform operation on rpc methods that already
+  ;; uses malli validation mechanism.
+  (if (contains? mdata ::sm/params)
+    f
+    (let [spec (or (::sv/spec mdata) (s/spec any?))]
+      (fn [cfg params]
+        (f cfg (us/conform spec params))))))
+
+(defn- wrap-params-validation
+  [_ f mdata]
+  (if-let [schema (::sm/params mdata)]
+    (let [schema  (sm/schema schema)
+          valid?  (sm/validator schema)
+          explain (sm/explainer schema)
+          decode  (sm/decoder schema sm/input-transformer)]
+
+      (fn [cfg params]
+        (let [params (decode params)]
+          (if (valid? params)
+            (f cfg params)
+
+            (ex/raise :type :validation
+                      :code :params-validation
+                      ::sm/explain (explain params))))))
+    f))
+
+(defn- wrap-output-validation
+  [_ f mdata]
+  (if (contains? cf/flags :rpc-output-validation)
+    (or (when-let [schema (::sm/result mdata)]
+          (let [schema  (sm/schema schema)
+                valid?  (sm/validator schema)
+                explain (sm/explainer schema)]
+            (fn [cfg params]
+              (let [response (f cfg params)]
+                (when (map? response)
+                  (when-not (valid? response)
+                    (ex/raise :type :validation
+                              :code :data-validation
+                              ::sm/explain (explain response))))
+                response))))
+        f)
+    f))
 
 (defn- wrap-all
   [cfg f mdata]
@@ -196,6 +234,8 @@
     (rlimit/wrap cfg $ mdata)
     (wrap-audit cfg $ mdata)
     (wrap-spec-conform cfg $ mdata)
+    (wrap-output-validation cfg $ mdata)
+    (wrap-params-validation cfg $ mdata)
     (wrap-authentication cfg $ mdata)
     (wrap-access-token cfg $ mdata)))
 

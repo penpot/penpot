@@ -9,6 +9,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.http.session :as-alias session]
@@ -82,6 +83,14 @@
                           (dissoc ::s/problems ::s/value)
                           (cond-> explain (assoc :explain explain)))})
 
+      (= code :params-validation)
+      (let [explain (::sm/explain data)
+            payload (sm/humanize-data explain)]
+        {::yrs/status 400
+         ::yrs/body   (-> data
+                          (dissoc ::sm/explain)
+                          (assoc :data payload))})
+
       (= code :request-body-too-large)
       {::yrs/status 413 ::yrs/body data}
 
@@ -90,16 +99,39 @@
 
 (defmethod handle-exception :assertion
   [error request]
-  (let [edata   (ex-data error)
-        explain (ex/explain edata)]
-    (binding [l/*context* (request->context request)]
-      (l/error :hint "Assertion error" :message (ex-message error) :cause error)
-      {::yrs/status 500
-       ::yrs/body   {:type :server-error
-                     :code :assertion
-                     :data (-> edata
-                               (dissoc ::s/problems ::s/value ::s/spec)
-                               (cond-> explain (assoc :explain explain)))}})))
+  (binding [l/*context* (request->context request)]
+    (let [{:keys [code] :as data} (ex-data error)]
+      (cond
+        (= code :data-validation)
+        (let [explain (::sm/explain data)
+              payload (sm/humanize-data explain)]
+
+          (l/error :hint "Data assertion error" :message (ex-message error) :cause error)
+          {::yrs/status 500
+           ::yrs/body   {:type :server-error
+                         :code :assertion
+                         :data (-> data
+                                   (dissoc ::sm/explain)
+                                   (assoc :data payload))}})
+
+        (= code :spec-validation)
+        (let [explain (ex/explain data)]
+          (l/error :hint "Spec assertion error" :message (ex-message error) :cause error)
+          {::yrs/status 500
+           ::yrs/body   {:type :server-error
+                         :code :assertion
+                         :data (-> data
+                                   (dissoc ::s/problems ::s/value ::s/spec)
+                                   (cond-> explain (assoc :explain explain)))}})
+
+        :else
+        (do
+          (l/error :hint "Assertion error" :message (ex-message error) :cause error)
+          {::yrs/status 500
+           ::yrs/body   {:type :server-error
+                         :code :assertion
+                         :data data}})))))
+
 
 (defmethod handle-exception :not-found
   [err _]

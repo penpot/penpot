@@ -155,6 +155,7 @@
 
     (binding [ffeat/*current*  features
               ffeat/*previous* (:features file)]
+
       (let [update-fn (cond-> update-file*
                         (contains? features "storage/pointer-map")
                         (wrap-with-pointer-map-context)

@@ -10,6 +10,7 @@
   (:require
    #?(:clj [clojure.stacktrace :as strace])
    [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [expound.alpha :as expound])
@@ -31,6 +32,7 @@
   [& params]
   `(throw (error ~@params)))
 
+;; FIXME deprecate
 (defn try*
   [f on-error]
   (try (f) (catch #?(:clj Throwable :cljs :default) e (on-error e))))
@@ -40,11 +42,15 @@
 
 (defmacro ignoring
   [& exprs]
-  `(try* (^:once fn* [] ~@exprs) (constantly nil)))
+  (if (:ns &env)
+    `(try ~@exprs (catch :default e# nil))
+    `(try ~@exprs (catch Throwable e# nil))))
 
 (defmacro try!
   [& exprs]
-  `(try* (^:once fn* [] ~@exprs) identity))
+  (if (:ns &env)
+    `(try ~@exprs (catch :default e# e#))
+    `(try ~@exprs (catch Throwable e# e#))))
 
 (defn ex-info?
   [v]
@@ -77,7 +83,12 @@
           (contains? data ::s/spec))
      (binding [s/*explain-out* expound/printer]
        (with-out-str
-         (s/explain-out (update data ::s/problems #(take max-problems %))))))))
+         (s/explain-out (update data ::s/problems #(take max-problems %)))))
+
+     (contains? data ::sm/explain)
+     (pp/pprint-str (sm/humanize-data (::sm/explain data))
+                    :level 3
+                    :length 10))))
 
 #?(:clj
 (defn format-throwable
@@ -157,7 +168,7 @@
             (print-trace cause)
             (when-let [data (ex-data cause)]
               (when data?
-                (print-data (dissoc data ::s/problems ::s/spec ::s/value)))
+                (print-data (dissoc data ::s/problems ::s/spec ::s/value ::sm/explain)))
               (when explain?
                 (if-let [explain (explain data)]
                   (print-explain explain)))))

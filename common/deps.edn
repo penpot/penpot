@@ -18,6 +18,8 @@
   selmer/selmer {:mvn/version "1.12.55"}
   criterium/criterium {:mvn/version "0.4.6"}
 
+  metosin/malli {:mvn/version "0.10.3"}
+
   expound/expound {:mvn/version "0.9.0"}
   com.cognitect/transit-clj {:mvn/version "1.0.329"}
   com.cognitect/transit-cljs {:mvn/version "0.8.280"}

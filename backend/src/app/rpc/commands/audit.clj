@@ -39,8 +39,9 @@
    :profile-id :ip-addr :props :context])
 
 (defn- handle-events
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id events ::http/request]}]
-  (let [ip-addr (audit/parse-client-ip request)
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id events] :as params}]
+  (let [request (-> params meta ::http/request)
+        ip-addr (audit/parse-client-ip request)
         xform   (comp
                  (map #(assoc % :profile-id profile-id))
                  (map #(assoc % :ip-addr ip-addr))

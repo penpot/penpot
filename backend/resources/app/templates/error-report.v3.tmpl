@@ -1,0 +1,100 @@
+ {% extends "app/templates/base.tmpl" %}
+
+{% block title %}
+penpot - error report v2 {{id}}
+{% endblock %}
+
+{% block content %}
+<nav>
+  <div>[<a href="/dbg/error">⮜</a>]</div>
+  <div>[<a href="#message">message</a>]</div>
+  <div>[<a href="#props">props</a>]</div>
+  <div>[<a href="#context">context</a>]</div>
+  {% if params %}
+  <div>[<a href="#params">params</a>]</div>
+  {% endif %}
+  {% if data %}
+  <div>[<a href="#edata">data</a>]</div>
+  {% endif %}
+  {% if explain %}
+  <div>[<a href="#explain">explain</a>]</div>
+  {% endif %}
+  {% if value %}
+  <div>[<a href="#value">value</a>]</div>
+  {% endif %}
+  {% if trace %}
+  <div>[<a href="#trace">trace</a>]</div>
+  {% endif %}
+</nav>
+<main>
+  <div class="table">
+    <div class="table-row multiline">
+      <div id="message" class="table-key">MESSAGE: </div>
+
+      <div class="table-val">
+        <h1>{{hint}}</h1>
+      </div>
+    </div>
+
+    <div class="table-row multiline">
+      <div id="props" class="table-key">LOG PROPS: </div>
+      <div class="table-val">
+        <pre>{{props}}</pre>
+      </div>
+    </div>
+
+    <div class="table-row multiline">
+      <div id="context" class="table-key">CONTEXT: </div>
+
+      <div class="table-val">
+        <pre>{{context}}</pre>
+      </div>
+    </div>
+
+    {% if params %}
+    <div class="table-row multiline">
+      <div id="params" class="table-key">PARAMS: </div>
+      <div class="table-val">
+        <pre>{{params}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if data %}
+    <div class="table-row multiline">
+      <div id="edata" class="table-key">DATA: </div>
+      <div class="table-val">
+        <pre>{{data}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if value %}
+    <div class="table-row multiline">
+      <div id="value" class="table-key">VALIDATION VALUE: </div>
+      <div class="table-val">
+        <pre>{{value}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if explain %}
+    <div class="table-row multiline">
+      <div id="explain" class="table-key">EXPLAIN: </div>
+      <div class="table-val">
+        <pre>{{explain}}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if trace %}
+    <div class="table-row multiline">
+      <div id="trace" class="table-key">TRACE:</div>
+      <div class="table-val">
+        <pre>{{trace}}</pre>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

@@ -153,8 +153,8 @@
   [_ cfg]
   (rr/router
    [["" {:middleware [[mw/server-timing]
-                      [mw/format-response]
                       [mw/params]
+                      [mw/format-response]
                       [mw/parse-request]
                       [session/soft-auth cfg]
                       [actoken/soft-auth cfg]
