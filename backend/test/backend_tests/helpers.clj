@@ -135,13 +135,14 @@
                              :app.auth.oidc/generic-provider
                              :app.setup/builtin-templates
                              :app.auth.oidc/routes
-                             :app.worker/executors-monitor
                              :app.http.oauth/handler
                              :app.notifications/handler
                              :app.loggers.mattermost/reporter
                              :app.loggers.database/reporter
                              :app.worker/cron
-                             :app.worker/worker))
+                             :app.worker/dispatcher
+                             [:app.main/default :app.worker/worker]
+                             [:app.main/webhook :app.worker/worker]))
           _      (ig/load-namespaces system)
           system (-> (ig/prep system)
                      (ig/init))]
