@@ -119,7 +119,7 @@
         border-radius: 50%;
         font-size: $fs24;
         color: $color-white;
-        line-height: 120px;
+        line-height: $lh-500; // Original value was 120px; 120px/24px =500% => $lh-500
         text-align: center;
         background: $color-primary-dark;
         z-index: 14;

@@ -115,7 +115,7 @@
     font-family: "worksans", sans-serif !important;
     font-size: $fs12;
     height: 1.5rem;
-    line-height: 1.5rem;
+    line-height: $lh-200; // Original value was 1.5rem = 24px; 24px/12px = 200% => lh-200
     text-align: center;
     width: 2.5rem !important;
   }

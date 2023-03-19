@@ -500,7 +500,7 @@ input[type="radio"],
 input[type="checkbox"] {
   box-sizing: border-box;
   cursor: pointer;
-  line-height: normal;
+  line-height: $lh-normal;
   margin-top: 1px 0 0;
 }
 

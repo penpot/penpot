@@ -97,7 +97,7 @@ video {
   border: 0;
   font: inherit;
   font-size: 100%;
-  line-height: $base-lh;
+  line-height: $lh-143;
   margin: 0;
   padding: 0;
   text-decoration: none;
@@ -118,7 +118,7 @@ section {
   display: block;
 }
 body {
-  line-height: 1;
+  line-height: $lh-100;
 }
 
 ol,

@@ -239,7 +239,7 @@
     h2 {
       cursor: pointer;
       font-size: $fs18;
-      line-height: 1rem;
+      line-height: $lh-088; // Original value was 1rem = 16px; 16px/18px = 88.88888% => $lh-088
       font-weight: $fw600;
       color: $color-black;
       margin-right: $size-1;
@@ -251,7 +251,7 @@
 
     .info {
       font-size: $fs14;
-      line-height: 1rem;
+      line-height: $lh-115; // Original value was 1rem = 16px; 16px/14px = 114.285714286% => $lh-115 (rounded)
       font-weight: $fw400;
       color: $color-gray-60;
       margin-left: 0.75rem;
@@ -333,7 +333,7 @@
 
 .recent-files-row-title-info {
   color: $color-gray-60;
-  line-height: 1rem;
+  line-height: $lh-115; // Original value was 1rem = 16px; 16px/14px = 114.285714286% => $lh-115
   font-size: $fs14;
   font-weight: $fw400;
   @media (max-width: 880px) {
@@ -484,9 +484,8 @@
       border: none;
       cursor: pointer;
       height: 58px;
-      display: inline-block;
-      line-height: 58px;
-      text-align: center;
+      display: inline-flex;
+      align-items: center;
       border-top: 2px solid #e4e4e4;
       border-left: 2px solid #e4e4e4;
       border-right: 2px solid #e4e4e4;
@@ -499,7 +498,7 @@
       span {
         display: inline-block;
         vertical-align: middle;
-        line-height: normal;
+        line-height: $lh-normal;
         font-size: $fs18;
         font-weight: $fw600;
         color: $color-black;
@@ -523,12 +522,13 @@
     border: 2px solid #e0e4e9;
     border-radius: 50%;
     text-align: center;
-    line-height: 35px;
     width: 35px;
     height: 35px;
     cursor: pointer;
     background-color: $color-white;
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
     svg {
       width: 12px;
       height: 12px;
