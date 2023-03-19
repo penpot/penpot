@@ -104,7 +104,6 @@
 
 (defn created-thread-on-viewer
   [{:keys [id comment page-id] :as thread}]
-
   (ptk/reify ::created-thread-on-viewer
     ptk/UpdateEvent
     (update [_ state]
