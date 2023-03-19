@@ -141,7 +141,7 @@
 
 (defn shift-select-shapes
   ([id objects]
-   (ptk/reify ::shift-select-shapes
+   (ptk/reify ::shift-select-shapes-2
      ptk/UpdateEvent
      (update [_ state]
        (let [selection (-> state
