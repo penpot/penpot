@@ -65,8 +65,6 @@
         {:processed (+ stotal htotal)
          :orphans stotal}))))
 
-
-
 (def ^:private sql:get-profiles-chunk
   "select id, photo_id, created_at from profile
     where deleted_at is not null
