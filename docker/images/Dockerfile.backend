@@ -25,6 +25,7 @@ RUN set -ex; \
         woff-tools \
         woff2 \
         python3 \
+        python3-tabulate \
         fontforge \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \

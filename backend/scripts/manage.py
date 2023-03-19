@@ -11,6 +11,7 @@ import json
 import socket
 import sys
 
+from tabulate import tabulate
 from getpass import getpass
 from urllib.parse import urlparse
 
@@ -58,13 +59,17 @@ def print_error(res):
         break
 
 def run_cmd(params):
-    expr = "(app.srepl.ext/run-json-cmd {})".format(encode(params))
-    res, failed = send_eval(expr)
-    if failed:
-        print_error(res)
-        sys.exit(-1)
+    try:
+        expr = "(app.srepl.ext/run-json-cmd {})".format(encode(params))
+        res, failed = send_eval(expr)
+        if failed:
+            print_error(res)
+            sys.exit(-1)
 
-    return res
+        return res
+    except Exception as cause:
+        print("EXC:", str(cause))
+        sys.exit(-2)
 
 def create_profile(fullname, email, password):
     params = {
@@ -96,6 +101,34 @@ def update_profile(email, fullname, password, is_active):
     else:
         print(f"No profile found with email {email}")
 
+def delete_profile(email, soft):
+    params = {
+        "cmd": "delete-profile",
+        "params": {
+            "email": email,
+            "soft": soft
+        }
+    }
+
+    res = run_cmd(params)
+    if res is True:
+        print(f"Deleted")
+    else:
+        print(f"No profile found with email {email}")
+
+def search_profile(email):
+    params = {
+        "cmd": "search-profile",
+        "params": {
+            "email": email,
+        }
+    }
+
+    res = run_cmd(params)
+
+    if isinstance(res, list):
+        print(tabulate(res, headers="keys"))
+
 def derive_password(password):
     params = {
         "cmd": "derive-password",
@@ -107,11 +140,13 @@ def derive_password(password):
     res = run_cmd(params)
     print(f"Derived password: \"{res}\"")
 
-available_commands = [
+available_commands = (
     "create-profile",
     "update-profile",
-    "derive-password"
-]
+    "delete-profile",
+    "search-profile",
+    "derive-password",
+)
 
 parser = argparse.ArgumentParser(
     description=(
@@ -121,10 +156,11 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument("-V", "--version", action="version", version="Penpot CLI %%develop%%")
 parser.add_argument("action", action="store", choices=available_commands)
-parser.add_argument("-n", "--fullname", help="Fullname", action="store")
-parser.add_argument("-e", "--email", help="Email", action="store")
-parser.add_argument("-p", "--password", help="Password", action="store")
-parser.add_argument("-c", "--connect", help="Connect to PREPL", action="store", default="tcp://localhost:6063")
+parser.add_argument("-f", "--force", help="force operation", action="store_true")
+parser.add_argument("-n", "--fullname", help="fullname", action="store")
+parser.add_argument("-e", "--email", help="email", action="store")
+parser.add_argument("-p", "--password", help="password", action="store")
+parser.add_argument("-c", "--connect", help="connect to PREPL", action="store", default="tcp://localhost:6063")
 
 args = parser.parse_args()
 
@@ -165,3 +201,19 @@ elif args.action == "derive-password":
         password = getpass("Password: ")
 
     derive_password(password)
+
+elif args.action == "delete-profile":
+    email = args.email
+    soft = not args.force
+
+    if email is None:
+        email = input("Email: ")
+
+    delete_profile(email, soft)
+
+elif args.action == "search-profile":
+    email = args.email
+    if email is None:
+        email = input("Email: ")
+
+    search_profile(email)

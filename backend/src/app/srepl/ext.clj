@@ -13,6 +13,7 @@
    [app.db :as db]
    [app.rpc.commands.auth :as cmd.auth]
    [app.util.json :as json]
+   [app.util.time :as dt]
    [cuerdas.core :as str]))
 
 (defn- get-current-system
@@ -63,8 +64,42 @@
                                 params
                                 {:email email
                                  :deleted-at nil}
-                                {:return-keys false})]
+                                {::db/return-keys? false})]
             (pos? (:next.jdbc/update-count res))))))))
+
+(defmethod run-json-cmd* :delete-profile
+  [{:keys [email soft]}]
+  (when-not email
+    (ex/raise :type :assertion
+              :code :invalid-arguments
+              :hint "email should be provided"))
+
+  (when-let [system (get-current-system)]
+    (db/with-atomic [conn (:app.db/pool system)]
+
+      (let [res (if soft
+                  (db/update! conn :profile
+                              {:deleted-at (dt/now)}
+                              {:email email :deleted-at nil}
+                              {::db/return-keys? false})
+                  (db/delete! conn :profile
+                              {:email email}
+                              {::db/return-keys? false}))]
+        (pos? (:next.jdbc/update-count res))))))
+
+(defmethod run-json-cmd* :search-profile
+  [{:keys [email]}]
+  (when-not email
+    (ex/raise :type :assertion
+              :code :invalid-arguments
+              :hint "email should be provided"))
+
+  (when-let [system (get-current-system)]
+    (db/with-atomic [conn (:app.db/pool system)]
+
+      (let [sql (str "select email, fullname, created_at, deleted_at from profile "
+                     " where email similar to ? order by created_at desc limit 100")]
+        (db/exec! conn [sql email])))))
 
 (defmethod run-json-cmd* :derive-password
   [{:keys [password]}]
