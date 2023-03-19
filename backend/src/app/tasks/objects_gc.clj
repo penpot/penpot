@@ -62,7 +62,9 @@
         (when (:rollback? params)
           (db/rollback! conn))
 
-        {:processed (+ stotal htotal)}))))
+        {:processed (+ stotal htotal)
+         :orphans stotal}))))
+
 
 
 (def ^:private sql:get-profiles-chunk
@@ -78,24 +80,22 @@
   [{:keys [::conn ::min-age ::storage] :as cfg}]
   (letfn [(get-chunk [cursor]
             (let [rows (db/exec! conn [sql:get-profiles-chunk min-age cursor])]
-              [(some->> rows peek :created-at) rows]))]
-    (reduce
-     (fn [total {:keys [id photo-id]}]
-       (l/debug :hint "permanently delete profile" :id (str id))
+              [(some->> rows peek :created-at) rows]))
 
-       ;; Mark as deleted the storage object related with the
-       ;; photo-id field.
-       (some->> photo-id (sto/touch-object! storage))
+          (process-profile [total {:keys [id photo-id]}]
+            (l/debug :hint "permanently delete profile" :id (str id))
 
-       ;; And finally, permanently delete the profile.
-       (db/delete! conn :profile {:id id})
+            ;; Mark as deleted the storage object related with the
+            ;; photo-id field.
+            (some->> photo-id (sto/touch-object! storage))
 
-       (inc total))
-     0
-     (d/iteration get-chunk
-                  :vf second
-                  :kf first
-                  :initk (dt/now)))))
+            ;; And finally, permanently delete the profile.
+            (db/delete! conn :profile {:id id})
+
+            (inc total))]
+
+    (->> (d/iteration get-chunk :vf second :kf first :initk (dt/now))
+         (reduce process-profile 0))))
 
 (def ^:private sql:get-teams-chunk
   "select id, photo_id, created_at from team
@@ -110,24 +110,22 @@
   [{:keys [::conn ::min-age ::storage] :as cfg}]
   (letfn [(get-chunk [cursor]
             (let [rows (db/exec! conn [sql:get-teams-chunk min-age cursor])]
-              [(some->> rows peek :created-at) rows]))]
-    (reduce
-     (fn [total {:keys [id photo-id]}]
-       (l/debug :hint "permanently delete team" :id (str id))
+              [(some->> rows peek :created-at) rows]))
 
-       ;; Mark as deleted the storage object related with the
-       ;; photo-id field.
-       (some->> photo-id (sto/touch-object! storage))
+          (process-team [total {:keys [id photo-id]}]
+            (l/debug :hint "permanently delete team" :id (str id))
 
-       ;; And finally, permanently delete the team.
-       (db/delete! conn :team {:id id})
+            ;; Mark as deleted the storage object related with the
+            ;; photo-id field.
+            (some->> photo-id (sto/touch-object! storage))
 
-       (inc total))
-     0
-     (d/iteration get-chunk
-                  :vf second
-                  :kf first
-                  :initk (dt/now)))))
+            ;; And finally, permanently delete the team.
+            (db/delete! conn :team {:id id})
+
+            (inc total))]
+
+    (->> (d/iteration get-chunk :vf second :kf first :initk (dt/now))
+         (reduce process-team 0))))
 
 (def ^:private sql:get-orphan-teams-chunk
   "select t.id, t.created_at
@@ -146,23 +144,21 @@
   [{:keys [::conn] :as cfg}]
   (letfn [(get-chunk [cursor]
             (let [rows (db/exec! conn [sql:get-orphan-teams-chunk cursor])]
-              [(some->> rows peek :created-at) rows]))]
-    (reduce
-     (fn [total {:keys [id]}]
-       (let [result (db/update! conn :team
-                                {:deleted-at (dt/now)}
-                                {:id id :deleted-at nil}
-                                {::db/return-keys? false})
-             count  (db/get-update-count result)]
-         (when (pos? count)
-           (l/debug :hint "mark team for deletion" :id (str id) ))
+              [(some->> rows peek :created-at) rows]))
 
-         (+ total count)))
-     0
-     (d/iteration get-chunk
-                  :vf second
-                  :kf first
-                  :initk (dt/now)))))
+          (process-team [total {:keys [id]}]
+            (let [result (db/update! conn :team
+                                     {:deleted-at (dt/now)}
+                                     {:id id :deleted-at nil}
+                                     {::db/return-keys? false})
+                  count  (db/get-update-count result)]
+              (when (pos? count)
+                (l/debug :hint "mark team for deletion" :id (str id) ))
+
+              (+ total count)))]
+
+    (->> (d/iteration get-chunk :vf second :kf first :initk (dt/now))
+         (reduce process-team 0))))
 
 (def ^:private sql:get-fonts-chunk
   "select id, created_at, woff1_file_id, woff2_file_id, otf_file_id, ttf_file_id
@@ -178,26 +174,24 @@
   [{:keys [::conn ::min-age ::storage] :as cfg}]
   (letfn [(get-chunk [cursor]
             (let [rows (db/exec! conn [sql:get-fonts-chunk min-age cursor])]
-              [(some->> rows peek :created-at) rows]))]
-    (reduce
-     (fn [total {:keys [id] :as font}]
-       (l/debug :hint "permanently delete font variant" :id (str id))
+              [(some->> rows peek :created-at) rows]))
 
-       ;; Mark as deleted the all related storage objects
-       (some->> (:woff1-file-id font) (sto/touch-object! storage))
-       (some->> (:woff2-file-id font) (sto/touch-object! storage))
-       (some->> (:otf-file-id font)   (sto/touch-object! storage))
-       (some->> (:ttf-file-id font)   (sto/touch-object! storage))
+          (process-font [total {:keys [id] :as font}]
+            (l/debug :hint "permanently delete font variant" :id (str id))
 
-       ;; And finally, permanently delete the team font variant
-       (db/delete! conn :team-font-variant {:id id})
+            ;; Mark as deleted the all related storage objects
+            (some->> (:woff1-file-id font) (sto/touch-object! storage))
+            (some->> (:woff2-file-id font) (sto/touch-object! storage))
+            (some->> (:otf-file-id font)   (sto/touch-object! storage))
+            (some->> (:ttf-file-id font)   (sto/touch-object! storage))
 
-       (inc total))
-     0
-     (d/iteration get-chunk
-                  :vf second
-                  :kf first
-                  :initk (dt/now)))))
+            ;; And finally, permanently delete the team font variant
+            (db/delete! conn :team-font-variant {:id id})
+
+            (inc total))]
+
+    (->> (d/iteration get-chunk :vf second :kf first :initk (dt/now))
+         (reduce process-font 0))))
 
 (def ^:private sql:get-projects-chunk
   "select id, created_at
@@ -213,20 +207,17 @@
   [{:keys [::conn ::min-age] :as cfg}]
   (letfn [(get-chunk [cursor]
             (let [rows (db/exec! conn [sql:get-projects-chunk min-age cursor])]
-              [(some->> rows peek :created-at) rows]))]
-    (reduce
-     (fn [total {:keys [id]}]
-       (l/debug :hint "permanently delete project" :id (str id))
+              [(some->> rows peek :created-at) rows]))
 
-       ;; And finally, permanently delete the project.
-       (db/delete! conn :project {:id id})
+          (process-project [total {:keys [id]}]
+            (l/debug :hint "permanently delete project" :id (str id))
+            ;; And finally, permanently delete the project.
+            (db/delete! conn :project {:id id})
 
-       (inc total))
-     0
-     (d/iteration get-chunk
-                  :vf second
-                  :kf first
-                  :initk (dt/now)))))
+            (inc total))]
+
+    (->> (d/iteration get-chunk :vf second :kf first :initk (dt/now))
+         (reduce process-project 0))))
 
 (def ^:private sql:get-files-chunk
   "select id, created_at
@@ -242,17 +233,13 @@
   [{:keys [::conn ::min-age] :as cfg}]
   (letfn [(get-chunk [cursor]
             (let [rows (db/exec! conn [sql:get-files-chunk min-age cursor])]
-              [(some->> rows peek :created-at) rows]))]
-    (reduce
-     (fn [total {:keys [id]}]
-       (l/debug :hint "permanently delete file" :id (str id))
+              [(some->> rows peek :created-at) rows]))
 
-       ;; And finally, permanently delete the file.
-       (db/delete! conn :file {:id id})
+          (process-file [total {:keys [id]}]
+            (l/debug :hint "permanently delete file" :id (str id))
+            ;; And finally, permanently delete the file.
+            (db/delete! conn :file {:id id})
+            (inc total))]
 
-       (inc total))
-     0
-     (d/iteration get-chunk
-                  :vf second
-                  :kf first
-                  :initk (dt/now)))))
+    (->> (d/iteration get-chunk :vf second :kf first :initk (dt/now))
+         (reduce process-file 0))))
