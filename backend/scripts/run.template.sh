@@ -18,7 +18,7 @@ if [ -f ./environ ]; then
     source ./environ
 fi
 
-export JVM_OPTS="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=log4j2.xml -XX:-OmitStackTraceInFastThrow $JVM_OPTS"
+export JVM_OPTS="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=log4j2.xml -XX:-OmitStackTraceInFastThrow --enable-preview $JVM_OPTS"
 
 set -x
 exec $JAVA_CMD $JVM_OPTS "$@" -jar penpot.jar -m app.main
