@@ -3,7 +3,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v18.12.1 \
+    NODE_VERSION=v18.15.0 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/node/bin:$PATH
 
