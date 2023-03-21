@@ -21,7 +21,7 @@
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
-   [app.rpc.climit :as-alias climit]
+   [app.rpc.climit :as climit]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
