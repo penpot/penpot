@@ -1600,9 +1600,10 @@
                                   (gpt/subtract (gpt/point (:selrect base)) orig-pos))]
                   [frame-id parent-id delta index]))))
 
-          ;; Change the indexes if the paste is done with an element selected
+          ;; Change the indexes of the pasted shapes
           (change-add-obj-index [paste-objects selected index change]
-            (let [set-index (fn [[result index] id]
+            (let [index (or index -1) ;; if there is no current element selected, we want the first (inc index) to be 0
+                  set-index (fn [[result index] id]
                               [(assoc result id index) (inc index)])
 
                   map-ids
@@ -1626,7 +1627,8 @@
 
           ;; Proceed with the standard shape paste process.
           (do-paste [it state mouse-pos media]
-            (let [file-id      (:current-file-id state)
+            (let [libraries    (wsh/get-libraries state)
+                  file-id      (:current-file-id state)
                   page         (wsh/lookup-page state)
                   media-idx    (d/index-by :prev-id media)
 
@@ -1651,7 +1653,9 @@
 
                   all-objects (merge (:objects page) paste-objects)
 
-                  changes  (-> (dws/prepare-duplicate-changes all-objects page selected delta it nil)
+                  library-data (wsh/get-file state file-id)
+
+                  changes  (-> (dws/prepare-duplicate-changes all-objects page selected delta it libraries library-data)
                                (pcb/amend-changes (partial process-rchange media-idx))
                                (pcb/amend-changes (partial change-add-obj-index paste-objects selected index)))
 

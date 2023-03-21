@@ -152,7 +152,6 @@
         changes     (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/update-color color))
-        
         undo-id (js/Symbol)]
     (rx/of (dwu/start-undo-transaction undo-id)
            (dch/commit-changes changes)
@@ -436,18 +435,10 @@
   (ptk/reify ::restore-component
     ptk/WatchEvent
     (watch [it state _]
-     (let [library-data (wsh/get-file state library-id)
-           component    (ctkl/get-deleted-component library-data component-id)
-           page         (ctf/get-component-page library-data component)
-           shapes       (cph/get-children-with-self (:objects component) (:main-instance-id component))
-           changes      (-> (pcb/empty-changes it)
-                            (pcb/with-library-data library-data)
-                            (pcb/with-page page))
-           changes      (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                                changes
-                                shapes)
-           changes      (pcb/restore-component changes component-id)]
-     (rx/of (dch/commit-changes changes))))))
+      (let [library-data (wsh/get-file state library-id)
+            changes (:changes (dwlh/prepare-restore-component library-data component-id it))]
+        (rx/of (dch/commit-changes changes))))))
+
 
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id
@@ -475,8 +466,7 @@
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (ptk/data-event :layout/update [(:id new-shape)])
-               (dws/select-shapes (d/ordered-set (:id new-shape))) 
-               
+               (dws/select-shapes (d/ordered-set (:id new-shape)))
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn detach-component

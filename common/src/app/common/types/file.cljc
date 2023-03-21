@@ -201,10 +201,14 @@
 
 (defn restore-component
   "Recover a deleted component and all its shapes and put all this again in place."
-  [file-data component-id]
-  (-> file-data
-      (ctkl/update-component component-id #(dissoc % :objects))
-      (ctkl/mark-component-undeleted component-id)))
+  [file-data component-id page-id]
+  (let [components-v2 (dm/get-in file-data [:options :components-v2])
+        update-page? (and components-v2 (not (nil? page-id)))]
+    (-> file-data
+        (ctkl/update-component component-id #(dissoc % :objects))
+        (ctkl/mark-component-undeleted component-id)
+        (cond-> update-page?
+                (ctkl/update-component component-id #(assoc % :main-instance-page page-id))))))
 
 (defn purge-component
   "Remove permanently a component."
@@ -383,7 +387,6 @@
                         (some? (:component-file %))
                         (assoc :component-file (:id file-data)))
                      main-instance-shapes)
-                
                 ; Add all shapes of the main instance to the library page
                 add-main-instance-shapes
                 (fn [page]

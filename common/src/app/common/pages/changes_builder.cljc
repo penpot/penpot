@@ -656,13 +656,16 @@
                                         :id id})))
 
 (defn restore-component
-  [changes id]
-  (assert-library changes)
-  (-> changes
-      (update :redo-changes conj {:type :restore-component
-                                  :id id})
-      (update :undo-changes d/preconj {:type :del-component
-                                       :id id})))
+  ([changes id]
+   (restore-component changes id nil))
+  ([changes id page-id]
+   (assert-library changes)
+   (-> changes
+       (update :redo-changes conj {:type :restore-component
+                                   :id id
+                                   :page-id page-id})
+       (update :undo-changes d/preconj {:type :del-component
+                                        :id id}))))
 
 (defn ignore-remote
   [changes]
