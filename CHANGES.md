@@ -33,6 +33,7 @@
 - Fix problem with alt getting stuck when alt+tab [Taiga #5013](https://tree.taiga.io/project/penpot/issue/5013)
 - Fix problem with z positioning of elements [Taiga #5014](https://tree.taiga.io/project/penpot/issue/5014)
 - Fix problem in Firefox with scroll jumping when changin pages [#3052](https://github.com/penpot/penpot/issues/3052)
+- Fix nested frame interaction created flow in wrong frame [Taiga #5043](https://tree.taiga.io/project/penpot/issue/5043)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
