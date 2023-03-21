@@ -24,14 +24,14 @@
 
 (defn select-grid-cell
   [grid-id row column]
-  (ptk/reify ::hover-grid-cell
+  (ptk/reify ::select-grid-cell
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-grid-edition grid-id :selected] [row column]))))
 
 (defn remove-selection
   [grid-id]
-  (ptk/reify ::hover-grid-cell
+  (ptk/reify ::remove-selection
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-grid-edition grid-id] dissoc :selected))))
