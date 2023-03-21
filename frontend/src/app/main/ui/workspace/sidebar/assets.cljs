@@ -718,7 +718,21 @@
          (fn [component event]
            (dnd/set-data! event "penpot/component" {:file-id file-id
                                                     :component component})
-           (dnd/set-allowed-effect! event "move")))]
+           (dnd/set-allowed-effect! event "move")))
+
+        on-show-main
+        (mf/use-fn
+         (mf/deps @state components)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [component-id (:component-id @state)
+                 component (->> components
+                                (filter #(= (:id %) component-id))
+                                first)
+                 main-instance-id (:main-instance-id component)
+                 main-instance-page (:main-instance-page component)]
+             (when (and main-instance-id main-instance-page) ;; Only when :components-v2 is enabled
+               (st/emit! (dw/go-to-main-instance main-instance-page main-instance-id))))))]
 
     [:& asset-section {:file-id file-id
                        :title (tr "workspace.assets.components")
@@ -759,10 +773,14 @@
           :options [(when-not (or multi-components? multi-assets?)
                       [(tr "workspace.assets.rename") on-rename])
                     (when-not multi-assets?
-                      [(tr "workspace.assets.duplicate") on-duplicate])
+                      [(if components-v2
+                         (tr "workspace.assets.duplicate-main")
+                         (tr "workspace.assets.duplicate")) on-duplicate])
                     [(tr "workspace.assets.delete") on-delete]
                     (when-not multi-assets?
-                      [(tr "workspace.assets.group") on-group])]}])]]))
+                      [(tr "workspace.assets.group") on-group])
+                    (when (and components-v2 (not multi-assets?))
+                        [(tr "workspace.shape.menu.show-main") on-show-main])]}])]]))
 
 
 ;; ---- Graphics box ----

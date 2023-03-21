@@ -2820,6 +2820,9 @@ msgstr "Delete"
 msgid "workspace.assets.duplicate"
 msgstr "Duplicate"
 
+msgid "workspace.assets.duplicate-main"
+msgstr "Duplicate main"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Edit"

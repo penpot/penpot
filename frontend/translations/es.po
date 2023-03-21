@@ -2974,6 +2974,9 @@ msgstr "Borrar"
 msgid "workspace.assets.duplicate"
 msgstr "Duplicar"
 
+msgid "workspace.assets.duplicate-main"
+msgstr "Duplicar principal"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
