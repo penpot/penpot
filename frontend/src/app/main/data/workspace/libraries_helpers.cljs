@@ -146,24 +146,30 @@
 
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."
-  [changes file-id component-id position page libraries]
-  (let [component     (ctf/get-component libraries file-id component-id)
-        library       (get libraries file-id)
+  ([changes file-id component-id position page libraries]
+   (generate-instantiate-component changes file-id component-id position page libraries nil))
 
-        components-v2 (dm/get-in library [:data :options :components-v2])
+  ([changes file-id component-id position page libraries old-id]
+   (let [component     (ctf/get-component libraries file-id component-id)
+         library       (get libraries file-id)
 
-        [new-shape new-shapes]
-        (ctn/make-component-instance page
-                                     component
-                                     (:data library)
-                                     position
-                                     components-v2)
+         components-v2 (dm/get-in library [:data :options :components-v2])
 
-        changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                        changes
-                        new-shapes)]
+         [new-shape new-shapes]
+         (ctn/make-component-instance page
+                                      component
+                                      (:data library)
+                                      position
+                                      components-v2)
 
-    [new-shape changes]))
+         changes (cond-> (pcb/add-object changes (first new-shapes) {:ignore-touched true})
+                     (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
+
+         changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                         changes
+                         (rest new-shapes))]
+
+     [new-shape changes])))
 
 (defn generate-detach-instance
   "Generate changes to remove the links between a shape and all its children
@@ -184,6 +190,29 @@
                  :touched nil))]
 
     (pcb/update-shapes changes shapes update-fn)))
+
+
+(defn prepare-restore-component
+  ([library-data component-id it]
+   (let [component    (ctkl/get-deleted-component library-data component-id)
+         page         (ctf/get-component-page library-data component)]
+     (prepare-restore-component library-data component-id it page (gpt/point 0 0) nil nil)))
+
+  ([library-data component-id it page delta old-id changes]
+   (let [component    (ctkl/get-deleted-component library-data component-id)
+
+         shapes       (cph/get-children-with-self (:objects component) (:main-instance-id component))
+         shapes       (map #(gsh/move % delta) shapes)
+         changes      (-> (or changes (pcb/empty-changes it))
+                          (pcb/with-page page)
+                          (pcb/with-library-data library-data))
+         changes      (cond-> (pcb/add-object changes (first shapes) {:ignore-touched true})
+                        (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
+         changes      (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                              changes
+                              (rest shapes))]
+     {:changes (pcb/restore-component changes component-id (:id page))
+      :shape (first shapes)})))
 
 ;; ---- General library synchronization functions ----
 
