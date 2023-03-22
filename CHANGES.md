@@ -44,6 +44,7 @@
 - Fix path options not showing when editing rects or ellipses [Taiga #5053](https://tree.taiga.io/project/penpot/issue/5053)
 - Fix tooltips for some alignment options are truncated on design tab [Taiga #5040](https://tree.taiga.io/project/penpot/issue/5040)
 - Fix horizontal margins drag don't always start from place [Taiga #5020](https://tree.taiga.io/project/penpot/issue/5020)
+- Fix multiplayer username sometimes is not displayed correctly [Taiga #4400](https://tree.taiga.io/project/penpot/issue/4400)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
