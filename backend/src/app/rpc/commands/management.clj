@@ -231,12 +231,13 @@
   ;; Defer all constraints
   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 
-  (let [project (db/get-by-id conn :project project-id)
-
+  (let [project (-> (db/get-by-id conn :project project-id)
+                    (assoc :is-pinned false))
+        
         files   (db/query conn :file
-                          {:project-id (:id project)
-                           :deleted-at nil}
-                          {:columns [:id]})
+                  {:project-id (:id project)
+                   :deleted-at nil}
+                  {:columns [:id]})
 
         project (cond-> project
                   (string? name)
