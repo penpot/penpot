@@ -1904,6 +1904,9 @@ msgstr "Enviar invitacion"
 msgid "modals.invite-member.emails"
 msgstr "Emails, separados por coma"
 
+msgid "modals.invite-member.repeated-invitation"
+msgstr "Algunas direcciones de correo ya se encuentran entre los miembros. Estas invitaciones no serán enviadas."
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
 msgstr "Invitar a miembros al equipo"

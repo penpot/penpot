@@ -1821,6 +1821,9 @@ msgstr "Send invitation"
 msgid "modals.invite-member.emails"
 msgstr "Emails, comma separated"
 
+msgid "modals.invite-member.repeated-invitation"
+msgstr "Some emails are from current team members. Their invitations will not be sent."
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
 msgstr "Invite members to the team"
