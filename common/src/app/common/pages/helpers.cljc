@@ -37,8 +37,10 @@
    (= type :frame)))
 
 (defn group-shape?
-  [{:keys [type]}]
-  (= type :group))
+  ([objects id]
+   (group-shape? (get objects id)))
+  ([{:keys [type]}]
+   (= type :group)))
 
 (defn mask-shape?
   [{:keys [type masked-group?]}]
