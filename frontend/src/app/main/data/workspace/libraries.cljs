@@ -314,7 +314,7 @@
             shapes   (dwg/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group _ changes]
-                (dwlh/generate-add-component it shapes objects page-id file-id components-v2)]
+                (dwlh/generate-add-component it shapes objects page-id file-id components-v2 dwg/prepare-create-group)]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
                      (dws/select-shapes (d/ordered-set (:id group)))))))))))
@@ -458,8 +458,10 @@
       (let [page      (wsh/lookup-page state)
             libraries (wsh/get-libraries state)
 
+            changes   (pcb/empty-changes it (:id page))
+
             [new-shape changes]
-            (dwlh/generate-instantiate-component it
+            (dwlh/generate-instantiate-component changes
                                                  file-id
                                                  component-id
                                                  position
