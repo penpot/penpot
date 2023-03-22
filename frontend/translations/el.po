@@ -1797,19 +1797,19 @@ msgstr "Ευθυγράμμιση κέντρο"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Δικαιολόγηση"
+msgstr "Δικαιολόγηση (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Στοίχιση αριστερά"
+msgstr "Στοίχιση αριστερά (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Στοίχιση στο κέντρο"
+msgstr "Στοίχιση στο κέντρο (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Για ευθυγράμμιση προς τα δεξιά"
+msgstr "Για ευθυγράμμιση προς τα δεξιά (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -1849,7 +1849,7 @@ msgstr "Κανένας"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Διαγράμμιση"
+msgstr "Διαγράμμιση (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -1869,7 +1869,7 @@ msgstr "Τίτλος υπόθεση"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "υπογράμμιση"
+msgstr "υπογράμμιση (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"
