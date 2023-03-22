@@ -45,6 +45,7 @@
      from file as f
     inner join projects as pr on (f.project_id = pr.id)
     where f.name ilike ('%' || ? || '%')
+      and (f.deleted_at is null or f.deleted_at > now())
     order by f.created_at asc")
 
 (defn search-files
