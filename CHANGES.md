@@ -36,6 +36,7 @@
 - Fix problem in Firefox with scroll jumping when changin pages [#3052](https://github.com/penpot/penpot/issues/3052)
 - Fix nested frame interaction created flow in wrong frame [Taiga #5043](https://tree.taiga.io/project/penpot/issue/5043)
 - Font-Kerning does not work on Artboard Export to PNG/JPG/PDF [#3029](https://github.com/penpot/penpot/issues/3029)
+- Fix manipulate duplicated project (delete, duplicate, rename, pin/unpin...) [Taiga #5027](https://tree.taiga.io/project/penpot/issue/5027)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
