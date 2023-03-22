@@ -41,6 +41,7 @@
 - Fix problem with selected colors and texts [Taiga #5051](https://tree.taiga.io/project/penpot/issue/5051)
 - Fix problem when assigning color from palette or assets [Taiga #5050](https://tree.taiga.io/project/penpot/issue/5050)
 - Fix shortcuts for alignment [Taiga #5030](https://tree.taiga.io/project/penpot/issue/5030)
+- Fix path options not showing when editing rects or ellipses [Taiga #5053](https://tree.taiga.io/project/penpot/issue/5053)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
