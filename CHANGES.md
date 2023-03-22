@@ -38,6 +38,7 @@
 - Font-Kerning does not work on Artboard Export to PNG/JPG/PDF [#3029](https://github.com/penpot/penpot/issues/3029)
 - Fix manipulate duplicated project (delete, duplicate, rename, pin/unpin...) [Taiga #5027](https://tree.taiga.io/project/penpot/issue/5027)
 - Fix deleted files appear in search results [Taiga #5002](https://tree.taiga.io/project/penpot/issue/5002)
+- Fix problem with selected colors and texts [Taiga #5051](https://tree.taiga.io/project/penpot/issue/5051)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:

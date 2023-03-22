@@ -339,7 +339,8 @@
 (defn change-text-color
   [old-color new-color index node]
   (let [fills (map #(dissoc % :fill-color-ref-id :fill-color-ref-file) (:fills node))
-        parsed-color (d/without-nils (color-att->text old-color))
+        parsed-color (-> (d/without-nils (color-att->text old-color))
+                         (dissoc :fill-color-ref-id :fill-color-ref-file))
         parsed-new-color (d/without-nils (color-att->text new-color))
         has-color? (d/index-of fills parsed-color)]
     (cond-> node
