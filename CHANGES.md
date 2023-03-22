@@ -40,6 +40,7 @@
 - Fix deleted files appear in search results [Taiga #5002](https://tree.taiga.io/project/penpot/issue/5002)
 - Fix problem with selected colors and texts [Taiga #5051](https://tree.taiga.io/project/penpot/issue/5051)
 - Fix problem when assigning color from palette or assets [Taiga #5050](https://tree.taiga.io/project/penpot/issue/5050)
+- Fix shortcuts for alignment [Taiga #5030](https://tree.taiga.io/project/penpot/issue/5030)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:

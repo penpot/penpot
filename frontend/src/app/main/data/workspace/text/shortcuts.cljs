@@ -202,22 +202,22 @@
         (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
 (def shortcuts
-  {:align-left    {:tooltip (ds/meta (ds/alt "l"))
-                   :command (ds/c-mod "alt+l")
-                   :subsections [:text-editor]
-                   :fn #(update-attrs-when-no-readonly {:text-align "left"})}
-   :align-right   {:tooltip (ds/meta (ds/alt "r"))
-                   :command (ds/c-mod "alt+r")
-                   :subsections [:text-editor]
-                   :fn #(update-attrs-when-no-readonly {:text-align "right"})}
-   :align-center  {:tooltip (ds/meta (ds/alt "t"))
-                   :command (ds/c-mod "alt+t")
-                   :subsections [:text-editor]
-                   :fn #(update-attrs-when-no-readonly {:text-align "center"})}
-   :align-justify {:tooltip (ds/meta (ds/alt "j"))
-                   :command (ds/c-mod "alt+j")
-                   :subsections [:text-editor]
-                   :fn #(update-attrs-when-no-readonly {:text-align "justify"})}
+  {:text-align-left    {:tooltip (ds/meta (ds/alt "l"))
+                        :command (ds/c-mod "alt+l")
+                        :subsections [:text-editor]
+                        :fn #(update-attrs-when-no-readonly {:text-align "left"})}
+   :text-align-right   {:tooltip (ds/meta (ds/alt "r"))
+                        :command (ds/c-mod "alt+r")
+                        :subsections [:text-editor]
+                        :fn #(update-attrs-when-no-readonly {:text-align "right"})}
+   :text-align-center  {:tooltip (ds/meta (ds/alt "t"))
+                        :command (ds/c-mod "alt+t")
+                        :subsections [:text-editor]
+                        :fn #(update-attrs-when-no-readonly {:text-align "center"})}
+   :text-align-justify {:tooltip (ds/meta (ds/alt "j"))
+                        :command (ds/c-mod "alt+j")
+                        :subsections [:text-editor]
+                        :fn #(update-attrs-when-no-readonly {:text-align "justify"})}
 
    :underline     {:tooltip (ds/meta "u")
                    :command (ds/c-mod "u")
