@@ -15,7 +15,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
    [app.rpc :as-alias rpc]
-   [app.rpc.climit :as-alias climit]
+   [app.rpc.climit :as climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
