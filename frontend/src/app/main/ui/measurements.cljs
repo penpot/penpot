@@ -307,7 +307,7 @@
 
         on-pointer-down
         (mf/use-callback
-         (mf/deps frame-id padding-num)
+         (mf/deps frame-id rect-data padding-num)
          (fn [event]
            (dom/capture-pointer event)
            (reset! resizing? true)
@@ -382,9 +382,9 @@
         pill-width                         (/ flex-display-pill-width zoom)
         pill-height                        (/ flex-display-pill-height zoom)
         hover?                             #(or hover-all?
-                                                (and (or (= % :p1) (= % :p3)) hover-v?)
-                                                (and (or (= % :p2) (= % :p4)) hover-h?)
-                                                (= @hover %))
+                                              (and (or (= % :p1) (= % :p3)) hover-v?)
+                                              (and (or (= % :p2) (= % :p4)) hover-h?)
+                                              (= @hover %))
         negate                             {:p1 (if (:flip-y frame) true false)
                                             :p2 (if (:flip-x frame) true false)
                                             :p3 (if (:flip-y frame) true false)
@@ -854,9 +854,9 @@
 (mf/defc padding
   [{:keys [frame zoom alt? shift?]}]
   (when frame
-      [:g.measurement-gaps {:pointer-events "none"}
-       [:g.hover-shapes
-        [:& padding-rects {:frame frame :zoom zoom :alt? alt? :shift? shift?}]]]))
+    [:g.measurement-gaps {:pointer-events "none"}
+     [:g.hover-shapes
+      [:& padding-rects {:frame frame :zoom zoom :alt? alt? :shift? shift?}]]]))
 
 (mf/defc gap
   [{:keys [frame zoom]}]
