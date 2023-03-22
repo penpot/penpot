@@ -14,12 +14,14 @@
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
+   [app.common.types.component :as ctk]
    [app.common.types.page :as ctp]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
+   [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
@@ -330,7 +332,7 @@
 (defn prepare-duplicate-changes
   "Prepare objects to duplicate: generate new id, give them unique names,
   move to the desired position, and recalculate parents and frames as needed."
-  [all-objects page ids delta it]
+  [all-objects page ids delta it libraries]
   (let [shapes         (map (d/getf all-objects) ids)
         unames         (volatile! (cp/retrieve-used-names (:objects page)))
         update-unames! (fn [new-name] (vswap! unames conj new-name))
@@ -351,7 +353,8 @@
                                                       update-unames!
                                                       ids-map
                                                       %2
-                                                      delta)
+                                                      delta
+                                                      libraries)
                      init-changes))]
 
     (-> changes
@@ -359,11 +362,25 @@
         (prepare-duplicate-guides shapes page ids-map delta))))
 
 (defn- prepare-duplicate-shape-change
-  ([changes objects page unames update-unames! ids-map obj delta]
-   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta (:frame-id obj) (:parent-id obj)))
+  ([changes objects page unames update-unames! ids-map obj delta libraries]
+   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta libraries (:frame-id obj) (:parent-id obj)))
 
-  ([changes objects page unames update-unames! ids-map obj delta frame-id parent-id]
-   (if (some? obj)
+  ([changes objects page unames update-unames! ids-map obj delta libraries frame-id parent-id]
+   (cond
+     (nil? obj)
+     changes
+
+     (ctk/main-instance? obj)
+     (let [[_new-shape changes]
+           (dwlh/generate-instantiate-component changes
+                                                (:component-file obj)
+                                                (:component-id obj)
+                                                (gpt/point (:x obj) (:y obj))
+                                                page
+                                                libraries)]
+       changes)
+     
+     :else
      (let [frame?      (cph/frame-shape? obj)
            new-id      (ids-map (:id obj))
            parent-id   (or parent-id frame-id)
@@ -392,11 +409,11 @@
                                                  ids-map
                                                  child
                                                  delta
+                                                 libraries
                                                  (if frame? new-id frame-id)
                                                  new-id))
                changes
-               (map (d/getf objects) (:shapes obj))))
-     changes)))
+               (map (d/getf objects) (:shapes obj)))))))
 
 (defn- prepare-duplicate-flows
   [changes shapes page ids-map]
@@ -545,7 +562,9 @@
                                     (calc-duplicate-delta obj state objects)
                                     (gpt/point 0 0))
 
-                  changes         (->> (prepare-duplicate-changes objects page selected delta it)
+                  libraries       (wsh/get-libraries state)
+
+                  changes         (->> (prepare-duplicate-changes objects page selected delta it libraries)
                                        (duplicate-changes-update-indices objects selected))
 
                   changes         (cond-> changes add-group-id? (assoc :group-id (uuid/random)))

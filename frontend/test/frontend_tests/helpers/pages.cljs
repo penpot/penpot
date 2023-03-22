@@ -8,6 +8,7 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -113,7 +114,8 @@
                                      (:objects page)
                                      (:id page)
                                      current-file-id
-                                     true)]
+                                     true
+                                     dwg/prepare-create-group)]
 
     (swap! idmap assoc instance-label (:id group)
                        component-label component-id)
@@ -127,8 +129,10 @@
    (let [page      (current-page state)
          libraries (wsh/get-libraries state)
 
+         changes   (pcb/empty-changes nil (:id page))
+
          [new-shape changes]
-         (dwlh/generate-instantiate-component nil
+         (dwlh/generate-instantiate-component changes
                                               file-id
                                               component-id
                                               (gpt/point 100 100)

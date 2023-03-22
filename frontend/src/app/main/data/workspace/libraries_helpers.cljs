@@ -24,7 +24,6 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.state-helpers :as wsh]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]))
@@ -66,7 +65,7 @@
   "If there is exactly one id, and it's a group or a frame, and not already a component,
   use it as root. Otherwise, create a group that contains all ids. Then, make a
   component with it, and link all shapes to their corresponding one in the component."
-  [it shapes objects page-id file-id components-v2]
+  [it shapes objects page-id file-id components-v2 prepare-create-group]
   (let [[group changes]
         (if (and (= (count shapes) 1)
                  (or (= (:type (first shapes)) :group)
@@ -77,12 +76,12 @@
           (let [group-name (if (= 1 (count shapes))
                              (:name (first shapes))
                              "Component 1")]
-            (dwg/prepare-create-group it
-                                      objects
-                                      page-id
-                                      shapes
-                                      group-name
-                                      (not (ctk/instance-root? (first shapes))))))
+            (prepare-create-group it            ; This function needs to be passed as argument
+                                  objects       ; to avoid a circular dependence
+                                  page-id
+                                  shapes
+                                  group-name
+                                  (not (ctk/instance-root? (first shapes))))))
 
         name (:name group)
         [path name] (cph/parse-path-name name)
@@ -147,7 +146,7 @@
 
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."
-  [it file-id component-id position page libraries]
+  [changes file-id component-id position page libraries]
   (let [component     (ctf/get-component libraries file-id component-id)
         library       (get libraries file-id)
 
@@ -161,7 +160,7 @@
                                      components-v2)
 
         changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                        (pcb/empty-changes it (:id page))
+                        changes
                         new-shapes)]
 
     [new-shape changes]))
