@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as colors]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.pages.helpers :as cph]
    [app.main.broadcast :as mbc]
    [app.main.data.modal :as md]
@@ -81,6 +82,8 @@
         text-ids  (filter is-text? ids)
         shape-ids (remove is-text? ids)
 
+        undo-id (js/Symbol)
+
         attrs
         (cond-> {}
           (contains? color :color)
@@ -104,8 +107,10 @@
         transform-attrs #(transform % attrs)]
 
     (rx/concat
+     (rx/of (dwu/start-undo-transaction undo-id))
      (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
-     (rx/of (dch/update-shapes shape-ids transform-attrs)))))
+     (rx/of (dch/update-shapes shape-ids transform-attrs))
+     (rx/of (dwu/commit-undo-transaction undo-id)))))
 
 (defn swap-attrs [shape attr index new-index]
   (let [first (get-in shape [attr index])
@@ -366,23 +371,33 @@
          (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn apply-color-from-palette
-  [color is-alt?]
+  [color stroke?]
   (ptk/reify ::apply-color-from-palette
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects  (wsh/lookup-page-objects state)
             selected (->> (wsh/lookup-selected state)
                           (cph/clean-loops objects))
-            selected-obj (keep (d/getf objects) selected)
-            select-shapes-for-color (fn [shape objects]
-                                      (let [shapes (case (:type shape)
-                                                     :group (cph/get-children objects (:id shape))
-                                                     [shape])]
-                                        (->> shapes
-                                             (remove cph/group-shape?)
-                                             (map :id))))
-            ids (mapcat #(select-shapes-for-color % objects) selected-obj)]
-        (if is-alt?
+
+            ids
+            (loop [pending (seq selected)
+                   result []]
+              (if (empty? pending)
+                result
+                (let [cur (first pending)
+                      ;; We treat frames with no fill the same as groups
+                      group? (or (cph/group-shape? objects cur)
+                                 (and (cph/frame-shape? objects cur)
+                                      (empty? (dm/get-in objects [cur :fills]))))
+
+                      pending
+                      (if group?
+                        (concat pending (dm/get-in objects [cur :shapes]))
+                        pending)
+
+                      result (cond-> result (not group?) (conj cur))]
+                  (recur (rest pending) result))))]
+        (if stroke?
           (rx/of (change-stroke ids (merge uc/empty-color color) 0))
           (rx/of (change-fill ids (merge uc/empty-color color) 0)))))))
 
