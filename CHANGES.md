@@ -47,6 +47,7 @@
 - Fix multiplayer username sometimes is not displayed correctly [Taiga #4400](https://tree.taiga.io/project/penpot/issue/4400)
 - Show warning when trying to invite a user that is already in members [Taiga #4147](https://tree.taiga.io/project/penpot/issue/4147)
 - Fix problem with text out of borders when changing from auto-width to fixed [Taiga #4308](https://tree.taiga.io/project/penpot/issue/4308)
+- Fix header not showing when exiting fullscreen mode in viewer [Taiga #4244](https://tree.taiga.io/project/penpot/issue/4244)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:

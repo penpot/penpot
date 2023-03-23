@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer
+  (:import goog.events.EventType)
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
@@ -34,6 +35,7 @@
    [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
    [app.util.dom :as dom]
    [app.util.dom.normalize-wheel :as nw]
+   [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.webapi :as wapi]
@@ -329,7 +331,13 @@
                  (dom/stop-propagation event)
                  (if shift?
                    (dom/set-h-scroll-pos! viewer-section new-scroll-pos)
-                   (dom/set-scroll-pos! viewer-section new-scroll-pos)))))))]
+                   (dom/set-scroll-pos! viewer-section new-scroll-pos)))))))
+
+        on-exit-fullscreen
+        (mf/use-callback
+         (fn []
+           (when (not (dom/fullscreen?))
+             (st/emit! (dv/exit-fullscreen)))))]
 
     (hooks/use-shortcuts ::viewer sc/shortcuts)
     (when (nil? page)
@@ -348,11 +356,19 @@
 
     (mf/with-effect []
       (dom/set-html-theme-color clr/gray-50 "dark")
-      (let [key1 (events/listen js/window "click" on-click)
-            key2 (events/listen (mf/ref-val viewer-section-ref) "wheel" on-wheel #js {"passive" false})]
+      (let [events
+            [(events/listen globals/window EventType.CLICK on-click)
+             (events/listen (mf/ref-val viewer-section-ref) EventType.WHEEL on-wheel #js {"passive" false})]]
+
+        (doseq [event dom/fullscreen-events]
+          (.addEventListener globals/document event on-exit-fullscreen false))
+
         (fn []
-          (events/unlistenByKey key1)
-          (events/unlistenByKey key2))))
+          (doseq [key events]
+            (events/unlistenByKey key))
+
+          (doseq [event dom/fullscreen-events]
+            (.removeEventListener globals/document event on-exit-fullscreen)))))
 
     (mf/use-effect
      (fn []
