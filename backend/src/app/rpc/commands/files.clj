@@ -201,6 +201,16 @@
                      ::db/check-deleted? false})]
     (blob/decode (:content row))))
 
+(defn load-all-pointers!
+  [data]
+  (doseq [[_id page] (:pages-index data)]
+    (when (pmap/pointer-map? page)
+      (pmap/load! page)))
+  (doseq [[_id component] (:components data)]
+    (when (pmap/pointer-map? component)
+      (pmap/load! component)))
+  data)
+
 (defn persist-pointers!
   [conn file-id]
   (doseq [[id item] @pmap/*tracked*]
@@ -846,18 +856,23 @@
   (let [library (db/get-by-id conn :file id)]
     (when (:is-shared library)
       (let [ldata (-> library decode-row pmg/migrate-file :data)]
+        (binding [pmap/*load-fn* (partial load-pointer conn id)]
+          (load-all-pointers! ldata))
         (->> (db/query conn :file-library-rel {:library-file-id id})
              (map :file-id)
              (keep #(db/get-by-id conn :file % ::db/check-deleted? false))
              (map decode-row)
              (map pmg/migrate-file)
              (run! (fn [{:keys [id data revn] :as file}]
-                     (let [data (ctf/absorb-assets data ldata)]
-                       (db/update! conn :file
-                                   {:revn (inc revn)
-                                    :data (blob/encode data)
-                                    :modified-at (dt/now)}
-                                   {:id id})))))))))
+                     (binding [pmap/*tracked* (atom {})
+                               pmap/*load-fn* (partial load-pointer conn id)]
+                       (let [data (ctf/absorb-assets data ldata)]
+                         (db/update! conn :file
+                                     {:revn (inc revn)
+                                      :data (blob/encode data)
+                                      :modified-at (dt/now)}
+                                     {:id id}))
+                       (persist-pointers! conn id)))))))))
 
 (s/def ::set-file-shared
   (s/keys :req [::rpc/profile-id]
