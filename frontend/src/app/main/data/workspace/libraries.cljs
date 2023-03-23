@@ -176,10 +176,11 @@
   (ptk/reify ::rename-color
     ptk/WatchEvent
     (watch [it state _]
-      (let [data        (get state :workspace-data)
-            object      (get-in data [:colors id])
-            new-object  (assoc object :name new-name)]
-        (do-update-color it state new-object file-id)))))
+      (when (and (some? new-name) (not= "" new-name))
+        (let [data        (get state :workspace-data)
+              object      (get-in data [:colors id])
+              new-object  (assoc object :name new-name)]
+          (do-update-color it state new-object file-id))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
@@ -211,14 +212,15 @@
   (ptk/reify ::rename-media
     ptk/WatchEvent
     (watch [it state _]
-      (let [data        (get state :workspace-data)
-            [path name] (cph/parse-path-name new-name)
-            object      (get-in data [:media id])
-            new-object  (assoc object :path path :name name)
-            changes     (-> (pcb/empty-changes it)
-                            (pcb/with-library-data data)
-                            (pcb/update-media new-object))]
-        (rx/of (dch/commit-changes changes))))))
+      (when (and (some? new-name) (not= "" new-name))
+        (let [data        (get state :workspace-data)
+              [path name] (cph/parse-path-name new-name)
+              object      (get-in data [:media id])
+              new-object  (assoc object :path path :name name)
+              changes     (-> (pcb/empty-changes it)
+                              (pcb/with-library-data data)
+                              (pcb/update-media new-object))]
+          (rx/of (dch/commit-changes changes)))))))
 
 
 (defn delete-media
@@ -281,11 +283,12 @@
   (ptk/reify ::rename-typography
     ptk/WatchEvent
     (watch [it state _]
-      (let [data        (get state :workspace-data)
-            [path name] (cph/parse-path-name new-name)
-            object      (get-in data [:typographies id])
-            new-object  (assoc object :path path :name name)]
-        (do-update-tipography it state new-object file-id)))))
+      (when (and (some? new-name) (not= "" new-name))
+        (let [data        (get state :workspace-data)
+              [path name] (cph/parse-path-name new-name)
+              object      (get-in data [:typographies id])
+              new-object  (assoc object :path path :name name)]
+          (do-update-tipography it state new-object file-id))))))
 
 (defn delete-typography
   [id]
@@ -342,27 +345,28 @@
   (ptk/reify ::rename-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [data        (get state :workspace-data)
-            [path name] (cph/parse-path-name new-name)
+      (when (and (some? new-name) (not= "" new-name))
+        (let [data        (get state :workspace-data)
+              [path name] (cph/parse-path-name new-name)
 
-            update-fn
-            (fn [component]
-              ;; NOTE: we need to ensure the component exists,
-              ;; because there are small possibilities of race
-              ;; conditions with component deletion.
-              (when component
-                (-> component
-                    (assoc :path path)
-                    (assoc :name name)
-                    (update :objects
-                            ;; Give the same name to the root shape
-                            #(assoc-in % [id :name] name)))))
+              update-fn
+              (fn [component]
+                ;; NOTE: we need to ensure the component exists,
+                ;; because there are small possibilities of race
+                ;; conditions with component deletion.
+                (when component
+                  (-> component
+                      (assoc :path path)
+                      (assoc :name name)
+                      (update :objects
+                              ;; Give the same name to the root shape
+                              #(assoc-in % [id :name] name)))))
 
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (pcb/update-component id update-fn))]
+              changes (-> (pcb/empty-changes it)
+                          (pcb/with-library-data data)
+                          (pcb/update-component id update-fn))]
 
-        (rx/of (dch/commit-changes changes))))))
+          (rx/of (dch/commit-changes changes)))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."

@@ -1156,7 +1156,7 @@
 
         rename-color
         (fn [name]
-          (st/emit! (dwl/update-color (assoc color :name name) file-id)))
+          (st/emit! (dwl/rename-color file-id (:id color) name)))
 
         edit-color
         (fn [new-color]
