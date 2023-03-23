@@ -50,6 +50,7 @@
 - Fix header not showing when exiting fullscreen mode in viewer [Taiga #4244](https://tree.taiga.io/project/penpot/issue/4244)
 - Fix visual problem in select options [Taiga #5028](https://tree.taiga.io/project/penpot/issue/5028)
 - Forbid empty names for assets [Taiga #5056](https://tree.taiga.io/project/penpot/issue/5056)
+- Select children after ungroup action [Taiga #4917](https://tree.taiga.io/project/penpot/issue/4917)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
