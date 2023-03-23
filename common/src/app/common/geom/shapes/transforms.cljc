@@ -382,9 +382,10 @@
 
 (defn update-group-selrect
   [group children]
-  (let [shape-center (gco/center-shape group)
-        ;; Points for every shape inside the group
+  (let [;; Points for every shape inside the group
         points (->> children (mapcat :points))
+
+        shape-center (gco/center-points points)
 
         ;; Fixed problem with empty groups. Should not happen (but it does)
         points (if (empty? points) (:points group) points)
