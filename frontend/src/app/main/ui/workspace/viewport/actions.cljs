@@ -434,7 +434,15 @@
                                                 (:id component)
                                                 (gpt/point final-x final-y))))
 
-         ;; Will trigger when the user drags an image from a browser to the viewport
+         ;; Will trigger when the user drags an image from a browser to the viewport (firefox and chrome do it a bit different depending on the origin)
+         (dnd/has-type? event "Files")
+         (let [files  (dnd/get-files event)
+               params {:file-id (:id file)
+                       :position viewport-coord
+                       :blobs (seq files)}]
+           (st/emit! (dwm/upload-media-workspace params)))
+
+         ;; Will trigger when the user drags an image from a browser to the viewport (firefox and chrome do it a bit different depending on the origin)
          (dnd/has-type? event "text/uri-list")
          (let [data  (dnd/get-data event "text/uri-list")
                lines (str/lines data)
