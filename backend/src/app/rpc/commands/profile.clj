@@ -113,7 +113,7 @@
 (declare invalidate-profile-session!)
 
 (s/def ::password ::us/not-empty-string)
-(s/def ::old-password ::us/not-empty-string)
+(s/def ::old-password (s/nilable ::us/string))
 
 (s/def ::update-profile-password
   (s/keys :req [::rpc/profile-id]
@@ -145,7 +145,8 @@
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
   (let [profile (db/get-by-id conn :profile profile-id ::db/for-update? true)]
-    (when-not (:valid (auth/verify-password old-password (:password profile)))
+    (when (and (not= (:password profile) "!")
+               (not (:valid (auth/verify-password old-password (:password profile)))))
       (ex/raise :type :validation
                 :code :old-password-not-match))
     profile))
