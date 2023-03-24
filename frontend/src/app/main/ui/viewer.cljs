@@ -354,7 +354,6 @@
          (dom/set-html-title (str "\u25b6 " (tr "title.viewer" name))))))
 
     (mf/with-effect []
-      (dom/set-html-theme-color clr/gray-50 "dark")
       (let [events
             [(events/listen globals/window EventType.CLICK on-click)
              (events/listen (mf/ref-val viewer-section-ref) EventType.WHEEL on-wheel #js {"passive" false})]]
