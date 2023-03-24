@@ -17,6 +17,7 @@
    [app.common.geom.shapes.modifiers :as gsm]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
+   [app.common.geom.shapes.text :as gst]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]))
 
@@ -195,3 +196,6 @@
 
 ;; Modifiers
 (dm/export gsm/set-objects-modifiers)
+
+;; Text
+(dm/export gst/position-data-selrect)
