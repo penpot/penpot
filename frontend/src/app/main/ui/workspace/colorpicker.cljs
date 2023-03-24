@@ -67,7 +67,8 @@
         (mf/use-fn
          (mf/deps current-color @drag?)
          (fn [color]
-           (when (not= (str/lower (:hex color)) (str/lower (:hex current-color)))
+           (when (or (not= (str/lower (:hex color)) (str/lower (:hex current-color)))
+                     (not= (:h color) (:h current-color)))
              (let [recent-color (merge current-color color)
                    recent-color (dc/materialize-color-components recent-color)]
                (st/emit! (dc/update-colorpicker-color recent-color (not @drag?)))))))
