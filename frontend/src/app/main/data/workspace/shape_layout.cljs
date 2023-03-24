@@ -143,17 +143,16 @@
                    (/ (- (- max-y min-y) all-height) (dec (count shapes)))
                    0)
 
-         layout-gap {:row-gap row-gap :column-gap column-gap}
+         layout-gap {:row-gap (max row-gap 0) :column-gap (max column-gap 0)}
 
          parent-selrect (:selrect parent)
-         padding (when (and (not (nil? parent)) (> (count shapes) 1))
+         padding (when (and (not (nil? parent)) (> (count shapes) 0))
                    {:p1 (min (- min-y (:y1 parent-selrect)) (- (:y2 parent-selrect) max-y))
                     :p2 (min (- min-x (:x1 parent-selrect)) (- (:x2 parent-selrect) max-x))})]
 
      (cond-> {:layout-flex-dir direction}
-       (not (nil? padding)) (assoc :layout-padding {:p1 (:p1 padding) :p2 (:p2 padding) :p3 (:p1 padding) :p4 (:p2 padding)}
-                                   :layout-align-items :center
-                                   :layout-gap layout-gap)))))
+       (not (nil? padding)) (assoc :layout-padding {:p1 (:p1 padding) :p2 (:p2 padding) :p3 (:p1 padding) :p4 (:p2 padding)})
+       (not (nil? layout-gap)) (assoc :layout-gap layout-gap)))))
 
 (defn shapes->grid-params
   "Given the shapes calculate its flex parameters (horizontal vs vertical, gaps, etc)"
@@ -361,46 +360,46 @@
                (dwu/commit-undo-transaction undo-id))))))
 
 #_(defn update-grid-cells
-  [parent objects]
-  (let [children (cph/get-immediate-children objects (:id parent))
-        layout-grid-rows (:layout-grid-rows parent)
-        layout-grid-columns (:layout-grid-columns parent)
-        num-rows (count layout-grid-columns)
-        num-columns (count layout-grid-columns)
-        layout-grid-cells (:layout-grid-cells parent)
+    [parent objects]
+    (let [children (cph/get-immediate-children objects (:id parent))
+          layout-grid-rows (:layout-grid-rows parent)
+          layout-grid-columns (:layout-grid-columns parent)
+          num-rows (count layout-grid-columns)
+          num-columns (count layout-grid-columns)
+          layout-grid-cells (:layout-grid-cells parent)
 
-        allocated-shapes
-        (into #{} (mapcat :shapes) (:layout-grid-cells parent))
+          allocated-shapes
+          (into #{} (mapcat :shapes) (:layout-grid-cells parent))
 
-        no-cell-shapes
-        (->> children (:shapes parent) (remove allocated-shapes))
+          no-cell-shapes
+          (->> children (:shapes parent) (remove allocated-shapes))
 
-        layout-grid-cells
-        (for [[row-idx row] (d/enumerate layout-grid-rows)
-              [col-idx col] (d/enumerate layout-grid-columns)]
+          layout-grid-cells
+          (for [[row-idx row] (d/enumerate layout-grid-rows)
+                [col-idx col] (d/enumerate layout-grid-columns)]
 
-          (let [shape (nth children (+ (* row-idx num-columns) col-idx) nil)
-                cell-data {:id (uuid/next)
-                           :row (inc row-idx)
-                           :column (inc col-idx)
-                           :row-span 1
-                           :col-span 1
-                           :shapes (when shape [(:id shape)])}]
-            [(:id cell-data) cell-data]))]
-    (assoc parent :layout-grid-cells (into {} layout-grid-cells))))
+            (let [shape (nth children (+ (* row-idx num-columns) col-idx) nil)
+                  cell-data {:id (uuid/next)
+                             :row (inc row-idx)
+                             :column (inc col-idx)
+                             :row-span 1
+                             :col-span 1
+                             :shapes (when shape [(:id shape)])}]
+              [(:id cell-data) cell-data]))]
+      (assoc parent :layout-grid-cells (into {} layout-grid-cells))))
 
 #_(defn check-grid-cells-update
-  [ids]
-  (ptk/reify ::check-grid-cells-update
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
-            undo-id (js/Symbol)]
-        (rx/of (dwc/update-shapes
-                ids
-                (fn [shape]
-                  (-> shape
-                      (update-grid-cells objects)))))))))
+    [ids]
+    (ptk/reify ::check-grid-cells-update
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [objects (wsh/lookup-page-objects state)
+              undo-id (js/Symbol)]
+          (rx/of (dwc/update-shapes
+                  ids
+                  (fn [shape]
+                    (-> shape
+                        (update-grid-cells objects)))))))))
 
 (defn add-layout-track
   [ids type value]
