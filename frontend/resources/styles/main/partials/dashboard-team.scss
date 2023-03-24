@@ -97,12 +97,11 @@
     fill: $color-gray-20;
   }
 
-  .error {
-    background-color: #ffd9e0;
+  .error,
+  .warning {
     width: 100%;
     display: flex;
     .icon {
-      background-color: $color-danger;
       text-align: center;
       padding: 5px;
       svg {
@@ -116,6 +115,22 @@
       color: $color-black;
       padding: 5px;
       font-size: $fs12;
+    }
+  }
+
+  .error {
+    background-color: #ffd9e0;
+
+    .icon {
+      background-color: $color-danger;
+    }
+  }
+
+  .warning {
+    background-color: #ffeaca;
+
+    .icon {
+      background-color: $color-warning;
     }
   }
 }

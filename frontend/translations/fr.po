@@ -3647,19 +3647,19 @@ msgstr "Aligner au centre"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Justifier"
+msgstr "Justifier (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Aligner à gauche"
+msgstr "Aligner à gauche (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Aligner verticalement au milieu"
+msgstr "Aligner verticalement au milieu (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Aligner à droite"
+msgstr "Aligner à droite (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3704,7 +3704,7 @@ msgstr "Aucune"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Barré"
+msgstr "Barré (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3724,7 +3724,7 @@ msgstr "Premières Lettres en Capitales"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Soulignage"
+msgstr "Soulignage (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

@@ -270,6 +270,9 @@ textarea {
       &.invalid {
         border: 1px solid $color-danger;
       }
+      &.caution {
+        border: 1px solid $color-warning;
+      }
 
       .text {
         display: inline-block;

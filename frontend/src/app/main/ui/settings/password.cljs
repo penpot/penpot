@@ -32,7 +32,10 @@
 (defn- on-success
   [form]
   (reset! form nil)
-  (let [msg (tr "dashboard.notifications.password-saved")]
+  (let [password-old-node (dom/get-element "password-old")
+        msg (tr "dashboard.notifications.password-saved")]
+    (dom/clean-value! password-old-node)
+    (dom/focus! password-old-node)
     (st/emit! (dm/success msg))))
 
 (defn- on-submit
@@ -45,7 +48,7 @@
 
 (s/def ::password-1 ::us/not-empty-string)
 (s/def ::password-2 ::us/not-empty-string)
-(s/def ::password-old ::us/not-empty-string)
+(s/def ::password-old (s/nilable ::us/string))
 
 (defn- password-equality
   [errors data]
@@ -66,9 +69,10 @@
 
 (mf/defc password-form
   [{:keys [locale] :as props}]
-  (let [form (fm/use-form :spec ::password-form
-                          :validators [password-equality]
-                          :initial {})]
+  (let [initial (mf/use-memo (constantly {:password-old nil}))
+        form (fm/use-form :spec ::password-form
+               :validators [password-equality]
+               :initial initial)]
     [:& fm/form {:class "password-form"
                  :on-submit on-submit
                  :form form}
@@ -77,6 +81,7 @@
       [:& fm/input
        {:type "password"
         :name :password-old
+        :auto-focus? true
         :label (t locale "labels.old-password")}]]
 
      [:div.fields-row

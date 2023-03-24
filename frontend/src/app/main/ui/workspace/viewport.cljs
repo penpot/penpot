@@ -134,12 +134,14 @@
         ;; STREAMS
         move-stream       (mf/use-memo #(rx/subject))
 
-        frame-parent      (mf/use-memo
+        guide-frame       (mf/use-memo
                            (mf/deps @hover-ids base-objects)
                            (fn []
-                             (let [parent (get base-objects (last @hover-ids))]
-                               (when (= :frame (:type parent))
-                                 parent))))
+                             (let [parent-id
+                                   (->> @hover-ids
+                                        (d/seek (partial cph/root-frame? base-objects)))]
+                               (when (some? parent-id)
+                                 (get base-objects parent-id)))))
 
         zoom              (d/check-num zoom 1)
         drawing-tool      (:tool drawing)
@@ -495,7 +497,7 @@
          [:& guides/viewport-guides
           {:zoom zoom
            :vbox vbox
-           :hover-frame frame-parent
+           :hover-frame guide-frame
            :disabled-guides? disabled-guides?
            :modifiers modifiers}])
 

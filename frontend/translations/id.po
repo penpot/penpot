@@ -3673,19 +3673,19 @@ msgstr "Paskan ke tengah"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Justify"
+msgstr "Justify (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Paskan ke kiri"
+msgstr "Paskan ke kiri (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Paskan ke tengah"
+msgstr "Paskan ke tengah (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Paskan ke kanan"
+msgstr "Paskan ke kanan (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3729,7 +3729,7 @@ msgstr "Tidak ada"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Coret"
+msgstr "Coret (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3749,7 +3749,7 @@ msgstr "Huruf Judul"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Garis bawah"
+msgstr "Garis bawah (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

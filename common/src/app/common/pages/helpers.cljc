@@ -37,8 +37,10 @@
    (= type :frame)))
 
 (defn group-shape?
-  [{:keys [type]}]
-  (= type :group))
+  ([objects id]
+   (group-shape? (get objects id)))
+  ([{:keys [type]}]
+   (= type :group)))
 
 (defn mask-shape?
   [{:keys [type masked-group?]}]
@@ -170,6 +172,25 @@
      (some->> shape-or-id
               (get objects)
               (get-frame objects)))))
+
+(defn get-root-frame
+  [objects shape-id]
+
+  (let [frame-id
+        (if (frame-shape? objects shape-id)
+          shape-id
+          (dm/get-in objects [shape-id :frame-id]))
+
+        frame (get objects frame-id)]
+    (cond
+      (or (root? frame) (nil? frame))
+      nil
+
+      (root-frame? frame)
+      frame
+
+      :else
+      (get-root-frame objects (:frame-id frame)))))
 
 (defn valid-frame-target?
   [objects parent-id shape-id]

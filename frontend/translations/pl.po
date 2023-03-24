@@ -3572,19 +3572,19 @@ msgstr "Wyrównaj do środka"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Wyjustuj"
+msgstr "Wyjustuj (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Wyrównaj do lewej"
+msgstr "Wyrównaj do lewej (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Wyrównaj do środka"
+msgstr "Wyrównaj do środka (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Wyrównaj do prawej"
+msgstr "Wyrównaj do prawej (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3628,7 +3628,7 @@ msgstr "Brak"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Przekreślenie"
+msgstr "Przekreślenie (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3648,7 +3648,7 @@ msgstr "Nazwy Własne"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Podkreślenie"
+msgstr "Podkreślenie (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.groups
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
@@ -195,6 +196,11 @@
                                 (keep :id))
                           selected)
 
+            child-ids
+            (into (d/ordered-set)
+                  (mapcat #(dm/get-in objects [% :shapes]))
+                  selected)
+
             changes {:redo-changes (vec (mapcat :redo-changes changes-list))
                      :undo-changes (vec (mapcat :undo-changes changes-list))
                      :origin it}
@@ -203,7 +209,8 @@
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (ptk/data-event :layout/update parents)
-               (dwu/commit-undo-transaction undo-id))))))
+               (dwu/commit-undo-transaction undo-id)
+               (dws/select-shapes child-ids))))))
 
 (def mask-group
   (ptk/reify ::mask-group

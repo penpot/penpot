@@ -58,7 +58,8 @@
         shape       (or drawing-obj (-> selected first))]
     (when (or (and (= (count selected) 1)
                    (= (:id shape) edition)
-                   (cph/path-shape? shape))
+                   (and (not (cph/text-shape? shape))
+                        (not (cph/frame-shape? shape))))
               (and (some? drawing-obj)
                    (cph/path-shape? drawing-obj)
                    (not= :curve (:tool drawing))))

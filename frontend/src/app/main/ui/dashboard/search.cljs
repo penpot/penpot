@@ -87,4 +87,5 @@
         :else
         [:& grid {:files result
                   :hide-new? true
+                  :origin :search
                   :limit limit}])]]))

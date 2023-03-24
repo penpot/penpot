@@ -59,7 +59,8 @@
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
   (assert (boolean? navigate?) "missing `navigate?` prop")
-  (let [is-lib-page? (= :libraries origin)
+  (let [is-lib-page?     (= :libraries origin)
+        is-search-page?  (= :search origin)
         top              (or top 0)
         left             (or left 0)
 
@@ -264,28 +265,30 @@
                       [{:option-name    (tr "dashboard.open-in-new-tab")
                         :id             "file-open-new-tab"
                         :option-handler on-new-tab}
-                       {:option-name    (tr "labels.rename")
-                        :id             "file-rename"
-                        :option-handler on-edit
-                        :data-test      "file-rename"}
-                       {:option-name    (tr "dashboard.duplicate")
-                        :id             "file-duplicate"
-                        :option-handler on-duplicate
-                        :data-test      "file-duplicate"}
-                       (when (and (not is-lib-page?) (or (seq current-projects) (seq other-teams)))
+                       (when (not is-search-page?)
+                         {:option-name    (tr "labels.rename")
+                          :id             "file-rename"
+                          :option-handler on-edit
+                          :data-test      "file-rename"}
+                         {:option-name    (tr "dashboard.duplicate")
+                          :id             "file-duplicate"
+                          :option-handler on-duplicate
+                          :data-test      "file-duplicate"})
+                       (when (and (not is-lib-page?) (not is-search-page?) (or (seq current-projects) (seq other-teams)))
                          {:option-name    (tr "dashboard.move-to")
                           :id             "file-move-to"
                           :sub-options    sub-options
                           :data-test      "file-move-to"})
-                       (if (:is-shared file)
-                         {:option-name    (tr "dashboard.unpublish-shared")
-                          :id             "file-del-shared"
-                          :option-handler on-del-shared
-                          :data-test      "file-del-shared"}
-                         {:option-name    (tr "dashboard.add-shared")
-                          :id             "file-add-shared"
-                          :option-handler on-add-shared
-                          :data-test      "file-add-shared"})
+                       (when (not is-search-page?)
+                         (if (:is-shared file)
+                           {:option-name    (tr "dashboard.unpublish-shared")
+                            :id             "file-del-shared"
+                            :option-handler on-del-shared
+                            :data-test      "file-del-shared"}
+                           {:option-name    (tr "dashboard.add-shared")
+                            :id             "file-add-shared"
+                            :option-handler on-add-shared
+                            :data-test      "file-add-shared"}))
                        {:option-name   :separator}
                        {:option-name    (tr "dashboard.download-binary-file")
                         :id             "file-download-binary"
@@ -295,7 +298,7 @@
                         :id             "file-download-standard"
                         :option-handler on-export-standard-files
                         :data-test      "download-standard-file"}
-                       (when (not is-lib-page?)
+                       (when (and (not is-lib-page?) (not is-search-page?))
                          {:option-name   :separator}
                          {:option-name    (tr "labels.delete")
                           :id             "file-delete"

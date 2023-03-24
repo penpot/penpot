@@ -300,6 +300,13 @@
     (update [_ state]
       (update-in state [:viewer-local :fullscreen?] not))))
 
+(defn exit-fullscreen
+  []
+  (ptk/reify ::exit-fullscreen
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :fullscreen?] false))))
+
 (defn set-viewport-size
   [{:keys [size]}]
   (ptk/reify ::set-viewport-size

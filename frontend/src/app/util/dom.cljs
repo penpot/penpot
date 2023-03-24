@@ -368,11 +368,21 @@
   (when (some? node)
     (.blur node)))
 
+;; List of dom events for different browsers to detect the exit of fullscreen mode
+(def fullscreen-events
+  ["fullscreenchange" "mozfullscreenchange" "MSFullscreenChange" "webkitfullscreenchange"])
+
 (defn fullscreen?
   []
   (cond
     (obj/in? globals/document "webkitFullscreenElement")
     (boolean (.-webkitFullscreenElement globals/document))
+
+    (obj/in? globals/document "mozFullScreen")
+    (boolean (.-mozFullScreen globals/document))
+
+    (obj/in? globals/document "msFullscreenElement")
+    (boolean (.-msFullscreenElement globals/document))
 
     (obj/in? globals/document "fullscreenElement")
     (boolean (.-fullscreenElement globals/document))

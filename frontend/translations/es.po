@@ -1904,6 +1904,9 @@ msgstr "Enviar invitacion"
 msgid "modals.invite-member.emails"
 msgstr "Emails, separados por coma"
 
+msgid "modals.invite-member.repeated-invitation"
+msgstr "Algunas direcciones de correo ya se encuentran entre los miembros. Estas invitaciones no serán enviadas."
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
 msgstr "Invitar a miembros al equipo"
@@ -2602,6 +2605,12 @@ msgstr "Comentarios"
 
 msgid "shortcuts.open-dashboard"
 msgstr "Ir al dashboard"
+
+msgid "shortcuts.select-next"
+msgstr "Seleccionar capa siguiente"
+
+msgid "shortcuts.select-prev"
+msgstr "Seleccionar capa anterior"
 
 msgid "shortcuts.open-inspect"
 msgstr "Ir al inspector"
@@ -4190,19 +4199,19 @@ msgstr "Aliniear al centro"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-justify"
-msgstr "Justificar"
+msgstr "Justificar (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-left"
-msgstr "Alinear a la izquierda"
+msgstr "Alinear a la izquierda (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "Alinear al centro"
+msgstr "Alinear al centro (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-right"
-msgstr "Alinear a la derecha"
+msgstr "Alinear a la derecha (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -4247,7 +4256,7 @@ msgstr "Nada"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
-msgstr "Tachado"
+msgstr "Tachado (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -4267,7 +4276,7 @@ msgstr "Título"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.underline"
-msgstr "Subrayado"
+msgstr "Subrayado (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.uppercase"

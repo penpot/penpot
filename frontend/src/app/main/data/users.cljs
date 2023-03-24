@@ -37,7 +37,7 @@
 (s/def ::created-at ::us/inst)
 (s/def ::password-1 ::us/string)
 (s/def ::password-2 ::us/string)
-(s/def ::password-old ::us/string)
+(s/def ::password-old (s/nilable ::us/string))
 
 (s/def ::profile
   (s/keys :req-un [::id]

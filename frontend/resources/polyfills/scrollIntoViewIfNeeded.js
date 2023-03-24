@@ -1,29 +1,46 @@
+/*
+  MIT License
+
+Copyright (c) 2021 Tobias Buschor
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+// Polyfill for `scrollIntoViewIfNeeded` function not existing in Firefox.
+// https://github.com/nuxodin/lazyfill
+
+
 ;(function() {
   if (!Element.prototype.scrollIntoViewIfNeeded) {
-    Element.prototype.scrollIntoViewIfNeeded = function (centerIfNeeded) {
-      centerIfNeeded = arguments.length === 0 ? true : !!centerIfNeeded;
-
-      var parent = this.parentNode;
-      if (parent) {
-        var parentComputedStyle = window.getComputedStyle(parent, null),
-          parentBorderTopWidth = parseInt(parentComputedStyle.getPropertyValue('border-top-width')),
-          parentBorderLeftWidth = parseInt(parentComputedStyle.getPropertyValue('border-left-width')),
-          overTop = this.offsetTop - parent.offsetTop < parent.scrollTop,
-          overBottom = (this.offsetTop - parent.offsetTop + this.clientHeight - parentBorderTopWidth) > (parent.scrollTop + parent.clientHeight),
-          overLeft = this.offsetLeft - parent.offsetLeft < parent.scrollLeft,
-          overRight = (this.offsetLeft - parent.offsetLeft + this.clientWidth - parentBorderLeftWidth) > (parent.scrollLeft + parent.clientWidth),
-          alignWithTop = overTop && !overBottom;
-
-        if ((overTop || overBottom) && centerIfNeeded) {
-          parent.scrollTop = this.offsetTop - parent.offsetTop - parent.clientHeight / 2 - parentBorderTopWidth + this.clientHeight / 2;
+    Element.prototype.scrollIntoViewIfNeeded = function ( centerIfNeeded = true ) {
+      const el = this;
+      new IntersectionObserver( function( [entry] ) {
+        const ratio = entry.intersectionRatio;
+        if (ratio < 1) {
+          let place = ratio <= 0 && centerIfNeeded ? 'center' : 'nearest';
+          el.scrollIntoView( {
+            block: place,
+            inline: place,
+          } );
         }
-        if ((overLeft || overRight) && centerIfNeeded) {
-          parent.scrollLeft = this.offsetLeft - parent.offsetLeft - parent.clientWidth / 2 - parentBorderLeftWidth + this.clientWidth / 2;
-        }
-        if ((overTop || overBottom || overLeft || overRight) && !centerIfNeeded) {
-          this.scrollIntoView(alignWithTop);
-        }
-      }
+        this.disconnect();
+      } ).observe(this);
     };
   }
 })()

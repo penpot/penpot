@@ -22,6 +22,7 @@
 - Allow for absolute positioned elements inside layout [Taiga #4834](https://tree.taiga.io/project/penpot/us/4834)
 - Add z-index option for flex layout items [Taiga #2980](https://tree.taiga.io/project/penpot/us/2980)
 - Scale content proportionally affects strokes, shadows, blurs and corners [Taiga #1951](https://tree.taiga.io/project/penpot/us/1951)
+- Use tabulators to navigate layers [Taiga #5010](https://tree.taiga.io/project/penpot/issue/5010)
 
 ### :bug: Bugs fixed
 
@@ -44,6 +45,27 @@
 - Fix problem with board titles misplaced [Taiga #4738](https://tree.taiga.io/project/penpot/issue/4738)
 - Fix problem with alt getting stuck when alt+tab [Taiga #5013](https://tree.taiga.io/project/penpot/issue/5013)
 - Fix problem with z positioning of elements [Taiga #5014](https://tree.taiga.io/project/penpot/issue/5014)
+- Fix problem in Firefox with scroll jumping when changin pages [#3052](https://github.com/penpot/penpot/issues/3052)
+- Fix nested frame interaction created flow in wrong frame [Taiga #5043](https://tree.taiga.io/project/penpot/issue/5043)
+- Font-Kerning does not work on Artboard Export to PNG/JPG/PDF [#3029](https://github.com/penpot/penpot/issues/3029)
+- Fix manipulate duplicated project (delete, duplicate, rename, pin/unpin...) [Taiga #5027](https://tree.taiga.io/project/penpot/issue/5027)
+- Fix deleted files appear in search results [Taiga #5002](https://tree.taiga.io/project/penpot/issue/5002)
+- Fix problem with selected colors and texts [Taiga #5051](https://tree.taiga.io/project/penpot/issue/5051)
+- Fix problem when assigning color from palette or assets [Taiga #5050](https://tree.taiga.io/project/penpot/issue/5050)
+- Fix shortcuts for alignment [Taiga #5030](https://tree.taiga.io/project/penpot/issue/5030)
+- Fix path options not showing when editing rects or ellipses [Taiga #5053](https://tree.taiga.io/project/penpot/issue/5053)
+- Fix tooltips for some alignment options are truncated on design tab [Taiga #5040](https://tree.taiga.io/project/penpot/issue/5040)
+- Fix horizontal margins drag don't always start from place [Taiga #5020](https://tree.taiga.io/project/penpot/issue/5020)
+- Fix multiplayer username sometimes is not displayed correctly [Taiga #4400](https://tree.taiga.io/project/penpot/issue/4400)
+- Show warning when trying to invite a user that is already in members [Taiga #4147](https://tree.taiga.io/project/penpot/issue/4147)
+- Fix problem with text out of borders when changing from auto-width to fixed [Taiga #4308](https://tree.taiga.io/project/penpot/issue/4308)
+- Fix header not showing when exiting fullscreen mode in viewer [Taiga #4244](https://tree.taiga.io/project/penpot/issue/4244)
+- Fix visual problem in select options [Taiga #5028](https://tree.taiga.io/project/penpot/issue/5028)
+- Forbid empty names for assets [Taiga #5056](https://tree.taiga.io/project/penpot/issue/5056)
+- Select children after ungroup action [Taiga #4917](https://tree.taiga.io/project/penpot/issue/4917)
+- Fix problem with guides not showing when moving over nested frames [Taiga #4905](https://tree.taiga.io/project/penpot/issue/4905)
+- Fix change email and password for users signed in via social login [Taiga #4273](https://tree.taiga.io/project/penpot/issue/4273)
+- Fix drag and drop files from browser or file explorer under circumstances [Taiga #5054](https://tree.taiga.io/project/penpot/issue/5054)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:

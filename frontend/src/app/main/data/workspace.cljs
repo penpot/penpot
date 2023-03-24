@@ -2043,6 +2043,8 @@
 (dm/export dws/select-all)
 (dm/export dws/select-inside-group)
 (dm/export dws/select-shape)
+(dm/export dws/select-prev-shape)
+(dm/export dws/select-next-shape)
 (dm/export dws/shift-select-shapes)
 
 ;; Highlight
