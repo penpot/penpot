@@ -390,8 +390,8 @@
                                             :p3 (if (:flip-y frame) true false)
                                             :p4 (if (:flip-x frame) true false)}
         negate                             (cond-> negate
-                                             (= :fix (:layout-item-h-sizing frame)) (assoc :p2 (not (:p2 negate)))
-                                             (= :fix (:layout-item-v-sizing frame)) (assoc :p3 (not (:p3 negate))))
+                                             (not= :auto (:layout-item-h-sizing frame)) (assoc :p2 (not (:p2 negate)))
+                                             (not= :auto (:layout-item-v-sizing frame)) (assoc :p3 (not (:p3 negate))))
 
         padding-rect-data                  {:p1 {:key (str frame-id "-p1")
                                                  :x x1
