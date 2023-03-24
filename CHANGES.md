@@ -45,6 +45,13 @@
 - Fix tooltips for some alignment options are truncated on design tab [Taiga #5040](https://tree.taiga.io/project/penpot/issue/5040)
 - Fix horizontal margins drag don't always start from place [Taiga #5020](https://tree.taiga.io/project/penpot/issue/5020)
 - Fix multiplayer username sometimes is not displayed correctly [Taiga #4400](https://tree.taiga.io/project/penpot/issue/4400)
+- Show warning when trying to invite a user that is already in members [Taiga #4147](https://tree.taiga.io/project/penpot/issue/4147)
+- Fix problem with text out of borders when changing from auto-width to fixed [Taiga #4308](https://tree.taiga.io/project/penpot/issue/4308)
+- Fix header not showing when exiting fullscreen mode in viewer [Taiga #4244](https://tree.taiga.io/project/penpot/issue/4244)
+- Fix visual problem in select options [Taiga #5028](https://tree.taiga.io/project/penpot/issue/5028)
+- Forbid empty names for assets [Taiga #5056](https://tree.taiga.io/project/penpot/issue/5056)
+- Select children after ungroup action [Taiga #4917](https://tree.taiga.io/project/penpot/issue/4917)
+- Fix problem with guides not showing when moving over nested frames [Taiga #4905](https://tree.taiga.io/project/penpot/issue/4905)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:

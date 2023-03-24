@@ -195,6 +195,10 @@
   }
 
   .input-select {
+    /* This padding is so the text won't overlap the arrow*/
+    padding-right: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: $color-gray-10;
 
     &:focus {
