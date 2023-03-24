@@ -1326,14 +1326,19 @@
                 res)))
 
           (maybe-translate [shape objects selected+children]
-            (let [root-frame-id (cph/get-shape-id-root-frame objects (:id shape))]
-              (if (and (not (cph/root-frame? shape))
-                       (not (contains? selected+children root-frame-id)))
-                ;; When the parent frame is not selected we change to relative
-                ;; coordinates
+            (let [frame-id (:frame-id shape)
+                  root-frame-id (cph/get-shape-id-root-frame objects (:id shape))]
+              (cond
+                (cph/root-frame? shape) shape
+                (contains? selected+children root-frame-id) shape
+
+                (cph/frame-shape? shape)
                 (let [frame (get objects root-frame-id)]
                   (gsh/translate-to-frame shape frame))
-                shape)))
+
+                :else
+                (let [frame (get objects frame-id)]
+                  (gsh/translate-to-frame shape frame)))))
 
           (on-copy-error [error]
             (js/console.error "Clipboard blocked:" error)
