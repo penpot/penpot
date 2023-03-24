@@ -32,7 +32,7 @@
 (s/def ::path ::us/string)
 (s/def ::profile-id ::us/uuid)
 (s/def ::password ::us/not-empty-string)
-(s/def ::old-password ::us/not-empty-string)
+(s/def ::old-password (s/nilable ::us/string))
 (s/def ::theme ::us/string)
 
 ;; --- MUTATION: Update Profile (own)

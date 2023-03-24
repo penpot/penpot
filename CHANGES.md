@@ -52,6 +52,7 @@
 - Forbid empty names for assets [Taiga #5056](https://tree.taiga.io/project/penpot/issue/5056)
 - Select children after ungroup action [Taiga #4917](https://tree.taiga.io/project/penpot/issue/4917)
 - Fix problem with guides not showing when moving over nested frames [Taiga #4905](https://tree.taiga.io/project/penpot/issue/4905)
+- Fix change email and password for users signed in via social login [Taiga #4273](https://tree.taiga.io/project/penpot/issue/4273)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
