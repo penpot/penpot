@@ -150,9 +150,9 @@
                    {:p1 (min (- min-y (:y1 parent-selrect)) (- (:y2 parent-selrect) max-y))
                     :p2 (min (- min-x (:x1 parent-selrect)) (- (:x2 parent-selrect) max-x))})]
 
-     (cond-> {:layout-flex-dir direction}
-       (not (nil? padding)) (assoc :layout-padding {:p1 (:p1 padding) :p2 (:p2 padding) :p3 (:p1 padding) :p4 (:p2 padding)})
-       (not (nil? layout-gap)) (assoc :layout-gap layout-gap)))))
+     (cond-> {:layout-flex-dir direction :layout-gap layout-gap}
+       (not (nil? padding))
+       (assoc :layout-padding {:p1 (:p1 padding) :p2 (:p2 padding) :p3 (:p1 padding) :p4 (:p2 padding)})))))
 
 (defn shapes->grid-params
   "Given the shapes calculate its flex parameters (horizontal vs vertical, gaps, etc)"
