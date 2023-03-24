@@ -222,12 +222,14 @@
 
         disabled-guides?         (or drawing-tool transform)
 
-        show-padding? (and (= (count selected-shapes) 1)
+        show-padding? (and (nil? transform)
+                           (= (count selected-shapes) 1)
                            (= (:type (first selected-shapes)) :frame)
                            (= (:layout (first selected-shapes)) :flex))
 
 
-        show-margin? (and (= (count selected-shapes) 1)
+        show-margin? (and (nil? transform)
+                          (= (count selected-shapes) 1)
                           (= (:layout selected-frame) :flex))]
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
