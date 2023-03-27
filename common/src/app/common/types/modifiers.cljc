@@ -645,11 +645,15 @@
           (recur matrix (next modifiers)))))))
 
 (defn transform-text-node [value attrs]
-  (let [font-size (-> (get attrs :font-size 14)
-                      (d/parse-double)
-                      (* value)
-                      (str))]
+  (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)
+        letter-spacing (-> (get attrs :letter-spacing 0) d/parse-double (* value) str)]
+    (d/txt-merge attrs {:font-size font-size
+                        :letter-spacing letter-spacing})))
+
+(defn transform-paragraph-node [value attrs]
+  (let [font-size   (-> (get attrs :font-size 14) d/parse-double (* value) str)]
     (d/txt-merge attrs {:font-size font-size})))
+
 
 (defn update-text-content
   [shape scale-text-content value]
@@ -661,9 +665,8 @@
   (letfn [(scale-text-content
             [content value]
             (->> content
-                 (txt/transform-nodes
-                  txt/is-text-node?
-                  (partial transform-text-node value))))
+                 (txt/transform-nodes txt/is-text-node? (partial transform-text-node value))
+                 (txt/transform-nodes txt/is-paragraph-node? (partial transform-paragraph-node value))))
 
           (apply-scale-content
             [shape value]
