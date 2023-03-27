@@ -3212,6 +3212,18 @@ msgstr "Mostrar reglas"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Mostrar paleta de textos"
 
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Activar escala proporcional"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Desactivar escala proporcional"
+
+msgid "workspace.header.menu.undo"
+msgstr "Deshacer"
+
+msgid "workspace.header.menu.redo"
+msgstr "Rehacer"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
 msgstr "Restablecer"

@@ -3049,6 +3049,18 @@ msgstr "Show rulers"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Show fonts palette"
 
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Enable proportional scale"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Disable proportional scale"
+
+msgid "workspace.header.menu.undo"
+msgstr "Undo"
+
+msgid "workspace.header.menu.redo"
+msgstr "Redo"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
 msgstr "Reset"
