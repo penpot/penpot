@@ -66,7 +66,8 @@
     (when (contains? #{:auto-height :auto-width} grow-type)
       (let [{:keys [width height]}
             (-> (dom/query node ".paragraph-set")
-                (dom/get-client-size))
+                (dom/get-bounding-rect))
+
             width (mth/ceil width)
             height (mth/ceil height)]
         (when (and (not (mth/almost-zero? width))
