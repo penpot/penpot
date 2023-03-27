@@ -316,7 +316,7 @@
 
         on-lost-pointer-capture
         (mf/use-callback
-         (mf/deps frame-id padding-num)
+         (mf/deps frame-id padding-num padding)
          (fn [event]
            (dom/release-pointer event)
            (reset! resizing? false)
@@ -326,7 +326,7 @@
 
         on-pointer-move
         (mf/use-callback
-         (mf/deps frame-id padding-num padding)
+         (mf/deps frame-id padding-num padding hover-all? hover-v? hover-h?)
          (fn [event]
            (let [pos (dom/get-client-position event)]
              (reset! mouse-pos (point->viewport pos))
@@ -486,7 +486,7 @@
 
         on-pointer-move
         (mf/use-callback
-         (mf/deps shape-id margin-num margin)
+         (mf/deps shape-id margin-num margin hover-all? hover-v? hover-h?)
          (fn [event]
            (let [pos (dom/get-client-position event)]
              (reset! mouse-pos (point->viewport pos))
