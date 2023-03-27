@@ -54,6 +54,12 @@
 
         select-margin #(select-margins (= % :m1) (= % :m2) (= % :m3) (= % :m4))]
 
+    (mf/use-effect
+     (fn []
+       (fn []
+         ;;on destroy component
+         (select-margins false false false false))))
+
     [:div.margin-row
      (cond
        (= margin-type :simple)

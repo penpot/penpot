@@ -256,6 +256,12 @@
 
         select-padding #(select-paddings (= % :p1) (= % :p2) (= % :p3) (= % :p4))]
 
+    (mf/use-effect
+     (fn []
+       (fn []
+         ;;on destroy component
+         (select-paddings false false false false))))
+
     [:div.padding-row
      (cond
        (= padding-type :simple)
@@ -315,6 +321,13 @@
   (let [select-gap
         (fn [gap]
           (st/emit! (udw/set-gap-selected gap)))]
+
+    (mf/use-effect
+     (fn []
+       (fn []
+         ;;on destroy component
+         (select-gap nil))))
+
     [:div.layout-row
      [:div.gap.row-title "Gap"]
      [:div.gap-group
