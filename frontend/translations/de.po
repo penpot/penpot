@@ -1337,6 +1337,7 @@ msgid "labels.no-invitations"
 msgstr "Es gibt keine Einladungen."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Drücken Sie die Schaltfläche \"Zum Team einladen\", um weitere Mitglieder "

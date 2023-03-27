@@ -586,7 +586,8 @@
   [:div.empty-invitations
    [:span (tr "labels.no-invitations")]
    (when can-invite?
-     [:span (tr "labels.no-invitations-hint")])])
+     [:& i18n/tr-html {:label "labels.no-invitations-hint"
+                       :tag-name "span"}])])
 
 (mf/defc invitation-section
   [{:keys [team invitations] :as props}]

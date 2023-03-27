@@ -1289,6 +1289,7 @@ msgid "labels.no-invitations"
 msgstr "Nema pozivnica."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "Pritisni gumb \"Pozovi u tim\" da pozoveš više članova u ovaj tim."
 

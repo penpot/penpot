@@ -1291,6 +1291,7 @@ msgid "labels.no-invitations"
 msgstr "Nu există invitații."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Apăsați butonul „Invitați în echipă” pentru a invita mai mulți membri în "
