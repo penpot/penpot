@@ -729,8 +729,13 @@
     (let [perms    (get-permissions conn profile-id team-id)
           profile  (db/get-by-id conn :profile profile-id)
           team     (db/get-by-id conn :team team-id)
-          emails   (cond-> (or emails #{}) (string? email) (conj email))]
 
+          ;; Members emails. We don't re-send inviation to already existing members
+          member?  (into #{}
+                         (map :email)
+                         (db/exec! conn [sql:team-members team-id]))
+
+          emails   (cond-> (or emails #{}) (string? email) (conj email))]
 
       (run! (partial quotes/check-quote! conn)
             (list {::quotes/id ::quotes/invitations-per-team
@@ -754,6 +759,7 @@
 
       (let [cfg         (assoc cfg ::db/conn conn)
             invitations (->> emails
+                             (remove member?)
                              (map (fn [email]
                                     {:email (str/lower email)
                                      :team team

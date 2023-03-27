@@ -177,7 +177,9 @@
                            :on-submit  on-submit}]]
 
       [:div.action-buttons
-       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))
+       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")
+                             :disabled (and (boolean (some current-data-emails current-members-emails))
+                                            (empty? (remove current-members-emails current-data-emails)))}]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MEMBERS SECTION
