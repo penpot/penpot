@@ -674,7 +674,7 @@
               (cph/text-shape? shape)
               (update-text-content scale-text-content value) 
               
-              (cph/rect-shape? shape)
+              :always
               (gsc/update-corners-scale value)
               
               (d/not-empty? (:strokes shape))
