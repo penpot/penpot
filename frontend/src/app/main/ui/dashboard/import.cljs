@@ -378,7 +378,7 @@
 
            [:div.feedback-banner
             [:div.icon i/checkbox-checked]
-            [:div.message (tr "dashboard.import.import-message" (if (some? template) 1 success-files))]]))
+            [:div.message (tr "dashboard.import.import-message" (i18n/c (if (some? template) 1 success-files)))]]))
 
        (for [file files]
          (let [editing? (and (some? (:file-id file))
