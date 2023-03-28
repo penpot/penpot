@@ -67,6 +67,7 @@
 - Fix problem with selection colors and texts [Taiga #5079](https://tree.taiga.io/project/penpot/issue/5079)
 - Remove "show in view mode" flag when moving frame to frame [Taiga #5091](https://tree.taiga.io/project/penpot/issue/5091)
 - Fix problem creating files in project page [Taiga #5060](https://tree.taiga.io/project/penpot/issue/5060)
+- Disable empty names on rename files [Taiga #5088](https://tree.taiga.io/project/penpot/issue/5088)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
