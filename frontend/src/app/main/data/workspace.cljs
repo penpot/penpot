@@ -663,6 +663,9 @@
         (cond-> (not (ctl/any-layout? objects parent-id))
           (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
 
+        ;; Remove the hide in viewer flag
+        (pcb/update-shapes ordered-indexes #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
+
         ;; Move the shapes
         (pcb/change-parent parent-id
                            shapes

@@ -104,7 +104,7 @@
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize 
+  (letfn [(resize
            [shape initial layout [point lock? center? point-snap]]
             (let [{:keys [width height]} (:selrect shape)
                   {:keys [rotation]} shape
@@ -745,13 +745,16 @@
                  (remove (fn [shape]
                            (and (ctl/layout-absolute? shape)
                                 (= frame-id (:parent-id shape))))))
+            moving-shapes-ids
+            (map :id moving-shapes)
 
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
                 ;; Remove layout-item properties when moving a shape outside a layout
                 (cond-> (not (ctl/any-layout? objects frame-id))
-                  (pcb/update-shapes (map :id moving-shapes) ctl/remove-layout-item-data))
+                  (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
+                (pcb/update-shapes moving-shapes-ids #(cond-> % (cph/frame-shape? %) (assoc :hide-in-viewer true)))
                 (pcb/change-parent frame-id moving-shapes drop-index)
                 (pcb/remove-objects empty-parents))]
 

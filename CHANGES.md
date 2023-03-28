@@ -65,6 +65,7 @@
 - Fix expanded typography on assets sidebar is moving [Taiga #5063](https://tree.taiga.io/project/penpot/issue/5063)
 - Fix spelling mistake in confirmation after importing only 1 file [Taiga #5095](https://tree.taiga.io/project/penpot/issue/5095)
 - Fix problem with selection colors and texts [Taiga #5079](https://tree.taiga.io/project/penpot/issue/5079)
+- Remove "show in view mode" flag when moving frame to frame [Taiga #5091](https://tree.taiga.io/project/penpot/issue/5091)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
