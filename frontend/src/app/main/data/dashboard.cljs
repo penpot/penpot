@@ -925,6 +925,13 @@
       {:num-files (count ids)
        :project-id project-id})
 
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [origin-project (get-in state [:dashboard-files (first ids) :project-id])]
+        (-> state
+            (update-in [:dashboard-projects origin-project :count] #(- % (count ids)))
+            (update-in [:dashboard-projects project-id :count] #(+ % (count ids))))))
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [on-success on-error]
