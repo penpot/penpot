@@ -185,6 +185,7 @@
                              :auto-focus? true
                              :trim true
                              :valid-item-fn us/parse-email
+                             :caution-item-fn #{}
                              :on-submit  on-submit
                              :label (tr "modals.invite-member.emails")}]]
 

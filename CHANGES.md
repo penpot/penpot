@@ -59,6 +59,7 @@
 - Fix problem with outer stroke in texts [Taiga #5078](https://tree.taiga.io/project/penpot/issue/5078)
 - Fix problem with text carring over next line when changing to fixed [Taiga #5067](https://tree.taiga.io/project/penpot/issue/5067)
 - Fix don't show invite user hero to users with editor role [Taiga #5086](https://tree.taiga.io/project/penpot/issue/5086)
+- Fix enter emails on onboarding new user creating team [Taiga #5089](https://tree.taiga.io/project/penpot/issue/5089)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
