@@ -595,3 +595,25 @@
        (d/enumerate)
        (sort comparator-layout-z-index)
        (mapv second)))
+
+(defn common-parent-frame
+  "Search for the common frame for the selected shapes. Otherwise returns the root frame"
+  [objects selected]
+
+  (loop [frame-id (get-in objects [(first selected) :frame-id])
+         frame-parents (get-parent-ids objects frame-id)
+         selected (rest selected)]
+    (if (empty? selected)
+      frame-id
+
+      (let [current (first selected)
+            parent? (into #{} (get-parent-ids objects current))
+
+            [frame-id frame-parents]
+            (if (parent? frame-id)
+              [frame-id frame-parents]
+
+              (let [frame-id (d/seek parent? frame-parents)]
+                [frame-id (get-parent-ids objects frame-id)]))]
+
+        (recur frame-id frame-parents (rest selected))))))
