@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.file-builder :as fb]
    [app.common.media :as cm]
+   [app.common.types.components-list :as ctkl]
    [app.common.uuid :as uuid]
    [app.util.dom :as dom]
    [app.util.json :as json]
@@ -108,7 +109,7 @@
         components-stream
         (->> files-stream
              (rx/flat-map vals)
-             (rx/filter #(d/not-empty? (get-in % [:data :components])))
+             (rx/filter #(d/not-empty? (ctkl/components-seq (:data %))))
              (rx/flat-map e/parse-library-components))
 
         pages-stream

@@ -34,22 +34,20 @@
 
 (declare commit-changes)
 
-
-(defn- add-group-id
+(defn- add-undo-group
   [changes state]
-  (let [undo          (:workspace-undo state)
-        items         (:items undo)
-        index         (or (:index undo) (dec (count items)))
-        prev-item     (when-not (or (empty? items) (= index -1))
-                                (get items index))
-        group-id      (:group-id prev-item)
-        add-group-id? (and
-                       (not (nil? group-id))
-                       (= (get-in changes [:redo-changes 0 :type]) :mod-obj)
-                       (= (get-in prev-item [:redo-changes 0 :type]) :add-obj)) ;; This is a copy-and-move with mouse+alt
-        ]
-    (cond-> changes add-group-id? (assoc :group-id group-id))))
+  (let [undo            (:workspace-undo state)
+        items           (:items undo)
+        index           (or (:index undo) (dec (count items)))
+        prev-item       (when-not (or (empty? items) (= index -1))
+                          (get items index))
+        undo-group      (:undo-group prev-item)
+        add-undo-group? (and
+                         (not (nil? undo-group))
+                         (= (get-in changes [:redo-changes 0 :type]) :mod-obj)
+                         (= (get-in prev-item [:redo-changes 0 :type]) :add-obj))] ;; This is a copy-and-move with mouse+alt
 
+    (cond-> changes add-undo-group? (assoc :undo-group undo-group))))
 
 (def commit-changes? (ptk/type? ::commit-changes))
 
@@ -82,7 +80,7 @@
                             (pcb/set-stack-undo? stack-undo?)
                             (pcb/with-objects objects))
                         ids)
-             changes (add-group-id changes state)]
+             changes (add-undo-group changes state)]
          (rx/concat
           (if (seq (:redo-changes changes))
             (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))
@@ -165,15 +163,24 @@
           changes)))
 
 (defn commit-changes
+  "Schedules a list of changes to execute now, and add the corresponding undo changes to
+   the undo stack.
+   
+   Options:
+   - save-undo?: if set to false, do not add undo changes.
+   - undo-group: if some consecutive changes (or even transactions) share the same
+                 undo-group, they will be undone or redone in a single step
+   "
   [{:keys [redo-changes undo-changes
-           origin save-undo? file-id group-id stack-undo?]
-    :or {save-undo? true stack-undo? false}}]
+           origin save-undo? file-id undo-group stack-undo?]
+    :or {save-undo? true stack-undo? false undo-group (uuid/next)}}]
   (log/debug :msg "commit-changes"
+             :js/undo-group (str undo-group)
              :js/redo-changes redo-changes
              :js/undo-changes undo-changes)
-  (let [error  (volatile! nil)
+  (let [error   (volatile! nil)
         page-id (:current-page-id @st/state)
-        frames (changed-frames redo-changes (wsh/lookup-page-objects @st/state))]
+        frames  (changed-frames redo-changes (wsh/lookup-page-objects @st/state))]
     (ptk/reify ::commit-changes
       cljs.core/IDeref
       (-deref [_]
@@ -184,8 +191,8 @@
          :page-id page-id
          :frames frames
          :save-undo? save-undo?
-         :stack-undo? stack-undo?
-         :group-id group-id})
+         :undo-group undo-group
+         :stack-undo? stack-undo?})
 
       ptk/UpdateEvent
       (update [_ state]
@@ -215,7 +222,7 @@
                 add-page-id
                 (fn [{:keys [id type page] :as change}]
                   (cond-> change
-                    (page-change? type)
+                    (and (page-change? type) (nil? (:page-id change)))
                     (assoc :page-id (or id (:id page)))))
 
                 changes-by-pages
@@ -234,5 +241,5 @@
              (when (and save-undo? (seq undo-changes))
                (let [entry {:undo-changes undo-changes
                             :redo-changes redo-changes
-                            :group-id group-id}]
+                            :undo-group undo-group}]
                  (rx/of (dwu/append-undo entry stack-undo?)))))))))))

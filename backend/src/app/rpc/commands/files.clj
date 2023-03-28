@@ -13,6 +13,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
@@ -199,6 +200,16 @@
                     {:columns [:content]
                      ::db/check-deleted? false})]
     (blob/decode (:content row))))
+
+(defn load-all-pointers!
+  [data]
+  (doseq [[_id page] (:pages-index data)]
+    (when (pmap/pointer-map? page)
+      (pmap/load! page)))
+  (doseq [[_id component] (:components data)]
+    (when (pmap/pointer-map? component)
+      (pmap/load! component)))
+  data)
 
 (defn persist-pointers!
   [conn file-id]
@@ -485,17 +496,23 @@
 (defn get-team-shared-files
   [conn team-id]
   (letfn [(assets-sample [assets limit]
-            (let [sorted-assets (->> (vals assets)
-                                     (sort-by #(str/lower (:name %))))]
-              {:count (count sorted-assets)
-               :sample (into [] (take limit sorted-assets))}))
+           (let [sorted-assets (->> (vals assets)
+                                    (sort-by #(str/lower (:name %))))]
+             {:count (count sorted-assets)
+              :sample (into [] (take limit sorted-assets))}))
 
           (library-summary [{:keys [id data] :as file}]
             (binding [pmap/*load-fn* (partial load-pointer conn id)]
-              {:components (assets-sample (:components data) 4)
-               :media (assets-sample (:media data) 3)
-               :colors (assets-sample (:colors data) 3)
-               :typographies (assets-sample (:typographies data) 3)}))]
+              (let [load-objects (fn [component]
+                                   (binding [pmap/*load-fn* (partial load-pointer conn id)]
+                                     (ctf/load-component-objects data component)))
+                    components-sample (-> (assets-sample (ctkl/components data) 4)
+                                          (update :sample
+                                                  #(map load-objects %)))]
+                {:components components-sample
+                 :media (assets-sample (:media data) 3)
+                 :colors (assets-sample (:colors data) 3)
+                 :typographies (assets-sample (:typographies data) 3)})))]
 
     (->> (db/exec! conn [sql:team-shared-files team-id])
          (into #{} (comp
@@ -552,7 +569,10 @@
        (map (fn [{:keys [id] :as row}]
               (binding [pmap/*load-fn* (partial load-pointer conn id)]
                 (-> row
-                    (update :data dissoc :pages-index)
+                    ;; TODO: re-enable this dissoc and replace call
+                    ;;       with other that gets files individually
+                    ;;       See task https://tree.taiga.io/project/penpot/task/4904
+                    ;; (update :data dissoc :pages-index)
                     (handle-file-features client-features)))))
        (vec)))
 
@@ -836,18 +856,23 @@
   (let [library (db/get-by-id conn :file id)]
     (when (:is-shared library)
       (let [ldata (-> library decode-row pmg/migrate-file :data)]
+        (binding [pmap/*load-fn* (partial load-pointer conn id)]
+          (load-all-pointers! ldata))
         (->> (db/query conn :file-library-rel {:library-file-id id})
              (map :file-id)
              (keep #(db/get-by-id conn :file % ::db/check-deleted? false))
              (map decode-row)
              (map pmg/migrate-file)
              (run! (fn [{:keys [id data revn] :as file}]
-                     (let [data (ctf/absorb-assets data ldata)]
-                       (db/update! conn :file
-                                   {:revn (inc revn)
-                                    :data (blob/encode data)
-                                    :modified-at (dt/now)}
-                                   {:id id})))))))))
+                     (binding [pmap/*tracked* (atom {})
+                               pmap/*load-fn* (partial load-pointer conn id)]
+                       (let [data (ctf/absorb-assets data ldata)]
+                         (db/update! conn :file
+                                     {:revn (inc revn)
+                                      :data (blob/encode data)
+                                      :modified-at (dt/now)}
+                                     {:id id}))
+                       (persist-pointers! conn id)))))))))
 
 (s/def ::set-file-shared
   (s/keys :req [::rpc/profile-id]

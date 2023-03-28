@@ -65,3 +65,41 @@
   (t/is (= 0 (d/check-num [] 0)))
   (t/is (= 0 (d/check-num :foo 0)))
   (t/is (= 0 (d/check-num nil 0))))
+
+(t/deftest insert-at-index
+  ;; insert different object
+  (t/is (= (d/insert-at-index [:a :b] 1 [:c :d])
+           [:a :c :d :b]))
+
+  ;; insert on the start
+  (t/is (= (d/insert-at-index [:a :b] 0 [:c])
+           [:c :a :b]))
+
+  ;; insert on the end 1
+  (t/is (= (d/insert-at-index [:a :b] 2 [:c])
+           [:a :b :c]))
+
+  ;; insert on the end with not existing index
+  (t/is (= (d/insert-at-index [:a :b] 10 [:c])
+           [:a :b :c]))
+
+  ;; insert existing in a contiguous index
+  (t/is (= (d/insert-at-index [:a :b] 1 [:a])
+           [:a :b]))
+
+  ;; insert existing in the same index
+  (t/is (= (d/insert-at-index [:a :b] 0 [:a])
+           [:a :b]))
+
+  ;; insert existing in other index case 1
+  (t/is (= (d/insert-at-index [:a :b :c] 2 [:a])
+           [:b :a :c]))
+
+  ;; insert existing in other index case 2
+  (t/is (= (d/insert-at-index [:a :b :c :d] 0 [:d])
+           [:d :a :b :c]))
+
+  ;; insert existing in other index case 3
+  (t/is (= (d/insert-at-index [:a :b :c :d] 1 [:a])
+           [:a :b :c :d])))
+

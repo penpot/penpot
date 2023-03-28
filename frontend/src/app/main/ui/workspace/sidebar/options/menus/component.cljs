@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require
-       [app.common.types.components-list :as ctkl]
+    [app.common.types.components-list :as ctkl]
     [app.common.types.file :as ctf]
     [app.main.data.modal :as modal]
     [app.main.data.workspace :as dw]

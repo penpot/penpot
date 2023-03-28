@@ -36,7 +36,9 @@
 
 (defn get-component-root
   [component]
-  (get-in component [:objects (:id component)]))
+  (if (some? (:main-instance-id component))
+    (get-in component [:objects (:main-instance-id component)])
+    (get-in component [:objects (:id component)])))
 
 (defn uses-library-components?
   "Check if the shape uses any component in the given library."
@@ -45,12 +47,12 @@
        (= (:component-file shape) library-id)))
 
 (defn in-component-instance?
-  "Check if the shape is inside a component instance."
+  "Check if the shape is inside a component non-main instance."
   [shape]
   (some? (:shape-ref shape)))
 
 (defn in-component-instance-not-root?
-  "Check if the shape is inside a component instance and
+  "Check if the shape is inside a component non-main instance and
   is not the root shape."
   [shape]
   (and (some? (:shape-ref shape))
@@ -66,5 +68,3 @@
           :remote-synced?
           :shape-ref
           :touched))
-
-

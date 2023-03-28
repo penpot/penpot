@@ -105,12 +105,13 @@
             [:span.num-assets (str "\u00A0(") (:count components) ")"]] ;; Unicode 00A0 is non-breaking space
            [:div.asset-list
             (for [component (:sample components)]
-              [:div.asset-list-item {:key (str "assets-component-" (:id component))}
-               [:& component-svg {:group (get-in component [:objects (:id component)])
-                                  :objects (:objects component)}]
-               [:div.name-block
-                [:span.item-name {:title (:name component)}
-                 (:name component)]]])
+              (let [root-id (or (:main-instance-id component) (:id component))] ;; Check for components-v2 in library
+                [:div.asset-list-item {:key (str "assets-component-" (:id component))}
+                 [:& component-svg {:root-shape (get-in component [:objects root-id])
+                                    :objects (:objects component)}] ;; Components in the summary come loaded with objects, even in v2
+                 [:div.name-block
+                  [:span.item-name {:title (:name component)}
+                   (:name component)]]]))
             (when (> (:count components) (count (:sample components)))
               [:div.asset-list-item
                [:div.name-block

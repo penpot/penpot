@@ -7,20 +7,15 @@
 (ns frontend-tests.helpers.pages
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.common.pages.changes-builder :as pcb]
    [app.common.pages.helpers :as cph]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries-helpers :as dwlh]
-   [app.main.data.workspace.state-helpers :as wsh]
-   [beicon.core :as rx]
-   [cljs.pprint :refer [pprint]]
-   [cljs.test :as t :include-macros true]
-   [potok.core :as ptk]))
+   [app.main.data.workspace.state-helpers :as wsh]))
 
 ;; ---- Helpers to manage pages and objects
 
@@ -32,10 +27,12 @@
    :workspace-layout layout/default-layout
    :workspace-global layout/default-global
    :workspace-data {:id current-file-id
+                    :options {:components-v2 true}
                     :components {}
                     :pages []
                     :pages-index {}}
-   :workspace-libraries {}})
+   :workspace-libraries {}
+   :features {:components-v2 true}})
 
 (def ^:private idmap (atom {}))
 
@@ -55,6 +52,11 @@
   [state label]
   (let [page (current-page state)]
     (get-in page [:objects (id label)])))
+
+(defn get-children
+  [state label]
+  (let [page (current-page state)]
+    (cph/get-children (:objects page) (id label))))
 
 (defn sample-page
   ([state] (sample-page state {}))
@@ -106,16 +108,17 @@
         objects (wsh/lookup-page-objects state (:id page))
         shapes  (dwg/shapes-for-grouping objects shape-ids)
 
-        [group component-root changes]
+        [group component-id changes]
         (dwlh/generate-add-component nil
                                      shapes
                                      (:objects page)
                                      (:id page)
                                      current-file-id
-                                     true)]
+                                     true
+                                     dwg/prepare-create-group)]
 
     (swap! idmap assoc instance-label (:id group)
-                       component-label (:id component-root))
+                       component-label component-id)
     (update state :workspace-data
             cp/process-changes (:redo-changes changes))))
 
@@ -126,8 +129,10 @@
    (let [page      (current-page state)
          libraries (wsh/get-libraries state)
 
+         changes   (pcb/empty-changes nil (:id page))
+
          [new-shape changes]
-         (dwlh/generate-instantiate-component nil
+         (dwlh/generate-instantiate-component changes
                                               file-id
                                               component-id
                                               (gpt/point 100 100)
@@ -148,7 +153,9 @@
                 assoc library-id {:id library-id
                                   :name name
                                   :data {:id library-id
+                                         :options (:options data)
+                                         :pages (:pages data)
+                                         :pages-index (:pages-index data)
                                          :components (:components data)}})
         (update :workspace-data
                 assoc :components {} :pages [] :pages-index {}))))
-

@@ -310,16 +310,16 @@
                  update-fn    #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
              (reduce update-fn objects children-ids))))
 
-        root-shape (get objects root-shape-id)
-        width      (* (:width root-shape) zoom)
-        height     (* (:height root-shape) zoom)
-        vbox       (format-viewbox {:width (:width root-shape 0)
-                                    :height (:height root-shape 0)})
+        root-shape' (get objects root-shape-id)
+        width       (* (:width root-shape') zoom)
+        height      (* (:height root-shape') zoom)
+        vbox        (format-viewbox {:width (:width root-shape' 0)
+                                     :height (:height root-shape' 0)})
         root-shape-wrapper
         (mf/use-memo
-         (mf/deps objects root-shape)
+         (mf/deps objects root-shape')
          (fn []
-           (case (:type root-shape)
+           (case (:type root-shape')
              :group (group-wrapper-factory objects)
              :frame (frame-wrapper-factory objects))))]
 
@@ -332,9 +332,9 @@
            :xmlns:penpot (when include-metadata? "https://penpot.app/xmlns")
            :fill "none"}
 
-     [:> shape-container {:shape root-shape}
+     [:> shape-container {:shape root-shape'}
       [:& (mf/provider muc/is-component?) {:value true}
-       [:& root-shape-wrapper {:shape root-shape :view-box vbox}]]]]))
+       [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]]))
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}

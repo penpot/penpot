@@ -39,6 +39,12 @@
   [changes stack-undo?]
   (assoc changes :stack-undo? stack-undo?))
 
+(defn set-undo-group
+  [changes undo-group]
+  (cond-> changes
+          (some? undo-group)
+          (assoc :undo-group undo-group)))
+
 (defn with-page
   [changes page]
   (vary-meta changes assoc
@@ -80,7 +86,8 @@
   [changes1 changes2]
   {:redo-changes (d/concat-vec (:redo-changes changes1) (:redo-changes changes2))
    :undo-changes (d/concat-vec (:undo-changes changes1) (:undo-changes changes2))
-   :origin (:origin changes1)})
+   :origin (:origin changes1)
+   :undo-group (:undo-group changes1)})
 
 ; TODO: remove this when not needed
 (defn- assert-page-id
@@ -598,19 +605,21 @@
         (update :redo-changes
                 (fn [redo-changes]
                   (-> redo-changes
-                      (conj {:type :add-component
-                             :id id
-                             :path path
-                             :name name
-                             :main-instance-id main-instance-id
-                             :main-instance-page main-instance-page
-                             :shapes new-shapes})
+                      (conj (cond-> {:type :add-component
+                                     :id id
+                                     :path path
+                                     :name name
+                                     :main-instance-id main-instance-id
+                                     :main-instance-page main-instance-page}
+                                    (some? new-shapes)  ;; this will be null in components-v2
+                                    (assoc :shapes new-shapes)))
                       (into (map mk-change) updated-shapes))))
         (update :undo-changes
                 (fn [undo-changes]
                   (-> undo-changes
                       (d/preconj {:type :del-component
-                                  :id id})
+                                  :id id
+                                  :skip-undelete? true})
                       (into (comp (map :id)
                                   (map lookupf)
                                   (map mk-change))
@@ -629,7 +638,7 @@
                                       :id id
                                       :name (:name new-component)
                                       :path (:path new-component)
-                                      :objects (:objects new-component)})
+                                      :objects (:objects new-component)}) ;; this won't exist in components-v2
           (update :undo-changes d/preconj {:type :mod-component
                                            :id id
                                            :name (:name prev-component)
@@ -638,28 +647,13 @@
       changes)))
 
 (defn delete-component
-  [changes id components-v2]
+  [changes id]
   (assert-library changes)
-  (let [library-data   (::library-data (meta changes))
-        prev-component (get-in library-data [:components id])]
-    (-> changes
-        (update :redo-changes conj {:type :del-component
-                                    :id id})
-        (update :undo-changes
-                (fn [undo-changes]
-                  (cond-> undo-changes
-                    components-v2
-                    (d/preconj {:type :purge-component
-                                :id id})
-
-                    :always
-                    (d/preconj {:type :add-component
-                                :id id
-                                :name (:name prev-component)
-                                :path (:path prev-component)
-                                :main-instance-id (:main-instance-id prev-component)
-                                :main-instance-page (:main-instance-page prev-component)
-                                :shapes (vals (:objects prev-component))})))))))
+  (-> changes
+      (update :redo-changes conj {:type :del-component
+                                  :id id})
+      (update :undo-changes d/preconj {:type :restore-component
+                                        :id id})))
 
 (defn restore-component
   [changes id]

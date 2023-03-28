@@ -14,6 +14,7 @@
    [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -171,7 +172,7 @@
                ;; not the root. In this case, they must not be deleted,
                ;; but hidden (to be able to recover them more easily).
                (let [shape           (get objects shape-id)
-                     component-shape (cph/get-component-shape objects shape)]
+                     component-shape (ctn/get-component-shape objects shape)]
                  (and (ctk/in-component-instance? shape)
                       (not= shape component-shape)
                       (not (ctk/main-instance? component-shape)))))
@@ -291,7 +292,7 @@
         changes (reduce (fn [changes component-id]
                           ;; It's important to delete the component before the main instance, because we
                           ;; need to store the instance position if we want to restore it later.
-                          (pcb/delete-component changes component-id components-v2))
+                          (pcb/delete-component changes component-id))
                         changes
                         components-to-delete)
 
