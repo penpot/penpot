@@ -1294,6 +1294,7 @@ msgid "labels.no-invitations"
 msgstr "Ez dago gonbidapenik."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "Sakatu 'Taldera gonbdiatu' taldekide gehiago izateko."
 

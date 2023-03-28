@@ -1278,6 +1278,7 @@ msgid "labels.no-invitations"
 msgstr "Приглашений нет."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Нажмите кнопку «Пригласить в команду», чтобы пригласить в эту команду "

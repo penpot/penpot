@@ -54,6 +54,10 @@
 - Fix problem with guides not showing when moving over nested frames [Taiga #4905](https://tree.taiga.io/project/penpot/issue/4905)
 - Fix change email and password for users signed in via social login [Taiga #4273](https://tree.taiga.io/project/penpot/issue/4273)
 - Fix drag and drop files from browser or file explorer under circumstances [Taiga #5054](https://tree.taiga.io/project/penpot/issue/5054)
+- Fix problem when copy/pasting shapes [Taiga #4931](https://tree.taiga.io/project/penpot/issue/4931)
+- Fix problem with color picker not able to change hue [Taiga #5065](https://tree.taiga.io/project/penpot/issue/5065)
+- Fix problem with outer stroke in texts [Taiga #5078](https://tree.taiga.io/project/penpot/issue/5078)
+- Fix problem with text carring over next line when changing to fixed [Taiga #5067](https://tree.taiga.io/project/penpot/issue/5067)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:

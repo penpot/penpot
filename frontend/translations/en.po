@@ -1379,6 +1379,7 @@ msgid "labels.no-invitations"
 msgstr "No pending invitations."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "Click the **Invite people** button to invite people to this team."
 
@@ -3048,6 +3049,18 @@ msgstr "Show rulers"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Show fonts palette"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Enable proportional scale"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Disable proportional scale"
+
+msgid "workspace.header.menu.undo"
+msgstr "Undo"
+
+msgid "workspace.header.menu.redo"
+msgstr "Redo"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"

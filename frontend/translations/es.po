@@ -1450,6 +1450,7 @@ msgid "labels.no-invitations"
 msgstr "No hay invitaciones."
 
 #: src/app/main/ui/dashboard/team.cljs
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "Pulsa el botón 'Invitar al equipo' para añadir más integrantes al equipo."
 
@@ -3211,6 +3212,18 @@ msgstr "Mostrar reglas"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Mostrar paleta de textos"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Activar escala proporcional"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Desactivar escala proporcional"
+
+msgid "workspace.header.menu.undo"
+msgstr "Deshacer"
+
+msgid "workspace.header.menu.redo"
+msgstr "Rehacer"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"

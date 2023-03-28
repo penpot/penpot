@@ -177,7 +177,9 @@
                            :on-submit  on-submit}]]
 
       [:div.action-buttons
-       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))
+       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")
+                             :disabled (and (boolean (some current-data-emails current-members-emails))
+                                            (empty? (remove current-members-emails current-data-emails)))}]]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MEMBERS SECTION
@@ -586,7 +588,8 @@
   [:div.empty-invitations
    [:span (tr "labels.no-invitations")]
    (when can-invite?
-     [:span (tr "labels.no-invitations-hint")])])
+     [:& i18n/tr-html {:label "labels.no-invitations-hint"
+                       :tag-name "span"}])])
 
 (mf/defc invitation-section
   [{:keys [team invitations] :as props}]
