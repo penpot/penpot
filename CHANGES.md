@@ -63,6 +63,7 @@
 - Fix invalid files amount after moving on dashboard [Taiga #5080](https://tree.taiga.io/project/penpot/issue/5080)
 - Fix dashboard left sidebar, the [x] overlaps the field [Taiga #5064](https://tree.taiga.io/project/penpot/issue/5064)
 - Fix expanded typography on assets sidebar is moving [Taiga #5063](https://tree.taiga.io/project/penpot/issue/5063)
+- Fix spelling mistake in confirmation after importing only 1 file [Taiga #5095](https://tree.taiga.io/project/penpot/issue/5095)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:

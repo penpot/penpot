@@ -450,7 +450,9 @@ msgid "dashboard.import.import-error"
 msgstr "Hubo un problema importando el fichero. No ha podido ser importado."
 
 msgid "dashboard.import.import-message"
-msgstr "%s files have been imported succesfully."
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 fichero se ha importado correctamente."
+msgstr[1] "%s ficheros se han importado correctamente."
 
 msgid "dashboard.import.import-warning"
 msgstr "Algunos ficheros contenían objetos erroneos que no han sido importados."
