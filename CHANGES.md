@@ -61,6 +61,7 @@
 - Fix don't show invite user hero to users with editor role [Taiga #5086](https://tree.taiga.io/project/penpot/issue/5086)
 - Fix enter emails on onboarding new user creating team [Taiga #5089](https://tree.taiga.io/project/penpot/issue/5089)
 - Fix invalid files amount after moving on dashboard [Taiga #5080](https://tree.taiga.io/project/penpot/issue/5080)
+- Fix dashboard left sidebar, the [x] overlaps the field [Taiga #5064](https://tree.taiga.io/project/penpot/issue/5064)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
