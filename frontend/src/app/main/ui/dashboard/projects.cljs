@@ -362,8 +362,13 @@
                                  (reverse))
         recent-map          (mf/deref recent-files-ref)
         props               (some-> profile (get :props {}))
-        team-hero?          (and (:team-hero? props true)
-                                 (not (:is-default team)))
+        you-owner?          (get-in team [:permissions :is-owner])
+        you-admin?          (get-in team [:permissions :is-admin])
+        can-invite?         (or you-owner? you-admin?)
+        team-hero?          (and can-invite?
+                              (:team-hero? props true)
+                              (not (:is-default team)))
+
         tutorial-viewed?    (:viewed-tutorial? props true)
         walkthrough-viewed? (:viewed-walkthrough? props true)
 
