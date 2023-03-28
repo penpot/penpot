@@ -339,6 +339,10 @@
 
     .typography-container {
       position: relative;
+
+      &:last-child {
+        padding-bottom: 0.5em;
+      }
     }
 
     .drag-counter {
