@@ -318,8 +318,10 @@
 (defn unit
   [p1]
   (let [p-length (length p1)]
-    (Point. (/ (dm/get-prop p1 :x) p-length)
-            (/ (dm/get-prop p1 :y) p-length))))
+    (if (mth/almost-zero? p-length)
+      (Point. 0 0)
+      (Point. (/ (dm/get-prop p1 :x) p-length)
+              (/ (dm/get-prop p1 :y) p-length)))))
 
 (defn perpendicular
   [pt]
