@@ -23,6 +23,7 @@
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
+   [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
 
 (defn create-file-role!
@@ -66,6 +67,10 @@
 
     (->> (assoc params :file-id id :role :owner)
          (create-file-role! conn))
+
+    (db/update! conn :project
+      {:modified-at (dt/now)}
+      {:id project-id})
 
     (files/decode-row file)))
 
