@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.flex-layout :as gcfl]
    [app.common.geom.shapes.grid-layout :as gcgl]
@@ -180,6 +181,7 @@
     (let [children     (->> children
                             (map (d/getf objects))
                             (remove :hidden)
+                            (remove gco/invalid-geometry?)
                             (map apply-modifiers))
           layout-data  (gcfl/calc-layout-data parent children @transformed-parent-bounds)
           children     (into [] (cond-> children (not (:reverse? layout-data)) reverse))
@@ -215,6 +217,7 @@
               modif-tree))]
     (let [children     (->> (cph/get-immediate-children objects (:id parent))
                             (remove :hidden)
+                            (remove gco/invalid-geometry?)
                             (map apply-modifiers))
           grid-data    (gcgl/calc-layout-data parent children @transformed-parent-bounds)]
       (loop [modif-tree modif-tree
@@ -249,7 +252,8 @@
                 (ctm/resize (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))
 
         children (->> (cph/get-immediate-children objects parent-id)
-                      (remove :hidden))
+                      (remove :hidden)
+                      (remove gco/invalid-geometry?))
 
         content-bounds
         (when (and (d/not-empty? children) (or (ctl/auto-height? parent) (ctl/auto-width? parent)))
