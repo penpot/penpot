@@ -444,7 +444,7 @@ msgstr "There was a problem importing the file. The file wasn't imported."
 
 msgid "dashboard.import.import-message"
 msgid_plural "dashboard.import.import-message"
-msgstr[0] "1 file have been imported successfully."
+msgstr[0] "1 file has been imported successfully."
 msgstr[1] "%s files have been imported successfully."
 
 msgid "dashboard.import.import-warning"
