@@ -37,6 +37,14 @@
            :is-admin false
            :can-edit false)))
 
+(defn make-admin-predicate-fn
+  "A simple factory for admin permission predicate functions."
+  [qfn]
+  (us/assert fn? qfn)
+  (fn check
+    ([perms] (:is-admin perms))
+    ([conn & args] (check (apply qfn conn args)))))
+
 (defn make-edition-predicate-fn
   "A simple factory for edition permission predicate functions."
   [qfn]
