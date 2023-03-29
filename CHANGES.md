@@ -70,6 +70,7 @@
 - Disable empty names on rename files [Taiga #5088](https://tree.taiga.io/project/penpot/issue/5088)
 - Fix problem with SVG and flex layout [Taiga #](https://tree.taiga.io/project/penpot/issue/5099)
 - Fix unpublish and delete shared library warning messages [Taiga #5090](https://tree.taiga.io/project/penpot/issue/5090)
+- Fix last update project timer update after creating new file [Taiga #5096](https://tree.taiga.io/project/penpot/issue/5096)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
