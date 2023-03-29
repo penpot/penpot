@@ -33,6 +33,7 @@
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
@@ -150,10 +151,12 @@
                        :on-accept #(st/emit! (dwl/set-file-shared (:id file) false))
                        :count-libraries 1}))))
 
-        handle-blur (fn [_]
-                      (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
-                        (st/emit! (dw/rename-file (:id file) value)))
-                      (reset! editing? false))
+        handle-blur
+        (fn [_]
+          (let [value (str/trim (-> edit-input-ref mf/ref-val dom/get-value))]
+            (when (not= value "")
+              (st/emit! (dw/rename-file (:id file) value))))
+          (reset! editing? false))
 
         handle-name-keydown (fn [event]
                               (when (kbd/enter? event)

@@ -144,6 +144,7 @@
 
         create-file
         (mf/use-fn
+         (mf/deps project)
          (fn [origin]
            (st/emit! (with-meta (dd/create-file {:project-id (:id project)})
                        {::ev/origin origin}))))]

@@ -268,7 +268,9 @@
         (mf/use-fn
          (mf/deps file)
          (fn [name]
-           (st/emit! (dd/rename-file (assoc file :name name)))
+           (let [name (str/trim name)]
+             (when (not= name "")
+               (st/emit! (dd/rename-file (assoc file :name name)))))
            (swap! local assoc :edition false)))
 
         on-edit
