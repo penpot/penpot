@@ -20,7 +20,7 @@ target.stopCallback = function(e, element, combo) {
   return element.tagName == 'INPUT' || 
          element.tagName == 'SELECT' || 
          element.tagName == 'TEXTAREA' || 
-         element.tagName == 'BUTTON' || 
+         (element.tagName == 'BUTTON' && combo.includes("tab")) ||
          (element.contentEditable && element.contentEditable == 'true');
 }
 
