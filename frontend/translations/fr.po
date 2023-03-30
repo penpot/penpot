@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-20 21:39+0000\n"
-"Last-Translator: Locness <locness3@orange.fr>\n"
+"PO-Revision-Date: 2023-03-31 13:37+0000\n"
+"Last-Translator: Aimee <aimeeritleng@outlook.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 4.17-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -309,8 +309,8 @@ msgstr "Dupliquer %s fichiers"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh non ! Vous n'avez pas encore de fichiers ! Si vous voulez essayer avec "
-"des modèles, allez sur [Bibliothèques et modèles] "
-"(https://penpot.app/libraries-templates.html)"
+"des modèles, allez sur [Bibliothèques et modèles] (https://penpot.app/"
+"libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Télécharger %s fichiers Penpot (.penpot)"
@@ -403,7 +403,7 @@ msgid "dashboard.fonts.dismiss-all"
 msgstr "Rejeter tout"
 
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Vous n'avez installé aucune police personnalisée."
+msgstr "Les polices personnalisées installées apparaîtront ici."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.fonts-added"
@@ -471,7 +471,7 @@ msgstr "Envoi du fichier : %s"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
-msgstr "Inviter dans l’équipe"
+msgstr "Inviter des personnes"
 
 #: src/app/main/ui/dashboard/sidebar.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs
@@ -606,17 +606,9 @@ msgstr "Sélectionnez un thème"
 msgid "dashboard.show-all-files"
 msgstr "Voir tous les fichiers"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgstr "Votre fichier a été supprimé avec succès"
-
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "Votre projet a été supprimé avec succès"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgstr "Votre fichier a été dupliqué avec succès"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -844,7 +836,7 @@ msgstr "Jeton inconnu"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
-msgstr "Le nom d’utilisateur ou le mot de passe semble être faux."
+msgstr "E-mail ou mot de passe incorrect."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
@@ -967,10 +959,6 @@ msgstr "Largeur"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Ombre"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -1315,17 +1303,17 @@ msgstr "Nouveau mot de passe"
 #: src/app/main/ui/workspace/comments.cljs,
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "Vous n’avez aucune notification de commentaire en attente"
+msgstr "Vous n’avez aucune notification de commentaire en attente."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
-msgstr "Il n'y a pas d'invitations."
+msgstr "Aucune invitation en attente."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr ""
-"Appuyez sur le bouton \"Inviter à l'équipe\" pour inviter d'autres membres "
-"à cette équipe."
+"Appuyez sur le bouton \"Inviter des personnes\" pour inviter d'autres "
+"membres à cette équipe."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1664,8 +1652,10 @@ msgstr[1] "Êtes-vous sûr de vouloir supprimer ces fichiers ?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.scd-message"
 msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Ce fichier contient les bibliothèques utilisées dans ce fichier :"
-msgstr[1] "Ce fichier contient les bibliothèques utilisées dans ces fichiers :"
+msgstr[0] ""
+"Certaines ressources de la bibliothèque de ce fichier sont utilisées ici :"
+msgstr[1] ""
+"Certaines ressources des bibliothèques de ce fichier sont utilisées ici :"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -1797,18 +1787,14 @@ msgid "modals.small-nudge"
 msgstr "Petit nudge"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Annuler la publication"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.hint"
 msgid_plural "modals.unpublish-shared-confirm.hint"
 msgstr[0] ""
-"Si vous le retirez, les ressources là-dedans deviennent une bibliothèque de "
-"ce fichier."
+"Si vous annulez la publication, ces ressources seront déplacées vers la "
+"bibliothèque locale du fichier."
 msgstr[1] ""
-"Si vous le retirez, les ressources là-dedans deviennent une bibliothèque de "
-"ces fichiers."
+"Si vous annulez leur publication, ces ressources seront déplacées vers la "
+"bibliothèque locale du fichier."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -1819,8 +1805,8 @@ msgstr[1] "Vous êtes sûr de vouloir retirer ces bibliothèques ?"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.scd-message"
 msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Utilisé dans le fichier suivant :"
-msgstr[1] "Utilisé dans les fichiers suivants :"
+msgstr[0] "Certaines ressources de cette bibliothèque sont utilisées ici :"
+msgstr[1] "Certaines ressources de ces bibliothèques sont utilisées ici :"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
@@ -1862,7 +1848,7 @@ msgstr "Actualiser le composant d’une bibliothèque"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
-msgstr "E‑mail d'invitation envoyé!"
+msgstr "E‑mail d'invitation envoyé"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
@@ -1985,9 +1971,6 @@ msgstr "Créer une équipe et envoyer des invitations"
 msgid "onboarding.choice.team-up.roles"
 msgstr "Inviter avec le rôle :"
 
-msgid "onboarding.contrib.desc2.1"
-msgstr "Vous pouvez accéder au"
-
 msgid "onboarding.newsletter.accept"
 msgstr "Oui, s'abonner"
 
@@ -2000,14 +1983,8 @@ msgstr "Politique de confidentialité."
 msgid "onboarding.newsletter.title"
 msgstr "Vous souhaitez recevoir les actualités de Penpot ?"
 
-msgid "onboarding.slide.0.title"
-msgstr "Designer des libraires, styles and composants"
-
 msgid "onboarding.slide.1.title"
 msgstr "Donnez vie à vos conceptions avec des interactions"
-
-msgid "onboarding.slide.3.alt"
-msgstr "Inspect et lowcode"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Créer une équipe"
@@ -2574,10 +2551,6 @@ msgid "viewer.header.share.copy-link"
 msgstr "Copier le lien"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.subtitle"
-msgstr "Toute personne disposant du lien aura accès"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.show-interactions"
 msgstr "Afficher les interactions"
 
@@ -3002,7 +2975,7 @@ msgstr "BIBLIOTHÈQUES PARTAGÉES"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"
-msgstr "Multiple typographies"
+msgstr "Typographies multiples"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography-tooltip"
@@ -3019,9 +2992,6 @@ msgstr "Actualiser"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"
 msgstr "MISES À JOUR"
-
-msgid "workspace.library.store"
-msgstr "Prédéfinies"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.add-interaction"
@@ -3099,11 +3069,6 @@ msgstr "Export"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "Exporter la sélection"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs
-msgid "workspace.options.export-object"
-msgstr "Exporter l'élément"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
 msgid "workspace.options.export.suffix"
@@ -3254,7 +3219,7 @@ msgstr "(non définie)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-open-url"
-msgstr "Ouvrir l'url"
+msgstr "Ouvrir l'URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-out"
@@ -3681,10 +3646,10 @@ msgid "workspace.options.width"
 msgstr "Largeur"
 
 msgid "workspace.options.x"
-msgstr "X"
+msgstr "Axe X"
 
 msgid "workspace.options.y"
-msgstr "Y"
+msgstr "Axe Y"
 
 msgid "workspace.path.actions.add-node"
 msgstr "Ajouter un nœud (%s)"
@@ -3755,7 +3720,7 @@ msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Détacher les instances"
 
 msgid "workspace.shape.menu.difference"
-msgstr "Difference"
+msgstr "Différence"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.duplicate"
@@ -4072,3 +4037,48 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Type de contenu"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook créé avec succès."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Aucun webhook créé jusqu’à présent."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook mis à jour avec succès."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "La fonctionnalité '%s' n'est pas prise en charge."
+
+msgid "errors.webhooks.connection"
+msgstr "Erreur de connexion, URL inaccessible"
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Erreur lors de la validation SSL."
+
+msgid "errors.webhooks.timeout"
+msgstr "Délai d'attente dépassé"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Erreur inattendue lors de la validation"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Taille et position"
+
+msgid "dashboard.webhooks.create"
+msgstr "Créer un webhook"
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Appuyez sur le bouton « Ajouter un webhook » pour en ajouter un."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Veuillez entrer une adresse mail valide"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "L'URL ne passe pas la validation."
