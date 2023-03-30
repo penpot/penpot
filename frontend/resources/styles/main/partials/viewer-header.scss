@@ -3,7 +3,7 @@
   background-color: $color-gray-50;
   border-bottom: 1px solid $color-gray-60;
   display: grid;
-  grid-template-columns: 45% 10% 45%;
+  grid-template-columns: 1fr 130px 1fr;
   height: 48px;
   padding: 0 $size-4 0 55px;
   top: 0;

@@ -72,6 +72,7 @@
 - Fix unpublish and delete shared library warning messages [Taiga #5090](https://tree.taiga.io/project/penpot/issue/5090)
 - Fix last update project timer update after creating new file [Taiga #5096](https://tree.taiga.io/project/penpot/issue/5096)
 - Fix dashboard scrolling using 'Page Up' and 'Page Down' [Taiga #5081](https://tree.taiga.io/project/penpot/issue/5081)
+- Fix view mode header buttons overlapping in small resolutions [Taiga #5058](https://tree.taiga.io/project/penpot/issue/5058)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
