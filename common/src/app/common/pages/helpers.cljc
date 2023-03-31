@@ -552,19 +552,22 @@
 
        (loop [current-val init-val
               current-id  (first root-children)
-              pending-ids (rest root-children)]
+              pending-ids (rest root-children)
+              processed   #{}]
 
+         (if (contains? processed current-id)
+           (recur current-val (first pending-ids) (rest pending-ids) processed)
+           (let [current-shape (get objects current-id)
+                 processed (conj processed current-id)
+                 next-val (reducer-fn current-val current-shape)
+                 next-pending-ids
+                 (if (or (nil? check-children?) (check-children? current-shape))
+                   (concat (or (:shapes current-shape) []) pending-ids)
+                   pending-ids)]
 
-         (let [current-shape (get objects current-id)
-               next-val (reducer-fn current-val current-shape)
-               next-pending-ids
-               (if (or (nil? check-children?) (check-children? current-shape))
-                 (concat (or (:shapes current-shape) []) pending-ids)
-                 pending-ids)]
-
-           (if (empty? next-pending-ids)
-             next-val
-             (recur next-val (first next-pending-ids) (rest next-pending-ids)))))))))
+             (if (empty? next-pending-ids)
+               next-val
+               (recur next-val (first next-pending-ids) (rest next-pending-ids) processed)))))))))
 
 (defn selected-with-children
   [objects selected]
