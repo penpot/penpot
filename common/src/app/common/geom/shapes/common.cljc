@@ -9,7 +9,8 @@
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.rect :as gpr]))
+   [app.common.geom.shapes.rect :as gpr]
+   [app.common.math :as mth]))
 
 (defn center-rect
   [{:keys [x y width height]}]
@@ -71,3 +72,15 @@
   [{:keys [x1 y1 x2 y2] :as sr} matrix]
   (let [[c1 c2] (transform-points [(gpt/point x1 y1) (gpt/point x2 y2)] matrix)]
     (gpr/corners->selrect c1 c2)))
+
+(defn invalid-geometry?
+  [{:keys [points selrect]}]
+
+  (or (mth/nan? (:x selrect))
+      (mth/nan? (:y selrect))
+      (mth/nan? (:width selrect))
+      (mth/nan? (:height selrect))
+      (some (fn [p]
+              (or (mth/nan? (:x p))
+                  (mth/nan? (:y p))))
+            points)))

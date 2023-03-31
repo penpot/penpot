@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.flex-layout :as gcl]
    [app.common.geom.shapes.pixel-precision :as gpp]
@@ -175,6 +176,7 @@
 
     (let [children     (->> (cph/get-immediate-children objects (:id parent))
                             (remove :hidden)
+                            (remove gco/invalid-geometry?)
                             (map apply-modifiers))
           layout-data  (gcl/calc-layout-data parent children @transformed-parent-bounds)
           children     (into [] (cond-> children (not (:reverse? layout-data)) reverse))
@@ -215,7 +217,8 @@
                 (ctm/resize-parent (gpt/point 1 scale-height) origin (:transform parent) (:transform-inverse parent)))))
 
         children (->> (cph/get-immediate-children objects parent-id)
-                      (remove :hidden))
+                      (remove :hidden)
+                      (remove gco/invalid-geometry?))
 
         content-bounds
         (when (and (d/not-empty? children) (or (ctl/auto-height? parent) (ctl/auto-width? parent)))
