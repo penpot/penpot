@@ -11,12 +11,13 @@
    [app.config :as cf]
    [app.main.store :as st]
    [app.util.timers :as tm]
+   [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.core :as ptk]
    [rumext.v2 :as mf]))
 
-(log/set-level! :trace)
+(log/set-level! :warn)
 
 (def available-features
   #{:auto-layout :components-v2})
@@ -78,20 +79,28 @@
         active-feature? (mf/deref active-feature-ref)]
     active-feature?))
 
-;; Enable all features set on the configuration
-(->> @cf/flags
-     (map name)
-     (keep (fn [flag]
-             (when (str/starts-with? flag "frontend-feature-")
-               (subs flag 17))))
-     (map keyword)
-     (run! enable-feature!))
+(defn initialize
+  []
+  (ptk/reify ::initialize
+    ptk/WatchEvent
+    (watch [_ _ _]
+     (log/trace :hint "event:initialize" :fn "features")
+     (rx/concat
+      ;; Enable all features set on the configuration
+      (->> (rx/from @cf/flags)
+           (rx/map name)
+           (rx/map (fn [flag]
+                     (when (str/starts-with? flag "frontend-feature-")
+                       (subs flag 17))))
+           (rx/filter some?)
+           (rx/map keyword)
+           (rx/map enable-feature))
 
-;; Enable the rest of available configuration if we are on development
-;; environemnt (aka devenv).
-(when *assert*
-  ;; By default, all features disabled, except in development
-  ;; environment, that are enabled except components-v2
-  (->> available-features
-       (remove #(= % :components-v2))
-       (run! enable-feature!)))
+      ;; Enable the rest of available configuration if we are on development
+      ;; environemnt (aka devenv).
+      (when *assert*
+        ;; By default, all features disabled, except in development
+        ;; environment, that are enabled except components-v2
+        (->> (rx/from available-features)
+             (rx/filter #(not= % :components-v2))
+             (rx/map enable-feature)))))))
