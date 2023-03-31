@@ -31,7 +31,14 @@
 
         links   (->> (db/query conn :share-link {:file-id file-id})
                      (mapv (fn [row]
-                             (update row :pages db/decode-pgarray #{}))))
+                             (-> row
+                                 (update :pages db/decode-pgarray #{})
+                                 ;; NOTE: the flags are deprecated but are still present
+                                 ;; on the table on old rows. The flags are pgarray and
+                                 ;; for avoid decoding it (because they are no longer used
+                                 ;; on frontend) we just dissoc the column attribute from
+                                 ;; row.
+                                 (dissoc :flags)))))
 
         fonts   (db/query conn :team-font-variant
                           {:team-id (:team-id project)
