@@ -1007,13 +1007,13 @@
 
 ;; --- MUTATION COMMAND: upsert-file-thumbnail
 
-(def sql:upsert-file-thumbnail
+(def ^:private sql:upsert-file-thumbnail
   "insert into file_thumbnail (file_id, revn, data, props)
    values (?, ?, ?, ?::jsonb)
        on conflict(file_id, revn) do
           update set data = ?, props=?, updated_at=now();")
 
-(defn upsert-file-thumbnail
+(defn- upsert-file-thumbnail!
   [conn {:keys [file-id revn data props]}]
   (let [props (db/tjson (or props {}))]
     (db/exec-one! conn [sql:upsert-file-thumbnail
@@ -1033,5 +1033,6 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
-    (upsert-file-thumbnail conn params)
+    (when-not (db/read-only? conn)
+      (upsert-file-thumbnail! conn params))
     nil))
