@@ -75,6 +75,7 @@
 - Fix view mode header buttons overlapping in small resolutions [Taiga #5058](https://tree.taiga.io/project/penpot/issue/5058)
 - Fix precision for wrap in flex [Taiga #5072](https://tree.taiga.io/project/penpot/issue/5072)
 - Fix relative position overlay positioning [Taiga #5092](https://tree.taiga.io/project/penpot/issue/5092)
+- Fix hide grid keyboard shortcut [Github #3071](https://github.com/penpot/penpot/pull/3071)
 
 ### :heart: Community contributions by (Thank you!)
 - To @ondrejkonec: for contributing to the code with:
