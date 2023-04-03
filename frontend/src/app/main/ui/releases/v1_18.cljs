@@ -39,7 +39,7 @@
          [:img {:src "images/features/1.18-spacing.gif" :border "0" :alt "Spacing management"}]]
         [:div.modal-right
          [:div.modal-title
-          [:h2 "Spacing management for Flex layoutFlex-Layout"]]
+          [:h2 "Spacing management for Flex layout"]]
          [:div.modal-content
           [:p "Managing Flex Layout spacing is much more intuitive now. Visualize paddings, margins and gaps and drag to resize them."]
           [:p "And not only that, when creating Flex layouts, the spacing is predicted, helping you to maintain your design composition."]]
